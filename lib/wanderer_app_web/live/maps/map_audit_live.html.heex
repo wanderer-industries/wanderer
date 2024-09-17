@@ -1,0 +1,82 @@
+<main
+  id="map-events-list"
+  class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
+>
+  <div class="flex flex-col gap-4 w-full">
+    <UserActivity.list stream={@streams.activity} page={@page} end_of_stream?={@end_of_stream?} />
+  </div>
+</main>
+<nav class="fixed top-0 z-100 px-6 pl-20 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-gray-900  bg-opacity-70 bg-neutral-900">
+  <span className="w-full font-medium text-sm">
+    <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
+      <%= @map_name %>
+    </.link>
+    - Audit
+  </span>
+  <span className="mr-2"></span>
+  <div class="flex gap-2">
+    <.form :let={f} for={@form} phx-change="update_filters" autocomplete="off">
+      <.input
+        type="select"
+        field={f[:activity]}
+        class="p-dropdown p-component p-inputwrapper !h-8 py-0 w-full"
+        placeholder="Select an activity"
+        options={Enum.map(@activities, fn activity -> activity end)}
+      />
+    </.form>
+    <div class="flex space-x-4 font-inter text-slate-700 text-navy-100">
+      <div class="join w-full justify-between font-inter text-navy-100 sm:flex ">
+        <button
+          phx-click="set_period"
+          phx-value-period="1H"
+          class={[
+            "btn btn-sm join-item font-sm text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "1H")
+          ]}
+        >
+          HOUR
+        </button>
+        <button
+          phx-click="set_period"
+          phx-value-period="1D"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "1D")
+          ]}
+        >
+          DAY
+        </button>
+        <button
+          phx-click="set_period"
+          phx-value-period="1W"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "1W")
+          ]}
+        >
+          WEEK
+        </button>
+        <%!-- <button
+          phx-click="set_period"
+          phx-value-period="1M"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "1M")
+          ]}
+        >
+          M
+        </button>
+        <button
+          phx-click="set_period"
+          phx-value-period="ALL"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "ALL")
+          ]}
+        >
+          ALL
+        </button>--%>
+      </div>
+    </div>
+  </div>
+</nav>

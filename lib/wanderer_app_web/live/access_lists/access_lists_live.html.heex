@@ -1,0 +1,183 @@
+<div class="p-3 h-full w-full pl-20">
+  <main class="flex gap-4 w-full h-full shadow-sm col-span-2 lg:col-span-1 overflow-auto p-3">
+    <div class="flex-1 flex flex-col w-64 h-full bg-gray-400 bg-opacity-5 border border-gray-500 rounded-none justify-between table overflow-auto">
+      <.table
+        class="h-[calc(100vh-106px)] !overflow-y-auto"
+        id="access-lists"
+        rows={@access_lists}
+        row_click={fn acl -> send(self(), "select_acl_#{acl.id}") end}
+        row_selected={fn acl -> @selected_acl_id == acl.id end}
+      >
+        <:col :let={acl} label="Access List">
+          <%= acl.name %>
+        </:col>
+        <:col :let={acl} label="Description">
+          <%= acl.description %>
+        </:col>
+        <:action :let={acl}>
+          <.link
+            :if={can_edit?(acl, @current_user)}
+            class="hover:text-white"
+            patch={~p"/access-lists/#{acl.id}/edit"}
+          >
+            <.icon name="hero-pencil-solid" class="w-4 h-4" />
+          </.link>
+        </:action>
+        <:action :let={acl}>
+          <button
+            :if={can_edit?(acl, @current_user)}
+            phx-click="delete-acl"
+            phx-value-id={acl.id}
+            data={[confirm: "Please confirm to delete access list!"]}
+          >
+            <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
+          </button>
+        </:action>
+      </.table>
+      <.link class="btn mt-2 w-full btn-neutral rounded-none" patch={~p"/access-lists/new"}>
+        <.icon name="hero-plus-solid" class="w-6 h-6" />
+        <h3 class="card-title text-center text-md">New Access List</h3>
+      </.link>
+    </div>
+    <div class="flex-2 w-[50%] flex flex-col h-full bg-gray-400 bg-opacity-5 border border-gray-500 justify-between">
+      <div phx-hook="Drag" id="drag">
+        <div class="stats h-14 w-full rounded-none">
+          <.dropzone
+            name="admin"
+            icon="hero-user-group-solid"
+            disabled={@selected_acl_id == ""}
+            title="Admin"
+          />
+          <.dropzone
+            name="manager"
+            icon="hero-academic-cap-solid"
+            disabled={@selected_acl_id == ""}
+            title="Manager"
+          />
+          <.dropzone
+            name="member"
+            icon="hero-user-solid"
+            disabled={@selected_acl_id == ""}
+            title="Member"
+          />
+          <.dropzone
+            name="viewer"
+            icon="hero-eye-solid"
+            disabled={@selected_acl_id == ""}
+            title="Viewer"
+          />
+          <.dropzone
+            name="blocked"
+            icon="hero-no-symbol-solid text-red-500"
+            disabled={@selected_acl_id == ""}
+            title="Blocked"
+          />
+        </div>
+        <h3 class="w-full p-2 text-center text-sm border-t border-gray-500">
+          Drag members into the area above to assign a role
+        </h3>
+
+        <div
+          class="dropzone droppable draggable-dropzone--occupied flex flex-col gap-1 w-full rounded-none h-[calc(100vh-211px)] !overflow-y-auto"
+          id="acl_members"
+        >
+          <div
+            :for={member <- @members |> Enum.sort(&(&1.name < &2.name))}
+            draggable="true"
+            id={member.id}
+            class="draggable !p-1 h-10 cursor-move bg-black bg-opacity-25 hover:text-white"
+            data-dropzone="pool"
+          >
+            <div class="flex justify-between relative">
+              <.member_item member={member} />
+              <button
+                :if={can_delete_member?(member, @access_list, @current_user)}
+                class="z-10 absolute top-0 right-2"
+                draggable="false"
+                phx-click="delete-member"
+                phx-value-id={member.id}
+                data={[confirm: "Please confirm to delete member!"]}
+              >
+                <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <.link
+        disabled={@selected_acl_id == "" or not can_add_members?(@access_list, @current_user)}
+        class="btn mt-2 w-full btn-neutral rounded-none"
+        patch={~p"/access-lists/#{@selected_acl_id}/add-members"}
+      >
+        <.icon name="hero-plus-solid" class="w-6 h-6" />
+        <h3 class="card-title text-center text-md">Add Members</h3>
+      </.link>
+    </div>
+  </main>
+</div>
+
+<.modal
+  :if={@live_action in [:create, :edit]}
+  title={"#{(@live_action == :create && "Create") || "Edit"} Access List"}
+  class="!w-[500px]"
+  id="add_acl_modal"
+  show
+  on_cancel={JS.patch(~p"/access-lists/#{@selected_acl_id}")}
+>
+  <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action}>
+    <.input type="text" field={f[:name]} placeholder="Name" />
+    <.input type="textarea" field={f[:description]} placeholder="Public description" />
+    <.live_select
+      field={f[:owner_id]}
+      dropdown_extra_class="max-h-64"
+      available_option_class="w-full"
+      value_mapper={&map_character/1}
+      update_min_len={0}
+      phx-focus="set-default"
+      options={@characters}
+      placeholder="Owner"
+    >
+      <:option :let={option}>
+        <div class="flex items-center">
+          <.avatar url={member_icon_url(option.eve_id)} label={option.label} />
+          &nbsp;<%= option.label %>
+        </div>
+      </:option>
+    </.live_select>
+    <div class="modal-action">
+      <.button class="mt-2" type="submit" phx-disable-with="Saving...">
+        <%= (@live_action == :create && "Create") || "Save" %>
+      </.button>
+    </div>
+  </.form>
+</.modal>
+
+<.modal
+  :if={@live_action in [:add_members]}
+  title="Add Member"
+  class="!w-[500px]"
+  id="add_member"
+  show
+  on_cancel={JS.patch(~p"/access-lists/#{@selected_acl_id}")}
+>
+  <.form :let={f} for={@member_form} phx-submit={@live_action}>
+    <.live_select
+      field={f[:member_id]}
+      dropdown_extra_class="max-h-64"
+      available_option_class="w-full"
+      debounce={250}
+      update_min_len={3}
+      options={@member_search_options}
+      placeholder="Search a character/corporation/alliance"
+    >
+      <:option :let={option}>
+        <.search_member_item option={option} />
+      </:option>
+    </.live_select>
+    <div class="modal-action">
+      <.button class="mt-2" type="submit">
+        Add
+      </.button>
+    </div>
+  </.form>
+</.modal>

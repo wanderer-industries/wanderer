@@ -1,0 +1,69 @@
+/* TODO all of this styles need for fixing
+     problems with PrimeFlex because of tailwind broke them
+
+     IMPORTANT: here should not be set any design - only original PrimeFlex behaviour
+     e.g. paddings, margins, positions and other.
+*/
+
+.p-virtualscroller {
+  position: relative;
+
+  .p-virtualscroller-spacer {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    width: 100%;
+  }
+}
+
+.p-tooltip {
+  position: absolute;
+}
+
+.p-menuitem, .p-menuitem-content {
+  height: 36px;
+  flex-grow: 1;
+}
+
+.p-menuitem > .p-menuitem-content > a {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  padding: 0 12px;
+}
+
+.p-contextmenu .p-menuitem {
+  position: relative;
+}
+
+.p-contextmenu .p-submenu-list {
+  position: absolute;
+  min-width: 100%;
+  z-index: 1;
+}
+
+.p-contextmenu .p-menuitem-link .p-submenu-icon {
+  margin-left: auto;
+}
+
+.p-contextmenu .p-submenu-list {
+  padding: 0.5rem 0;
+  //border: 0 none;
+  border-radius: 6px;
+  //border: 1px solid #383838;
+}
+
+.p-icon-field {
+  .p-inputtext {
+    width: 100%;
+  }
+
+  .p-input-icon {
+    right: 0.75rem;
+  }
+}
+

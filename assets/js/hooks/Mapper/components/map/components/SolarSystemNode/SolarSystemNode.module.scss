@@ -1,0 +1,242 @@
+@import "@/hooks/Mapper/components/map/styles/eve-common-variables";
+
+$pastel-blue: #5a7d9a;
+$pastel-pink: #d291bc;
+$pastel-green: #88b04b;
+$pastel-yellow: #ffdd59;
+$dark-bg: #2d2d2d;
+$text-color: #ffffff;
+$tooltip-bg: #202020; // Темный фон для подсказок
+
+.RootCustomNode {
+  display: flex;
+  width: 130px;
+  height: 34px;
+
+  flex-direction: column;
+  padding: 2px 6px;
+  font-size: 10px;
+
+  background-color: $tooltip-bg;
+  box-shadow: 0 0 5px rgba($dark-bg, 0.5);
+  border: 1px solid darken($pastel-blue, 10%);
+  border-radius: 5px;
+  position: relative;
+  z-index: 1;
+
+  &.selected {
+    border-color: $pastel-pink;
+    box-shadow: 0 0 10px #9a1af1c2;
+  }
+
+  .tooltip {
+    background-color: $tooltip-bg;
+    color: $text-color;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid $pastel-pink;
+  }
+
+  &.eve-system-status-home {
+    border: 1px solid darken($eve-solar-system-status-color-home, 30%);
+    background-image: linear-gradient(45deg, $eve-solar-system-status-friendly, transparent);
+
+    &.selected {
+      border-color: $eve-solar-system-status-color-home;
+    }
+  }
+
+  &.eve-system-status-friendly {
+    border: 1px solid darken($eve-solar-system-status-color-friendly, 20%);
+    background-image: linear-gradient(45deg, darken($eve-solar-system-status-friendly, 30%), transparent);
+
+    &.selected {
+      border-color: darken($eve-solar-system-status-color-friendly, 5%);
+    }
+  }
+
+  &.eve-system-status-lookingFor {
+    border: 1px solid darken($eve-solar-system-status-color-lookingFor, 15%);
+    background-image: linear-gradient(45deg, #45ff8f2f, #457fff2f);
+
+    &.selected {
+      border-color: $pastel-pink;
+    }
+  }
+
+  &.eve-system-status-warning {
+    background-image: linear-gradient(45deg, $eve-solar-system-status-warning, transparent);
+  }
+
+  &.eve-system-status-dangerous {
+    background-image: linear-gradient(45deg, $eve-solar-system-status-dangerous, transparent);
+  }
+
+  &.eve-system-status-target {
+    background-image: linear-gradient(45deg, $eve-solar-system-status-target, transparent);
+  }
+
+}
+
+.Bookmarks {
+  position: absolute;
+  width: 100%;
+  z-index: 0;
+  display: flex;
+  left: 4px;
+
+  & > .Bookmark {
+    min-width: 13px;
+    height: 22px;
+    position: relative;
+    top: -13px;
+    border-radius: 5px;
+    color: #ffffff;
+    font-size: 8px;
+    text-align: center;
+    padding-top: 2px;
+    font-weight: bolder;
+    padding-left: 3px;
+    padding-right: 3px;
+
+    //background-color: #833ca4;
+
+    &:not(:first-child) {
+      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, .3);
+    }
+  }
+
+  .BookmarkWithIcon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: -2px;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 1);
+    padding-right: 2px;
+
+    & > .icon {
+      width: 8px;
+      height: 8px;
+      font-size: 8px;
+    }
+
+    & > .text {
+      margin-top: 1px;
+      font-size: 9px;
+    }
+  }
+
+}
+
+.icon {
+  width: 8px;
+  height: 8px;
+  font-size: 8px;
+}
+
+.HeadRow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  position: relative;
+  top: 1px;
+
+  .classTitle {
+    font-size: 11px;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgb(0 0 0 / 73%);
+  }
+
+  .TagTitle {
+    font-size: 11px;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
+
+    color: #ffb01d;
+  }
+
+  .classSystemName {
+    //font-weight: bold;
+  }
+
+  .solarSystemName {
+
+  }
+
+}
+
+.BottomRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 19px;
+
+  .localCounter {
+    display: flex;
+    //align-items: center;
+    gap: 2px;
+
+    & > i {
+      position: relative;
+      top: 1px;
+    }
+
+    & > span {
+      font-size: 9px;
+      line-height: 9px;
+      font-weight: 500;
+      //margin-top: 1px;
+    }
+  }
+}
+
+.effect {
+  width: 8px;
+  height: 8px;
+  margin-top: -2px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  margin-left: 1px;
+}
+
+.statics {
+  display: flex;
+  gap: 2px;
+  font-size: 8px;
+
+  & > * {
+    line-height: 10px;
+  }
+}
+
+.Handlers {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.Handle {
+  min-width: initial;
+  min-height: initial;
+  border: 1px solid $pastel-blue;
+  width: 5px;
+  height: 5px;
+
+  &.selected {
+    border-color: $pastel-pink;
+  }
+
+  &.HandleTop { top: -2px }
+
+  &.HandleRight { right: -2px }
+
+  &.HandleBottom { bottom: -2px }
+
+  &.HandleLeft { left: -2px }
+}

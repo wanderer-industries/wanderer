@@ -1,0 +1,565 @@
+[
+	{
+		"name": "Red Giant",
+		"modifiers": [
+			{
+				"name": "Smart Bomb Damage",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Heat Damage",
+				"positive": false,
+				"power": [
+					"+15%",
+					"+22%",
+					"+29%",
+					"+36%",
+					"+43%",
+					"+50%"
+				]
+			},
+			{
+				"name": "Overload Bonus",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Bomb Damage",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Smart Bomb Range",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Black Hole",
+		"modifiers": [
+			{
+				"name": "Missile Velocity",
+				"positive": true,
+				"power": [
+					"+15%",
+					"+22%",
+					"+29%",
+					"+36%",
+					"+43%",
+					"+50%"
+				]
+			},
+			{
+				"name": "Stasis Webifier Strength",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Inertia",
+				"positive": false,
+				"power": [
+					"+15%",
+					"+22%",
+					"+29%",
+					"+36%",
+					"+43%",
+					"+50%"
+				]
+			},
+			{
+				"name": "Ship Velocity",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100"
+				]
+			},
+			{
+				"name": "Missile Explosion Velocity",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Targeting Range",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Cataclysmic Variable",
+		"modifiers": [
+			{
+				"name": "Remote Capacitor Transmitter Amount",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Capacitor Recharge Time",
+				"positive": false,
+				"power": [
+					"+15%",
+					"+22%",
+					"+29%",
+					"+36%",
+					"+43%",
+					"+50%"
+				]
+			},
+			{
+				"name": "Capacitor Capacity",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Remote Armor Repair Amount",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Local Armor Repair Amount",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Local Shield Repair Amount",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Shield Transfer Amount",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Pulsar",
+		"modifiers": [
+			{
+				"name": "Armor Resists",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Shield Capacity",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Capacitor Recharge Time",
+				"positive": true,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Signature Radius",
+				"positive": false,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "NOS & Neut Drain Amount",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Magnetar",
+		"modifiers": [
+			{
+				"name": "Drone Tracking",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Tracking Speed",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Target Painter Strength",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Damage",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Targeting Range",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Missile Explosion Radius",
+				"positive": false,
+				"power": [
+					"+15%",
+					"+22%",
+					"+29%",
+					"+36%",
+					"+43%",
+					"+50%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Wolf-Rayet Star",
+		"modifiers": [
+			{
+				"name": "Small Weapon Damage",
+				"positive": true,
+				"power": [
+					"+60%",
+					"+88%",
+					"+116%",
+					"+144%",
+					"+172%",
+					"+200%"
+				]
+			},
+			{
+				"name": "Armor HP",
+				"positive": true,
+				"power": [
+					"+30%",
+					"+44%",
+					"+58%",
+					"+72%",
+					"+86%",
+					"+100%"
+				]
+			},
+			{
+				"name": "Shield Resist",
+				"positive": false,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			},
+			{
+				"name": "Signature Radius",
+				"positive": true,
+				"power": [
+					"-15%",
+					"-22%",
+					"-29%",
+					"-36%",
+					"-43%",
+					"-50%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Imperial Stellar Observatory",
+		"modifiers": [
+			{
+				"name": "Armor capacity",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Energy warfare capacitor drain",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Mining speed",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			}
+		]
+	},
+	{
+		"name": "State Stellar Observatory",
+		"modifiers": [
+			{
+				"name": "Shield capacity",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "ECM range",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Mining speed",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Republic Stellar Observatory",
+		"modifiers": [
+			{
+				"name": "Shield capacity",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Webifier range",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Mining speed",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Federal Stellar Observatory",
+		"modifiers": [
+			{
+				"name": "Armor capacity",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			},
+			{
+				"name": "Warp scramble strength",
+				"positive": true,
+				"power": [
+					"+1"
+				]
+			},
+			{
+				"name": "Mining speed",
+				"positive": true,
+				"power": [
+					"+10%"
+				]
+			}
+		]
+	},
+	{
+		"name": "Dazh Liminality Locus",
+		"modifiers": [
+			{
+				"name": "Remote armor repair",
+				"positive": true,
+				"power": [
+					"+25%"
+				]
+			},
+			{
+				"name": "Remote shield boost",
+				"positive": true,
+				"power": [
+					"+25%"
+				]
+			},
+			{
+				"name": "Warp speed",
+				"positive": false,
+				"power": [
+					"-30%"
+				]
+			},
+			{
+				"name": "Maximum locked targets",
+				"positive": false,
+				"power": [
+					"-50%"
+				]
+			}
+		]
+	}
+]

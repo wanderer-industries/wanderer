@@ -1,0 +1,21 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy artifact
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            /app/release/linux/deploy.sh ${{ github.event.release.tag_name }}

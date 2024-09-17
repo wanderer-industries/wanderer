@@ -1,0 +1,257 @@
+<main class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 overflow-auto">
+  <div class="page-content">
+    <div class="container-fluid px-[0.625rem]">
+      <div class="grid grid-cols-1 pb-6">
+        <div class="md:flex items-center justify-between px-[2px]">
+          <h4 class="text-[18px] font-medium text-gray-800 mb-sm-0 grow dark:text-gray-100 mb-2 md:mb-0">
+            Administration
+          </h4>
+          <.link :if={@map_subscriptions_enabled?} phx-click="authorize">
+            <.icon
+              name="hero-key-solid"
+              class="w-6 h-6 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100"
+            />
+          </.link>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-4 pb-6">
+        <div :if={@map_subscriptions_enabled?} class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-400 dark:text-gray-400">Wanderer Balance</span>
+              <h4 class="my-4 font-medium text-gray-800 text-4xl  dark:text-gray-100">
+                <span class="counter-value">
+                  <%= @total_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                </span>
+                ISK
+              </h4>
+            </div>
+          </div>
+        </div>
+
+        <div :if={@map_subscriptions_enabled?} class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-400 dark:text-gray-400">Update User Balance</span>
+              <.form :let={f} for={@form} phx-change="check-amount" phx-submit="update-balance">
+                <.live_select
+                  field={f[:character_id]}
+                  dropdown_extra_class="max-h-64 overflow-y-auto flex flex-row"
+                  available_option_class="w-full"
+                  debounce={250}
+                  update_min_len={3}
+                  options={@character_search_options}
+                  placeholder="Search a character"
+                >
+                  <:option :let={option}>
+                    <.search_member_item option={option} />
+                  </:option>
+                </.live_select>
+                <.live_select
+                  field={f[:amount]}
+                  update_min_len={0}
+                  options={@amounts}
+                  placeholder="Amount"
+                />
+                <div class="modal-action">
+                  <.button class="mt-2" type="submit">
+                    Update Balance
+                  </.button>
+                </div>
+              </.form>
+            </div>
+          </div>
+        </div>
+
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-400 dark:text-gray-400">Unlink Character</span>
+              <.form :let={f} for={@unlink_character_form} phx-submit="unlink-character">
+                <.live_select
+                  field={f[:unlink_character_id]}
+                  dropdown_extra_class="max-h-64 overflow-y-auto flex flex-row"
+                  available_option_class="w-full"
+                  debounce={250}
+                  update_min_len={3}
+                  options={@character_search_options}
+                  placeholder="Search a character"
+                >
+                  <:option :let={option}>
+                    <.search_member_item option={option} />
+                  </:option>
+                </.live_select>
+                <div class="modal-action">
+                  <.button class="mt-2" type="submit">
+                    Unlink
+                  </.button>
+                </div>
+              </.form>
+            </div>
+          </div>
+        </div>
+
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <span class="text-gray-400 dark:text-gray-400">EVE DB Data</span>
+            <.button
+              class="mt-2"
+              type="button"
+              phx-click="update-eve-db-data"
+              phx-disable-with="Updating EVE DB Data..."
+            >
+              Update EVE DB Data
+            </.button>
+          </div>
+        </div>
+
+        <div :if={@show_invites?} class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-400 dark:text-gray-400">Invite Link</span>
+              <h4 class="my-4 font-medium text-gray-800 text-4xl  dark:text-gray-100">
+                <.button class="btn btn-primary" phx-click="generate-invite-link">
+                  Generate
+                </.button>
+
+                <div :if={not is_nil(@invite_link)} class="join">
+                  <input
+                    class="input input-bordered join-item"
+                    readonly
+                    type="text"
+                    value={@invite_link}
+                  />
+                  <.button
+                    phx-hook="CopyToClipboard"
+                    id="copy-to-clipboard"
+                    class="copy-link btn join-item rounded-r-full"
+                    data-url={@invite_link}
+                  >
+                    Copy
+                    <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
+                      Link copied
+                    </div>
+                  </.button>
+                </div>
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div :if={@map_subscriptions_enabled?} class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div class="col-span-12 2xl:col-span-5">
+          <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+            <div class="nav-tabs border-b-tabs">
+              <div class="py-3">
+                <div class="px-3" data-simplebar="init">
+                  <div class="simplebar-wrapper">
+                    <div class="simplebar-height-auto-observer-wrapper">
+                      <div class="simplebar-height-auto-observer"></div>
+                    </div>
+                    <div class="simplebar-mask">
+                      <div class="simplebar-offset">
+                        <div class="simplebar-content-wrapper">
+                          <div class="simplebar-content" style="padding: 0px 12px;">
+                            <.table
+                              id="transactions"
+                              rows={@transactions}
+                              class="!max-h-[40vh] !overflow-y-auto"
+                            >
+                              <:col :let={transaction}>
+                                <div class=" text-22">
+                                  <.icon name="hero-credit-card-solid" class="h-5 w-5" />
+                                </div>
+                              </:col>
+                              <:col :let={transaction} label="Transaction">
+                                <div>
+                                  <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
+                                    <%= transaction.reason_encoded %>
+                                  </h5>
+                                  <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                    <%= transaction.date %>
+                                  </p>
+                                </div>
+                              </:col>
+                              <:col :let={transaction} label="Description">
+                                <%= transaction.description %>
+                              </:col>
+                              <:col :let={transaction} label="">
+                                <div class="text-end">
+                                  <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
+                                    <%= transaction.amount_encoded
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                  </h5>
+                                  <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                    ISK
+                                  </p>
+                                </div>
+                              </:col>
+                            </.table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="simplebar-placeholder"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-span-12 2xl:col-span-5 mt-6">
+            <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+              <div class="nav-tabs border-b-tabs">
+                <div class="py-3">
+                  <div class="px-3" data-simplebar="init">
+                    <div class="simplebar-wrapper">
+                      <div class="simplebar-height-auto-observer-wrapper">
+                        <div class="simplebar-height-auto-observer"></div>
+                      </div>
+                      <div class="simplebar-mask">
+                        <div class="simplebar-offset">
+                          <div class="simplebar-content-wrapper">
+                            <div class="simplebar-content" style="padding: 0px 12px;">
+                              <.table
+                                id="transactions"
+                                rows={@active_map_subscriptions}
+                                class="!max-h-[40vh] !overflow-y-auto"
+                              >
+                                <:col :let={subscription}>
+                                  <div class=" text-22">
+                                    <.icon name="hero-check-badge-solid" class="w-5 h-5" />
+                                  </div>
+                                </:col>
+                                <:col :let={subscription} label="Active Till">
+                                  <.local_time
+                                    :if={subscription.active_till}
+                                    id={"subscription-active-till-#{subscription.id}"}
+                                    at={subscription.active_till}
+                                  >
+                                    <%= subscription.active_till %>
+                                  </.local_time>
+                                </:col>
+                                <:col :let={subscription} label="Characters Limit">
+                                  <%= subscription.characters_limit %>
+                                </:col>
+                                <:col :let={subscription} label="Hubs Limit">
+                                  <%= subscription.hubs_limit %>
+                                </:col>
+                                <:col :let={subscription} label="Auto Renew">
+                                  <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+                                </:col>
+                              </.table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

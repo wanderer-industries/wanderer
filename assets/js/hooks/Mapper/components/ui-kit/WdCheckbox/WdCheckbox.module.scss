@@ -1,0 +1,26 @@
+.CheckboxRoot {
+  &.SizeXS {
+    width: 14px;
+    height: 14px;
+
+    :global {
+      .p-checkbox-box, .p-checkbox-input {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+  &.SizeM {
+    width: 16px;
+    height: 16px;
+
+    :global {
+      .p-checkbox-box, .p-checkbox-input {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+.Label {}

@@ -1,0 +1,15 @@
+{
+  "name": "wanderer-dev",
+  "dockerComposeFile": ["./docker-compose.yml"],
+  "extensions": ["jakebecker.elixir-ls"],
+  "service": "wanderer",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "settings": {
+    "editor.formatOnSave": true,
+    "search.exclude": {
+      "**/doc": true
+    },
+    "elixirLS.dialyzerEnabled": false
+  }
+}

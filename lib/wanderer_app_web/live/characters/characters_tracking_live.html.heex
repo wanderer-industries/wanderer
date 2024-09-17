@@ -1,0 +1,78 @@
+<div class="p-3 h-full w-full pl-20">
+  <main class="flex gap-4 w-full h-full shadow-sm rounded-lg col-span-2 lg:col-span-1 overflow-auto p-3">
+    <div class="flex-1 flex flex-col w-64 h-full border border-dotted border-gray-700 justify-between overflow-auto">
+      <.table
+        id="maps"
+        class="h-[calc(100vh-106px)] !overflow-y-auto"
+        rows={@maps}
+        row_click={fn map -> send(self(), "select_map_#{map.slug}") end}
+        row_selected={fn map -> @selected_map_slug == map.slug end}
+      >
+        <:col :let={map} label="Map">
+          <div class="flex items-center gap-2">
+            <.link
+              navigate={~p"/#{map.slug}"}
+              class="hover:text-white cursor-pointer tooltip tooltip-right"
+              data-tip="Go to map"
+            >
+              <.icon name="hero-map-solid" class="w-6 h-6" />
+            </.link>
+            <%= map.name %>
+          </div>
+        </:col>
+        <:col :let={map} label="Description">
+          <%= map.description %>
+        </:col>
+      </.table>
+    </div>
+    <div class="flex-2 w-[50%] flex flex-col h-full border border-dotted border-gray-700 justify-between">
+      <section :if={not is_nil(@selected_map)}>
+        <.async_result :let={characters} assign={@characters}>
+          <:loading>Loading...</:loading>
+          <:failed :let={reason}><%= reason %></:failed>
+
+          <span :if={characters}>
+            <.table
+              id="characters"
+              class="h-[calc(100vh-106px)] !overflow-y-auto"
+              rows={characters}
+              row_click={fn character -> send(self(), "toggle_track_#{character.id}") end}
+            >
+              <:col :let={character} label="Tracked">
+                <div class="flex items-center gap-2">
+                  <label>
+                    <input
+                      type="checkbox"
+                      class="checkbox"
+                      phx-click="toggle_track"
+                      phx-value-character-id={character.id}
+                      id={"character-track-#{character.id}"}
+                      checked={character.tracked}
+                    />
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
+                    <div>
+                      <div>
+                        <span class="font-bold"><%= character.name %></span><span class="ml-1 text-gray-400">[<%= character.corporation_ticker %>]</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </:col>
+            </.table>
+          </span>
+        </.async_result>
+      </section>
+      <section
+        :if={is_nil(@selected_map)}
+        class="flex flex-col h-full justify-center items-center"
+      >
+        <.icon name="hero-information-circle" class="w-10 h-10" />
+        <h1 class="text-xl">
+          Select a map to configure character tracking
+        </h1>
+      </section>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,117 @@
+<article class="prose prose-lg ccp-font w-full max-w-3xl mx-auto">
+  <!--Container-->
+  <div class="w-full px-4 md:px-6 text-xl leading-normal ccp-font">
+    <!--Title-->
+    <h1 class="font-bold break-normal pt-10 ccp-font text-white">
+      <%= @post.title %>
+    </h1>
+
+    <div class="text-md md:text-base font-normal mt-0 ccp-font flex items-center gap-4">
+      <div class="flex justify-start content-center gap-2">
+        <%= @post.date %> - BY <span class="uppercase"><%= @post.author %></span>
+      </div>
+
+      <div class="min-h-[10px] w-px self-stretch border-t-0 bg-gradient-to-tr from-transparent to-transparent opacity-25 via-neutral-200 block">
+      </div>
+      <div class="flex justify-start content-center">
+        <a
+          class="no-underline hover:text-pink-500 hover:text-underline h-8 md:h-auto p-2 text-center h-auto transform hover:scale-125 duration-300 ease-in-out"
+          href={"https://twitter.com/intent/tweet?url=#{current_url(@conn)}"}
+          target="_blank"
+        >
+          <svg class="fill-current h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+            <path d="M30.063 7.313c-.813 1.125-1.75 2.125-2.875 2.938v.75c0 1.563-.188 3.125-.688 4.625a15.088 15.088 0 0 1-2.063 4.438c-.875 1.438-2 2.688-3.25 3.813a15.015 15.015 0 0 1-4.625 2.563c-1.813.688-3.75 1-5.75 1-3.25 0-6.188-.875-8.875-2.625.438.063.875.125 1.375.125 2.688 0 5.063-.875 7.188-2.5-1.25 0-2.375-.375-3.375-1.125s-1.688-1.688-2.063-2.875c.438.063.813.125 1.125.125.5 0 1-.063 1.5-.25-1.313-.25-2.438-.938-3.313-1.938a5.673 5.673 0 0 1-1.313-3.688v-.063c.813.438 1.688.688 2.625.688a5.228 5.228 0 0 1-1.875-2c-.5-.875-.688-1.813-.688-2.75 0-1.063.25-2.063.75-2.938 1.438 1.75 3.188 3.188 5.25 4.25s4.313 1.688 6.688 1.813a5.579 5.579 0 0 1 1.5-5.438c1.125-1.125 2.5-1.688 4.125-1.688s3.063.625 4.188 1.813a11.48 11.48 0 0 0 3.688-1.375c-.438 1.375-1.313 2.438-2.563 3.188 1.125-.125 2.188-.438 3.313-.875z">
+            </path>
+          </svg>
+        </a>
+        <a
+          class="inline-block no-underline hover:text-pink-500 hover:text-underline text-center h-auto p-2 transform hover:scale-125 duration-300 ease-in-out"
+          href={"https://www.facebook.com/sharer/sharer.php?u=#{current_url(@conn)}"}
+          target="_blank"
+        >
+          <svg class="fill-current h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+            <path d="M19 6h5V0h-5c-3.86 0-7 3.14-7 7v3H8v6h4v16h6V16h5l1-6h-6V7c0-.542.458-1 1-1z">
+            </path>
+          </svg>
+        </a>
+        <a
+          class="inline-block no-underline hover:text-pink-500 hover:text-underline text-center h-auto p-2 transform hover:scale-125 duration-300 ease-in-out"
+          href={"https://www.reddit.com/submit?url=#{current_url(@conn)}"}
+          target="_blank"
+        >
+          <svg
+            class="fill-current h-6"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              d="M12.008 16.521a3.84 3.84 0 0 0 2.47-.77v.04a.281.281 0 0 0 .005-.396.281.281 0 0 0-.395-.005 3.291 3.291 0 0 1-2.09.61 3.266 3.266 0 0 1-2.081-.63.27.27 0 0 0-.38.381 3.84 3.84 0 0 0 2.47.77Z"
+            />
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10Zm-4.845-1.407A1.463 1.463 0 0 1 18.67 12a1.46 1.46 0 0 1-.808 1.33c.01.146.01.293 0 .44 0 2.242-2.61 4.061-5.829 4.061s-5.83-1.821-5.83-4.061a3.25 3.25 0 0 1 0-.44 1.458 1.458 0 0 1-.457-2.327 1.458 1.458 0 0 1 2.063-.064 7.163 7.163 0 0 1 3.9-1.23l.738-3.47v-.006a.31.31 0 0 1 .37-.236l2.452.49a1 1 0 1 1-.132.611l-2.14-.45-.649 3.12a7.11 7.11 0 0 1 3.85 1.23c.259-.246.6-.393.957-.405Z"
+              clip-rule="evenodd"
+            />
+            <path
+              fill="currentColor"
+              d="M15.305 13a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-4.625 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"
+            />
+          </svg>
+        </a>
+      </div>
+      <div class="min-h-[10px] w-px self-stretch border-t-0 bg-gradient-to-tr from-transparent to-transparent opacity-25 via-neutral-200 block">
+      </div>
+      <div class="flex justify-start content-center">
+        <button
+          id="link-share-button"
+          class="copy-link flex no-underline hover:text-pink-500 hover:text-underline md:h-auto p-2 text-center h-auto relative transform hover:scale-125 duration-300 ease-in-out"
+          type="button"
+          data-url={current_url(@conn)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            class="fill-current h-6"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M8.914 6.025a.75.75 0 0 1 1.06 0 3.5 3.5 0 0 1 0 4.95l-2 2a3.5 3.5 0 0 1-5.396-4.402.75.75 0 0 1 1.251.827 2 2 0 0 0 3.085 2.514l2-2a2 2 0 0 0 0-2.828.75.75 0 0 1 0-1.06Z"
+              clip-rule="evenodd"
+            />
+            <path
+              fill-rule="evenodd"
+              d="M7.086 9.975a.75.75 0 0 1-1.06 0 3.5 3.5 0 0 1 0-4.95l2-2a3.5 3.5 0 0 1 5.396 4.402.75.75 0 0 1-1.251-.827 2 2 0 0 0-3.085-2.514l-2 2a2 2 0 0 0 0 2.828.75.75 0 0 1 0 1.06Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <div class="absolute w-[100px] left-8 link-copied hidden">Link copied</div>
+        </button>
+      </div>
+    </div>
+    <div class="w-full justify-end">
+      <ul class="flex flex-wrap items-center p-0 m-0">
+        <li :for={tag <- @post.tags} class="inline-flex rounded-[35px] bg-primary px-1 text-white">
+          <a href="#">
+            <div class="badge badge-outline text-primary rounded-none border-none text-xl">
+              #<%= tag %>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <h4 class=" break-normal font-normal mt-8 ccp-font">
+      <%= @post.description %>
+    </h4>
+    <!--Post Content-->
+    <%= raw(@post.body) %>
+  </div>
+  <!--/container-->
+</article>

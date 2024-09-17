@@ -1,0 +1,472 @@
+<div class="grid grid-flow-row gap-2 p-3 h-full w-full pl-20">
+  <main class="w-full rounded-lg shadow col-span-2 lg:col-span-1 overflow-auto p-3">
+    <%= if @maps != [] do %>
+      <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 ">
+        <.link
+          class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
+          patch={~p"/maps/new"}
+        >
+          <div class="card-body  justify-center items-center ">
+            <.icon name="hero-plus-solid" class="w-20 h-20" />
+            <h3 class="card-title text-center text-md">Create Map</h3>
+          </div>
+        </.link>
+        <.async_result :let={maps} assign={@maps}>
+          <:loading>
+            <div class="skeleton card rounded"></div>
+            <div class="skeleton card rounded"></div>
+            <div class="skeleton card rounded"></div>
+            <div class="skeleton card rounded"></div>
+          </:loading>
+          <:failed :let={reason}><%= reason %></:failed>
+          <.link
+            :for={map <- maps}
+            navigate={~p"/#{map.slug}"}
+            class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white"
+          >
+            <figure class="absolute z-10 h-200 avatar w-full h-full">
+              <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
+
+              <img
+                :if={map.scope === :wormholes}
+                class="absolute h-200"
+                src="/images/wh_back.jpg"
+              />
+              <img
+                :if={map.scope === :stargates}
+                class="absolute h-200"
+                src="/images/stargates_back.webp"
+              />
+            </figure>
+
+            <div class="absolute z-50 left-0 top-0 w-full h-full p-6 flex flex-col justify-between bg-opacity-70 bg-neutral-900 hover:bg-opacity-30 transform transition duration-500">
+              <div>
+                <h2 class="card-title text-sm">
+                  <%= map.name %>
+                </h2>
+                <p title={map.description} class="text-sm mt-4 line-clamp-2">
+                  <%= map.description %>
+                </p>
+                <div
+                  :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
+                  class="w-full flex gap-2 mt-2 text-xs"
+                >
+                  <button
+                    :for={acl <- map.acls}
+                    class="p-tag p-component rounded-none hover:text-white"
+                    id={"map-acl-#{acl.id}"}
+                    type="button"
+                    phx-hook="MapAction"
+                    data-event="open_acl"
+                    data-data={acl.id}
+                  >
+                    <div class="p-tag-value">
+                      <%= acl.name %>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <h2 class="w-full flex justify-between mb-4 text-sm">
+                  Tracked Characters:
+                  <span class="font-bold">
+                    <%= map.characters_count %>
+                  </span>
+                </h2>
+                <div class="flex gap-2 justify-end">
+                  <button
+                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                    id={"map-audit-#{map.slug}"}
+                    phx-hook="MapAction"
+                    data-event="open_audit"
+                    data-data={map.slug}
+                    class="h-8 w-8 hover:text-white"
+                  >
+                    <.icon name="hero-key-solid" class="w-6 h-6" />
+                  </button>
+                  <button
+                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                    id={"map-settings-#{map.slug}"}
+                    phx-hook="MapAction"
+                    data-event="open_settings"
+                    data-data={map.slug}
+                    class="h-8 w-8 hover:text-white"
+                  >
+                    <.icon name="hero-cog-6-tooth-solid" class="w-6 h-6" />
+                  </button>
+                  <button
+                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                    id={"edit-map-#{map.slug}"}
+                    class="h-8 w-8 hover:text-white"
+                    type="button"
+                    phx-hook="MapAction"
+                    data-event="edit_map"
+                    data-data={map.slug}
+                  >
+                    <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
+                  </button>
+                  <button
+                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                    id={"delete-map-#{map.slug}"}
+                    class="h-8 w-8 hover:text-white"
+                    phx-hook="MapAction"
+                    data-event="delete"
+                    data-data={map.slug}
+                    data-confirm="Please confirm to delete map!"
+                  >
+                    <.icon name="hero-trash-solid" class="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </.link>
+        </.async_result>
+      </div>
+    <% end %>
+  </main>
+</div>
+<.modal
+  :if={@live_action in [:create, :edit]}
+  title={"#{(@live_action == :create && "Create") || "Edit"} Map"}
+  class="!w-[500px]"
+  id="add_map_modal"
+  show
+  on_cancel={JS.patch(~p"/maps")}
+>
+  <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action} autocomplete="off">
+    <.input type="text" field={f[:name]} placeholder="Name" />
+    <.input type="text" field={f[:slug]} prefix={@uri} placeholder="map-slug" />
+    <.input type="textarea" field={f[:description]} placeholder="Public description" />
+    <.live_select
+      field={f[:owner_id]}
+      value_mapper={&map_character/1}
+      options={@characters}
+      placeholder="Select a map owner"
+    >
+      <:option :let={option}>
+        <div class="flex items-center">
+          <.avatar url={member_icon_url(option.eve_id)} label={option.label} />
+          &nbsp;<%= option.label %>
+        </div>
+      </:option>
+    </.live_select>
+    <.input
+      type="select"
+      field={f[:scope]}
+      class="p-dropdown p-component p-inputwrapper"
+      placeholder="Select a map scope"
+      options={Enum.map(@scopes, fn scope -> {scope, scope} end)}
+    />
+    <.input
+      type="checkbox"
+      field={f[:only_tracked_characters]}
+      label="Allow only tracked characters"
+    />
+    <.input
+      :if={@live_action == :create}
+      type="checkbox"
+      field={f[:create_default_acl]}
+      label="Create default access list"
+    />
+    <.live_select
+      field={f[:acls]}
+      dropdown_extra_class="!h-24"
+      value_mapper={&map_acl_value/1}
+      debounce={250}
+      update_min_len={2}
+      mode={:tags}
+      options={@acls}
+      placeholder="Add an existing access list"
+    />
+    <div class="modal-action">
+      <.button class="mt-2" type="submit">
+        <%= (@live_action == :create && "Create") || "Save" %>
+      </.button>
+    </div>
+  </.form>
+</.modal>
+
+<.modal
+  :if={@live_action in [:settings]}
+  title="Map Settings"
+  class="!w-[800px]"
+  id="map-settings-modal"
+  show
+  on_cancel={JS.patch(~p"/maps")}
+>
+  <div role="tablist" class="tabs tabs-bordered">
+    <a
+      :if={@map_subscriptions_enabled?}
+      role="tab"
+      phx-click="change_settings_tab"
+      phx-value-tab="general"
+      class={[
+        "tab",
+        classes("tab-active": @active_settings_tab == "general")
+      ]}
+    >
+      <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
+    </a>
+    <a
+      :if={@map_subscriptions_enabled?}
+      role="tab"
+      phx-click="change_settings_tab"
+      phx-value-tab="balance"
+      class={[
+        "tab",
+        classes("tab-active": @active_settings_tab == "balance")
+      ]}
+    >
+      <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
+    </a>
+    <a
+      :if={@map_subscriptions_enabled?}
+      role="tab"
+      phx-click="change_settings_tab"
+      phx-value-tab="subscription"
+      class={[
+        "tab",
+        classes("tab-active": @active_settings_tab == "subscription")
+      ]}
+    >
+      <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
+    </a>
+  </div>
+  <.header :if={@active_settings_tab == "general"} class="bordered border-1 border-zinc-800">
+    Import/Export Map Settings
+    <:actions>
+      <.form :if={assigns |> Map.get(:import_form, false)} for={@import_form} phx-change="import">
+        <div phx-drop-target="{@uploads.settings.ref}">
+          <.live_file_input upload={@uploads.settings} />
+        </div>
+      </.form>
+      <progress :if={@importing} class="progress w-56"></progress>
+      <.button
+        id="export-settings-btn"
+        class="mt-8"
+        type="button"
+        disabled={@importing}
+        phx-hook="DownloadJson"
+        data-name={@map_slug}
+        data-content={Jason.encode!(assigns[:export_settings] || %{})}
+      >
+        <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" /> Export Settings
+      </.button>
+    </:actions>
+  </.header>
+  <.header :if={@active_settings_tab == "balance"} class="bordered border-1 border-zinc-800">
+    <div class="stats w-full bg-primary text-primary-content">
+      <div class="stat">
+        <div class="stat-figure text-primary">
+          <.button :if={not @is_topping_up?} class="mt-2" type="button" phx-click="show_topup">
+            <.icon name="hero-banknotes-solid" class="w-4 h-4" /> Top Up
+          </.button>
+        </div>
+        <div class="stat-title">Map balance</div>
+        <div class="stat-value text-white">
+          ISK <%= @map_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+        </div>
+        <div class="stat-actions text-end"></div>
+      </div>
+    </div>
+
+    <.form
+      :let={f}
+      :if={@is_topping_up?}
+      for={@topup_form}
+      phx-change="validate_topup"
+      phx-submit="topup"
+    >
+      <.live_select
+        field={f[:amount]}
+        update_min_len={0}
+        options={@amounts}
+        placeholder="Select topup amount"
+      />
+      <div class="modal-action">
+        <.button class="mt-2" type="button" phx-click="hide_topup">
+          Cancel
+        </.button>
+        <.button class="mt-2" type="submit">
+          Top Up
+        </.button>
+      </div>
+    </.form>
+  </.header>
+  <.table
+    :if={@active_settings_tab == "subscription"}
+    class="!max-h-[20vh] !overflow-y-auto"
+    empty_label="No active subscriptions, using alpha plan by default."
+    id="active-subscriptions-tbl"
+    rows={@map_subscriptions}
+  >
+    <:col :let={subscription} label="Subscription Plan">
+      <%= subscription.plan %>
+    </:col>
+    <:col :let={subscription} label="Status">
+      <%= subscription.status %>
+    </:col>
+    <:col :let={subscription} label="Characters Limit">
+      <%= subscription.characters_limit %>
+    </:col>
+    <:col :let={subscription} label="Hubs Limit">
+      <%= subscription.hubs_limit %>
+    </:col>
+    <:col :let={subscription} label="Active Till">
+      <.local_time
+        :if={subscription.active_till}
+        id={"subscription-active-till-#{subscription.id}"}
+        at={subscription.active_till}
+      >
+        <%= subscription.active_till %>
+      </.local_time>
+    </:col>
+    <:col :let={subscription} label="Auto Renew">
+      <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+    </:col>
+    <:action :let={subscription}>
+      <div class="tooltip tooltip-left" data-tip="Edit subscription">
+        <button
+          :if={subscription.status == :active && subscription.plan != :alpha}
+          phx-click="edit-subscription"
+          phx-value-id={subscription.id}
+        >
+          <.icon name="hero-pencil-square-solid" class="w-4 h-4 hover:text-white" />
+        </button>
+      </div>
+    </:action>
+    <:action :let={subscription}>
+      <div class="tooltip tooltip-left" data-tip="Cancel subscription">
+        <button
+          :if={subscription.status == :active && subscription.plan != :alpha}
+          phx-click="cancel-subscription"
+          phx-value-id={subscription.id}
+          data={[confirm: "Please confirm to cancel subscription!"]}
+        >
+          <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
+        </button>
+      </div>
+    </:action>
+  </.table>
+
+  <div class="modal-action">
+    <div
+      class="tooltip"
+      data-tip={
+        if @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active,
+          do: "You can have only one active subscription plan",
+          else: ""
+      }
+    >
+      <.button
+        :if={@active_settings_tab == "subscription" && not @is_adding_subscription?}
+        type="button"
+        disabled={
+          @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
+            @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha
+        }
+        phx-click="add_subscription"
+      >
+        Add subscription
+      </.button>
+    </div>
+  </div>
+
+  <.header
+    :if={@active_settings_tab == "subscription" && @is_adding_subscription?}
+    class="bordered border-1 flex flex-col gap-4"
+  >
+    <div :if={is_nil(@selected_subscription)}>
+      Add subscription
+      <div class="badge badge-secondary">Limited time offer: 50%</div>
+    </div>
+    <div :if={not is_nil(@selected_subscription)}>
+      Edit subscription
+      <div class="badge badge-secondary">Limited time offer: 50%</div>
+    </div>
+    <.form
+      :let={f}
+      for={@subscription_form}
+      phx-change="validate_subscription"
+      phx-submit={if is_nil(@selected_subscription), do: "subscribe", else: "update_subscription"}
+    >
+      <.input
+        :if={is_nil(@selected_subscription)}
+        type="select"
+        field={f[:period]}
+        class="p-dropdown p-component p-inputwrapper"
+        placeholder="Subscription period"
+        options={@subscription_periods}
+      />
+      <.input
+        field={f[:characters_limit]}
+        label="Characters limit"
+        show_value={true}
+        type="range"
+        min="300"
+        max="5000"
+        step="100"
+        class="range range-xs"
+      />
+      <.input
+        field={f[:hubs_limit]}
+        label="Hubs limit"
+        show_value={true}
+        type="range"
+        min="20"
+        max="50"
+        step="10"
+        class="range range-xs"
+      />
+      <.input field={f[:auto_renew?]} label="Auto Renew" type="checkbox" />
+      <div
+        :if={is_nil(@selected_subscription)}
+        class="stats w-full bg-primary text-primary-content"
+      >
+        <div class="stat">
+          <div class="stat-figure text-primary">
+            <.button type="submit">
+              Subscribe
+            </.button>
+          </div>
+          <div class="flex gap-8">
+            <div>
+              <div class="stat-title">Estimated price</div>
+              <div class="stat-value text-white">
+                ISK <%= (@estimated_price - @discount)
+                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+              </div>
+            </div>
+            <div>
+              <div class="stat-title">Discount</div>
+              <div class="stat-value text-white relative">
+                ISK <%= @discount |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                <span class="absolute top-0 right-0 text-xs text-white discount" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        :if={not is_nil(@selected_subscription)}
+        class="stats w-full bg-primary text-primary-content"
+      >
+        <div class="stat">
+          <div class="stat-figure text-primary">
+            <.button type="button" phx-click="cancel_edit_subscription">
+              Cancel
+            </.button>
+            <.button type="submit">
+              Update
+            </.button>
+          </div>
+          <div class="stat-title">Additional price (mounthly)</div>
+          <div class="stat-value text-white">
+            ISK <%= @additional_price |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+          </div>
+          <div class="stat-actions text-end"></div>
+        </div>
+      </div>
+    </.form>
+  </.header>
+</.modal>

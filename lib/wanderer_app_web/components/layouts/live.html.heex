@@ -1,0 +1,29 @@
+<div class="flex flex-col w-0 flex-1 overflow-hidden bg-gradient-to-r from-stone-950 to-stone-900">
+  <.connection_status>
+    Re-establishing connection...
+  </.connection_status>
+
+  <main
+    class="main flex-1 relative z-0 overflow-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0"
+    phx-mounted={JS.remove_class("opacity-0")}
+  >
+    <%= @inner_content %>
+  </main>
+  <aside class="h-full w-14 left-0 absolute bg-gray-400 bg-opacity-5  text-gray-200 shadow-lg border-r border-gray-900  bg-opacity-70 bg-neutral-900">
+    <.sidebar_nav_links
+      active_tab={@active_tab}
+      show_admin={@show_admin}
+      map_subscriptions_enabled={@map_subscriptions_enabled?}
+    />
+  </aside>
+  <.ping_container rtt_class={@rtt_class} />
+  <.feedback_container />
+  <.new_version_banner app_version={@app_version} />
+</div>
+
+<%= live_render(@socket, WandererAppWeb.ServerStatusLive,
+  container: {:div, class: ""},
+  id: "server-status"
+) %>
+
+<.live_component module={WandererAppWeb.Alerts} id="notifications" view_flash={@flash} />

@@ -1,0 +1,195 @@
+<nav class="px-6 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-gray-900  bg-opacity-70 bg-neutral-900">
+  <span className="w-full"></span>
+  <span className="mr-2"></span>
+  <div class="flex gap-2">
+    <div class="form-control">
+      <label class="label cursor-pointer gap-2">
+        <span class="label-text">Show table</span>
+        <%= if @mode == :table do %>
+          <input type="checkbox" class="checkbox" checked phx-click="show_table" />
+        <% else %>
+          <input type="checkbox" class="checkbox" phx-click="show_table" />
+        <% end %>
+      </label>
+    </div>
+    <div :if={@wallet_tracking_enabled?} class="form-control">
+      <label class="label cursor-pointer gap-2">
+        <span class="label-text">Show balance</span>
+        <input
+          phx-ignore
+          type="checkbox"
+          class="checkbox"
+          phx-click={JS.toggle_class("show-blured", to: "#characters-list")}
+        />
+      </label>
+    </div>
+  </div>
+</nav>
+<main
+  id="characters-list"
+  class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
+>
+  <div
+    :if={@mode == :blocks}
+    class="gap-4 grid grid-cols-1 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 "
+  >
+    <.link patch={~p"/characters/authorize"}>
+      <div class="card card-side rounded-none h-full items-center hover:text-white bg-gradient-to-l from-stone-950 to-stone-900 transform transition duration-500">
+        <div class="card-body justify-center items-center">
+          <.icon name="hero-squares-plus-solid" class="w-20 h-20" />
+          <h3 class="card-title text-center text-md">Authorize character</h3>
+          <p class="text-sm text-center ">* Using EVE-ONLINE SSO authorization</p>
+        </div>
+      </div>
+    </.link>
+    <div
+      :for={character <- @characters}
+      class="card rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
+    >
+      <figure class="avatar">
+        <img class="h-max-100" src={member_icon_url(character.eve_id)} alt={character.name} />
+        <div class="absolute left-0 bottom-0 w-full h-30 bg-opacity-60 bg-gray-900">
+          <h2 class="absolute w-full flex justify-between px-4 left-0 top-10 text-xs">
+            Corporation:
+            <span>
+              <%= character
+              |> get(path(:corporation_name), "-") %>
+            </span>
+          </h2>
+          <h2 class="absolute w-full flex justify-between px-4 left-0 top-16 text-xs">
+            Alliance:
+            <span>
+              <%= character
+              |> get(path(:alliance_name), "-") || "-" %>
+            </span>
+          </h2>
+          <h2 class="absolute left-0 bottom-12 px-4 text-xs w-full flex justify-between">
+            Location:
+            <span>
+              <%= character
+              |> get(path(:location / :solar_system_info / :solar_system_name, :map), "-") %>
+            </span>
+          </h2>
+          <h2
+            :if={@wallet_tracking_enabled? && character.show_wallet_balance?}
+            class="absolute w-full flex justify-between bottom-7 text-xs px-4"
+          >
+            Balance:
+            <span class="blur">
+              ISK <%= (character
+                       |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
+              |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+            </span>
+          </h2>
+          <h2 class="absolute w-full flex justify-between px-4 left-0 bottom-2 text-xs">
+            Ship:
+            <span>
+              <%= character
+              |> get(path(:ship / :ship_type_info / :name, :map), "-") %>
+            </span>
+          </h2>
+        </div>
+      </figure>
+      <div class="card-body">
+        <h2 class="card-title text-sm"><%= character.name %></h2>
+        <p></p>
+        <div class="card-actions justify-between">
+          <div>
+            <div
+              :if={character.invalid_token}
+              class="tooltip"
+              data-tip="Invalid token. Please refresh authorization"
+            >
+              <.icon name="hero-exclamation-triangle" class="text-red-500 h-4 w-4" />
+            </div>
+          </div>
+          <div class="card-actions justify-end">
+            <.link
+              patch={~p"/characters/authorize"}
+              class="tooltip tooltip-bottom"
+              data-tip="Refresh Authorization"
+            >
+              <.icon name="hero-arrow-path-solid" class="w-4 h-4 hover:text-white " />
+            </.link>
+            <button
+              class="tooltip tooltip-bottom"
+              phx-click="delete"
+              phx-value-character_id={character.id}
+              data={[confirm: "Please confirm to delete character!"]}
+              data-tip="Delete Character"
+            >
+              <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div :if={@mode == :table} class="flex flex-col gap-4">
+    <.link patch={~p"/characters/authorize"}>
+      <button
+        type="button"
+        class="btn h-10 rounded-none  hover:text-white bg-gradient-to-l from-stone-950 to-stone-900 transform transition duration-500"
+      >
+        <.icon name="hero-squares-plus-solid" class="w-8 h-8" /> Authorize character
+      </button>
+    </.link>
+
+    <.table class="!max-h-[80vh] !overflow-y-auto" id="characters-tbl" rows={@characters}>
+      <:col :let={character} label="Character">
+        <figure class="avatar h-10 w-10">
+          <img class="h-10 w-10" src={member_icon_url(character.eve_id)} alt={character.name} />
+        </figure>
+      </:col>
+      <:col :let={character} label="Name">
+        <%= character.name %>
+      </:col>
+      <:col :let={character} label="Corporation">
+        <%= character
+        |> get(path(:corporation_name), "-") %>
+      </:col>
+      <:col :let={character} label="Alliance">
+        <%= character
+        |> get(path(:alliance_name), "-") || "-" %>
+      </:col>
+      <:col :let={character} label="Location">
+        <%= character
+        |> get(path(:location / :solar_system_info / :solar_system_name, :map), "-") %>
+      </:col>
+      <:col :let={character} label="Ship">
+        <%= character
+        |> get(path(:ship / :ship_type_info / :name, :map), "-") %>
+      </:col>
+      <:col :let={character} :if={@wallet_tracking_enabled?} label="Balance">
+        <span :if={character.show_wallet_balance?} class="blur">
+          ISK <%= (character
+                   |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
+          |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+        </span>
+      </:col>
+    </.table>
+  </div>
+
+  <.modal
+    :if={@live_action in [:authorize]}
+    id="authorize-character-modal"
+    title="Authorize Character"
+    class="!w-[400px]"
+    show
+    on_cancel={JS.patch(~p"/characters")}
+  >
+    <.form :let={f} for={@form} phx-submit="authorize">
+      <div :if={@wallet_tracking_enabled?} class="pb-2 -mt-8">
+        <.input
+          type="checkbox"
+          field={f[:track_wallet]}
+          label="Access to character wallet information"
+        />
+      </div>
+      <div class="modal-action mt-0">
+        <.button type="submit">AUTHORIZE</.button>
+      </div>
+    </.form>
+  </.modal>
+</main>

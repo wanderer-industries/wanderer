@@ -1,0 +1,13 @@
+<div class="flex flex-col w-0 flex-1 overflow-hidden">
+  <.flash_group flash={@flash} />
+  <.connection_status>
+    Re-establishing connection...
+  </.connection_status>
+
+  <main
+    class="main flex-1 relative z-0 overflow-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0 bg-gradient-to-r from-stone-950 to-stone-900 maps_bg ccp-font"
+    phx-mounted={JS.remove_class("opacity-0")}
+  >
+    <%= @inner_content %>
+  </main>
+</div>

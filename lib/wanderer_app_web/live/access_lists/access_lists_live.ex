@@ -1,0 +1,651 @@
+defmodule WandererAppWeb.AccessListsLive do
+  use WandererAppWeb, :live_view
+
+  require Logger
+
+  @impl true
+  def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
+    {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
+
+    characters =
+      characters
+      |> Enum.sort_by(& &1.name, :asc)
+      |> Enum.map(&map_character/1)
+
+    {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
+
+    {:ok,
+     socket
+     |> assign(
+       selected_acl: nil,
+       selected_acl_id: "",
+       user_id: user_id,
+       access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end),
+       characters: characters,
+       members: []
+     )}
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(
+       selected_acl: nil,
+       selected_acl_id: "",
+       access_lists: [],
+       characters: [],
+       members: []
+     )}
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:active_page, :access_lists)
+    |> assign(:page_title, "Access Lists")
+  end
+
+  defp apply_action(socket, :create, _params) do
+    socket
+    |> assign(:active_page, :access_lists)
+    |> assign(:page_title, "Access Lists - New")
+    |> assign(
+      :form,
+      AshPhoenix.Form.for_create(WandererApp.Api.AccessList, :new,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> to_form()
+    )
+  end
+
+  defp apply_action(socket, :edit, %{"id" => acl_id} = _params) do
+    access_list = socket.assigns.access_lists |> Enum.find(&(&1.id == acl_id))
+
+    socket
+    |> assign(:active_page, :access_lists)
+    |> assign(:page_title, "Access Lists - Edit")
+    |> assign(:acl_id, acl_id)
+    |> assign(
+      :form,
+      access_list |> AshPhoenix.Form.for_update(:update, forms: [auto?: true]) |> to_form()
+    )
+  end
+
+  defp apply_action(socket, :members, %{"id" => acl_id} = _params) do
+    with access_list when not is_nil(access_list) <-
+           socket.assigns.access_lists |> Enum.find(&(&1.id == acl_id)),
+         {:ok, access_list} <- access_list |> Ash.load(:owner),
+         {:ok, members} <-
+           WandererApp.Api.AccessListMember.read_by_access_list(%{access_list_id: acl_id}) do
+      socket
+      |> assign(:active_page, :access_lists)
+      |> assign(:page_title, "Access Lists - Members")
+      |> assign(:selected_acl_id, acl_id)
+      |> assign(:access_list, access_list)
+      |> assign(:members, members)
+    else
+      _ ->
+        socket
+        |> put_flash(:error, "You don't have an access to this access list.")
+        |> push_navigate(to: ~p"/access-lists")
+    end
+  end
+
+  defp apply_action(socket, :add_members, %{"id" => acl_id} = _params) do
+    {:ok, %{owner: %{id: _character_id}} = access_list} =
+      socket.assigns.access_lists |> Enum.find(&(&1.id == acl_id)) |> Ash.load(:owner)
+
+    user_character_ids = socket.assigns.current_user.characters |> Enum.map(& &1.id)
+
+    user_character_ids
+    |> Enum.each(fn user_character_id ->
+      :ok = WandererApp.Character.TrackerManager.start_tracking(user_character_id)
+    end)
+
+    socket
+    |> assign(:active_page, :access_lists)
+    |> assign(:page_title, "Access Lists - Add Members")
+    |> assign(:selected_acl_id, acl_id)
+    |> assign(:user_character_ids, user_character_ids)
+    |> assign(
+      member_search_options: socket.assigns.characters |> Enum.map(&map_user_character_info/1)
+    )
+    |> assign(:access_list, access_list)
+    |> assign(
+      :members,
+      WandererApp.Api.AccessListMember.read_by_access_list!(%{access_list_id: acl_id})
+    )
+    |> assign(
+      :member_form,
+      %{} |> to_form()
+    )
+  end
+
+  @impl true
+  def handle_event("set-default", %{"id" => id}, socket) do
+    send_update(LiveSelect.Component, options: socket.assigns.characters, id: id)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "live_select_change",
+        %{"id" => "_member_id_live_select_component" = id, "text" => text} = _change_event,
+        socket
+      ) do
+    options =
+      if text == "" do
+        socket.assigns.characters
+      else
+        DebounceAndThrottle.Debounce.apply(
+          Process,
+          :send_after,
+          [self(), {:search, text}, 100],
+          "member_search_#{socket.assigns.selected_acl_id}",
+          500
+        )
+
+        [%{label: "Loading...", value: :loading, disabled: true}]
+      end
+
+    send_update(LiveSelect.Component, options: options, id: id)
+
+    {:noreply,
+     socket
+     |> assign(member_search_options: options, member_search_text: text, member_search_id: id)}
+  end
+
+  @impl true
+  def handle_event("live_select_change", %{"id" => id, "text" => text} = _change_event, socket) do
+    options =
+      if text == "" do
+        socket.assigns.characters
+      else
+        socket.assigns.characters
+      end
+
+    send_update(LiveSelect.Component, options: options, id: id)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("select_acl_" <> acl_id, _, socket) do
+    {:noreply,
+     socket
+     |> push_patch(to: ~p"/access-lists/#{acl_id}")}
+  end
+
+  def handle_event("validate", %{"form" => params}, socket) do
+    form = AshPhoenix.Form.validate(socket.assigns.form, params)
+    {:noreply, assign(socket, form: form)}
+  end
+
+  def handle_event("create", %{"form" => form}, socket) do
+    case WandererApp.Api.AccessList.new(form) do
+      {:ok, _acl} ->
+        {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> assign(
+           selected_acl: nil,
+           access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end)
+         )
+         |> push_patch(to: ~p"/access-lists")}
+
+      _ ->
+        {:noreply, socket |> put_flash(:error, "Failed to create access list. Try again.")}
+    end
+  end
+
+  def handle_event("edit", %{"form" => form} = _params, socket) do
+    {:ok, _} =
+      socket.assigns.access_lists
+      |> Enum.find(&(&1.id == socket.assigns.acl_id))
+      |> WandererApp.Api.AccessList.update(form)
+
+    {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
+
+    {:noreply,
+     socket
+     |> assign(access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end))
+     |> push_patch(to: ~p"/access-lists")}
+  end
+
+  def handle_event(
+        "add_members",
+        %{"member_id" => member_id} = _params,
+        %{assigns: assigns} = socket
+      ) do
+    member_option =
+      assigns.member_search_options
+      |> Enum.find(&(&1.value == member_id))
+
+    add_member(socket, assigns.access_list.id, member_option)
+
+    {:noreply, socket |> push_patch(to: ~p"/access-lists/#{assigns.access_list.id}")}
+  end
+
+  def handle_event("delete-acl", %{"id" => acl_id} = _params, socket) do
+    case socket.assigns.access_lists
+         |> Enum.find(&(&1.id == acl_id))
+         |> WandererApp.Api.AccessList.destroy() do
+      {:ok, _acl} ->
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "acls:#{acl_id}",
+          {:acl_deleted, %{acl_id: acl_id}}
+        )
+
+        {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> assign(access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end))}
+
+      _error ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You can't delete this access list. Plese remove it from the map first."
+         )}
+    end
+  rescue
+    _ ->
+      {:noreply,
+       socket
+       |> put_flash(
+         :error,
+         "You can't delete this access list. Plese remove it from the map first."
+       )}
+  end
+
+  def handle_event("delete-member", %{"id" => member_id} = _params, socket) do
+    socket.assigns.members
+    |> Enum.find(&(&1.id == member_id))
+    |> WandererApp.Api.AccessListMember.destroy!()
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "acls:#{socket.assigns.selected_acl_id}",
+      {:acl_updated, %{acl_id: socket.assigns.selected_acl_id}}
+    )
+
+    {:noreply,
+     socket
+     |> assign(
+       members:
+         WandererApp.Api.AccessListMember.read_by_access_list!(%{
+           access_list_id: socket.assigns.selected_acl_id
+         })
+     )}
+  end
+
+  @impl true
+  def handle_event("dropped", %{"draggedId" => dragged_id, "dropzoneId" => dropzone_id}, socket) do
+    role_atom =
+      [:admin, :manager, :member, :viewer, :blocked]
+      |> Enum.find(fn role_atom -> to_string(role_atom) == dropzone_id end)
+
+    case role_atom do
+      nil ->
+        {:noreply, socket}
+
+      role_atom ->
+        member =
+          socket.assigns.members
+          |> Enum.find(&(&1.id == dragged_id))
+
+        {:noreply, socket |> maybe_update_role(member, role_atom, socket.assigns.access_list)}
+    end
+  end
+
+  @impl true
+  def handle_event("noop", _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:search, text}, socket) do
+    first_character_id =
+      socket.assigns.user_character_ids
+      |> Enum.at(0)
+
+    {:ok, options} = search(first_character_id, text)
+
+    send_update(LiveSelect.Component, options: options, id: socket.assigns.member_search_id)
+    {:noreply, socket |> assign(member_search_options: options)}
+  end
+
+  @impl true
+  def handle_info(_event, socket), do: {:noreply, socket}
+
+  defp maybe_update_role(
+         socket,
+         %{
+           id: member_id,
+           eve_character_id: eve_character_id,
+           eve_corporation_id: eve_corporation_id,
+           eve_alliance_id: eve_alliance_id
+         } = member,
+         role_atom,
+         access_list
+       )
+       when not is_nil(eve_character_id) or
+              ((not is_nil(eve_corporation_id) or not is_nil(eve_alliance_id)) and
+                 role_atom not in [:admin, :manager]) do
+    can_assign_role =
+      cond do
+        current_user_is_owner?(socket.assigns.current_user, access_list) ->
+          true
+
+        current_user_has_role?(socket.assigns.current_user, access_list, :admin) ->
+          true
+
+        not is_nil(eve_character_id) and
+          (characters_has_role?([eve_character_id], access_list, :admin) or
+             characters_has_role?([eve_character_id], access_list, :manager)) and
+            not current_user_has_role?(socket.assigns.current_user, access_list, :admin) ->
+          false
+
+        current_user_has_role?(socket.assigns.current_user, access_list, :manager) and
+            role_atom in [:member, :viewer, :blocked] ->
+          true
+
+        true ->
+          false
+      end
+
+    case can_assign_role do
+      true ->
+        member =
+          member
+          |> WandererApp.Api.AccessListMember.update_role!(%{role: role_atom})
+
+        :telemetry.execute([:wanderer_app, :acl, :member, :update], %{count: 1}, %{
+          user_id: socket.assigns.current_user.id,
+          acl_id: socket.assigns.selected_acl_id,
+          member:
+            member |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+        })
+
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "acls:#{socket.assigns.selected_acl_id}",
+          {:acl_updated, %{acl_id: socket.assigns.selected_acl_id}}
+        )
+
+        socket
+        |> assign(
+          :members,
+          socket.assigns.members
+          |> Enum.map(fn m -> if m.id == member_id, do: member, else: m end)
+        )
+
+      _ ->
+        socket
+        |> put_flash(:error, "You're not allowed to assign this role")
+    end
+  end
+
+  defp maybe_update_role(
+         socket,
+         _member,
+         _role_atom,
+         _access_list
+       ) do
+    socket
+    |> put_flash(:info, "Only Characters can have Admin or Manager roles")
+  end
+
+  defp characters_has_role?(character_eve_ids, access_list, role_atom) do
+    access_list.members
+    |> Enum.any?(fn member ->
+      member.eve_character_id in character_eve_ids and member.role == role_atom
+    end)
+  end
+
+  defp current_user_is_owner?(current_user, access_list) do
+    character_ids = current_user.characters |> Enum.map(& &1.id)
+
+    access_list.owner_id in character_ids
+  end
+
+  defp current_user_has_role?(current_user, access_list, role_atom) do
+    character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
+
+    characters_has_role?(character_eve_ids, access_list, role_atom)
+  end
+
+  defp can_add_members?(nil, _current_user), do: false
+
+  defp can_add_members?(access_list, current_user) do
+    character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
+
+    member = access_list.members |> Enum.find(&(&1.eve_character_id in character_eve_ids))
+
+    current_user_is_owner?(current_user, access_list) or
+      (not is_nil(member) and member.role in [:admin, :manager])
+  end
+
+  defp can_delete_member?(
+         %{eve_character_id: eve_character_id, role: role_atom} = _member,
+         access_list,
+         current_user
+       ) do
+    cond do
+      current_user_is_owner?(current_user, access_list) ->
+        true
+
+      current_user_has_role?(current_user, access_list, :admin) ->
+        true
+
+      not is_nil(eve_character_id) and
+        (characters_has_role?([eve_character_id], access_list, :admin) or
+           characters_has_role?([eve_character_id], access_list, :manager)) and
+          not current_user_has_role?(current_user, access_list, :admin) ->
+        false
+
+      current_user_has_role?(current_user, access_list, :manager) and
+          role_atom in [:member, :viewer, :blocked] ->
+        true
+
+      true ->
+        false
+    end
+  end
+
+  defp can_edit?(access_list, current_user) do
+    character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
+
+    member = access_list.members |> Enum.find(&(&1.eve_character_id in character_eve_ids))
+
+    current_user_is_owner?(current_user, access_list) or
+      (not is_nil(member) and member.role == :admin)
+  end
+
+  defp add_member(
+         socket,
+         access_list_id,
+         %{label: name, value: eve_id, character: true} = _member_option
+       ) do
+    case WandererApp.Api.AccessListMember.create(%{
+           access_list_id: access_list_id,
+           name: name,
+           eve_character_id: eve_id,
+           eve_alliance_id: nil,
+           eve_corporation_id: nil
+         }) do
+      {:ok, member} ->
+        :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1}, %{
+          user_id: socket.assigns.current_user.id,
+          acl_id: access_list_id,
+          member:
+            member |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+        })
+
+        {:ok, member}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  defp add_member(
+         socket,
+         access_list_id,
+         %{label: name, value: eve_id, corporation: true} = _member_option
+       ) do
+    case WandererApp.Api.AccessListMember.create(%{
+           access_list_id: access_list_id,
+           name: name,
+           eve_character_id: nil,
+           eve_alliance_id: nil,
+           eve_corporation_id: eve_id
+         }) do
+      {:ok, member} ->
+        :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1}, %{
+          user_id: socket.assigns.current_user.id,
+          acl_id: access_list_id,
+          member:
+            member |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+        })
+
+        {:ok, member}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  defp add_member(
+         socket,
+         access_list_id,
+         %{label: name, value: eve_id, alliance: true} = _member_option
+       ) do
+    case WandererApp.Api.AccessListMember.create(%{
+           access_list_id: access_list_id,
+           name: name,
+           eve_character_id: nil,
+           eve_corporation_id: nil,
+           eve_alliance_id: eve_id,
+           role: :viewer
+         }) do
+      {:ok, member} ->
+        :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1}, %{
+          user_id: socket.assigns.current_user.id,
+          acl_id: access_list_id,
+          member:
+            member |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+        })
+
+        {:ok, member}
+
+      error ->
+        Logger.error(error)
+        {:ok, nil}
+    end
+  end
+
+  attr :disabled, :boolean, default: true
+  attr :name, :string
+  attr :icon, :string
+  attr :title, :string
+
+  def dropzone(assigns) do
+    ~H"""
+    <div
+      class={[
+        "dropzone stat text-center flex flex-1 items-center justify-center border-gray-500",
+        classes("bg-grey-800": @disabled, "hover:bg-orange-600 hover:bg-opacity-30": not @disabled)
+      ]}
+      id={@name}
+      data-dropzone={@name}
+      title={@title}
+    >
+      <.icon name={@icon} class="w-6 h-6" />
+    </div>
+    """
+  end
+
+  slot(:option)
+
+  def search_member_item(assigns) do
+    ~H"""
+    <div class="flex items-center">
+      <div :if={@option.value != :loading} class="avatar">
+        <div class="rounded-md w-12 h-12">
+          <img src={search_member_icon_url(@option)} alt={@option.label} />
+        </div>
+      </div>
+      <span :if={@option.value == :loading} <span class="loading loading-spinner loading-xs"></span>
+      &nbsp; <%= @option.label %>
+    </div>
+    """
+  end
+
+  def member_item(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2">
+      <.icon :if={not is_nil(@member.role)} name={member_role_icon(@member.role)} class="w-6 h-6" />
+      <div class="avatar">
+        <div class="rounded-md w-8 h-8">
+          <img src={member_icon_url(@member)} alt={@member.name} />
+        </div>
+      </div>
+      <%= @member.name %>
+    </div>
+    """
+  end
+
+  def member_role_icon(:admin), do: "hero-user-group-solid"
+  def member_role_icon(:manager), do: "hero-academic-cap-solid"
+  def member_role_icon(:member), do: "hero-user-solid"
+  def member_role_icon(:viewer), do: "hero-eye-solid"
+  def member_role_icon(:blocked), do: "hero-no-symbol-solid text-red-500"
+  def member_role_icon(_), do: "hero-cake-solid"
+
+  def search_member_icon_url(%{character: true} = option),
+    do: member_icon_url(%{eve_character_id: option.value})
+
+  def search_member_icon_url(%{corporation: true} = option),
+    do: member_icon_url(%{eve_corporation_id: option.value})
+
+  def search_member_icon_url(%{alliance: true} = option),
+    do: member_icon_url(%{eve_alliance_id: option.value})
+
+  def search_member_icon_url(%{eve_id: eve_id} = _option),
+    do: member_icon_url(%{eve_character_id: eve_id})
+
+  defp search(character_id, search),
+    do:
+      WandererApp.Character.search(character_id,
+        params: [search: search, categories: "character,alliance,corporation"]
+      )
+
+  defp map_user_character_info(%{eve_id: eve_id, label: label} = _character) do
+    %{
+      label: label,
+      value: eve_id,
+      character: true
+    }
+  end
+
+  defp map_character(%{name: name, id: id, eve_id: eve_id} = _character) do
+    %{label: name, value: id, id: id, eve_id: eve_id}
+  end
+
+  defp map_ui_acl(acl, selected_id) do
+    acl |> Map.merge(%{selected: acl.id == selected_id})
+  end
+end

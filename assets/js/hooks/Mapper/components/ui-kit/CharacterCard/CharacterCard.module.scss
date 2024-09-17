@@ -1,0 +1,46 @@
+.CharacterCard {
+
+}
+
+.EveIcon {
+  display: flex;
+  transition:
+    border-color 250ms,
+    opacity 250ms;
+  min-width: 33px;
+  min-height: 33px;
+  width: 33px;
+  height: 33px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #272727;
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: 3px;
+}
+
+.CharName {
+  max-width: 10rem;
+
+  &.CardBorderLeftIsOwn {
+    color: rgb(251 146 60 / 1)
+  }
+}
+
+.CharIcon {}
+
+.CharRow {
+  display: grid;
+  gap: 4px;
+
+  &.TwoColumns {
+    grid-template-columns: auto 1fr;
+  }
+
+  &.ThreeColumns {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+.CardBorderLeftIsOwn {
+
+}

@@ -1,0 +1,13 @@
+.VirtualScroller {
+  height: 100% !important;
+}
+
+.CharacterRow {
+  //border-left-width: 1px;
+
+  &.CardBorderLeftIsOwn {
+    border-left-color: rgb(251 146 60 / 1)
+  }
+}
+
+

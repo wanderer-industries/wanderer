@@ -1,0 +1,53 @@
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+*.iml
+
+*.key
+
+/.idea/
+/node_modules/
+/assets/node_modules/
+/assets/lib/ui-kit/dist/
+
+# Ignore assets that are produced by build tools.
+/priv/static/assets/
+/priv/static/*.js
+/priv/static/*.css
+
+.DS_Store
+**/.DS_Store
+
+# Temporary files, for example, from tests.
+/tmp/
+
+
+.env
+*.local.env
+
+.direnv/
+.cache/
+.nix-shell/
+.lexical/
+
+/_build
+/cover
+/deps
+/doc
+/.fetch
+erl_crash.dump
+*.ez
+*.beam
+/config/*.secret.exs
+.elixir_ls/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

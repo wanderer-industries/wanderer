@@ -1,0 +1,12 @@
+.p-tooltip {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+
+  & > .p-tooltip-text {
+    background-color: initial;
+  }
+}
+
+.p-tooltip.p-tooltip-active {
+  opacity: 1;
+}

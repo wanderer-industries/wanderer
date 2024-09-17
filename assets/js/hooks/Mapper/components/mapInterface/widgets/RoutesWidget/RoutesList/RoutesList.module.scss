@@ -1,0 +1,20 @@
+.RoutesListRoot {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.RouteSystem {
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+
+  cursor: pointer;
+  transition: opacity 200ms;
+  opacity: 1;
+}
+
+.Faded {
+  opacity: 0.3;
+}

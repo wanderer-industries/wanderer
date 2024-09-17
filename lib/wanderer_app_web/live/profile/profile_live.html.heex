@@ -1,0 +1,345 @@
+<main class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 overflow-auto">
+  <div class="page-content">
+    <div class="container-fluid px-[0.625rem]">
+      <div class="grid grid-cols-1 pb-6">
+        <div class="md:flex items-center justify-between px-[2px]">
+          <h4 class="text-[18px] font-medium text-gray-800 mb-sm-0 grow dark:text-gray-100 mb-2 md:mb-0">
+            Profile
+          </h4>
+          <div class="flex justify-center items-center gap-2">
+            <span class="hidden"><%= @user_hash %></span>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-4 pb-6">
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-700 dark:text-gray-400">Wanderer Balance</span>
+              <h4 class="mt-4 font-medium text-gray-800 text-4xl dark:text-gray-100">
+                <span class="counter-value">
+                  ISK <%= @wanderer_balance
+                  |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                </span>
+              </h4>
+            </div>
+          </div>
+          <div class="card-actions justify-end p-6">
+            <.link class="hover:text-white" patch={~p"/profile/deposit"}>
+              <.button type="button">Deposit ISK</.button>
+            </.link>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 gap-y-6 2xl:gap-6 lg:grid-cols-12">
+        <div class="col-span-12 2xl:col-span-5">
+          <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+            <div class="nav-tabs border-b-tabs">
+              <div class="flex pb-0 card-body ">
+                <h5 class="flex-grow mr-2 text-gray-800 text-15 dark:text-gray-400">
+                  Transactions
+                </h5>
+              </div>
+              <div class="py-3">
+                <div class="px-3" data-simplebar="init" style="max-height: 352px;">
+                  <div class="simplebar-wrapper" style="margin: 0px -12px;">
+                    <div class="simplebar-height-auto-observer-wrapper">
+                      <div class="simplebar-height-auto-observer"></div>
+                    </div>
+                    <div class="simplebar-mask">
+                      <div class="simplebar-offset" style="right: -20px; bottom: 0px;">
+                        <div
+                          class="simplebar-content-wrapper"
+                          style="height: auto; padding-right: 20px; padding-bottom: 0px; overflow: hidden scroll;"
+                        >
+                          <div class="simplebar-content" style="padding: 0px 12px;">
+                            <.table
+                              id="transactions"
+                              rows={@transactions}
+                              class="!max-h-[40vh] !overflow-y-auto"
+                            >
+                              <:col :let={transaction}>
+                                <div class=" text-22">
+                                  <.icon name="hero-credit-card-solid" class="h-5 w-5" />
+                                </div>
+                              </:col>
+                              <:col :let={transaction} label="Transaction">
+                                <div>
+                                  <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
+                                    <%= transaction.reason_encoded %>
+                                  </h5>
+                                  <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                    <.local_time
+                                      id={"invoice-inserted-#{transaction.id}"}
+                                      at={transaction.date}
+                                    >
+                                      <%= transaction.date %>
+                                    </.local_time>
+                                  </p>
+                                </div>
+                              </:col>
+                              <:col :let={transaction} label="Description">
+                                <%= transaction.description %>
+                              </:col>
+                              <:col :let={transaction} label="">
+                                <div class="text-end">
+                                  <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
+                                    <%= transaction.amount_encoded
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                  </h5>
+                                  <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                    ISK
+                                  </p>
+                                </div>
+                              </:col>
+                            </.table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="simplebar-placeholder" style="width: auto; height: 448px;"></div>
+                  </div>
+                  <div class="simplebar-track simplebar-horizontal" style="visibility: hidden;">
+                    <div
+                      class="simplebar-scrollbar"
+                      style="transform: translate3d(0px, 0px, 0px); display: none;"
+                    >
+                    </div>
+                  </div>
+                  <div class="simplebar-track simplebar-vertical" style="visibility: visible;">
+                    <div
+                      class="simplebar-scrollbar"
+                      style="height: 289px; transform: translate3d(0px, 0px, 0px); display: block;"
+                    >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-span-12 2xl:col-span-5">
+          <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+            <div class="nav-tabs border-b-tabs">
+              <div class="flex pb-0 card-body ">
+                <h5 class="flex-grow mr-2 text-gray-800 text-15 dark:text-gray-400">
+                  Invoices
+                </h5>
+              </div>
+              <div class="py-3">
+                <div class="px-3" data-simplebar="init" style="max-height: 352px;">
+                  <div class="simplebar-wrapper" style="margin: 0px -12px;">
+                    <div class="simplebar-height-auto-observer-wrapper">
+                      <div class="simplebar-height-auto-observer"></div>
+                    </div>
+                    <div class="simplebar-mask">
+                      <div class="simplebar-offset" style="right: -20px; bottom: 0px;">
+                        <div
+                          class="simplebar-content-wrapper"
+                          style="height: auto; padding-right: 20px; padding-bottom: 0px; overflow: hidden scroll;"
+                        >
+                          <div class="simplebar-content" style="padding: 0px 12px;">
+                            <.table
+                              id="transactions"
+                              rows={@invoices}
+                              class="!max-h-[40vh] !overflow-y-auto"
+                            >
+                              <:col :let={invoice}>
+                                <div class=" text-22">
+                                  Map subscription
+                                </div>
+                              </:col>
+                              <:col :let={invoice} label="Map">
+                                <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                  <%= invoice.map.name %>
+                                </p>
+                              </:col>
+                              <:col :let={invoice} label="Date">
+                                <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                  <.local_time
+                                    id={"invoice-inserted-#{invoice.id}"}
+                                    at={invoice.inserted_at}
+                                  >
+                                    <%= invoice.inserted_at %>
+                                  </.local_time>
+                                </p>
+                              </:col>
+                              <:col :let={invoice} label="">
+                                <div class="text-end">
+                                  <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
+                                    <%= invoice.amount
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                  </h5>
+                                  <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                                    ISK
+                                  </p>
+                                </div>
+                              </:col>
+                            </.table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="simplebar-placeholder" style="width: auto; height: 448px;"></div>
+                  </div>
+                  <div class="simplebar-track simplebar-horizontal" style="visibility: hidden;">
+                    <div
+                      class="simplebar-scrollbar"
+                      style="transform: translate3d(0px, 0px, 0px); display: none;"
+                    >
+                    </div>
+                  </div>
+                  <div class="simplebar-track simplebar-vertical" style="visibility: visible;">
+                    <div
+                      class="simplebar-scrollbar"
+                      style="height: 289px; transform: translate3d(0px, 0px, 0px); display: block;"
+                    >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <.modal
+    :if={@live_action in [:subscribe]}
+    title="Subscription Plans"
+    id="subscribe-modal"
+    show
+    on_cancel={JS.patch(~p"/profile")}
+  >
+    <div class="w-full px-4 py-4 mx-auto sm:py-8">
+      <div class="sm:flex sm:flex-col sm:align-center">
+        <div class="relative self-center mt-0 bg-zinc-900 rounded-lg p-0.5 flex sm:mt-8 border border-zinc-800">
+          <button
+            type="button"
+            class="relative w-1/2 bg-zinc-700 border-zinc-800 shadow-sm text-white rounded-md m-1 py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50 focus:z-10 sm:w-auto sm:px-8"
+          >
+            Monthly billing
+          </button>
+          <button
+            type="button"
+            class="ml-0.5 relative w-1/2 border border-transparent text-zinc-400 rounded-md m-1 py-2 text-sm font-medium whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50 focus:z-10 sm:w-auto sm:px-8"
+          >
+            Yearly billing
+          </button>
+        </div>
+      </div>
+      <div class="mt-4 space-y-0 sm:mt-16 flex items-center justify-center gap-6 w-full lg:mx-auto xl:mx-0">
+        <div class="flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600 bg-zinc-900 flex-1 basis-1/3 max-w-xs">
+          <div class="p-6 flex flex-col items-center justify-between h-full">
+            <h2 class="text-2xl font-semibold leading-6 text-white">1 month</h2>
+            <p class="pt-8">
+              <span class="text-3xl font-extrabold white">12M</span><span class="mx-2 text-base font-medium text-zinc-100">ISK/<!-- -->month</span>
+            </p>
+            <button
+              data-variant="slim"
+              class="block w-full py-2 mt-8 text-sm font-semibold text-center text-white rounded-md hover:bg-zinc-900"
+              type="button"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600 bg-zinc-900 border border-pink-500 flex-1 basis-1/3 max-w-xs">
+          <div class="p-6 flex flex-col items-center justify-between h-full">
+            <h2 class="text-2xl font-semibold leading-6 text-white">3 months</h2>
+            <p class="mt-8">
+              <span class="text-3xl font-extrabold white">10M</span><span class="mx-2 text-base font-medium text-zinc-100">ISK/<!-- -->month</span>
+            </p>
+            <button
+              data-variant="slim"
+              class="block w-full py-2 mt-8 text-sm font-semibold text-center text-white rounded-md hover:bg-zinc-900"
+              type="button"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-col rounded-lg shadow-sm divide-y divide-zinc-600 bg-zinc-900 flex-1 basis-1/3 max-w-xs">
+          <div class="p-6 flex flex-col items-center justify-between h-full">
+            <h2 class="text-2xl font-semibold leading-6 text-white">6 months</h2>
+            <p class="mt-8">
+              <span class="text-3xl font-extrabold white">8M</span><span class="mx-2 text-base font-medium text-zinc-100">ISK/<!-- -->month</span>
+            </p>
+            <button
+              data-variant="slim"
+              class="Button_root__3fIL8 Button_slim__eaYER block w-full py-2 mt-8 text-sm font-semibold text-center text-white rounded-md hover:bg-zinc-900"
+              type="button"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </.modal>
+
+  <.modal
+    :if={@live_action in [:deposit]}
+    title="Deposit ISK"
+    id="deposit-modal"
+    class="!w-[700px]"
+    show
+    on_cancel={JS.patch(~p"/profile")}
+  >
+    <div :if={is_nil(@corporation_info)} class="w-full max-h-[80vh] overflow-y-auto mx-auto">
+      It's not available yet :(
+    </div>
+    <div :if={@corporation_info} class="w-full max-h-[80vh] overflow-y-auto mx-auto">
+      <div class="mx-auto p-4 rounded-lg shadow-md">
+        <div
+          :if={@corporation_info}
+          class="w-full flex flex-row items-center justify-between gap-2 p-4 bg-stone-950 bg-opacity-70 rounded-lg"
+        >
+          Wanderer EVE Corporation:
+          <.corporation_info
+            corporation_id={@corporation_id}
+            corporation_info={@corporation_info}
+          />
+        </div>
+        <h2 class="mt-2 text-2xl font-semibold mb-4 text-white-800">
+          How to Deposit ISK to a Wanderer Account in Eve Online
+        </h2>
+        <ol class="list-decimal list-inside mb-4">
+          <li class="mb-2">
+            <strong>Open Your Wallet:</strong>
+            Click on the wallet icon in the Neocom menu to access your financial overview.
+          </li>
+          <li class="mb-2">
+            <strong>Navigate to the 'Transfer ISK' Tab:</strong>
+            Find the 'Transfer ISK' option in your wallet interface.
+          </li>
+          <li class="mb-2">
+            <strong>Choose 'Give ISK':</strong>
+            Click on the 'Give ISK' button to initiate the transfer.
+          </li>
+          <li class="mb-2">
+            <strong>Enter Recipient's Name:</strong>
+            Type in the name of the Wanderer name: <b><%= @corporation_info["name"] %></b>.
+          </li>
+          <li class="mb-2">
+            <strong>Specify the Amount:</strong>
+            Input the amount of ISK you wish to transfer to the corporate account.
+          </li>
+          <li class="mb-2">
+            <strong>Add a Note (Optional):</strong>
+            Include a short note or reason for the transfer if desired.
+          </li>
+          <li class="mb-2">
+            <strong>Confirm the Transfer:</strong>
+            Double-check the recipient's name and the amount, then click 'OK' to complete the transaction.
+          </li>
+        </ol>
+        <p>
+          The ISK will be transferred instantly to the Wanderer's account. Ensure you enter the correct recipient name to avoid any errors. Fly safe and enjoy your time in Eve Online!
+        </p>
+      </div>
+    </div>
+  </.modal>
+</main>

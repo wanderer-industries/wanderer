@@ -1,0 +1,19 @@
+.WHEffectViewRoot {
+
+}
+
+.WHEffectViewContent {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  row-gap: 4px;
+  column-gap: 12px;
+
+  & > span {
+    line-height: initial;
+  }
+
+  & > span:nth-child(2n) {
+    justify-self: end;
+  }
+}

@@ -1,0 +1,15 @@
+.RoutesGrid {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+
+  column-gap: 3px;
+  row-gap: 2px;
+
+  font-size: 12px;
+}
+
+.RemoveBtn {
+  font-size: 9px;
+  opacity: 0.3;
+}

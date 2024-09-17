@@ -1,0 +1,14 @@
+.InfoDrawerRoot {
+  border-left: 1px solid rgb(115, 120, 128);
+
+  &.RightSide {
+    border-left: initial;
+    border-right: 2px solid rgb(115, 120, 128);
+  }
+}
+
+.InfoDrawerLabel {
+  font-size: 11px;
+  line-height: 12px;
+  margin-bottom: 1px;
+}

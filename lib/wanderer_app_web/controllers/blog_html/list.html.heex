@@ -1,0 +1,75 @@
+<section class="max-w-full w-full text-indigo-400 bg-cover bg-fixed">
+  <div class="w-full text-xl leading-normal ccp-font text-center">
+    <.link navigate={~p"/news"}>
+      <h1 class="font-bold break-normal ccp-font text-white">
+        News
+      </h1>
+    </.link>
+  </div>
+
+  <div class="flex flex-col-reverse justify-between gap-6 xl:flex-row text-white" dir="ltr">
+    <div class="w-full max-w-none flex-grow pt-10">
+      <div class="flex min-h-[50vh] w-full flex-col justify-center gap-6 p-4 lg:flex-row">
+        <div class="max-w-2xl max-lg:mx-auto max-lg:w-full">
+          <div class="sticky top-32 mx-auto sm:max-w-none">
+            <ul class="menu menu-horizontal lg:menu-vertical lg:w-56">
+              <li class="menu-title">Tags</li>
+              <%= for tag <- @tags do %>
+                <li>
+                  <.link
+                    navigate={~p"/news?tag=#{tag}"}
+                    class={if @selected_tag == tag, do: "active", else: "false"}
+                  >
+                    <%= tag %>
+                  </.link>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+        <div class="mx-auto w-full max-w-2xl">
+          <!----><!----><!----> <!---->
+          <div class="grid justify-items-stretch gap-6">
+            <%= for post <- @posts do %>
+              <.link
+                navigate={~p"/news/#{post.id}"}
+                class="card sm:card-side hover:bg-base-200 transition-colors sm:max-w-none hover:text-white"
+              >
+                <figure class="mx-auto w-full object-cover p-6 max-sm:pb-0 sm:max-w-[12rem] sm:pe-0">
+                  <img
+                    loading="lazy"
+                    class="border-base-content bg-base-300 rounded-btn border border-opacity-5"
+                    alt={post.title}
+                    src={post.cover_image_uri}
+                  />
+                </figure>
+                <div class="card-body hover:text-white">
+                  <h2 class="card-title"><%= post.title %></h2>
+                  <p class="text-xs opacity-60">
+                    <%= post.description %>
+                  </p>
+                  <div class="card-actions justify-end">
+                    <ul class="flex flex-wrap items-center p-0 m-0">
+                      <li
+                        :for={tag <- post.tags}
+                        class="inline-flex rounded-[35px] bg-primary px-1 text-white"
+                      >
+                        <div class="badge badge-outline text-primary rounded-none border-none text-sm">
+                          #<%= tag %>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </.link>
+            <% end %>
+          </div>
+          <!---->
+        </div>
+      </div>
+      <div class="flex justify-center xl:hidden">
+        <!----><!---->
+      </div>
+    </div>
+  </div>
+</section>

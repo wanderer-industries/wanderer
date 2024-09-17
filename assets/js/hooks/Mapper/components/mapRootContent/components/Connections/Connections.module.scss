@@ -1,0 +1,26 @@
+.OnTheMapRoot {
+
+}
+
+.SidebarOnTheMap {
+  width: 400px;
+  padding: 0 !important;
+
+  :global {
+    .p-sidebar-content {
+      padding-left: 0px;
+      padding-right: 0px;
+    }
+  }
+}
+
+.SidebarContent {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  row-gap: 4px;
+  height: 100%;
+}
+
+.InfoTextSize {
+  font-size: 12px !important;
+}
