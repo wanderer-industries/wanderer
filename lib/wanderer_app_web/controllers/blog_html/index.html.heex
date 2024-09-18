@@ -11,35 +11,30 @@
         </div>
         <!--Right Col-->
         <div :if={@invite_token_valid} class="overflow-hidden">
-          <%!-- <img class="mx-auto w-full md:w-4/5 transform -rotate-6 transition hover:scale-105 duration-700 ease-in-out hover:rotate-6" src="macbook.svg" /> --%>
           <.link navigate={~p"/auth/eve?invite=#{@invite_token}"}>
             <img src="https://web.ccpgamescdn.com/eveonlineassets/developers/eve-sso-login-black-large.png" />
           </.link>
         </div>
       </div>
     </div>
-    <div class="carousel carousel-center !bg-neutral rounded-box max-w-4xl space-x-6 p-4">
-      <%= for post <- @posts do %>
-        <.link class="carousel-item relative" navigate={~p"/news/#{post.id}"}>
-          <div class="artboard-horizontal phone-1 relative hover:text-white mt-10">
-            <img
-              class="rounded-lg shadow-lg block !w-[400px] !h-[200px] opacity-75"
-              src={post.cover_image_uri}
-            />
-            <p class="absolute bottom-24 left-14 text-sm  font-normal ccp-font">
-              <%= post.date %> - BY <span class="uppercase"><%= post.author %></span>
-            </p>
-            <h3 class="absolute bottom-4 left-14 font-bold break-normal pt-6 pb-2 ccp-font text-white">
-              <%= post.title %>
-            </h3>
-          </div>
-        </.link>
-      <% end %>
+    <div class="carousel carousel-center bg-neutral rounded-box max-w-[80%] space-x-4 p-4">
+    <%= for post <- @posts do %>
+      <.link class="group carousel-item relative" navigate={~p"/news/#{post.id}"}>
+        <div class="artboard-horizontal phone-1 relative hover:text-white mt-10">
+          <img
+            class="rounded-lg shadow-lg block !w-[400px] !h-[200px] opacity-75"
+            src={post.cover_image_uri}
+          />
+          <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300"></div>
+          <h3 class="absolute bottom-4 left-14 font-bold break-normal pt-6 pb-2 ccp-font text-white">
+            <%= post.title %>
+          </h3>
+        </div>
+      </.link>
+    <% end %>
     </div>
-    <div class="flex w-full justify-center gap-2 py-2">
-      <%= for post <- @posts do %>
-        <.link class="btn btn-xs" navigate={~p"/news/#{post.id}"}></.link>
-      <% end %>
-    </div>
+    <%!-- <div class="carousel carousel-center !bg-neutral rounded-box max-w-4xl space-x-6 p-4">
+
+    </div> --%>
   </div>
 </section>
