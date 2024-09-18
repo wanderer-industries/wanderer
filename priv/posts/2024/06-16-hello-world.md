@@ -42,20 +42,17 @@ We prioritize your security and privacy. Our application uses advanced encryptio
 
 We believe in the power of community and collaboration. Join our growing community of Eve Online players and take your gameplay to the next level. Share tips, strategies, and feedback on our forums and social media channels.
 
-- **[Forums](#)**
-- **[Twitter](#)**
-- **[Discord](#)**
+- **[Discord](https://discord.gg/cafERvDD2k)**
+- **[Telegram](https://t.me/wanderer_mapper)**
+- **[Github](https://github.com/wanderer-industries)**
 
 ## Feedback and Support
 
 We are committed to continuous improvement and value your feedback. If you encounter any issues or have suggestions for new features, please reach out to our support team. We're here to help!
 
-- **[Support](#)**
-- **[Feedback Form](#)**
-
 ## Conclusion
 
-The Eve Online Shared Systems Map application is more than just a tool—it's a game-changer. Enhance your strategic planning, improve coordination with your team, and explore the vast universe of Eve Online like never before. Download the app today and start your journey towards galactic dominance!
+The Wanderer application is more than just a tool—it's a game-changer. Enhance your strategic planning, improve coordination with your team, and explore the vast universe of Eve Online like never before. Join today and start your journey towards galactic dominance!
 
 Fly safe,
 WANDERER TEAM
