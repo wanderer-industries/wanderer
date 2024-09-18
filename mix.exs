@@ -2,7 +2,7 @@ defmodule WandererApp.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/wanderer-industries/wanderer"
-  @version "0.23.36"
+  @version "1.0.0"
 
   def project do
     [
@@ -21,7 +21,7 @@ defmodule WandererApp.MixProject do
           applications: [
             wanderer_app: :permanent
           ],
-          version: "0.1.0"
+          version: "1.0.0"
         ]
       ]
     ]

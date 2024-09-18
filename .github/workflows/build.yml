@@ -149,7 +149,7 @@ jobs:
         id: get-latest-tag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
-          fallback: 0.1.0
+          fallback: 1.0.0
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -201,7 +201,7 @@ jobs:
         id: get-latest-tag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
-          fallback: 0.1.0
+          fallback: 1.0.0
 
       - name: 🏷 Create Draft Release
         uses: softprops/action-gh-release@v1
