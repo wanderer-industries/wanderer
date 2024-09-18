@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.4](https://github.com/wanderer-industries/wanderer/compare/v1.0.3...v1.0.4) (2024-09-18)
+
+
+
+
+### Bug Fixes:
+
+* core: skip search results for failed character info request
+
 ## [v1.0.3](https://github.com/wanderer-industries/wanderer/compare/v1.0.2...v1.0.3) (2024-09-18)
 
 
