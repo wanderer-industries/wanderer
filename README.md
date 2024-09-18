@@ -18,7 +18,7 @@ Interested to learn more? [Check more on our website](https://wanderer.ltd/news)
 
 ### Can Wanderer be self-hosted?
 
-Wanderer is [open source](https://wanderer.ltd/open-source-website-analytics) and we have a free as in beer and self-hosted solution called [Wanderer Community Edition (CE)](https://wanderer.ltd/news/self-hosted). Here are the differences between Wanderer and Wanderer CE:
+Wanderer is open source project and we have a free as in beer and self-hosted solution called [Wanderer Community Edition (CE)](https://wanderer.ltd/news/community-edition). Here are the differences between Wanderer and Wanderer CE:
 
 |  | Wanderer Cloud  | Wanderer Community Edition |
 | ------------- | ------------- | ------------- |
