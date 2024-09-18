@@ -40,21 +40,6 @@ jobs:
         run: flyctl deploy --remote-only --wait-timeout=300 --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      - name: Get content
-        uses: 2428392/gh-truncate-string-action@v1.3.0
-        id: get-content
-        with:
-          stringToTruncate: |
-            🚀 Test Server deploy result: ${{ job.status }}
-
-            Deploy ${{ job.status }} *${{ github.sha }}* (<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|#${{ github.run_number }}>) of ${{ github.event.repository.name }} by ${{ github.actor }} on ${{ github.event_name }} \n${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-          maxLength: 2000
-          truncationSymbol: "..."
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_DEV_WEBHOOK_URL }}
-          content: ${{ steps.get-content.outputs.string }}
 
   build:
     name: 🛠 Build
