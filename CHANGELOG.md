@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.9](https://github.com/wanderer-industries/wanderer/compare/v1.0.8...v1.0.9) (2024-09-19)
+
+
+
+
+### Bug Fixes:
+
+* core: Fix system add error if it's already added on map
+
 ## [v1.0.8](https://github.com/wanderer-industries/wanderer/compare/v1.0.7...v1.0.8) (2024-09-19)
 
 
