@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.8](https://github.com/wanderer-industries/wanderer/compare/v1.0.7...v1.0.8) (2024-09-19)
+
+
+
+
+### Bug Fixes:
+
+* docker: Fix DB connection in docker-compose internal network
+
 ## [v1.0.7](https://github.com/wanderer-industries/wanderer/compare/v1.0.6...v1.0.7) (2024-09-19)
 
 
