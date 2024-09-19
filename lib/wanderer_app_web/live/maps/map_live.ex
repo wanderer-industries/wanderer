@@ -724,47 +724,55 @@ defmodule WandererAppWeb.MapLive do
             first_character_eve_id =
               Map.get(socket.assigns, :user_characters, []) |> List.first()
 
-            added_signatures =
-              added_signatures
-              |> _parse_signatures(first_character_eve_id, system.id)
+            case not is_nil(first_character_eve_id) do
+              true ->
+                added_signatures =
+                  added_signatures
+                  |> _parse_signatures(first_character_eve_id, system.id)
 
-            updated_signatures =
-              updated_signatures
-              |> _parse_signatures(first_character_eve_id, system.id)
+                updated_signatures =
+                  updated_signatures
+                  |> _parse_signatures(first_character_eve_id, system.id)
 
-            updated_signatures_eve_ids =
-              updated_signatures
-              |> Enum.map(fn s -> s.eve_id end)
+                updated_signatures_eve_ids =
+                  updated_signatures
+                  |> Enum.map(fn s -> s.eve_id end)
 
-            removed_signatures_eve_ids =
-              removed_signatures
-              |> _parse_signatures(first_character_eve_id, system.id)
-              |> Enum.map(fn s -> s.eve_id end)
+                removed_signatures_eve_ids =
+                  removed_signatures
+                  |> _parse_signatures(first_character_eve_id, system.id)
+                  |> Enum.map(fn s -> s.eve_id end)
 
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id in removed_signatures_eve_ids end)
-            |> Enum.each(fn s ->
-              s
-              |> Ash.destroy!()
-            end)
+                WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
+                |> Enum.filter(fn s -> s.eve_id in removed_signatures_eve_ids end)
+                |> Enum.each(fn s ->
+                  s
+                  |> Ash.destroy!()
+                end)
 
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id in updated_signatures_eve_ids end)
-            |> Enum.each(fn s ->
-              updated = updated_signatures |> Enum.find(fn u -> u.eve_id == s.eve_id end)
+                WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
+                |> Enum.filter(fn s -> s.eve_id in updated_signatures_eve_ids end)
+                |> Enum.each(fn s ->
+                  updated = updated_signatures |> Enum.find(fn u -> u.eve_id == s.eve_id end)
 
-              if not is_nil(updated) do
-                s
-                |> WandererApp.Api.MapSystemSignature.update(updated)
-              end
-            end)
+                  if not is_nil(updated) do
+                    s
+                    |> WandererApp.Api.MapSystemSignature.update(updated)
+                  end
+                end)
 
-            added_signatures
-            |> Enum.map(fn s ->
-              s |> WandererApp.Api.MapSystemSignature.create!()
-            end)
+                added_signatures
+                |> Enum.map(fn s ->
+                  s |> WandererApp.Api.MapSystemSignature.create!()
+                end)
 
-            {:reply, %{signatures: _get_system_signatures(system.id)}, socket}
+                {:reply, %{signatures: _get_system_signatures(system.id)}, socket}
+              _ ->
+                {:reply, %{signatures: []}, socket |> put_flash(
+                  :error,
+                  "You should enable tracking for at least one character to work with signatures."
+                )}
+            end
 
           _ ->
             {:noreply, socket}
