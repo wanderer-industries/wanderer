@@ -53,6 +53,15 @@ map_subscriptions_enabled =
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
   |> String.to_existing_atom()
 
+
+map_subscription_characters_limit =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 100)
+
+map_subscription_hubs_limit =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_HUBS_LIMIT", 10)
+
 wallet_tracking_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_WALLET_TRACKING_ENABLED", "false")
@@ -77,7 +86,7 @@ config :wanderer_app,
   wallet_tracking_enabled: wallet_tracking_enabled,
   subscription_settings: %{
     plans: [
-      %{id: "alpha", characters_limit: 100, hubs_limit: 10, base_price: 0, monthly_discount: 0},
+      %{id: "alpha", characters_limit: map_subscription_characters_limit, hubs_limit: map_subscription_hubs_limit, base_price: 0, monthly_discount: 0},
       %{
         id: "omega",
         characters_limit: 300,
