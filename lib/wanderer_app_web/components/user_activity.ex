@@ -46,7 +46,7 @@ defmodule WandererAppWeb.UserActivity do
             <.local_time id={@activity.id} at={@activity.inserted_at} />
           </span>
         </p>
-        <p class="flex shrink-0 items-center space-x-1 min-w-[200px]">
+        <p :if={not is_nil(@activity.character)} class="flex shrink-0 items-center space-x-1 min-w-[200px]">
           <.character_item character={@activity.character} />
         </p>
       </div>
