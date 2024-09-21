@@ -1589,6 +1589,7 @@ defmodule WandererAppWeb.MapLive do
           :character_eve_id,
           :name,
           :description,
+          :custom_info,
           :kind,
           :group,
           :updated_at
@@ -1796,6 +1797,7 @@ defmodule WandererAppWeb.MapLive do
           eve_id: eve_id,
           name: name,
           description: Map.get(signature, "description"),
+          custom_info: Map.get(signature, "custom_info"),
           kind: kind,
           group: group,
           character_eve_id: character_eve_id

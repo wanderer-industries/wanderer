@@ -31,7 +31,8 @@ defmodule WandererApp.Api.MapSystemSignature do
       :name,
       :description,
       :kind,
-      :group
+      :group,
+      :custom_info
     ]
 
     defaults [:read, :destroy]
@@ -50,7 +51,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :name,
         :description,
         :kind,
-        :group
+        :group,
+        :custom_info
       ]
 
       argument :system_id, :uuid, allow_nil?: false
@@ -66,7 +68,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :name,
         :description,
         :kind,
-        :group
+        :group,
+        :custom_info
       ]
 
       primary? true
@@ -96,6 +99,10 @@ defmodule WandererApp.Api.MapSystemSignature do
     end
 
     attribute :description, :string do
+      allow_nil? true
+    end
+
+    attribute :custom_info, :string do
       allow_nil? true
     end
 
