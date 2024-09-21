@@ -115,6 +115,9 @@ export const RoutesWidgetContent = () => {
           {preparedRoutes.map(route => {
             const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
 
+            // eslint-disable-next-line no-console
+            console.log('JOipP', `Check sys [${route.destination}]:`, sys);
+
             return (
               <>
                 <div className="flex gap-2 items-center">
