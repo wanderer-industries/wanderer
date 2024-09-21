@@ -38,7 +38,7 @@ export const RoutesWidgetContent = () => {
 
   const { loading } = useLoadRoutes();
 
-  const { systems: systemStatics, loadSystems } = useLoadSystemStatic({ systems: hubs ?? [] });
+  const { systems: systemStatics, loadSystems, lastUpdateKey } = useLoadSystemStatic({ systems: hubs ?? [] });
   const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers({
     outCommand,
     hubs,
@@ -51,7 +51,8 @@ export const RoutesWidgetContent = () => {
 
       return { ...systemStatics.get(parseInt(x))!, ...(sys && { customName: sys.name ?? '' }) };
     });
-  }, [hubs, systems, systemStatics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hubs, systems, systemStatics, lastUpdateKey]);
 
   const preparedRoutes = useMemo(() => {
     return (

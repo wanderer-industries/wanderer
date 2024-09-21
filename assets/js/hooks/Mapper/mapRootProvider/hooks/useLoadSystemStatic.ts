@@ -27,12 +27,14 @@ interface UseLoadSystemStaticProps {
 export const useLoadSystemStatic = ({ systems }: UseLoadSystemStaticProps) => {
   const { outCommand } = useMapRootState();
   const [loading, setLoading] = useState(false);
+  const [lastUpdateKey, setLastUpdateKey] = useState(0);
 
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
 
   const addSystemStatic = useCallback((static_info: SolarSystemStaticInfoRaw) => {
     cache.set(static_info.solar_system_id, static_info);
+    setLastUpdateKey(new Date().getTime());
   }, []);
 
   const loadSystems = useCallback(async (systems: (number | string)[]) => {
@@ -43,6 +45,7 @@ export const useLoadSystemStatic = ({ systems }: UseLoadSystemStaticProps) => {
     if (toLoad.length > 0) {
       const res = await loadSystemStaticInfo(ref.current.outCommand, toLoad);
       res.forEach(x => cache.set(x.solar_system_id, x));
+      setLastUpdateKey(new Date().getTime());
     }
     setLoading(false);
   }, []);
@@ -52,5 +55,5 @@ export const useLoadSystemStatic = ({ systems }: UseLoadSystemStaticProps) => {
     // eslint-disable-next-line
   }, [systems]);
 
-  return { addSystemStatic, systems: cache, loading, loadSystems };
+  return { addSystemStatic, systems: cache, lastUpdateKey, loading, loadSystems };
 };
