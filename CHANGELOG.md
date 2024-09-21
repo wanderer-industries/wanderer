@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.15](https://github.com/wanderer-industries/wanderer/compare/v1.0.14...v1.0.15) (2024-09-21)
+
+
+
+
+### Bug Fixes:
+
+* map: Show a proper user notification if map was deleted/archived
+
 ## [v1.0.14](https://github.com/wanderer-industries/wanderer/compare/v1.0.13...v1.0.14) (2024-09-21)
 
 
