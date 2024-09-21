@@ -38,7 +38,7 @@ export const RoutesWidgetContent = () => {
 
   const { loading } = useLoadRoutes();
 
-  const { systems: systemStatics, loadSystems } = useLoadSystemStatic({ systems: hubs ?? [] });
+  const { systems: systemStatics, loadSystems, lastUpdateKey } = useLoadSystemStatic({ systems: hubs ?? [] });
   const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers({
     outCommand,
     hubs,
@@ -51,7 +51,8 @@ export const RoutesWidgetContent = () => {
 
       return { ...systemStatics.get(parseInt(x))!, ...(sys && { customName: sys.name ?? '' }) };
     });
-  }, [hubs, systems, systemStatics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hubs, systems, systemStatics, lastUpdateKey]);
 
   const preparedRoutes = useMemo(() => {
     return (
@@ -113,6 +114,10 @@ export const RoutesWidgetContent = () => {
         <div className={clsx(classes.RoutesGrid, 'px-2 py-2')}>
           {preparedRoutes.map(route => {
             const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
+
+            // TODO do not delte this console log
+            // eslint-disable-next-line no-console
+            // console.log('JOipP', `Check sys [${route.destination}]:`, sys);
 
             return (
               <>
