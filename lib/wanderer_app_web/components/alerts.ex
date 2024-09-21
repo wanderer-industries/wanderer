@@ -51,7 +51,7 @@ defmodule WandererAppWeb.Alerts do
   def delayed_fade_out_flash() do
     JS.hide(
       transition:
-        {"transition-opacity ease-out delay-2000 duration-1000", "opacity-100", "opacity-0"},
+        {"transition-opacity ease-out delay-5000 duration-6000", "opacity-100", "opacity-0"},
       time: 6000
     )
     |> JS.push("lv:clear-flash")
