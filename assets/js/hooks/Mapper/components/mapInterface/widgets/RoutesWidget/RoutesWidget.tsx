@@ -115,8 +115,9 @@ export const RoutesWidgetContent = () => {
           {preparedRoutes.map(route => {
             const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
 
+            // TODO do not delte this console log
             // eslint-disable-next-line no-console
-            console.log('JOipP', `Check sys [${route.destination}]:`, sys);
+            // console.log('JOipP', `Check sys [${route.destination}]:`, sys);
 
             return (
               <>
