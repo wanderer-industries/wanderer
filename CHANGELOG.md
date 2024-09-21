@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.0.16](https://github.com/wanderer-industries/wanderer/compare/v1.0.15...v1.0.16) (2024-09-21)
+
+
+
+
+### Bug Fixes:
+
+* Map: commented console log
+
+* Map: add console log for check sys loading
+
+* Map: add key for cache changes detecting
+
 ## [v1.0.15](https://github.com/wanderer-industries/wanderer/compare/v1.0.14...v1.0.15) (2024-09-21)
 
 
