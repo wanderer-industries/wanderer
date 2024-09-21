@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.13](https://github.com/wanderer-industries/wanderer/compare/v1.0.12...v1.0.13) (2024-09-21)
+
+
+
+
+### Bug Fixes:
+
+* tracking: Ensure user has at least one character tracked to work with map
+
 ## [v1.0.12](https://github.com/wanderer-industries/wanderer/compare/v1.0.11...v1.0.12) (2024-09-20)
 
 
