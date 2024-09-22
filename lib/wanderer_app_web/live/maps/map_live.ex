@@ -1723,7 +1723,7 @@ defmodule WandererAppWeb.MapLive do
            time_status: time_status,
            ship_size_type: ship_size_type,
            locked: locked
-         } = _connection
+         } = connection
        ),
        do: %{
          id: "#{solar_system_source}_#{solar_system_target}",
@@ -1732,7 +1732,8 @@ defmodule WandererAppWeb.MapLive do
          ship_size_type: ship_size_type,
          locked: locked,
          source: "#{solar_system_source}",
-         target: "#{solar_system_target}"
+         target: "#{solar_system_target}",
+         custom_info: connection |> Map.get(:custom_info)
        }
 
   defp map_ui_character(character),
