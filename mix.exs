@@ -111,8 +111,7 @@ defmodule WandererApp.MixProject do
       {:mox, "~> 1.1", only: [:test, :integration]},
       {:git_ops, "~> 2.6.1"},
       {:version_tasks, "~> 0.12.0"},
-      {:error_tracker, "~> 0.2"},
-      {:sourceror, "~> 1.3.0", override: true}
+      {:error_tracker, "~> 0.2"}
     ]
   end
 
