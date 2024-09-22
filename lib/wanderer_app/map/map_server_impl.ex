@@ -468,6 +468,12 @@ defmodule WandererApp.Map.Server.Impl do
       ),
       do: _update_connection(state, :update_locked, [:locked], connection_update)
 
+  def update_connection_custom_info(
+        state,
+        connection_update
+      ),
+      do: _update_connection(state, :update_custom_info, [:custom_info], connection_update)
+
   def import_settings(%{map_id: map_id} = state, settings, user_id) do
     WandererApp.Cache.put(
       "map_#{map_id}:importing",

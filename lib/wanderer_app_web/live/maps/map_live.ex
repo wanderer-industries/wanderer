@@ -708,6 +708,7 @@ defmodule WandererAppWeb.MapLive do
                     "mass_status" -> :update_connection_mass_status
                     "ship_size_type" -> :update_connection_ship_size_type
                     "locked" -> :update_connection_locked
+                    "custom_info" -> :update_connection_custom_info
                     _ -> nil
                   end
 
@@ -717,6 +718,7 @@ defmodule WandererAppWeb.MapLive do
                     "mass_status" -> :mass_status
                     "ship_size_type" -> :ship_size_type
                     "locked" -> :locked
+                    "custom_info" -> :custom_info
                     _ -> nil
                   end
 

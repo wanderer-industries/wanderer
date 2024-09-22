@@ -27,4 +27,9 @@ defmodule WandererApp.MapConnectionRepo do
     do:
       connection
       |> WandererApp.Api.MapConnection.update_locked(update)
+
+  def update_custom_info(connection, update),
+    do:
+      connection
+      |> WandererApp.Api.MapConnection.update_custom_info(update)
 end

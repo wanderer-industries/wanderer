@@ -107,6 +107,7 @@ export enum OutCommand {
   updateConnectionMassStatus = 'update_connection_mass_status',
   updateConnectionShipSizeType = 'update_connection_ship_size_type',
   updateConnectionLocked = 'update_connection_locked',
+  updateConnectionCustomInfo = 'update_connection_custom_info',
   updateSignatures = 'update_signatures',
   updateSystemName = 'update_system_name',
   updateSystemDescription = 'update_system_description',
