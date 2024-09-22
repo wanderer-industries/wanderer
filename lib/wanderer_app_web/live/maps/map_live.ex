@@ -65,10 +65,9 @@ defmodule WandererAppWeb.MapLive do
         })
 
       {:ok,
-        %{
-          deleted: true
-        } = map} ->
-
+       %{
+         deleted: true
+       } = map} ->
         socket
         |> put_flash(
           :error,
@@ -419,7 +418,11 @@ defmodule WandererAppWeb.MapLive do
 
         {:noreply,
          socket
-         |> assign(map_loaded?: true, user_characters: user_character_eve_ids, has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids))
+         |> assign(
+           map_loaded?: true,
+           user_characters: user_character_eve_ids,
+           has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+         )
          |> _push_map_event("init", initial_data)
          |> push_event("js-exec", %{
            to: "#map-loader",
@@ -489,24 +492,31 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("manual_add_system", %{"coordinates" => coordinates} = _event, %{assigns: %{has_tracked_characters?: has_tracked_characters?}} = socket) do
+  def handle_event(
+        "manual_add_system",
+        %{"coordinates" => coordinates} = _event,
+        %{assigns: %{has_tracked_characters?: has_tracked_characters?}} = socket
+      ) do
     case has_tracked_characters? do
       true ->
         case _check_user_permissions(socket, :add_system) do
           true ->
             {:noreply,
-            socket
-            |> assign(coordinates: coordinates)
-            |> push_patch(to: ~p"/#{socket.assigns.map_slug}/add-system")}
+             socket
+             |> assign(coordinates: coordinates)
+             |> push_patch(to: ~p"/#{socket.assigns.map_slug}/add-system")}
 
           _ ->
             {:noreply, socket}
         end
+
       _ ->
-        {:noreply, socket |> put_flash(
-          :error,
-          "You should enable tracking for at least one character to add system."
-        )}
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to add system."
+         )}
     end
   end
 
@@ -514,189 +524,225 @@ defmodule WandererAppWeb.MapLive do
   def handle_event(
         "manual_add_connection",
         %{"source" => solar_system_source_id, "target" => solar_system_target_id} = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
-          case has_tracked_characters? do
-            true ->
-              case _check_user_permissions(socket, :add_connection) do
-                true ->
-                  map_id =
-                    socket
-                    |> map_id()
+    case has_tracked_characters? do
+      true ->
+        case _check_user_permissions(socket, :add_connection) do
+          true ->
+            map_id =
+              socket
+              |> map_id()
 
-                  map_id
-                  |> WandererApp.Map.Server.add_connection(%{
-                    solar_system_source_id: solar_system_source_id |> String.to_integer(),
-                    solar_system_target_id: solar_system_target_id |> String.to_integer()
-                  })
+            map_id
+            |> WandererApp.Map.Server.add_connection(%{
+              solar_system_source_id: solar_system_source_id |> String.to_integer(),
+              solar_system_target_id: solar_system_target_id |> String.to_integer()
+            })
 
-                  :telemetry.execute([:wanderer_app, :map, :connection, :add], %{count: 1}, %{
-                    character_id: tracked_character_ids |> List.first(),
-                    user_id: current_user.id,
-                    map_id: map_id,
-                    solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-                    solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
-                  })
+            :telemetry.execute([:wanderer_app, :map, :connection, :add], %{count: 1}, %{
+              character_id: tracked_character_ids |> List.first(),
+              user_id: current_user.id,
+              map_id: map_id,
+              solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+              solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+            })
 
-                  {:noreply, socket}
+            {:noreply, socket}
 
-                _ ->
-                  {:noreply, socket}
-              end
-            _ ->
-              {:noreply, socket |> put_flash(
-                :error,
-                "You should enable tracking for at least one character to add connection."
-              )}
-          end
+          _ ->
+            {:noreply, socket}
+        end
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to add connection."
+         )}
+    end
   end
 
   @impl true
   def handle_event(
         "add_hub",
         %{"system_id" => solar_system_id} = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
-        case has_tracked_characters? do
+    case has_tracked_characters? do
+      true ->
+        case _check_user_permissions(socket, :update_system) do
           true ->
-            case _check_user_permissions(socket, :update_system) do
-              true ->
-                map_id =
-                  socket
-                  |> map_id()
+            map_id =
+              socket
+              |> map_id()
 
-                :telemetry.execute([:wanderer_app, :map, :hub, :add], %{count: 1}, %{
-                  character_id: tracked_character_ids |> List.first(),
-                  user_id: current_user.id,
-                  map_id: map_id,
-                  solar_system_id: solar_system_id
-                })
+            :telemetry.execute([:wanderer_app, :map, :hub, :add], %{count: 1}, %{
+              character_id: tracked_character_ids |> List.first(),
+              user_id: current_user.id,
+              map_id: map_id,
+              solar_system_id: solar_system_id
+            })
 
-                map_id
-                |> WandererApp.Map.Server.add_hub(%{
-                  solar_system_id: solar_system_id
-                })
+            map_id
+            |> WandererApp.Map.Server.add_hub(%{
+              solar_system_id: solar_system_id
+            })
 
-                {:noreply, socket}
+            {:noreply, socket}
 
-              _ ->
-                {:noreply, socket}
-            end
           _ ->
-            {:noreply, socket |> put_flash(
-              :error,
-              "You should enable tracking for at least one character to add hub."
-            )}
+            {:noreply, socket}
         end
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to add hub."
+         )}
+    end
   end
 
   @impl true
   def handle_event(
         "delete_hub",
         %{"system_id" => solar_system_id} = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
-        case has_tracked_characters? do
+    case has_tracked_characters? do
+      true ->
+        case _check_user_permissions(socket, :update_system) do
           true ->
-            case _check_user_permissions(socket, :update_system) do
-              true ->
-                map_id =
-                  socket
-                  |> map_id()
+            map_id =
+              socket
+              |> map_id()
 
-                :telemetry.execute([:wanderer_app, :map, :hub, :remove], %{count: 1}, %{
-                  character_id: tracked_character_ids |> List.first(),
-                  user_id: current_user.id,
-                  map_id: map_id,
-                  solar_system_id: solar_system_id
-                })
+            :telemetry.execute([:wanderer_app, :map, :hub, :remove], %{count: 1}, %{
+              character_id: tracked_character_ids |> List.first(),
+              user_id: current_user.id,
+              map_id: map_id,
+              solar_system_id: solar_system_id
+            })
 
-                map_id
-                |> WandererApp.Map.Server.remove_hub(%{
-                  solar_system_id: solar_system_id
-                })
+            map_id
+            |> WandererApp.Map.Server.remove_hub(%{
+              solar_system_id: solar_system_id
+            })
 
-                {:noreply, socket}
+            {:noreply, socket}
 
-              _ ->
-                {:noreply, socket}
-            end
           _ ->
-            {:noreply, socket |> put_flash(
-              :error,
-              "You should enable tracking for at least one character to remove hub."
-            )}
+            {:noreply, socket}
         end
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to remove hub."
+         )}
+    end
   end
 
   @impl true
   def handle_event(
         "update_system_" <> param,
         %{"system_id" => solar_system_id, "value" => value} = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
-        case has_tracked_characters? do
+    case has_tracked_characters? do
+      true ->
+        case _check_user_permissions(socket, :update_system) do
           true ->
-            case _check_user_permissions(socket, :update_system) do
-              true ->
-                method_atom =
-                  case param do
-                    "name" -> :update_system_name
-                    "description" -> :update_system_description
-                    "labels" -> :update_system_labels
-                    "locked" -> :update_system_locked
-                    "tag" -> :update_system_tag
-                    "status" -> :update_system_status
-                    _ -> nil
-                  end
+            method_atom =
+              case param do
+                "name" -> :update_system_name
+                "description" -> :update_system_description
+                "labels" -> :update_system_labels
+                "locked" -> :update_system_locked
+                "tag" -> :update_system_tag
+                "status" -> :update_system_status
+                _ -> nil
+              end
 
-                key_atom =
-                  case param do
-                    "name" -> :name
-                    "description" -> :description
-                    "labels" -> :labels
-                    "locked" -> :locked
-                    "tag" -> :tag
-                    "status" -> :status
-                    _ -> :none
-                  end
+            key_atom =
+              case param do
+                "name" -> :name
+                "description" -> :description
+                "labels" -> :labels
+                "locked" -> :locked
+                "tag" -> :tag
+                "status" -> :status
+                _ -> :none
+              end
 
-                map_id =
-                  socket
-                  |> map_id()
+            map_id =
+              socket
+              |> map_id()
 
-                :telemetry.execute([:wanderer_app, :map, :system, :update], %{count: 1}, %{
-                  character_id: tracked_character_ids |> List.first(),
-                  user_id: current_user.id,
-                  map_id: map_id,
-                  solar_system_id: "#{solar_system_id}" |> String.to_integer(),
-                  key: key_atom,
-                  value: value
-                })
+            :telemetry.execute([:wanderer_app, :map, :system, :update], %{count: 1}, %{
+              character_id: tracked_character_ids |> List.first(),
+              user_id: current_user.id,
+              map_id: map_id,
+              solar_system_id: "#{solar_system_id}" |> String.to_integer(),
+              key: key_atom,
+              value: value
+            })
 
-                apply(WandererApp.Map.Server, method_atom, [
-                  map_id,
-                  %{
-                    solar_system_id: "#{solar_system_id}" |> String.to_integer()
-                  }
-                  |> Map.put_new(key_atom, value)
-                ])
+            apply(WandererApp.Map.Server, method_atom, [
+              map_id,
+              %{
+                solar_system_id: "#{solar_system_id}" |> String.to_integer()
+              }
+              |> Map.put_new(key_atom, value)
+            ])
 
-                {:noreply, socket}
+            {:noreply, socket}
 
-              _ ->
-                {:noreply, socket}
-            end
           _ ->
-            {:noreply, socket |> put_flash(
-              :error,
-              "You should enable tracking for at least one character to update system."
-            )}
+            {:noreply, socket}
         end
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to update system."
+         )}
+    end
   end
 
   @impl true
@@ -707,65 +753,74 @@ defmodule WandererAppWeb.MapLive do
           "target" => solar_system_target_id,
           "value" => value
         } = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
-        case has_tracked_characters? do
+    case has_tracked_characters? do
+      true ->
+        case _check_user_permissions(socket, :update_system) do
           true ->
-            case _check_user_permissions(socket, :update_system) do
-              true ->
-                method_atom =
-                  case param do
-                    "time_status" -> :update_connection_time_status
-                    "mass_status" -> :update_connection_mass_status
-                    "ship_size_type" -> :update_connection_ship_size_type
-                    "locked" -> :update_connection_locked
-                    _ -> nil
-                  end
+            method_atom =
+              case param do
+                "time_status" -> :update_connection_time_status
+                "mass_status" -> :update_connection_mass_status
+                "ship_size_type" -> :update_connection_ship_size_type
+                "locked" -> :update_connection_locked
+                _ -> nil
+              end
 
-                key_atom =
-                  case param do
-                    "time_status" -> :time_status
-                    "mass_status" -> :mass_status
-                    "ship_size_type" -> :ship_size_type
-                    "locked" -> :locked
-                    _ -> nil
-                  end
+            key_atom =
+              case param do
+                "time_status" -> :time_status
+                "mass_status" -> :mass_status
+                "ship_size_type" -> :ship_size_type
+                "locked" -> :locked
+                _ -> nil
+              end
 
-                map_id =
-                  socket
-                  |> map_id()
+            map_id =
+              socket
+              |> map_id()
 
-                :telemetry.execute([:wanderer_app, :map, :connection, :update], %{count: 1}, %{
-                  character_id: tracked_character_ids |> List.first(),
-                  user_id: current_user.id,
-                  map_id: map_id,
-                  solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-                  solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer(),
-                  key: key_atom,
-                  value: value
-                })
+            :telemetry.execute([:wanderer_app, :map, :connection, :update], %{count: 1}, %{
+              character_id: tracked_character_ids |> List.first(),
+              user_id: current_user.id,
+              map_id: map_id,
+              solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+              solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer(),
+              key: key_atom,
+              value: value
+            })
 
-                apply(WandererApp.Map.Server, method_atom, [
-                  map_id,
-                  %{
-                    solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-                    solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
-                  }
-                  |> Map.put_new(key_atom, value)
-                ])
+            apply(WandererApp.Map.Server, method_atom, [
+              map_id,
+              %{
+                solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+                solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+              }
+              |> Map.put_new(key_atom, value)
+            ])
 
-                {:noreply, socket}
+            {:noreply, socket}
 
-              _ ->
-                {:noreply, socket}
-            end
           _ ->
-            {:noreply, socket |> put_flash(
-              :error,
-              "You should enable tracking for at least one character to update connection."
-            )}
+            {:noreply, socket}
         end
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to update connection."
+         )}
+    end
   end
 
   @impl true
@@ -834,11 +889,14 @@ defmodule WandererAppWeb.MapLive do
                 end)
 
                 {:reply, %{signatures: _get_system_signatures(system.id)}, socket}
+
               _ ->
-                {:reply, %{signatures: []}, socket |> put_flash(
-                  :error,
-                  "You should enable tracking for at least one character to work with signatures."
-                )}
+                {:reply, %{signatures: []},
+                 socket
+                 |> put_flash(
+                   :error,
+                   "You should enable tracking for at least one character to work with signatures."
+                 )}
             end
 
           _ ->
@@ -973,11 +1031,14 @@ defmodule WandererAppWeb.MapLive do
           _ ->
             {:noreply, socket}
         end
+
       _ ->
-        {:noreply, socket |> put_flash(
-          :error,
-          "You should enable tracking for at least one character to update system."
-        )}
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to update system."
+         )}
     end
   end
 
@@ -990,21 +1051,24 @@ defmodule WandererAppWeb.MapLive do
     case has_tracked_characters? do
       true ->
         case _check_user_permissions(socket, :update_system) do
-            true ->
-              socket
-              |> map_id()
-              |> _update_system_positions(positions)
+          true ->
+            socket
+            |> map_id()
+            |> _update_system_positions(positions)
 
-              {:noreply, socket}
+            {:noreply, socket}
 
-            _ ->
-              {:noreply, socket}
-          end
+          _ ->
+            {:noreply, socket}
+        end
+
       _ ->
-        {:noreply, socket |> put_flash(
-          :error,
-          "You should enable tracking for at least one character to update systems."
-        )}
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to update systems."
+         )}
     end
   end
 
@@ -1012,7 +1076,13 @@ defmodule WandererAppWeb.MapLive do
   def handle_event(
         "delete_systems",
         solar_system_ids,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
     case has_tracked_characters? do
@@ -1032,20 +1102,28 @@ defmodule WandererAppWeb.MapLive do
           _ ->
             {:noreply, socket}
         end
-      _ ->
-        {:noreply, socket |> put_flash(
-          :error,
-          "You should enable tracking for at least one character to delete systems."
-        )}
-    end
 
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to delete systems."
+         )}
+    end
   end
 
   @impl true
   def handle_event(
         "manual_delete_connection",
         %{"source" => solar_system_source_id, "target" => solar_system_target_id} = _event,
-        %{assigns: %{current_user: current_user, tracked_character_ids: tracked_character_ids, has_tracked_characters?: has_tracked_characters?}} =
+        %{
+          assigns: %{
+            current_user: current_user,
+            tracked_character_ids: tracked_character_ids,
+            has_tracked_characters?: has_tracked_characters?
+          }
+        } =
           socket
       ) do
     case has_tracked_characters? do
@@ -1075,13 +1153,15 @@ defmodule WandererAppWeb.MapLive do
           _ ->
             {:noreply, socket}
         end
-      _ ->
-        {:noreply, socket |> put_flash(
-          :error,
-          "You should enable tracking for at least one character to delete connection."
-        )}
-    end
 
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "You should enable tracking for at least one character to delete connection."
+         )}
+    end
   end
 
   @impl true
@@ -1387,14 +1467,14 @@ defmodule WandererAppWeb.MapLive do
               []
           end
 
-          events =
-            case map_characters |> Enum.empty?() do
-              true ->
-                events ++ [:empty_tracked_characters]
+        events =
+          case map_characters |> Enum.empty?() do
+            true ->
+              events ++ [:empty_tracked_characters]
 
-              _ ->
-                events
-            end
+            _ ->
+              events
+          end
 
         {:ok, characters_limit} = map_id |> WandererApp.Map.get_characters_limit()
 
