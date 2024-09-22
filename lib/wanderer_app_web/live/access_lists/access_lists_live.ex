@@ -238,8 +238,8 @@ defmodule WandererAppWeb.AccessListsLive do
   def handle_event("delete-acl", %{"id" => acl_id} = _params, socket) do
     case socket.assigns.access_lists
          |> Enum.find(&(&1.id == acl_id))
-         |> WandererApp.Api.AccessList.destroy() do
-      {:ok, _acl} ->
+         |> WandererApp.Api.AccessList.destroy!() do
+      :ok ->
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "acls:#{acl_id}",
@@ -252,7 +252,7 @@ defmodule WandererAppWeb.AccessListsLive do
          socket
          |> assign(access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end))}
 
-      _error ->
+      error ->
         {:noreply,
          socket
          |> put_flash(
@@ -261,7 +261,7 @@ defmodule WandererAppWeb.AccessListsLive do
          )}
     end
   rescue
-    _ ->
+    _error ->
       {:noreply,
        socket
        |> put_flash(

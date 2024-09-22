@@ -104,6 +104,12 @@ defmodule WandererApp.Api.AccessListMember do
     end
   end
 
+  postgres do
+    references do
+      reference :access_list, on_delete: :delete
+    end
+  end
+
   identities do
     identity :uniq_acl_character_id, [:access_list_id, :eve_character_id] do
       pre_check?(true)
