@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.18](https://github.com/wanderer-industries/wanderer/compare/v1.0.17...v1.0.18) (2024-09-22)
+
+
+
+
+### Bug Fixes:
+
+* ACL: Cant delete ACL list after map deletion #5
+
 ## [v1.0.17](https://github.com/wanderer-industries/wanderer/compare/v1.0.16...v1.0.17) (2024-09-21)
 
 
