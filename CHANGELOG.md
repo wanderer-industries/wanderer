@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.20](https://github.com/wanderer-industries/wanderer/compare/v1.0.19...v1.0.20) (2024-09-23)
+
+
+
+
+### Bug Fixes:
+
+* core: Small fixes & improvements
+
 ## [v1.0.19](https://github.com/wanderer-industries/wanderer/compare/v1.0.18...v1.0.19) (2024-09-23)
 
 
