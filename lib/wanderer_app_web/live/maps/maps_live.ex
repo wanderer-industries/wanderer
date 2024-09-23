@@ -107,7 +107,7 @@ defmodule WandererAppWeb.MapsLive do
     subscription_form = %{
       "plan" => "omega",
       "period" => "1",
-      "characters_limit" => "100",
+      "characters_limit" => "300",
       "hubs_limit" => "10",
       "auto_renew?" => true
     }

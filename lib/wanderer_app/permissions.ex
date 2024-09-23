@@ -17,7 +17,16 @@ defmodule WandererApp.Permissions do
   @delete_map 4096
 
   @viewer_role [@view_system, @view_character, @view_connection]
-  @member_role @viewer_role ++ [@add_system, @add_connection, @update_system, @track_character, @delete_connection, @delete_system, @lock_system]
+  @member_role @viewer_role ++
+                 [
+                   @add_system,
+                   @add_connection,
+                   @update_system,
+                   @track_character,
+                   @delete_connection,
+                   @delete_system,
+                   @lock_system
+                 ]
   @manager_role @member_role
   @admin_role @manager_role ++ [@add_acl, @delete_acl, @delete_map]
 

@@ -169,19 +169,4 @@ defmodule WandererAppWeb.MapAuditLive do
       _ -> socket
     end
   end
-
-  defp map_ui_character(character) do
-    character
-    |> Map.take([
-      :id,
-      :eve_id,
-      :name,
-      :corporation_id,
-      :corporation_name,
-      :corporation_ticker,
-      :alliance_id,
-      :alliance_name,
-      :alliance_ticker
-    ])
-  end
 end

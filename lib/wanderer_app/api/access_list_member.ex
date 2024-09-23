@@ -114,9 +114,11 @@ defmodule WandererApp.Api.AccessListMember do
     identity :uniq_acl_character_id, [:access_list_id, :eve_character_id] do
       pre_check?(true)
     end
-    identity :uniq_acl_corporation_id, [:access_list_id, :eve_corporation_id]  do
+
+    identity :uniq_acl_corporation_id, [:access_list_id, :eve_corporation_id] do
       pre_check?(true)
     end
+
     identity :uniq_acl_alliance_id, [:access_list_id, :eve_alliance_id] do
       pre_check?(true)
     end

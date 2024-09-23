@@ -92,11 +92,11 @@ defmodule WandererAppWeb.CoreComponents do
               <div class="absolute right-4">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                type="button"
-                class="p-link opacity-70 hover:opacity-100"
-                aria-label={gettext("close")}
+                  type="button"
+                  class="p-link opacity-70 hover:opacity-100"
+                  aria-label={gettext("close")}
                 >
-                <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
                 </button>
               </div>
             </h3>

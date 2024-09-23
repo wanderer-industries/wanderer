@@ -191,7 +191,7 @@ defmodule WandererApp.Map.Server.Impl do
 
       state
     else
-      {:error, error} ->
+      {:error, _error} ->
         state
     end
   end
@@ -205,7 +205,7 @@ defmodule WandererApp.Map.Server.Impl do
 
       state
     else
-      {:error, error} ->
+      {:error, _error} ->
         state
     end
   end
@@ -797,7 +797,7 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
-  def handle_event({ref, _result}, %{map_id: map_id} = state) do
+  def handle_event({ref, _result}, %{map_id: _map_id} = state) do
     Process.demonitor(ref, [:flush])
 
     state
@@ -1657,32 +1657,33 @@ defmodule WandererApp.Map.Server.Impl do
             {:ok, solar_system_info} =
               WandererApp.Api.MapSolarSystem.by_solar_system_id(location.solar_system_id)
 
-              WandererApp.MapSystemRepo.create(%{
-                  map_id: map_id,
-                  solar_system_id: location.solar_system_id,
-                  name: solar_system_info.solar_system_name,
-                  position_x: position.x,
-                  position_y: position.y
-                })
-                |> case do
-                  {:ok, new_system} ->
-                    @ddrt.insert(
-                      {new_system.solar_system_id,
-                      WandererApp.Map.PositionCalculator.get_system_bounding_rect(new_system)},
-                      rtree_name
-                    )
+            WandererApp.MapSystemRepo.create(%{
+              map_id: map_id,
+              solar_system_id: location.solar_system_id,
+              name: solar_system_info.solar_system_name,
+              position_x: position.x,
+              position_y: position.y
+            })
+            |> case do
+              {:ok, new_system} ->
+                @ddrt.insert(
+                  {new_system.solar_system_id,
+                   WandererApp.Map.PositionCalculator.get_system_bounding_rect(new_system)},
+                  rtree_name
+                )
 
-                    WandererApp.Cache.put(
-                      "map_#{map_id}:system_#{new_system.id}:last_activity",
-                      DateTime.utc_now(),
-                      ttl: @system_inactive_timeout
-                    )
+                WandererApp.Cache.put(
+                  "map_#{map_id}:system_#{new_system.id}:last_activity",
+                  DateTime.utc_now(),
+                  ttl: @system_inactive_timeout
+                )
 
-                    broadcast!(map_id, :add_system, new_system)
-                    WandererApp.Map.add_system(map_id, new_system)
-                  _ ->
-                    :ok
-                end
+                broadcast!(map_id, :add_system, new_system)
+                WandererApp.Map.add_system(map_id, new_system)
+
+              _ ->
+                :ok
+            end
         end
 
       {:error, _} ->

@@ -225,7 +225,8 @@ defmodule WandererAppWeb.AccessListsLive do
         "add_members",
         %{"member_id" => member_id} = _params,
         %{assigns: assigns} = socket
-      ) when is_binary(member_id) and member_id != "" do
+      )
+      when is_binary(member_id) and member_id != "" do
     member_option =
       assigns.member_search_options
       |> Enum.find(&(&1.value == member_id))
@@ -252,7 +253,7 @@ defmodule WandererAppWeb.AccessListsLive do
          socket
          |> assign(access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end))}
 
-      error ->
+      _error ->
         {:noreply,
          socket
          |> put_flash(

@@ -207,11 +207,11 @@ defmodule WandererApp.Character do
        |> Enum.map(fn task -> Task.await(task, 145_000) end)
        |> Enum.map(fn result ->
          case result do
-             {:ok, result} -> map_function.(result)
-             _ -> nil
+           {:ok, result} -> map_function.(result)
+           _ -> nil
          end
-        end)
-        |> Enum.filter(fn result -> not is_nil(result) end)}
+       end)
+       |> Enum.filter(fn result -> not is_nil(result) end)}
 
   defp _map_alliance_info(info) do
     %{
