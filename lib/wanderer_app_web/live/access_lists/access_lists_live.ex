@@ -225,7 +225,7 @@ defmodule WandererAppWeb.AccessListsLive do
         "add_members",
         %{"member_id" => member_id} = _params,
         %{assigns: assigns} = socket
-      ) do
+      ) when is_binary(member_id) and member_id != "" do
     member_option =
       assigns.member_search_options
       |> Enum.find(&(&1.value == member_id))
@@ -312,6 +312,12 @@ defmodule WandererAppWeb.AccessListsLive do
 
   @impl true
   def handle_event("noop", _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(event, body, socket) do
+    Logger.warning(fn -> "unhandled event: #{event} #{inspect(body)}" end)
     {:noreply, socket}
   end
 
