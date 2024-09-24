@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.0.21](https://github.com/wanderer-industries/wanderer/compare/v1.0.20...v1.0.21) (2024-09-24)
+
+
+
+
+### Bug Fixes:
+
+* Map: Main map doesn't load back after refreshing/switching pages
+
 ## [v1.0.20](https://github.com/wanderer-industries/wanderer/compare/v1.0.19...v1.0.20) (2024-09-23)
 
 
