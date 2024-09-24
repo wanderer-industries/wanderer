@@ -9,6 +9,10 @@ defmodule WandererAppWeb.Router do
     warn: false,
     only: [redirect_if_user_is_authenticated: 2]
 
+  import WandererAppWeb.BasicAuth,
+    warn: false,
+    only: [admin_basic_auth: 2]
+
   @code_reloading Application.compile_env(
                     :wanderer_app,
                     [WandererAppWeb.Endpoint, :code_reloader],
@@ -19,6 +23,10 @@ defmodule WandererAppWeb.Router do
   @img_src ~w('self' data: https://images.evetech.net https://web.ccpgamescdn.com https://images.ctfassets.net https://w.appzi.io)
   @font_src ~w('self' data: https://web.ccpgamescdn.com https://w.appzi.io)
   @script_src ~w('self' )
+
+  pipeline :admin_bauth do
+    plug :admin_basic_auth
+  end
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -137,11 +145,9 @@ defmodule WandererAppWeb.Router do
     get "/:provider/callback", AuthController, :callback
   end
 
-  scope "/", WandererAppWeb do
+  scope "/admin", WandererAppWeb do
     pipe_through(:browser)
-
-    get "/", RedirectController, :redirect_authenticated
-    get("/last", MapsController, :last)
+    pipe_through(:admin_bauth)
 
     live_session :admin,
       on_mount: [
@@ -149,8 +155,22 @@ defmodule WandererAppWeb.Router do
         {WandererAppWeb.UserAuth, :ensure_admin},
         WandererAppWeb.Nav
       ] do
-      live("/admin", AdminLive, :index)
+      live("/", AdminLive, :index)
     end
+
+    error_tracker_dashboard("/errors",
+      on_mount: [
+        {WandererAppWeb.UserAuth, :ensure_authenticated},
+        {WandererAppWeb.UserAuth, :ensure_admin}
+      ]
+    )
+  end
+
+  scope "/", WandererAppWeb do
+    pipe_through(:browser)
+
+    get "/", RedirectController, :redirect_authenticated
+    get("/last", MapsController, :last)
 
     live_session :authenticated,
       on_mount: [
@@ -180,16 +200,7 @@ defmodule WandererAppWeb.Router do
     end
   end
 
-  scope "/admin" do
-    pipe_through(:browser)
 
-    error_tracker_dashboard("/errors",
-      on_mount: [
-        {WandererAppWeb.UserAuth, :ensure_authenticated},
-        {WandererAppWeb.UserAuth, :ensure_admin}
-      ]
-    )
-  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:wanderer_app, :dev_routes) do
@@ -206,7 +217,6 @@ defmodule WandererAppWeb.Router do
       error_tracker_dashboard("/errors", as: :error_tracker_dev_dashboard)
 
       live_dashboard("/dashboard", metrics: WandererAppWeb.Telemetry)
-      # forward("/mailbox", Plug.Swoosh.MailboxPreview)
     end
   end
 end

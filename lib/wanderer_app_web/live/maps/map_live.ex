@@ -44,6 +44,7 @@ defmodule WandererAppWeb.MapLive do
          id: map_id,
          deleted: false
        } = map} ->
+
         Task.async(fn -> _load_initial_data(map, is_reconnect?, current_user) end)
 
         socket
@@ -344,6 +345,98 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
+  def handle_info({:map_init, %{map_id: map_id} = initial_data}, socket) do
+    Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+    WandererApp.Map.Manager.start_map(map_id)
+
+    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+
+    if map_started do
+      Process.send_after(self(), %{event: :map_started}, 100)
+    end
+
+    {:noreply,
+      socket
+      |> assign(initial_data)}
+  end
+
+  def handle_info({:map_start,
+   %{
+     map_id: map_id,
+     user_characters: user_character_eve_ids,
+     initial_data: initial_data,
+     events: events
+   } = _started_data}, socket) do
+    socket =
+      events
+      |> Enum.reduce(socket, fn event, socket ->
+        case event do
+          {:track_characters, map_characters, track_character} ->
+            :ok = _track_characters(map_characters, map_id, track_character)
+            :ok = _add_characters(map_characters, map_id)
+            socket
+
+          :invalid_token_message ->
+            socket
+            |> put_flash(
+              :error,
+              "One of your characters has expired token. Please refresh it on characters page."
+            )
+
+          :empty_tracked_characters ->
+            socket
+            |> put_flash(
+              :info,
+              "You should enable tracking for at least one character to work with map."
+            )
+
+          :map_character_limit ->
+            socket
+            |> put_flash(
+              :error,
+              "Map reached its character limit, your characters won't be tracked. Please contact administrator."
+            )
+
+          _ ->
+            socket
+        end
+      end)
+
+    {:noreply,
+      socket
+      |> assign(
+        map_loaded?: true,
+        user_characters: user_character_eve_ids,
+        has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+      )
+      |> _push_map_event("init", initial_data)
+      |> push_event("js-exec", %{
+        to: "#map-loader",
+        attr: "data-loaded"
+      })}
+  end
+
+  def handle_info(:no_access, socket), do:
+    {:noreply,
+     socket
+     |> put_flash(:error, "You don't have an access to this map.")
+     |> push_navigate(to: ~p"/maps")}
+
+  def handle_info(:no_permissions, socket), do:
+    {:noreply,
+     socket
+     |> put_flash(:error, "You don't have permissions to use this map.")
+     |> push_navigate(to: ~p"/maps")}
+
+  def handle_info(:not_all_characters_tracked, socket), do:
+    {:noreply,
+     socket
+     |> put_flash(
+       :error,
+       "You should enable tracking for all characters that have access to this map first!"
+     )
+     |> push_navigate(to: ~p"/tracking/#{socket.assigns.map_slug}")}
+
   @impl true
   def handle_info(
         {ref, result},
@@ -361,73 +454,16 @@ defmodule WandererAppWeb.MapLive do
          )}
 
       {:map_init_data, %{map_id: map_id} = initial_data} ->
-        Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-        WandererApp.Map.Manager.start_map(map_id)
+        Process.send_after(self(), {:map_init, initial_data}, 100)
+        {:noreply, socket}
 
-        {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+      {:map_started, started_data} ->
+        Process.send_after(self(), {:map_start, started_data}, 100)
+        {:noreply, socket}
 
-        if map_started do
-          Process.send_after(self(), %{event: :map_started}, 100)
-        end
-
-        {:noreply,
-         socket
-         |> assign(initial_data)}
-
-      {:map_started,
-       %{
-         map_id: map_id,
-         user_characters: user_character_eve_ids,
-         initial_data: initial_data,
-         events: events
-       } = _started_data} ->
-        socket =
-          events
-          |> Enum.reduce(socket, fn event, socket ->
-            case event do
-              {:track_characters, map_characters, track_character} ->
-                :ok = _track_characters(map_characters, map_id, track_character)
-                :ok = _add_characters(map_characters, map_id)
-                socket
-
-              :invalid_token_message ->
-                socket
-                |> put_flash(
-                  :error,
-                  "One of your characters has expired token. Please refresh it on characters page."
-                )
-
-              :empty_tracked_characters ->
-                socket
-                |> put_flash(
-                  :info,
-                  "You should enable tracking for at least one character to work with map."
-                )
-
-              :map_character_limit ->
-                socket
-                |> put_flash(
-                  :error,
-                  "Map reached its character limit, your characters won't be tracked. Please contact administrator."
-                )
-
-              _ ->
-                socket
-            end
-          end)
-
-        {:noreply,
-         socket
-         |> assign(
-           map_loaded?: true,
-           user_characters: user_character_eve_ids,
-           has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
-         )
-         |> _push_map_event("init", initial_data)
-         |> push_event("js-exec", %{
-           to: "#map-loader",
-           attr: "data-loaded"
-         })}
+      {:map_error, map_error} ->
+        Process.send_after(self(), map_error, 100)
+        {:noreply, socket}
 
       {:character_activity, character_activity} ->
         {:noreply,
@@ -447,31 +483,12 @@ defmodule WandererAppWeb.MapLive do
            }
          )}
 
-      {:map_error, :not_all_characters_tracked} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "You should enable tracking for all characters that have access to this map first!"
-         )
-         |> push_navigate(to: ~p"/tracking/#{socket.assigns.map_slug}")}
-
-      {:map_error, :no_permissions} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You don't have permissions to use this map.")
-         |> push_navigate(to: ~p"/maps")}
-
-      {:map_error, :no_access} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You don't have an access to this map.")
-         |> push_navigate(to: ~p"/maps")}
-
       _ ->
         {:noreply, socket}
     end
   end
+
+
 
   @impl true
   def handle_info(_event, socket), do: {:noreply, socket}
@@ -1423,7 +1440,7 @@ defmodule WandererAppWeb.MapLive do
       tracked_character_ids =
         availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
 
-      all_character_tracked? = availaible_map_characters |> Enum.all?(& &1.tracked)
+      all_character_tracked? = (not (availaible_map_characters |> Enum.empty?())) and availaible_map_characters |> Enum.all?(& &1.tracked)
 
       cond do
         (only_tracked_characters and can_track? and all_character_tracked?) or
