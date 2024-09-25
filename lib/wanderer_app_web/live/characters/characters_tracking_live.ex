@@ -42,8 +42,10 @@ defmodule WandererAppWeb.CharactersTrackingLive do
 
     {:ok, character_settings} =
       case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: selected_map.id}) do
-        {:ok, settings} -> {:ok, settings}
-        _ -> {:ok, []}
+        {:ok, settings} ->
+          {:ok, settings}
+        _ ->
+          {:ok, []}
       end
 
     user_id = socket.assigns.user_id

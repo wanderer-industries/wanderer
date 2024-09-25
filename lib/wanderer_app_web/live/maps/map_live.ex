@@ -8,7 +8,7 @@ defmodule WandererAppWeb.MapLive do
     socket =
       with %{"slug" => map_slug} <- params do
         socket
-        |> _init_state(map_slug, false)
+        |> _init_state(map_slug)
       else
         _ ->
           # redirect back to main
@@ -29,7 +29,7 @@ defmodule WandererAppWeb.MapLive do
     {:ok, socket |> assign(server_online: false)}
   end
 
-  defp _init_state(socket, map_slug, is_reconnect?) do
+  defp _init_state(socket, map_slug) do
     current_user = socket.assigns.current_user
 
     ErrorTracker.set_context(%{user_id: current_user.id})
@@ -45,7 +45,7 @@ defmodule WandererAppWeb.MapLive do
          deleted: false
        } = map} ->
 
-        Task.async(fn -> _load_initial_data(map, is_reconnect?, current_user) end)
+        Process.send_after(self(), {:init_map, map}, 100)
 
         socket
         |> assign(
@@ -345,6 +345,63 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
+  def handle_info({:init_map, map}, %{assigns: %{current_user: current_user}} = socket) do
+    with %{
+           id: map_id,
+           deleted: false,
+           only_tracked_characters: only_tracked_characters,
+           user_permissions: user_permissions,
+           name: map_name,
+           owner_id: owner_id
+         } <- map do
+      user_permissions =
+        WandererApp.Permissions.get_map_permissions(
+          user_permissions,
+          owner_id,
+          current_user.characters |> Enum.map(& &1.id)
+        )
+
+      {:ok, character_settings} =
+        case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+          {:ok, settings} -> {:ok, settings}
+          _ -> {:ok, []}
+        end
+
+      {:ok, %{characters: availaible_map_characters}} =
+        WandererApp.Maps.load_characters(map, character_settings, current_user.id)
+
+      can_view? = user_permissions.view_system
+      can_track? = user_permissions.track_character
+
+      tracked_character_ids =
+        availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
+
+      all_character_tracked? = (not (availaible_map_characters |> Enum.empty?())) and availaible_map_characters |> Enum.all?(& &1.tracked)
+
+      cond do
+        (only_tracked_characters and can_track? and all_character_tracked?) or
+            (not only_tracked_characters and can_view?) ->
+            Process.send_after(self(), {:map_init, %{
+              map_id: map_id,
+              page_title: map_name,
+              user_permissions: user_permissions,
+              tracked_character_ids: tracked_character_ids
+            }}, 100)
+
+        only_tracked_characters and can_track? and not all_character_tracked? ->
+          Process.send_after(self(), :not_all_characters_tracked, 100)
+
+        true ->
+          Process.send_after(self(), :no_permissions, 100)
+      end
+    else
+      _ ->
+        Process.send_after(self(), :no_access, 100)
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_info({:map_init, %{map_id: map_id} = initial_data}, socket) do
     Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
     WandererApp.Map.Manager.start_map(map_id)
@@ -453,11 +510,7 @@ defmodule WandererAppWeb.MapLive do
            maps: maps
          )}
 
-      {:map_init_data, %{map_id: map_id} = initial_data} ->
-        Process.send_after(self(), {:map_init, initial_data}, 100)
-        {:noreply, socket}
-
-      {:map_started, started_data} ->
+      {:map_started_data, started_data} ->
         Process.send_after(self(), {:map_start, started_data}, 100)
         {:noreply, socket}
 
@@ -1409,63 +1462,6 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
-  defp _load_initial_data(map, is_reconnect?, current_user) do
-    with %{
-           id: map_id,
-           deleted: false,
-           only_tracked_characters: only_tracked_characters,
-           user_permissions: user_permissions,
-           name: map_name,
-           owner_id: owner_id
-         } <- map do
-      user_permissions =
-        WandererApp.Permissions.get_map_permissions(
-          user_permissions,
-          owner_id,
-          current_user.characters |> Enum.map(& &1.id)
-        )
-
-      {:ok, character_settings} =
-        case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
-          {:ok, settings} -> {:ok, settings}
-          _ -> {:ok, []}
-        end
-
-      {:ok, %{characters: availaible_map_characters}} =
-        WandererApp.Maps.load_characters(map, character_settings, current_user.id)
-
-      can_view? = user_permissions.view_system
-      can_track? = user_permissions.track_character
-
-      tracked_character_ids =
-        availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
-
-      all_character_tracked? = (not (availaible_map_characters |> Enum.empty?())) and availaible_map_characters |> Enum.all?(& &1.tracked)
-
-      cond do
-        (only_tracked_characters and can_track? and all_character_tracked?) or
-            (not only_tracked_characters and can_view?) ->
-          {:map_init_data,
-           %{
-             map_id: map_id,
-             page_title: map_name,
-             user_permissions: user_permissions,
-             tracked_character_ids: tracked_character_ids,
-             is_reconnect?: is_reconnect?
-           }}
-
-        only_tracked_characters and can_track? and not all_character_tracked? ->
-          {:map_error, :not_all_characters_tracked}
-
-        true ->
-          {:map_error, :no_permissions}
-      end
-    else
-      _ ->
-        {:map_error, :no_access}
-    end
-  end
-
   defp _on_map_started(map_id, current_user, user_permissions) do
     case user_permissions do
       %{view_system: true, track_character: track_character} ->
@@ -1552,7 +1548,7 @@ defmodule WandererAppWeb.MapLive do
           )
           |> Map.put(:reset, true)
 
-        {:map_started,
+        {:map_started_data,
          %{
            map_id: map_id,
            user_characters: user_character_eve_ids,

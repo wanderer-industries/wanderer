@@ -60,8 +60,6 @@ defmodule WandererApp.Maps do
     end
   end
 
-  def load_characters(_map, [], _user_id), do: {:ok, %{characters: []}}
-
   def load_characters(map, character_settings, user_id) do
     {:ok, user_characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: user_id})
