@@ -176,13 +176,13 @@ defmodule WandererApp.Map.Server.Impl do
   def get_characters(%{map_id: map_id} = _state),
     do: {:ok, map_id |> WandererApp.Map.list_characters()}
 
-  def add_character(%{map_id: map_id} = state, %{id: character_id} = character) do
+  def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
     with :ok <- map_id |> WandererApp.Map.add_character(character),
          {:ok, _} <-
            WandererApp.MapCharacterSettingsRepo.create(%{
              character_id: character_id,
              map_id: map_id,
-             tracked: false
+             tracked: track_character
            }),
          {:ok, character} <- WandererApp.Character.get_character(character_id) do
       broadcast!(map_id, :character_added, character)

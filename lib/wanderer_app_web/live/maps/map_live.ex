@@ -331,7 +331,7 @@ defmodule WandererAppWeb.MapLive do
 
             _ ->
               :ok = _track_characters(map_characters, map_id, true)
-              :ok = _add_characters(map_characters, map_id)
+              :ok = _add_characters(map_characters, map_id, track_character)
           end
 
           socket
@@ -430,7 +430,7 @@ defmodule WandererAppWeb.MapLive do
         case event do
           {:track_characters, map_characters, track_character} ->
             :ok = _track_characters(map_characters, map_id, track_character)
-            :ok = _add_characters(map_characters, map_id)
+            :ok = _add_characters(map_characters, map_id, track_character)
             socket
 
           :invalid_token_message ->
@@ -459,6 +459,24 @@ defmodule WandererAppWeb.MapLive do
         end
       end)
 
+    Process.send_after(self(), {:map_loaded,
+      %{
+        map_id: map_id,
+        user_characters: user_character_eve_ids,
+        initial_data: initial_data
+      }}, 100)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:map_loaded,
+   %{
+     map_id: map_id,
+     user_characters: user_character_eve_ids,
+     initial_data: initial_data
+   } = _loaded_data}, socket) do
+    map_characters = map_id |> WandererApp.Map.list_characters()
+
     {:noreply,
       socket
       |> assign(
@@ -466,7 +484,9 @@ defmodule WandererAppWeb.MapLive do
         user_characters: user_character_eve_ids,
         has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
       )
-      |> _push_map_event("init", initial_data)
+      |> _push_map_event("init", initial_data |> Map.merge(%{
+        characters: map_characters |> Enum.map(&map_ui_character/1)
+      }))
       |> push_event("js-exec", %{
         to: "#map-loader",
         attr: "data-loaded"
@@ -1320,7 +1340,6 @@ defmodule WandererAppWeb.MapLive do
   def handle_event("toggle_track", %{"character-id" => character_id}, socket) do
     map = socket.assigns.map
     character_settings = socket.assigns.character_settings
-    current_user = socket.assigns.current_user
 
     socket =
       case character_settings |> Enum.find(&(&1.character_id == character_id)) do
@@ -1335,7 +1354,7 @@ defmodule WandererAppWeb.MapLive do
           character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
           :ok = _track_characters([character], map.id, true)
-          :ok = _add_characters([character], map.id)
+          :ok = _add_characters([character], map.id, true)
 
           socket
 
@@ -1370,7 +1389,7 @@ defmodule WandererAppWeb.MapLive do
               character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
               :ok = _track_characters([character], map.id, true)
-              :ok = _add_characters([character], map.id)
+              :ok = _add_characters([character], map.id, true)
 
               socket
           end
@@ -1378,7 +1397,7 @@ defmodule WandererAppWeb.MapLive do
 
     %{result: characters} = socket.assigns.characters
 
-    {:ok, map_characters} = _get_map_characters(map.id, socket.assigns.current_user)
+    {:ok, map_characters} = _get_tracked_map_characters(map.id, socket.assigns.current_user)
 
     user_character_eve_ids = map_characters |> Enum.map(& &1.eve_id)
 
@@ -1467,12 +1486,12 @@ defmodule WandererAppWeb.MapLive do
       %{view_system: true, track_character: track_character} ->
         {:ok, _} = current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id})
 
-        {:ok, map_characters} = _get_map_characters(map_id, current_user)
+        {:ok, tracked_map_characters} = _get_tracked_map_characters(map_id, current_user)
 
-        user_character_eve_ids = map_characters |> Enum.map(& &1.eve_id)
+        user_character_eve_ids = tracked_map_characters |> Enum.map(& &1.eve_id)
 
         events =
-          case map_characters |> Enum.any?(&(&1.access_token == nil)) do
+          case tracked_map_characters |> Enum.any?(&(&1.access_token == nil)) do
             true ->
               [:invalid_token_message]
 
@@ -1481,7 +1500,7 @@ defmodule WandererAppWeb.MapLive do
           end
 
         events =
-          case map_characters |> Enum.empty?() do
+          case tracked_map_characters |> Enum.empty?() do
             true ->
               events ++ [:empty_tracked_characters]
 
@@ -1497,13 +1516,11 @@ defmodule WandererAppWeb.MapLive do
         events =
           case present_character_ids |> Enum.count() < characters_limit do
             true ->
-              events ++ [{:track_characters, map_characters, track_character}]
+              events ++ [{:track_characters, tracked_map_characters, track_character}]
 
             _ ->
               events ++ [:map_character_limit]
           end
-
-        characters = map_id |> WandererApp.Map.list_characters() |> Enum.map(&map_ui_character/1)
 
         {:ok, kills} = WandererApp.Cache.lookup("map_#{map_id}:zkb_kills", Map.new())
 
@@ -1511,7 +1528,6 @@ defmodule WandererAppWeb.MapLive do
           map_id
           |> _get_map_data()
           |> Map.merge(%{
-            characters: characters,
             kills:
               kills
               |> Enum.filter(fn {_, kills} -> kills > 0 end)
@@ -1603,7 +1619,7 @@ defmodule WandererAppWeb.MapLive do
     }
   end
 
-  defp _get_map_characters(map_id, current_user) do
+  defp _get_tracked_map_characters(map_id, current_user) do
     case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
            map_id: map_id,
            character_ids: current_user.characters |> Enum.map(& &1.id)
@@ -1936,17 +1952,13 @@ defmodule WandererAppWeb.MapLive do
 
   defp _get_routes_settings(_), do: %{}
 
-  defp _add_characters([], _map_id), do: :ok
+  defp _add_characters([], _map_id, _track_character), do: :ok
 
-  defp _add_characters([character | characters], map_id) do
-    Task.async(fn ->
-      map_id
-      |> WandererApp.Map.Server.add_character(character)
+  defp _add_characters([character | characters], map_id, track_character) do
+    map_id
+    |> WandererApp.Map.Server.add_character(character, track_character)
 
-      :skip
-    end)
-
-    _add_characters(characters, map_id)
+    _add_characters(characters, map_id, track_character)
   end
 
   defp _remove_characters([], _map_id), do: :ok
