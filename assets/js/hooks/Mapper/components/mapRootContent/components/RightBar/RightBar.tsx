@@ -13,6 +13,8 @@ interface RightBarProps {
 export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
 
+  const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
+
   const handleAddCharacter = useCallback(() => {
     outCommand({
       type: OutCommand.addCharacter,
@@ -24,6 +26,13 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
     setInterfaceSettings(x => ({
       ...x,
       isShowMinimap: !x.isShowMinimap,
+    }));
+  }, [setInterfaceSettings]);
+
+  const toggleKSpace = useCallback(() => {
+    setInterfaceSettings(x => ({
+      ...x,
+      isShowKSpace: !x.isShowKSpace,
     }));
   }, [setInterfaceSettings]);
 
@@ -67,19 +76,31 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
 
       <div className="flex flex-col items-center mb-2 gap-1">
         <WdTooltipWrapper
-          content={interfaceSettings.isShowMinimap ? 'Hide minimap' : 'Show minimap'}
+          content={
+            interfaceSettings.isShowKSpace ? 'Hide highlighting Imperial Space' : 'Show highlighting Imperial Space'
+          }
           position={TooltipPosition.left}
         >
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
             type="button"
+            onClick={toggleKSpace}
+          >
+            {interfaceSettings.isShowKSpace ? (
+              <i className="pi pi-star-fill text-lg"></i>
+            ) : (
+              <i className="pi pi-star text-lg"></i>
+            )}
+          </button>
+        </WdTooltipWrapper>
+
+        <WdTooltipWrapper content={isShowMinimap ? 'Hide minimap' : 'Show minimap'} position={TooltipPosition.left}>
+          <button
+            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+            type="button"
             onClick={toggleMinimap}
           >
-            {interfaceSettings.isShowMinimap ? (
-              <i className="pi pi-eye text-lg"></i>
-            ) : (
-              <i className="pi pi-eye-slash text-lg"></i>
-            )}
+            {isShowMinimap ? <i className="pi pi-eye text-lg"></i> : <i className="pi pi-eye-slash text-lg"></i>}
           </button>
         </WdTooltipWrapper>
 

@@ -24,7 +24,7 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
     update,
     outCommand,
     data: { selectedConnections, selectedSystems, hubs, systems },
-    interfaceSettings: { isShowMenu, isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap },
+    interfaceSettings: { isShowMenu, isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap, isShowKSpace },
   } = useMapRootState();
 
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
@@ -99,6 +99,7 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
         onSelectionContextMenu={handleSystemMultipleContext}
         minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
         isShowMinimap={isShowMinimap}
+        showKSpaceBG={isShowKSpace}
       />
 
       {openSettings != null && (

@@ -30,11 +30,13 @@ const INITIAL_DATA: MapRootData = {
 type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowMinimap: boolean;
+  isShowKSpace: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
   isShowMinimap: true,
+  isShowKSpace: false,
 };
 
 export interface MapRootContextProps {
@@ -50,6 +52,7 @@ const MapRootContext = createContext<MapRootContextProps>({
   update: () => {},
   data: { ...INITIAL_DATA },
   mapRef: { current: null },
+  // @ts-ignore
   outCommand: async () => void 0,
   interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
   setInterfaceSettings: () => null,
