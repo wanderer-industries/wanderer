@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.2.0](https://github.com/wanderer-industries/wanderer/compare/v1.1.0...v1.2.0) (2024-09-29)
+
+
+
+
+### Features:
+
+* Map: Add ability to open jump planner from routes
+
 ## [v1.1.0](https://github.com/wanderer-industries/wanderer/compare/v1.0.23...v1.1.0) (2024-09-29)
 
 
