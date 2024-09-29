@@ -4,6 +4,7 @@ import { Commands, MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Ma
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import * as React from 'react';
+import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
@@ -15,16 +16,21 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand, mapRef }: U
   const contextMenuRef = useRef<ContextMenu | null>(null);
 
   const [system, setSystem] = useState<string>();
+  const routeRef = useRef<(SolarSystemStaticInfoRaw | undefined)[]>([]);
 
   const ref = useRef({ hubs, system, outCommand, mapRef });
   ref.current = { hubs, system, outCommand, mapRef };
 
-  const open = useCallback((ev: React.SyntheticEvent, systemId: string) => {
-    setSystem(systemId);
-    ev.preventDefault();
-    ctxManager.next('ctxSysInfo', contextMenuRef.current);
-    contextMenuRef.current?.show(ev);
-  }, []);
+  const open = useCallback(
+    (ev: React.SyntheticEvent, systemId: string, route: (SolarSystemStaticInfoRaw | undefined)[]) => {
+      setSystem(systemId);
+      routeRef.current = route;
+      ev.preventDefault();
+      ctxManager.next('ctxSysInfo', contextMenuRef.current);
+      contextMenuRef.current?.show(ev);
+    },
+    [],
+  );
 
   const onHubToggle = useCallback(() => {
     const { hubs, system, outCommand } = ref.current;
