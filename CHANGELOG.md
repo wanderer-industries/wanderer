@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.1.0](https://github.com/wanderer-industries/wanderer/compare/v1.0.23...v1.1.0) (2024-09-29)
+
+
+
+
+### Features:
+
+* Map: Add highlighting for imperial space systems depends on faction
+
 ## [v1.0.23](https://github.com/wanderer-industries/wanderer/compare/v1.0.22...v1.0.23) (2024-09-25)
 
 
