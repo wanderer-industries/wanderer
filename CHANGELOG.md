@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.2.1](https://github.com/wanderer-industries/wanderer/compare/v1.2.0...v1.2.1) (2024-10-02)
+
+
+
+
+### Bug Fixes:
+
+* ACL: Fix allowing to save map/access list with empty owner set
+
 ## [v1.2.0](https://github.com/wanderer-industries/wanderer/compare/v1.1.0...v1.2.0) (2024-09-29)
 
 
