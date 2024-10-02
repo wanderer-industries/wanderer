@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.2.3](https://github.com/wanderer-industries/wanderer/compare/v1.2.2...v1.2.3) (2024-10-02)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix map loading after select a different map.
+
 ## [v1.2.2](https://github.com/wanderer-industries/wanderer/compare/v1.2.1...v1.2.2) (2024-10-02)
 
 
