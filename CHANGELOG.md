@@ -2,6 +2,33 @@
 
 <!-- changelog -->
 
+## [v1.2.0](https://github.com/wanderer-industries/wanderer/compare/v1.1.0...v1.2.0) (2024-09-29)
+
+
+
+
+### Features:
+
+* Map: Add ability to open jump planner from routes
+
+## [v1.1.0](https://github.com/wanderer-industries/wanderer/compare/v1.0.23...v1.1.0) (2024-09-29)
+
+
+
+
+### Features:
+
+* Map: Add highlighting for imperial space systems depends on faction
+
+## [v1.0.23](https://github.com/wanderer-industries/wanderer/compare/v1.0.22...v1.0.23) (2024-09-25)
+
+
+
+
+### Bug Fixes:
+
+* Map: Main map doesn't load back after refreshing/switching pages
+
 ## [v1.0.22](https://github.com/wanderer-industries/wanderer/compare/v1.0.21...v1.0.22) (2024-09-25)
 
 ### Bug Fixes

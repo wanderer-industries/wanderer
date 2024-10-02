@@ -54,7 +54,7 @@ export const RoutesWidgetContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hubs, systems, systemStatics, lastUpdateKey]);
 
-  const preparedRoutes = useMemo(() => {
+  const preparedRoutes: Route[] = useMemo(() => {
     return (
       routes?.routes
         .sort(sortByDist)
@@ -71,15 +71,17 @@ export const RoutesWidgetContent = () => {
     );
   }, [routes?.routes, routes?.systems_static_data, systemId]);
 
-  const refData = useRef({ open, loadSystems });
-  refData.current = { open, loadSystems };
+  const refData = useRef({ open, loadSystems, preparedRoutes });
+  refData.current = { open, loadSystems, preparedRoutes };
 
   useEffect(() => {
     (async () => await refData.current.loadSystems(hubs))();
   }, [hubs]);
 
   const handleClick = useCallback((e: MouseEvent, systemId: string) => {
-    refData.current.open(e, systemId);
+    const route = refData.current.preparedRoutes.find(x => x.destination.toString() === systemId);
+
+    refData.current.open(e, systemId, route?.mapped_systems ?? []);
   }, []);
 
   const handleContextMenu = useCallback(
@@ -146,7 +148,14 @@ export const RoutesWidgetContent = () => {
         </div>
       )}
 
-      <ContextMenuSystemInfo hubs={hubs} systems={systems} systemStatics={systemStatics} {...systemCtxProps} />
+      <ContextMenuSystemInfo
+        hubs={hubs}
+        routes={preparedRoutes}
+        systems={systems}
+        systemStatics={systemStatics}
+        systemIdFrom={systemId}
+        {...systemCtxProps}
+      />
     </>
   );
 };

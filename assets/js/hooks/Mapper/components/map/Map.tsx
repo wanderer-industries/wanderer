@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef, MouseEvent, useCallback } from 'react';
+import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
 import ReactFlow, {
   Background,
   ConnectionMode,
@@ -94,6 +94,7 @@ interface MapCompProps {
   minimapClasses?: string;
   isShowMinimap?: boolean;
   onSystemContextMenu: (event: MouseEvent<Element>, systemId: string) => void;
+  showKSpaceBG?: boolean;
 }
 
 const MapComp = ({
@@ -105,6 +106,7 @@ const MapComp = ({
   onConnectionInfoClick,
   onSelectionContextMenu,
   isShowMinimap,
+  showKSpaceBG,
 }: MapCompProps) => {
   const [nodes, , onNodesChange] = useNodesState<SolarSystemRawType>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>[]>(initialEdges);
@@ -168,6 +170,13 @@ const MapComp = ({
   const handleMoveEnd: OnMoveEnd = (_, viewport) => {
     localStorage.setItem(SESSION_KEY.viewPort, JSON.stringify(viewport));
   };
+
+  useEffect(() => {
+    update(x => ({
+      ...x,
+      showKSpaceBG: showKSpaceBG,
+    }));
+  }, [showKSpaceBG, update]);
 
   return (
     <>
