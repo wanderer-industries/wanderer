@@ -23,7 +23,7 @@ export default {
       onError: handleError,
     });
 
-    this.pushEvent('loaded');
+    this.pushEvent('ui_loaded');
   },
 
   handleEventWrapper(event: string, handler: (payload: any) => void) {

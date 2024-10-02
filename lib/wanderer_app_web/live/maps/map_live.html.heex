@@ -2,9 +2,10 @@
   id="map-loader"
   data-loading={show_loader("map-loader")}
   data-loaded={hide_loader("map-loader")}
-  class="!z-100 absolute w-screen h-screen bg-transparent hidden"
+  class="!z-100 w-screen h-screen hidden relative"
 >
-  <div class="flex w-full h-full items-center justify-center">
+  <div class="hs-overlay-backdrop transition duration absolute inset-0 blur" />
+  <div class="flex !z-[150] w-full h-full items-center justify-center">
     <div class="Loader" data-text="Wanderer">
       <span class="Loader__Circle"></span>
       <span class="Loader__Circle"></span>
@@ -12,6 +13,8 @@
       <span class="Loader__Circle"></span>
     </div>
   </div>
+
+
 </div>
 
 <div class="w-full h-full" id="mapper" phx-hook="Mapper" phx-update="ignore"></div>

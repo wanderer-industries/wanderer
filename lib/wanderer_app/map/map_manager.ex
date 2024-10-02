@@ -10,8 +10,8 @@ defmodule WandererApp.Map.Manager do
   alias WandererApp.Map.Server
   alias WandererApp.Map.ServerSupervisor
 
-  @maps_start_per_second 100
-  @maps_start_interval 1500
+  @maps_start_per_second 5
+  @maps_start_interval 1000
   @maps_queue :maps_queue
   @garbage_collection_interval :timer.hours(1)
   @check_maps_queue_interval :timer.seconds(1)

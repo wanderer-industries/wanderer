@@ -68,13 +68,16 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         state
 
       false ->
-        WandererApp.Character.update_character_state(character_id, %{opts: opts})
-        :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
-
         Logger.debug(fn -> "Start character tracker: #{inspect(character_id)}" end)
 
-        tracked_characters = [character_id | state.characters] |> Enum.uniq()
+        Task.start_link(fn ->
+          WandererApp.Character.update_character_state(character_id, %{opts: opts})
+          :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
 
+          :ok
+        end)
+
+        tracked_characters = [character_id | state.characters] |> Enum.uniq()
         WandererApp.Cache.insert("tracked_characters", tracked_characters)
 
         %{state | characters: tracked_characters}

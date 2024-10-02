@@ -45,7 +45,7 @@ defmodule WandererAppWeb.MapLive do
          deleted: false
        } = map} ->
 
-        Process.send_after(self(), {:init_map, map}, 100)
+        Process.send_after(self(), {:init_map, map}, 10)
 
         socket
         |> assign(
@@ -114,7 +114,7 @@ defmodule WandererAppWeb.MapLive do
           }
         } = socket
       ) do
-    Task.async(fn -> _on_map_started(map_id, current_user, user_permissions) end)
+    _on_map_started(map_id, current_user, user_permissions)
 
     {:noreply, socket}
   end
@@ -386,17 +386,17 @@ defmodule WandererAppWeb.MapLive do
               page_title: map_name,
               user_permissions: user_permissions,
               tracked_character_ids: tracked_character_ids
-            }}, 100)
+            }}, 10)
 
         only_tracked_characters and can_track? and not all_character_tracked? ->
-          Process.send_after(self(), :not_all_characters_tracked, 100)
+          Process.send_after(self(), :not_all_characters_tracked, 10)
 
         true ->
-          Process.send_after(self(), :no_permissions, 100)
+          Process.send_after(self(), :no_permissions, 10)
       end
     else
       _ ->
-        Process.send_after(self(), :no_access, 100)
+        Process.send_after(self(), :no_access, 10)
     end
 
     {:noreply, socket}
@@ -404,13 +404,6 @@ defmodule WandererAppWeb.MapLive do
 
   def handle_info({:map_init, %{map_id: map_id} = initial_data}, socket) do
     Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-    WandererApp.Map.Manager.start_map(map_id)
-
-    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
-
-    if map_started do
-      Process.send_after(self(), %{event: :map_started}, 100)
-    end
 
     {:noreply,
       socket
@@ -464,7 +457,7 @@ defmodule WandererAppWeb.MapLive do
         map_id: map_id,
         user_characters: user_character_eve_ids,
         initial_data: initial_data
-      }}, 100)
+      }}, 10)
 
     {:noreply, socket}
   end
@@ -567,7 +560,15 @@ defmodule WandererAppWeb.MapLive do
   def handle_info(_event, socket), do: {:noreply, socket}
 
   @impl true
-  def handle_event("loaded", _body, socket) do
+  def handle_event("ui_loaded", _body, %{assigns: %{map_id: map_id}} = socket) do
+    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+
+    if map_started do
+      Process.send_after(self(), %{event: :map_started}, 10)
+    else
+      WandererApp.Map.Manager.start_map(map_id)
+    end
+
     {:noreply, socket}
   end
 
@@ -577,7 +578,8 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("change_map", %{"map_slug" => map_slug} = _event, socket) do
+  def handle_event("change_map", %{"map_slug" => map_slug} = _event, %{assigns: %{map_id: map_id}} = socket) do
+    Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
     {:noreply, push_navigate(socket, to: ~p"/#{map_slug}")}
   end
 
@@ -1564,16 +1566,23 @@ defmodule WandererAppWeb.MapLive do
           )
           |> Map.put(:reset, true)
 
-        {:map_started_data,
-         %{
-           map_id: map_id,
-           user_characters: user_character_eve_ids,
-           initial_data: initial_data,
-           events: events
-         }}
+        Process.send_after(self(), {:map_start, %{
+          map_id: map_id,
+          user_characters: user_character_eve_ids,
+          initial_data: initial_data,
+          events: events
+        }}, 10)
+        # {:map_started_data,
+        #  %{
+        #    map_id: map_id,
+        #    user_characters: user_character_eve_ids,
+        #    initial_data: initial_data,
+        #    events: events
+        #  }}
 
       _ ->
-        {:map_error, :no_access}
+        Process.send_after(self(), {:map_error, :no_access}, 10)
+
     end
   end
 
@@ -2079,13 +2088,14 @@ defmodule WandererAppWeb.MapLive do
     :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
   end
 
-  defp _push_map_event(socket, type, event_body),
-    do:
+  defp _push_map_event(socket, type, event_body)
+    do
       socket
       |> push_event("map_event", %{
         type: type,
         body: event_body |> WandererApp.Utils.JSONUtil.compress()
       })
+    end
 
   defp map_id(%{assigns: %{map_id: map_id}} = _socket), do: map_id
 end

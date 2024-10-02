@@ -177,37 +177,45 @@ defmodule WandererApp.Map.Server.Impl do
     do: {:ok, map_id |> WandererApp.Map.list_characters()}
 
   def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
-    with :ok <- map_id |> WandererApp.Map.add_character(character),
-         {:ok, _} <-
-           WandererApp.MapCharacterSettingsRepo.create(%{
-             character_id: character_id,
-             map_id: map_id,
-             tracked: track_character
-           }),
-         {:ok, character} <- WandererApp.Character.get_character(character_id) do
-      broadcast!(map_id, :character_added, character)
+    Task.start_link(fn ->
+      with :ok <- map_id |> WandererApp.Map.add_character(character),
+           {:ok, _} <-
+             WandererApp.MapCharacterSettingsRepo.create(%{
+               character_id: character_id,
+               map_id: map_id,
+               tracked: track_character
+             }),
+           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+        broadcast!(map_id, :character_added, character)
 
-      :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
+        :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
 
-      state
-    else
-      {:error, _error} ->
-        state
-    end
+        :ok
+      else
+        {:error, _error} ->
+          :ok
+      end
+    end)
+
+    state
   end
 
   def remove_character(%{map_id: map_id} = state, character_id) do
-    with :ok <- WandererApp.Map.remove_character(map_id, character_id),
-         {:ok, character} <- WandererApp.Character.get_character(character_id) do
-      broadcast!(map_id, :character_removed, character)
+    Task.start_link(fn ->
+      with :ok <- WandererApp.Map.remove_character(map_id, character_id),
+           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+        broadcast!(map_id, :character_removed, character)
 
-      :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
+        :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
 
-      state
-    else
-      {:error, _error} ->
-        state
-    end
+        :ok
+      else
+        {:error, _error} ->
+          :ok
+      end
+    end)
+
+    state
   end
 
   def untrack_characters(%{map_id: map_id} = state, characters_ids) do
