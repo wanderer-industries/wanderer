@@ -137,23 +137,17 @@
     <.input type="text" field={f[:name]} placeholder="Name" />
     <.input type="text" field={f[:slug]} prefix={@uri} placeholder="map-slug" />
     <.input type="textarea" field={f[:description]} placeholder="Public description" />
-    <.live_select
+    <.input
+      type="select"
       field={f[:owner_id]}
-      value_mapper={&map_character/1}
-      options={@characters}
+      class="p-dropdown p-component p-inputwrapper mt-8"
       placeholder="Select a map owner"
-    >
-      <:option :let={option}>
-        <div class="flex items-center">
-          <.avatar url={member_icon_url(option.eve_id)} label={option.label} />
-          &nbsp;<%= option.label %>
-        </div>
-      </:option>
-    </.live_select>
+      options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
+    />
     <.input
       type="select"
       field={f[:scope]}
-      class="p-dropdown p-component p-inputwrapper"
+      class="p-dropdown p-component p-inputwrapper  mt-8"
       placeholder="Select a map scope"
       options={Enum.map(@scopes, fn scope -> {scope, scope} end)}
     />

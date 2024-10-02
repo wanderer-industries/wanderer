@@ -99,40 +99,34 @@ defmodule WandererAppWeb.AccessListsLive do
   end
 
   defp apply_action(socket, :add_members, %{"id" => acl_id} = _params) do
-    {:ok, %{owner: %{id: _character_id}} = access_list} =
-      socket.assigns.access_lists |> Enum.find(&(&1.id == acl_id)) |> Ash.load(:owner)
+    with {:ok, %{owner: %{id: _character_id}} = access_list} <- socket.assigns.access_lists |> Enum.find(&(&1.id == acl_id)) |> Ash.load(:owner),
+     user_character_ids <- socket.assigns.current_user.characters |> Enum.map(& &1.id) do
+      user_character_ids
+      |> Enum.each(fn user_character_id ->
+        :ok = WandererApp.Character.TrackerManager.start_tracking(user_character_id)
+      end)
 
-    user_character_ids = socket.assigns.current_user.characters |> Enum.map(& &1.id)
-
-    user_character_ids
-    |> Enum.each(fn user_character_id ->
-      :ok = WandererApp.Character.TrackerManager.start_tracking(user_character_id)
-    end)
-
-    socket
-    |> assign(:active_page, :access_lists)
-    |> assign(:page_title, "Access Lists - Add Members")
-    |> assign(:selected_acl_id, acl_id)
-    |> assign(:user_character_ids, user_character_ids)
-    |> assign(
-      member_search_options: socket.assigns.characters |> Enum.map(&map_user_character_info/1)
-    )
-    |> assign(:access_list, access_list)
-    |> assign(
-      :members,
-      WandererApp.Api.AccessListMember.read_by_access_list!(%{access_list_id: acl_id})
-    )
-    |> assign(
-      :member_form,
-      %{} |> to_form()
-    )
-  end
-
-  @impl true
-  def handle_event("set-default", %{"id" => id}, socket) do
-    send_update(LiveSelect.Component, options: socket.assigns.characters, id: id)
-
-    {:noreply, socket}
+      socket
+      |> assign(:active_page, :access_lists)
+      |> assign(:page_title, "Access Lists - Add Members")
+      |> assign(:selected_acl_id, acl_id)
+      |> assign(:user_character_ids, user_character_ids)
+      |> assign(
+        member_search_options: socket.assigns.characters |> Enum.map(&map_user_character_info/1)
+      )
+      |> assign(:access_list, access_list)
+      |> assign(
+        :members,
+        WandererApp.Api.AccessListMember.read_by_access_list!(%{access_list_id: acl_id})
+      )
+      |> assign(
+        :member_form,
+        %{} |> to_form()
+      )
+    else
+      _ ->
+      socket
+    end
   end
 
   @impl true

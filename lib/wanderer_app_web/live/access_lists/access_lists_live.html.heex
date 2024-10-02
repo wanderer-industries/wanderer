@@ -127,23 +127,13 @@
   <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action}>
     <.input type="text" field={f[:name]} placeholder="Name" />
     <.input type="textarea" field={f[:description]} placeholder="Public description" />
-    <.live_select
+    <.input
+      type="select"
       field={f[:owner_id]}
-      dropdown_extra_class="max-h-64"
-      available_option_class="w-full"
-      value_mapper={&map_character/1}
-      update_min_len={0}
-      phx-focus="set-default"
-      options={@characters}
-      placeholder="Owner"
-    >
-      <:option :let={option}>
-        <div class="flex items-center">
-          <.avatar url={member_icon_url(option.eve_id)} label={option.label} />
-          &nbsp;<%= option.label %>
-        </div>
-      </:option>
-    </.live_select>
+      class="p-dropdown p-component p-inputwrapper mt-8"
+      placeholder="Select a map owner"
+      options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
+    />
     <div class="modal-action">
       <.button class="mt-2" type="submit" phx-disable-with="Saving...">
         <%= (@live_action == :create && "Create") || "Save" %>

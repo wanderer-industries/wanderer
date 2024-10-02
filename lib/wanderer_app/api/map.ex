@@ -63,7 +63,6 @@ defmodule WandererApp.Api.Map do
       primary?(true)
 
       argument :owner_id, :uuid, allow_nil?: false
-      argument :owner_id_text_input, :string, allow_nil?: true
       argument :create_default_acl, :boolean, allow_nil?: true
       argument :acls, {:array, :uuid}, allow_nil?: true
       argument :acls_text_input, :string, allow_nil?: true

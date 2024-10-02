@@ -43,7 +43,6 @@ defmodule WandererApp.Api.AccessList do
       primary?(true)
 
       argument :owner_id, :uuid, allow_nil?: false
-      argument :owner_id_text_input, :string, allow_nil?: true
 
       change manage_relationship(:owner_id, :owner, on_lookup: :relate, on_no_match: nil)
     end
@@ -51,8 +50,6 @@ defmodule WandererApp.Api.AccessList do
     update :update do
       accept [:name, :description, :owner_id]
       primary?(true)
-
-      argument :owner_id_text_input, :string, allow_nil?: true
     end
 
     update :assign_owner do

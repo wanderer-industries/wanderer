@@ -170,24 +170,6 @@ defmodule WandererAppWeb.MapsLive do
   @impl true
   def handle_event(
         "live_select_change",
-        %{"id" => "form_owner_id_live_select_component" = id, "text" => text} = _change_event,
-        socket
-      ) do
-    options =
-      if text == "" do
-        socket.assigns.characters
-      else
-        socket.assigns.characters
-      end
-
-    send_update(LiveSelect.Component, options: options, id: id)
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event(
-        "live_select_change",
         %{"id" => id, "text" => text} = _change_event,
         socket
       ) do
