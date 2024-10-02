@@ -12,6 +12,8 @@
 
 # Ignore assets that are produced by build tools.
 /priv/static/assets/
+/priv/static/icons/
+/priv/static/images/
 /priv/static/*.js
 /priv/static/*.css
 
