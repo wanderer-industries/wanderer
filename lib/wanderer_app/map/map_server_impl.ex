@@ -366,14 +366,18 @@ defmodule WandererApp.Map.Server.Impl do
     |> Enum.each(fn connection ->
       @logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
 
-      connection
-      |> WandererApp.MapConnectionRepo.destroy!()
+      {:ok, from_connections} = WandererApp.MapConnectionRepo.get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
+      {:ok, to_connections} = WandererApp.MapConnectionRepo.get_by_locations(map_id, connection.solar_system_target, connection.solar_system_source)
+
+      [from_connections ++ to_connections]
+      |> List.flatten()
+      |> WandererApp.MapConnectionRepo.bulk_destroy!()
       |> case do
         :ok ->
           :ok
 
-        {:error, error} ->
-          @logger.error("Failed to remove connection from map: #{inspect(error, pretty: true)}")
+        error ->
+          @logger.error("Failed to remove connections from map: #{inspect(error, pretty: true)}")
           :ok
       end
     end)
