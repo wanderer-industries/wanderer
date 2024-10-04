@@ -229,7 +229,7 @@ defmodule WandererApp.EveDataService do
         constellation_id = row["constellationID"] |> Integer.parse() |> elem(0)
 
         {:ok, wormhole_class_id} =
-          _get_wormhole_class_id(
+          get_wormhole_class_id(
             map_location_wormhole_classes,
             region_id,
             constellation_id,
@@ -237,16 +237,16 @@ defmodule WandererApp.EveDataService do
           )
 
         {:ok, constellation_name} =
-          _get_constellation_name(map_constellations, constellation_id)
+          get_constellation_name(map_constellations, constellation_id)
 
-        {:ok, region_name} = _get_region_name(map_regions, region_id)
+        {:ok, region_name} = get_region_name(map_regions, region_id)
 
-        {:ok, wormhole_class} = _get_wormhole_class(wormhole_classes, wormhole_class_id)
+        {:ok, wormhole_class} = get_wormhole_class(wormhole_classes, wormhole_class_id)
 
-        {:ok, security} = _get_security(row["security"])
+        {:ok, security} = get_security(row["security"])
 
         {:ok, class_title} =
-          _get_class_title(
+          get_class_title(
             wormhole_classes_info,
             wormhole_class_id,
             security,
@@ -270,7 +270,7 @@ defmodule WandererApp.EveDataService do
           solar_system_id: solar_system_id,
           solar_system_name: row["solarSystemName"],
           solar_system_name_lc: row["solarSystemName"] |> String.downcase(),
-          sun_type_id: _get_sun_type_id(row["sunTypeID"]),
+          sun_type_id: get_sun_type_id(row["sunTypeID"]),
           constellation_name: constellation_name,
           region_name: region_name,
           security: security,
@@ -279,8 +279,8 @@ defmodule WandererApp.EveDataService do
           type_description: wormhole_class.title,
           is_shattered: is_shattered
         }
-        |> _get_wormhole_data(wormhole_systems, solar_system_id, wormhole_class)
-        |> _get_triglavian_data(triglavian_systems, solar_system_id)
+        |> get_wormhole_data(wormhole_systems, solar_system_id, wormhole_class)
+        |> get_triglavian_data(triglavian_systems, solar_system_id)
       end
     )
   end
@@ -332,14 +332,14 @@ defmodule WandererApp.EveDataService do
     )
   end
 
-  defp _get_sun_type_id(sun_type_id) do
+  defp get_sun_type_id(sun_type_id) do
     case sun_type_id do
       "None" -> 0
       _ -> sun_type_id |> Integer.parse() |> elem(0)
     end
   end
 
-  defp _get_wormhole_data(default_data, wormhole_systems, solar_system_id, wormhole_class) do
+  defp get_wormhole_data(default_data, wormhole_systems, solar_system_id, wormhole_class) do
     case Enum.find(wormhole_systems, fn system -> system.solar_system_id == solar_system_id end) do
       nil ->
         default_data
@@ -355,7 +355,7 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp _get_triglavian_data(default_data, triglavian_systems, solar_system_id) do
+  defp get_triglavian_data(default_data, triglavian_systems, solar_system_id) do
     case Enum.find(triglavian_systems, fn system -> system.solar_system_id == solar_system_id end) do
       nil ->
         default_data
@@ -370,14 +370,18 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp _get_security(security) do
+  defp get_security(security) do
     case security do
       nil -> {:ok, ""}
-      _ -> {:ok, Decimal.parse(security) |> elem(0) |> Decimal.round(1) |> Decimal.to_string()}
+      _ -> {:ok, String.to_float(security) |> get_true_security() |> Float.to_string(decimals: 1)}
     end
   end
 
-  defp _get_class_title(wormhole_classes_info, wormhole_class_id, security, wormhole_class) do
+  defp get_true_security(security) when is_float(security) and security > 0.0 and security < 0.05, do: security |> Float.ceil(1)
+
+  defp get_true_security(security) when is_float(security), do: security |> Float.floor(1)
+
+  defp get_class_title(wormhole_classes_info, wormhole_class_id, security, wormhole_class) do
     case wormhole_class_id in [
            wormhole_classes_info.names["hs"],
            wormhole_classes_info.names["ls"],
@@ -391,7 +395,7 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp _get_constellation_name(constellations, constellation_id) do
+  defp get_constellation_name(constellations, constellation_id) do
     case Enum.find(constellations, fn constellation ->
            constellation.constellation_id == constellation_id
          end) do
@@ -400,24 +404,24 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp _get_region_name(regions, region_id) do
+  defp get_region_name(regions, region_id) do
     case Enum.find(regions, fn region -> region.region_id == region_id end) do
       nil -> {:ok, ""}
       region -> {:ok, region.region_name}
     end
   end
 
-  defp _get_wormhole_class(wormhole_classes, wormhole_class_id) do
+  defp get_wormhole_class(wormhole_classes, wormhole_class_id) do
     {:ok,
      Enum.find(wormhole_classes, fn wormhole_class ->
        wormhole_class.wormhole_class_id == wormhole_class_id
      end)}
   end
 
-  defp _get_wormhole_class_id(_systems, _region_id, _constellation_id, 30_100_000),
+  defp get_wormhole_class_id(_systems, _region_id, _constellation_id, 30_100_000),
     do: {:ok, 10_100}
 
-  defp _get_wormhole_class_id(systems, region_id, constellation_id, solar_system_id) do
+  defp get_wormhole_class_id(systems, region_id, constellation_id, solar_system_id) do
     with region <-
            Enum.find(systems, fn system ->
              system.location_id |> Integer.parse() |> elem(0) == region_id
@@ -430,23 +434,23 @@ defmodule WandererApp.EveDataService do
            Enum.find(systems, fn system ->
              system.location_id |> Integer.parse() |> elem(0) == solar_system_id
            end),
-         wormhole_class_id <- _get_wormhole_class_id(region, constellation, solar_system) do
+         wormhole_class_id <- get_wormhole_class_id(region, constellation, solar_system) do
       {:ok, wormhole_class_id}
     else
       _ -> {:ok, -1}
     end
   end
 
-  defp _get_wormhole_class_id(_region, _constellation, solar_system)
+  defp get_wormhole_class_id(_region, _constellation, solar_system)
        when not is_nil(solar_system),
        do: solar_system.wormhole_class_id |> Integer.parse() |> elem(0)
 
-  defp _get_wormhole_class_id(_region, constellation, _solar_system)
+  defp get_wormhole_class_id(_region, constellation, _solar_system)
        when not is_nil(constellation),
        do: constellation.wormhole_class_id |> Integer.parse() |> elem(0)
 
-  defp _get_wormhole_class_id(region, _constellation, _solar_system) when not is_nil(region),
+  defp get_wormhole_class_id(region, _constellation, _solar_system) when not is_nil(region),
     do: region.wormhole_class_id |> Integer.parse() |> elem(0)
 
-  defp _get_wormhole_class_id(_region, _constellation, _solar_system), do: -1
+  defp get_wormhole_class_id(_region, _constellation, _solar_system), do: -1
 end
