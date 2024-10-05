@@ -178,7 +178,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             resizableColumns
             rowHover
             selectAll
-            showHeaders={true}
             sortField="eve_id"
             onRowMouseEnter={handleEnterRow}
             onRowMouseLeave={handleLeaveRow}
