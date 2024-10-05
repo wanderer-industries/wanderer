@@ -25,6 +25,23 @@ defmodule WandererApp.MapConnectionRepo do
 
   def create!(connection), do: connection |> WandererApp.Api.MapConnection.create!()
 
+  def destroy(map_id, connection) do
+    {:ok, from_connections} = get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
+    {:ok, to_connections} = get_by_locations(map_id, connection.solar_system_target, connection.solar_system_source)
+
+    [from_connections ++ to_connections]
+    |> List.flatten()
+    |> bulk_destroy!()
+    |> case do
+      :ok ->
+        :ok
+
+      error ->
+        @logger.error("Failed to remove connections from map: #{inspect(error, pretty: true)}")
+        :ok
+    end
+  end
+
   def destroy!(connection), do:
     connection |> WandererApp.Api.MapConnection.destroy!()
 

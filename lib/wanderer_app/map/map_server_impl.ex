@@ -365,21 +365,7 @@ defmodule WandererApp.Map.Server.Impl do
     connections_to_remove
     |> Enum.each(fn connection ->
       @logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
-
-      {:ok, from_connections} = WandererApp.MapConnectionRepo.get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
-      {:ok, to_connections} = WandererApp.MapConnectionRepo.get_by_locations(map_id, connection.solar_system_target, connection.solar_system_source)
-
-      [from_connections ++ to_connections]
-      |> List.flatten()
-      |> WandererApp.MapConnectionRepo.bulk_destroy!()
-      |> case do
-        :ok ->
-          :ok
-
-        error ->
-          @logger.error("Failed to remove connections from map: #{inspect(error, pretty: true)}")
-          :ok
-      end
+      WandererApp.MapConnectionRepo.destroy(map_id, connection)
     end)
 
     @ddrt.delete(removed_ids, rtree_name)
@@ -1579,8 +1565,7 @@ defmodule WandererApp.Map.Server.Impl do
            old_location.solar_system_id
          ) do
       {:ok, connection} ->
-        connection
-        |> WandererApp.MapConnectionRepo.destroy!()
+        :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
 
         broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)

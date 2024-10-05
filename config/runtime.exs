@@ -220,7 +220,10 @@ if config_env() == :prod do
       # See the documentation on https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0},
-      port: web_port
+      port: web_port,
+      thousand_island_options: [
+        transport_ports: [hibernate_after: 15_000]
+      ]
     ],
     secret_key_base: secret_key_base
 
