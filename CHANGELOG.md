@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.2.5](https://github.com/wanderer-industries/wanderer/compare/v1.2.4...v1.2.5) (2024-10-04)
+
+
+
+
+### Bug Fixes:
+
+* Core: Add system "true security" correction
+
 ## [v1.2.4](https://github.com/wanderer-industries/wanderer/compare/v1.2.3...v1.2.4) (2024-10-03)
 
 
