@@ -4,7 +4,7 @@ import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
 
-import { DataTable, DataTableRowMouseEvent } from 'primereact/datatable';
+import { DataTable, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useRefState from 'react-usestateref';
@@ -25,6 +25,17 @@ import {
   renderName,
   renderTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
+import useLocalStorageState from 'use-local-storage-state';
+
+type SystemSignaturesSortSettings = {
+  sortField: string;
+  sortOrder: SortOrder;
+}
+
+const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
+  sortField: 'eve_id',
+  sortOrder: 1
+};
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -38,6 +49,10 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
 
   const [hoveredSig, setHoveredSig] = useState<SystemSignature | null>(null);
+
+  const [sortSettings, setSortSettings] = useLocalStorageState<SystemSignaturesSortSettings>('window:signatures:sort', {
+    defaultValue: SORT_DEFAULT_VALUES,
+  });
 
   const tableRef = useRef<HTMLDivElement>(null);
   const compact = useMaxWidth(tableRef, 260);
@@ -178,7 +193,9 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             resizableColumns
             rowHover
             selectAll
-            sortField="eve_id"
+            sortField={sortSettings.sortField}
+            sortOrder={sortSettings.sortOrder}
+            onSort={(event) => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
             onRowMouseEnter={handleEnterRow}
             onRowMouseLeave={handleLeaveRow}
             rowClassName={row => {
