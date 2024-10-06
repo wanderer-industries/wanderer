@@ -20,13 +20,12 @@
   position: absolute;
 }
 
-.p-menuitem,
-.p-menuitem-content {
+.p-menuitem, .p-menuitem-content {
   height: 36px;
   flex-grow: 1;
 }
 
-.p-menuitem>.p-menuitem-content>a {
+.p-menuitem > .p-menuitem-content>a {
   width: 100%;
   height: 100%;
 
