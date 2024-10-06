@@ -178,7 +178,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             resizableColumns
             rowHover
             selectAll
-            showHeaders={false}
+            sortField="eve_id"
             onRowMouseEnter={handleEnterRow}
             onRowMouseLeave={handleLeaveRow}
             rowClassName={row => {
@@ -199,6 +199,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               field="group"
               body={renderIcon}
               style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+              headerStyle={{ fontSize: "14px", padding: "0.25rem" }}
             ></Column>
 
             <Column
@@ -206,12 +207,16 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               header="Id"
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               style={{ maxWidth: 72, minWidth: 72, width: 72 }}
+              headerStyle={{ fontSize: "14px", padding: "0.25rem" }}
+              sortable
             ></Column>
             <Column
               field="group"
               header="Group"
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               hidden={compact}
+              headerStyle={{ fontSize: "14px", padding: "0.25rem" }}
+              sortable
             ></Column>
             <Column
               field="name"
@@ -220,6 +225,8 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               body={renderName}
               style={{ maxWidth: nameColumnWidth }}
               hidden={compact || medium}
+              headerStyle={{ fontSize: "14px", padding: "0.25rem" }}
+              sortable
             ></Column>
             <Column
               field="updated_at"
@@ -227,6 +234,8 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               dataType="date"
               bodyClassName="w-[80px] text-ellipsis overflow-hidden whitespace-nowrap"
               body={renderTimeLeft}
+              headerStyle={{ fontSize: "14px", padding: "0.25rem" }}
+              sortable
             ></Column>
           </DataTable>
         </>
