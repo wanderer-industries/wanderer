@@ -25,16 +25,17 @@ import {
   renderName,
   renderTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
+// import { PrimeIcons } from 'primereact/api';
 import useLocalStorageState from 'use-local-storage-state';
 
 type SystemSignaturesSortSettings = {
   sortField: string;
   sortOrder: SortOrder;
-}
+};
 
 const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
-  sortField: 'eve_id',
-  sortOrder: 1
+  sortField: 'updated_at',
+  sortOrder: -1,
 };
 
 interface SystemSignaturesContentProps {
@@ -65,7 +66,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   const handleResize = useCallback(() => {
     if (tableRef.current) {
       const tableWidth = tableRef.current.offsetWidth;
-      const otherColumnsWidth = 265;
+      const otherColumnsWidth = 276;
       const availableWidth = tableWidth - otherColumnsWidth;
       setNameColumnWidth(`${availableWidth}px`);
     }
@@ -174,6 +175,14 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
     setHoveredSig(null);
   }, []);
 
+  // const renderToolbar = (/*row: SystemSignature*/) => {
+  //   return (
+  //     <div className="flex justify-end items-center gap-2">
+  //       <span className={clsx(PrimeIcons.PENCIL, 'text-[10px]')}></span>
+  //     </div>
+  //   );
+  // };
+
   return (
     <div ref={tableRef} className="h-full">
       {filteredSignatures.length === 0 ? (
@@ -183,21 +192,23 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
       ) : (
         <>
           <DataTable
+            className={classes.Table}
             value={filteredSignatures}
             size="small"
             selectionMode="multiple"
             selection={selectedSignatures}
+            metaKeySelection
             onSelectionChange={e => setSelectedSignatures(e.value)}
             dataKey="eve_id"
             tableClassName="w-full select-none"
-            resizableColumns
+            resizableColumns={false}
             rowHover
             selectAll
             sortField={sortSettings.sortField}
             sortOrder={sortSettings.sortOrder}
-            onSort={(event) => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
-            onRowMouseEnter={handleEnterRow}
-            onRowMouseLeave={handleLeaveRow}
+            onSort={event => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
+            onRowMouseEnter={compact || medium ? handleEnterRow : undefined}
+            onRowMouseLeave={compact || medium ? handleLeaveRow : undefined}
             rowClassName={row => {
               if (selectedSignatures.some(x => x.eve_id === row.eve_id)) {
                 return clsx(classes.TableRowCompact, 'bg-amber-500/50 hover:bg-amber-500/70 transition duration-200');
@@ -215,7 +226,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               bodyClassName="p-0 px-1"
               field="group"
               body={renderIcon}
-              style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+              style={{ maxWidth: 26, minWidth: 26, width: 26, height: 25 }}
             ></Column>
 
             <Column
@@ -249,6 +260,14 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               body={renderTimeLeft}
               sortable
             ></Column>
+
+            {/*<Column*/}
+            {/*  bodyClassName="p-0 pl-1 pr-2"*/}
+            {/*  field="group"*/}
+            {/*  body={renderToolbar}*/}
+            {/*  headerClassName={headerClasses}*/}
+            {/*  style={{ maxWidth: 26, minWidth: 26, width: 26 }}*/}
+            {/*></Column>*/}
           </DataTable>
         </>
       )}

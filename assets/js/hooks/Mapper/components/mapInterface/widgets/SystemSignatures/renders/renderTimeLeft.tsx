@@ -3,7 +3,7 @@ import { TimeLeft } from '@/hooks/Mapper/components/ui-kit';
 
 export const renderTimeLeft = (row: SystemSignature) => {
   return (
-    <div className="flex justify-end w-full items-center">
+    <div className="flex w-full items-center">
       <TimeLeft cDate={row.updated_at ? new Date(row.updated_at) : undefined} />
     </div>
   );
