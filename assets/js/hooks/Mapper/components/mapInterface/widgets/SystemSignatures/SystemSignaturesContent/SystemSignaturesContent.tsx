@@ -31,11 +31,11 @@ import useLocalStorageState from 'use-local-storage-state';
 type SystemSignaturesSortSettings = {
   sortField: string;
   sortOrder: SortOrder;
-}
+};
 
 const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
   sortField: 'eve_id',
-  sortOrder: 1
+  sortOrder: 1,
 };
 
 interface SystemSignaturesContentProps {
@@ -183,8 +183,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   //   );
   // };
 
-  const headerClasses = clsx(classes.HeaderRow, 'text-[12px] py-[3px]');
-
   return (
     <div ref={tableRef} className="h-full">
       {filteredSignatures.length === 0 ? (
@@ -208,7 +206,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             selectAll
             sortField={sortSettings.sortField}
             sortOrder={sortSettings.sortOrder}
-            onSort={(event) => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
+            onSort={event => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
             onRowMouseEnter={compact || medium ? handleEnterRow : undefined}
             onRowMouseLeave={compact || medium ? handleLeaveRow : undefined}
             rowClassName={row => {
@@ -226,7 +224,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
           >
             <Column
               bodyClassName="p-0 px-1"
-              headerClassName={headerClasses}
               field="group"
               body={renderIcon}
               style={{ maxWidth: 26, minWidth: 26, width: 26 }}
@@ -235,7 +232,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             <Column
               field="eve_id"
               header="Id"
-              headerClassName={headerClasses}
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               style={{ maxWidth: 72, minWidth: 72, width: 72 }}
               sortable
@@ -243,7 +239,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             <Column
               field="group"
               header="Group"
-              headerClassName={headerClasses}
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               hidden={compact}
               sortable
@@ -251,7 +246,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
             <Column
               field="name"
               header="Name"
-              headerClassName={headerClasses}
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               body={renderName}
               style={{ maxWidth: nameColumnWidth }}
@@ -262,7 +256,6 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               field="updated_at"
               header="Updated"
               dataType="date"
-              headerClassName={headerClasses}
               bodyClassName="w-[80px] text-ellipsis overflow-hidden whitespace-nowrap"
               body={renderTimeLeft}
               sortable

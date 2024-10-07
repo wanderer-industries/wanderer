@@ -6,13 +6,5 @@
 }
 
 .Table {
-  :global {
-    .p-sortable-column > .p-column-header-content > span:last-child {
-      transform: scale(0.7);
 
-      & > svg {
-        margin-left: 4px;
-      }
-    }
-  }
 }
