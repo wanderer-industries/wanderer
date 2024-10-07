@@ -34,8 +34,8 @@ type SystemSignaturesSortSettings = {
 };
 
 const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
-  sortField: 'eve_id',
-  sortOrder: 1,
+  sortField: 'updated_at',
+  sortOrder: -1,
 };
 
 interface SystemSignaturesContentProps {
@@ -226,7 +226,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               bodyClassName="p-0 px-1"
               field="group"
               body={renderIcon}
-              style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+              style={{ maxWidth: 26, minWidth: 26, width: 26, height: 25 }}
             ></Column>
 
             <Column
