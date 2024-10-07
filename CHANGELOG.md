@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.3.0](https://github.com/wanderer-industries/wanderer/compare/v1.2.10...v1.3.0) (2024-10-07)
+
+
+
+
+### Features:
+
+* Map: Fix default sort
+
+* Map: Remove resizible and fix styles of column sorting
+
+* Map: Revision of sorting from also adding ability to sort all columns
+
 ## [v1.2.10](https://github.com/wanderer-industries/wanderer/compare/v1.2.9...v1.2.10) (2024-10-07)
 
 
