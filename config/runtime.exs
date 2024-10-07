@@ -192,9 +192,20 @@ if config_env() == :prod do
     |> get_var_from_path_or_env("DATABASE_SSL_ENABLED", "false")
     |> String.to_existing_atom()
 
+  db_ssl_verify_none =
+    config_dir
+    |> get_var_from_path_or_env("DATABASE_SSL_VERIFY_NONE", "false")
+    |> String.to_existing_atom()
+
+  client_opts =
+    if db_ssl_verify_none do
+      [verify: :verify_none]
+    end
+
   config :wanderer_app, WandererApp.Repo,
     url: database_url,
     ssl: db_ssl_enabled,
+    ssl_opts: client_opts,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
