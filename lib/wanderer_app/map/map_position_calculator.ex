@@ -73,9 +73,9 @@ defmodule WandererApp.Map.PositionCalculator do
   end
 
   def get_available_positions(level, x, y, opts),
-    do: _adjusted_coordinates(1 + level * 2, x, y, opts)
+    do: adjusted_coordinates(1 + level * 2, x, y, opts)
 
-  defp _edge_coordinates(n, opts) when n > 1 do
+  defp edge_coordinates(n, opts) when n > 1 do
     min = -div(n, 2)
     max = div(n, 2)
     # Top edge
@@ -92,16 +92,20 @@ defmodule WandererApp.Map.PositionCalculator do
     |> Enum.uniq()
   end
 
-  defp _sorted_edge_coordinates(n, opts) when n > 1 do
-    coordinates = _edge_coordinates(n, opts)
-    middle_right_index = div(n, 2)
+  defp sorted_edge_coordinates(n, opts) when n > 1 do
+    coordinates = edge_coordinates(n, opts)
+    start_index = get_start_index(n, opts[:layout])
 
-    Enum.slice(coordinates, middle_right_index, length(coordinates) - middle_right_index) ++
-      Enum.slice(coordinates, 0, middle_right_index)
+    Enum.slice(coordinates, start_index, length(coordinates) - start_index) ++
+      Enum.slice(coordinates, 0, start_index)
   end
 
-  defp _adjusted_coordinates(n, start_x, start_y, opts) when n > 1 do
-    sorted_coords = _sorted_edge_coordinates(n, opts)
+  defp get_start_index(n, "left_to_right"), do: div(n, 2)
+
+  defp get_start_index(n, "top_to_bottom"), do: div(n, 2) + n - 1
+
+  defp adjusted_coordinates(n, start_x, start_y, opts) when n > 1 do
+    sorted_coords = sorted_edge_coordinates(n, opts)
 
     Enum.map(sorted_coords, fn {x, y} ->
       {

@@ -5,6 +5,8 @@ defmodule WandererAppWeb.MapsLive do
 
   alias BetterNumber, as: Number
 
+  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
   @impl true
   def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
     {:ok, active_characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
@@ -677,6 +679,12 @@ defmodule WandererAppWeb.MapsLive do
     updated_map =
       map
       |> WandererApp.Api.Map.update_options!(%{options: Jason.encode!(options)})
+
+    @pubsub_client.broadcast(
+      WandererApp.PubSub,
+      "maps:#{map_id}",
+      {:options_updated, options}
+    )
 
     {:noreply, socket |> assign(map: updated_map, options_form: options_form)}
   end
