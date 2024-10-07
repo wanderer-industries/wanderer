@@ -112,6 +112,13 @@ defmodule WandererAppWeb.MapsLive do
       "auto_renew?" => true
     }
 
+    options_form =
+      map.options
+      |> case do
+        nil -> %{"layout" => "left_to_right"}
+        options -> Jason.decode!(options)
+      end
+
     {:ok, estimated_price, discount} =
       WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
 
@@ -130,6 +137,7 @@ defmodule WandererAppWeb.MapsLive do
       active_settings_tab: "general",
       is_adding_subscription?: false,
       selected_subscription: nil,
+      options_form: options_form |> to_form(),
       map_subscriptions: map_subscriptions,
       subscription_form: subscription_form |> to_form(),
       estimated_price: estimated_price,
@@ -142,6 +150,10 @@ defmodule WandererAppWeb.MapsLive do
         {"3 Months", "3"},
         {"6 Months", "6"},
         {"1 Year", "12"}
+      ],
+      layout_options: [
+        {"Left To Right", "left_to_right"},
+        {"Top To Bottom", "top_to_bottom"}
       ]
     )
     |> allow_upload(:settings,
@@ -651,6 +663,22 @@ defmodule WandererAppWeb.MapsLive do
        _load_maps(current_user)
      end)
      |> push_patch(to: ~p"/maps")}
+  end
+
+  def handle_event(
+        "update_options",
+        %{
+          "layout" => layout
+        } = options_form,
+        %{assigns: %{map_id: map_id, map: map, current_user: current_user}} = socket
+      ) do
+    options = %{layout: layout}
+
+    updated_map =
+      map
+      |> WandererApp.Api.Map.update_options!(%{options: Jason.encode!(options)})
+
+    {:noreply, socket |> assign(map: updated_map, options_form: options_form)}
   end
 
   @impl true

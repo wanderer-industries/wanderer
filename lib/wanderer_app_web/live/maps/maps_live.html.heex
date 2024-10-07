@@ -26,7 +26,6 @@
           >
             <figure class="absolute z-10 h-200 avatar w-full h-full">
               <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
-
               <img
                 :if={map.scope === :wormholes}
                 class="absolute h-200"
@@ -190,7 +189,6 @@
 >
   <div role="tablist" class="tabs tabs-bordered">
     <a
-      :if={@map_subscriptions_enabled?}
       role="tab"
       phx-click="change_settings_tab"
       phx-value-tab="general"
@@ -200,6 +198,17 @@
       ]}
     >
       <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
+    </a>
+    <a
+      role="tab"
+      phx-click="change_settings_tab"
+      phx-value-tab="import"
+      class={[
+        "tab",
+        classes("tab-active": @active_settings_tab == "import")
+      ]}
+    >
+      <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;Import/Export
     </a>
     <a
       :if={@map_subscriptions_enabled?}
@@ -227,6 +236,27 @@
     </a>
   </div>
   <.header :if={@active_settings_tab == "general"} class="bordered border-1 border-zinc-800">
+    <:actions>
+      <.form
+        :let={f}
+        :if={assigns |> Map.get(:options_form, false)}
+        for={@options_form}
+        phx-change="update_options"
+      >
+        <div class="stat-title">Map systems layout</div>
+        <div class="stat-value text-white">
+          <.input
+            type="select"
+            field={f[:layout]}
+            class="p-dropdown p-component p-inputwrapper"
+            placeholder="Map default layout"
+            options={@layout_options}
+          />
+        </div>
+      </.form>
+    </:actions>
+  </.header>
+  <.header :if={@active_settings_tab == "import"} class="bordered border-1 border-zinc-800">
     Import/Export Map Settings
     <:actions>
       <.form :if={assigns |> Map.get(:import_form, false)} for={@import_form} phx-change="import">

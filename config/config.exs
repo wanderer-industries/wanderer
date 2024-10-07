@@ -60,15 +60,7 @@ config :dart_sass, :version, "1.54.5"
 
 config :tailwind, :version, "3.2.7"
 
-config :wanderer_app, WandererApp.PromEx,
-  manual_metrics_start_delay: :no_delay,
-  metrics_server: [
-    port: 4021,
-    path: "/metrics",
-    protocol: :http,
-    pool_size: 5,
-    cowboy_opts: [ip: {0, 0, 0, 0}]
-  ]
+config :wanderer_app, WandererApp.PromEx, manual_metrics_start_delay: :no_delay
 
 config :wanderer_app,
   grafana_datasource_id: "wanderer"

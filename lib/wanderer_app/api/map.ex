@@ -18,6 +18,7 @@ defmodule WandererApp.Api.Map do
     define(:update, action: :update)
     define(:update_acls, action: :update_acls)
     define(:update_hubs, action: :update_hubs)
+    define(:update_options, action: :update_options)
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
 
@@ -112,6 +113,10 @@ defmodule WandererApp.Api.Map do
       accept [:hubs]
     end
 
+    update :update_options do
+      accept [:options]
+    end
+
     update :mark_as_deleted do
       accept([])
 
@@ -165,6 +170,10 @@ defmodule WandererApp.Api.Map do
     attribute :only_tracked_characters, :boolean do
       default(false)
       allow_nil?(true)
+    end
+
+    attribute :options, :string do
+      allow_nil? true
     end
 
     create_timestamp(:inserted_at)
