@@ -68,7 +68,7 @@ defmodule WandererAppWeb.MapLive do
       {:ok,
        %{
          deleted: true
-       } = map} ->
+       } = _map} ->
         socket
         |> put_flash(
           :error,
@@ -511,7 +511,7 @@ defmodule WandererAppWeb.MapLive do
   def handle_info(
         {ref, result},
         socket
-      ) do
+      ) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
     case result do
@@ -553,8 +553,6 @@ defmodule WandererAppWeb.MapLive do
         {:noreply, socket}
     end
   end
-
-
 
   @impl true
   def handle_info(_event, socket), do: {:noreply, socket}
@@ -1572,16 +1570,9 @@ defmodule WandererAppWeb.MapLive do
           initial_data: initial_data,
           events: events
         }}, 10)
-        # {:map_started_data,
-        #  %{
-        #    map_id: map_id,
-        #    user_characters: user_character_eve_ids,
-        #    initial_data: initial_data,
-        #    events: events
-        #  }}
 
       _ ->
-        Process.send_after(self(), {:map_error, :no_access}, 10)
+        Process.send_after(self(), :no_access, 10)
 
     end
   end
