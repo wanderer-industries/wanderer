@@ -11,7 +11,8 @@ defmodule WandererApp.Map.Server.Impl do
   defstruct [
     :map_id,
     :rtree_name,
-    map: nil
+    map: nil,
+    map_opts: []
   ]
 
   # @ccp1 -1
@@ -795,6 +796,9 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
+  def handle_event({:options_updated, options}, %{map: map, map_id: map_id} = state),
+    do: %{state | map_opts: [layout: options.layout]}
+
   def handle_event({ref, _result}, %{map_id: _map_id} = state) do
     Process.demonitor(ref, [:flush])
 
@@ -834,12 +838,12 @@ defmodule WandererApp.Map.Server.Impl do
          character_id,
          location,
          old_location,
-         %{map: map, map_id: map_id, rtree_name: rtree_name} = _state
+         %{map: map, map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = _state
        ) do
     case is_nil(old_location.solar_system_id) and
            _can_add_location(map.scope, location.solar_system_id) do
       true ->
-        :ok = maybe_add_system(map_id, location, nil, rtree_name)
+        :ok = maybe_add_system(map_id, location, nil, rtree_name, map_opts)
 
       _ ->
         case _is_connection_valid(
@@ -849,8 +853,8 @@ defmodule WandererApp.Map.Server.Impl do
              ) do
           true ->
             {:ok, character} = WandererApp.Character.get_character(character_id)
-            :ok = maybe_add_system(map_id, location, old_location, rtree_name)
-            :ok = maybe_add_system(map_id, old_location, location, rtree_name)
+            :ok = maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
+            :ok = maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
             :ok = maybe_add_connection(map_id, location, old_location, character)
 
           _ ->
@@ -1097,7 +1101,7 @@ defmodule WandererApp.Map.Server.Impl do
        end)}
 
   defp _add_system(
-         %{map_id: map_id, rtree_name: rtree_name} = state,
+         %{map_id: map_id, map_opts: map_opts, rtree_name: rtree_name} = state,
          %{
            solar_system_id: solar_system_id,
            coordinates: coordinates
@@ -1113,7 +1117,7 @@ defmodule WandererApp.Map.Server.Impl do
 
         _ ->
           %{x: x, y: y} =
-            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name)
+            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
 
           %{"x" => x, "y" => y}
       end
@@ -1255,20 +1259,22 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp _init_map(
          state,
-         %{characters: characters} = map,
+         %{characters: characters} = initial_map,
          subscription_settings,
          systems,
          connections
        ) do
     map =
-      map
+      initial_map
       |> WandererApp.Map.new()
       |> WandererApp.Map.update_subscription_settings!(subscription_settings)
       |> WandererApp.Map.add_systems!(systems)
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
 
-    %{state | map: map}
+    map_options = WandererApp.Map.get_map_options!(initial_map)
+
+    %{state | map: map, map_opts: [layout: map_options |> Map.get("layout")]}
   end
 
   defp _init_map_systems(state, [] = _systems), do: state
@@ -1614,11 +1620,11 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp maybe_add_connection(_map_id, _location, _old_location, _character), do: :ok
 
-  defp maybe_add_system(map_id, location, old_location, rtree_name)
+  defp maybe_add_system(map_id, location, old_location, rtree_name, opts)
        when not is_nil(location) do
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
-        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name)
+        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, opts)
 
         case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
                map_id,
@@ -1688,14 +1694,14 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name), do: :ok
+  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _opts), do: :ok
 
-  defp calc_new_system_position(map_id, old_location, rtree_name) do
+  defp calc_new_system_position(map_id, old_location, rtree_name, opts),
+    do:
     {:ok,
      map_id
      |> WandererApp.Map.find_system_by_location(old_location)
-     |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name)}
-  end
+     |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name, opts)}
 
   defp _broadcast_acl_updates(
          {:ok,
