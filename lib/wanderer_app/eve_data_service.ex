@@ -377,7 +377,8 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp get_true_security(security) when is_float(security) and security > 0.0 and security < 0.05, do: security |> Float.ceil(1)
+  defp get_true_security(security) when is_float(security) and security > 0.0 and security < 0.05,
+    do: security |> Float.ceil(1)
 
   defp get_true_security(security) when is_float(security), do: security |> Float.floor(1)
 

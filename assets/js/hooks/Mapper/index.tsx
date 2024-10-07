@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import Mapper from './MapRoot';
-import { decompressToJson } from './utils';
 
 export default {
   _rootEl: null,
@@ -28,12 +27,7 @@ export default {
 
   handleEventWrapper(event: string, handler: (payload: any) => void) {
     this.handleEvent(event, (body: any) => {
-      if (event === 'map_event') {
-        const { type, body: data } = body;
-        handler({ type, body: decompressToJson(data) });
-      } else {
-        handler(body);
-      }
+      handler(body);
     });
   },
 

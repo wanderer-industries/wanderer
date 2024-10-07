@@ -55,7 +55,6 @@ config :wanderer_app, WandererAppWeb.Endpoint,
 config :wanderer_app, WandererAppWeb.Endpoint,
   live_reload: [
     interval: 1000,
-    web_console_logger: true,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",

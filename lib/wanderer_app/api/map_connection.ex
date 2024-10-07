@@ -48,7 +48,13 @@ defmodule WandererApp.Api.MapConnection do
       argument(:map_id, :string, allow_nil?: false)
       argument(:solar_system_source, :integer, allow_nil?: false)
       argument(:solar_system_target, :integer, allow_nil?: false)
-      filter(expr(map_id == ^arg(:map_id) and solar_system_source == ^arg(:solar_system_source) and solar_system_target == ^arg(:solar_system_target)))
+
+      filter(
+        expr(
+          map_id == ^arg(:map_id) and solar_system_source == ^arg(:solar_system_source) and
+            solar_system_target == ^arg(:solar_system_target)
+        )
+      )
     end
 
     read :get_link_pairs_advanced do

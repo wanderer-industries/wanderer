@@ -274,7 +274,7 @@ defmodule WandererApp.Esi.ApiClient do
             )
   def get_alliance_info(eve_id, opts \\ []) do
     case _get_alliance_info(eve_id, "", opts) do
-      {:ok, result} -> {:ok, result |> Map.merge(%{"eve_id" => eve_id})}
+      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
     end
   end
@@ -286,7 +286,7 @@ defmodule WandererApp.Esi.ApiClient do
             )
   def get_corporation_info(eve_id, opts \\ []) do
     case _get_corporation_info(eve_id, "", opts) do
-      {:ok, result} -> {:ok, result |> Map.merge(%{"eve_id" => eve_id})}
+      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
     end
   end
@@ -301,7 +301,7 @@ defmodule WandererApp.Esi.ApiClient do
            "/characters/#{eve_id}/",
            opts |> _with_cache_opts()
          ) do
-      {:ok, result} -> {:ok, result |> Map.merge(%{"eve_id" => eve_id})}
+      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
     end
   end

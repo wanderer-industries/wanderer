@@ -594,20 +594,12 @@ defmodule WandererAppWeb.MapsLive do
 
         added_acls
         |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :add], %{count: 1}, %{
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
+          :telemetry.execute([:wanderer_app, :map, :acl, :add], %{count: 1})
         end)
 
         removed_acls
         |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :remove], %{count: 1}, %{
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
+          :telemetry.execute([:wanderer_app, :map, :acl, :remove], %{count: 1})
         end)
 
         Phoenix.PubSub.broadcast(
@@ -898,6 +890,6 @@ defmodule WandererAppWeb.MapsLive do
 
   defp map_map(%{acls: acls} = map) do
     map
-    |> Map.merge(%{acls: acls |> Enum.map(&map_acl/1)})
+    |> Map.put(:acls, acls |> Enum.map(&map_acl/1))
   end
 end
