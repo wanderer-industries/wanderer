@@ -38,8 +38,6 @@ defmodule WandererApp.Application do
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
         WandererApp.Map.ZkbDataFetcher,
-        WandererApp.Character.ActivityTracker,
-        WandererApp.User.ActivityTracker,
         WandererAppWeb.Presence,
         WandererAppWeb.Endpoint
       ] ++ maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?())

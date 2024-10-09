@@ -70,12 +70,10 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       false ->
         Logger.debug(fn -> "Start character tracker: #{inspect(character_id)}" end)
 
-        Task.start_link(fn ->
-          WandererApp.Character.update_character_state(character_id, %{opts: opts})
-          :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
-
-          :ok
-        end)
+        WandererApp.TaskWrapper.start_link(WandererApp.Character, :update_character_state, [
+          character_id,
+          %{opts: opts}
+        ])
 
         tracked_characters = [character_id | state.characters] |> Enum.uniq()
         WandererApp.Cache.insert("tracked_characters", tracked_characters)
@@ -180,9 +178,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     characters
     |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.update_online(character_id)
-      end)
+      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
+        character_id
+      ])
     end)
 
     state
@@ -207,10 +205,19 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :check_online_errors, @check_online_errors_interval)
 
     characters
-    |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.check_online_errors(character_id)
-      end)
+    |> Task.async_stream(
+      fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :check_online_errors, [
+          character_id
+        ])
+      end,
+      timeout: :timer.seconds(15),
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task
+    )
+    |> Enum.each(fn
+      {:ok, _result} -> :ok
+      {:error, reason} -> @logger.error("Error in check_online_errors: #{inspect(reason)}")
     end)
 
     state
@@ -228,9 +235,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     characters
     |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.update_location(character_id)
-      end)
+      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
+        character_id
+      ])
     end)
 
     state
@@ -257,9 +264,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     characters
     |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.update_ship(character_id)
-      end)
+      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
+        character_id
+      ])
     end)
 
     state
@@ -285,10 +292,19 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :update_info, @update_info_interval)
 
     characters
-    |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.update_info(character_id)
-      end)
+    |> Task.async_stream(
+      fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_info, [
+          character_id
+        ])
+      end,
+      timeout: :timer.seconds(15),
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task
+    )
+    |> Enum.each(fn
+      {:ok, _result} -> :ok
+      {:error, reason} -> @logger.error("Error in update_info: #{inspect(reason)}")
     end)
 
     state
@@ -314,10 +330,19 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :update_wallet, @update_wallet_interval)
 
     characters
-    |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        WandererApp.Character.Tracker.update_wallet(character_id)
-      end)
+    |> Task.async_stream(
+      fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_wallet, [
+          character_id
+        ])
+      end,
+      timeout: :timer.seconds(15),
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task
+    )
+    |> Enum.each(fn
+      {:ok, _result} -> :ok
+      {:error, reason} -> @logger.error("Error in update_wallet: #{inspect(reason)}")
     end)
 
     state
@@ -358,7 +383,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
             end
         end
       end,
-      max_concurrency: 20,
+      max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
       timeout: :timer.seconds(15)
     )
@@ -394,7 +419,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
         WandererApp.Character.update_character_state(character_id, character_state)
       end,
-      max_concurrency: 20,
+      max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
       timeout: :timer.seconds(30)
     )
@@ -404,7 +429,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def handle_info({:stop_track, character_id}, state) do
-    Logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
+    @logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
     stop_tracking(state, character_id)
   end
 

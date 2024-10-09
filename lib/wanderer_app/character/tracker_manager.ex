@@ -46,9 +46,7 @@ defmodule WandererApp.Character.TrackerManager do
   def handle_call(:error, _, state), do: {:stop, :error, :ok, state}
 
   @impl true
-  def handle_call(:stop, _, state) do
-    {:stop, :normal, :ok, state}
-  end
+  def handle_call(:stop, _, state), do: {:stop, :normal, :ok, state}
 
   @impl true
   def handle_call(

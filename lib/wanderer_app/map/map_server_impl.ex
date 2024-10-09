@@ -376,16 +376,20 @@ defmodule WandererApp.Map.Server.Impl do
 
     case not is_nil(user_id) do
       true ->
-        :telemetry.execute(
-          [:wanderer_app, :map, :systems, :remove],
-          %{count: removed_ids |> Enum.count()},
-          %{
+        {:ok, _} =
+          WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
             character_id: character_id,
             user_id: user_id,
             map_id: map_id,
             solar_system_ids: removed_ids
-          }
+          })
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :systems, :remove],
+          %{count: removed_ids |> Enum.count()}
         )
+
+        :ok
 
       _ ->
         :ok
@@ -1169,12 +1173,15 @@ defmodule WandererApp.Map.Server.Impl do
 
     broadcast!(map_id, :add_system, system)
 
-    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1}, %{
-      character_id: character_id,
-      user_id: user_id,
-      map_id: map_id,
-      solar_system_id: solar_system_id
-    })
+    {:ok, _} =
+      WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
+        character_id: character_id,
+        user_id: user_id,
+        map_id: map_id,
+        solar_system_id: solar_system_id
+      })
+
+    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1})
 
     state
   end
@@ -1592,12 +1599,17 @@ defmodule WandererApp.Map.Server.Impl do
         :ok
 
       _ ->
-        :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{
-          map_id: map_id,
-          character: character,
-          solar_system_source_id: old_location.solar_system_id,
-          solar_system_target_id: location.solar_system_id
-        })
+        :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
+
+        {:ok, _} =
+          WandererApp.Api.MapChainPassages.new(%{
+            map_id: map_id,
+            character_id: character.id,
+            ship_type_id: character.ship,
+            ship_name: character.ship_name,
+            solar_system_source_id: old_location.solar_system_id,
+            solar_system_target_id: location.solar_system_id
+          })
     end
 
     case WandererApp.Map.check_connection(map_id, location, old_location) do

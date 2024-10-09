@@ -63,7 +63,7 @@ defmodule WandererApp.Zkb.KillsProvider do
   end
 
   defp handle_websocket(message, state) do
-    case message |> _parse_message() do
+    case message |> parse_message() do
       nil ->
         {:ok, state}
 
@@ -109,7 +109,7 @@ defmodule WandererApp.Zkb.KillsProvider do
     Logger.warning(fn -> "Terminating client process with reason : #{inspect(reason)}" end)
   end
 
-  defp _parse_message(
+  defp parse_message(
          %{
            "solar_system_id" => solar_system_id,
            "killmail_time" => killmail_time
@@ -123,5 +123,5 @@ defmodule WandererApp.Zkb.KillsProvider do
     }
   end
 
-  defp _parse_message(_message), do: nil
+  defp parse_message(_message), do: nil
 end

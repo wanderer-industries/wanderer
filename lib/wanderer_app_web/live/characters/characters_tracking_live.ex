@@ -44,6 +44,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
       case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: selected_map.id}) do
         {:ok, settings} ->
           {:ok, settings}
+
         _ ->
           {:ok, []}
       end

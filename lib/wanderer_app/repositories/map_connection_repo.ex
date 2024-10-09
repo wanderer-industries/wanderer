@@ -9,7 +9,11 @@ defmodule WandererApp.MapConnectionRepo do
     do: WandererApp.Api.MapConnection.read_by_map(%{map_id: map_id})
 
   def get_by_locations(map_id, solar_system_source, solar_system_target) do
-    WandererApp.Api.MapConnection.by_locations(%{map_id: map_id, solar_system_source: solar_system_source, solar_system_target: solar_system_target})
+    WandererApp.Api.MapConnection.by_locations(%{
+      map_id: map_id,
+      solar_system_source: solar_system_source,
+      solar_system_target: solar_system_target
+    })
     |> case do
       {:ok, connections} ->
         {:ok, connections}
@@ -26,8 +30,11 @@ defmodule WandererApp.MapConnectionRepo do
   def create!(connection), do: connection |> WandererApp.Api.MapConnection.create!()
 
   def destroy(map_id, connection) do
-    {:ok, from_connections} = get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
-    {:ok, to_connections} = get_by_locations(map_id, connection.solar_system_target, connection.solar_system_source)
+    {:ok, from_connections} =
+      get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
+
+    {:ok, to_connections} =
+      get_by_locations(map_id, connection.solar_system_target, connection.solar_system_source)
 
     [from_connections ++ to_connections]
     |> List.flatten()
@@ -42,8 +49,7 @@ defmodule WandererApp.MapConnectionRepo do
     end
   end
 
-  def destroy!(connection), do:
-    connection |> WandererApp.Api.MapConnection.destroy!()
+  def destroy!(connection), do: connection |> WandererApp.Api.MapConnection.destroy!()
 
   def bulk_destroy!(connections) do
     connections
@@ -51,6 +57,7 @@ defmodule WandererApp.MapConnectionRepo do
     |> case do
       %Ash.BulkResult{status: :success} ->
         :ok
+
       error ->
         error
     end

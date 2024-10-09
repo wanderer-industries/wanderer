@@ -605,9 +605,7 @@ defmodule WandererAppWeb.CoreComponents do
             phx-click={@row_click && @row_click.(row)}
             class={"hover #{if @row_selected && @row_selected.(row), do: "!bg-slate-600", else: ""} #{if @row_click, do: "cursor-pointer", else: ""}"}
           >
-            <td
-              :for={{col, _index} <- Enum.with_index(@col)}
-            >
+            <td :for={{col, _index} <- Enum.with_index(@col)}>
               <%= render_slot(col, @row_item.(row)) %>
             </td>
             <td :if={@action != []}>
