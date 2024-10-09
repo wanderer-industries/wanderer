@@ -319,11 +319,14 @@ defmodule WandererAppWeb.AccessListsLive do
 
   @impl true
   def handle_info({:search, text}, socket) do
-    first_character_id =
-      socket.assigns.user_character_ids
+
+    active_character_id =
+      socket.assigns.current_user.characters
+      |> Enum.filter(fn character -> not is_nil(character.refresh_token) end)
+      |> Enum.map(& &1.id)
       |> Enum.at(0)
 
-    {:ok, options} = search(first_character_id, text)
+    {:ok, options} = search(active_character_id, text)
 
     send_update(LiveSelect.Component, options: options, id: socket.assigns.member_search_id)
     {:noreply, socket |> assign(member_search_options: options)}

@@ -48,6 +48,8 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   const [signatures, setSignatures, signaturesRef] = useRefState<SystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<SystemSignature[]>([]);
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
+  const [parsedSignatures, setParsedSignatures] = useState<SystemSignature[]>([]);
+  const [askUser, setAskUser] = useState(false);
 
   const [hoveredSig, setHoveredSig] = useState<SystemSignature | null>(null);
 
@@ -90,8 +92,8 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   }, [outCommand, systemId]);
 
   const handleUpdateSignatures = useCallback(
-    async (newSignatures: SystemSignature[]) => {
-      const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures);
+    async (newSignatures: SystemSignature[], updateOnly: boolean) => {
+      const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures, updateOnly);
 
       const { signatures: updatedSignatures } = await outCommand({
         type: OutCommand.updateSignatures,
@@ -114,12 +116,25 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
       return;
     }
     const selectedSignaturesEveIds = selectedSignatures.map(x => x.eve_id);
-    await handleUpdateSignatures(signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)));
+    await handleUpdateSignatures(
+      signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)),
+      false,
+    );
   }, [handleUpdateSignatures, signatures, selectedSignatures]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
   }, [signatures]);
+
+  const handleReplaceAll = useCallback(() => {
+    handleUpdateSignatures(parsedSignatures, false);
+    setAskUser(false);
+  }, [parsedSignatures, handleUpdateSignatures]);
+
+  const handleUpdateOnly = useCallback(() => {
+    handleUpdateSignatures(parsedSignatures, true);
+    setAskUser(false);
+  }, [parsedSignatures, handleUpdateSignatures]);
 
   useHotkey(true, ['a'], handleSelectAll);
 
@@ -135,7 +150,12 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
       settings.map(x => x.key),
     );
 
-    handleUpdateSignatures(signatures);
+    if (!signaturesRef.current || !signaturesRef.current.length) {
+      handleUpdateSignatures(signatures, false);
+    } else {
+      setParsedSignatures(signatures);
+      setAskUser(true);
+    }
   }, [clipboardContent]);
 
   useEffect(() => {
@@ -184,98 +204,125 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   // };
 
   return (
-    <div ref={tableRef} className="h-full">
-      {filteredSignatures.length === 0 ? (
-        <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">
-          No signatures
+    <>
+      {askUser && (
+        <div className="flex w-full h-full bg-stone-900/95 backdrop-blur-sm">
+          <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
+            <div className="text-stone-400/80 text-sm">
+              <div className="flex flex-col text-center gap-2">
+                <button className="p-button p-component p-button-outlined p-button-sm btn-wide">
+                  <span className="p-button-label p-c" onClick={handleReplaceAll}>
+                    Replace
+                  </span>
+                </button>
+                <button className="p-button p-component p-button-outlined p-button-sm btn-wide">
+                  <span className="p-button-label p-c" onClick={handleUpdateOnly}>
+                    Update
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      ) : (
-        <>
-          <DataTable
-            className={classes.Table}
-            value={filteredSignatures}
-            size="small"
-            selectionMode="multiple"
-            selection={selectedSignatures}
-            metaKeySelection
-            onSelectionChange={e => setSelectedSignatures(e.value)}
-            dataKey="eve_id"
-            tableClassName="w-full select-none"
-            resizableColumns={false}
-            rowHover
-            selectAll
-            sortField={sortSettings.sortField}
-            sortOrder={sortSettings.sortOrder}
-            onSort={event => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
-            onRowMouseEnter={compact || medium ? handleEnterRow : undefined}
-            onRowMouseLeave={compact || medium ? handleLeaveRow : undefined}
-            rowClassName={row => {
-              if (selectedSignatures.some(x => x.eve_id === row.eve_id)) {
-                return clsx(classes.TableRowCompact, 'bg-amber-500/50 hover:bg-amber-500/70 transition duration-200');
-              }
-
-              const dateClass = getRowColorByTimeLeft(row.updated_at ? new Date(row.updated_at) : undefined);
-              if (!dateClass) {
-                return clsx(classes.TableRowCompact, 'hover:bg-purple-400/20 transition duration-200');
-              }
-
-              return clsx(classes.TableRowCompact, dateClass);
-            }}
-          >
-            <Column
-              bodyClassName="p-0 px-1"
-              field="group"
-              body={renderIcon}
-              style={{ maxWidth: 26, minWidth: 26, width: 26, height: 25 }}
-            ></Column>
-
-            <Column
-              field="eve_id"
-              header="Id"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              style={{ maxWidth: 72, minWidth: 72, width: 72 }}
-              sortable
-            ></Column>
-            <Column
-              field="group"
-              header="Group"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              hidden={compact}
-              sortable
-            ></Column>
-            <Column
-              field="name"
-              header="Name"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              body={renderName}
-              style={{ maxWidth: nameColumnWidth }}
-              hidden={compact || medium}
-              sortable
-            ></Column>
-            <Column
-              field="updated_at"
-              header="Updated"
-              dataType="date"
-              bodyClassName="w-[80px] text-ellipsis overflow-hidden whitespace-nowrap"
-              body={renderTimeLeft}
-              sortable
-            ></Column>
-
-            {/*<Column*/}
-            {/*  bodyClassName="p-0 pl-1 pr-2"*/}
-            {/*  field="group"*/}
-            {/*  body={renderToolbar}*/}
-            {/*  headerClassName={headerClasses}*/}
-            {/*  style={{ maxWidth: 26, minWidth: 26, width: 26 }}*/}
-            {/*></Column>*/}
-          </DataTable>
-        </>
       )}
-      <WdTooltip
-        className="bg-stone-900/95 text-slate-50"
-        ref={tooltipRef}
-        content={hoveredSig ? <SignatureView {...hoveredSig} /> : null}
-      />
-    </div>
+      {!askUser && (
+        <div ref={tableRef} className="h-full">
+          {filteredSignatures.length === 0 ? (
+            <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">
+              No signatures
+            </div>
+          ) : (
+            <>
+              <DataTable
+                className={classes.Table}
+                value={filteredSignatures}
+                size="small"
+                selectionMode="multiple"
+                selection={selectedSignatures}
+                metaKeySelection
+                onSelectionChange={e => setSelectedSignatures(e.value)}
+                dataKey="eve_id"
+                tableClassName="w-full select-none"
+                resizableColumns={false}
+                rowHover
+                selectAll
+                sortField={sortSettings.sortField}
+                sortOrder={sortSettings.sortOrder}
+                onSort={event => setSortSettings(() => ({ sortField: event.sortField, sortOrder: event.sortOrder }))}
+                onRowMouseEnter={compact || medium ? handleEnterRow : undefined}
+                onRowMouseLeave={compact || medium ? handleLeaveRow : undefined}
+                rowClassName={row => {
+                  if (selectedSignatures.some(x => x.eve_id === row.eve_id)) {
+                    return clsx(
+                      classes.TableRowCompact,
+                      'bg-amber-500/50 hover:bg-amber-500/70 transition duration-200',
+                    );
+                  }
+
+                  const dateClass = getRowColorByTimeLeft(row.updated_at ? new Date(row.updated_at) : undefined);
+                  if (!dateClass) {
+                    return clsx(classes.TableRowCompact, 'hover:bg-purple-400/20 transition duration-200');
+                  }
+
+                  return clsx(classes.TableRowCompact, dateClass);
+                }}
+              >
+                <Column
+                  bodyClassName="p-0 px-1"
+                  field="group"
+                  body={renderIcon}
+                  style={{ maxWidth: 26, minWidth: 26, width: 26, height: 25 }}
+                ></Column>
+
+                <Column
+                  field="eve_id"
+                  header="Id"
+                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                  style={{ maxWidth: 72, minWidth: 72, width: 72 }}
+                  sortable
+                ></Column>
+                <Column
+                  field="group"
+                  header="Group"
+                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                  hidden={compact}
+                  sortable
+                ></Column>
+                <Column
+                  field="name"
+                  header="Name"
+                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                  body={renderName}
+                  style={{ maxWidth: nameColumnWidth }}
+                  hidden={compact || medium}
+                  sortable
+                ></Column>
+                <Column
+                  field="updated_at"
+                  header="Updated"
+                  dataType="date"
+                  bodyClassName="w-[80px] text-ellipsis overflow-hidden whitespace-nowrap"
+                  body={renderTimeLeft}
+                  sortable
+                ></Column>
+
+                {/*<Column*/}
+                {/*  bodyClassName="p-0 pl-1 pr-2"*/}
+                {/*  field="group"*/}
+                {/*  body={renderToolbar}*/}
+                {/*  headerClassName={headerClasses}*/}
+                {/*  style={{ maxWidth: 26, minWidth: 26, width: 26 }}*/}
+                {/*></Column>*/}
+              </DataTable>
+            </>
+          )}
+          <WdTooltip
+            className="bg-stone-900/95 text-slate-50"
+            ref={tooltipRef}
+            content={hoveredSig ? <SignatureView {...hoveredSig} /> : null}
+          />
+        </div>
+      )}
+    </>
   );
 };

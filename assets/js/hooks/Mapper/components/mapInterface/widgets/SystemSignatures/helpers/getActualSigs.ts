@@ -5,6 +5,7 @@ import { getState } from './getState.ts';
 export const getActualSigs = (
   oldSignatures: SystemSignature[],
   newSignatures: SystemSignature[],
+  updateOnly: boolean,
 ): { added: SystemSignature[]; updated: SystemSignature[]; removed: SystemSignature[] } => {
   const updated: SystemSignature[] = [];
   const removed: SystemSignature[] = [];
@@ -20,7 +21,9 @@ export const getActualSigs = (
         updated.push({ ...oldSig, group: newSig.group, name: newSig.name });
       }
     } else {
-      removed.push(oldSig);
+      if (!updateOnly) {
+        removed.push(oldSig);
+      }
     }
   });
 

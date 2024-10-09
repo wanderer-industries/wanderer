@@ -58,7 +58,8 @@ defmodule WandererAppWeb.Router do
           ~w('unsafe-inline'),
           ~w(https://unpkg.com),
           ~w(https://w.appzi.io),
-          ~w(https://www.googletagmanager.com)
+          ~w(https://www.googletagmanager.com),
+          ~w(https://cdnjs.cloudflare.com)
         ],
         style_src: @style_src,
         img_src: @img_src,
