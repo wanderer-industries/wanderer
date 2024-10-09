@@ -374,12 +374,14 @@ defmodule WandererAppWeb.AccessListsLive do
           member
           |> WandererApp.Api.AccessListMember.update_role!(%{role: role_atom})
 
-        {:ok, _} = WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_updated, %{
-          user_id: socket.assigns.current_user.id,
-          acl_id: socket.assigns.selected_acl_id,
-          member:
-            member |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
-        })
+        {:ok, _} =
+          WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_updated, %{
+            user_id: socket.assigns.current_user.id,
+            acl_id: socket.assigns.selected_acl_id,
+            member:
+              member
+              |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+          })
 
         :telemetry.execute([:wanderer_app, :acl, :member, :update], %{count: 1})
 
@@ -554,15 +556,14 @@ defmodule WandererAppWeb.AccessListsLive do
            role: :viewer
          }) do
       {:ok, member} ->
-
-      {:ok, _} =
-        WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_added, %{
-          user_id: socket.assigns.current_user.id,
-          acl_id: access_list_id,
-          member:
-            member
-            |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
-        })
+        {:ok, _} =
+          WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_added, %{
+            user_id: socket.assigns.current_user.id,
+            acl_id: access_list_id,
+            member:
+              member
+              |> Map.take([:eve_character_id, :eve_corporation_id, :eve_alliance_id, :role])
+          })
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
 

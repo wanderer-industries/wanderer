@@ -71,11 +71,24 @@ defmodule WandererApp.Character do
     end
   end
 
+  def get_character_state!(character_id) do
+    case get_character_state(character_id) do
+      {:ok, character_state} ->
+        character_state
+
+      _ ->
+        Logger.error("Failed to get character_state #{character_id}")
+        throw("Failed to get character_state #{character_id}")
+    end
+  end
+
   def update_character_state(character_id, character_state_update) do
     Cachex.get_and_update(:character_state_cache, character_id, fn character_state ->
       case character_state do
         nil ->
           new_state = WandererApp.Character.Tracker.init(character_id: character_id)
+          :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
+
           {:commit, Map.merge(new_state, character_state_update)}
 
         _ ->

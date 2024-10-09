@@ -67,8 +67,8 @@ defmodule WandererApp.EveDataService do
   end
 
   def load_wormhole_types() do
-    JSONUtil.read_json("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholes.json")
-    |> JSONUtil.map_json(fn row ->
+    JSONUtil.read_json!("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholes.json")
+    |> Enum.map(fn row ->
       %{
         id: row["typeID"],
         name: row["name"],
@@ -85,8 +85,8 @@ defmodule WandererApp.EveDataService do
   end
 
   def load_wormhole_classes() do
-    JSONUtil.read_json("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholeClasses.json")
-    |> JSONUtil.map_json(fn row ->
+    JSONUtil.read_json!("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholeClasses.json")
+    |> Enum.map(fn row ->
       %{
         id: row["id"],
         short_name: row["shortName"],
@@ -98,8 +98,8 @@ defmodule WandererApp.EveDataService do
   end
 
   def load_wormhole_systems() do
-    JSONUtil.read_json("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholeSystems.json")
-    |> JSONUtil.map_json(fn row ->
+    JSONUtil.read_json!("#{:code.priv_dir(:wanderer_app)}/repo/data/wormholeSystems.json")
+    |> Enum.map(fn row ->
       %{
         solar_system_id: row["solarSystemID"],
         wanderers: row["wanderers"],
@@ -111,8 +111,8 @@ defmodule WandererApp.EveDataService do
   end
 
   def load_effects() do
-    JSONUtil.read_json("#{:code.priv_dir(:wanderer_app)}/repo/data/effects.json")
-    |> JSONUtil.map_json(fn row ->
+    JSONUtil.read_json!("#{:code.priv_dir(:wanderer_app)}/repo/data/effects.json")
+    |> Enum.map(fn row ->
       %{
         id: row["name"] |> Slug.slugify(),
         name: row["name"],
@@ -130,8 +130,8 @@ defmodule WandererApp.EveDataService do
   end
 
   def load_triglavian_systems() do
-    JSONUtil.read_json("#{:code.priv_dir(:wanderer_app)}/repo/data/triglavianSystems.json")
-    |> JSONUtil.map_json(fn row ->
+    JSONUtil.read_json!("#{:code.priv_dir(:wanderer_app)}/repo/data/triglavianSystems.json")
+    |> Enum.map(fn row ->
       %{
         solar_system_id: row["solarSystemID"],
         solar_system_name: row["solarSystemName"],
@@ -377,10 +377,21 @@ defmodule WandererApp.EveDataService do
     end
   end
 
+  defp truncate_to_two_digits(value) when is_float(value), do: Float.floor(value * 100) / 100
+
   defp get_true_security(security) when is_float(security) and security > 0.0 and security < 0.05,
     do: security |> Float.ceil(1)
 
-  defp get_true_security(security) when is_float(security), do: security |> Float.floor(1)
+  defp get_true_security(security) when is_float(security) do
+    truncated_value = security |> truncate_to_two_digits()
+    floor_value = truncated_value |> Float.floor(1)
+
+    if Float.round(truncated_value - floor_value, 2) < 0.05 do
+      floor_value
+    else
+      Float.ceil(truncated_value, 1)
+    end
+  end
 
   defp get_class_title(wormhole_classes_info, wormhole_class_id, security, wormhole_class) do
     case wormhole_class_id in [

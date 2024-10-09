@@ -32,7 +32,7 @@ export default {
   },
 
   reconnected() {
-    this.pushEvent('reconnected');
+    this.pushEvent('ui_loaded');
   },
 
   async pushEventAsync(event: string, payload: any) {

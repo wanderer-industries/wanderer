@@ -55,13 +55,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   def handle_info({ref, result}, state) do
     Process.demonitor(ref, [:flush])
 
-    case result do
-      :ok ->
-        {:noreply, state}
-
-      _ ->
-        {:noreply, state}
-    end
+    {:noreply, state}
   end
 
   defp _update_map_kills(map_id) do
@@ -70,10 +64,9 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         map_id
         |> WandererApp.Map.get_map!()
         |> Map.get(:systems, Map.new())
-        |> Map.keys()
-        |> Enum.reduce(Map.new(), fn solar_system_id, acc ->
+        |> Enum.reduce(Map.new(), fn {solar_system_id, _system}, acc ->
           kills_count = WandererApp.Cache.get("zkb_kills_#{solar_system_id}")
-          acc |> Map.put_new(solar_system_id, kills_count || 0)
+          acc |> Map.put(solar_system_id, kills_count || 0)
         end)
         |> _maybe_broadcast_map_kills(map_id)
 
@@ -87,28 +80,24 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
     updated_kills_system_ids =
       new_kills_map
-      |> Map.keys()
-      |> Enum.filter(fn solar_system_id ->
-        kills_count = new_kills_map |> Map.get(solar_system_id, 0)
-        old_kills_count = old_kills_map |> Map.get(solar_system_id, 0)
-
-        kills_count != old_kills_count and
-          kills_count > 0
-      end)
-
-    removed_kills_system_ids =
-      old_kills_map
-      |> Map.keys()
-      |> Enum.filter(fn solar_system_id ->
-        new_kills_count = new_kills_map |> Map.get(solar_system_id, 0)
+      |> Map.filter(fn {solar_system_id, new_kills_count} ->
         old_kills_count = old_kills_map |> Map.get(solar_system_id, 0)
 
         new_kills_count != old_kills_count and
-          old_kills_count > 0 and new_kills_count == 0
+          new_kills_count > 0
       end)
+      |> Map.keys()
 
-    [updated_kills_system_ids | removed_kills_system_ids]
-    |> List.flatten()
+    removed_kills_system_ids =
+      old_kills_map
+      |> Map.filter(fn {solar_system_id, old_kills_count} ->
+        new_kills_count = new_kills_map |> Map.get(solar_system_id, 0)
+
+        old_kills_count > 0 and new_kills_count == 0
+      end)
+      |> Map.keys()
+
+    (updated_kills_system_ids ++ removed_kills_system_ids)
     |> case do
       [] ->
         :ok

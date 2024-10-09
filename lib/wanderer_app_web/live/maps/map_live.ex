@@ -592,11 +592,6 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("reconnected", _body, socket) do
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event(
         "change_map",
         %{"map_slug" => map_slug} = _event,
