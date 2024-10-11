@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.5.0](https://github.com/wanderer-industries/wanderer/compare/v1.4.0...v1.5.0) (2024-10-11)
+
+
+
+
+### Features:
+
+* Map: Follow Character on Map and auto select their current system
+
 ## [v1.4.0](https://github.com/wanderer-industries/wanderer/compare/v1.3.6...v1.4.0) (2024-10-11)
 
 
