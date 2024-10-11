@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.3.6](https://github.com/wanderer-industries/wanderer/compare/v1.3.5...v1.3.6) (2024-10-09)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Signatures update fixes
+
 ## [v1.3.5](https://github.com/wanderer-industries/wanderer/compare/v1.3.4...v1.3.5) (2024-10-09)
 
 
