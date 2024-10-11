@@ -91,7 +91,7 @@ export const RoutesList = ({ data, onContextMenu }: RoutesListProps) => {
   const { mapRef } = useMapRootState();
 
   const handleClick = useCallback(
-    (systemId: number) => mapRef.current?.command(Commands.selectSystem, systemId.toString()),
+    (systemId: number) => mapRef.current?.command(Commands.centerSystem, systemId.toString()),
     [mapRef],
   );
 

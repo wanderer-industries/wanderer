@@ -85,6 +85,10 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               mapRoutes(data as CommandRoutes);
               break;
 
+            case Commands.centerSystem:
+              // do nothing here
+              break;
+
             case Commands.selectSystem:
               // do nothing here
               break;

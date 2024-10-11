@@ -11,7 +11,7 @@ const Characters = ({ data }: { data: CharacterTypeRaw[] }) => {
 
   const handleSelect = useCallback(
     (character: CharacterTypeRaw) => {
-      mapRef.current?.command(Commands.selectSystem, character?.location?.solar_system_id?.toString());
+      mapRef.current?.command(Commands.centerSystem, character?.location?.solar_system_id?.toString());
     },
     [mapRef],
   );

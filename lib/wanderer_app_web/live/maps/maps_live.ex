@@ -664,7 +664,7 @@ defmodule WandererAppWeb.MapsLive do
         %{
           "layout" => layout
         } = options_form,
-        %{assigns: %{map_id: map_id, map: map, current_user: current_user}} = socket
+        %{assigns: %{map_id: map_id, map: map}} = socket
       ) do
     options = %{layout: layout}
 

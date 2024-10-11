@@ -22,6 +22,13 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
     });
   }, [outCommand]);
 
+  const handleOpenUserSettings = useCallback(() => {
+    outCommand({
+      type: OutCommand.openUserSettings,
+      data: null,
+    });
+  }, [outCommand]);
+
   const toggleMinimap = useCallback(() => {
     setInterfaceSettings(x => ({
       ...x,
@@ -63,6 +70,16 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
           </button>
         </WdTooltipWrapper>
 
+        <WdTooltipWrapper content="User settings" position={TooltipPosition.left}>
+          <button
+            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+            type="button"
+            onClick={handleOpenUserSettings}
+          >
+            <i className="pi pi-cog text-lg"></i>
+          </button>
+        </WdTooltipWrapper>
+
         <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
@@ -87,9 +104,9 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             onClick={toggleKSpace}
           >
             {interfaceSettings.isShowKSpace ? (
-              <i className="pi pi-star-fill text-lg"></i>
+              <i className="pi pi-heart-fill text-lg"></i>
             ) : (
-              <i className="pi pi-star text-lg"></i>
+              <i className="pi pi-heart text-lg"></i>
             )}
           </button>
         </WdTooltipWrapper>

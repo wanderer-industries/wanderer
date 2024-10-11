@@ -377,7 +377,7 @@ defmodule WandererAppWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name} class="form-control mt-8">
-      <label class="label cursor-pointer">
+      <label class="label cursor-pointer gap-2">
         <span class="label-text"><%= @label %></span>
         <input type="hidden" name={@name} value="false" />
         <input

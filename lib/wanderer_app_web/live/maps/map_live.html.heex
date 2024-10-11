@@ -149,3 +149,20 @@
     </.table>
   </.async_result>
 </.modal>
+
+<.modal
+  :if={assigns |> Map.get(:show_user_settings?, false)}
+  id="map-user-settings-modal"
+  title="Map user settings"
+  show
+  on_cancel={JS.push("hide_user_settings")}
+>
+  <.form
+    :let={f}
+    :if={assigns |> Map.get(:user_settings_form, false)}
+    for={@user_settings_form}
+    phx-change="update_user_settings"
+  >
+    <.input type="checkbox" field={f[:select_on_spash]} label="Auto select splashed systems" />
+  </.form>
+</.modal>

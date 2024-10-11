@@ -6,7 +6,7 @@ defmodule WandererApp.Character do
   @read_character_wallet_scope "esi-wallet.read_character_wallet.v1"
   @read_corp_wallet_scope "esi-wallet.read_corporation_wallets.v1"
 
-  def get_character(character_id) do
+  def get_character(character_id) when not is_nil(character_id) do
     case Cachex.get(:character_cache, character_id) do
       {:ok, nil} ->
         case WandererApp.Api.Character.by_id(character_id) do
@@ -22,6 +22,8 @@ defmodule WandererApp.Character do
         {:ok, character}
     end
   end
+
+  def get_character(_character_id), do: {:ok, nil}
 
   def get_character!(character_id) do
     case get_character(character_id) do

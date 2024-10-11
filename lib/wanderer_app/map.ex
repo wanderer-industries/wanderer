@@ -56,9 +56,9 @@ defmodule WandererApp.Map do
     map
     |> Map.get(:options)
     |> case do
-        nil -> %{"layout" => "left_to_right"}
-        options -> Jason.decode!(options)
-      end
+      nil -> %{"layout" => "left_to_right"}
+      options -> Jason.decode!(options)
+    end
   end
 
   def update_map(map_id, map_update) do

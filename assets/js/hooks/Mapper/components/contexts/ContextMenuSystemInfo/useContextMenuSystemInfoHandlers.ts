@@ -48,19 +48,19 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand, mapRef }: U
   }, []);
 
   const onAddSystem = useCallback(() => {
-    const { system, outCommand, mapRef } = ref.current;
-    if (!system) {
+    const { system: solarSystemId, outCommand, mapRef } = ref.current;
+    if (!solarSystemId) {
       return;
     }
 
     outCommand({
       type: OutCommand.addSystem,
       data: {
-        system_id: system,
+        system_id: solarSystemId,
       },
     });
     setTimeout(() => {
-      mapRef.current?.command(Commands.selectSystem, system);
+      mapRef.current?.command(Commands.centerSystem, solarSystemId);
       setSystem(undefined);
     }, 200);
   }, []);

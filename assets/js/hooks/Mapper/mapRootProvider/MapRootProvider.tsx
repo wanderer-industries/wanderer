@@ -4,7 +4,6 @@ import { MapHandlers, MapUnionTypes, OutCommandHandler, SolarSystemConnection } 
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
-import { DEFAULT_SETTINGS } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];

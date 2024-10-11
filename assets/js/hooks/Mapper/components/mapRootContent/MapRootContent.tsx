@@ -6,6 +6,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useState } from 'react';
 import { OnTheMap, RightBar } from '@/hooks/Mapper/components/mapRootContent/components';
 import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/components/MapContextMenu/MapContextMenu.tsx';
+import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 
 export interface MapRootContentProps {}
 
@@ -18,6 +19,8 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const mapInterface = <MapInterface />;
 
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
+
+  useSkipContextMenu();
 
   return (
     <Layout map={<MapWrapper refn={mapRef} />}>

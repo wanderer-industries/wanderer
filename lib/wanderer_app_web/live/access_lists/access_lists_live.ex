@@ -319,7 +319,6 @@ defmodule WandererAppWeb.AccessListsLive do
 
   @impl true
   def handle_info({:search, text}, socket) do
-
     active_character_id =
       socket.assigns.current_user.characters
       |> Enum.filter(fn character -> not is_nil(character.refresh_token) end)

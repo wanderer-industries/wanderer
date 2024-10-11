@@ -21,6 +21,7 @@ export enum Commands {
   mapUpdated = 'map_updated',
   killsUpdated = 'kills_updated',
   routes = 'routes',
+  centerSystem = 'center_system',
   selectSystem = 'select_system',
 }
 
@@ -40,7 +41,8 @@ export type Command =
   | Commands.mapUpdated
   | Commands.killsUpdated
   | Commands.routes
-  | Commands.selectSystem;
+  | Commands.selectSystem
+  | Commands.centerSystem;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -72,6 +74,7 @@ export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandSelectSystem = string | undefined;
+export type CommandCenterSystem = string | undefined;
 
 export interface CommandData {
   [Commands.init]: CommandInit;
@@ -90,6 +93,7 @@ export interface CommandData {
   [Commands.routes]: CommandRoutes;
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
+  [Commands.centerSystem]: CommandCenterSystem;
 }
 
 export interface MapHandlers {
@@ -123,6 +127,7 @@ export enum OutCommand {
   setAutopilotWaypoint = 'set_autopilot_waypoint',
   addSystem = 'add_system',
   addCharacter = 'add_character',
+  openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
 
   // Only UI commands

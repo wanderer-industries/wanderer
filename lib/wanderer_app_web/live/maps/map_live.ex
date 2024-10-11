@@ -119,39 +119,39 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_info(:character_token_invalid, socket) do
-    {:noreply,
-     socket
-     |> _put_invalid_token_message()}
-  end
+  def handle_info(:character_token_invalid, socket),
+    do:
+      {:noreply,
+       socket
+       |> _put_invalid_token_message()}
 
   @impl true
-  def handle_info(%{event: :add_system, payload: system}, socket) do
-    {:noreply,
-     socket
-     |> push_map_event("add_systems", [map_ui_system(system)])}
-  end
+  def handle_info(%{event: :add_system, payload: system}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_map_event("add_systems", [map_ui_system(system)])}
 
   @impl true
-  def handle_info(%{event: :update_system, payload: system}, socket) do
-    {:noreply,
-     socket
-     |> push_map_event("update_systems", [map_ui_system(system)])}
-  end
+  def handle_info(%{event: :update_system, payload: system}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_map_event("update_systems", [map_ui_system(system)])}
 
   @impl true
-  def handle_info(%{event: :update_connection, payload: connection}, socket) do
-    {:noreply,
-     socket
-     |> push_map_event("update_connection", map_ui_connection(connection))}
-  end
+  def handle_info(%{event: :update_connection, payload: connection}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_map_event("update_connection", map_ui_connection(connection))}
 
   @impl true
-  def handle_info(%{event: :systems_removed, payload: solar_system_ids}, socket) do
-    {:noreply,
-     socket
-     |> push_map_event("remove_systems", solar_system_ids)}
-  end
+  def handle_info(%{event: :systems_removed, payload: solar_system_ids}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_map_event("remove_systems", solar_system_ids)}
 
   @impl true
   def handle_info(%{event: :remove_connections, payload: connections}, socket) do
@@ -175,6 +175,40 @@ defmodule WandererAppWeb.MapLive do
        "add_connections",
        connections
      )}
+  end
+
+  @impl true
+  def handle_info(
+        %{
+          event: :maybe_select_system,
+          payload: %{
+            character_id: character_id,
+            solar_system_id: solar_system_id
+          }
+        },
+        %{assigns: %{current_user: current_user, map_user_settings: map_user_settings}} = socket
+      ) do
+    is_user_character? =
+      current_user.characters |> Enum.map(& &1.id) |> Enum.member?(character_id)
+
+    select_on_spash? =
+      map_user_settings
+      |> WandererApp.MapUserSettingsRepo.to_form_data!()
+      |> Map.get("select_on_spash", "false")
+      |> String.to_existing_atom()
+
+    socket =
+      (is_user_character? && select_on_spash?)
+      |> case do
+        true ->
+          socket
+          |> push_map_event("select_system", solar_system_id)
+
+        false ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -420,6 +454,7 @@ defmodule WandererAppWeb.MapLive do
         {:map_start,
          %{
            map_id: map_id,
+           map_user_settings: map_user_settings,
            user_characters: user_character_eve_ids,
            initial_data: initial_data,
            events: events
@@ -466,20 +501,24 @@ defmodule WandererAppWeb.MapLive do
       {:map_loaded,
        %{
          map_id: map_id,
-         user_characters: user_character_eve_ids,
          initial_data: initial_data
        }},
       10
     )
 
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(
+       map_user_settings: map_user_settings,
+       user_characters: user_character_eve_ids,
+       has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+     )}
   end
 
   def handle_info(
         {:map_loaded,
          %{
            map_id: map_id,
-           user_characters: user_character_eve_ids,
            initial_data: initial_data
          } = _loaded_data},
         socket
@@ -488,11 +527,7 @@ defmodule WandererAppWeb.MapLive do
 
     {:noreply,
      socket
-     |> assign(
-       map_loaded?: true,
-       user_characters: user_character_eve_ids,
-       has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
-     )
+     |> assign(map_loaded?: true)
      |> push_map_event(
        "init",
        initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
@@ -1472,6 +1507,39 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
+  def handle_event(
+        "open_user_settings",
+        _,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    {:ok, user_settings_form} =
+      WandererApp.MapUserSettingsRepo.get!(map_id, current_user.id)
+      |> WandererApp.MapUserSettingsRepo.to_form_data()
+
+    {:noreply,
+     socket
+     |> assign(
+       show_user_settings?: true,
+       user_settings_form: user_settings_form |> to_form()
+     )}
+  end
+
+  @impl true
+  def handle_event(
+        "update_user_settings",
+        user_settings_form,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    settings = user_settings_form |> Map.take(["select_on_spash"]) |> Jason.encode!()
+
+    {:ok, user_settings} =
+      WandererApp.MapUserSettingsRepo.create_or_update(map_id, current_user.id, settings)
+
+    {:noreply,
+     socket |> assign(user_settings_form: user_settings_form, map_user_settings: user_settings)}
+  end
+
+  @impl true
   def handle_event("noop", _, socket), do: {:noreply, socket}
 
   @impl true
@@ -1494,6 +1562,10 @@ defmodule WandererAppWeb.MapLive do
   @impl true
   def handle_event("hide_tracking", _, socket),
     do: {:noreply, socket |> assign(show_tracking?: false)}
+
+  @impl true
+  def handle_event("hide_user_settings", _, socket),
+    do: {:noreply, socket |> assign(show_user_settings?: false)}
 
   @impl true
   def handle_event(
@@ -1523,6 +1595,8 @@ defmodule WandererAppWeb.MapLive do
     case user_permissions do
       %{view_system: true, track_character: track_character} ->
         {:ok, _} = current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id})
+
+        {:ok, map_user_settings} = WandererApp.MapUserSettingsRepo.get(map_id, current_user.id)
 
         {:ok, tracked_map_characters} = _get_tracked_map_characters(map_id, current_user)
 
@@ -1607,6 +1681,7 @@ defmodule WandererAppWeb.MapLive do
           {:map_start,
            %{
              map_id: map_id,
+             map_user_settings: map_user_settings,
              user_characters: user_character_eve_ids,
              initial_data: initial_data,
              events: events
