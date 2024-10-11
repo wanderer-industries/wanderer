@@ -113,7 +113,7 @@ defmodule WandererAppWeb.MapLive do
           }
         } = socket
       ) do
-    _on_map_started(map_id, current_user, user_permissions)
+    on_map_started(map_id, current_user, user_permissions)
 
     {:noreply, socket}
   end
@@ -1591,108 +1591,109 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
-  defp _on_map_started(map_id, current_user, user_permissions) do
-    case user_permissions do
-      %{view_system: true, track_character: track_character} ->
-        {:ok, _} = current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id})
+  defp on_map_started(
+         map_id,
+         current_user,
+         %{view_system: true, track_character: track_character} = user_permissions
+       ) do
+    with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
+         {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user.id),
+         {:ok, tracked_map_characters} <- _get_tracked_map_characters(map_id, current_user),
+         {:ok, characters_limit} <- map_id |> WandererApp.Map.get_characters_limit(),
+         {:ok, present_character_ids} <-
+           WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", []),
+         {:ok, kills} <- WandererApp.Cache.lookup("map_#{map_id}:zkb_kills", Map.new()) do
+      user_character_eve_ids = tracked_map_characters |> Enum.map(& &1.eve_id)
 
-        {:ok, map_user_settings} = WandererApp.MapUserSettingsRepo.get(map_id, current_user.id)
+      events =
+        case tracked_map_characters |> Enum.any?(&(&1.access_token == nil)) do
+          true ->
+            [:invalid_token_message]
 
-        {:ok, tracked_map_characters} = _get_tracked_map_characters(map_id, current_user)
+          _ ->
+            []
+        end
 
-        user_character_eve_ids = tracked_map_characters |> Enum.map(& &1.eve_id)
+      events =
+        case tracked_map_characters |> Enum.empty?() do
+          true ->
+            events ++ [:empty_tracked_characters]
 
-        events =
-          case tracked_map_characters |> Enum.any?(&(&1.access_token == nil)) do
-            true ->
-              [:invalid_token_message]
+          _ ->
+            events
+        end
 
-            _ ->
-              []
-          end
+      events =
+        case present_character_ids |> Enum.count() < characters_limit do
+          true ->
+            events ++ [{:track_characters, tracked_map_characters, track_character}]
 
-        events =
-          case tracked_map_characters |> Enum.empty?() do
-            true ->
-              events ++ [:empty_tracked_characters]
+          _ ->
+            events ++ [:map_character_limit]
+        end
 
-            _ ->
-              events
-          end
+      initial_data =
+        map_id
+        |> _get_map_data()
+        |> Map.merge(%{
+          kills:
+            kills
+            |> Enum.filter(fn {_, kills} -> kills > 0 end)
+            |> Enum.map(&map_ui_kill/1),
+          present_characters:
+            present_character_ids
+            |> WandererApp.Character.get_character_eve_ids!(),
+          user_characters: user_character_eve_ids,
+          user_permissions: user_permissions,
+          system_static_infos: nil,
+          wormhole_types: nil,
+          effects: nil,
+          reset: false
+        })
 
-        {:ok, characters_limit} = map_id |> WandererApp.Map.get_characters_limit()
+      system_static_infos =
+        map_id
+        |> WandererApp.Map.list_systems!()
+        |> Enum.map(&WandererApp.CachedInfo.get_system_static_info!(&1.solar_system_id))
+        |> Enum.map(&map_ui_system_static_info/1)
 
-        {:ok, present_character_ids} =
-          WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
-
-        events =
-          case present_character_ids |> Enum.count() < characters_limit do
-            true ->
-              events ++ [{:track_characters, tracked_map_characters, track_character}]
-
-            _ ->
-              events ++ [:map_character_limit]
-          end
-
-        {:ok, kills} = WandererApp.Cache.lookup("map_#{map_id}:zkb_kills", Map.new())
-
-        initial_data =
-          map_id
-          |> _get_map_data()
-          |> Map.merge(%{
-            kills:
-              kills
-              |> Enum.filter(fn {_, kills} -> kills > 0 end)
-              |> Enum.map(&map_ui_kill/1),
-            present_characters:
-              present_character_ids
-              |> WandererApp.Character.get_character_eve_ids!(),
-            user_characters: user_character_eve_ids,
-            user_permissions: user_permissions,
-            system_static_infos: nil,
-            wormhole_types: nil,
-            effects: nil,
-            reset: false
-          })
-
-        system_static_infos =
-          map_id
-          |> WandererApp.Map.list_systems!()
-          |> Enum.map(&WandererApp.CachedInfo.get_system_static_info!(&1.solar_system_id))
-
-        initial_data =
-          initial_data
-          |> Map.put(
-            :wormholes,
-            WandererApp.CachedInfo.get_wormhole_types!()
-          )
-          |> Map.put(
-            :effects,
-            WandererApp.CachedInfo.get_effects!()
-          )
-          |> Map.put(
-            :system_static_infos,
-            system_static_infos |> Enum.map(&map_ui_system_static_info/1)
-          )
-          |> Map.put(:reset, true)
-
-        Process.send_after(
-          self(),
-          {:map_start,
-           %{
-             map_id: map_id,
-             map_user_settings: map_user_settings,
-             user_characters: user_character_eve_ids,
-             initial_data: initial_data,
-             events: events
-           }},
-          10
+      initial_data =
+        initial_data
+        |> Map.put(
+          :wormholes,
+          WandererApp.CachedInfo.get_wormhole_types!()
         )
+        |> Map.put(
+          :effects,
+          WandererApp.CachedInfo.get_effects!()
+        )
+        |> Map.put(
+          :system_static_infos,
+          system_static_infos
+        )
+        |> Map.put(:reset, true)
 
-      _ ->
+      Process.send_after(
+        self(),
+        {:map_start,
+         %{
+           map_id: map_id,
+           map_user_settings: map_user_settings,
+           user_characters: user_character_eve_ids,
+           initial_data: initial_data,
+           events: events
+         }},
+        10
+      )
+    else
+      error ->
+        Logger.error(fn -> "map_start_error: #{error}" end)
         Process.send_after(self(), :no_access, 10)
     end
   end
+
+  defp on_map_started(_map_id, _current_user, _user_permissions),
+    do: Process.send_after(self(), :no_access, 10)
 
   defp _set_autopilot_waypoint(
          current_user,

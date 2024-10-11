@@ -3,7 +3,17 @@ defmodule WandererApp.MapUserSettingsRepo do
 
   @default_form_data %{"select_on_spash" => "false"}
 
-  def get(map_id, user_id), do: WandererApp.Api.MapUserSettings.by_user_id(map_id, user_id)
+  def get(map_id, user_id) do
+    map_id
+    |> WandererApp.Api.MapUserSettings.by_user_id(user_id)
+    |> case do
+      {:ok, settings} ->
+        {:ok, settings}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
 
   def get!(map_id, user_id) do
     WandererApp.Api.MapUserSettings.by_user_id(map_id, user_id)
