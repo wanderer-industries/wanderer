@@ -1627,8 +1627,16 @@ defmodule WandererApp.Map.Server.Impl do
             solar_system_target: location.solar_system_id
           })
 
-        broadcast!(map_id, :add_connection, connection)
         WandererApp.Map.add_connection(map_id, connection)
+
+        broadcast!(map_id, :add_connection, connection)
+        broadcast!(map_id, :maybe_link_signature, %{
+          character_id: character_id,
+          solar_system_source: old_location.solar_system_id,
+          solar_system_target: location.solar_system_id,
+        })
+
+        :ok
 
       {:error, error} ->
         @logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)

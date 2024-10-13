@@ -118,6 +118,10 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               // do nothing here
               break;
 
+            case Commands.linkSignatureToSystem:
+              // do nothing here
+              break;
+
             default:
               console.warn(`Map handlers: Unknown command: ${type}`, data);
               break;

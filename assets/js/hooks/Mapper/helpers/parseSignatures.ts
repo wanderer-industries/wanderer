@@ -1,4 +1,4 @@
-import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
+import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
 import { SystemSignature } from '@/hooks/Mapper/types';
 
 export const parseSignatures = (value: string, availableKeys: string[]): SystemSignature[] => {

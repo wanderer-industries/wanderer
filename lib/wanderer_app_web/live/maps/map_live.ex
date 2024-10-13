@@ -212,6 +212,67 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
+  def handle_info(
+        %{
+          event: :maybe_link_signature,
+          payload: %{
+            character_id: character_id,
+            solar_system_source: solar_system_source,
+            solar_system_target: solar_system_target,
+          }
+        },
+        %{assigns: %{current_user: current_user, map_id: map_id, map_user_settings: map_user_settings}} = socket
+      ) do
+    is_user_character? =
+      current_user.characters |> Enum.map(& &1.id) |> Enum.member?(character_id)
+
+    link_signature_on_splash? =
+      map_user_settings
+      |> WandererApp.MapUserSettingsRepo.to_form_data!()
+      |> Map.get("link_signature_on_splash", "false")
+      |> String.to_existing_atom()
+
+      {:ok, signatures} =
+        WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+             map_id: map_id,
+             solar_system_id: solar_system_source
+           })
+      |> case do
+        {:ok, system} ->
+          {:ok, get_system_signatures(system.id)}
+        _ ->
+          {:ok, []}
+      end
+
+      # signatures
+      # :
+      # (4) [{…}, {…}, {…}, {…}]
+      # solar_system_source
+      # :
+      # 31000526
+      # solar_system_target
+      # :
+      # 31001819
+      #
+    socket =
+      (is_user_character? && link_signature_on_splash? && not(signatures |> Enum.empty?()))
+      |> case do
+        true ->
+          socket
+          |> push_map_event("link_signature_to_system", %{
+            solar_system_source: solar_system_source,
+            solar_system_target: solar_system_target,
+            signatures: signatures
+          })
+
+        false ->
+          socket
+      end
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info(%{event: :update_map, payload: map_diff}, socket) do
     {:noreply,
      socket
@@ -1048,7 +1109,7 @@ defmodule WandererAppWeb.MapLive do
                   s |> WandererApp.Api.MapSystemSignature.create!()
                 end)
 
-                {:reply, %{signatures: _get_system_signatures(system.id)}, socket}
+                {:reply, %{signatures: get_system_signatures(system.id)}, socket}
 
               _ ->
                 {:reply, %{signatures: []},
@@ -1079,7 +1140,7 @@ defmodule WandererAppWeb.MapLive do
            solar_system_id: solar_system_id |> String.to_integer()
          }) do
       {:ok, system} ->
-        {:reply, %{signatures: _get_system_signatures(system.id)}, socket}
+        {:reply, %{signatures: get_system_signatures(system.id)}, socket}
 
       _ ->
         {:reply, %{signatures: []}, socket}
@@ -1530,7 +1591,7 @@ defmodule WandererAppWeb.MapLive do
         user_settings_form,
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
-    settings = user_settings_form |> Map.take(["select_on_spash"]) |> Jason.encode!()
+    settings = user_settings_form |> Map.take(["select_on_spash", "link_signature_on_splash"]) |> Jason.encode!()
 
     {:ok, user_settings} =
       WandererApp.MapUserSettingsRepo.create_or_update(map_id, current_user.id, settings)
@@ -1540,7 +1601,56 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("noop", _, socket), do: {:noreply, socket}
+  def handle_event(
+        "link_signature_to_system",
+        %{
+          "signature_eve_id" => signature_eve_id,
+          "solar_system_source" => solar_system_source,
+          "solar_system_target" => solar_system_target
+        },
+        socket
+      ) do
+
+    socket
+    |> _check_user_permissions(:update_system)
+    |> case do
+      true ->
+        case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+                map_id: socket.assigns.map_id,
+                solar_system_id: solar_system_source
+              }) do
+          {:ok, system} ->
+            first_character_eve_id =
+              Map.get(socket.assigns, :user_characters, []) |> List.first()
+
+            case not is_nil(first_character_eve_id) do
+              true ->
+                WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
+                |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
+                |> Enum.each(fn s ->
+                  s
+                  |> WandererApp.Api.MapSystemSignature.update_linked_system(%{linked_system_id: solar_system_target})
+                end)
+
+                {:noreply, socket}
+
+              _ ->
+                {:noreply,
+                  socket
+                  |> put_flash(
+                    :error,
+                    "You should enable tracking for at least one character to work with signatures."
+                  )}
+            end
+
+          _ ->
+            {:noreply, socket}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
   @impl true
   def handle_event("show_activity", _, socket) do
@@ -1584,6 +1694,9 @@ defmodule WandererAppWeb.MapLive do
        timeout: 100
      })}
   end
+
+  @impl true
+  def handle_event("noop", _, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event(event, body, socket) do
@@ -1816,11 +1929,11 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
-  defp _get_system_signatures(system_id),
+  defp get_system_signatures(system_id),
     do:
       system_id
       |> WandererApp.Api.MapSystemSignature.by_system_id!()
-      |> Enum.map(fn %{updated_at: updated_at} = s ->
+      |> Enum.map(fn %{updated_at: updated_at, linked_system_id: linked_system_id} = s ->
         s
         |> Map.take([
           :system_id,
@@ -1832,6 +1945,7 @@ defmodule WandererAppWeb.MapLive do
           :group,
           :updated_at
         ])
+        |> Map.put(:linked_system, get_system_static_info(linked_system_id))
         |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
       end)
 
@@ -1897,14 +2011,7 @@ defmodule WandererAppWeb.MapLive do
          } = _system,
          _include_static_data? \\ true
        ) do
-    system_static_info =
-      case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
-        {:ok, system_static_info} ->
-          map_ui_system_static_info(system_static_info)
-
-        _ ->
-          %{}
-      end
+    system_static_info = get_system_static_info(solar_system_id)
 
     %{
       id: "#{solar_system_id}",
@@ -1918,6 +2025,18 @@ defmodule WandererAppWeb.MapLive do
       tag: tag,
       visible: visible
     }
+  end
+
+  defp get_system_static_info(nil), do: nil
+
+  defp get_system_static_info(solar_system_id) do
+    case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+      {:ok, system_static_info} ->
+        map_ui_system_static_info(system_static_info)
+
+      _ ->
+        %{}
+    end
   end
 
   defp map_ui_system_static_info(nil), do: %{}

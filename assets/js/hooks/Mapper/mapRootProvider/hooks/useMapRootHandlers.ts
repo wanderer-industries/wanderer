@@ -27,6 +27,8 @@ import {
   useRoutes,
 } from './api';
 
+import { emitMapEvent } from '@/hooks/Mapper/events';
+
 export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapInit = useMapInit();
   const { addSystems, removeSystems, updateSystems } = useCommandsSystems();
@@ -91,6 +93,10 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
 
             case Commands.selectSystem:
               // do nothing here
+              break;
+
+            case Commands.linkSignatureToSystem:
+              emitMapEvent({ name: Commands.linkSignatureToSystem, data });
               break;
 
             case Commands.killsUpdated:

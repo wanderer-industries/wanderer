@@ -23,6 +23,7 @@ export enum Commands {
   routes = 'routes',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
+  linkSignatureToSystem = 'link_signature_to_system',
 }
 
 export type Command =
@@ -42,7 +43,8 @@ export type Command =
   | Commands.killsUpdated
   | Commands.routes
   | Commands.selectSystem
-  | Commands.centerSystem;
+  | Commands.centerSystem
+  | Commands.linkSignatureToSystem;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -75,6 +77,11 @@ export type CommandRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandSelectSystem = string | undefined;
 export type CommandCenterSystem = string | undefined;
+export type CommandLinkSignatureToSystem = {
+  solar_system_source: number;
+  solar_system_target: number;
+  signatures: any[];
+};
 
 export interface CommandData {
   [Commands.init]: CommandInit;
@@ -94,6 +101,7 @@ export interface CommandData {
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
   [Commands.centerSystem]: CommandCenterSystem;
+  [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
 }
 
 export interface MapHandlers {
@@ -129,6 +137,7 @@ export enum OutCommand {
   addCharacter = 'add_character',
   openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
+  linkSignatureToSystem = 'link_signature_to_system',
 
   // Only UI commands
   openSettings = 'open_settings',

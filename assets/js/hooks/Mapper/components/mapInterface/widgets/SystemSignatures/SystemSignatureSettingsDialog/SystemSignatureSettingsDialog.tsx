@@ -5,6 +5,14 @@ import { Checkbox } from 'primereact/checkbox';
 
 export type Setting = { key: string; name: string; value: boolean };
 
+export const COSMIC_SIGNATURE = 'Cosmic Signature';
+export const COSMIC_ANOMALY = 'Cosmic Anomaly';
+export const DEPLOYABLE = 'Deployable';
+export const STRUCTURE = 'Structure';
+export const STARBASE = 'Starbase';
+export const SHIP = 'Ship';
+export const DRONE = 'Drone';
+
 interface SystemSignatureSettingsDialogProps {
   settings: Setting[];
   onSave: (settings: Setting[]) => void;

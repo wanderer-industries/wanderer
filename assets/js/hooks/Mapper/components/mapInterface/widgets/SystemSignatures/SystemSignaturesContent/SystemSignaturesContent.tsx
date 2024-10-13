@@ -24,6 +24,7 @@ import {
   renderIcon,
   renderName,
   renderTimeLeft,
+  renderLinkedSystem,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
 // import { PrimeIcons } from 'primereact/api';
 import useLocalStorageState from 'use-local-storage-state';
@@ -41,8 +42,10 @@ const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
 interface SystemSignaturesContentProps {
   systemId: string;
   settings: Setting[];
+  selectable?: boolean;
+  onSelect?: (signatures: SystemSignature[]) => void;
 }
-export const SystemSignaturesContent = ({ systemId, settings }: SystemSignaturesContentProps) => {
+export const SystemSignaturesContent = ({ systemId, settings, selectable, onSelect }: SystemSignaturesContentProps) => {
   const { outCommand } = useMapRootState();
 
   const [signatures, setSignatures, signaturesRef] = useRefState<SystemSignature[]>([]);
@@ -92,25 +95,25 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
     setSignatures(signatures);
   }, [outCommand, systemId]);
 
-  const updateSignatures = useCallback(
-    async (newSignatures: SystemSignature[], updateOnly: boolean) => {
-      const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures, updateOnly);
+  // const updateSignatures = useCallback(
+  //   async (newSignatures: SystemSignature[], updateOnly: boolean) => {
+  //     const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures, updateOnly);
 
-      const { signatures: updatedSignatures } = await outCommand({
-        type: OutCommand.updateSignatures,
-        data: {
-          system_id: systemId,
-          added,
-          updated,
-          removed,
-        },
-      });
+  //     const { signatures: updatedSignatures } = await outCommand({
+  //       type: OutCommand.updateSignatures,
+  //       data: {
+  //         system_id: systemId,
+  //         added,
+  //         updated,
+  //         removed,
+  //       },
+  //     });
 
-      setSignatures(() => updatedSignatures);
-      setSelectedSignatures([]);
-    },
-    [outCommand, systemId],
-  );
+  //     setSignatures(() => updatedSignatures);
+  //     setSelectedSignatures([]);
+  //   },
+  //   [outCommand, systemId],
+  // );
 
   const handleUpdateSignatures = useCallback(
     async (newSignatures: SystemSignature[], updateOnly: boolean) => {
@@ -133,6 +136,9 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
   );
 
   const handleDeleteSelected = useCallback(async () => {
+    if (selectable) {
+      return;
+    }
     if (selectedSignatures.length === 0) {
       return;
     }
@@ -141,7 +147,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
       signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)),
       false,
     );
-  }, [handleUpdateSignatures, signatures, selectedSignatures]);
+  }, [handleUpdateSignatures, selectable, signatures, selectedSignatures]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
@@ -157,11 +163,20 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
     setAskUser(false);
   }, [parsedSignatures, handleUpdateSignatures]);
 
+  const handleSelectSignatures = useCallback(e => {
+    setSelectedSignatures(e.value);
+    onSelect?.(e.value);
+  }, []);
+
   useHotkey(true, ['a'], handleSelectAll);
 
   useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
 
   useEffect(() => {
+    if (selectable) {
+      return;
+    }
+
     if (!clipboardContent) {
       return;
     }
@@ -179,7 +194,7 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
       setParsedSignatures(newSignatures);
       setAskUser(true);
     }
-  }, [clipboardContent]);
+  }, [clipboardContent, selectable]);
 
   useEffect(() => {
     if (!systemId) {
@@ -240,10 +255,10 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
               className={classes.Table}
               value={filteredSignatures}
               size="small"
-              selectionMode="multiple"
+              // selectionMode={selectable ? 'multiple' : 'single'}
               selection={selectedSignatures}
               metaKeySelection
-              onSelectionChange={e => setSelectedSignatures(e.value)}
+              onSelectionChange={handleSelectSignatures}
               dataKey="eve_id"
               tableClassName="w-full select-none"
               resizableColumns={false}
@@ -297,6 +312,18 @@ export const SystemSignaturesContent = ({ systemId, settings }: SystemSignatures
                 hidden={compact || medium}
                 sortable
               ></Column>
+              {!selectable && (
+                <Column
+                  field="linked_system"
+                  header="Linked System"
+                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                  body={renderLinkedSystem}
+                  style={{ maxWidth: nameColumnWidth }}
+                  hidden={compact}
+                  sortable
+                ></Column>
+              )}
+
               <Column
                 field="updated_at"
                 header="Updated"

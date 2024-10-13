@@ -1,7 +1,7 @@
 defmodule WandererApp.MapUserSettingsRepo do
   use WandererApp, :repository
 
-  @default_form_data %{"select_on_spash" => "false"}
+  @default_form_data %{"select_on_spash" => "false", "link_signature_on_splash" => "false"}
 
   def get(map_id, user_id) do
     map_id
