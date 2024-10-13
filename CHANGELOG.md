@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.6.0](https://github.com/wanderer-industries/wanderer/compare/v1.5.0...v1.6.0) (2024-10-13)
+
+
+
+
+### Features:
+
+* Map: Link signature on splash
+
 ## [v1.5.0](https://github.com/wanderer-industries/wanderer/compare/v1.4.0...v1.5.0) (2024-10-11)
 
 
