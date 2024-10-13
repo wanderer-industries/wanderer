@@ -163,10 +163,13 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
     setAskUser(false);
   }, [parsedSignatures, handleUpdateSignatures]);
 
-  const handleSelectSignatures = useCallback(e => {
-    setSelectedSignatures(e.value);
-    onSelect?.(e.value);
-  }, []);
+  const handleSelectSignatures = useCallback(
+    e => {
+      setSelectedSignatures(e.value);
+      onSelect?.(e.value);
+    },
+    [onSelect],
+  );
 
   useHotkey(true, ['a'], handleSelectAll);
 
@@ -255,7 +258,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
               className={classes.Table}
               value={filteredSignatures}
               size="small"
-              // selectionMode={selectable ? 'multiple' : 'single'}
+              selectionMode={selectable ? 'single' : 'multiple'}
               selection={selectedSignatures}
               metaKeySelection
               onSelectionChange={handleSelectSignatures}
@@ -312,17 +315,15 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
                 hidden={compact || medium}
                 sortable
               ></Column>
-              {!selectable && (
-                <Column
-                  field="linked_system"
-                  header="Linked System"
-                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-                  body={renderLinkedSystem}
-                  style={{ maxWidth: nameColumnWidth }}
-                  hidden={compact}
-                  sortable
-                ></Column>
-              )}
+              <Column
+                field="linked_system"
+                header="Linked System"
+                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                body={renderLinkedSystem}
+                style={{ maxWidth: nameColumnWidth }}
+                hidden={compact}
+                sortable
+              ></Column>
 
               <Column
                 field="updated_at"
