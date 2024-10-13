@@ -43,7 +43,7 @@ interface SystemSignaturesContentProps {
   systemId: string;
   settings: Setting[];
   selectable?: boolean;
-  onSelect?: (signatures: SystemSignature[]) => void;
+  onSelect?: (signature: SystemSignature) => void;
 }
 export const SystemSignaturesContent = ({ systemId, settings, selectable, onSelect }: SystemSignaturesContentProps) => {
   const { outCommand } = useMapRootState();

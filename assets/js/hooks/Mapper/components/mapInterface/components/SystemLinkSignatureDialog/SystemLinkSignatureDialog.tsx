@@ -21,8 +21,6 @@ const signatureSettings: Setting[] = [{ key: COSMIC_SIGNATURE, name: 'Show Cosmi
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const { outCommand } = useMapRootState();
 
-  console.log(data);
-
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
 
@@ -31,8 +29,8 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
   }, [setVisible]);
 
   const handleSelect = useCallback(
-    (signatures: SystemSignature[]) => {
-      if (!signatures.length) {
+    (signature: SystemSignature) => {
+      if (!signature) {
         return;
       }
 
@@ -42,7 +40,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         type: OutCommand.linkSignatureToSystem,
         data: {
           ...data,
-          signature_eve_id: signatures[0].eve_id,
+          signature_eve_id: signature.eve_id,
         },
       });
       setVisible(false);
