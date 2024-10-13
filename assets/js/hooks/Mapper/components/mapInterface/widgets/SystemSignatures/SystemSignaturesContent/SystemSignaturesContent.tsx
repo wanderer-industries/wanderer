@@ -165,10 +165,13 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
 
   const handleSelectSignatures = useCallback(
     e => {
-      setSelectedSignatures(e.value);
-      onSelect?.(e.value);
+      if (selectable) {
+        onSelect?.(e.value);
+      } else {
+        setSelectedSignatures(e.value);
+      }
     },
-    [onSelect],
+    [onSelect, selectable],
   );
 
   useHotkey(true, ['a'], handleSelectAll);
