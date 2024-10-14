@@ -20,52 +20,7 @@
 
 * Map: Link signature on splash
 
-## [v1.9.0](https://github.com/wanderer-industries/wanderer/compare/v1.8.0...v1.9.0) (2024-10-13)
-
-
-
-
-### Features:
-
-* Map: Link signature on splash
-
-## [v1.8.0](https://github.com/wanderer-industries/wanderer/compare/v1.7.0...v1.8.0) (2024-10-13)
-
-
-
-
-### Features:
-
-* Map: Link signature on splash
-
-## [v1.7.0](https://github.com/wanderer-industries/wanderer/compare/v1.6.0...v1.7.0) (2024-10-13)
-
-
-
-
-### Features:
-
-* Map: Link signature on splash
-
-## [v1.6.0](https://github.com/wanderer-industries/wanderer/compare/v1.5.0...v1.6.0) (2024-10-13)
-
-
-
-
-### Features:
-
-* Map: Link signature on splash
-
 ## [v1.5.0](https://github.com/wanderer-industries/wanderer/compare/v1.4.0...v1.5.0) (2024-10-11)
-
-
-
-
-### Features:
-
-* Map: Follow Character on Map and auto select their current system
-
-## [v1.4.0](https://github.com/wanderer-industries/wanderer/compare/v1.3.6...v1.4.0) (2024-10-11)
 
 
 
@@ -83,35 +38,6 @@
 
 * Signatures: Signatures update fixes
 
-## [v1.3.5](https://github.com/wanderer-industries/wanderer/compare/v1.3.4...v1.3.5) (2024-10-09)
-
-
-
-
-### Bug Fixes:
-
-* Signatures: Signatures update fixes
-
-## [v1.3.4](https://github.com/wanderer-industries/wanderer/compare/v1.3.3...v1.3.4) (2024-10-09)
-
-
-
-
-## [v1.3.3](https://github.com/wanderer-industries/wanderer/compare/v1.3.2...v1.3.3) (2024-10-08)
-
-
-
-
-## [v1.3.2](https://github.com/wanderer-industries/wanderer/compare/v1.3.1...v1.3.2) (2024-10-07)
-
-
-
-
-## [v1.3.1](https://github.com/wanderer-industries/wanderer/compare/v1.3.0...v1.3.1) (2024-10-07)
-
-
-
-
 ## [v1.3.0](https://github.com/wanderer-industries/wanderer/compare/v1.2.10...v1.3.0) (2024-10-07)
 
 
@@ -124,26 +50,6 @@
 * Map: Remove resizible and fix styles of column sorting
 
 * Map: Revision of sorting from also adding ability to sort all columns
-
-## [v1.2.10](https://github.com/wanderer-industries/wanderer/compare/v1.2.9...v1.2.10) (2024-10-07)
-
-
-
-
-## [v1.2.9](https://github.com/wanderer-industries/wanderer/compare/v1.2.8...v1.2.9) (2024-10-07)
-
-
-
-
-## [v1.2.8](https://github.com/wanderer-industries/wanderer/compare/v1.2.7...v1.2.8) (2024-10-06)
-
-
-
-
-## [v1.2.7](https://github.com/wanderer-industries/wanderer/compare/v1.2.6...v1.2.7) (2024-10-05)
-
-
-
 
 ## [v1.2.6](https://github.com/wanderer-industries/wanderer/compare/v1.2.5...v1.2.6) (2024-10-05)
 
@@ -180,11 +86,6 @@
 ### Bug Fixes:
 
 * Map: Fix map loading after select a different map.
-
-## [v1.2.2](https://github.com/wanderer-industries/wanderer/compare/v1.2.1...v1.2.2) (2024-10-02)
-
-
-
 
 ## [v1.2.1](https://github.com/wanderer-industries/wanderer/compare/v1.2.0...v1.2.1) (2024-10-02)
 
@@ -302,20 +203,10 @@
 
 * docker: Fix DB connection in docker-compose internal network
 
-## [v1.0.7](https://github.com/wanderer-industries/wanderer/compare/v1.0.6...v1.0.7) (2024-09-19)
-
-## [v1.0.6](https://github.com/wanderer-industries/wanderer/compare/v1.0.5...v1.0.6) (2024-09-18)
-
-## [v1.0.5](https://github.com/wanderer-industries/wanderer/compare/v1.0.4...v1.0.5) (2024-09-18)
-
 ## [v1.0.4](https://github.com/wanderer-industries/wanderer/compare/v1.0.3...v1.0.4) (2024-09-18)
 
 ### Bug Fixes
 
 * core: skip search results for failed character info request
-
-## [v1.0.3](https://github.com/wanderer-industries/wanderer/compare/v1.0.2...v1.0.3) (2024-09-18)
-
-## [v1.0.2](https://github.com/wanderer-industries/wanderer/compare/v1.0.1...v1.0.2) (2024-09-18)
 
 ## [v1.0.1](https://github.com/wanderer-industries/wanderer/compare/v1.0.0...v1.0.1) (2024-09-18)
