@@ -333,7 +333,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def delete_systems(
-        %{map_id: map_id, rtree_name: rtree_name} = state,
+        %{map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = state,
         removed_ids,
         user_id,
         character_id
@@ -352,7 +352,7 @@ defmodule WandererApp.Map.Server.Impl do
     removed_ids
     |> Enum.each(fn solar_system_id ->
       map_id
-      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
+      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id, map_opts)
       |> case do
         {:ok, _} ->
           :ok
@@ -801,7 +801,13 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def handle_event({:options_updated, options}, %{map: map, map_id: map_id} = state),
-    do: %{state | map_opts: [layout: options.layout]}
+    do: %{
+      state
+      | map_opts: [
+          layout: options |> Map.get("layout"),
+          store_custom_labels: options |> Map.get("store_custom_labels")
+        ]
+    }
 
   def handle_event({ref, _result}, %{map_id: _map_id} = state) do
     Process.demonitor(ref, [:flush])
@@ -1278,9 +1284,14 @@ defmodule WandererApp.Map.Server.Impl do
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
 
-    map_options = WandererApp.Map.get_map_options!(initial_map)
+    {:ok, map_options} = WandererApp.MapRepo.options_to_form_data(initial_map)
 
-    %{state | map: map, map_opts: [layout: map_options |> Map.get("layout")]}
+    map_opts = [
+      layout: map_options |> Map.get("layout"),
+      store_custom_labels: map_options |> Map.get("store_custom_labels")
+    ]
+
+    %{state | map: map, map_opts: map_opts}
   end
 
   defp _init_map_systems(state, [] = _systems), do: state
@@ -1630,10 +1641,11 @@ defmodule WandererApp.Map.Server.Impl do
         WandererApp.Map.add_connection(map_id, connection)
 
         broadcast!(map_id, :add_connection, connection)
+
         broadcast!(map_id, :maybe_link_signature, %{
           character_id: character_id,
           solar_system_source: old_location.solar_system_id,
-          solar_system_target: location.solar_system_id,
+          solar_system_target: location.solar_system_id
         })
 
         :ok

@@ -1,6 +1,8 @@
 defmodule WandererApp.MapRepo do
   use WandererApp, :repository
 
+  @default_map_options %{"layout" => "left_to_right", "store_custom_labels" => false}
+
   def get(map_id, relationships \\ []) do
     map_id
     |> WandererApp.Api.Map.by_id()
@@ -27,5 +29,18 @@ defmodule WandererApp.MapRepo do
       _ ->
         {:error, :map_not_found}
     end
+  end
+
+  def update_options(map, options),
+    do:
+      map
+      |> WandererApp.Api.Map.update_options(%{options: Jason.encode!(options)})
+
+  def options_to_form_data(%{options: options} = _map_options) when not is_nil(options), do: {:ok, Jason.decode!(options)}
+  def options_to_form_data(_), do: {:ok, @default_map_options}
+
+  def options_to_form_data!(options) do
+    {:ok, data} = options_to_form_data(options)
+    data
   end
 end

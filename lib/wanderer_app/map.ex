@@ -52,15 +52,6 @@ defmodule WandererApp.Map do
     end
   end
 
-  def get_map_options!(map) do
-    map
-    |> Map.get(:options)
-    |> case do
-      nil -> %{"layout" => "left_to_right"}
-      options -> Jason.decode!(options)
-    end
-  end
-
   def update_map(map_id, map_update) do
     Cachex.get_and_update(:map_cache, map_id, fn map ->
       case map do

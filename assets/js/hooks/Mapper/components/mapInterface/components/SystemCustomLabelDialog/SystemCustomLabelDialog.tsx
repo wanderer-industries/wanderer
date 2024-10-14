@@ -7,7 +7,7 @@ import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { IconField } from 'primereact/iconfield';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
-import { WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { WdImageSize, WdImgButton, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 interface SystemCustomLabelDialog {
   systemId: string;
@@ -79,14 +79,14 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
 
   // @ts-ignore
   const handleInput = useCallback(e => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9[\](){}]/g, '');
   }, []);
 
   return (
     <Dialog
       header="Edit label"
       visible={visible}
-      draggable={false}
+      draggable={true}
       style={{ width: '250px' }}
       onHide={onHide}
       onShow={onShow}
@@ -100,9 +100,13 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
               <IconField>
                 {label !== '' && (
                   <WdImgButton
-                    className="pi pi-trash p-input-icon"
+                    className="pi pi-trash text-red-400"
                     textSize={WdImageSize.large}
-                    tooltip={{ content: 'Reset label' }}
+                    tooltip={{
+                      content: 'Remove custom label',
+                      className: 'pi p-input-icon',
+                      position: TooltipPosition.top,
+                    }}
                     onClick={handleReset}
                   />
                 )}
@@ -111,7 +115,7 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
                   aria-describedby="username-help"
                   autoComplete="off"
                   value={label}
-                  maxLength={3}
+                  maxLength={5}
                   onChange={e => setLabel(e.target.value)}
                   // @ts-expect-error
                   ref={inputRef}

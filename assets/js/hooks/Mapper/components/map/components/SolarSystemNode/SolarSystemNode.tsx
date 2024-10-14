@@ -29,7 +29,7 @@ const SpaceToClass: Record<string, string> = {
 };
 
 const sortedLabels = (labels: string[]) => {
-  if (labels === null) {
+  if (!labels) {
     return [];
   }
 

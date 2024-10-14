@@ -46,7 +46,7 @@ export const useLabelsMenu = (
     }
 
     // const labels = getLabels(system.labels);
-    const hasLabels = labels.list.length > 0;
+    const hasLabels = labels?.list?.length > 0;
     const statusList = hasLabels ? LABELS_ORDER : LABELS_ORDER.slice(1);
 
     return [

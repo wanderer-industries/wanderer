@@ -66,7 +66,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={handleAddCharacter}
           >
-            <i className="pi pi-user-plus text-lg"></i>
+            <i className="pi pi-user-plus"></i>
           </button>
         </WdTooltipWrapper>
 
@@ -76,7 +76,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={handleOpenUserSettings}
           >
-            <i className="pi pi-cog text-lg"></i>
+            <i className="pi pi-cog"></i>
           </button>
         </WdTooltipWrapper>
 
@@ -86,7 +86,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={onShowOnTheMap}
           >
-            <i className="pi pi-hashtag text-lg"></i>
+            <i className="pi pi-hashtag"></i>
           </button>
         </WdTooltipWrapper>
       </div>
@@ -103,11 +103,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={toggleKSpace}
           >
-            {interfaceSettings.isShowKSpace ? (
-              <i className="pi pi-heart-fill text-lg"></i>
-            ) : (
-              <i className="pi pi-heart text-lg"></i>
-            )}
+            <i className={interfaceSettings.isShowKSpace ? 'hero-cloud-solid' : 'hero-cloud'}></i>
           </button>
         </WdTooltipWrapper>
 
@@ -117,7 +113,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={toggleMinimap}
           >
-            {isShowMinimap ? <i className="pi pi-eye text-lg"></i> : <i className="pi pi-eye-slash text-lg"></i>}
+            <i className={isShowMinimap ? 'pi pi-eye' : 'pi pi-eye-slash'}></i>
           </button>
         </WdTooltipWrapper>
 
@@ -127,7 +123,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={toggleMenu}
           >
-            <i className="pi pi-window-minimize text-lg"></i>
+            <i className="pi pi-window-minimize"></i>
           </button>
         </WdTooltipWrapper>
       </div>

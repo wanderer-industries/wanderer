@@ -243,16 +243,23 @@
         for={@options_form}
         phx-change="update_options"
       >
-        <div class="stat-title">Map systems layout</div>
-        <div class="stat-value text-white">
-          <.input
-            type="select"
-            field={f[:layout]}
-            class="p-dropdown p-component p-inputwrapper"
-            placeholder="Map default layout"
-            options={@layout_options}
-          />
+        <div>
+          <div class="stat-title">Map systems layout</div>
+          <div class="stat-value text-white">
+            <.input
+              type="select"
+              field={f[:layout]}
+              class="p-dropdown p-component p-inputwrapper"
+              placeholder="Map default layout"
+              options={@layout_options}
+            />
+          </div>
         </div>
+        <.input
+          type="checkbox"
+          field={f[:store_custom_labels]}
+          label="Store system custom labels"
+        />
       </.form>
     </:actions>
   </.header>

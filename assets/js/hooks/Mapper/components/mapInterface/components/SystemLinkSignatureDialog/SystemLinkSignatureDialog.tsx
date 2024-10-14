@@ -45,7 +45,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       });
       setVisible(false);
     },
-    [setVisible],
+    [data, setVisible],
   );
 
   return (

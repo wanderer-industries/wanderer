@@ -80,7 +80,6 @@ export type CommandCenterSystem = string | undefined;
 export type CommandLinkSignatureToSystem = {
   solar_system_source: number;
   solar_system_target: number;
-  signatures: any[];
 };
 
 export interface CommandData {
