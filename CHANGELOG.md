@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.11.0](https://github.com/wanderer-industries/wanderer/compare/v1.10.0...v1.11.0) (2024-10-14)
+
+
+
+
+### Features:
+
+* Map: Add map level option to store custom labels
+
 ## [v1.10.0](https://github.com/wanderer-industries/wanderer/compare/v1.9.0...v1.10.0) (2024-10-13)
 
 
