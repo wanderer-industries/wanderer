@@ -4,57 +4,14 @@ defmodule WandererAppWeb.MapLive do
   require Logger
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(params, _session, socket) when is_connected?(socket) do
     socket =
       with %{"slug" => map_slug} <- params do
-        socket
-        |> _init_state(map_slug)
-      else
-        _ ->
-          # redirect back to main
-          socket
-          |> assign(
-            map_loaded?: false,
-            maps_loading: false,
-            selected_subscription: nil,
-            maps: [],
-            map: nil,
-            map_id: nil,
-            map_slug: nil,
-            user_permissions: nil,
-            form: to_form(%{"map_slug" => nil})
-          )
-      end
-
-    {:ok, socket |> assign(server_online: false)}
-  end
-
-  defp _init_state(socket, map_slug) do
-    current_user = socket.assigns.current_user
-
-    ErrorTracker.set_context(%{user_id: current_user.id})
-    Task.async(fn -> _get_available_maps(current_user) end)
-
-    map_slug
-    |> WandererApp.Api.Map.get_map_by_slug()
-    |> _load_user_permissions(current_user)
-    |> case do
-      {:ok,
-       %{
-         id: map_id,
-         deleted: false
-       } = map} ->
-        Process.send_after(self(), {:init_map, map}, 10)
+        Process.send_after(self(), {:load_map, map_slug}, Enum.random(10..200))
 
         socket
         |> assign(
-          map: map,
-          map_id: map_id,
-          map_loaded?: false,
           maps_loading: true,
-          maps: [],
-          user_permissions: nil,
-          selected_subscription: nil,
           map_slug: map_slug,
           form: to_form(%{"map_slug" => map_slug})
         )
@@ -63,43 +20,47 @@ defmodule WandererAppWeb.MapLive do
           attr: "data-loading",
           timeout: 2000
         })
+      else
+        _ ->
+          # redirect back to main
+          socket
+          |> assign(
+            maps_loading: false,
+            map_id: nil,
+            map_slug: nil,
+            form: to_form(%{"map_slug" => nil})
+          )
+      end
 
-      {:ok,
-       %{
-         deleted: true
-       } = _map} ->
-        socket
-        |> put_flash(
-          :error,
-          "Map was deleted by owner or administrator."
-        )
-        |> push_navigate(to: ~p"/maps")
+    {:ok,
+     socket
+     |> assign(
+       map_loaded?: false,
+       maps: [],
+       server_online: false,
+       selected_subscription: nil,
+       user_permissions: nil
+     )}
+  end
 
-      {:error, _} ->
-        socket
-        |> put_flash(
-          :error,
-          "Something went wrong. Please try one more time or submit an issue."
-        )
-        |> push_navigate(to: ~p"/maps")
-    end
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(
+       maps_loading: false,
+       map_loaded?: false,
+       maps: [],
+       server_online: false,
+       selected_subscription: nil,
+       user_permissions: nil,
+       form: to_form(%{"map_slug" => nil})
+     )}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-  end
-
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:active_page, :map)
-  end
-
-  defp apply_action(socket, :add_system, _params) do
-    socket
-    |> assign(:active_page, :map)
-    |> assign(:page_title, "Add System")
-    |> assign(:add_system_form, to_form(%{"system_id" => nil}))
   end
 
   @impl true
@@ -435,7 +396,49 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
-  def handle_info({:init_map, map}, %{assigns: %{current_user: current_user}} = socket) do
+  def handle_info({:load_map, map_slug}, %{assigns: %{current_user: current_user}} = socket) do
+    ErrorTracker.set_context(%{user_id: current_user.id})
+    Task.async(fn -> _get_available_maps(current_user) end)
+
+    map_slug
+    |> WandererApp.MapRepo.get_by_slug_with_permissions(current_user)
+    |> case do
+      {:ok,
+       %{
+         id: map_id,
+         deleted: false
+       } = map} ->
+        Process.send_after(self(), {:init_map, map}, 10)
+
+        {:noreply, socket}
+
+      {:ok,
+       %{
+         deleted: true
+       } = _map} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Map was deleted by owner or administrator."
+         )
+         |> push_navigate(to: ~p"/maps")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Something went wrong. Please try one more time or submit an issue."
+         )
+         |> push_navigate(to: ~p"/maps")}
+    end
+  end
+
+  def handle_info(
+        {:init_map, map},
+        %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket
+      ) do
     with %{
            id: map_id,
            deleted: false,
@@ -473,38 +476,35 @@ defmodule WandererAppWeb.MapLive do
       cond do
         (only_tracked_characters and can_track? and all_character_tracked?) or
             (not only_tracked_characters and can_view?) ->
-          Process.send_after(
-            self(),
-            {:map_init,
-             %{
-               map_id: map_id,
-               page_title: map_name,
-               user_permissions: user_permissions,
-               tracked_character_ids: tracked_character_ids
-             }},
-            10
-          )
+          Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+          {:ok, ui_loaded} = WandererApp.Cache.get_and_remove("map_#{map_slug}:ui_loaded", false)
+
+          if ui_loaded do
+            maybe_start_map(map_id)
+          end
+
+          {:noreply,
+           socket
+           |> assign(
+             map_id: map_id,
+             page_title: map_name,
+             user_permissions: user_permissions,
+             tracked_character_ids: tracked_character_ids
+           )}
 
         only_tracked_characters and can_track? and not all_character_tracked? ->
           Process.send_after(self(), :not_all_characters_tracked, 10)
+          {:noreply, socket}
 
         true ->
           Process.send_after(self(), :no_permissions, 10)
+          {:noreply, socket}
       end
     else
       _ ->
         Process.send_after(self(), :no_access, 10)
+        {:noreply, socket}
     end
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:map_init, %{map_id: map_id} = initial_data}, socket) do
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-
-    {:noreply,
-     socket
-     |> assign(initial_data)}
   end
 
   def handle_info(
@@ -553,38 +553,16 @@ defmodule WandererAppWeb.MapLive do
         end
       end)
 
-    Process.send_after(
-      self(),
-      {:map_loaded,
-       %{
-         map_id: map_id,
-         initial_data: initial_data
-       }},
-      10
-    )
-
-    {:noreply,
-     socket
-     |> assign(
-       map_user_settings: map_user_settings,
-       user_characters: user_character_eve_ids,
-       has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
-     )}
-  end
-
-  def handle_info(
-        {:map_loaded,
-         %{
-           map_id: map_id,
-           initial_data: initial_data
-         } = _loaded_data},
-        socket
-      ) do
     map_characters = map_id |> WandererApp.Map.list_characters()
 
     {:noreply,
      socket
-     |> assign(map_loaded?: true)
+     |> assign(
+       map_loaded?: true,
+       map_user_settings: map_user_settings,
+       user_characters: user_character_eve_ids,
+       has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+     )
      |> push_map_event(
        "init",
        initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
@@ -671,13 +649,15 @@ defmodule WandererAppWeb.MapLive do
   def handle_info(_event, socket), do: {:noreply, socket}
 
   @impl true
-  def handle_event("ui_loaded", _body, %{assigns: %{map_id: map_id}} = socket) do
-    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+  def handle_event("ui_loaded", _body, %{assigns: %{map_slug: map_slug} = assigns} = socket) do
+    assigns
+    |> Map.get(:map_id)
+    |> case do
+      map_id when not is_nil(map_id) ->
+        maybe_start_map(map_id)
 
-    if map_started do
-      Process.send_after(self(), %{event: :map_started}, 10)
-    else
-      WandererApp.Map.Manager.start_map(map_id)
+      _ ->
+        WandererApp.Cache.insert("map_#{map_slug}:ui_loaded", true)
     end
 
     {:noreply, socket}
@@ -1704,6 +1684,28 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket}
   end
 
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:active_page, :map)
+  end
+
+  defp apply_action(socket, :add_system, _params) do
+    socket
+    |> assign(:active_page, :map)
+    |> assign(:page_title, "Add System")
+    |> assign(:add_system_form, to_form(%{"system_id" => nil}))
+  end
+
+  defp maybe_start_map(map_id) do
+    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+
+    if map_started do
+      Process.send_after(self(), %{event: :map_started}, 10)
+    else
+      WandererApp.Map.Manager.start_map(map_id)
+    end
+  end
+
   defp on_map_started(
          map_id,
          current_user,
@@ -1830,13 +1832,6 @@ defmodule WandererAppWeb.MapLive do
         :skip
     end
   end
-
-  defp _load_user_permissions({:ok, map}, current_user) do
-    map
-    |> Ash.load([:acls, :user_permissions], actor: current_user)
-  end
-
-  defp _load_user_permissions(error, _current_user), do: error
 
   defp _get_map_data(map_id, include_static_data? \\ true) do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()

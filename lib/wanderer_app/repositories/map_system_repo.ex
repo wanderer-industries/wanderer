@@ -38,7 +38,9 @@ defmodule WandererApp.MapSystemRepo do
   end
 
   def cleanup_labels(%{labels: labels} = system, opts) do
-    store_custom_labels? = Keyword.get(opts, :store_custom_labels, "false") |> String.to_existing_atom()
+    store_custom_labels? =
+      Keyword.get(opts, :store_custom_labels, "false") |> String.to_existing_atom()
+
     labels = get_filtered_labels(labels, store_custom_labels?)
 
     system
@@ -54,10 +56,12 @@ defmodule WandererApp.MapSystemRepo do
       %{"customLabel" => customLabel} = labels when is_binary(customLabel) ->
         %{"customLabel" => customLabel, "labels" => []}
         |> Jason.encode!()
+
       _ ->
         nil
     end
   end
+
   def get_filtered_labels(_, _store_custom_labels), do: nil
 
   def update_name(system, update),
