@@ -508,17 +508,16 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
-  def handle_info(
-        {:map_start,
+  defp map_start(
+         socket,
          %{
            map_id: map_id,
            map_user_settings: map_user_settings,
            user_characters: user_character_eve_ids,
            initial_data: initial_data,
            events: events
-         } = _started_data},
-        socket
-      ) do
+         } = _started_data
+       ) do
     socket =
       events
       |> Enum.reduce(socket, fn event, socket ->
@@ -556,22 +555,21 @@ defmodule WandererAppWeb.MapLive do
 
     map_characters = map_id |> WandererApp.Map.list_characters()
 
-    {:noreply,
-     socket
-     |> assign(
-       map_loaded?: true,
-       map_user_settings: map_user_settings,
-       user_characters: user_character_eve_ids,
-       has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
-     )
-     |> push_map_event(
-       "init",
-       initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
-     )
-     |> push_event("js-exec", %{
-       to: "#map-loader",
-       attr: "data-loaded"
-     })}
+    socket
+    |> assign(
+      map_loaded?: true,
+      map_user_settings: map_user_settings,
+      user_characters: user_character_eve_ids,
+      has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+    )
+    |> push_map_event(
+      "init",
+      initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
+    )
+    |> push_event("js-exec", %{
+      to: "#map-loader",
+      attr: "data-loaded"
+    })
   end
 
   def handle_info(:no_access, socket),
@@ -616,8 +614,7 @@ defmodule WandererAppWeb.MapLive do
          )}
 
       {:map_started_data, started_data} ->
-        Process.send_after(self(), {:map_start, started_data}, 100)
-        {:noreply, socket}
+        {:noreply, socket |> map_start(started_data)}
 
       {:map_error, map_error} ->
         Process.send_after(self(), map_error, 100)
@@ -1412,7 +1409,13 @@ defmodule WandererAppWeb.MapLive do
   def handle_event(
         "add_character",
         _,
-        %{assigns: %{current_user: current_user, map_id: map_id, user_permissions: user_permissions}} = socket
+        %{
+          assigns: %{
+            current_user: current_user,
+            map_id: map_id,
+            user_permissions: user_permissions
+          }
+        } = socket
       ) do
     {:ok, character_settings} =
       case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
@@ -1577,6 +1580,19 @@ defmodule WandererAppWeb.MapLive do
        show_user_settings?: true,
        user_settings_form: user_settings_form |> to_form()
      )}
+  end
+
+  @impl true
+  def handle_event(
+        "get_user_settings",
+        _,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+      {:ok, user_settings} =
+        WandererApp.MapUserSettingsRepo.get!(map_id, current_user.id)
+        |> WandererApp.MapUserSettingsRepo.to_form_data()
+
+    {:reply, %{user_settings: user_settings}, socket}
   end
 
   @impl true
