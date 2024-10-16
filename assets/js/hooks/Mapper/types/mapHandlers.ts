@@ -140,6 +140,9 @@ export enum OutCommand {
 
   // Only UI commands
   openSettings = 'open_settings',
+
+  getUserSettings = 'get_user_settings',
+  updateUserSettings = 'update_user_settings',
 }
 
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;

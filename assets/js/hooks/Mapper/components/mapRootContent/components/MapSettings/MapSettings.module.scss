@@ -1,0 +1,127 @@
+.verticalTabsContainer {
+  display: flex;
+  width: 100%;
+  min-height: 300px;
+
+  :global {
+    .p-tabview {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .p-tabview-panels {
+      padding: 6px 1rem !important;
+      flex-grow: 1;
+    }
+
+    .p-tabview-nav-container {
+      border-right: none;
+      height: 100%;
+    }
+
+    .p-tabview-nav {
+      flex-direction: column;
+      width: 150px;
+      min-height: 100%;
+      border: none;
+
+      li {
+        width: 100%;
+        border-right: 4px solid var(--surface-hover);
+        background-color: var(--surface-card);
+
+        transition: background-color 200ms, border-right-color 200ms;
+
+        &:hover {
+          background-color: var(--surface-hover);
+          border-right: 4px solid var(--surface-100);
+        }
+
+        .p-tabview-nav-link {
+          transition: color 200ms;
+
+          justify-content: flex-end;
+          padding: 10px;
+          //background-color: var(--surface-card);
+          background-color: initial;
+          border: none;
+          color: var(--gray-400);
+
+          border-radius: initial;
+          font-weight: 400;
+          margin: 0;
+        }
+
+        &.p-tabview-selected {
+          background-color: var(--surface-50);
+          border-right: 4px solid var(--primary-color);
+
+          .p-tabview-nav-link {
+            font-weight: 600;
+            color: var(--primary-color);
+          }
+
+          &:hover {
+            //background-color: var(--surface-hover);
+            border-right: 4px solid var(--primary-color);
+          }
+
+        }
+      }
+    }
+
+    .p-tabview-panel {
+      flex-grow: 1;
+    }
+  }
+}
+
+
+.CheckboxContainer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+
+  & > span:nth-child(1) {
+    color: var(--gray-200);
+    font-size: 13px;
+  }
+
+  & > :nth-child(2){
+    border-bottom: 2px dotted #3f3f3f;
+    height: 2px;
+    margin: 0 12px;
+  }
+}
+
+/* Уменьшение размеров InputSwitch с использованием глобальных стилей */
+.smallInputSwitch {
+  height: 100%;
+  display: flex;
+  align-items: center;
+
+  :global {
+    .p-inputswitch {
+      height: 1rem;
+      width: 2rem;
+      &.p-inputswitch-checked {
+        .p-inputswitch-slider::before {
+          transform: translateX(1rem);
+        }
+      }
+
+      &.p-highlight .p-inputswitch-slider:before {
+        transform: translateX(1rem);
+      }
+
+      .p-inputswitch-slider::before {
+        width: 0.8rem;
+        height: 0.8rem;
+        margin-top: -0.4rem;
+        margin-left: -3px;
+      }
+    }
+  }
+
+}
