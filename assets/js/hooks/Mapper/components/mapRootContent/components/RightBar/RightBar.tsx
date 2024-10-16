@@ -8,9 +8,10 @@ import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 interface RightBarProps {
   onShowOnTheMap?: () => void;
+  onShowMapSettings?: () => void;
 }
 
-export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
+export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) => {
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
 
   const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
@@ -18,13 +19,6 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
   const handleAddCharacter = useCallback(() => {
     outCommand({
       type: OutCommand.addCharacter,
-      data: null,
-    });
-  }, [outCommand]);
-
-  const handleOpenUserSettings = useCallback(() => {
-    outCommand({
-      type: OutCommand.openUserSettings,
       data: null,
     });
   }, [outCommand]);
@@ -70,16 +64,6 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
           </button>
         </WdTooltipWrapper>
 
-        <WdTooltipWrapper content="User settings" position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={handleOpenUserSettings}
-          >
-            <i className="pi pi-cog"></i>
-          </button>
-        </WdTooltipWrapper>
-
         <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
@@ -92,6 +76,16 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
+        <WdTooltipWrapper content="User settings" position={TooltipPosition.left}>
+          <button
+            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+            type="button"
+            onClick={onShowMapSettings}
+          >
+            <i className="pi pi-cog"></i>
+          </button>
+        </WdTooltipWrapper>
+
         <WdTooltipWrapper
           content={
             interfaceSettings.isShowKSpace ? 'Hide highlighting Imperial Space' : 'Show highlighting Imperial Space'

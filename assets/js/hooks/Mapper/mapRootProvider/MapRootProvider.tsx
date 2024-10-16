@@ -26,7 +26,13 @@ const INITIAL_DATA: MapRootData = {
   selectedConnections: [],
 };
 
-type InterfaceStoredSettings = {
+export enum InterfaceStoredSettingsProps {
+  isShowMenu = 'isShowMenu',
+  isShowMinimap = 'isShowMinimap',
+  isShowKSpace = 'isShowKSpace',
+}
+
+export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowMinimap: boolean;
   isShowKSpace: boolean;

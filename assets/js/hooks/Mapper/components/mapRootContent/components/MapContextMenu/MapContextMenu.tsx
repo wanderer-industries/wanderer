@@ -8,10 +8,11 @@ import { MenuItem } from 'primereact/menuitem';
 
 export interface MapContextMenuProps {
   onShowOnTheMap?: () => void;
+  onShowMapSettings?: () => void;
 }
 
-export const MapContextMenu = ({ onShowOnTheMap }: MapContextMenuProps) => {
-  const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContextMenuProps) => {
+  const { outCommand, setInterfaceSettings } = useMapRootState();
 
   const menuRight = useRef<Menu>(null);
 
@@ -21,13 +22,6 @@ export const MapContextMenu = ({ onShowOnTheMap }: MapContextMenuProps) => {
       data: null,
     });
   }, [outCommand]);
-
-  const toggleMinimap = useCallback(() => {
-    setInterfaceSettings(x => ({
-      ...x,
-      isShowMinimap: !x.isShowMinimap,
-    }));
-  }, [setInterfaceSettings]);
 
   const items = useMemo(() => {
     return [
@@ -43,9 +37,9 @@ export const MapContextMenu = ({ onShowOnTheMap }: MapContextMenuProps) => {
       },
       { separator: true },
       {
-        label: interfaceSettings.isShowMinimap ? 'Hide minimap' : 'Show minimap',
-        icon: `pi ${interfaceSettings.isShowMinimap ? 'pi-eye-slash' : 'pi-eye'}`,
-        command: toggleMinimap,
+        label: 'Settings',
+        icon: `pi pi-cog`,
+        command: onShowMapSettings,
       },
       {
         label: 'Dock menu',
@@ -57,7 +51,7 @@ export const MapContextMenu = ({ onShowOnTheMap }: MapContextMenuProps) => {
           })),
       },
     ] as MenuItem[];
-  }, [handleAddCharacter, interfaceSettings.isShowMinimap, onShowOnTheMap, setInterfaceSettings, toggleMinimap]);
+  }, [handleAddCharacter, onShowMapSettings, onShowOnTheMap, setInterfaceSettings]);
 
   return (
     <div className="ml-1">
