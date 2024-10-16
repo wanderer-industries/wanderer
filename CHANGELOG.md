@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.12.1](https://github.com/wanderer-industries/wanderer/compare/v1.12.0...v1.12.1) (2024-10-16)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix system add error after map page refresh
+
 ## [v1.12.0](https://github.com/wanderer-industries/wanderer/compare/v1.11.5...v1.12.0) (2024-10-16)
 
 
