@@ -489,7 +489,8 @@ defmodule WandererAppWeb.MapLive do
              map_id: map_id,
              page_title: map_name,
              user_permissions: user_permissions,
-             tracked_character_ids: tracked_character_ids
+             tracked_character_ids: tracked_character_ids,
+             only_tracked_characters: only_tracked_characters
            )}
 
         only_tracked_characters and can_track? and not all_character_tracked? ->
@@ -1408,14 +1409,18 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("add_character", _, %{assigns: assigns} = socket) do
+  def handle_event(
+        "add_character",
+        _,
+        %{assigns: %{current_user: current_user, map_id: map_id, user_permissions: user_permissions}} = socket
+      ) do
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: assigns.map_id}) do
+      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
 
-    case assigns.user_permissions.track_character do
+    case user_permissions.track_character do
       true ->
         {:noreply,
          socket
@@ -1424,10 +1429,14 @@ defmodule WandererAppWeb.MapLive do
            character_settings: character_settings
          )
          |> assign_async(:characters, fn ->
-           WandererApp.Maps.load_characters(
-             assigns.map |> Ash.load!(:acls),
+           {:ok, map} =
+             map_id
+             |> WandererApp.MapRepo.get([:acls])
+
+           map
+           |> WandererApp.Maps.load_characters(
              character_settings,
-             assigns.current_user.id
+             current_user.id
            )
          end)}
 
@@ -1447,24 +1456,33 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_event("toggle_track", %{"character-id" => character_id}, socket) do
-    map = socket.assigns.map
-    character_settings = socket.assigns.character_settings
-
+  def handle_event(
+        "toggle_track",
+        %{"character-id" => character_id},
+        %{
+          assigns: %{
+            map_id: map_id,
+            map_slug: map_slug,
+            character_settings: character_settings,
+            current_user: current_user,
+            only_tracked_characters: only_tracked_characters
+          }
+        } = socket
+      ) do
     socket =
       case character_settings |> Enum.find(&(&1.character_id == character_id)) do
         nil ->
           {:ok, map_character_settings} =
             WandererApp.Api.MapCharacterSettings.create(%{
               character_id: character_id,
-              map_id: map.id,
+              map_id: map_id,
               tracked: true
             })
 
           character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
-          :ok = _track_characters([character], map.id, true)
-          :ok = _add_characters([character], map.id, true)
+          :ok = _track_characters([character], map_id, true)
+          :ok = _add_characters([character], map_id, true)
 
           socket
 
@@ -1477,16 +1495,16 @@ defmodule WandererAppWeb.MapLive do
 
               character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
-              :ok = _untrack_characters([character], map.id)
-              :ok = _remove_characters([character], map.id)
+              :ok = _untrack_characters([character], map_id)
+              :ok = _remove_characters([character], map_id)
 
-              if map.only_tracked_characters do
+              if only_tracked_characters do
                 socket
                 |> put_flash(
                   :error,
                   "You should enable tracking for all characters that have access to this map first!"
                 )
-                |> push_navigate(to: ~p"/tracking/#{map.slug}")
+                |> push_navigate(to: ~p"/tracking/#{map_slug}")
               else
                 socket
               end
@@ -1498,8 +1516,8 @@ defmodule WandererAppWeb.MapLive do
 
               character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
-              :ok = _track_characters([character], map.id, true)
-              :ok = _add_characters([character], map.id, true)
+              :ok = _track_characters([character], map_id, true)
+              :ok = _add_characters([character], map_id, true)
 
               socket
           end
@@ -1507,12 +1525,12 @@ defmodule WandererAppWeb.MapLive do
 
     %{result: characters} = socket.assigns.characters
 
-    {:ok, map_characters} = _get_tracked_map_characters(map.id, socket.assigns.current_user)
+    {:ok, map_characters} = _get_tracked_map_characters(map_id, current_user)
 
     user_character_eve_ids = map_characters |> Enum.map(& &1.eve_id)
 
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map.id}) do
+      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
