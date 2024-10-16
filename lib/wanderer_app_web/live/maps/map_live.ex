@@ -66,18 +66,9 @@ defmodule WandererAppWeb.MapLive do
   @impl true
   def handle_info(
         %{event: :map_started},
-        %{
-          assigns: %{
-            current_user: current_user,
-            map_id: map_id,
-            user_permissions: user_permissions
-          }
-        } = socket
-      ) do
-    on_map_started(map_id, current_user, user_permissions)
-
-    {:noreply, socket}
-  end
+        socket
+      ),
+      do: {:noreply, socket |> on_map_started()}
 
   @impl true
   def handle_info(:character_token_invalid, socket),
@@ -508,70 +499,6 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
-  defp map_start(
-         socket,
-         %{
-           map_id: map_id,
-           map_user_settings: map_user_settings,
-           user_characters: user_character_eve_ids,
-           initial_data: initial_data,
-           events: events
-         } = _started_data
-       ) do
-    socket =
-      events
-      |> Enum.reduce(socket, fn event, socket ->
-        case event do
-          {:track_characters, map_characters, track_character} ->
-            :ok = _track_characters(map_characters, map_id, track_character)
-            :ok = _add_characters(map_characters, map_id, track_character)
-            socket
-
-          :invalid_token_message ->
-            socket
-            |> put_flash(
-              :error,
-              "One of your characters has expired token. Please refresh it on characters page."
-            )
-
-          :empty_tracked_characters ->
-            socket
-            |> put_flash(
-              :info,
-              "You should enable tracking for at least one character to work with map."
-            )
-
-          :map_character_limit ->
-            socket
-            |> put_flash(
-              :error,
-              "Map reached its character limit, your characters won't be tracked. Please contact administrator."
-            )
-
-          _ ->
-            socket
-        end
-      end)
-
-    map_characters = map_id |> WandererApp.Map.list_characters()
-
-    socket
-    |> assign(
-      map_loaded?: true,
-      map_user_settings: map_user_settings,
-      user_characters: user_character_eve_ids,
-      has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
-    )
-    |> push_map_event(
-      "init",
-      initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
-    )
-    |> push_event("js-exec", %{
-      to: "#map-loader",
-      attr: "data-loaded"
-    })
-  end
-
   def handle_info(:no_access, socket),
     do:
       {:noreply,
@@ -612,9 +539,6 @@ defmodule WandererAppWeb.MapLive do
            maps_loading: false,
            maps: maps
          )}
-
-      {:map_started_data, started_data} ->
-        {:noreply, socket |> map_start(started_data)}
 
       {:map_error, map_error} ->
         Process.send_after(self(), map_error, 100)
@@ -1588,9 +1512,9 @@ defmodule WandererAppWeb.MapLive do
         _,
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
-      {:ok, user_settings} =
-        WandererApp.MapUserSettingsRepo.get!(map_id, current_user.id)
-        |> WandererApp.MapUserSettingsRepo.to_form_data()
+    {:ok, user_settings} =
+      WandererApp.MapUserSettingsRepo.get!(map_id, current_user.id)
+      |> WandererApp.MapUserSettingsRepo.to_form_data()
 
     {:reply, %{user_settings: user_settings}, socket}
   end
@@ -1740,10 +1664,79 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
+  defp map_start(
+         socket,
+         %{
+           map_id: map_id,
+           map_user_settings: map_user_settings,
+           user_characters: user_character_eve_ids,
+           initial_data: initial_data,
+           events: events
+         } = _started_data
+       ) do
+    socket =
+      events
+      |> Enum.reduce(socket, fn event, socket ->
+        case event do
+          {:track_characters, map_characters, track_character} ->
+            :ok = _track_characters(map_characters, map_id, track_character)
+            :ok = _add_characters(map_characters, map_id, track_character)
+            socket
+
+          :invalid_token_message ->
+            socket
+            |> put_flash(
+              :error,
+              "One of your characters has expired token. Please refresh it on characters page."
+            )
+
+          :empty_tracked_characters ->
+            socket
+            |> put_flash(
+              :info,
+              "You should enable tracking for at least one character to work with map."
+            )
+
+          :map_character_limit ->
+            socket
+            |> put_flash(
+              :error,
+              "Map reached its character limit, your characters won't be tracked. Please contact administrator."
+            )
+
+          _ ->
+            socket
+        end
+      end)
+
+    map_characters = map_id |> WandererApp.Map.list_characters()
+
+    socket
+    |> assign(
+      map_loaded?: true,
+      map_user_settings: map_user_settings,
+      user_characters: user_character_eve_ids,
+      has_tracked_characters?: _has_tracked_characters?(user_character_eve_ids)
+    )
+    |> push_map_event(
+      "init",
+      initial_data |> Map.put(:characters, map_characters |> Enum.map(&map_ui_character/1))
+    )
+    |> push_event("js-exec", %{
+      to: "#map-loader",
+      attr: "data-loaded"
+    })
+  end
+
   defp on_map_started(
-         map_id,
-         current_user,
-         %{view_system: true, track_character: track_character} = user_permissions
+         %{
+           assigns: %{
+             current_user: current_user,
+             map_id: map_id,
+             user_permissions:
+               %{view_system: true, track_character: track_character} = user_permissions
+           }
+         } = socket
        ) do
     with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
          {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user.id),
@@ -1822,27 +1815,27 @@ defmodule WandererAppWeb.MapLive do
         )
         |> Map.put(:reset, true)
 
-      Process.send_after(
-        self(),
-        {:map_start,
-         %{
-           map_id: map_id,
-           map_user_settings: map_user_settings,
-           user_characters: user_character_eve_ids,
-           initial_data: initial_data,
-           events: events
-         }},
-        10
-      )
+      socket
+      |> map_start(%{
+        map_id: map_id,
+        map_user_settings: map_user_settings,
+        user_characters: user_character_eve_ids,
+        initial_data: initial_data,
+        events: events
+      })
     else
       error ->
         Logger.error(fn -> "map_start_error: #{error}" end)
         Process.send_after(self(), :no_access, 10)
+
+        socket
     end
   end
 
-  defp on_map_started(_map_id, _current_user, _user_permissions),
-    do: Process.send_after(self(), :no_access, 10)
+  defp on_map_started(socket) do
+    Process.send_after(self(), :no_access, 10)
+    socket
+  end
 
   defp _set_autopilot_waypoint(
          current_user,
