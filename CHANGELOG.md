@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.12.0](https://github.com/wanderer-industries/wanderer/compare/v1.11.5...v1.12.0) (2024-10-16)
+
+
+
+
+### Features:
+
+* Map: Prettify user settings
+
 ## [v1.11.5](https://github.com/wanderer-industries/wanderer/compare/v1.11.4...v1.11.5) (2024-10-16)
 
 
