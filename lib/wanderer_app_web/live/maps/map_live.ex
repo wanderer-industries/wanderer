@@ -65,10 +65,10 @@ defmodule WandererAppWeb.MapLive do
 
   @impl true
   def handle_info(
-        %{event: :map_started},
+        %{event: :map_server_started},
         socket
       ),
-      do: {:noreply, socket |> on_map_started()}
+      do: {:noreply, socket |> handle_map_server_started()}
 
   @impl true
   def handle_info(:character_token_invalid, socket),
@@ -1655,13 +1655,49 @@ defmodule WandererAppWeb.MapLive do
   end
 
   defp maybe_start_map(map_id) do
-    {:ok, map_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
+    {:ok, map_server_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
 
-    if map_started do
-      Process.send_after(self(), %{event: :map_started}, 10)
+    if map_server_started do
+      Process.send_after(self(), %{event: :map_server_started}, 10)
     else
       WandererApp.Map.Manager.start_map(map_id)
     end
+  end
+
+  defp handle_map_start_events(socket, map_id, events) do
+    events
+    |> Enum.reduce(socket, fn event, socket ->
+      case event do
+        {:track_characters, map_characters, track_character} ->
+          :ok = _track_characters(map_characters, map_id, track_character)
+          :ok = _add_characters(map_characters, map_id, track_character)
+          socket
+
+        :invalid_token_message ->
+          socket
+          |> put_flash(
+            :error,
+            "One of your characters has expired token. Please refresh it on characters page."
+          )
+
+        :empty_tracked_characters ->
+          socket
+          |> put_flash(
+            :info,
+            "You should enable tracking for at least one character to work with map."
+          )
+
+        :map_character_limit ->
+          socket
+          |> put_flash(
+            :error,
+            "Map reached its character limit, your characters won't be tracked. Please contact administrator."
+          )
+
+        _ ->
+          socket
+      end
+    end)
   end
 
   defp map_start(
@@ -1675,39 +1711,8 @@ defmodule WandererAppWeb.MapLive do
          } = _started_data
        ) do
     socket =
-      events
-      |> Enum.reduce(socket, fn event, socket ->
-        case event do
-          {:track_characters, map_characters, track_character} ->
-            :ok = _track_characters(map_characters, map_id, track_character)
-            :ok = _add_characters(map_characters, map_id, track_character)
-            socket
-
-          :invalid_token_message ->
-            socket
-            |> put_flash(
-              :error,
-              "One of your characters has expired token. Please refresh it on characters page."
-            )
-
-          :empty_tracked_characters ->
-            socket
-            |> put_flash(
-              :info,
-              "You should enable tracking for at least one character to work with map."
-            )
-
-          :map_character_limit ->
-            socket
-            |> put_flash(
-              :error,
-              "Map reached its character limit, your characters won't be tracked. Please contact administrator."
-            )
-
-          _ ->
-            socket
-        end
-      end)
+      socket
+      |> handle_map_start_events(map_id, events)
 
     map_characters = map_id |> WandererApp.Map.list_characters()
 
@@ -1728,7 +1733,7 @@ defmodule WandererAppWeb.MapLive do
     })
   end
 
-  defp on_map_started(
+  defp handle_map_server_started(
          %{
            assigns: %{
              current_user: current_user,
@@ -1832,7 +1837,7 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
-  defp on_map_started(socket) do
+  defp handle_map_server_started(socket) do
     Process.send_after(self(), :no_access, 10)
     socket
   end

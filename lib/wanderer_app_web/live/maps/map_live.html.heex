@@ -49,7 +49,7 @@
 </div>
 
 <.modal
-  :if={@live_action in [:add_system]}
+  :if={@live_action in [:add_system] && not is_nil(assigns |> Map.get(:map_slug)) && @map_loaded?}
   id="add-system-modal"
   class="!w-[400px]"
   title="Add System"

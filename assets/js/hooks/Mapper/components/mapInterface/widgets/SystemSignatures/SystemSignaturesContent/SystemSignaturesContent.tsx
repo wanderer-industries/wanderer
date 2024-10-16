@@ -320,7 +320,8 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
               ></Column>
               <Column
                 field="linked_system"
-                header="Linked System"
+                header="Leads To"
+                headerClassName="whitespace-nowrap"
                 bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
                 body={renderLinkedSystem}
                 style={{ maxWidth: nameColumnWidth }}
@@ -364,7 +365,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
                   </button>
                   <button className="p-button p-component p-button-outlined p-button-sm btn-wide">
                     <span className="p-button-label p-c" onClick={handleReplaceAll}>
-                      Update & Delete
+                      Update & Delete missing
                     </span>
                   </button>
                 </div>

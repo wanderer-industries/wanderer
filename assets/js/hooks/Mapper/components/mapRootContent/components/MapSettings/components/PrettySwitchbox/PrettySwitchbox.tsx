@@ -9,12 +9,12 @@ interface PrettySwitchboxProps {
 
 export const PrettySwitchbox = ({ checked, setChecked, label }: PrettySwitchboxProps) => {
   return (
-    <div className={styles.CheckboxContainer}>
+    <label className={styles.CheckboxContainer}>
       <span>{label}</span>
       <div />
       <div className={styles.smallInputSwitch}>
         <WdCheckbox size="m" label={''} value={checked} onChange={e => setChecked(e.checked ?? false)} />
       </div>
-    </div>
+    </label>
   );
 };

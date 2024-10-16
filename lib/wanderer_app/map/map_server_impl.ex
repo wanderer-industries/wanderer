@@ -149,7 +149,7 @@ defmodule WandererApp.Map.Server.Impl do
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
 
-      broadcast!(map_id, :map_started)
+      broadcast!(map_id, :map_server_started)
 
       :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
 
