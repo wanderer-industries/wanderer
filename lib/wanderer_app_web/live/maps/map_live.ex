@@ -394,26 +394,8 @@ defmodule WandererAppWeb.MapLive do
     map_slug
     |> WandererApp.MapRepo.get_by_slug_with_permissions(current_user)
     |> case do
-      {:ok,
-       %{
-         id: map_id,
-         deleted: false
-       } = map} ->
-        Process.send_after(self(), {:init_map, map}, 10)
-
-        {:noreply, socket}
-
-      {:ok,
-       %{
-         deleted: true
-       } = _map} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "Map was deleted by owner or administrator."
-         )
-         |> push_navigate(to: ~p"/maps")}
+      {:ok, map} ->
+        {:noreply, socket |> init_map(map)}
 
       {:error, _} ->
         {:noreply,
@@ -423,79 +405,6 @@ defmodule WandererAppWeb.MapLive do
            "Something went wrong. Please try one more time or submit an issue."
          )
          |> push_navigate(to: ~p"/maps")}
-    end
-  end
-
-  def handle_info(
-        {:init_map, map},
-        %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket
-      ) do
-    with %{
-           id: map_id,
-           deleted: false,
-           only_tracked_characters: only_tracked_characters,
-           user_permissions: user_permissions,
-           name: map_name,
-           owner_id: owner_id
-         } <- map do
-      user_permissions =
-        WandererApp.Permissions.get_map_permissions(
-          user_permissions,
-          owner_id,
-          current_user.characters |> Enum.map(& &1.id)
-        )
-
-      {:ok, character_settings} =
-        case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
-          {:ok, settings} -> {:ok, settings}
-          _ -> {:ok, []}
-        end
-
-      {:ok, %{characters: availaible_map_characters}} =
-        WandererApp.Maps.load_characters(map, character_settings, current_user.id)
-
-      can_view? = user_permissions.view_system
-      can_track? = user_permissions.track_character
-
-      tracked_character_ids =
-        availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
-
-      all_character_tracked? =
-        not (availaible_map_characters |> Enum.empty?()) and
-          availaible_map_characters |> Enum.all?(& &1.tracked)
-
-      cond do
-        (only_tracked_characters and can_track? and all_character_tracked?) or
-            (not only_tracked_characters and can_view?) ->
-          Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-          {:ok, ui_loaded} = WandererApp.Cache.get_and_remove("map_#{map_slug}:ui_loaded", false)
-
-          if ui_loaded do
-            maybe_start_map(map_id)
-          end
-
-          {:noreply,
-           socket
-           |> assign(
-             map_id: map_id,
-             page_title: map_name,
-             user_permissions: user_permissions,
-             tracked_character_ids: tracked_character_ids,
-             only_tracked_characters: only_tracked_characters
-           )}
-
-        only_tracked_characters and can_track? and not all_character_tracked? ->
-          Process.send_after(self(), :not_all_characters_tracked, 10)
-          {:noreply, socket}
-
-        true ->
-          Process.send_after(self(), :no_permissions, 10)
-          {:noreply, socket}
-      end
-    else
-      _ ->
-        Process.send_after(self(), :no_access, 10)
-        {:noreply, socket}
     end
   end
 
@@ -1654,6 +1563,77 @@ defmodule WandererAppWeb.MapLive do
     |> assign(:add_system_form, to_form(%{"system_id" => nil}))
   end
 
+  defp init_map(
+         %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket,
+         %{
+           id: map_id,
+           deleted: false,
+           only_tracked_characters: only_tracked_characters,
+           user_permissions: user_permissions,
+           name: map_name,
+           owner_id: owner_id
+         } = map
+       ) do
+    user_permissions =
+      WandererApp.Permissions.get_map_permissions(
+        user_permissions,
+        owner_id,
+        current_user.characters |> Enum.map(& &1.id)
+      )
+
+    {:ok, character_settings} =
+      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+        {:ok, settings} -> {:ok, settings}
+        _ -> {:ok, []}
+      end
+
+    {:ok, %{characters: availaible_map_characters}} =
+      WandererApp.Maps.load_characters(map, character_settings, current_user.id)
+
+    can_view? = user_permissions.view_system
+    can_track? = user_permissions.track_character
+
+    tracked_character_ids =
+      availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
+
+    all_character_tracked? =
+      not (availaible_map_characters |> Enum.empty?()) and
+        availaible_map_characters |> Enum.all?(& &1.tracked)
+
+    cond do
+      (only_tracked_characters and can_track? and all_character_tracked?) or
+          (not only_tracked_characters and can_view?) ->
+        Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+        {:ok, ui_loaded} = WandererApp.Cache.get_and_remove("map_#{map_slug}:ui_loaded", false)
+
+        if ui_loaded do
+          maybe_start_map(map_id)
+        end
+
+         socket
+         |> assign(
+           map_id: map_id,
+           page_title: map_name,
+           user_permissions: user_permissions,
+           tracked_character_ids: tracked_character_ids,
+           only_tracked_characters: only_tracked_characters
+         )
+
+      only_tracked_characters and can_track? and not all_character_tracked? ->
+        Process.send_after(self(), :not_all_characters_tracked, 10)
+        socket
+
+      true ->
+        Process.send_after(self(), :no_permissions, 10)
+        socket
+    end
+  end
+
+  defp init_map(socket, _map) do
+    Process.send_after(self(), :no_access, 10)
+    socket
+  end
+
   defp maybe_start_map(map_id) do
     {:ok, map_server_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
 
@@ -1975,20 +1955,6 @@ defmodule WandererAppWeb.MapLive do
         |> Map.put(:linked_system, get_system_static_info(linked_system_id))
         |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
       end)
-
-  defp show_loader(js \\ %JS{}, id),
-    do:
-      JS.show(js,
-        to: "##{id}",
-        transition: {"transition-opacity ease-out duration-500", "opacity-0", "opacity-100"}
-      )
-
-  defp hide_loader(js \\ %JS{}, id),
-    do:
-      JS.hide(js,
-        to: "##{id}",
-        transition: {"transition-opacity ease-in duration-500", "opacity-100", "opacity-0"}
-      )
 
   defp _get_available_maps(current_user) do
     {:ok, maps} =
