@@ -112,7 +112,8 @@ defmodule WandererApp.MixProject do
       {:git_ops, "~> 2.6.1"},
       {:version_tasks, "~> 0.12.0"},
       {:error_tracker, "~> 0.2"},
-      {:ddrt, "~> 0.2.1"}
+      {:ddrt, "~> 0.2.1"},
+      {:live_view_events, "~> 0.1.0"}
     ]
   end
 

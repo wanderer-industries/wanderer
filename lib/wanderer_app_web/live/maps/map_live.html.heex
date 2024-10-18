@@ -3,17 +3,15 @@
 <div class="w-full h-full" id="mapper" phx-hook="Mapper" phx-update="ignore"></div>
 
 <div class="absolute top-0 mt-2 left-16 flex gap-1">
-  <.form :let={f} for={@form} phx-change="change_map">
-    <span :if={@maps_loading} class="loading loading-dots loading-xs"></span>
-    <.input
-      :if={not @maps_loading}
-      type="select"
-      field={f[:map_slug]}
-      class="select h-8 min-h-[0px] !pt-1 !pb-1 text-sm bg-neutral-900"
-      placeholder="Select a map..."
-      options={Enum.map(@maps, fn map -> {map.label, map.value} end)}
-    />
-  </.form>
+  <.live_component
+    :if={not is_nil(assigns |> Map.get(:map_slug))}
+    module={WandererAppWeb.MapPicker}
+    id="map-picker"
+    notify_to={self()}
+    current_user={@current_user}
+    map_slug={@map_slug}
+    event_name="change_map"
+  />
 
   <.button
     :if={(@user_permissions || %{}) |> Map.get(:view_character, false)}
@@ -133,26 +131,4 @@
       </:col>
     </.table>
   </.async_result>
-</.modal>
-
-<.modal
-  :if={assigns |> Map.get(:show_user_settings?, false)}
-  id="map-user-settings-modal"
-  title="Map user settings"
-  show
-  on_cancel={JS.push("hide_user_settings")}
->
-  <.form
-    :let={f}
-    :if={assigns |> Map.get(:user_settings_form, false)}
-    for={@user_settings_form}
-    phx-change="update_user_settings"
-  >
-    <.input type="checkbox" field={f[:select_on_spash]} label="Auto select splashed systems" />
-    <.input
-      type="checkbox"
-      field={f[:link_signature_on_splash]}
-      label="Link splashed systems to signatures"
-    />
-  </.form>
 </.modal>

@@ -46,4 +46,13 @@ defmodule WandererApp.MapUserSettingsRepo do
     {:ok, data} = to_form_data(user_settings)
     data
   end
+
+  def get_boolean_setting(settings, key, default \\ false) do
+    settings
+    |> Map.get(key, default)
+    |> to_boolean()
+  end
+
+  def to_boolean(value) when is_binary(value), do: value |> String.to_existing_atom()
+  def to_boolean(value) when is_boolean(value), do: value
 end
