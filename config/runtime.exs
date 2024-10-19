@@ -53,7 +53,6 @@ map_subscriptions_enabled =
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
   |> String.to_existing_atom()
 
-
 map_subscription_characters_limit =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 100)
@@ -78,7 +77,9 @@ config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
   custom_route_base_url: System.get_env("CUSTOM_ROUTE_BASE_URL"),
-  invites: System.get_env("WANDERER_INVITES", "false") == "true",
+  invites: System.get_env("WANDERER_INVITES", "false") |> String.to_existing_atom(),
+  admin_username: System.get_env("WANDERER_ADMIN_USERNAME", "admin"),
+  admin_password: System.get_env("WANDERER_ADMIN_PASSWORD"),
   admins: admins,
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
@@ -86,7 +87,13 @@ config :wanderer_app,
   wallet_tracking_enabled: wallet_tracking_enabled,
   subscription_settings: %{
     plans: [
-      %{id: "alpha", characters_limit: map_subscription_characters_limit, hubs_limit: map_subscription_hubs_limit, base_price: 0, monthly_discount: 0},
+      %{
+        id: "alpha",
+        characters_limit: map_subscription_characters_limit,
+        hubs_limit: map_subscription_hubs_limit,
+        base_price: 0,
+        monthly_discount: 0
+      },
       %{
         id: "omega",
         characters_limit: 300,
@@ -185,9 +192,20 @@ if config_env() == :prod do
     |> get_var_from_path_or_env("DATABASE_SSL_ENABLED", "false")
     |> String.to_existing_atom()
 
+  db_ssl_verify_none =
+    config_dir
+    |> get_var_from_path_or_env("DATABASE_SSL_VERIFY_NONE", "false")
+    |> String.to_existing_atom()
+
+  client_opts =
+    if db_ssl_verify_none do
+      [verify: :verify_none]
+    end
+
   config :wanderer_app, WandererApp.Repo,
     url: database_url,
     ssl: db_ssl_enabled,
+    ssl_opts: client_opts,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 

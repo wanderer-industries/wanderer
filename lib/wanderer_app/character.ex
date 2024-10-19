@@ -6,7 +6,7 @@ defmodule WandererApp.Character do
   @read_character_wallet_scope "esi-wallet.read_character_wallet.v1"
   @read_corp_wallet_scope "esi-wallet.read_corporation_wallets.v1"
 
-  def get_character(character_id) do
+  def get_character(character_id) when not is_nil(character_id) do
     case Cachex.get(:character_cache, character_id) do
       {:ok, nil} ->
         case WandererApp.Api.Character.by_id(character_id) do
@@ -22,6 +22,8 @@ defmodule WandererApp.Character do
         {:ok, character}
     end
   end
+
+  def get_character(_character_id), do: {:ok, nil}
 
   def get_character!(character_id) do
     case get_character(character_id) do
@@ -71,11 +73,24 @@ defmodule WandererApp.Character do
     end
   end
 
+  def get_character_state!(character_id) do
+    case get_character_state(character_id) do
+      {:ok, character_state} ->
+        character_state
+
+      _ ->
+        Logger.error("Failed to get character_state #{character_id}")
+        throw("Failed to get character_state #{character_id}")
+    end
+  end
+
   def update_character_state(character_id, character_state_update) do
     Cachex.get_and_update(:character_state_cache, character_id, fn character_state ->
       case character_state do
         nil ->
           new_state = WandererApp.Character.Tracker.init(character_id: character_id)
+          :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
+
           {:commit, Map.merge(new_state, character_state_update)}
 
         _ ->
@@ -207,11 +222,11 @@ defmodule WandererApp.Character do
        |> Enum.map(fn task -> Task.await(task, 145_000) end)
        |> Enum.map(fn result ->
          case result do
-             {:ok, result} -> map_function.(result)
-             _ -> nil
+           {:ok, result} -> map_function.(result)
+           _ -> nil
          end
-        end)
-        |> Enum.filter(fn result -> not is_nil(result) end)}
+       end)
+       |> Enum.filter(fn result -> not is_nil(result) end)}
 
   defp _map_alliance_info(info) do
     %{

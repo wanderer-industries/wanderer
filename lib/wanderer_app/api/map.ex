@@ -18,6 +18,7 @@ defmodule WandererApp.Api.Map do
     define(:update, action: :update)
     define(:update_acls, action: :update_acls)
     define(:update_hubs, action: :update_hubs)
+    define(:update_options, action: :update_options)
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
 
@@ -63,7 +64,6 @@ defmodule WandererApp.Api.Map do
       primary?(true)
 
       argument :owner_id, :uuid, allow_nil?: false
-      argument :owner_id_text_input, :string, allow_nil?: true
       argument :create_default_acl, :boolean, allow_nil?: true
       argument :acls, {:array, :uuid}, allow_nil?: true
       argument :acls_text_input, :string, allow_nil?: true
@@ -111,6 +111,10 @@ defmodule WandererApp.Api.Map do
 
     update :update_hubs do
       accept [:hubs]
+    end
+
+    update :update_options do
+      accept [:options]
     end
 
     update :mark_as_deleted do
@@ -166,6 +170,10 @@ defmodule WandererApp.Api.Map do
     attribute :only_tracked_characters, :boolean do
       default(false)
       allow_nil?(true)
+    end
+
+    attribute :options, :string do
+      allow_nil? true
     end
 
     create_timestamp(:inserted_at)

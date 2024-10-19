@@ -37,7 +37,7 @@ export const CharacterCard = ({
   const { mapRef } = useMapRootState();
 
   const handleSelect = useCallback(() => {
-    mapRef.current?.command(Commands.selectSystem, char?.location?.solar_system_id?.toString());
+    mapRef.current?.command(Commands.centerSystem, char?.location?.solar_system_id?.toString());
   }, [mapRef, char]);
 
   return (

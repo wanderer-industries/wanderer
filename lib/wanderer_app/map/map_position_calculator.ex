@@ -19,46 +19,47 @@ defmodule WandererApp.Map.PositionCalculator do
 
   def get_system_bounding_rect(_system), do: [{0, 0}, {0, 0}]
 
-  def get_new_system_position(nil, rtree_name) do
-    {:ok, {x, y}} = rtree_name |> _check_system_available_positions(@start_x, @start_y, 1)
+  def get_new_system_position(nil, rtree_name, opts) do
+    {:ok, {x, y}} = rtree_name |> check_system_available_positions(@start_x, @start_y, 1, opts)
     %{x: x, y: y}
   end
 
   def get_new_system_position(
         %{position_x: start_x, position_y: start_y} = _old_system,
-        rtree_name
+        rtree_name,
+        opts
       ) do
-    {:ok, {x, y}} = rtree_name |> _check_system_available_positions(start_x, start_y, 1)
+    {:ok, {x, y}} = rtree_name |> check_system_available_positions(start_x, start_y, 1, opts)
+
     %{x: x, y: y}
   end
 
-  defp _check_system_available_positions(_rtree_name, _start_x, _start_y, 100) do
-    {:ok, {@start_x, @start_y}}
-  end
+  defp check_system_available_positions(_rtree_name, _start_x, _start_y, 100, _opts),
+    do: {:ok, {@start_x, @start_y}}
 
-  defp _check_system_available_positions(rtree_name, start_x, start_y, level) do
-    possible_positions = _get_available_positions(level, start_x, start_y)
+  defp check_system_available_positions(rtree_name, start_x, start_y, level, opts) do
+    possible_positions = get_available_positions(level, start_x, start_y, opts)
 
-    case _get_available_position(possible_positions, rtree_name) do
+    case get_available_position(possible_positions, rtree_name) do
       {:ok, nil} ->
-        rtree_name |> _check_system_available_positions(start_x, start_y, level + 1)
+        rtree_name |> check_system_available_positions(start_x, start_y, level + 1, opts)
 
       {:ok, position} ->
         {:ok, position}
     end
   end
 
-  defp _get_available_position([], _rtree_name), do: {:ok, nil}
+  defp get_available_position([], _rtree_name), do: {:ok, nil}
 
-  defp _get_available_position([position | rest], rtree_name) do
-    if _is_available_position(position, rtree_name) do
+  defp get_available_position([position | rest], rtree_name) do
+    if is_available_position(position, rtree_name) do
       {:ok, position}
     else
-      _get_available_position(rest, rtree_name)
+      get_available_position(rest, rtree_name)
     end
   end
 
-  defp _is_available_position({x, y} = _position, rtree_name) do
+  defp is_available_position({x, y} = _position, rtree_name) do
     case DDRT.query(get_system_bounding_rect(%{position_x: x, position_y: y}), rtree_name) do
       {:ok, []} ->
         true
@@ -71,9 +72,10 @@ defmodule WandererApp.Map.PositionCalculator do
     end
   end
 
-  def _get_available_positions(level, x, y), do: _adjusted_coordinates(1 + level * 2, x, y)
+  def get_available_positions(level, x, y, opts),
+    do: adjusted_coordinates(1 + level * 2, x, y, opts)
 
-  defp _edge_coordinates(n) when n > 1 do
+  defp edge_coordinates(n, opts) when n > 1 do
     min = -div(n, 2)
     max = div(n, 2)
     # Top edge
@@ -90,16 +92,20 @@ defmodule WandererApp.Map.PositionCalculator do
     |> Enum.uniq()
   end
 
-  defp _sorted_edge_coordinates(n) when n > 1 do
-    coordinates = _edge_coordinates(n)
-    middle_right_index = div(n, 2)
+  defp sorted_edge_coordinates(n, opts) when n > 1 do
+    coordinates = edge_coordinates(n, opts)
+    start_index = get_start_index(n, opts[:layout])
 
-    Enum.slice(coordinates, middle_right_index, length(coordinates) - middle_right_index) ++
-      Enum.slice(coordinates, 0, middle_right_index)
+    Enum.slice(coordinates, start_index, length(coordinates) - start_index) ++
+      Enum.slice(coordinates, 0, start_index)
   end
 
-  defp _adjusted_coordinates(n, start_x, start_y) when n > 1 do
-    sorted_coords = _sorted_edge_coordinates(n)
+  defp get_start_index(n, "left_to_right"), do: div(n, 2)
+
+  defp get_start_index(n, "top_to_bottom"), do: div(n, 2) + n - 1
+
+  defp adjusted_coordinates(n, start_x, start_y, opts) when n > 1 do
+    sorted_coords = sorted_edge_coordinates(n, opts)
 
     Enum.map(sorted_coords, fn {x, y} ->
       {

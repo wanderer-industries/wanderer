@@ -1,9 +1,12 @@
+import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
+
 export type SystemSignature = {
   eve_id: string;
   kind: string;
   name: string;
   description?: string;
   group: string;
+  linked_system?: SolarSystemStaticInfoRaw;
   updated_at?: string;
 };
 

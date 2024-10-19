@@ -65,7 +65,7 @@ export class LabelsManager {
   }
 
   hasLabel(label: string) {
-    return this.parsedLabels.labels.includes(label);
+    return this.parsedLabels.labels?.includes(label);
   }
 
   toggleLabel(label: string) {

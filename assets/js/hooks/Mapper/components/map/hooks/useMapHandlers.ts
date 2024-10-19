@@ -1,4 +1,4 @@
-import { ForwardedRef, useImperativeHandle } from 'react';
+import { ForwardedRef, useImperativeHandle, useRef } from 'react';
 import {
   CommandAddConnections,
   CommandAddSystems,
@@ -26,6 +26,7 @@ import {
   useMapInit,
   useMapRemoveSystems,
   useMapUpdateSystems,
+  useCenterSystem,
   useSelectSystem,
 } from './api';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
@@ -35,7 +36,11 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
   const mapAddSystems = useMapAddSystems();
   const mapUpdateSystems = useMapUpdateSystems();
   const removeSystems = useMapRemoveSystems(onSelectionChange);
+  const centerSystem = useCenterSystem();
   const selectSystem = useSelectSystem();
+
+  const selectRef = useRef({ onSelectionChange });
+  selectRef.current = { onSelectionChange };
 
   const { addConnections, removeConnections, updateConnection } = useCommandsConnections();
   const { mapUpdated, killsUpdated } = useMapCommands();
@@ -91,11 +96,29 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               killsUpdated(data as CommandKillsUpdated);
               break;
 
+            case Commands.centerSystem:
+              setTimeout(() => {
+                const systemId = `${data}`;
+                centerSystem(systemId as CommandSelectSystem);
+              }, 100);
+              break;
+
             case Commands.selectSystem:
-              selectSystem(data as CommandSelectSystem);
+              setTimeout(() => {
+                const systemId = `${data}`;
+                selectRef.current.onSelectionChange({
+                  systems: [systemId],
+                  connections: [],
+                });
+                selectSystem(systemId as CommandSelectSystem);
+              }, 100);
               break;
 
             case Commands.routes:
+              // do nothing here
+              break;
+
+            case Commands.linkSignatureToSystem:
               // do nothing here
               break;
 

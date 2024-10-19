@@ -19,9 +19,17 @@ import { PrimeIcons } from 'primereact/api';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick.ts';
+import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
+
+const SpaceToClass: Record<string, string> = {
+  [Spaces.Caldari]: classes.Caldaria,
+  [Spaces.Matar]: classes.Mataria,
+  [Spaces.Amarr]: classes.Amarria,
+  [Spaces.Gallente]: classes.Gallente,
+};
 
 const sortedLabels = (labels: string[]) => {
-  if (labels === null) {
+  if (!labels) {
     return [];
   }
 
@@ -50,6 +58,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
     statics,
     effect_name,
     region_name,
+    region_id,
     is_shattered,
     solar_system_name,
   } = data.system_static_info;
@@ -69,6 +78,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
       isConnecting,
       hoverNodeId,
       visibleNodes,
+      showKSpaceBG,
     },
     outCommand,
   } = useMapState();
@@ -114,6 +124,9 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const showHandlers = isConnecting || hoverNodeId === id;
 
+  const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
+  const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
+
   return (
     <>
       {visible && (
@@ -147,7 +160,11 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         </div>
       )}
 
-      <div className={clsx(classes.RootCustomNode, classes[STATUS_CLASSES[status]], { [classes.selected]: selected })}>
+      <div
+        className={clsx(classes.RootCustomNode, regionClass, classes[STATUS_CLASSES[status]], {
+          [classes.selected]: selected,
+        })}
+      >
         {visible && (
           <>
             <div className={classes.HeadRow}>
@@ -183,7 +200,13 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
               )}
 
               {!isWormhole && !customName && (
-                <div className="text-stone-400 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
+                <div
+                  className={clsx('text-stone-400 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5', {
+                    ['text-teal-100 font-bold']: space === Spaces.Caldari,
+                    ['text-yellow-100 font-bold']: space === Spaces.Amarr || space === Spaces.Matar,
+                    ['text-lime-200/80 font-bold']: space === Spaces.Gallente,
+                  })}
+                >
                   {region_name}
                 </div>
               )}

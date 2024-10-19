@@ -4,7 +4,6 @@ import { MapHandlers, MapUnionTypes, OutCommandHandler, SolarSystemConnection } 
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
-import { DEFAULT_SETTINGS } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -27,14 +26,22 @@ const INITIAL_DATA: MapRootData = {
   selectedConnections: [],
 };
 
-type InterfaceStoredSettings = {
+export enum InterfaceStoredSettingsProps {
+  isShowMenu = 'isShowMenu',
+  isShowMinimap = 'isShowMinimap',
+  isShowKSpace = 'isShowKSpace',
+}
+
+export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowMinimap: boolean;
+  isShowKSpace: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
   isShowMinimap: true,
+  isShowKSpace: false,
 };
 
 export interface MapRootContextProps {
@@ -50,6 +57,7 @@ const MapRootContext = createContext<MapRootContextProps>({
   update: () => {},
   data: { ...INITIAL_DATA },
   mapRef: { current: null },
+  // @ts-ignore
   outCommand: async () => void 0,
   interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
   setInterfaceSettings: () => null,

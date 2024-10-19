@@ -67,3 +67,21 @@
   }
 }
 
+.p-sortable-column {
+  font-size: 12px;
+  font-weight: bold;
+  padding: 3px 4px;
+}
+
+.p-selectable-row td {
+  padding: 4px 4px;
+}
+
+.p-sortable-column > .p-column-header-content > span:last-child {
+  transform: scale(0.7);
+
+  & > svg {
+    margin-left: 4px;
+  }
+}
+

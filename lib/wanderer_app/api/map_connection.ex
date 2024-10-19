@@ -18,10 +18,7 @@ defmodule WandererApp.Api.MapConnection do
       action: :read
     )
 
-    define(:by_locations,
-      get_by: [:map_id, :solar_system_source, :solar_system_target],
-      action: :read
-    )
+    define(:by_locations, action: :read_by_locations)
 
     define(:read_by_map, action: :read_by_map)
     define(:get_link_pairs_advanced, action: :get_link_pairs_advanced)
@@ -46,6 +43,19 @@ defmodule WandererApp.Api.MapConnection do
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id)))
+    end
+
+    read :read_by_locations do
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:solar_system_source, :integer, allow_nil?: false)
+      argument(:solar_system_target, :integer, allow_nil?: false)
+
+      filter(
+        expr(
+          map_id == ^arg(:map_id) and solar_system_source == ^arg(:solar_system_source) and
+            solar_system_target == ^arg(:solar_system_target)
+        )
+      )
     end
 
     read :get_link_pairs_advanced do

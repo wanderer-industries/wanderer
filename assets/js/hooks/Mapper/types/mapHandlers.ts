@@ -21,7 +21,9 @@ export enum Commands {
   mapUpdated = 'map_updated',
   killsUpdated = 'kills_updated',
   routes = 'routes',
+  centerSystem = 'center_system',
   selectSystem = 'select_system',
+  linkSignatureToSystem = 'link_signature_to_system',
 }
 
 export type Command =
@@ -40,7 +42,9 @@ export type Command =
   | Commands.mapUpdated
   | Commands.killsUpdated
   | Commands.routes
-  | Commands.selectSystem;
+  | Commands.selectSystem
+  | Commands.centerSystem
+  | Commands.linkSignatureToSystem;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -72,6 +76,11 @@ export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandSelectSystem = string | undefined;
+export type CommandCenterSystem = string | undefined;
+export type CommandLinkSignatureToSystem = {
+  solar_system_source: number;
+  solar_system_target: number;
+};
 
 export interface CommandData {
   [Commands.init]: CommandInit;
@@ -90,6 +99,8 @@ export interface CommandData {
   [Commands.routes]: CommandRoutes;
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
+  [Commands.centerSystem]: CommandCenterSystem;
+  [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
 }
 
 export interface MapHandlers {
@@ -124,10 +135,15 @@ export enum OutCommand {
   setAutopilotWaypoint = 'set_autopilot_waypoint',
   addSystem = 'add_system',
   addCharacter = 'add_character',
+  openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
+  linkSignatureToSystem = 'link_signature_to_system',
 
   // Only UI commands
   openSettings = 'open_settings',
+
+  getUserSettings = 'get_user_settings',
+  updateUserSettings = 'update_user_settings',
 }
 
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;

@@ -11,6 +11,8 @@ defmodule WandererApp.Env do
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
   def wallet_tracking_enabled?, do: get_key(:wallet_tracking_enabled, false)
   def admins, do: get_key(:admins, [])
+  def admin_username, do: get_key(:admin_username)
+  def admin_password, do: get_key(:admin_password)
   def corp_wallet, do: get_key(:corp_wallet, "")
   def corp_eve_id, do: get_key(:corp_id, -1)
   def subscription_settings, do: get_key(:subscription_settings)

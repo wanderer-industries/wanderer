@@ -5,6 +5,8 @@ defmodule WandererAppWeb.MapsLive do
 
   alias BetterNumber, as: Number
 
+  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
   @impl true
   def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
     {:ok, active_characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
@@ -107,10 +109,12 @@ defmodule WandererAppWeb.MapsLive do
     subscription_form = %{
       "plan" => "omega",
       "period" => "1",
-      "characters_limit" => "100",
+      "characters_limit" => "300",
       "hubs_limit" => "10",
       "auto_renew?" => true
     }
+
+    {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
 
     {:ok, estimated_price, discount} =
       WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
@@ -130,6 +134,7 @@ defmodule WandererAppWeb.MapsLive do
       active_settings_tab: "general",
       is_adding_subscription?: false,
       selected_subscription: nil,
+      options_form: options_form_data |> to_form(),
       map_subscriptions: map_subscriptions,
       subscription_form: subscription_form |> to_form(),
       estimated_price: estimated_price,
@@ -142,6 +147,10 @@ defmodule WandererAppWeb.MapsLive do
         {"3 Months", "3"},
         {"6 Months", "6"},
         {"1 Year", "12"}
+      ],
+      layout_options: [
+        {"Left To Right", "left_to_right"},
+        {"Top To Bottom", "top_to_bottom"}
       ]
     )
     |> allow_upload(:settings,
@@ -163,24 +172,6 @@ defmodule WandererAppWeb.MapsLive do
   @impl true
   def handle_event("set-default-scope", %{"id" => id}, socket) do
     send_update(LiveSelect.Component, options: ["wormholes", "stargates", "none", "all"], id: id)
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event(
-        "live_select_change",
-        %{"id" => "form_owner_id_live_select_component" = id, "text" => text} = _change_event,
-        socket
-      ) do
-    options =
-      if text == "" do
-        socket.assigns.characters
-      else
-        socket.assigns.characters
-      end
-
-    send_update(LiveSelect.Component, options: options, id: id)
 
     {:noreply, socket}
   end
@@ -612,20 +603,12 @@ defmodule WandererAppWeb.MapsLive do
 
         added_acls
         |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :add], %{count: 1}, %{
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
+          :telemetry.execute([:wanderer_app, :map, :acl, :add], %{count: 1})
         end)
 
         removed_acls
         |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :remove], %{count: 1}, %{
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
+          :telemetry.execute([:wanderer_app, :map, :acl, :remove], %{count: 1})
         end)
 
         Phoenix.PubSub.broadcast(
@@ -669,6 +652,26 @@ defmodule WandererAppWeb.MapsLive do
        _load_maps(current_user)
      end)
      |> push_patch(to: ~p"/maps")}
+  end
+
+  def handle_event(
+        "update_options",
+        options_form,
+        %{assigns: %{map_id: map_id, map: map}} = socket
+      ) do
+    options =
+      options_form
+      |> Map.take(["layout", "store_custom_labels"])
+
+    {:ok, updated_map} = WandererApp.MapRepo.update_options(map, options)
+
+    @pubsub_client.broadcast(
+      WandererApp.PubSub,
+      "maps:#{map_id}",
+      {:options_updated, options}
+    )
+
+    {:noreply, socket |> assign(map: updated_map, options_form: options_form)}
   end
 
   @impl true
@@ -916,6 +919,6 @@ defmodule WandererAppWeb.MapsLive do
 
   defp map_map(%{acls: acls} = map) do
     map
-    |> Map.merge(%{acls: acls |> Enum.map(&map_acl/1)})
+    |> Map.put(:acls, acls |> Enum.map(&map_acl/1))
   end
 end

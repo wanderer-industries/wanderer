@@ -5,12 +5,19 @@ import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
 import isEqual from 'lodash.isequal';
 import { ContextMenuSystem, useContextMenuSystemHandlers } from '@/hooks/Mapper/components/contexts';
-import { SystemCustomLabelDialog, SystemSettingsDialog } from '@/hooks/Mapper/components/mapInterface/components';
+import {
+  SystemCustomLabelDialog,
+  SystemSettingsDialog,
+  SystemLinkSignatureDialog,
+} from '@/hooks/Mapper/components/mapInterface/components';
 import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { Node } from 'reactflow';
+
+import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { useMapEventListener } from '@/hooks/Mapper/events';
 
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
 
@@ -24,7 +31,7 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
     update,
     outCommand,
     data: { selectedConnections, selectedSystems, hubs, systems },
-    interfaceSettings: { isShowMenu, isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap },
+    interfaceSettings: { isShowMenu, isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap, isShowKSpace },
   } = useMapRootState();
 
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
@@ -53,12 +60,16 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
   );
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
+  const [openLinkSignatures, setOpenLinkSignatures] = useState<any | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
   const handleCommand: OutCommandHandler = useCallback(
     event => {
       switch (event.type) {
         case OutCommand.openSettings:
           setOpenSettings(event.data.system_id);
+          break;
+        case OutCommand.linkSignatureToSystem:
+          setOpenLinkSignatures(event.data);
           break;
         default:
           return outCommand(event);
@@ -88,6 +99,14 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
 
   const handleConnectionDbClick = useCallback((e: SolarSystemConnection) => setSelectedConnection(e), []);
 
+  useMapEventListener(event => {
+    switch (event.name) {
+      case Commands.linkSignatureToSystem:
+        setOpenLinkSignatures(event.data);
+        return true;
+    }
+  });
+
   return (
     <>
       <Map
@@ -99,22 +118,19 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
         onSelectionContextMenu={handleSystemMultipleContext}
         minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
         isShowMinimap={isShowMinimap}
+        showKSpaceBG={isShowKSpace}
       />
 
       {openSettings != null && (
-        <SystemSettingsDialog
-          systemId={openSettings}
-          visible={openSettings != null}
-          setVisible={() => setOpenSettings(null)}
-        />
+        <SystemSettingsDialog systemId={openSettings} visible setVisible={() => setOpenSettings(null)} />
       )}
 
       {openCustomLabel != null && (
-        <SystemCustomLabelDialog
-          systemId={openCustomLabel}
-          visible={openCustomLabel != null}
-          setVisible={() => setOpenCustomLabel(null)}
-        />
+        <SystemCustomLabelDialog systemId={openCustomLabel} visible setVisible={() => setOpenCustomLabel(null)} />
+      )}
+
+      {openLinkSignatures != null && (
+        <SystemLinkSignatureDialog data={openLinkSignatures} setVisible={() => setOpenLinkSignatures(null)} />
       )}
 
       <Connections selectedConnection={selectedConnection} onHide={() => setSelectedConnection(null)} />

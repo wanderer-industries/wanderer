@@ -44,6 +44,13 @@ defmodule WandererApp.Api.MapAccessList do
     belongs_to :access_list, WandererApp.Api.AccessList, primary_key?: true, allow_nil?: false
   end
 
+  postgres do
+    references do
+      reference :map, on_delete: :delete
+      reference :access_list, on_delete: :delete
+    end
+  end
+
   identities do
     identity :unique_map_acl, [:map_id, :access_list_id] do
       pre_check?(false)

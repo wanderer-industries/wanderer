@@ -28,6 +28,12 @@ body {
   font-weight: 500;
 }
 
+#bg-canvas {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+}
+
 .ccp-font {
   font-family: 'Shentox', 'Rogan', sans-serif !important;
 }

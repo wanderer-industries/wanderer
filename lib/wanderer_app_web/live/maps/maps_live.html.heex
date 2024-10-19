@@ -26,7 +26,6 @@
           >
             <figure class="absolute z-10 h-200 avatar w-full h-full">
               <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
-
               <img
                 :if={map.scope === :wormholes}
                 class="absolute h-200"
@@ -137,23 +136,17 @@
     <.input type="text" field={f[:name]} placeholder="Name" />
     <.input type="text" field={f[:slug]} prefix={@uri} placeholder="map-slug" />
     <.input type="textarea" field={f[:description]} placeholder="Public description" />
-    <.live_select
+    <.input
+      type="select"
       field={f[:owner_id]}
-      value_mapper={&map_character/1}
-      options={@characters}
+      class="p-dropdown p-component p-inputwrapper mt-8"
       placeholder="Select a map owner"
-    >
-      <:option :let={option}>
-        <div class="flex items-center">
-          <.avatar url={member_icon_url(option.eve_id)} label={option.label} />
-          &nbsp;<%= option.label %>
-        </div>
-      </:option>
-    </.live_select>
+      options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
+    />
     <.input
       type="select"
       field={f[:scope]}
-      class="p-dropdown p-component p-inputwrapper"
+      class="p-dropdown p-component p-inputwrapper  mt-8"
       placeholder="Select a map scope"
       options={Enum.map(@scopes, fn scope -> {scope, scope} end)}
     />
@@ -196,7 +189,6 @@
 >
   <div role="tablist" class="tabs tabs-bordered">
     <a
-      :if={@map_subscriptions_enabled?}
       role="tab"
       phx-click="change_settings_tab"
       phx-value-tab="general"
@@ -206,6 +198,17 @@
       ]}
     >
       <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
+    </a>
+    <a
+      role="tab"
+      phx-click="change_settings_tab"
+      phx-value-tab="import"
+      class={[
+        "tab",
+        classes("tab-active": @active_settings_tab == "import")
+      ]}
+    >
+      <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
     </a>
     <a
       :if={@map_subscriptions_enabled?}
@@ -233,6 +236,34 @@
     </a>
   </div>
   <.header :if={@active_settings_tab == "general"} class="bordered border-1 border-zinc-800">
+    <:actions>
+      <.form
+        :let={f}
+        :if={assigns |> Map.get(:options_form, false)}
+        for={@options_form}
+        phx-change="update_options"
+      >
+        <div>
+          <div class="stat-title">Map systems layout</div>
+          <div class="stat-value text-white">
+            <.input
+              type="select"
+              field={f[:layout]}
+              class="p-dropdown p-component p-inputwrapper"
+              placeholder="Map default layout"
+              options={@layout_options}
+            />
+          </div>
+        </div>
+        <.input
+          type="checkbox"
+          field={f[:store_custom_labels]}
+          label="Store system custom labels"
+        />
+      </.form>
+    </:actions>
+  </.header>
+  <.header :if={@active_settings_tab == "import"} class="bordered border-1 border-zinc-800">
     Import/Export Map Settings
     <:actions>
       <.form :if={assigns |> Map.get(:import_form, false)} for={@import_form} phx-change="import">

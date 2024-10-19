@@ -23,6 +23,62 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   border-radius: 5px;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+
+
+  &.Mataria, &.Amarria, &.Gallente, &.Caldaria {
+    &::Before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: 50% 50%;
+      z-index: -1;
+      background-repeat: no-repeat;
+      border-radius: 3px;
+    }
+  }
+
+  &.Mataria {
+    &::before {
+      background-image: url("/images/mataria.png");
+      opacity: 0.6;
+      background-position-x: -28px;
+      background-position-y: -3px;
+    }
+  }
+
+  &.Caldaria {
+    &::before {
+      background-image: url("/images/caldaria.png");
+      opacity: 0.6;
+      background-position-x: -16px;
+      background-position-y: -17px;
+    }
+  }
+
+  &.Amarria {
+    &::before {
+      opacity: 0.45;
+      background-image: url("/images/amarr.png");
+      background-position-x: 0px;
+      background-position-y: -1px;
+      width: calc(100% + 10px)
+    }
+  }
+
+  &.Gallente {
+    &::before {
+      opacity: 0.6;
+      background-image: url("/images/gallente.png");
+      background-position-x: -1px;
+      background-position-y: -10px;
+    }
+  }
+
 
   &.selected {
     border-color: $pastel-pink;

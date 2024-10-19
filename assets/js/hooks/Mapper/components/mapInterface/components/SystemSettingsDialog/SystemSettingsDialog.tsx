@@ -90,7 +90,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
   }, []);
 
   const handleInput = useCallback((e: any) => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9[\](){}]/g, '');
   }, []);
 
   return (
@@ -160,7 +160,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                   aria-describedby="label"
                   autoComplete="off"
                   value={label}
-                  maxLength={3}
+                  maxLength={5}
                   onChange={e => setLabel(e.target.value)}
                   onInput={handleInput}
                 />

@@ -7,6 +7,7 @@ export type MapData = MapUnionTypes & {
   isConnecting: boolean;
   hoverNodeId: string | null;
   visibleNodes: Set<string>;
+  showKSpaceBG: boolean;
 };
 
 interface MapProviderProps {
@@ -27,6 +28,7 @@ const INITIAL_DATA: MapData = {
   connections: [],
   hoverNodeId: null,
   visibleNodes: new Set(),
+  showKSpaceBG: false,
 };
 
 export interface MapContextProps {
@@ -38,6 +40,7 @@ export interface MapContextProps {
 const MapContext = createContext<MapContextProps>({
   update: () => {},
   data: { ...INITIAL_DATA },
+  // @ts-ignore
   outCommand: async () => void 0,
 });
 

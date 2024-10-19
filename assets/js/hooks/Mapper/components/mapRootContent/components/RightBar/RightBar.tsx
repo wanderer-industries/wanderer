@@ -8,10 +8,13 @@ import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 interface RightBarProps {
   onShowOnTheMap?: () => void;
+  onShowMapSettings?: () => void;
 }
 
-export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
+export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) => {
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+
+  const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
 
   const handleAddCharacter = useCallback(() => {
     outCommand({
@@ -24,6 +27,13 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
     setInterfaceSettings(x => ({
       ...x,
       isShowMinimap: !x.isShowMinimap,
+    }));
+  }, [setInterfaceSettings]);
+
+  const toggleKSpace = useCallback(() => {
+    setInterfaceSettings(x => ({
+      ...x,
+      isShowKSpace: !x.isShowKSpace,
     }));
   }, [setInterfaceSettings]);
 
@@ -50,7 +60,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={handleAddCharacter}
           >
-            <i className="pi pi-user-plus text-lg"></i>
+            <i className="pi pi-user-plus"></i>
           </button>
         </WdTooltipWrapper>
 
@@ -60,26 +70,44 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={onShowOnTheMap}
           >
-            <i className="pi pi-hashtag text-lg"></i>
+            <i className="pi pi-hashtag"></i>
           </button>
         </WdTooltipWrapper>
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
+        <WdTooltipWrapper content="User settings" position={TooltipPosition.left}>
+          <button
+            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+            type="button"
+            onClick={onShowMapSettings}
+          >
+            <i className="pi pi-cog"></i>
+          </button>
+        </WdTooltipWrapper>
+
         <WdTooltipWrapper
-          content={interfaceSettings.isShowMinimap ? 'Hide minimap' : 'Show minimap'}
+          content={
+            interfaceSettings.isShowKSpace ? 'Hide highlighting Imperial Space' : 'Show highlighting Imperial Space'
+          }
           position={TooltipPosition.left}
         >
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
             type="button"
+            onClick={toggleKSpace}
+          >
+            <i className={interfaceSettings.isShowKSpace ? 'hero-cloud-solid' : 'hero-cloud'}></i>
+          </button>
+        </WdTooltipWrapper>
+
+        <WdTooltipWrapper content={isShowMinimap ? 'Hide minimap' : 'Show minimap'} position={TooltipPosition.left}>
+          <button
+            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+            type="button"
             onClick={toggleMinimap}
           >
-            {interfaceSettings.isShowMinimap ? (
-              <i className="pi pi-eye text-lg"></i>
-            ) : (
-              <i className="pi pi-eye-slash text-lg"></i>
-            )}
+            <i className={isShowMinimap ? 'pi pi-eye' : 'pi pi-eye-slash'}></i>
           </button>
         </WdTooltipWrapper>
 
@@ -89,7 +117,7 @@ export const RightBar = ({ onShowOnTheMap }: RightBarProps) => {
             type="button"
             onClick={toggleMenu}
           >
-            <i className="pi pi-window-minimize text-lg"></i>
+            <i className="pi pi-window-minimize"></i>
           </button>
         </WdTooltipWrapper>
       </div>

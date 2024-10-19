@@ -11,3 +11,7 @@ export const isKnownSpace = (wormholeClassID: number) => {
 
   return false;
 };
+
+export const isPossibleSpace = (spaces: number[], wormholeClassID: number) => {
+  return spaces.includes(wormholeClassID);
+};

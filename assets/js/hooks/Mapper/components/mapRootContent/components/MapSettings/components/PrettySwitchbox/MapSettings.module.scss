@@ -1,0 +1,48 @@
+.CheckboxContainer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+
+  & > span:nth-child(1) {
+    color: var(--gray-200);
+    font-size: 13px;
+    user-select: none;
+  }
+
+  & > :nth-child(2){
+    border-bottom: 2px dotted #3f3f3f;
+    height: 1px;
+    margin: 0 12px;
+  }
+}
+
+/* Уменьшение размеров InputSwitch с использованием глобальных стилей */
+.smallInputSwitch {
+  height: 100%;
+  display: flex;
+  align-items: center;
+
+  :global {
+    .p-inputswitch {
+      height: 1rem;
+      width: 2rem;
+      &.p-inputswitch-checked {
+        .p-inputswitch-slider::before {
+          transform: translateX(1rem);
+        }
+      }
+
+      &.p-highlight .p-inputswitch-slider:before {
+        transform: translateX(1rem);
+      }
+
+      .p-inputswitch-slider::before {
+        width: 0.8rem;
+        height: 0.8rem;
+        margin-top: -0.4rem;
+        margin-left: -3px;
+      }
+    }
+  }
+
+}

@@ -1,33 +1,17 @@
-<div
-  id="map-loader"
-  data-loading={show_loader("map-loader")}
-  data-loaded={hide_loader("map-loader")}
-  class="!z-100 absolute w-screen h-screen bg-transparent hidden"
->
-  <div class="flex w-full h-full items-center justify-center">
-    <div class="Loader" data-text="Wanderer">
-      <span class="Loader__Circle"></span>
-      <span class="Loader__Circle"></span>
-      <span class="Loader__Circle"></span>
-      <span class="Loader__Circle"></span>
-    </div>
-  </div>
-</div>
+<.live_component module={WandererAppWeb.MapLoader} id="map-loader" />
 
 <div class="w-full h-full" id="mapper" phx-hook="Mapper" phx-update="ignore"></div>
 
 <div class="absolute top-0 mt-2 left-16 flex gap-1">
-  <.form :let={f} for={@form} phx-change="change_map">
-    <span :if={@maps_loading} class="loading loading-dots loading-xs"></span>
-    <.input
-      :if={not @maps_loading}
-      type="select"
-      field={f[:map_slug]}
-      class="select h-8 min-h-[0px] !pt-1 !pb-1 text-sm bg-neutral-900"
-      placeholder="Select a map..."
-      options={Enum.map(@maps, fn map -> {map.label, map.value} end)}
-    />
-  </.form>
+  <.live_component
+    :if={not is_nil(assigns |> Map.get(:map_slug))}
+    module={WandererAppWeb.MapPicker}
+    id="map-picker"
+    notify_to={self()}
+    current_user={@current_user}
+    map_slug={@map_slug}
+    event_name="change_map"
+  />
 
   <.button
     :if={(@user_permissions || %{}) |> Map.get(:view_character, false)}
@@ -48,7 +32,7 @@
 </div>
 
 <.modal
-  :if={@live_action in [:add_system]}
+  :if={@live_action in [:add_system] && not is_nil(assigns |> Map.get(:map_slug)) && @map_loaded?}
   id="add-system-modal"
   class="!w-[400px]"
   title="Add System"

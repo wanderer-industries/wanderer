@@ -1490,6 +1490,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4714,25,Non-Interactable Asteroids,None,0,1,0,0,0
 4716,17,Abyssal Battlefield Filament Materials,None,1,0,0,0,1
 4717,17,CD Filaments,None,0,0,0,0,1
+4719,2,Rift,None,0,1,0,0,0
 4725,2118,Sequence Binders,None,0,0,0,0,1
 4726,2118,Ship SKIN Design Element,None,0,0,0,0,1
 4729,2143,Colony Reagents,None,1,0,0,0,1
@@ -1512,6 +1513,16 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4777,87,Structure Light Fighter,None,0,0,0,0,1
 4778,87,Structure Support Fighter,None,0,0,0,0,1
 4779,87,Structure Heavy Fighter,None,0,0,0,0,1
+4795,11,Asteroid Angel Cartel Officer Cruiser,None,0,0,0,0,0
+4796,11,Asteroid Angel Cartel Officer Frigate,None,0,0,0,0,0
+4797,11,Asteroid Blood Raiders Officer Cruiser,None,0,0,0,0,0
+4798,11,Asteroid Blood Raiders Officer Frigate,None,0,0,0,0,0
+4799,11,Asteroid Guristas Officer Cruiser,None,0,0,0,0,0
+4800,11,Asteroid Guristas Officer Frigate,None,0,0,0,0,0
+4801,11,Asteroid Sansha's Nation Officer Cruiser,None,0,0,0,0,0
+4802,11,Asteroid Sansha's Nation Officer Frigate,None,0,0,0,0,0
+4803,11,Asteroid Serpentis Officer Cruiser,None,0,0,0,0,0
+4804,11,Asteroid Serpentis Officer Frigate,None,0,0,0,0,0
 350858,350001,Infantry Weapons,None,1,0,0,0,0
 351064,350001,Infantry Dropsuits,None,1,0,0,0,0
 351121,350001,Infantry Modules,None,1,0,0,0,0

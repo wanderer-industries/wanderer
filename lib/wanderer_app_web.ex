@@ -62,6 +62,7 @@ defmodule WandererAppWeb do
       use Phoenix.LiveView, @opts
 
       unquote(html_helpers())
+      defguard is_connected?(socket) when socket.transport_pid != nil
     end
   end
 

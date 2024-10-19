@@ -1,21 +1,23 @@
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { InfoDrawer, LayoutEventBlocker, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
-import { Setting, SystemSignatureSettingsDialog } from './SystemSignatureSettingsDialog';
+import {
+  Setting,
+  SystemSignatureSettingsDialog,
+  COSMIC_SIGNATURE,
+  COSMIC_ANOMALY,
+  DEPLOYABLE,
+  STRUCTURE,
+  STARBASE,
+  SHIP,
+  DRONE,
+} from './SystemSignatureSettingsDialog';
 
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { PrimeIcons } from 'primereact/api';
 
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-
-export const COSMIC_SIGNATURE = 'Cosmic Signature';
-export const COSMIC_ANOMALY = 'Cosmic Anomaly';
-export const DEPLOYABLE = 'Deployable';
-export const STRUCTURE = 'Structure';
-export const STARBASE = 'Starbase';
-export const SHIP = 'Ship';
-export const DRONE = 'Drone';
 
 const settings: Setting[] = [
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true },

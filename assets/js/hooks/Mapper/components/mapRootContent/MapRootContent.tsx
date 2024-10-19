@@ -6,6 +6,8 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useState } from 'react';
 import { OnTheMap, RightBar } from '@/hooks/Mapper/components/mapRootContent/components';
 import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/components/MapContextMenu/MapContextMenu.tsx';
+import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
+import { MapSettings } from "@/hooks/Mapper/components/mapRootContent/components/MapSettings";
 
 export interface MapRootContentProps {}
 
@@ -15,9 +17,13 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const { isShowMenu } = interfaceSettings;
 
   const [showOnTheMap, setShowOnTheMap] = useState(false);
+  const [showMapSettings, setShowMapSettings] = useState(false);
   const mapInterface = <MapInterface />;
 
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
+  const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
+
+  useSkipContextMenu();
 
   return (
     <Layout map={<MapWrapper refn={mapRef} />}>
@@ -28,18 +34,19 @@ export const MapRootContent = ({}: MapRootContentProps) => {
             {mapInterface}
           </div>
           <div className="absolute top-0 right-0 w-14 h-[calc(100%+3.5rem)] pointer-events-auto">
-            <RightBar onShowOnTheMap={handleShowOnTheMap} />
+            <RightBar onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
           </div>
         </div>
       ) : (
         <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
           <Topbar>
-            <MapContextMenu onShowOnTheMap={handleShowOnTheMap} />
+            <MapContextMenu onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
           </Topbar>
           {mapInterface}
         </div>
       )}
       <OnTheMap show={showOnTheMap} onHide={() => setShowOnTheMap(false)} />
+      <MapSettings show={showMapSettings} onHide={() => setShowMapSettings(false)} />
     </Layout>
   );
 };

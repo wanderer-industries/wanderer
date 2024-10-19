@@ -11,7 +11,8 @@ defmodule WandererApp.Map.Server.Impl do
   defstruct [
     :map_id,
     :rtree_name,
-    map: nil
+    map: nil,
+    map_opts: []
   ]
 
   # @ccp1 -1
@@ -148,7 +149,7 @@ defmodule WandererApp.Map.Server.Impl do
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
 
-      broadcast!(map_id, :map_started)
+      broadcast!(map_id, :map_server_started)
 
       :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
 
@@ -176,38 +177,46 @@ defmodule WandererApp.Map.Server.Impl do
   def get_characters(%{map_id: map_id} = _state),
     do: {:ok, map_id |> WandererApp.Map.list_characters()}
 
-  def add_character(%{map_id: map_id} = state, %{id: character_id} = character) do
-    with :ok <- map_id |> WandererApp.Map.add_character(character),
-         {:ok, _} <-
-           WandererApp.MapCharacterSettingsRepo.create(%{
-             character_id: character_id,
-             map_id: map_id,
-             tracked: false
-           }),
-         {:ok, character} <- WandererApp.Character.get_character(character_id) do
-      broadcast!(map_id, :character_added, character)
+  def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
+    Task.start_link(fn ->
+      with :ok <- map_id |> WandererApp.Map.add_character(character),
+           {:ok, _} <-
+             WandererApp.MapCharacterSettingsRepo.create(%{
+               character_id: character_id,
+               map_id: map_id,
+               tracked: track_character
+             }),
+           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+        broadcast!(map_id, :character_added, character)
 
-      :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
+        :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
 
-      state
-    else
-      {:error, error} ->
-        state
-    end
+        :ok
+      else
+        {:error, _error} ->
+          :ok
+      end
+    end)
+
+    state
   end
 
   def remove_character(%{map_id: map_id} = state, character_id) do
-    with :ok <- WandererApp.Map.remove_character(map_id, character_id),
-         {:ok, character} <- WandererApp.Character.get_character(character_id) do
-      broadcast!(map_id, :character_removed, character)
+    Task.start_link(fn ->
+      with :ok <- WandererApp.Map.remove_character(map_id, character_id),
+           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+        broadcast!(map_id, :character_removed, character)
 
-      :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
+        :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
 
-      state
-    else
-      {:error, error} ->
-        state
-    end
+        :ok
+      else
+        {:error, _error} ->
+          :ok
+      end
+    end)
+
+    state
   end
 
   def untrack_characters(%{map_id: map_id} = state, characters_ids) do
@@ -324,7 +333,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def delete_systems(
-        %{map_id: map_id, rtree_name: rtree_name} = state,
+        %{map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = state,
         removed_ids,
         user_id,
         character_id
@@ -343,7 +352,7 @@ defmodule WandererApp.Map.Server.Impl do
     removed_ids
     |> Enum.each(fn solar_system_id ->
       map_id
-      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
+      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id, map_opts)
       |> case do
         {:ok, _} ->
           :ok
@@ -357,17 +366,7 @@ defmodule WandererApp.Map.Server.Impl do
     connections_to_remove
     |> Enum.each(fn connection ->
       @logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
-
-      connection
-      |> WandererApp.MapConnectionRepo.destroy!()
-      |> case do
-        :ok ->
-          :ok
-
-        {:error, error} ->
-          @logger.error("Failed to remove connection from map: #{inspect(error, pretty: true)}")
-          :ok
-      end
+      WandererApp.MapConnectionRepo.destroy(map_id, connection)
     end)
 
     @ddrt.delete(removed_ids, rtree_name)
@@ -377,16 +376,20 @@ defmodule WandererApp.Map.Server.Impl do
 
     case not is_nil(user_id) do
       true ->
-        :telemetry.execute(
-          [:wanderer_app, :map, :systems, :remove],
-          %{count: removed_ids |> Enum.count()},
-          %{
+        {:ok, _} =
+          WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
             character_id: character_id,
             user_id: user_id,
             map_id: map_id,
             solar_system_ids: removed_ids
-          }
+          })
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :systems, :remove],
+          %{count: removed_ids |> Enum.count()}
         )
+
+        :ok
 
       _ ->
         :ok
@@ -803,7 +806,16 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
-  def handle_event({ref, _result}, %{map_id: map_id} = state) do
+  def handle_event({:options_updated, options}, %{map: map, map_id: map_id} = state),
+    do: %{
+      state
+      | map_opts: [
+          layout: options |> Map.get("layout"),
+          store_custom_labels: options |> Map.get("store_custom_labels")
+        ]
+    }
+
+  def handle_event({ref, _result}, %{map_id: _map_id} = state) do
     Process.demonitor(ref, [:flush])
 
     state
@@ -842,12 +854,12 @@ defmodule WandererApp.Map.Server.Impl do
          character_id,
          location,
          old_location,
-         %{map: map, map_id: map_id, rtree_name: rtree_name} = _state
+         %{map: map, map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = _state
        ) do
     case is_nil(old_location.solar_system_id) and
            _can_add_location(map.scope, location.solar_system_id) do
       true ->
-        :ok = maybe_add_system(map_id, location, nil, rtree_name)
+        :ok = maybe_add_system(map_id, location, nil, rtree_name, map_opts)
 
       _ ->
         case _is_connection_valid(
@@ -856,10 +868,9 @@ defmodule WandererApp.Map.Server.Impl do
                location.solar_system_id
              ) do
           true ->
-            {:ok, character} = WandererApp.Character.get_character(character_id)
-            :ok = maybe_add_system(map_id, location, old_location, rtree_name)
-            :ok = maybe_add_system(map_id, old_location, location, rtree_name)
-            :ok = maybe_add_connection(map_id, location, old_location, character)
+            :ok = maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
+            :ok = maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
+            :ok = maybe_add_connection(map_id, location, old_location, character_id)
 
           _ ->
             :ok
@@ -1105,7 +1116,7 @@ defmodule WandererApp.Map.Server.Impl do
        end)}
 
   defp _add_system(
-         %{map_id: map_id, rtree_name: rtree_name} = state,
+         %{map_id: map_id, map_opts: map_opts, rtree_name: rtree_name} = state,
          %{
            solar_system_id: solar_system_id,
            coordinates: coordinates
@@ -1121,7 +1132,7 @@ defmodule WandererApp.Map.Server.Impl do
 
         _ ->
           %{x: x, y: y} =
-            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name)
+            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
 
           %{"x" => x, "y" => y}
       end
@@ -1173,12 +1184,15 @@ defmodule WandererApp.Map.Server.Impl do
 
     broadcast!(map_id, :add_system, system)
 
-    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1}, %{
-      character_id: character_id,
-      user_id: user_id,
-      map_id: map_id,
-      solar_system_id: solar_system_id
-    })
+    {:ok, _} =
+      WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
+        character_id: character_id,
+        user_id: user_id,
+        map_id: map_id,
+        solar_system_id: solar_system_id
+      })
+
+    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1})
 
     state
   end
@@ -1263,20 +1277,27 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp _init_map(
          state,
-         %{characters: characters} = map,
+         %{characters: characters} = initial_map,
          subscription_settings,
          systems,
          connections
        ) do
     map =
-      map
+      initial_map
       |> WandererApp.Map.new()
       |> WandererApp.Map.update_subscription_settings!(subscription_settings)
       |> WandererApp.Map.add_systems!(systems)
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
 
-    %{state | map: map}
+    {:ok, map_options} = WandererApp.MapRepo.options_to_form_data(initial_map)
+
+    map_opts = [
+      layout: map_options |> Map.get("layout"),
+      store_custom_labels: map_options |> Map.get("store_custom_labels")
+    ]
+
+    %{state | map: map, map_opts: map_opts}
   end
 
   defp _init_map_systems(state, [] = _systems), do: state
@@ -1573,8 +1594,7 @@ defmodule WandererApp.Map.Server.Impl do
            old_location.solar_system_id
          ) do
       {:ok, connection} ->
-        connection
-        |> WandererApp.MapConnectionRepo.destroy!()
+        :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
 
         broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
@@ -1586,20 +1606,32 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp maybe_remove_connection(_map_id, _location, _old_location), do: :ok
 
-  defp maybe_add_connection(map_id, location, old_location, character)
+  defp maybe_add_connection(map_id, location, old_location, character_id)
        when not is_nil(location) and not is_nil(old_location) and
               not is_nil(old_location.solar_system_id) and
               location.solar_system_id != old_location.solar_system_id do
-    case character do
+    character_id
+    |> WandererApp.Character.get_character!()
+    |> case do
       nil ->
         :ok
 
-      _ ->
-        :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{
-          map_id: map_id,
-          character: character,
-          solar_system_source_id: old_location.solar_system_id,
-          solar_system_target_id: location.solar_system_id
+      character ->
+        :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
+
+        {:ok, _} =
+          WandererApp.Api.MapChainPassages.new(%{
+            map_id: map_id,
+            character_id: character_id,
+            ship_type_id: character.ship,
+            ship_name: character.ship_name,
+            solar_system_source_id: old_location.solar_system_id,
+            solar_system_target_id: location.solar_system_id
+          })
+
+        broadcast!(map_id, :maybe_select_system, %{
+          character_id: character_id,
+          solar_system_id: location.solar_system_id
         })
     end
 
@@ -1612,8 +1644,17 @@ defmodule WandererApp.Map.Server.Impl do
             solar_system_target: location.solar_system_id
           })
 
-        broadcast!(map_id, :add_connection, connection)
         WandererApp.Map.add_connection(map_id, connection)
+
+        broadcast!(map_id, :add_connection, connection)
+
+        broadcast!(map_id, :maybe_link_signature, %{
+          character_id: character_id,
+          solar_system_source: old_location.solar_system_id,
+          solar_system_target: location.solar_system_id
+        })
+
+        :ok
 
       {:error, error} ->
         @logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)
@@ -1621,13 +1662,13 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp maybe_add_connection(_map_id, _location, _old_location, _character), do: :ok
+  defp maybe_add_connection(_map_id, _location, _old_location, _character_id), do: :ok
 
-  defp maybe_add_system(map_id, location, old_location, rtree_name)
+  defp maybe_add_system(map_id, location, old_location, rtree_name, opts)
        when not is_nil(location) do
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
-        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name)
+        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, opts)
 
         case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
                map_id,
@@ -1663,32 +1704,33 @@ defmodule WandererApp.Map.Server.Impl do
             {:ok, solar_system_info} =
               WandererApp.Api.MapSolarSystem.by_solar_system_id(location.solar_system_id)
 
-              WandererApp.MapSystemRepo.create(%{
-                  map_id: map_id,
-                  solar_system_id: location.solar_system_id,
-                  name: solar_system_info.solar_system_name,
-                  position_x: position.x,
-                  position_y: position.y
-                })
-                |> case do
-                  {:ok, new_system} ->
-                    @ddrt.insert(
-                      {new_system.solar_system_id,
-                      WandererApp.Map.PositionCalculator.get_system_bounding_rect(new_system)},
-                      rtree_name
-                    )
+            WandererApp.MapSystemRepo.create(%{
+              map_id: map_id,
+              solar_system_id: location.solar_system_id,
+              name: solar_system_info.solar_system_name,
+              position_x: position.x,
+              position_y: position.y
+            })
+            |> case do
+              {:ok, new_system} ->
+                @ddrt.insert(
+                  {new_system.solar_system_id,
+                   WandererApp.Map.PositionCalculator.get_system_bounding_rect(new_system)},
+                  rtree_name
+                )
 
-                    WandererApp.Cache.put(
-                      "map_#{map_id}:system_#{new_system.id}:last_activity",
-                      DateTime.utc_now(),
-                      ttl: @system_inactive_timeout
-                    )
+                WandererApp.Cache.put(
+                  "map_#{map_id}:system_#{new_system.id}:last_activity",
+                  DateTime.utc_now(),
+                  ttl: @system_inactive_timeout
+                )
 
-                    broadcast!(map_id, :add_system, new_system)
-                    WandererApp.Map.add_system(map_id, new_system)
-                  _ ->
-                    :ok
-                end
+                broadcast!(map_id, :add_system, new_system)
+                WandererApp.Map.add_system(map_id, new_system)
+
+              _ ->
+                :ok
+            end
         end
 
       {:error, _} ->
@@ -1696,14 +1738,14 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name), do: :ok
+  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _opts), do: :ok
 
-  defp calc_new_system_position(map_id, old_location, rtree_name) do
-    {:ok,
-     map_id
-     |> WandererApp.Map.find_system_by_location(old_location)
-     |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name)}
-  end
+  defp calc_new_system_position(map_id, old_location, rtree_name, opts),
+    do:
+      {:ok,
+       map_id
+       |> WandererApp.Map.find_system_by_location(old_location)
+       |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name, opts)}
 
   defp _broadcast_acl_updates(
          {:ok,

@@ -2,7 +2,7 @@ defmodule WandererApp.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/wanderer-industries/wanderer"
-  @version "1.0.12"
+  @version "1.12.3"
 
   def project do
     [
@@ -100,7 +100,7 @@ defmodule WandererApp.MixProject do
       {:makeup_elixir, ">= 0.0.0"},
       {:makeup_erlang, ">= 0.0.0"},
       {:better_number, "~> 1.0.0"},
-      {:delta_crdt, "~> 0.6.5"},
+      {:delta_crdt, "~> 0.6.5", override: true},
       {:qex, "~> 0.5"},
       {:site_encrypt, "~> 0.6.0"},
       {:bandit, "~> 1.0"},
@@ -112,7 +112,8 @@ defmodule WandererApp.MixProject do
       {:git_ops, "~> 2.6.1"},
       {:version_tasks, "~> 0.12.0"},
       {:error_tracker, "~> 0.2"},
-      {:sourceror, "~> 1.3.0", override: true}
+      {:ddrt, "~> 0.2.1"},
+      {:live_view_events, "~> 0.1.0"}
     ]
   end
 

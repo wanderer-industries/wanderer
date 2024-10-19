@@ -6,14 +6,9 @@ defmodule WandererApp.Utils.JSONUtil do
     Jason.decode(body)
   end
 
-  def map_json({:ok, json}, mapper) do
-    Enum.map(json, mapper)
-  end
-
-  def compress(data) do
-    data
-    |> Jason.encode!()
-    |> :zlib.compress()
-    |> Base.encode64()
-  end
+  def read_json!(filename),
+    do:
+      filename
+      |> File.read!()
+      |> Jason.decode!()
 end

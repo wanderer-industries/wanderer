@@ -1,5 +1,5 @@
 /* Основной класс диалога */
-.p-dialog {
+body .p-dialog {
   display: flex;
   flex-direction: column;
   //position: absolute;
@@ -7,11 +7,26 @@
   left: 0;
   //visibility: hidden;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 2px;
   box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
   transition: box-shadow 0.3s;
-  background: #fff;
   z-index: 1000;
+  border: 1px solid #212121;
+  background: var(--surface-h);
+  color: var(--text-color);
+
+  .p-dialog-header {
+    background: #171717 !important;
+    color: var(--text-color);
+
+    .p-dialog-header-icon:focus-visible {
+      box-shadow: none !important;
+    }
+  }
+
+  .p-dialog-footer {
+    border-top: 1px solid var(--surface-d);
+  }
 }
 
 /* Стиль видимого диалога */
@@ -45,12 +60,12 @@
   justify-content: space-between;
   padding: 1rem;
   background: #f4f4f4;
-  border-bottom: 1px solid #ddd;
+  //border-bottom: 1px solid #ddd;
 }
 
 /* Содержимое диалога */
 .p-dialog-content {
-  padding: 1rem;
+  padding: 0.5rem;
   overflow-y: auto;
   flex: 1;
 }
@@ -77,24 +92,4 @@
 
 .p-dialog-header-close .pi {
   font-size: 1.25rem;
-}
-
-/* Тема Saga Blue (пример) */
-body .p-dialog {
-  background: var(--surface-a);
-  color: var(--text-color);
-}
-
-body .p-dialog .p-dialog-header,
-body .p-dialog .p-dialog-footer {
-  background: var(--surface-b);
-  color: var(--text-color);
-}
-
-body .p-dialog .p-dialog-header {
-  border-bottom: 1px solid var(--surface-d);
-}
-
-body .p-dialog .p-dialog-footer {
-  border-top: 1px solid var(--surface-d);
 }

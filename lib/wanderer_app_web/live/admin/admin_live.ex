@@ -12,7 +12,7 @@ defmodule WandererAppWeb.AdminLive do
       {:ok, socket.assigns.current_user.characters}
     )
 
-    admin_character =
+    corp_wallet_character =
       socket.assigns.current_user.characters
       |> Enum.find(fn character ->
         WandererApp.Character.can_track_corp_wallet?(character)
@@ -31,39 +31,35 @@ defmodule WandererAppWeb.AdminLive do
     end)
 
     socket =
-      if not is_nil(admin_character) do
+      if not is_nil(corp_wallet_character) do
         {:ok, total_balance} =
-          WandererApp.Character.TransactionsTracker.get_total_balance(admin_character.id)
+          WandererApp.Character.TransactionsTracker.get_total_balance(corp_wallet_character.id)
 
         {:ok, transactions} =
-          WandererApp.Character.TransactionsTracker.get_transactions(admin_character.id)
-
-        {:ok, active_map_subscriptions} =
-          WandererApp.Api.MapSubscription.all_active()
+          WandererApp.Character.TransactionsTracker.get_transactions(corp_wallet_character.id)
 
         socket
         |> assign(
-          show_invites?: WandererApp.Env.invites(),
-          admin_character_id: admin_character.id,
           total_balance: total_balance,
-          transactions: transactions,
-          user_character_ids: user_character_ids,
-          active_map_subscriptions: active_map_subscriptions
+          transactions: transactions
         )
       else
         socket
         |> assign(
-          admin_character_id: nil,
-          show_invites?: false,
           total_balance: 0,
-          transactions: [],
-          active_map_subscriptions: []
+          transactions: []
         )
       end
+
+    {:ok, active_map_subscriptions} =
+      WandererApp.Api.MapSubscription.all_active()
 
     {:ok,
      socket
      |> assign(
+       active_map_subscriptions: active_map_subscriptions,
+       show_invites?: WandererApp.Env.invites(),
+       user_character_ids: user_character_ids,
        user_id: user_id,
        invite_link: nil,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?()
@@ -72,7 +68,7 @@ defmodule WandererAppWeb.AdminLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(user_id: nil, admin_character_id: nil)}
+    {:ok, socket |> assign(user_id: nil)}
   end
 
   @impl true

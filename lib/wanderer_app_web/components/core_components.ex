@@ -92,11 +92,11 @@ defmodule WandererAppWeb.CoreComponents do
               <div class="absolute right-4">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                type="button"
-                class="p-link opacity-70 hover:opacity-100"
-                aria-label={gettext("close")}
+                  type="button"
+                  class="p-link opacity-70 hover:opacity-100"
+                  aria-label={gettext("close")}
                 >
-                <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
                 </button>
               </div>
             </h3>
@@ -377,7 +377,7 @@ defmodule WandererAppWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name} class="form-control mt-8">
-      <label class="label cursor-pointer">
+      <label class="label cursor-pointer gap-2">
         <span class="label-text"><%= @label %></span>
         <input type="hidden" name={@name} value="false" />
         <input
@@ -602,12 +602,10 @@ defmodule WandererAppWeb.CoreComponents do
           <tr
             :for={row <- @rows}
             id={@row_id && @row_id.(row)}
+            phx-click={@row_click && @row_click.(row)}
             class={"hover #{if @row_selected && @row_selected.(row), do: "!bg-slate-600", else: ""} #{if @row_click, do: "cursor-pointer", else: ""}"}
           >
-            <td
-              :for={{col, _index} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-            >
+            <td :for={{col, _index} <- Enum.with_index(@col)}>
               <%= render_slot(col, @row_item.(row)) %>
             </td>
             <td :if={@action != []}>
