@@ -674,6 +674,7 @@ defmodule WandererAppWeb.MapLive do
         "mass_status" -> :update_connection_mass_status
         "ship_size_type" -> :update_connection_ship_size_type
         "locked" -> :update_connection_locked
+        "custom_info" -> :update_connection_custom_info
         _ -> nil
       end
 
@@ -683,6 +684,7 @@ defmodule WandererAppWeb.MapLive do
         "mass_status" -> :mass_status
         "ship_size_type" -> :ship_size_type
         "locked" -> :locked
+        "custom_info" -> :custom_info
         _ -> nil
       end
 
@@ -1719,13 +1721,12 @@ defmodule WandererAppWeb.MapLive do
       |> Enum.map(fn %{updated_at: updated_at, linked_system_id: linked_system_id} = s ->
         s
         |> Map.take([
-          :system_id,
           :eve_id,
-          :character_eve_id,
           :name,
           :description,
           :kind,
           :group,
+          :type,
           :updated_at
         ])
         |> Map.put(:linked_system, get_system_static_info(linked_system_id))
@@ -1905,7 +1906,8 @@ defmodule WandererAppWeb.MapLive do
                        "eve_id" => eve_id,
                        "name" => name,
                        "kind" => kind,
-                       "group" => group
+                       "group" => group,
+                       "type" => type
                      } = signature ->
         %{
           system_id: system_id,
@@ -1914,6 +1916,7 @@ defmodule WandererAppWeb.MapLive do
           description: Map.get(signature, "description"),
           kind: kind,
           group: group,
+          type: type,
           character_eve_id: character_eve_id
         }
       end)

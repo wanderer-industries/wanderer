@@ -15,6 +15,7 @@ defmodule WandererApp.Api.MapSystemSignature do
     define(:create, action: :create)
     define(:update, action: :update)
     define(:update_linked_system, action: :update_linked_system)
+    define(:update_type, action: :update_type)
 
     define(:by_id,
       get_by: [:id],
@@ -33,7 +34,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       :description,
       :kind,
       :group,
-      :custom_info
+      :type
     ]
 
     defaults [:read, :destroy]
@@ -53,7 +54,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :description,
         :kind,
         :group,
-        :custom_info
+        :type
       ]
 
       argument :system_id, :uuid, allow_nil?: false
@@ -71,7 +72,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :kind,
         :group,
         :linked_system_id,
-        :custom_info
+        :type
       ]
 
       primary? true
@@ -81,6 +82,11 @@ defmodule WandererApp.Api.MapSystemSignature do
     update :update_linked_system do
       accept [:linked_system_id]
     end
+
+    update :update_type do
+      accept [:type]
+    end
+
 
     read :by_system_id do
       argument(:system_id, :string, allow_nil?: false)
@@ -108,7 +114,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       allow_nil? true
     end
 
-    attribute :custom_info, :string do
+    attribute :type, :string do
       allow_nil? true
     end
 

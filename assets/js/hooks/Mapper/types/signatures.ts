@@ -6,6 +6,7 @@ export type SystemSignature = {
   name: string;
   description?: string;
   group: string;
+  type: string;
   linked_system?: SolarSystemStaticInfoRaw;
   updated_at?: string;
 };
