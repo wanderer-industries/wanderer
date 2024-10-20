@@ -5,32 +5,23 @@ defmodule WandererAppWeb.MapLive do
   require Logger
 
   @impl true
-  def mount(params, _session, socket) when is_connected?(socket) do
-    socket =
-      with %{"slug" => map_slug} <- params do
-        Process.send_after(self(), {:load_map, map_slug}, Enum.random(10..500))
-
-        socket
-        |> assign(map_slug: map_slug)
-        |> push_event("js-exec", %{
-          to: "#map-loader",
-          attr: "data-loading",
-          timeout: 2000
-        })
-      else
-        _ ->
-          socket
-          |> assign(map_slug: nil)
-      end
+  def mount(%{"slug" => map_slug} = params, _session, socket) when is_connected?(socket) do
+    Process.send_after(self(), {:load_map, map_slug}, Enum.random(10..500))
 
     {:ok,
      socket
      |> assign(
+       map_slug: map_slug,
        map_loaded?: false,
        server_online: false,
        selected_subscription: nil,
        user_permissions: nil
-     )}
+     )
+     |> push_event("js-exec", %{
+       to: "#map-loader",
+       attr: "data-loading",
+       timeout: 2000
+     })}
   end
 
   @impl true
@@ -38,6 +29,7 @@ defmodule WandererAppWeb.MapLive do
     {:ok,
      socket
      |> assign(
+       map_slug: nil,
        map_loaded?: false,
        server_online: false,
        selected_subscription: nil,
@@ -1245,9 +1237,9 @@ defmodule WandererAppWeb.MapLive do
         } = socket
       ) do
     case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-            map_id: map_id,
-            solar_system_id: solar_system_source
-          }) do
+           map_id: map_id,
+           solar_system_id: solar_system_source
+         }) do
       {:ok, system} ->
         first_character_eve_id =
           user_characters |> List.first()
@@ -1267,11 +1259,11 @@ defmodule WandererAppWeb.MapLive do
 
           _ ->
             {:noreply,
-              socket
-              |> put_flash(
-                :error,
-                "You should enable tracking for at least one character to work with signatures."
-              )}
+             socket
+             |> put_flash(
+               :error,
+               "You should enable tracking for at least one character to work with signatures."
+             )}
         end
 
       _ ->
