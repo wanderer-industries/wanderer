@@ -1,7 +1,7 @@
 defmodule WandererApp.MapRepo do
   use WandererApp, :repository
 
-  @default_map_options %{"layout" => "left_to_right", "store_custom_labels" => false}
+  @default_map_options %{"layout" => "left_to_right", "store_custom_labels" => "false"}
 
   def get(map_id, relationships \\ []) do
     map_id
