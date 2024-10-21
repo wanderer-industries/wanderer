@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.12.4](https://github.com/wanderer-industries/wanderer/compare/v1.12.3...v1.12.4) (2024-10-21)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix systems cleanup
+
 ## [v1.12.3](https://github.com/wanderer-industries/wanderer/compare/v1.12.2...v1.12.3) (2024-10-18)
 
 
