@@ -9,21 +9,25 @@ import { OutCommand } from '@/hooks/Mapper/types';
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
   select_on_spash = 'select_on_spash',
+  delete_connection_with_sigs = 'delete_connection_with_sigs',
 }
 
 export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
   [UserSettingsRemoteProps.select_on_spash]: false,
+  [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
 };
 
 export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.link_signature_on_splash,
   UserSettingsRemoteProps.select_on_spash,
+  UserSettingsRemoteProps.delete_connection_with_sigs,
 ];
 
 export type UserSettingsRemote = {
   link_signature_on_splash: boolean;
   select_on_spash: boolean;
+  delete_connection_with_sigs: boolean;
 };
 
 export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
@@ -49,6 +53,10 @@ const SYSTEMS_CHECKBOXES_PROPS: CheckboxesList = [
 
 const SIGNATURES_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: UserSettingsRemoteProps.link_signature_on_splash, label: 'Link signature on splash' },
+];
+
+const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [
+  { prop: UserSettingsRemoteProps.delete_connection_with_sigs, label: 'Delete connections to linked signatures' },
 ];
 
 const UI_CHECKBOXES_PROPS: CheckboxesList = [
@@ -149,8 +157,8 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
                   {renderCheckboxesList(SYSTEMS_CHECKBOXES_PROPS)}
                 </div>
               </TabPanel>
-              <TabPanel disabled header="Connections" headerClassName={styles.verticalTabHeader}>
-                <p>Connections</p>
+              <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
+                {renderCheckboxesList(CONNECTIONS_CHECKBOXES_PROPS)}
               </TabPanel>
               <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
                 {renderCheckboxesList(SIGNATURES_CHECKBOXES_PROPS)}

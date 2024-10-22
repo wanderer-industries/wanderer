@@ -67,8 +67,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :name,
         :description,
         :kind,
-        :group,
-        :linked_system_id
+        :group
       ]
 
       primary? true
