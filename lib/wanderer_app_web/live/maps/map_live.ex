@@ -391,6 +391,19 @@ defmodule WandererAppWeb.MapLive do
     end
   end
 
+  @impl true
+  def handle_info(
+        %{event: :signatures_updated, payload: solar_system_id},
+        socket
+      ),
+      do:
+        {:noreply,
+         socket
+         |> push_map_event(
+           "signatures_updated",
+           solar_system_id
+         )}
+
   def handle_info(:no_access, socket),
     do:
       {:noreply,
@@ -785,6 +798,8 @@ defmodule WandererAppWeb.MapLive do
             |> Enum.map(fn s ->
               s |> WandererApp.Api.MapSystemSignature.create!()
             end)
+
+            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{event: :signatures_updated, payload: system.solar_system_id})
 
             {:reply, %{signatures: get_system_signatures(system.id)}, socket}
 
