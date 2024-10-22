@@ -56,7 +56,7 @@ const SIGNATURES_CHECKBOXES_PROPS: CheckboxesList = [
 ];
 
 const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: UserSettingsRemoteProps.delete_connection_with_sigs, label: 'Delete connections with linked signatures' },
+  { prop: UserSettingsRemoteProps.delete_connection_with_sigs, label: 'Delete connections to linked signatures' },
 ];
 
 const UI_CHECKBOXES_PROPS: CheckboxesList = [
@@ -157,8 +157,8 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
                   {renderCheckboxesList(SYSTEMS_CHECKBOXES_PROPS)}
                 </div>
               </TabPanel>
-              <TabPanel disabled header="Connections" headerClassName={styles.verticalTabHeader}>
-                <p>Connections</p>
+              <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
+                {renderCheckboxesList(CONNECTIONS_CHECKBOXES_PROPS)}
               </TabPanel>
               <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
                 {renderCheckboxesList(SIGNATURES_CHECKBOXES_PROPS)}
