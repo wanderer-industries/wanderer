@@ -715,6 +715,7 @@ defmodule WandererAppWeb.MapLive do
         %{
           assigns: %{
             map_id: map_id,
+            map_user_settings: map_user_settings,
             user_characters: user_characters,
             user_permissions: %{update_system: true}
           }
@@ -748,9 +749,23 @@ defmodule WandererAppWeb.MapLive do
               |> parse_signatures(first_character_eve_id, system.id)
               |> Enum.map(fn s -> s.eve_id end)
 
+            delete_connection_with_sigs =
+              map_user_settings
+              |> WandererApp.MapUserSettingsRepo.to_form_data!()
+              |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
+
             WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
             |> Enum.filter(fn s -> s.eve_id in removed_signatures_eve_ids end)
             |> Enum.each(fn s ->
+
+              if delete_connection_with_sigs && not is_nil(s.linked_system_id) do
+                map_id
+                |> WandererApp.Map.Server.delete_connection(%{
+                  solar_system_source_id: solar_system_id |> String.to_integer(),
+                  solar_system_target_id: s.linked_system_id
+                })
+              end
+
               s
               |> Ash.destroy!()
             end)
@@ -1210,7 +1225,7 @@ defmodule WandererAppWeb.MapLive do
       ) do
     settings =
       user_settings_form
-      |> Map.take(["select_on_spash", "link_signature_on_splash"])
+      |> Map.take(["select_on_spash", "link_signature_on_splash", "delete_connection_with_sigs"])
       |> Jason.encode!()
 
     {:ok, user_settings} =

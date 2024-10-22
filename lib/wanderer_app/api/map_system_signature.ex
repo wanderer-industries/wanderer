@@ -71,7 +71,6 @@ defmodule WandererApp.Api.MapSystemSignature do
         :description,
         :kind,
         :group,
-        :linked_system_id,
         :type
       ]
 
@@ -86,7 +85,6 @@ defmodule WandererApp.Api.MapSystemSignature do
     update :update_type do
       accept [:type]
     end
-
 
     read :by_system_id do
       argument(:system_id, :string, allow_nil?: false)

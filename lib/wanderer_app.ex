@@ -30,4 +30,19 @@ defmodule WandererApp do
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end
+
+  def log_exception(kind, reason, stacktrace) do
+      reason = Exception.normalize(kind, reason, stacktrace)
+
+      crash_reason =
+        case kind do
+          :throw -> {{:nocatch, reason}, stacktrace}
+          _ -> {reason, stacktrace}
+        end
+
+      Logger.error(
+        Exception.format(kind, reason, stacktrace),
+        crash_reason: crash_reason
+      )
+    end
 end
