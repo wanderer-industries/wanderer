@@ -333,7 +333,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def delete_systems(
-        %{map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = state,
+        %{map_id: map_id, rtree_name: rtree_name} = state,
         removed_ids,
         user_id,
         character_id
@@ -352,7 +352,7 @@ defmodule WandererApp.Map.Server.Impl do
     removed_ids
     |> Enum.each(fn solar_system_id ->
       map_id
-      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id, map_opts)
+      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
         {:ok, _} ->
           :ok
@@ -1149,8 +1149,11 @@ defmodule WandererApp.Map.Server.Impl do
             rtree_name
           )
 
-          existing_system
-          |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
+          {:ok,
+           existing_system
+           |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
+           |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
+           |> WandererApp.MapSystemRepo.cleanup_tags()}
 
         _ ->
           {:ok, solar_system_info} =
@@ -1675,12 +1678,12 @@ defmodule WandererApp.Map.Server.Impl do
                location.solar_system_id
              ) do
           {:ok, existing_system} when not is_nil(existing_system) ->
-            {:ok, updated_system} =
-              existing_system
-              |> WandererApp.MapSystemRepo.update_position(%{
-                position_x: position.x,
-                position_y: position.y
-              })
+            {:ok,
+             existing_system
+             |> WandererApp.MapSystemRepo.update_position(%{
+               position_x: position.x,
+               position_y: position.y
+             })}
 
             @ddrt.insert(
               {existing_system.solar_system_id,

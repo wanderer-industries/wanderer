@@ -22,14 +22,10 @@ defmodule WandererApp.MapSystemRepo do
   def get_visible_by_map(map_id),
     do: WandererApp.Api.MapSystem.read_visible_by_map(%{map_id: map_id})
 
-  def remove_from_map(map_id, solar_system_id, opts) do
+  def remove_from_map(map_id, solar_system_id) do
     WandererApp.Api.MapSystem.read_by_map_and_solar_system!(%{
       map_id: map_id,
       solar_system_id: solar_system_id
-    })
-    |> cleanup_labels(opts)
-    |> WandererApp.Api.MapSystem.update_tag!(%{
-      tag: nil
     })
     |> WandererApp.Api.MapSystem.update_visible(%{visible: false})
   rescue
@@ -46,6 +42,13 @@ defmodule WandererApp.MapSystemRepo do
     system
     |> WandererApp.Api.MapSystem.update_labels!(%{
       labels: labels
+    })
+  end
+
+  def cleanup_tags(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_tag!(%{
+      tag: nil
     })
   end
 
@@ -97,5 +100,5 @@ defmodule WandererApp.MapSystemRepo do
   def update_position(system, update),
     do:
       system
-      |> WandererApp.Api.MapSystem.update_position(update)
+      |> WandererApp.Api.MapSystem.update_position!(update)
 end

@@ -765,12 +765,13 @@ defmodule WandererAppWeb.MapLive do
             delete_connection_with_sigs =
               map_user_settings
               |> WandererApp.MapUserSettingsRepo.to_form_data!()
-              |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
+              |> WandererApp.MapUserSettingsRepo.get_boolean_setting(
+                "delete_connection_with_sigs"
+              )
 
             WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
             |> Enum.filter(fn s -> s.eve_id in removed_signatures_eve_ids end)
             |> Enum.each(fn s ->
-
               if delete_connection_with_sigs && not is_nil(s.linked_system_id) do
                 map_id
                 |> WandererApp.Map.Server.delete_connection(%{
@@ -799,7 +800,10 @@ defmodule WandererAppWeb.MapLive do
               s |> WandererApp.Api.MapSystemSignature.create!()
             end)
 
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{event: :signatures_updated, payload: system.solar_system_id})
+            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+              event: :signatures_updated,
+              payload: system.solar_system_id
+            })
 
             {:reply, %{signatures: get_system_signatures(system.id)}, socket}
 
@@ -1285,7 +1289,10 @@ defmodule WandererAppWeb.MapLive do
               })
             end)
 
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{event: :signatures_updated, payload: solar_system_source})
+            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+              event: :signatures_updated,
+              payload: solar_system_source
+            })
 
             {:noreply, socket}
 
@@ -1337,7 +1344,10 @@ defmodule WandererAppWeb.MapLive do
               })
             end)
 
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{event: :signatures_updated, payload: solar_system_source})
+            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+              event: :signatures_updated,
+              payload: solar_system_source
+            })
 
             {:noreply, socket}
 
