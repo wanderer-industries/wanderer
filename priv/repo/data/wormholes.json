@@ -1,891 +1,1568 @@
 [
   {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c3"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30683,
-    "name": "T405"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["hs", "ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 30583,
-    "name": "R943"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "c6",
-    "src": ["hs"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "48",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30645,
-    "name": "B041"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "24",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30665,
-    "name": "S804"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "hs",
-    "src": ["thera"],
-    "static": true,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 34368,
-    "name": "Q063"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "ns",
-    "src": ["c4"],
-    "static": false,
-    "max_mass_per_jump": 1800000000,
-    "lifetime": "16",
-    "total_mass": 5000000000,
-    "sibling_groups": null,
-    "typeID": 30697,
-    "name": "K329"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "hs",
-    "src": ["c6"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30713,
-    "name": "B520"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": [],
-    "typeID": 30700,
-    "name": "M267"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c5",
-    "src": ["c6"],
-    "static": true,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": [],
-    "typeID": 30711,
-    "name": "V911"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30662,
-    "name": "O883"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c6"],
-    "static": true,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": [],
-    "typeID": 30712,
-    "name": "W237"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "thera",
-    "src": ["ns"],
-    "static": false,
-    "max_mass_per_jump": 1000000000,
-    "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 34367,
-    "name": "L031"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c1",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 30660,
-    "name": "H121"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "c1",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34134,
-    "name": "E004"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": [],
-    "typeID": 30703,
-    "name": "V753"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "c5",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34138,
-    "name": "C008"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "thera",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 100000000,
-    "sibling_groups": null,
-    "typeID": 34371,
-    "name": "F353"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "c6",
-    "src": ["ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "48",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30646,
-    "name": "U319"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c6"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [],
-    "typeID": 30710,
-    "name": "Z457"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c4"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30692,
-    "name": "X877"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [["B274"]],
-    "typeID": 30674,
-    "name": "Y683"
-  },
-  {
-    "mass_regen": 100000000,
-    "dest": "c4",
-    "src": ["hs", "ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30642,
-    "name": "O128"
-  },
-  {
-    "mass_regen": null,
-    "dest": "conflux",
-    "src": null,
-    "static": null,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 35653,
-    "name": "C414"
-  },
-  {
     "mass_regen": "3000000000",
     "dest": "c13",
-    "src": null,
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13",
+      "ns"
+    ],
     "static": false,
     "max_mass_per_jump": 5000000,
     "lifetime": "16",
     "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 34439,
-    "name": "A009"
+    "name": "A009",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c5",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
+    "dest": "ls",
+    "src": [
+      "c2"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
     "lifetime": "24",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30664,
-    "name": "L614"
+    "total_mass": 2000000000,
+    "name": "A239",
+    "respawn": [
+      "static"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "hs",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 2000000000,
-    "sibling_groups": [["Z647"], ["O477"], ["Y683"]],
-    "typeID": 30677,
-    "name": "B274"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c5",
-    "src": ["c4"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30693,
-    "name": "H900"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [["B274"]],
-    "typeID": 30673,
-    "name": "O477"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "c2",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34135,
-    "name": "L005"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [],
-    "typeID": 30701,
-    "name": "E175"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["c3"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": [],
-    "typeID": 30688,
-    "name": "K346"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "c3",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34136,
-    "name": "Z006"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c1",
-    "src": ["c4"],
-    "static": true,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 30689,
-    "name": "P060"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 2000000000,
-    "sibling_groups": [["D382"]],
-    "typeID": 30678,
-    "name": "A239"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30661,
-    "name": "C125"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["c5", "c6"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "16",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30706,
-    "name": "Z142"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["hs"],
+    "src": [
+      "hs"
+    ],
     "static": false,
     "max_mass_per_jump": 1000000000,
     "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30658,
-    "name": "R051"
+    "total_mass": 2000000000,
+    "name": "A641",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c5",
-    "src": ["c3"],
+    "dest": "c6",
+    "src": [
+      "c3",
+      "thera"
+    ],
     "static": false,
     "max_mass_per_jump": 300000000,
     "lifetime": "24",
     "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30684,
-    "name": "N770"
+    "name": "A982",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
-    "mass_regen": 0,
-    "dest": "c1",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": [],
-    "typeID": 30698,
-    "name": "Y790"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["thera"],
-    "static": true,
+    "mass_regen": 500000000,
+    "dest": "c6",
+    "src": [
+      "hs"
+    ],
+    "static": false,
     "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 34369,
-    "name": "V898"
+    "lifetime": "48",
+    "total_mass": 3000000000,
+    "name": "B041",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "hs",
-    "src": ["hs"],
+    "src": [
+      "c2"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 2000000000,
+    "name": "B274",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "hs",
+    "src": [
+      "ls",
+      "ns"
+    ],
     "static": false,
     "max_mass_per_jump": 1000000000,
     "lifetime": "16",
     "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30657,
-    "name": "A641"
+    "name": "B449",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
-    "mass_regen": 0,
-    "dest": "thera",
-    "src": ["ls"],
+    "mass_regen": 500000000,
+    "dest": "hs",
+    "src": [
+      "c6"
+    ],
     "static": false,
     "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 34366,
-    "name": "M164"
+    "lifetime": "48",
+    "total_mass": 3000000000,
+    "name": "B520",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": null,
     "dest": "barbican",
-    "src": null,
-    "static": null,
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "jove"
+    ],
+    "static": false,
     "max_mass_per_jump": 300000000,
     "lifetime": "16",
     "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 35651,
-    "name": "B735"
+    "name": "B735",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["c3"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30681,
-    "name": "I182"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "ls",
-    "src": ["c4"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30696,
-    "name": "N290"
-  },
-  {
-    "mass_regen": null,
-    "dest": "sentinel",
-    "src": null,
-    "static": null,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 35650,
-    "name": "S877"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": [],
-    "typeID": 30699,
-    "name": "D364"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["c4"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30690,
-    "name": "N766"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["c3"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": [],
-    "typeID": 30687,
-    "name": "U210"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c1",
-    "src": ["hs", "ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 100000000,
-    "sibling_groups": null,
-    "typeID": 30579,
-    "name": "Z971"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["c1"],
-    "static": true,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": [],
-    "typeID": 30668,
-    "name": "Z060"
-  },
-  {
-    "mass_regen": 0,
+    "mass_regen": "3000000000",
     "dest": "c5",
-    "src": ["c5"],
-    "static": true,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": [],
-    "typeID": 30702,
-    "name": "H296"
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "C008",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c1",
-    "src": ["c6"],
-    "static": true,
+    "dest": "c2",
+    "src": [
+      "c1"
+    ],
+    "static": false,
     "max_mass_per_jump": 20000000,
     "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": [],
-    "typeID": 30707,
-    "name": "Q317"
+    "total_mass": 1000000000,
+    "name": "C125",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c3"],
+    "dest": "ls",
+    "src": [
+      "c5",
+      "c6"
+    ],
     "static": false,
-    "max_mass_per_jump": 300000000,
+    "max_mass_per_jump": 1350000000,
     "lifetime": "24",
     "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30685,
-    "name": "A982"
+    "name": "C140",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "c3",
-    "src": ["hs", "ls", "ns"],
-    "static": false,
+    "src": [
+      "c4"
+    ],
+    "static": true,
     "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30584,
-    "name": "X702"
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "C247",
+    "respawn": [
+      "static"
+    ]
   },
   {
-    "mass_regen": 0,
-    "dest": "c1",
-    "src": ["c3"],
+    "mass_regen": 500000000,
+    "dest": "ns",
+    "src": [
+      "c6"
+    ],
     "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 30680,
-    "name": "V301"
+    "max_mass_per_jump": 1350000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "C248",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 500000000,
     "dest": "ls",
-    "src": ["c6"],
+    "src": [
+      "c6"
+    ],
     "static": false,
     "max_mass_per_jump": 1000000000,
-    "lifetime": "24",
+    "lifetime": "48",
     "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30714,
-    "name": "C391"
+    "name": "C391",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": null,
+    "dest": "conflux",
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "jove"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 750000000,
+    "name": "C414",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c5",
-    "src": ["hs"],
+    "dest": "pochven",
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "pochven"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "12",
+    "total_mass": 1000000000,
+    "name": "C729",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c2",
+    "src": [
+      "c5"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "D364",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c2",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "D382",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "hs",
+    "src": [
+      "c5",
+      "c6"
+    ],
     "static": false,
     "max_mass_per_jump": 1000000000,
     "lifetime": "24",
     "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30644,
-    "name": "M555"
+    "name": "D792",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 500000000,
+    "dest": "hs",
+    "src": [
+      "c3"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 5000000000,
+    "name": "D845",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": "3000000000",
+    "dest": "c1",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "E004",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c5"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "E175",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "c2"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "E545",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "thera"
+    ],
+    "static": true,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "16",
+    "total_mass": 3000000000,
+    "name": "E587",
+    "respawn": [
+      "static"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "thera",
-    "src": ["c2", "c3"],
+    "src": [
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6"
+    ],
     "static": false,
     "max_mass_per_jump": 300000000,
     "lifetime": "16",
     "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 34372,
-    "name": "F135"
+    "name": "F135",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "ns",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
+    "dest": "pochven",
+    "src": [
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6"
+    ],
+    "static": false,
+    "max_mass_per_jump": 375000000,
     "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [["N062"], ["R474"]],
-    "typeID": 30679,
-    "name": "E545"
+    "total_mass": 1000000000,
+    "name": "F216",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "thera",
+    "src": [
+      "c1"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 100000000,
+    "name": "F353",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": "3000000000",
+    "dest": "c6",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "G008",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "c2",
-    "src": ["c2"],
+    "src": [
+      "c6"
+    ],
     "static": true,
     "max_mass_per_jump": 300000000,
     "lifetime": "16",
     "total_mass": 2000000000,
-    "sibling_groups": [["A239"]],
-    "typeID": 30672,
-    "name": "D382"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c4",
-    "src": ["c1"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 30663,
-    "name": "M609"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "hs",
-    "src": ["c4"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30686,
-    "name": "S047"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": [["E545"]],
-    "typeID": 30676,
-    "name": "R474"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c5",
-    "src": ["c2"],
-    "static": true,
-    "max_mass_per_jump": 375000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": [["E545"]],
-    "typeID": 30675,
-    "name": "N062"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["thera"],
-    "static": true,
-    "max_mass_per_jump": 1000000000,
-    "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 34370,
-    "name": "E587"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "16",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30649,
-    "name": "S199"
+    "name": "G024",
+    "respawn": [
+      "static"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "c1",
-    "src": ["c2"],
-    "static": true,
+    "src": [
+      "c1"
+    ],
+    "static": false,
     "max_mass_per_jump": 20000000,
     "lifetime": "16",
     "total_mass": 500000000,
-    "sibling_groups": [["B274"]],
-    "typeID": 30671,
-    "name": "Z647"
+    "name": "H121",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c4"],
+    "dest": "c5",
+    "src": [
+      "c5"
+    ],
     "static": true,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "H296",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "c4"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "H900",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c2",
+    "src": [
+      "c3",
+      "thera"
+    ],
+    "static": false,
     "max_mass_per_jump": 300000000,
     "lifetime": "16",
     "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30691,
-    "name": "C247"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "ns",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34140,
-    "name": "Q003"
+    "name": "I182",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": 0,
     "dest": "ls",
-    "src": ["ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30648,
-    "name": "N944"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "hs",
-    "src": ["c5", "c6"],
-    "static": false,
-    "max_mass_per_jump": 1000000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30704,
-    "name": "D792"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "hs",
-    "src": ["c1"],
+    "src": [
+      "c1"
+    ],
     "static": true,
     "max_mass_per_jump": 20000000,
     "lifetime": "24",
     "total_mass": 1000000000,
-    "sibling_groups": [],
-    "typeID": 30666,
-    "name": "N110"
+    "name": "J244",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ls",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "thera"
+    ],
+    "static": false,
+    "max_mass_per_jump": 62000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "J377",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 500000000,
+    "dest": "ns",
+    "src": [
+      "c4"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1800000000,
+    "lifetime": "24",
+    "total_mass": 5000000000,
+    "name": "K329",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "c3"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 3000000000,
+    "name": "K346",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": "3000000000",
+    "dest": "c2",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "L005",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "thera",
+    "src": [
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "16",
+    "total_mass": 3000000000,
+    "name": "L031",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "c6"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "L477",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "c1",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "L614",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": "3000000000",
     "dest": "c4",
-    "src": null,
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
     "static": false,
     "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "M001",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "thera",
+    "src": [
+      "ls"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "M164",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "c5"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
     "lifetime": "16",
     "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34137,
-    "name": "M001"
+    "name": "M267",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "hs"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "M555",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c1"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "M609",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 375000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "N062",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "hs",
+    "src": [
+      "c1"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "N110",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 500000000,
+    "dest": "ls",
+    "src": [
+      "c4"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "N290",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "N432",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c2",
+    "src": [
+      "c4"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "N766",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "c3",
+      "thera"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "N770",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ls",
+    "src": [
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "N944",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "c3",
+      "thera"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "N968",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 100000000,
+    "dest": "c4",
+    "src": [
+      "hs",
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "O128",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "O477",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "c1",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "O883",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "c4"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "P060",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": "3000000000",
+    "dest": "ns",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "Q003",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "hs",
+    "src": [
+      "thera"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "Q063",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "c6"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "Q317",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ls",
+    "src": [
+      "hs"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "16",
+    "total_mass": 3000000000,
+    "name": "R051",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "pochven"
+    ],
+    "static": false,
+    "max_mass_per_jump": 375000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "R081",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": null,
+    "dest": "redoubt",
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "jove"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 750000000,
+    "name": "R259",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c6",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "R474",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c2",
+    "src": [
+      "hs",
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 750000000,
+    "name": "R943",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "hs",
+    "src": [
+      "c4"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "S047",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "S199",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c6",
+    "src": [
+      "c1",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "S804",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": null,
+    "dest": "sentinel",
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "jove"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 750000000,
+    "name": "S877",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c3",
+      "thera"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "T405",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "thera",
+    "src": [
+      "hs"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "T458",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ls",
+    "src": [
+      "c3"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "U210",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 500000000,
+    "dest": "c6",
+    "src": [
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "48",
+    "total_mass": 3300000000,
+    "name": "U319",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "pochven",
+    "src": [],
+    "static": false,
+    "max_mass_per_jump": 375000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "U372",
+    "respawn": [
+      "wandering",
+      "reverse"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c6",
+    "src": [
+      "c4"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 3000000000,
+    "name": "U574",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "hs"
+    ],
+    "static": false,
+    "max_mass_per_jump": 1000000000,
+    "lifetime": "16",
+    "total_mass": 3000000000,
+    "name": "V283",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "c3",
+      "thera"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "V301",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c6",
+    "src": [
+      "c5"
+    ],
+    "static": true,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "V753",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ls",
+    "src": [
+      "thera"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "V898",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c5",
+    "src": [
+      "c6"
+    ],
+    "static": true,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "V911",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": null,
+    "dest": "vidette",
+    "src": [
+      "hs",
+      "ls",
+      "ns",
+      "jove"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 750000000,
+    "name": "V928",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c6",
+    "src": [
+      "c6"
+    ],
+    "static": true,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "24",
+    "total_mass": 3300000000,
+    "name": "W237",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "pochven"
+    ],
+    "static": false,
+    "max_mass_per_jump": 62000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "X450",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c3",
+    "src": [
+      "hs",
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "24",
+    "total_mass": 1000000000,
+    "name": "X702",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c4"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "X877",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "Y683",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "c5"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "Y790",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": "3000000000",
+    "dest": "c3",
+    "src": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "thera",
+      "c13"
+    ],
+    "static": false,
+    "max_mass_per_jump": 5000000,
+    "lifetime": "4.5",
+    "total_mass": 1000000000,
+    "name": "Z006",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "c1"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 1000000000,
+    "name": "Z060",
+    "respawn": [
+      "static"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "ns",
+    "src": [
+      "c5",
+      "c6"
+    ],
+    "static": false,
+    "max_mass_per_jump": 2000000000,
+    "lifetime": "16",
+    "total_mass": 3300000000,
+    "name": "Z142",
+    "respawn": [
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c4",
+    "src": [
+      "c6"
+    ],
+    "static": true,
+    "max_mass_per_jump": 300000000,
+    "lifetime": "16",
+    "total_mass": 2000000000,
+    "name": "Z457",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "c2",
+      "drifter"
+    ],
+    "static": true,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 500000000,
+    "name": "Z647",
+    "respawn": [
+      "static",
+      "wandering"
+    ]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "c1",
+    "src": [
+      "hs",
+      "ls",
+      "ns"
+    ],
+    "static": false,
+    "max_mass_per_jump": 20000000,
+    "lifetime": "16",
+    "total_mass": 100000000,
+    "name": "Z971",
+    "respawn": [
+      "wandering"
+    ]
   },
   {
     "mass_regen": null,
@@ -895,188 +1572,6 @@
     "max_mass_per_jump": null,
     "lifetime": null,
     "total_mass": "",
-    "sibling_groups": null,
-    "typeID": 30831,
     "name": "K162"
-  },
-  {
-    "mass_regen": "3000000000",
-    "dest": "c6",
-    "src": null,
-    "static": false,
-    "max_mass_per_jump": 5000000,
-    "lifetime": "16",
-    "total_mass": 1000000000,
-    "sibling_groups": null,
-    "typeID": 34139,
-    "name": "G008"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "ns",
-    "src": ["c6"],
-    "static": false,
-    "max_mass_per_jump": 1350000000,
-    "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30715,
-    "name": "C248"
-  },
-  {
-    "mass_regen": null,
-    "dest": "vidette",
-    "src": null,
-    "static": null,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 35652,
-    "name": "V928"
-  },
-  {
-    "mass_regen": 500000000,
-    "dest": "hs",
-    "src": ["c3"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 5000000000,
-    "sibling_groups": [],
-    "typeID": 30695,
-    "name": "D845"
-  },
-  {
-    "mass_regen": null,
-    "dest": "redoubt",
-    "src": null,
-    "static": null,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 750000000,
-    "sibling_groups": null,
-    "typeID": 35654,
-    "name": "R259"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c3"],
-    "static": false,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30682,
-    "name": "N968"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "thera",
-    "src": ["hs"],
-    "static": false,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "16",
-    "total_mass": 500000000,
-    "sibling_groups": null,
-    "typeID": 34338,
-    "name": "T458"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ns",
-    "src": ["hs"],
-    "static": false,
-    "max_mass_per_jump": 1000000000,
-    "lifetime": "16",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30659,
-    "name": "V283"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["c5", "c6"],
-    "static": false,
-    "max_mass_per_jump": 1350000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30705,
-    "name": "C140"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c6",
-    "src": ["c4"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "24",
-    "total_mass": 3000000000,
-    "sibling_groups": null,
-    "typeID": 30694,
-    "name": "U574"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c5",
-    "src": ["ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 2000000000,
-    "lifetime": "24",
-    "total_mass": 3300000000,
-    "sibling_groups": null,
-    "typeID": 30643,
-    "name": "N432"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "hs",
-    "src": ["ls", "ns"],
-    "static": false,
-    "max_mass_per_jump": 1000000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": null,
-    "typeID": 30647,
-    "name": "B449"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c2",
-    "src": ["c6"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [],
-    "typeID": 30708,
-    "name": "G024"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "ls",
-    "src": ["c1"],
-    "static": true,
-    "max_mass_per_jump": 20000000,
-    "lifetime": "24",
-    "total_mass": 1000000000,
-    "sibling_groups": [],
-    "typeID": 30667,
-    "name": "J244"
-  },
-  {
-    "mass_regen": 0,
-    "dest": "c3",
-    "src": ["c6"],
-    "static": true,
-    "max_mass_per_jump": 300000000,
-    "lifetime": "16",
-    "total_mass": 2000000000,
-    "sibling_groups": [],
-    "typeID": 30709,
-    "name": "L477"
   }
 ]
