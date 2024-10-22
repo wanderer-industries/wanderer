@@ -1120,7 +1120,7 @@ defmodule WandererApp.Map.Server.Impl do
          %{
            solar_system_id: solar_system_id,
            coordinates: coordinates
-         } = _system_info,
+         } = system_info,
          user_id,
          character_id
        ) do
@@ -1140,20 +1140,36 @@ defmodule WandererApp.Map.Server.Impl do
     {:ok, system} =
       case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
         {:ok, existing_system} when not is_nil(existing_system) ->
-          @ddrt.insert(
-            {solar_system_id,
-             WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-               position_x: x,
-               position_y: y
-             })},
-            rtree_name
-          )
+          use_old_coordinates = Map.get(system_info, :use_old_coordinates, false)
 
-          {:ok,
-           existing_system
-           |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
-           |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
-           |> WandererApp.MapSystemRepo.cleanup_tags()}
+          if use_old_coordinates do
+            @ddrt.insert(
+              {solar_system_id,
+               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                 position_x: existing_system.position_x,
+                 position_y: existing_system.position_y
+               })},
+              rtree_name
+            )
+
+            {:ok, existing_system}
+          else
+            @ddrt.insert(
+              {solar_system_id,
+              WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                position_x: x,
+                position_y: y
+              })},
+              rtree_name
+            )
+
+            {:ok,
+             existing_system
+             |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
+             |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
+             |> WandererApp.MapSystemRepo.cleanup_tags()}
+          end
+
 
         _ ->
           {:ok, solar_system_info} =
