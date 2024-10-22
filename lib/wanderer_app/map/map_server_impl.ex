@@ -1678,12 +1678,12 @@ defmodule WandererApp.Map.Server.Impl do
                location.solar_system_id
              ) do
           {:ok, existing_system} when not is_nil(existing_system) ->
-            {:ok,
-             existing_system
-             |> WandererApp.MapSystemRepo.update_position(%{
-               position_x: position.x,
-               position_y: position.y
-             })}
+            updated_system =
+              existing_system
+              |> WandererApp.MapSystemRepo.update_position(%{
+                position_x: position.x,
+                position_y: position.y
+              })
 
             @ddrt.insert(
               {existing_system.solar_system_id,

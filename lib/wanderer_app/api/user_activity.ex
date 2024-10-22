@@ -8,6 +8,10 @@ defmodule WandererApp.Api.UserActivity do
   postgres do
     repo(WandererApp.Repo)
     table("user_activity_v1")
+
+    custom_indexes do
+      index [:entity_id, :event_type, :inserted_at], unique: true
+    end
   end
 
   code_interface do
@@ -103,6 +107,8 @@ defmodule WandererApp.Api.UserActivity do
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
+
+
 
   relationships do
     belongs_to :character, WandererApp.Api.Character do
