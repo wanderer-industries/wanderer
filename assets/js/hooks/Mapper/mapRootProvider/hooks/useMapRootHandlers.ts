@@ -100,11 +100,19 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
 
             case Commands.linkSignatureToSystem:
+              // TODO command data type lost
+              // @ts-ignore
               emitMapEvent({ name: Commands.linkSignatureToSystem, data });
               break;
 
             case Commands.killsUpdated:
               // do nothing here
+              break;
+
+            case Commands.signaturesUpdated:
+              // TODO command data type lost
+              // @ts-ignore
+              emitMapEvent({ name: Commands.signaturesUpdated, data });
               break;
 
             default:

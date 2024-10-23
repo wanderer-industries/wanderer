@@ -1,10 +1,10 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useClipboard } from '@/hooks/Mapper/hooks/useClipboard';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
 
-import { DataTable, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
+import { DataTable, DataTableRowClickEvent, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useRefState from 'react-usestateref';
@@ -22,12 +22,14 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/helpers';
 import {
   renderIcon,
-  renderName,
+  renderInfoColumn,
   renderTimeLeft,
-  renderLinkedSystem,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
-// import { PrimeIcons } from 'primereact/api';
 import useLocalStorageState from 'use-local-storage-state';
+import { PrimeIcons } from 'primereact/api';
+import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
+import { useMapEventListener } from '@/hooks/Mapper/events';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -53,6 +55,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const [parsedSignatures, setParsedSignatures] = useState<SystemSignature[]>([]);
   const [askUser, setAskUser] = useState(false);
+  const [selectedSignature, setSelectedSignature] = useState<SystemSignature | null>(null);
 
   const [hoveredSig, setHoveredSig] = useState<SystemSignature | null>(null);
 
@@ -164,6 +167,8 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
   }, [parsedSignatures, handleUpdateSignatures]);
 
   const handleSelectSignatures = useCallback(
+    // TODO still will be good to define types if we use typescript
+    // @ts-ignore
     e => {
       if (selectable) {
         onSelect?.(e.value);
@@ -212,6 +217,18 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
     handleGetSignatures();
   }, [systemId]);
 
+  useMapEventListener(event => {
+    switch (event.name) {
+      case Commands.signaturesUpdated:
+        if (event.data?.toString() !== systemId.toString()) {
+          return;
+        }
+
+        handleGetSignatures();
+        return true;
+    }
+  });
+
   useEffect(() => {
     const observer = new ResizeObserver(handleResize);
     if (tableRef.current) {
@@ -240,13 +257,22 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
     setHoveredSig(null);
   }, []);
 
-  // const renderToolbar = (/*row: SystemSignature*/) => {
-  //   return (
-  //     <div className="flex justify-end items-center gap-2">
-  //       <span className={clsx(PrimeIcons.PENCIL, 'text-[10px]')}></span>
-  //     </div>
-  //   );
-  // };
+  const renderToolbar = (/*row: SystemSignature*/) => {
+    return (
+      <div className="flex justify-end items-center gap-2 mr-[4px]">
+        <WdTooltipWrapper content="To Edit Signature do double click">
+          <span className={clsx(PrimeIcons.PENCIL, 'text-[10px]')}></span>
+        </WdTooltipWrapper>
+      </div>
+    );
+  };
+
+  const [showSignatureSettings, setShowSignatureSettings] = useState(false);
+
+  const handleRowClick = (e: DataTableRowClickEvent) => {
+    setSelectedSignature(e.data as SystemSignature);
+    setShowSignatureSettings(true);
+  };
 
   return (
     <>
@@ -257,6 +283,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
           </div>
         ) : (
           <>
+            {/* @ts-ignore */}
             <DataTable
               className={classes.Table}
               value={filteredSignatures}
@@ -268,6 +295,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
               dataKey="eve_id"
               tableClassName="w-full select-none"
               resizableColumns={false}
+              onRowDoubleClick={handleRowClick}
               rowHover
               selectAll
               sortField={sortSettings.sortField}
@@ -291,7 +319,7 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
               <Column
                 bodyClassName="p-0 px-1"
                 field="group"
-                body={renderIcon}
+                body={x => renderIcon(x)}
                 style={{ maxWidth: 26, minWidth: 26, width: 26, height: 25 }}
               ></Column>
 
@@ -310,41 +338,29 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
                 sortable
               ></Column>
               <Column
-                field="name"
-                header="Name"
+                field="info"
+                // header="Info"
                 bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-                body={renderName}
+                body={renderInfoColumn}
                 style={{ maxWidth: nameColumnWidth }}
                 hidden={compact || medium}
-                sortable
               ></Column>
-              <Column
-                field="linked_system"
-                header="Leads To"
-                headerClassName="whitespace-nowrap"
-                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-                body={renderLinkedSystem}
-                style={{ maxWidth: nameColumnWidth }}
-                hidden={compact}
-                sortable
-              ></Column>
-
               <Column
                 field="updated_at"
                 header="Updated"
                 dataType="date"
-                bodyClassName="w-[80px] text-ellipsis overflow-hidden whitespace-nowrap"
+                bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
                 body={renderTimeLeft}
                 sortable
               ></Column>
 
-              {/*<Column*/}
-              {/*  bodyClassName="p-0 pl-1 pr-2"*/}
-              {/*  field="group"*/}
-              {/*  body={renderToolbar}*/}
-              {/*  headerClassName={headerClasses}*/}
-              {/*  style={{ maxWidth: 26, minWidth: 26, width: 26 }}*/}
-              {/*></Column>*/}
+              <Column
+                bodyClassName="p-0 pl-1 pr-2"
+                field="group"
+                body={renderToolbar}
+                // headerClassName={headerClasses}
+                style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+              ></Column>
             </DataTable>
           </>
         )}
@@ -353,6 +369,14 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
           ref={tooltipRef}
           content={hoveredSig ? <SignatureView {...hoveredSig} /> : null}
         />
+
+        <SignatureSettings
+          systemId={systemId}
+          show={showSignatureSettings}
+          onHide={() => setShowSignatureSettings(false)}
+          signatureData={selectedSignature}
+        />
+
         {askUser && (
           <div className="absolute left-[1px] top-[29px] h-[calc(100%-30px)] w-[calc(100%-3px)] bg-stone-900/10 backdrop-blur-sm">
             <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">

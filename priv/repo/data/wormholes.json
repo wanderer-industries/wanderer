@@ -1567,11 +1567,12 @@
   {
     "mass_regen": null,
     "dest": null,
-    "src": null,
-    "static": null,
+    "src": [],
+    "static": false,
     "max_mass_per_jump": null,
     "lifetime": null,
     "total_mass": "",
-    "name": "K162"
+    "name": "K162",
+    "respawn": []
   }
 ]

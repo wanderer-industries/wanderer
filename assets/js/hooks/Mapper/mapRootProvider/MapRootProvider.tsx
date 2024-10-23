@@ -12,6 +12,7 @@ export type MapRootData = MapUnionTypes & {
 
 const INITIAL_DATA: MapRootData = {
   wormholesData: {},
+  wormholes: [],
   effects: {},
   characters: [],
   userCharacters: [],

@@ -79,7 +79,8 @@ defmodule WandererApp.EveDataService do
         max_mass_per_jump: row["max_mass_per_jump"],
         static: row["static"],
         mass_regen: row["mass_regen"],
-        sibling_groups: row["sibling_groups"]
+        sibling_groups: row["sibling_groups"],
+        respawn: row["respawn"]
       }
     end)
   end

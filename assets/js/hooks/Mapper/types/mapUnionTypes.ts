@@ -7,6 +7,7 @@ import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 
 export type MapUnionTypes = {
   wormholesData: Record<string, WormholeDataRaw>;
+  wormholes: WormholeDataRaw[];
   effects: Record<string, EffectRaw>;
   characters: CharacterTypeRaw[];
   userCharacters: string[];

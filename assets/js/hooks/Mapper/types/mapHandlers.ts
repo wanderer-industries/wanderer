@@ -24,6 +24,7 @@ export enum Commands {
   centerSystem = 'center_system',
   selectSystem = 'select_system',
   linkSignatureToSystem = 'link_signature_to_system',
+  signaturesUpdated = 'signatures_updated',
 }
 
 export type Command =
@@ -44,7 +45,8 @@ export type Command =
   | Commands.routes
   | Commands.selectSystem
   | Commands.centerSystem
-  | Commands.linkSignatureToSystem;
+  | Commands.linkSignatureToSystem
+  | Commands.signaturesUpdated;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -81,6 +83,7 @@ export type CommandLinkSignatureToSystem = {
   solar_system_source: number;
   solar_system_target: number;
 };
+export type CommandLinkSignaturesUpdated = number;
 
 export interface CommandData {
   [Commands.init]: CommandInit;
@@ -101,6 +104,7 @@ export interface CommandData {
   [Commands.selectSystem]: CommandSelectSystem;
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
+  [Commands.signaturesUpdated]: CommandLinkSignaturesUpdated;
 }
 
 export interface MapHandlers {
@@ -144,6 +148,7 @@ export enum OutCommand {
 
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
+  unlinkSignature = 'unlink_signature',
 }
 
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;

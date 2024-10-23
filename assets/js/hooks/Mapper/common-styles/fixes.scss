@@ -85,3 +85,26 @@
   }
 }
 
+.p-dropdown-label, .p-inputtext {
+  padding: 0.25rem 0.75rem;
+  font-size: 14px;
+}
+
+.p-dropdown-item {
+  padding: 0.25rem 0.5rem;
+  font-size: 14px;
+}
+
+.p-dropdown-item-group {
+  padding: 0.25rem 0.75rem;
+  font-size: 14px;
+}
+
+.p-dropdown-trigger {
+  width: 14px;
+  margin: 0 12px;
+}
+
+.p-dropdown-empty-message {
+  padding: 0.25rem 0.5rem;
+}
