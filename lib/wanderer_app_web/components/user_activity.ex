@@ -68,6 +68,10 @@ defmodule WandererAppWeb.UserActivity do
       </div>
 
       <.character_item :if={not is_nil(@activity.character)} character={@activity.character} />
+      <p :if={is_nil(@activity.character)} class="text-sm text-[var(--color-gray-4)] w-[150px]">
+        System user / Administrator
+      </p>
+
       <p class="text-sm text-[var(--color-gray-4)] w-[15%]">
         <%= _get_event_name(@activity.event_type) %>
       </p>
