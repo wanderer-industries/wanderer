@@ -1,4 +1,4 @@
-@import "@/hooks/Mapper/components/map/styles/eve-common-variables";
+@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 $pastel-blue: #5a7d9a;
 $pastel-pink: #d291bc;
@@ -25,9 +25,11 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   z-index: 1;
   overflow: hidden;
 
-
-  &.Mataria, &.Amarria, &.Gallente, &.Caldaria {
-    &::Before {
+  &.Mataria,
+  &.Amarria,
+  &.Gallente,
+  &.Caldaria {
+    &::before {
       content: '';
       position: absolute;
       top: 0;
@@ -44,41 +46,39 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 
   &.Mataria {
     &::before {
-      background-image: url("/images/mataria.png");
+      background-image: url('/images/mataria-180.png');
       opacity: 0.6;
-      background-position-x: -28px;
-      background-position-y: -3px;
+      background-position-x: 1px;
+      background-position-y: -14px;
     }
   }
 
   &.Caldaria {
     &::before {
-      background-image: url("/images/caldaria.png");
+      background-image: url('/images/caldaria-180.png');
       opacity: 0.6;
-      background-position-x: -16px;
-      background-position-y: -17px;
+      background-position-x: 1px;
+      background-position-y: -10px;
     }
   }
 
   &.Amarria {
     &::before {
       opacity: 0.45;
-      background-image: url("/images/amarr.png");
-      background-position-x: 0px;
-      background-position-y: -1px;
-      width: calc(100% + 10px)
+      background-image: url('/images/amarr-180.png');
+      background-position-x: 0;
+      background-position-y: -13px;
     }
   }
 
   &.Gallente {
     &::before {
-      opacity: 0.6;
-      background-image: url("/images/gallente.png");
-      background-position-x: -1px;
-      background-position-y: -10px;
+      opacity: 0.5;
+      background-image: url('/images/gallente-180.png');
+      background-position-x: 1px;
+      background-position-y: 0;
     }
   }
-
 
   &.selected {
     border-color: $pastel-pink;
@@ -131,7 +131,6 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   &.eve-system-status-target {
     background-image: linear-gradient(45deg, $eve-solar-system-status-target, transparent);
   }
-
 }
 
 .Bookmarks {
@@ -158,7 +157,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
     //background-color: #833ca4;
 
     &:not(:first-child) {
-      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, .3);
+      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
     }
   }
 
@@ -181,7 +180,6 @@ $tooltip-bg: #202020; // Темный фон для подсказок
       font-size: 9px;
     }
   }
-
 }
 
 .icon {
@@ -219,9 +217,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   }
 
   .solarSystemName {
-
   }
-
 }
 
 .BottomRow {
@@ -288,11 +284,19 @@ $tooltip-bg: #202020; // Темный фон для подсказок
     border-color: $pastel-pink;
   }
 
-  &.HandleTop { top: -2px }
+  &.HandleTop {
+    top: -2px;
+  }
 
-  &.HandleRight { right: -2px }
+  &.HandleRight {
+    right: -2px;
+  }
 
-  &.HandleBottom { bottom: -2px }
+  &.HandleBottom {
+    bottom: -2px;
+  }
 
-  &.HandleLeft { left: -2px }
+  &.HandleLeft {
+    left: -2px;
+  }
 }

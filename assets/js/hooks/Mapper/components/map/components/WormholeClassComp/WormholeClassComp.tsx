@@ -18,5 +18,9 @@ export const WormholeClassComp = ({ id }: WormholeClassComp) => {
   }
 
   const colorClass = WORMHOLE_CLASS_STYLES[wormholeDataAdditional.wormholeClassID.toString()];
-  return <div className={clsx(colorClass)}>{wormholeDataAdditional.shortName}</div>;
+  return (
+    <div className={clsx(colorClass, '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]')}>
+      {wormholeDataAdditional.shortName}
+    </div>
+  );
 };
