@@ -95,7 +95,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 
   &.eve-system-status-home {
     border: 1px solid darken($eve-solar-system-status-color-home, 30%);
-    background-image: linear-gradient(45deg, $eve-solar-system-status-friendly, transparent);
+    background-image: linear-gradient(275deg, $eve-solar-system-status-friendly, transparent);
 
     &.selected {
       border-color: $eve-solar-system-status-color-home;
@@ -104,7 +104,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 
   &.eve-system-status-friendly {
     border: 1px solid darken($eve-solar-system-status-color-friendly, 20%);
-    background-image: linear-gradient(45deg, darken($eve-solar-system-status-friendly, 30%), transparent);
+    background-image: linear-gradient(275deg, darken($eve-solar-system-status-friendly, 30%), transparent);
 
     &.selected {
       border-color: darken($eve-solar-system-status-color-friendly, 5%);
@@ -113,7 +113,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 
   &.eve-system-status-lookingFor {
     border: 1px solid darken($eve-solar-system-status-color-lookingFor, 15%);
-    background-image: linear-gradient(45deg, #45ff8f2f, #457fff2f);
+    background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
 
     &.selected {
       border-color: $pastel-pink;
@@ -121,15 +121,15 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   }
 
   &.eve-system-status-warning {
-    background-image: linear-gradient(45deg, $eve-solar-system-status-warning, transparent);
+    background-image: linear-gradient(275deg, $eve-solar-system-status-warning, transparent);
   }
 
   &.eve-system-status-dangerous {
-    background-image: linear-gradient(45deg, $eve-solar-system-status-dangerous, transparent);
+    background-image: linear-gradient(275deg, $eve-solar-system-status-dangerous, transparent);
   }
 
   &.eve-system-status-target {
-    background-image: linear-gradient(45deg, $eve-solar-system-status-target, transparent);
+    background-image: linear-gradient(275deg, $eve-solar-system-status-target, transparent);
   }
 }
 
