@@ -18,6 +18,9 @@ import {
   CommandUpdateSystems,
   MapHandlers,
 } from '@/hooks/Mapper/types/mapHandlers.ts';
+
+import { useMapEventListener } from '@/hooks/Mapper/events';
+
 import {
   useCommandsCharacters,
   useCommandsConnections,
@@ -63,7 +66,6 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               mapUpdateSystems(data as CommandUpdateSystems);
               break;
             case Commands.removeSystems:
-              removeSystems(data as CommandRemoveSystems);
               break;
             case Commands.addConnections:
               addConnections(data as CommandAddConnections);
@@ -131,4 +133,14 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
     },
     [],
   );
+
+  useMapEventListener(event => {
+    switch (event.name) {
+      case Commands.removeSystems:
+        removeSystems(event.data as CommandRemoveSystems);
+        break;
+      default:
+        break;
+    }
+  });
 };

@@ -4,6 +4,7 @@ import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.
 import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
+import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
@@ -16,8 +17,10 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
 
   const [system, setSystem] = useState<string>();
 
-  const ref = useRef({ hubs, system, systems, outCommand });
-  ref.current = { hubs, system, systems, outCommand };
+  const { deleteSystems } = useDeleteSystems();
+
+  const ref = useRef({ hubs, system, systems, outCommand, deleteSystems });
+  ref.current = { hubs, system, systems, outCommand, deleteSystems };
 
   const open = useCallback((ev: any, systemId: string) => {
     setSystem(systemId);
@@ -27,12 +30,12 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
   }, []);
 
   const onDeleteSystem = useCallback(() => {
-    const { system, outCommand } = ref.current;
+    const { system, deleteSystems } = ref.current;
     if (!system) {
       return;
     }
 
-    outCommand({ type: OutCommand.deleteSystems, data: [system] });
+    deleteSystems([system]);
     setSystem(undefined);
   }, []);
 

@@ -1088,12 +1088,13 @@ defmodule WandererApp.Map.Server.Impl do
              map_id,
              update.solar_system_id
            ),
-         {:ok, update_map} <- _get_update_map(update, attributes),
-         {:ok, updated_system} <-
-           apply(WandererApp.MapSystemRepo, update_method, [
-             system,
-             update_map
-           ]) do
+         {:ok, update_map} <- _get_update_map(update, attributes) do
+      {:ok, updated_system} =
+        apply(WandererApp.MapSystemRepo, update_method, [
+          system,
+          update_map
+        ])
+
       if not is_nil(callback_fn) do
         callback_fn.(updated_system)
       end
@@ -1103,7 +1104,7 @@ defmodule WandererApp.Map.Server.Impl do
       state
     else
       error ->
-        @logger.error("Failed to update system: #{inspect(error, pretty: true)}")
+        @logger.error("Fail ed to update system: #{inspect(error, pretty: true)}")
         state
     end
   end
@@ -1156,20 +1157,19 @@ defmodule WandererApp.Map.Server.Impl do
           else
             @ddrt.insert(
               {solar_system_id,
-              WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-                position_x: x,
-                position_y: y
-              })},
+               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                 position_x: x,
+                 position_y: y
+               })},
               rtree_name
             )
 
             {:ok,
              existing_system
-             |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
+             |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
              |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
              |> WandererApp.MapSystemRepo.cleanup_tags()}
           end
-
 
         _ ->
           {:ok, solar_system_info} =
@@ -1694,7 +1694,7 @@ defmodule WandererApp.Map.Server.Impl do
                location.solar_system_id
              ) do
           {:ok, existing_system} when not is_nil(existing_system) ->
-            updated_system =
+            {:ok, updated_system} =
               existing_system
               |> WandererApp.MapSystemRepo.update_position(%{
                 position_x: position.x,

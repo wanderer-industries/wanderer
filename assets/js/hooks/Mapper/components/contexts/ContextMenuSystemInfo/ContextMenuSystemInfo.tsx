@@ -8,7 +8,7 @@ import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
-import { useJumpPlannerMenu } from '@/hooks/Mapper/components/contexts/hooks/useJumpPlannerMenu';
+import { useJumpPlannerMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
 
 export interface ContextMenuSystemInfoProps {

@@ -1,16 +1,16 @@
 import { Node } from 'reactflow';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 
 export const useContextMenuSystemMultipleHandlers = () => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
-  const { outCommand } = useMapRootState();
   const [systems, setSystems] = useState<Node<SolarSystemRawType>[]>();
+
+  const { deleteSystems } = useDeleteSystems();
 
   const handleSystemMultipleContext: NodeSelectionMouseHandler = (ev, systems_) => {
     setSystems(systems_);
@@ -19,7 +19,7 @@ export const useContextMenuSystemMultipleHandlers = () => {
     contextMenuRef.current?.show(ev);
   };
 
-  const onDeleteSystems = () => {
+  const onDeleteSystems = useCallback(() => {
     if (!systems) {
       return;
     }
@@ -29,12 +29,11 @@ export const useContextMenuSystemMultipleHandlers = () => {
       return;
     }
 
-    outCommand({ type: OutCommand.deleteSystems, data: sysToDel });
-  };
+    deleteSystems(sysToDel);
+  }, [deleteSystems, systems]);
 
   return {
     handleSystemMultipleContext,
-
     contextMenuRef,
     onDeleteSystems,
   };

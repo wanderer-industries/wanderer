@@ -55,6 +55,10 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
             case Commands.removeSystems:
               removeSystems(data as CommandRemoveSystems);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.removeSystems, data });
+              }, 100);
+
               break;
             case Commands.addConnections:
               addConnections(data as CommandAddConnections);

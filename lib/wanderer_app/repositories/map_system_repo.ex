@@ -100,5 +100,10 @@ defmodule WandererApp.MapSystemRepo do
   def update_position(system, update),
     do:
       system
+      |> WandererApp.Api.MapSystem.update_position(update)
+
+  def update_position!(system, update),
+    do:
+      system
       |> WandererApp.Api.MapSystem.update_position!(update)
 end

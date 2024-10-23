@@ -1,4 +1,4 @@
-import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
+import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   Background,
   ConnectionMode,
@@ -13,12 +13,15 @@ import ReactFlow, {
   SelectionMode,
   useEdgesState,
   useNodesState,
+  NodeChange,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import classes from './Map.module.scss';
 import './styles/neon-theme.scss';
 import './styles/eve-common.scss';
 import { MapProvider, useMapState } from './MapProvider';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapHandlers, useUpdateNodes } from './hooks';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
@@ -34,6 +37,7 @@ import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -108,6 +112,7 @@ const MapComp = ({
   isShowMinimap,
   showKSpaceBG,
 }: MapCompProps) => {
+  const { getNode } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<SolarSystemRawType>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>[]>(initialEdges);
 
@@ -115,8 +120,15 @@ const MapComp = ({
   useUpdateNodes(nodes);
   const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers();
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
-
   const { update } = useMapState();
+  const {
+    data: { systems },
+  } = useMapRootState();
+
+  const { deleteSystems } = useDeleteSystems();
+
+  const systemsRef = useRef({ systems });
+  systemsRef.current = { systems };
 
   const onConnect: OnConnect = useCallback(
     params => {
@@ -171,6 +183,32 @@ const MapComp = ({
     localStorage.setItem(SESSION_KEY.viewPort, JSON.stringify(viewport));
   };
 
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const systemsIdsToRemove: string[] = [];
+      const nextChanges = changes.reduce((acc, change) => {
+        if (change.type === 'remove') {
+          const node = getNode(change.id);
+          const { systems = [] } = systemsRef.current;
+          if (node?.data?.id && !systems.map(s => s.id).includes(node?.data?.id)) {
+            return [...acc, change];
+          } else {
+            systemsIdsToRemove.push(node?.data?.id);
+          }
+          return acc;
+        }
+        return [...acc, change];
+      }, [] as NodeChange[]);
+
+      if (systemsIdsToRemove.length) {
+        deleteSystems(systemsIdsToRemove);
+      }
+
+      onNodesChange(nextChanges);
+    },
+    [deleteSystems, getNode, onNodesChange],
+  );
+
   useEffect(() => {
     update(x => ({
       ...x,
@@ -184,7 +222,7 @@ const MapComp = ({
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
+          onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           // TODO we need save into session all of this
@@ -222,7 +260,6 @@ const MapComp = ({
           // TODO need create clear example with problem with that flag
           //  if system is not visible edge not drawing (and any render in Custom node is not happening)
           // onlyRenderVisibleElements
-          deleteKeyCode={null}
           selectionMode={SelectionMode.Partial}
         >
           {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
