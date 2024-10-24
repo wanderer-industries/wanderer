@@ -192,7 +192,7 @@ const MapComp = ({
           const { systems = [] } = systemsRef.current;
           if (node?.data?.id && !systems.map(s => s.id).includes(node?.data?.id)) {
             return [...acc, change];
-          } else {
+          } else if (!node?.data?.locked) {
             systemsIdsToRemove.push(node?.data?.id);
           }
           return acc;
