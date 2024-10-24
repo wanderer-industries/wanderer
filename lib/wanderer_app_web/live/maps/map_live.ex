@@ -1992,8 +1992,7 @@ defmodule WandererAppWeb.MapLive do
                        "eve_id" => eve_id,
                        "name" => name,
                        "kind" => kind,
-                       "group" => group,
-                       "type" => type
+                       "group" => group
                      } = signature ->
         %{
           system_id: system_id,
@@ -2002,7 +2001,7 @@ defmodule WandererAppWeb.MapLive do
           description: Map.get(signature, "description"),
           kind: kind,
           group: group,
-          type: type,
+          type: Map.get(signature, "type"),
           character_eve_id: character_eve_id
         }
       end)
