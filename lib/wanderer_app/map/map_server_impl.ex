@@ -1612,13 +1612,13 @@ defmodule WandererApp.Map.Server.Impl do
            location.solar_system_id,
            old_location.solar_system_id
          ) do
-      {:ok, connection} ->
+      {:ok, connection} when not is_nil(connection) ->
         :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
 
         broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
 
-      {:error, _error} ->
+      _error ->
         :ok
     end
   end

@@ -60,7 +60,6 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               mapInit(data as CommandInit);
               break;
             case Commands.addSystems:
-              mapAddSystems(data as CommandAddSystems);
               break;
             case Commands.updateSystems:
               mapUpdateSystems(data as CommandUpdateSystems);
@@ -68,7 +67,6 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
             case Commands.removeSystems:
               break;
             case Commands.addConnections:
-              addConnections(data as CommandAddConnections);
               break;
             case Commands.removeConnections:
               removeConnections(data as CommandRemoveConnections);
@@ -136,6 +134,12 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
 
   useMapEventListener(event => {
     switch (event.name) {
+      case Commands.addConnections:
+        addConnections(event.data as CommandAddConnections);
+        break;
+      case Commands.addSystems:
+        mapAddSystems(event.data as CommandAddSystems);
+        break;
       case Commands.removeSystems:
         removeSystems(event.data as CommandRemoveSystems);
         break;

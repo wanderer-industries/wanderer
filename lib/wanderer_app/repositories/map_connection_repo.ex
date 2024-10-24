@@ -29,7 +29,7 @@ defmodule WandererApp.MapConnectionRepo do
 
   def create!(connection), do: connection |> WandererApp.Api.MapConnection.create!()
 
-  def destroy(map_id, connection) do
+  def destroy(map_id, connection) when not is_nil(connection) do
     {:ok, from_connections} =
       get_by_locations(map_id, connection.solar_system_source, connection.solar_system_target)
 
@@ -48,6 +48,8 @@ defmodule WandererApp.MapConnectionRepo do
         :ok
     end
   end
+
+  def destroy(_map_id, _connection), do: :ok
 
   def destroy!(connection), do: connection |> WandererApp.Api.MapConnection.destroy!()
 

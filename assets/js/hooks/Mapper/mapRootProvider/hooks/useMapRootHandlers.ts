@@ -49,6 +49,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
             case Commands.addSystems:
               addSystems(data as CommandAddSystems);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.addSystems, data });
+              }, 100);
               break;
             case Commands.updateSystems:
               updateSystems(data as CommandUpdateSystems);
@@ -62,6 +65,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
             case Commands.addConnections:
               addConnections(data as CommandAddConnections);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.addConnections, data });
+              }, 100);
               break;
             case Commands.removeConnections:
               removeConnections(data as CommandRemoveConnections);
