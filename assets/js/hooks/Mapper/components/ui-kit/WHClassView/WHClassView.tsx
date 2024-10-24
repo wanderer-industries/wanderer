@@ -16,26 +16,42 @@ const prepareMass = (mass: number) => {
 
 export interface WHClassViewProps {
   whClassName: string;
+  noOffset?: boolean;
+  useShortTitle?: boolean;
+  hideWhClass?: boolean;
+  highlightName?: boolean;
+  className?: string;
+  classNameWh?: string;
 }
 
-export const WHClassView = ({ whClassName }: WHClassViewProps) => {
+export const WHClassView = ({
+  whClassName,
+  noOffset,
+  useShortTitle,
+  hideWhClass,
+  highlightName,
+  className,
+  classNameWh,
+}: WHClassViewProps) => {
   const {
     data: { wormholesData },
   } = useMapRootState();
 
   const whData = useMemo(() => wormholesData[whClassName], [whClassName, wormholesData]);
   const whClass = useMemo(() => WORMHOLES_ADDITIONAL_INFO[whData.dest], [whData.dest]);
-  const whClassStyle = WORMHOLE_CLASS_STYLES[whClass.wormholeClassID];
+  const whClassStyle = WORMHOLE_CLASS_STYLES[whClass?.wormholeClassID] ?? '';
+
+  const uid = useMemo(() => new Date().getTime().toString(), []);
 
   return (
-    <div className={classes.WHClassViewRoot}>
+    <div className={clsx(classes.WHClassViewRoot, className)}>
       <Tooltip
-        target={`.wh-name${whClassName}`}
+        target={`.wh-name${whClassName}${uid}`}
         position="right"
         mouseTrack
         mouseTrackLeft={20}
         mouseTrackTop={30}
-        className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-70 "
+        className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-90 "
       >
         <div className="flex gap-3">
           <div className="flex flex-col gap-1">
@@ -49,9 +65,20 @@ export const WHClassView = ({ whClassName }: WHClassViewProps) => {
         </div>
       </Tooltip>
 
-      <div className={clsx(classes.WHClassViewContent, 'wh-name select-none cursor-help', `wh-name${whClassName}`)}>
-        <span>{whClassName}</span>
-        <span className={clsx(classes.WHClassName, whClassStyle)}>{whClass.shortName}</span>
+      <div
+        className={clsx(
+          classes.WHClassViewContent,
+          { [classes.NoOffset]: noOffset },
+          'wh-name select-none cursor-help',
+          `wh-name${whClassName}${uid}`,
+        )}
+      >
+        <span className={clsx({ [whClassStyle]: highlightName })}>{whClassName}</span>
+        {!hideWhClass && whClass && (
+          <span className={clsx(classes.WHClassName, whClassStyle, classNameWh)}>
+            {useShortTitle ? whClass.shortTitle : whClass.shortName}
+          </span>
+        )}
       </div>
     </div>
   );

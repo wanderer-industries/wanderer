@@ -28,6 +28,7 @@ defmodule WandererApp.Api.MapConnection do
     define(:update_time_status, action: :update_time_status)
     define(:update_ship_size_type, action: :update_ship_size_type)
     define(:update_locked, action: :update_locked)
+    define(:update_custom_info, action: :update_custom_info)
   end
 
   actions do
@@ -87,6 +88,10 @@ defmodule WandererApp.Api.MapConnection do
     update :update_locked do
       accept [:locked]
     end
+
+    update :update_custom_info do
+      accept [:custom_info]
+    end
   end
 
   attributes do
@@ -130,6 +135,10 @@ defmodule WandererApp.Api.MapConnection do
     end
 
     attribute :locked, :boolean
+
+    attribute :custom_info, :string do
+      allow_nil? true
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

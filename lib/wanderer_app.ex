@@ -32,17 +32,17 @@ defmodule WandererApp do
   end
 
   def log_exception(kind, reason, stacktrace) do
-      reason = Exception.normalize(kind, reason, stacktrace)
+    reason = Exception.normalize(kind, reason, stacktrace)
 
-      crash_reason =
-        case kind do
-          :throw -> {{:nocatch, reason}, stacktrace}
-          _ -> {reason, stacktrace}
-        end
+    crash_reason =
+      case kind do
+        :throw -> {{:nocatch, reason}, stacktrace}
+        _ -> {reason, stacktrace}
+      end
 
-      Logger.error(
-        Exception.format(kind, reason, stacktrace),
-        crash_reason: crash_reason
-      )
-    end
+    Logger.error(
+      Exception.format(kind, reason, stacktrace),
+      crash_reason: crash_reason
+    )
+  end
 end

@@ -13,9 +13,10 @@ export const SystemInfoContent = ({ systemId }: SystemInfoContentProps) => {
     data: { systems, wormholesData },
   } = useMapRootState();
 
-  const sys = getSystemById(systems, systemId)!;
+  const sys = getSystemById(systems, systemId)! || {};
   const { description } = sys;
-  const { system_class, region_name, constellation_name, statics, effect_name, effect_power } = sys.system_static_info;
+  const { system_class, region_name, constellation_name, statics, effect_name, effect_power } =
+    sys.system_static_info || {};
   const isWH = isWormholeSpace(system_class);
   const sortedStatics = useMemo(() => sortWHClasses(wormholesData, statics), [wormholesData, statics]);
 

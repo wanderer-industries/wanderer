@@ -133,7 +133,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         <div className={classes.Bookmarks}>
           {labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <div>{labelCustom}</div>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{labelCustom}</span>
             </div>
           )}
 
@@ -168,14 +168,16 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         {visible && (
           <>
             <div className={classes.HeadRow}>
-              <div className={clsx(classes.classTitle, classTitleColor)}>{class_title ?? '-'}</div>
+              <div className={clsx(classes.classTitle, classTitleColor, '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]')}>
+                {class_title ?? '-'}
+              </div>
               {tag != null && tag !== '' && (
                 <div className={clsx(classes.TagTitle, 'text-sky-400 font-medium')}>{tag}</div>
               )}
               <div
                 className={clsx(
                   classes.classSystemName,
-                  'flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
+                  '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
                 {solar_system_name}
@@ -196,16 +198,16 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
             <div className={clsx(classes.BottomRow, 'flex items-center justify-between')}>
               {customName && (
-                <div className="text-blue-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">{customName}</div>
+                <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-blue-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
+                  {customName}
+                </div>
               )}
 
               {!isWormhole && !customName && (
                 <div
-                  className={clsx('text-stone-400 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5', {
-                    ['text-teal-100 font-bold']: space === Spaces.Caldari,
-                    ['text-yellow-100 font-bold']: space === Spaces.Amarr || space === Spaces.Matar,
-                    ['text-lime-200/80 font-bold']: space === Spaces.Gallente,
-                  })}
+                  className={clsx(
+                    '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-stone-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5',
+                  )}
                 >
                   {region_name}
                 </div>
@@ -215,10 +217,10 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
               <div className="flex items-center justify-end">
                 <div className="flex gap-1 items-center">
-                  {locked && <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem' }}></i>}
+                  {locked && <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }}></i>}
 
                   {hubs.includes(solar_system_id.toString()) && (
-                    <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem' }}></i>
+                    <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem', fontWeight: 'bold' }}></i>
                   )}
 
                   {charactersInSystem.length > 0 && (

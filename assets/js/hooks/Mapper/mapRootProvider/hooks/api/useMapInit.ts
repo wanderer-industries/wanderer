@@ -24,6 +24,7 @@ export const useMapInit = () => {
 
       if (wormholes) {
         updateData.wormholesData = wormholes.reduce((acc, x) => ({ ...acc, [x.name]: x }), {});
+        updateData.wormholes = wormholes;
       }
 
       if (effects) {

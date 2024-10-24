@@ -30,11 +30,77 @@ export enum SOLAR_SYSTEM_CLASS_IDS {
   zarzakh = 10100,
 }
 
+export enum SOLAR_SYSTEM_CLASS_GROUPS {
+  ccp = 'ccp',
+  c1 = 'c1',
+  c2 = 'c2',
+  c3 = 'c3',
+  c4 = 'c4',
+  c5 = 'c5',
+  c6 = 'c6',
+  hs = 'hs',
+  ls = 'ls',
+  ns = 'ns',
+  thera = 'thera',
+  c13 = 'c13',
+  drifter = 'drifter',
+  unknown = 'unknown',
+  pochven = 'pochven',
+  jovian = 'jovian',
+}
+
+export const SOLAR_SYSTEM_TO_CLASS_GROUPS_CLASSES = {
+  c1: ['c1'],
+  c2: ['c2'],
+  c3: ['c3'],
+  c4: ['c4'],
+  c5: ['c5'],
+  c6: ['c6'],
+  hs: ['hs'],
+  ls: ['ls'],
+  ns: ['ns'],
+  thera: ['thera'],
+  c13: ['c13'],
+  pochven: ['pochven'],
+  drifter: ['sentinel', 'barbican', 'vidette', 'conflux', 'redoubt'],
+  jove: ['jove'],
+};
+
+export const SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS = {
+  ccp1: SOLAR_SYSTEM_CLASS_GROUPS.ccp,
+  c1: SOLAR_SYSTEM_CLASS_GROUPS.c1,
+  c2: SOLAR_SYSTEM_CLASS_GROUPS.c2,
+  c3: SOLAR_SYSTEM_CLASS_GROUPS.c3,
+  c4: SOLAR_SYSTEM_CLASS_GROUPS.c4,
+  c5: SOLAR_SYSTEM_CLASS_GROUPS.c5,
+  c6: SOLAR_SYSTEM_CLASS_GROUPS.c6,
+  hs: SOLAR_SYSTEM_CLASS_GROUPS.hs,
+  ls: SOLAR_SYSTEM_CLASS_GROUPS.ls,
+  ns: SOLAR_SYSTEM_CLASS_GROUPS.ns,
+  ccp2: SOLAR_SYSTEM_CLASS_GROUPS.ccp,
+  ccp3: SOLAR_SYSTEM_CLASS_GROUPS.ccp,
+  thera: SOLAR_SYSTEM_CLASS_GROUPS.thera,
+  c13: SOLAR_SYSTEM_CLASS_GROUPS.c13,
+  sentinel: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  baribican: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  vidette: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  conflux: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  redoubt: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  a1: SOLAR_SYSTEM_CLASS_GROUPS.unknown,
+  a2: SOLAR_SYSTEM_CLASS_GROUPS.unknown,
+  a3: SOLAR_SYSTEM_CLASS_GROUPS.unknown,
+  a4: SOLAR_SYSTEM_CLASS_GROUPS.unknown,
+  a5: SOLAR_SYSTEM_CLASS_GROUPS.unknown,
+  ccp4: SOLAR_SYSTEM_CLASS_GROUPS.ccp,
+  pochven: SOLAR_SYSTEM_CLASS_GROUPS.pochven,
+};
+
 type WormholesAdditionalInfoType = {
   id: string;
   shortName: string;
   wormholeClassID: number;
   title: string;
+  shortTitle: string;
   effectPower?: number;
 };
 
@@ -45,6 +111,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     shortName: 'CCP',
     wormholeClassID: -1,
     title: 'CCP System',
+    shortTitle: 'CCP',
   },
   {
     id: 'c1',
@@ -52,6 +119,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 1,
     effectPower: 1,
     title: 'Class 1',
+    shortTitle: 'C1',
   },
   {
     id: 'c2',
@@ -59,6 +127,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 2,
     effectPower: 2,
     title: 'Class 2',
+    shortTitle: 'C2',
   },
   {
     id: 'c3',
@@ -66,6 +135,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 3,
     effectPower: 3,
     title: 'Class 3',
+    shortTitle: 'C3',
   },
   {
     id: 'c4',
@@ -73,6 +143,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 4,
     effectPower: 4,
     title: 'Class 4',
+    shortTitle: 'C4',
   },
   {
     id: 'c5',
@@ -80,6 +151,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 5,
     effectPower: 5,
     title: 'Class 5',
+    shortTitle: 'C5',
   },
   {
     id: 'c6',
@@ -87,42 +159,49 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 6,
     effectPower: 6,
     title: 'Class 6',
+    shortTitle: 'C6',
   },
   {
     id: 'hs',
     shortName: 'H',
     wormholeClassID: 7,
     title: 'High-sec',
+    shortTitle: 'High-sec',
   },
   {
     id: 'ls',
     shortName: 'L',
     wormholeClassID: 8,
     title: 'Low-sec',
+    shortTitle: 'Low-sec',
   },
   {
     id: 'ns',
     shortName: 'N',
     wormholeClassID: 9,
     title: 'Null-sec',
+    shortTitle: 'Null-sec',
   },
   {
     id: 'ccp2',
     shortName: 'CCP',
     wormholeClassID: 10,
     title: 'CCP System',
+    shortTitle: 'CCP',
   },
   {
     id: 'ccp3',
     shortName: 'CCP',
     wormholeClassID: 11,
     title: 'CCP System',
+    shortTitle: 'CCP',
   },
   {
     id: 'thera',
     shortName: 'T',
     wormholeClassID: 12,
     title: 'Class 12 (Thera)',
+    shortTitle: 'Thera',
   },
   {
     id: 'c13',
@@ -130,6 +209,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 13,
     effectPower: 6,
     title: 'Class 13 (Shattered Frigate)',
+    shortTitle: 'C13',
   },
   {
     id: 'sentinel',
@@ -137,6 +217,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 14,
     effectPower: 2,
     title: 'Class 14 (Sentinel Drifter)',
+    shortTitle: 'Sentinel',
   },
   {
     id: 'barbican',
@@ -144,6 +225,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 15,
     effectPower: 2,
     title: 'Class 15 (Barbican Drifter)',
+    shortTitle: 'Barbican',
   },
   {
     id: 'vidette',
@@ -151,6 +233,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 16,
     effectPower: 2,
     title: 'Class 16 (Vidette Drifter)',
+    shortTitle: 'Vidette',
   },
   {
     id: 'conflux',
@@ -158,6 +241,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 17,
     effectPower: 2,
     title: 'Class 17 (Conflux Drifter)',
+    shortTitle: 'Conflux',
   },
   {
     id: 'redoubt',
@@ -165,58 +249,78 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 18,
     effectPower: 2,
     title: 'Class 18 (Redoubt Drifter)',
+    shortTitle: 'Redoubt',
   },
   {
     id: 'a1',
     shortName: 'A1',
     wormholeClassID: 19,
     title: '(Abyssal class 1)',
+    shortTitle: 'A1',
   },
   {
     id: 'a2',
     shortName: 'A2',
     wormholeClassID: 20,
     title: '(Abyssal class 2)',
+    shortTitle: 'A2',
   },
   {
     id: 'a3',
     shortName: 'A3',
     wormholeClassID: 21,
     title: '(Abyssal class 3)',
+    shortTitle: 'A3',
   },
   {
     id: 'a4',
     shortName: 'A4',
     wormholeClassID: 22,
     title: '(Abyssal class 4)',
+    shortTitle: 'A4',
   },
   {
     id: 'a5',
     shortName: 'A5',
     wormholeClassID: 23,
     title: '(Abyssal class 5)',
+    shortTitle: 'A5',
   },
   {
     id: 'ccp4',
     shortName: 'CCP',
     wormholeClassID: 24,
     title: 'CCP System (Penalty)',
+    shortTitle: 'CCP',
   },
   {
     id: 'pochven',
     shortName: 'P',
     wormholeClassID: 25,
     title: 'Triglavian space (Pochven)',
+    shortTitle: 'Pochven',
   },
   {
     id: 'zarzakh',
     shortName: 'N',
     wormholeClassID: 10100,
     title: 'Pirate space',
+    shortTitle: 'Zarzakh',
+  },
+  {
+    id: 'k162',
+    shortName: 'K162',
+    wormholeClassID: 10101,
+    title: 'Reverse',
+    shortTitle: 'K162',
   },
 ];
+
 export const WORMHOLES_ADDITIONAL_INFO: Record<string, WormholesAdditionalInfoType> =
   WORMHOLES_ADDITIONAL_INFO_RAW.reduce((acc, x) => ({ ...acc, [x.id]: x }), {});
+
+export const WORMHOLES_ADDITIONAL_INFO_BY_CLASS_ID: Record<string, WormholesAdditionalInfoType> =
+  WORMHOLES_ADDITIONAL_INFO_RAW.reduce((acc, x) => ({ ...acc, [x.wormholeClassID]: x }), {});
 
 // export const SOLAR_SYSTEM_CLASS_NAMES = {
 //   ccp1 =  ,

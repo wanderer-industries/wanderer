@@ -333,7 +333,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def delete_systems(
-        %{map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = state,
+        %{map_id: map_id, rtree_name: rtree_name} = state,
         removed_ids,
         user_id,
         character_id
@@ -352,7 +352,7 @@ defmodule WandererApp.Map.Server.Impl do
     removed_ids
     |> Enum.each(fn solar_system_id ->
       map_id
-      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id, map_opts)
+      |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
         {:ok, _} ->
           :ok
@@ -470,6 +470,12 @@ defmodule WandererApp.Map.Server.Impl do
         connection_update
       ),
       do: _update_connection(state, :update_locked, [:locked], connection_update)
+
+  def update_connection_custom_info(
+        state,
+        connection_update
+      ),
+      do: _update_connection(state, :update_custom_info, [:custom_info], connection_update)
 
   def import_settings(%{map_id: map_id} = state, settings, user_id) do
     WandererApp.Cache.put(
@@ -1082,12 +1088,13 @@ defmodule WandererApp.Map.Server.Impl do
              map_id,
              update.solar_system_id
            ),
-         {:ok, update_map} <- _get_update_map(update, attributes),
-         {:ok, updated_system} <-
-           apply(WandererApp.MapSystemRepo, update_method, [
-             system,
-             update_map
-           ]) do
+         {:ok, update_map} <- _get_update_map(update, attributes) do
+      {:ok, updated_system} =
+        apply(WandererApp.MapSystemRepo, update_method, [
+          system,
+          update_map
+        ])
+
       if not is_nil(callback_fn) do
         callback_fn.(updated_system)
       end
@@ -1097,7 +1104,7 @@ defmodule WandererApp.Map.Server.Impl do
       state
     else
       error ->
-        @logger.error("Failed to update system: #{inspect(error, pretty: true)}")
+        @logger.error("Fail ed to update system: #{inspect(error, pretty: true)}")
         state
     end
   end
@@ -1114,7 +1121,7 @@ defmodule WandererApp.Map.Server.Impl do
          %{
            solar_system_id: solar_system_id,
            coordinates: coordinates
-         } = _system_info,
+         } = system_info,
          user_id,
          character_id
        ) do
@@ -1134,17 +1141,35 @@ defmodule WandererApp.Map.Server.Impl do
     {:ok, system} =
       case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
         {:ok, existing_system} when not is_nil(existing_system) ->
-          @ddrt.insert(
-            {solar_system_id,
-             WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-               position_x: x,
-               position_y: y
-             })},
-            rtree_name
-          )
+          use_old_coordinates = Map.get(system_info, :use_old_coordinates, false)
 
-          existing_system
-          |> WandererApp.MapSystemRepo.update_position(%{position_x: x, position_y: y})
+          if use_old_coordinates do
+            @ddrt.insert(
+              {solar_system_id,
+               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                 position_x: existing_system.position_x,
+                 position_y: existing_system.position_y
+               })},
+              rtree_name
+            )
+
+            {:ok, existing_system}
+          else
+            @ddrt.insert(
+              {solar_system_id,
+               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                 position_x: x,
+                 position_y: y
+               })},
+              rtree_name
+            )
+
+            {:ok,
+             existing_system
+             |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
+             |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
+             |> WandererApp.MapSystemRepo.cleanup_tags()}
+          end
 
         _ ->
           {:ok, solar_system_info} =
@@ -1587,13 +1612,13 @@ defmodule WandererApp.Map.Server.Impl do
            location.solar_system_id,
            old_location.solar_system_id
          ) do
-      {:ok, connection} ->
+      {:ok, connection} when not is_nil(connection) ->
         :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
 
         broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
 
-      {:error, _error} ->
+      _error ->
         :ok
     end
   end

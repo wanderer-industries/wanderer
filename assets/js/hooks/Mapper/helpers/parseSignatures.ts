@@ -19,6 +19,7 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
       kind: availableKeys.includes(sigArrInfo[1]) ? sigArrInfo[1] : COSMIC_SIGNATURE,
       group: sigArrInfo[2],
       name: sigArrInfo[3],
+      type: '',
     });
   }
 

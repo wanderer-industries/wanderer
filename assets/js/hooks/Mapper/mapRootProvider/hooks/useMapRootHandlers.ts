@@ -49,15 +49,25 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
             case Commands.addSystems:
               addSystems(data as CommandAddSystems);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.addSystems, data });
+              }, 100);
               break;
             case Commands.updateSystems:
               updateSystems(data as CommandUpdateSystems);
               break;
             case Commands.removeSystems:
               removeSystems(data as CommandRemoveSystems);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.removeSystems, data });
+              }, 100);
+
               break;
             case Commands.addConnections:
               addConnections(data as CommandAddConnections);
+              setTimeout(() => {
+                emitMapEvent({ name: Commands.addConnections, data });
+              }, 100);
               break;
             case Commands.removeConnections:
               removeConnections(data as CommandRemoveConnections);
@@ -96,11 +106,19 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
 
             case Commands.linkSignatureToSystem:
+              // TODO command data type lost
+              // @ts-ignore
               emitMapEvent({ name: Commands.linkSignatureToSystem, data });
               break;
 
             case Commands.killsUpdated:
               // do nothing here
+              break;
+
+            case Commands.signaturesUpdated:
+              // TODO command data type lost
+              // @ts-ignore
+              emitMapEvent({ name: Commands.signaturesUpdated, data });
               break;
 
             default:

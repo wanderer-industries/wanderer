@@ -1,13 +1,12 @@
 import { createEvent } from 'react-event-hook';
 
-export interface MapEvent {
-  name: string;
-  data: {
-    solar_system_source: number;
-    solar_system_target: number;
-  };
+import { Command, CommandData } from '@/hooks/Mapper/types/mapHandlers.ts';
+
+export interface MapEvent<T extends Command> {
+  name: T;
+  data: CommandData[T];
 }
 
-const { useMapEventListener, emitMapEvent } = createEvent('map-event')<MapEvent>();
+const { useMapEventListener, emitMapEvent } = createEvent('map-event')<MapEvent<Command>>();
 
 export { useMapEventListener, emitMapEvent };

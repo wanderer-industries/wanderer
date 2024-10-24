@@ -1,6 +1,8 @@
 defmodule WandererAppWeb.MapAuditLive do
   use WandererAppWeb, :live_view
 
+  require Logger
+
   alias WandererAppWeb.UserActivity
 
   def mount(
@@ -37,6 +39,7 @@ defmodule WandererAppWeb.MapAuditLive do
                map_name: map_name,
                map_slug: map_slug,
                activity: activity,
+               can_undo_types: [:systems_removed],
                period: period || "1H",
                page: 1,
                per_page: 25,
@@ -114,8 +117,35 @@ defmodule WandererAppWeb.MapAuditLive do
     end
   end
 
+  def handle_event("undo", %{"event-data" => event_data, "event-type" => "systems_removed"}, %{assigns: %{map_id: map_id, current_user: current_user}} = socket) do
+    {:ok, %{"solar_system_ids" => solar_system_ids}} = Jason.decode(event_data)
+
+    solar_system_ids
+      |> Enum.each(fn solar_system_id ->
+        WandererApp.Map.Server.add_system(
+          map_id,
+          %{
+            solar_system_id: solar_system_id,
+            coordinates: nil,
+            use_old_coordinates: true
+          },
+          current_user.id,
+          nil
+        )
+      end)
+
+
+    {:noreply, socket |> put_flash(:info, "Systems restored!")}
+  end
+
   @impl true
   def handle_event("noop", _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(event, body, socket) do
+    Logger.warning(fn -> "unhandled event: #{event} #{inspect(body)}" end)
     {:noreply, socket}
   end
 
