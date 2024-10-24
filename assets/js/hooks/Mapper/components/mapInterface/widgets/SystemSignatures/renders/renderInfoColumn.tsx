@@ -5,7 +5,7 @@ import { renderName } from './renderName.tsx';
 import classes from './renderInfoColumn.module.scss';
 
 export const renderInfoColumn = (row: SystemSignature) => {
-  if (row.group === SignatureGroup.Wormhole) {
+  if (!row.group || row.group === SignatureGroup.Wormhole) {
     return (
       <div className="flex justify-start items-center gap-[6px]">
         {row.type && (
