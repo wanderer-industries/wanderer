@@ -18,7 +18,7 @@ export const useTagMenu = (
   ref.current = { onSystemTag, systems, systemId };
 
   return useCallback(() => {
-    const { onSystemTag, systemId , systems} = ref.current;
+    const { onSystemTag, systemId, systems } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
     const isSelectedLetters = AVAILABLE_LETTERS.includes(system?.tag ?? '');
