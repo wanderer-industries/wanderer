@@ -191,7 +191,10 @@ jobs:
 
       - name: Extract release notes
         id: extract-release-notes
-        uses: ffurrer2/extract-release-notes@v2
+        uses: sean0x42/markdown-extract@v4
+        with:
+          file: CHANGELOG.md
+          pattern: ${{ steps.get-latest-tag.outputs.tag }}
 
       - name: Get content
         uses: 2428392/gh-truncate-string-action@v1.3.0
@@ -202,7 +205,7 @@ jobs:
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
-            ${{ steps.extract-release-notes.outputs.release_notes }}
+            ${{ steps.extract-release-notes.outputs.markdown }}
           maxLength: 2000
           truncationSymbol: "..."
 
