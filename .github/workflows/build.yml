@@ -208,7 +208,8 @@ jobs:
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
             ${{ steps.extract-changelog.outputs.body }}
-          maxLength: 2000
+          maxLength: 500
+          truncationSymbol: "…"
 
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.3.0
