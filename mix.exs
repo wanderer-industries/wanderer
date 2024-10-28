@@ -2,7 +2,7 @@ defmodule WandererApp.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/wanderer-industries/wanderer"
-  @version "1.12.11"
+  @version "1.13.0"
 
   def project do
     [
