@@ -58,6 +58,8 @@ jobs:
         otp: ["27"]
         elixir: ["1.17"]
         node-version: ["18.x"]
+    outputs:
+      commit_hash: ${{ steps.generate-changelog.outputs.commit_hash }}
     steps:
       - name: Prepare
         run: |
@@ -108,16 +110,17 @@ jobs:
         run: mix compile
 
       - name: Generate Changelog & Update Tag Version
+        id: generate-changelog
         run: |
           git config --global user.name 'CI'
           git config --global user.email 'ci@users.noreply.github.com'
           mix git_ops.release --force-patch --yes
           git push --follow-tags
+          echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   docker:
     name: 🛠 Build Docker Images
-    needs:
-      - build
+    needs: build
     runs-on: ubuntu-22.04
     permissions:
       checks: write
@@ -141,6 +144,7 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
         with:
+          ref: ${{ needs.build.outputs.commit_hash }}
           fetch-depth: 0
 
       - name: Prepare Changelog
@@ -189,14 +193,10 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
 
-      - id: extract-changelog
-        uses: dahlia/submark@0.3.1
+      - uses: markpatterson27/markdown-to-output@v1
+        id: extract-changelog
         with:
-          input-file: CHANGELOG.md
-          heading-level: 2
-          heading-title-text: ${{ steps.get-latest-tag.outputs.tag }}
-          ignore-case: true
-          omit-heading: true
+          filepath: CHANGELOG.md
 
       - name: Get content
         uses: 2428392/gh-truncate-string-action@v1.3.0
@@ -207,9 +207,8 @@ jobs:
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
-            ${{ steps.extract-changelog.output.output-text }}
+            ${{ steps.extract-changelog.outputs.body }}
           maxLength: 2000
-          truncationSymbol: "..."
 
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.3.0

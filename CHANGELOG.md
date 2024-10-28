@@ -1,37 +1,6 @@
 # Change Log
 
 <!-- changelog -->
-
-## [v1.13.6](https://github.com/wanderer-industries/wanderer/compare/v1.13.5...v1.13.6) (2024-10-28)
-
-
-
-
-## [v1.13.5](https://github.com/wanderer-industries/wanderer/compare/v1.13.4...v1.13.5) (2024-10-28)
-
-
-
-
-## [v1.13.4](https://github.com/wanderer-industries/wanderer/compare/v1.13.3...v1.13.4) (2024-10-28)
-
-
-
-
-## [v1.13.3](https://github.com/wanderer-industries/wanderer/compare/v1.13.2...v1.13.3) (2024-10-28)
-
-
-
-
-## [v1.13.2](https://github.com/wanderer-industries/wanderer/compare/v1.13.1...v1.13.2) (2024-10-28)
-
-
-
-
-## [v1.13.1](https://github.com/wanderer-industries/wanderer/compare/v1.13.0...v1.13.1) (2024-10-28)
-
-
-
-
 ## [v1.13.0](https://github.com/wanderer-industries/wanderer/compare/v1.12.11...v1.13.0) (2024-10-28)
 
 
@@ -40,41 +9,6 @@
 ### Features:
 
 * Core: Use ESI /characters/affiliation API
-
-## [v1.12.11](https://github.com/wanderer-industries/wanderer/compare/v1.12.10...v1.12.11) (2024-10-25)
-
-
-
-
-## [v1.12.10](https://github.com/wanderer-industries/wanderer/compare/v1.12.9...v1.12.10) (2024-10-24)
-
-
-
-
-## [v1.12.9](https://github.com/wanderer-industries/wanderer/compare/v1.12.8...v1.12.9) (2024-10-24)
-
-
-
-
-## [v1.12.8](https://github.com/wanderer-industries/wanderer/compare/v1.12.7...v1.12.8) (2024-10-24)
-
-
-
-
-## [v1.12.7](https://github.com/wanderer-industries/wanderer/compare/v1.12.6...v1.12.7) (2024-10-24)
-
-
-
-
-## [v1.12.6](https://github.com/wanderer-industries/wanderer/compare/v1.12.5...v1.12.6) (2024-10-24)
-
-
-
-
-## [v1.12.5](https://github.com/wanderer-industries/wanderer/compare/v1.12.4...v1.12.5) (2024-10-22)
-
-
-
 
 ## [v1.12.4](https://github.com/wanderer-industries/wanderer/compare/v1.12.3...v1.12.4) (2024-10-21)
 
@@ -94,11 +28,6 @@
 
 * Map: Fix regression issues
 
-## [v1.12.2](https://github.com/wanderer-industries/wanderer/compare/v1.12.1...v1.12.2) (2024-10-16)
-
-
-
-
 ## [v1.12.1](https://github.com/wanderer-industries/wanderer/compare/v1.12.0...v1.12.1) (2024-10-16)
 
 
@@ -116,31 +45,6 @@
 ### Features:
 
 * Map: Prettify user settings
-
-## [v1.11.5](https://github.com/wanderer-industries/wanderer/compare/v1.11.4...v1.11.5) (2024-10-16)
-
-
-
-
-## [v1.11.4](https://github.com/wanderer-industries/wanderer/compare/v1.11.3...v1.11.4) (2024-10-16)
-
-
-
-
-## [v1.11.3](https://github.com/wanderer-industries/wanderer/compare/v1.11.2...v1.11.3) (2024-10-16)
-
-
-
-
-## [v1.11.2](https://github.com/wanderer-industries/wanderer/compare/v1.11.1...v1.11.2) (2024-10-15)
-
-
-
-
-## [v1.11.1](https://github.com/wanderer-industries/wanderer/compare/v1.11.0...v1.11.1) (2024-10-14)
-
-
-
 
 ## [v1.11.0](https://github.com/wanderer-industries/wanderer/compare/v1.10.0...v1.11.0) (2024-10-14)
 
