@@ -150,7 +150,7 @@ jobs:
 
       - name: Assign Changelog to step variable
         id: changelog-content
-        run: echo "::set-output name=CHANGELOG_CONTENT::$(cat CHANGELOG.md)"
+        run: echo "content=$(cat CHANGELOG.md)" >> $GITHUB_OUTPUT
 
       - name: Get Release Tag
         id: get-latest-tag
@@ -202,9 +202,7 @@ jobs:
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
-            **Changes**:
-
-            ${{ steps.changelog-content.outputs.CHANGELOG_CONTENT }}
+            ${{ steps.changelog-content.outputs.content }}
           maxLength: 2000
           truncationSymbol: "..."
 
