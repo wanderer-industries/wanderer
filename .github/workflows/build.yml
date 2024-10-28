@@ -150,7 +150,7 @@ jobs:
 
       - name: Assign Changelog to step variable
         id: changelog-content
-        run: echo "::set-output name=CHANGELOG_CONTENT::$(cat priv/changelog/CHANGELOG.md)"
+        run: echo "::set-output name=CHANGELOG_CONTENT::$(cat CHANGELOG.md)"
 
       - name: Get Release Tag
         id: get-latest-tag
