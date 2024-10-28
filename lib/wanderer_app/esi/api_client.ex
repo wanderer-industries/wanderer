@@ -53,6 +53,17 @@ defmodule WandererApp.Esi.ApiClient do
     )
   end
 
+  def post_characters_affiliation(character_eve_ids, _opts)
+      when is_list(character_eve_ids) do
+    _post(
+      "#{@base_url}/characters/affiliation/",
+      json: character_eve_ids,
+      params: %{
+        datasource: "tranquility"
+      }
+    )
+  end
+
   def find_routes(map_id, origin, hubs, routes_settings) do
     origin = origin |> String.to_integer()
     hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))

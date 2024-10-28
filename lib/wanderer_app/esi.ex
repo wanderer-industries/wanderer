@@ -5,6 +5,10 @@ defmodule WandererApp.Esi do
   defdelegate get_alliance_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_corporation_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_character_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
+
+  defdelegate post_characters_affiliation(character_eve_ids, opts \\ []),
+    to: WandererApp.Esi.ApiClient
+
   defdelegate get_character_wallet(character_eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_corporation_wallets(corporation_id, opts \\ []), to: WandererApp.Esi.ApiClient
 

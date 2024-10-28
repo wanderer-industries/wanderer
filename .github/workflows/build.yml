@@ -148,6 +148,10 @@ jobs:
           yes | cp -rf CHANGELOG.md priv/changelog/CHANGELOG.md
           sed -i '1i%{title: "Change Log"}\n\n---\n' priv/changelog/CHANGELOG.md
 
+      - name: Assign Changelog to step variable
+        id: changelog-content
+        run: echo "::set-output name=CHANGELOG_CONTENT::$(cat priv/changelog/CHANGELOG.md)"
+
       - name: Get Release Tag
         id: get-latest-tag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
@@ -188,6 +192,27 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
+
+      - name: Get content
+        uses: 2428392/gh-truncate-string-action@v1.3.0
+        id: get-content
+        with:
+          stringToTruncate: |
+            📣 Wanderer new release available 🎉
+
+            **Version**: ${{ steps.get-latest-tag.outputs.tag }}
+
+            **Changes**:
+
+            ${{ steps.changelog-content.outputs.CHANGELOG_CONTENT }}
+          maxLength: 2000
+          truncationSymbol: "..."
+
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: ${{ steps.get-content.outputs.string }}
 
   create-release:
     name: 🏷 Create Release

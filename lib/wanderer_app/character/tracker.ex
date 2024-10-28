@@ -73,7 +73,8 @@ defmodule WandererApp.Character.Tracker do
         case WandererApp.Esi.get_character_info(eve_id) do
           {:ok, info} ->
             {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
-            update = maybe_update_corporation(character_state, info)
+
+            update = maybe_update_corporation(character_state, eve_id |> String.to_integer())
             WandererApp.Character.update_character_state(character_id, update)
 
             :ok
@@ -103,7 +104,9 @@ defmodule WandererApp.Character.Tracker do
   end
 
   def update_ship(%{character_id: character_id, track_ship: true} = character_state) do
-    case WandererApp.Character.get_character(character_id) do
+    character_id
+    |> WandererApp.Character.get_character()
+    |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
         WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden")
         |> case do
@@ -541,12 +544,17 @@ defmodule WandererApp.Character.Tracker do
 
   defp maybe_update_corporation(
          state,
-         %{
-           "corporation_id" => corporation_id
-         } = _info
+         character_eve_id
        )
-       when not is_nil(corporation_id),
-       do: update_corporation(state, corporation_id)
+       when not is_nil(character_eve_id) and is_integer(character_eve_id) do
+    case WandererApp.Esi.post_characters_affiliation([character_eve_id]) do
+      {:ok, [character_aff_info]} when not is_nil(character_aff_info) ->
+        update_corporation(state, character_aff_info |> Map.get("corporation_id"))
+
+      error ->
+        state
+    end
+  end
 
   defp maybe_update_corporation(
          state,
