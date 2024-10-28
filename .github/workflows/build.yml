@@ -189,12 +189,14 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
 
-      - name: Extract release notes
-        id: extract-release-notes
-        uses: sean0x42/markdown-extract@v4
+      - id: extract-changelog
+        uses: dahlia/submark@0.3.1
         with:
-          file: CHANGELOG.md
-          pattern: ${{ steps.get-latest-tag.outputs.tag }}
+          input-file: CHANGELOG.md
+          heading-level: 2
+          heading-title-text: ${{ steps.get-latest-tag.outputs.tag }}
+          ignore-case: true
+          omit-heading: true
 
       - name: Get content
         uses: 2428392/gh-truncate-string-action@v1.3.0
@@ -205,7 +207,7 @@ jobs:
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
-            ${{ steps.extract-release-notes.outputs.markdown }}
+            ${{ steps.extract-changelog.output.output-text }}
           maxLength: 2000
           truncationSymbol: "..."
 
