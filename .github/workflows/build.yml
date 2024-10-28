@@ -189,6 +189,10 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
 
+      - name: Extract release notes
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@v2
+
       - name: Get content
         uses: 2428392/gh-truncate-string-action@v1.3.0
         id: get-content
@@ -198,7 +202,7 @@ jobs:
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
-            $(cat CHANGELOG.md)
+            ${{ steps.extract-release-notes.outputs.release_notes }}
           maxLength: 2000
           truncationSymbol: "..."
 
