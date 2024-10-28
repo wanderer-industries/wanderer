@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.13.0](https://github.com/wanderer-industries/wanderer/compare/v1.12.11...v1.13.0) (2024-10-28)
+
+
+
+
+### Features:
+
+* Core: Use ESI /characters/affiliation API
+
 ## [v1.12.11](https://github.com/wanderer-industries/wanderer/compare/v1.12.10...v1.12.11) (2024-10-25)
 
 
