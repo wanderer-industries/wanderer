@@ -33,7 +33,7 @@ defmodule WandererApp.MapSystemRepo do
       {:error, error}
   end
 
-  def cleanup_labels(%{labels: labels} = system, opts) do
+  def cleanup_labels!(%{labels: labels} = system, opts) do
     store_custom_labels? =
       Keyword.get(opts, :store_custom_labels, "false") |> String.to_existing_atom()
 
@@ -47,7 +47,7 @@ defmodule WandererApp.MapSystemRepo do
 
   def cleanup_tags(system) do
     system
-    |> WandererApp.Api.MapSystem.update_tag!(%{
+    |> WandererApp.Api.MapSystem.update_tag(%{
       tag: nil
     })
   end

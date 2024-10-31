@@ -1166,11 +1166,10 @@ defmodule WandererApp.Map.Server.Impl do
               rtree_name
             )
 
-            {:ok,
-             existing_system
-             |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
-             |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
-             |> WandererApp.MapSystemRepo.cleanup_tags()}
+            existing_system
+            |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
+            |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+            |> WandererApp.MapSystemRepo.cleanup_tags()
           end
 
         _ ->
@@ -1212,8 +1211,6 @@ defmodule WandererApp.Map.Server.Impl do
         map_id: map_id,
         solar_system_id: solar_system_id
       })
-
-    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1})
 
     state
   end
@@ -1685,11 +1682,11 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp maybe_add_connection(_map_id, _location, _old_location, _character_id), do: :ok
 
-  defp maybe_add_system(map_id, location, old_location, rtree_name, opts)
+  defp maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
        when not is_nil(location) do
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
-        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, opts)
+        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, map_opts)
 
         case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
                map_id,
@@ -1698,10 +1695,12 @@ defmodule WandererApp.Map.Server.Impl do
           {:ok, existing_system} when not is_nil(existing_system) ->
             {:ok, updated_system} =
               existing_system
-              |> WandererApp.MapSystemRepo.update_position(%{
+              |> WandererApp.MapSystemRepo.update_position!(%{
                 position_x: position.x,
                 position_y: position.y
               })
+              |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+              |> WandererApp.MapSystemRepo.cleanup_tags()
 
             @ddrt.insert(
               {existing_system.solar_system_id,
@@ -1723,7 +1722,7 @@ defmodule WandererApp.Map.Server.Impl do
 
           _ ->
             {:ok, solar_system_info} =
-              WandererApp.Api.MapSolarSystem.by_solar_system_id(location.solar_system_id)
+              WandererApp.CachedInfo.get_system_static_info(location.solar_system_id)
 
             WandererApp.MapSystemRepo.create(%{
               map_id: map_id,
@@ -1759,7 +1758,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _opts), do: :ok
+  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _map_opts), do: :ok
 
   defp calc_new_system_position(map_id, old_location, rtree_name, opts),
     do:

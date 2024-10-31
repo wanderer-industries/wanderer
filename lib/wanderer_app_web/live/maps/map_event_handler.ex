@@ -16,6 +16,7 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_characters_events [
     :character_added,
     :character_removed,
+    :character_updated,
     :characters_updated,
     :present_characters_updated
   ]

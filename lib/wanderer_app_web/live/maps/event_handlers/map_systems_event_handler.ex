@@ -65,6 +65,38 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
+        "add_system",
+        %{"system_id" => solar_system_id} = _event,
+        %{
+          assigns:
+            %{
+              map_id: map_id,
+              map_slug: map_slug,
+              current_user: current_user,
+              tracked_character_ids: tracked_character_ids,
+              user_permissions: %{add_system: true}
+            } = assigns
+        } = socket
+      )
+      when is_binary(solar_system_id) and solar_system_id != "" do
+    coordinates = Map.get(assigns, :coordinates)
+
+    WandererApp.Map.Server.add_system(
+      map_id,
+      %{
+        solar_system_id: solar_system_id |> String.to_integer(),
+        coordinates: coordinates
+      },
+      current_user.id,
+      tracked_character_ids |> List.first()
+    )
+
+    {:noreply,
+     socket
+     |> push_patch(to: ~p"/#{map_slug}")}
+  end
+
+  def handle_ui_event(
         "manual_add_system",
         %{"coordinates" => coordinates} = _event,
         %{
@@ -244,38 +276,6 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       |> Enum.map(&MapEventHandler.map_ui_system_static_info/1)
 
     {:reply, %{system_static_infos: system_static_infos}, socket}
-  end
-
-  def handle_ui_event(
-        "add_system",
-        %{"system_id" => solar_system_id} = _event,
-        %{
-          assigns:
-            %{
-              map_id: map_id,
-              map_slug: map_slug,
-              current_user: current_user,
-              tracked_character_ids: tracked_character_ids,
-              user_permissions: %{add_system: true}
-            } = assigns
-        } = socket
-      )
-      when is_binary(solar_system_id) and solar_system_id != "" do
-    coordinates = Map.get(assigns, :coordinates)
-
-    WandererApp.Map.Server.add_system(
-      map_id,
-      %{
-        solar_system_id: solar_system_id |> String.to_integer(),
-        coordinates: coordinates
-      },
-      current_user.id,
-      tracked_character_ids |> List.first()
-    )
-
-    {:noreply,
-     socket
-     |> push_patch(to: ~p"/#{map_slug}")}
   end
 
   def handle_ui_event(
