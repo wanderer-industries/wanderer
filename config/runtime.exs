@@ -55,11 +55,11 @@ map_subscriptions_enabled =
 
 map_subscription_characters_limit =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 100)
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 10_000)
 
 map_subscription_hubs_limit =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_HUBS_LIMIT", 10)
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_HUBS_LIMIT", 100)
 
 wallet_tracking_enabled =
   config_dir

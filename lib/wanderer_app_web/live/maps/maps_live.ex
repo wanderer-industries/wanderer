@@ -8,10 +8,13 @@ defmodule WandererAppWeb.MapsLive do
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   @impl true
-  def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
+  def mount(
+        _params,
+        %{"user_id" => user_id} = _session,
+        %{assigns: %{current_user: current_user}} = socket
+      )
+      when not is_nil(user_id) do
     {:ok, active_characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
-
-    current_user = socket.assigns.current_user
 
     user_characters =
       active_characters
@@ -600,16 +603,6 @@ defmodule WandererAppWeb.MapsLive do
         end
 
         {added_acls, removed_acls} = map.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
-
-        added_acls
-        |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :add], %{count: 1})
-        end)
-
-        removed_acls
-        |> Enum.each(fn acl_id ->
-          :telemetry.execute([:wanderer_app, :map, :acl, :remove], %{count: 1})
-        end)
 
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,

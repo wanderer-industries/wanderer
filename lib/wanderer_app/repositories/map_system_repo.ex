@@ -56,7 +56,7 @@ defmodule WandererApp.MapSystemRepo do
     labels
     |> Jason.decode!()
     |> case do
-      %{"customLabel" => customLabel} = labels when is_binary(customLabel) ->
+      %{"customLabel" => customLabel} when is_binary(customLabel) ->
         %{"customLabel" => customLabel, "labels" => []}
         |> Jason.encode!()
 

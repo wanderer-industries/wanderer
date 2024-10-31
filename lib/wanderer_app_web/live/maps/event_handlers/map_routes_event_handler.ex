@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.MapEventHandler
+  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(
         %{
@@ -24,10 +24,8 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
           }
         )
 
-  def handle_server_event(event, socket) do
-    Logger.warning(fn -> "unhandled map routes event: #{inspect(event)}" end)
-    socket
-  end
+  def handle_server_event(event, socket),
+    do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
         "get_routes",
@@ -76,10 +74,8 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
     {:noreply, socket}
   end
 
-  def handle_ui_event(event, body, socket) do
-    Logger.warning(fn -> "unhandled map routes ui event: #{event} #{inspect(body)}" end)
-    {:noreply, socket}
-  end
+  def handle_ui_event(event, body, socket),
+    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
   defp get_routes_settings(%{
          "path_type" => path_type,

@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.MapEventHandler
+  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(
         %{
@@ -68,10 +68,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           solar_system_id
         )
 
-  def handle_server_event(event, socket) do
-    Logger.warning(fn -> "unhandled map signatures event: #{inspect(event)}" end)
-    socket
-  end
+  def handle_server_event(event, socket),
+    do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
         "update_signatures",
@@ -307,10 +305,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     end
   end
 
-  def handle_ui_event(event, body, socket) do
-    Logger.warning(fn -> "unhandled map signatures ui event: #{event} #{inspect(body)}" end)
-    {:noreply, socket}
-  end
+  def handle_ui_event(event, body, socket),
+    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
   defp get_system_signatures(system_id),
     do:

@@ -193,7 +193,9 @@ defmodule WandererApp.Map.Server.Impl do
 
         :ok
       else
-        {:error, _error} ->
+        _error ->
+          {:ok, character} = WandererApp.Character.get_character(character_id)
+          broadcast!(map_id, :character_added, character)
           :ok
       end
     end)
@@ -806,7 +808,7 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
-  def handle_event({:options_updated, options}, %{map: map, map_id: map_id} = state),
+  def handle_event({:options_updated, options}, state),
     do: %{
       state
       | map_opts: [
