@@ -7,6 +7,8 @@ defmodule WandererApp do
   if it comes from the database, an external API or others.
   """
 
+  require Logger
+
   @doc """
   When used, dispatch to the appropriate domain service
   """
