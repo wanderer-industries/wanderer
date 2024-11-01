@@ -12,6 +12,7 @@ defmodule WandererAppWeb.MapPicker do
     {:ok, socket}
   end
 
+  @impl true
   def update(
         %{
           current_user: current_user,
@@ -29,6 +30,7 @@ defmodule WandererAppWeb.MapPicker do
      end)}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div id={@id}>
@@ -56,6 +58,7 @@ defmodule WandererAppWeb.MapPicker do
     """
   end
 
+  @impl true
   def handle_event("select", %{"map_slug" => map_slug} = _params, socket) do
     notify_to(socket.assigns.notify_to, socket.assigns.event_name, map_slug)
 

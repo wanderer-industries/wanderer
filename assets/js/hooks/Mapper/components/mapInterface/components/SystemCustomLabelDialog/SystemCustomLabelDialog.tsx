@@ -79,7 +79,7 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
 
   // @ts-ignore
   const handleInput = useCallback(e => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9[\](){}]/g, '');
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9\-[\](){}]/g, '');
   }, []);
 
   return (

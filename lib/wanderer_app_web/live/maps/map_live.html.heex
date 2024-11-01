@@ -104,20 +104,18 @@
       id="characters-tracking-table"
       class="h-[400px] !overflow-y-auto"
       rows={characters}
-      row_click={fn character -> send(self(), "toggle_track_#{character.id}") end}
+
     >
       <:col :let={character} label="Tracked">
-        <div class="flex items-center gap-3">
-          <label>
-            <input
-              type="checkbox"
-              class="checkbox"
-              phx-click="toggle_track"
-              phx-value-character-id={character.id}
-              id={"character-track-#{character.id}"}
-              checked={character.tracked}
-            />
-          </label>
+        <label class="flex items-center gap-3">
+          <input
+            type="checkbox"
+            class="checkbox"
+            phx-click="toggle_track"
+            phx-value-character-id={character.id}
+            id={"character-track-#{character.id}"}
+            checked={character.tracked}
+          />
           <div class="flex items-center gap-3">
             <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
             <div>
@@ -127,7 +125,7 @@
               <div class="text-sm opacity-50"></div>
             </div>
           </div>
-        </div>
+        </label>
       </:col>
     </.table>
   </.async_result>

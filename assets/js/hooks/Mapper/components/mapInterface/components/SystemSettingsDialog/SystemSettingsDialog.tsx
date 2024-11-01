@@ -90,7 +90,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
   }, []);
 
   const handleInput = useCallback((e: any) => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9[\](){}]/g, '');
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9\-[\](){}]/g, '');
   }, []);
 
   return (

@@ -75,7 +75,7 @@ defmodule WandererApp.Map.PositionCalculator do
   def get_available_positions(level, x, y, opts),
     do: adjusted_coordinates(1 + level * 2, x, y, opts)
 
-  defp edge_coordinates(n, opts) when n > 1 do
+  defp edge_coordinates(n, _opts) when n > 1 do
     min = -div(n, 2)
     max = div(n, 2)
     # Top edge
