@@ -134,7 +134,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def start_map(%__MODULE__{map: map, map_id: map_id} = state) do
-    with :ok <- _track_acls(map.acls |> Enum.map(& &1.id)) do
+    with :ok <- track_acls(map.acls |> Enum.map(& &1.id)) do
       @pubsub_client.subscribe(
         WandererApp.PubSub,
         "maps:#{map_id}"
@@ -193,7 +193,9 @@ defmodule WandererApp.Map.Server.Impl do
 
         :ok
       else
-        {:error, _error} ->
+        _error ->
+          {:ok, character} = WandererApp.Character.get_character(character_id)
+          broadcast!(map_id, :character_added, character)
           :ok
       end
     end)
@@ -603,7 +605,7 @@ defmodule WandererApp.Map.Server.Impl do
   def handle_event({:map_acl_updated, added_acls, removed_acls}, %{map: old_map} = state) do
     {:ok, map} = WandererApp.MapRepo.get(old_map.map_id, [:acls])
 
-    _track_acls(added_acls)
+    track_acls(added_acls)
 
     result =
       [added_acls | removed_acls]
@@ -677,7 +679,7 @@ defmodule WandererApp.Map.Server.Impl do
                         } ->
         DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
           @connection_auto_eol_hours and
-          _is_connection_valid(
+          is_connection_valid(
             :wormholes,
             solar_system_source_id,
             solar_system_target_id
@@ -705,7 +707,7 @@ defmodule WandererApp.Map.Server.Impl do
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id
                         } ->
-        connection_mark_eol_time = _get_connection_mark_eol_time(map_id, connection_id)
+        connection_mark_eol_time = get_connection_mark_eol_time(map_id, connection_id)
 
         reverse_connection =
           WandererApp.Map.get_connection(
@@ -715,24 +717,23 @@ defmodule WandererApp.Map.Server.Impl do
           )
 
         is_connection_exist =
-          _is_connection_exist(
+          is_connection_exist(
             map_id,
             solar_system_source_id,
             solar_system_target_id
-          )
+          ) || not is_nil(reverse_connection)
 
         is_connection_valid =
-          _is_connection_valid(
+          is_connection_valid(
             :wormholes,
             solar_system_source_id,
             solar_system_target_id
           )
 
-        not is_connection_exist or
-          not is_nil(reverse_connection) or
-          (is_connection_valid and
+        not is_connection_exist ||
+          (is_connection_valid &&
              (DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
-                @connection_auto_expire_hours or
+                @connection_auto_expire_hours ||
                 DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
                   @connection_auto_expire_hours - @connection_auto_eol_hours))
       end)
@@ -806,7 +807,7 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
-  def handle_event({:options_updated, options}, %{map: map, map_id: map_id} = state),
+  def handle_event({:options_updated, options}, state),
     do: %{
       state
       | map_opts: [
@@ -835,8 +836,9 @@ defmodule WandererApp.Map.Server.Impl do
     :ok
   end
 
-  defp _get_connection_mark_eol_time(map_id, connection_id) do
-    case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time") do
+  defp get_connection_mark_eol_time(map_id, connection_id) do
+    WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
+    |> case do
       nil ->
         DateTime.utc_now()
 
@@ -857,12 +859,12 @@ defmodule WandererApp.Map.Server.Impl do
          %{map: map, map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = _state
        ) do
     case is_nil(old_location.solar_system_id) and
-           _can_add_location(map.scope, location.solar_system_id) do
+           can_add_location(map.scope, location.solar_system_id) do
       true ->
         :ok = maybe_add_system(map_id, location, nil, rtree_name, map_opts)
 
       _ ->
-        case _is_connection_valid(
+        case is_connection_valid(
                map.scope,
                old_location.solar_system_id,
                location.solar_system_id
@@ -1153,7 +1155,8 @@ defmodule WandererApp.Map.Server.Impl do
               rtree_name
             )
 
-            {:ok, existing_system}
+            existing_system
+            |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
           else
             @ddrt.insert(
               {solar_system_id,
@@ -1164,11 +1167,11 @@ defmodule WandererApp.Map.Server.Impl do
               rtree_name
             )
 
-            {:ok,
-             existing_system
-             |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
-             |> WandererApp.MapSystemRepo.cleanup_labels(map_opts)
-             |> WandererApp.MapSystemRepo.cleanup_tags()}
+            existing_system
+            |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
+            |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+            |> WandererApp.MapSystemRepo.cleanup_tags!()
+            |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
           end
 
         _ ->
@@ -1210,8 +1213,6 @@ defmodule WandererApp.Map.Server.Impl do
         map_id: map_id,
         solar_system_id: solar_system_id
       })
-
-    :telemetry.execute([:wanderer_app, :map, :system, :add], %{count: 1})
 
     state
   end
@@ -1442,13 +1443,13 @@ defmodule WandererApp.Map.Server.Impl do
     broadcast!(map_id, :update_system, updated_system)
   end
 
-  defp _can_add_location(_scope, nil), do: false
+  defp can_add_location(_scope, nil), do: false
 
-  defp _can_add_location(:all, _solar_system_id), do: true
+  defp can_add_location(:all, _solar_system_id), do: true
 
-  defp _can_add_location(:none, _solar_system_id), do: false
+  defp can_add_location(:none, _solar_system_id), do: false
 
-  defp _can_add_location(scope, solar_system_id) do
+  defp can_add_location(scope, solar_system_id) do
     system_static_info =
       case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
         {:ok, system_static_info} when not is_nil(system_static_info) ->
@@ -1473,14 +1474,14 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _is_connection_exist(map_id, from_solar_system_id, to_solar_system_id),
+  defp is_connection_exist(map_id, from_solar_system_id, to_solar_system_id),
     do:
       not is_nil(
         WandererApp.Map.find_system_by_location(
           map_id,
           %{solar_system_id: from_solar_system_id}
         )
-      ) and
+      ) &&
         not is_nil(
           WandererApp.Map.find_system_by_location(
             map_id,
@@ -1488,13 +1489,13 @@ defmodule WandererApp.Map.Server.Impl do
           )
         )
 
-  defp _is_connection_valid(_scope, nil, _to_solar_system_id), do: false
+  defp is_connection_valid(_scope, nil, _to_solar_system_id), do: false
 
-  defp _is_connection_valid(:all, _from_solar_system_id, _to_solar_system_id), do: true
+  defp is_connection_valid(:all, _from_solar_system_id, _to_solar_system_id), do: true
 
-  defp _is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
+  defp is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
 
-  defp _is_connection_valid(scope, from_solar_system_id, to_solar_system_id) do
+  defp is_connection_valid(scope, from_solar_system_id, to_solar_system_id) do
     {:ok, known_jumps} =
       WandererApp.Api.MapSolarSystemJumps.find(%{
         before_system_id: from_solar_system_id,
@@ -1560,11 +1561,11 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _track_acls([]), do: :ok
+  defp track_acls([]), do: :ok
 
-  defp _track_acls([acl_id | rest]) do
+  defp track_acls([acl_id | rest]) do
     _track_acl(acl_id)
-    _track_acls(rest)
+    track_acls(rest)
   end
 
   defp _track_acl(acl_id),
@@ -1683,23 +1684,25 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp maybe_add_connection(_map_id, _location, _old_location, _character_id), do: :ok
 
-  defp maybe_add_system(map_id, location, old_location, rtree_name, opts)
+  defp maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
        when not is_nil(location) do
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
-        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, opts)
+        {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, map_opts)
 
         case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
                map_id,
                location.solar_system_id
              ) do
           {:ok, existing_system} when not is_nil(existing_system) ->
-            {:ok, updated_system} =
+            updated_system =
               existing_system
-              |> WandererApp.MapSystemRepo.update_position(%{
+              |> WandererApp.MapSystemRepo.update_position!(%{
                 position_x: position.x,
                 position_y: position.y
               })
+              |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+              |> WandererApp.MapSystemRepo.cleanup_tags!()
 
             @ddrt.insert(
               {existing_system.solar_system_id,
@@ -1721,7 +1724,7 @@ defmodule WandererApp.Map.Server.Impl do
 
           _ ->
             {:ok, solar_system_info} =
-              WandererApp.Api.MapSolarSystem.by_solar_system_id(location.solar_system_id)
+              WandererApp.CachedInfo.get_system_static_info(location.solar_system_id)
 
             WandererApp.MapSystemRepo.create(%{
               map_id: map_id,
@@ -1757,7 +1760,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _opts), do: :ok
+  defp maybe_add_system(_map_id, _location, _old_location, _rtree_name, _map_opts), do: :ok
 
   defp calc_new_system_position(map_id, old_location, rtree_name, opts),
     do:

@@ -45,7 +45,7 @@ defmodule WandererApp.MapSystemRepo do
     })
   end
 
-  def cleanup_tags(system) do
+  def cleanup_tags!(system) do
     system
     |> WandererApp.Api.MapSystem.update_tag!(%{
       tag: nil
@@ -106,4 +106,14 @@ defmodule WandererApp.MapSystemRepo do
     do:
       system
       |> WandererApp.Api.MapSystem.update_position!(update)
+
+  def update_visible(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_visible(update)
+
+  def update_visible!(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_visible!(update)
 end

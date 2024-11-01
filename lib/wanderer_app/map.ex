@@ -214,7 +214,7 @@ defmodule WandererApp.Map do
       %{visible: true} = system ->
         system
 
-      _ ->
+      _system ->
         nil
     end
   end
@@ -262,7 +262,7 @@ defmodule WandererApp.Map do
     case not Map.has_key?(systems, solar_system_id) do
       true ->
         map_id
-        |> update_map(%{systems: Map.put_new(systems, solar_system_id, system)})
+        |> update_map(%{systems: Map.put(systems, solar_system_id, system)})
 
         :ok
 
