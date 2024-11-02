@@ -40,14 +40,21 @@ defmodule WandererApp.MapSystemRepo do
     labels = get_filtered_labels(labels, store_custom_labels?)
 
     system
-    |> WandererApp.Api.MapSystem.update_labels!(%{
+    |> update_labels!(%{
       labels: labels
+    })
+  end
+
+  def cleanup_tags(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_tag(%{
+      tag: nil
     })
   end
 
   def cleanup_tags!(system) do
     system
-    |> WandererApp.Api.MapSystem.update_tag(%{
+    |> WandererApp.Api.MapSystem.update_tag!(%{
       tag: nil
     })
   end
@@ -96,6 +103,11 @@ defmodule WandererApp.MapSystemRepo do
     do:
       system
       |> WandererApp.Api.MapSystem.update_labels(update)
+
+  def update_labels!(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_labels!(update)
 
   def update_position(system, update),
     do:
