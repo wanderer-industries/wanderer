@@ -811,8 +811,9 @@ defmodule WandererApp.Map.Server.Impl do
     do: %{
       state
       | map_opts: [
-          layout: options |> Map.get("layout"),
-          store_custom_labels: options |> Map.get("store_custom_labels")
+          layout: options |> Map.get("layout", "left_to_right"),
+          store_custom_labels:
+            options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom()
         ]
     }
 
@@ -1313,8 +1314,9 @@ defmodule WandererApp.Map.Server.Impl do
     {:ok, map_options} = WandererApp.MapRepo.options_to_form_data(initial_map)
 
     map_opts = [
-      layout: map_options |> Map.get("layout"),
-      store_custom_labels: map_options |> Map.get("store_custom_labels")
+      layout: map_options |> Map.get("layout", "left_to_right"),
+      store_custom_labels:
+        map_options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom()
     ]
 
     %{state | map: map, map_opts: map_opts}
@@ -1750,12 +1752,14 @@ defmodule WandererApp.Map.Server.Impl do
                 broadcast!(map_id, :add_system, new_system)
                 WandererApp.Map.add_system(map_id, new_system)
 
-              _ ->
+              error ->
+                @logger.debug("Failed to create system: #{inspect(error, pretty: true)}")
                 :ok
             end
         end
 
-      {:error, _} ->
+      error ->
+        @logger.debug("Skip adding system: #{inspect(error, pretty: true)}")
         :ok
     end
   end

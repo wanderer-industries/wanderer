@@ -3,6 +3,8 @@ defmodule WandererApp.Application do
 
   use Application
 
+  require Logger
+
   @impl true
   def start(_type, _args) do
     children =
@@ -45,7 +47,16 @@ defmodule WandererApp.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
+
     Supervisor.start_link(children, opts)
+    |> case do
+      {:ok, _pid} = ok ->
+        ok
+
+      {:error, info} = e ->
+        Logger.error("Failed to start application: #{inspect(info)}")
+        e
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

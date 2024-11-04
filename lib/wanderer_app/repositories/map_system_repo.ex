@@ -35,7 +35,7 @@ defmodule WandererApp.MapSystemRepo do
 
   def cleanup_labels!(%{labels: labels} = system, opts) do
     store_custom_labels? =
-      Keyword.get(opts, :store_custom_labels, "false") |> String.to_existing_atom()
+      Keyword.get(opts, :store_custom_labels)
 
     labels = get_filtered_labels(labels, store_custom_labels?)
 

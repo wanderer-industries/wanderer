@@ -138,6 +138,7 @@ config :ueberauth, WandererApp.Ueberauth.Strategy.Eve.OAuth,
     System.get_env("EVE_CLIENT_WITH_CORP_WALLET_SECRET", "<EVE_CLIENT_WITH_CORP_WALLET_SECRET>")
 
 config :logger,
+  truncate: :infinity,
   level:
     String.to_existing_atom(
       System.get_env(

@@ -37,32 +37,32 @@ defmodule WandererApp.Esi.ApiClient do
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
-  def get_server_status, do: _get("/status")
+  def get_server_status, do: get("/status")
 
-  def set_autopilot_waypoint(add_to_beginning, clear_other_waypoints, destination_id, opts \\ []) do
-    _post_esi(
-      "/ui/autopilot/waypoint",
-      opts
-      |> Keyword.merge(
-        params: %{
-          add_to_beginning: add_to_beginning,
-          clear_other_waypoints: clear_other_waypoints,
-          destination_id: destination_id
-        }
+  def set_autopilot_waypoint(add_to_beginning, clear_other_waypoints, destination_id, opts \\ []),
+    do:
+      post_esi(
+        "/ui/autopilot/waypoint",
+        opts
+        |> Keyword.merge(
+          params: %{
+            add_to_beginning: add_to_beginning,
+            clear_other_waypoints: clear_other_waypoints,
+            destination_id: destination_id
+          }
+        )
       )
-    )
-  end
 
   def post_characters_affiliation(character_eve_ids, _opts)
-      when is_list(character_eve_ids) do
-    _post(
-      "#{@base_url}/characters/affiliation/",
-      json: character_eve_ids,
-      params: %{
-        datasource: "tranquility"
-      }
-    )
-  end
+      when is_list(character_eve_ids),
+      do:
+        post(
+          "#{@base_url}/characters/affiliation/",
+          json: character_eve_ids,
+          params: %{
+            datasource: "tranquility"
+          }
+        )
 
   def find_routes(map_id, origin, hubs, routes_settings) do
     origin = origin |> String.to_integer()
@@ -184,7 +184,7 @@ defmodule WandererApp.Esi.ApiClient do
     routes =
       all_routes
       |> Enum.map(fn route_info ->
-        _map_route_info(route_info)
+        map_route_info(route_info)
       end)
       |> Enum.filter(fn route_info -> not is_nil(route_info) end)
 
@@ -200,7 +200,7 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, result}
 
       _ ->
-        case _get_all_routes_custom(hubs, origin, params) do
+        case get_all_routes_custom(hubs, origin, params) do
           {:ok, result} ->
             WandererApp.Cache.insert(
               cache_key,
@@ -210,22 +210,21 @@ defmodule WandererApp.Esi.ApiClient do
 
             {:ok, result}
 
-          {:error, error} ->
-            @logger.error("Error getting custom routes for #{inspect(origin)}: #{inspect(error)}")
+          {:error, _error} ->
             @logger.error("Error getting custom routes for #{inspect(origin)}: #{inspect(hubs)}")
 
             @logger.error(
               "Error getting custom routes for #{inspect(origin)}: #{inspect(params)}"
             )
 
-            _get_all_routes_eve(hubs, origin, params, opts)
+            get_all_routes_eve(hubs, origin, params, opts)
         end
     end
   end
 
-  defp _get_all_routes_custom(hubs, origin, params),
+  defp get_all_routes_custom(hubs, origin, params),
     do:
-      _post(
+      post(
         "#{get_custom_route_base_url()}/route/multiple",
         [
           json: %{
@@ -239,7 +238,7 @@ defmodule WandererApp.Esi.ApiClient do
         |> Keyword.merge(@timeout_opts)
       )
 
-  def _get_all_routes_eve(hubs, origin, params, opts),
+  def get_all_routes_eve(hubs, origin, params, opts),
     do:
       {:ok,
        hubs
@@ -308,7 +307,7 @@ defmodule WandererApp.Esi.ApiClient do
               opts: [ttl: @ttl]
             )
   def get_character_info(eve_id, opts \\ []) do
-    case _get(
+    case get(
            "/characters/#{eve_id}/",
            opts |> _with_cache_opts()
          ) do
@@ -385,7 +384,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp _get_routes_eve(origin, destination, params, opts),
     do:
-      _get(
+      get(
         "/route/#{origin}/#{destination}/?#{params |> Plug.Conn.Query.encode()}",
         opts |> _with_cache_opts()
       )
@@ -394,14 +393,14 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp _get_alliance_info(alliance_eve_id, info_path, opts),
     do:
-      _get(
+      get(
         "/alliances/#{alliance_eve_id}/#{info_path}",
         opts |> _with_cache_opts()
       )
 
   defp _get_corporation_info(corporation_eve_id, info_path, opts),
     do:
-      _get(
+      get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
         opts |> _with_cache_opts()
       )
@@ -416,7 +415,7 @@ defmodule WandererApp.Esi.ApiClient do
     character_id = opts |> Keyword.get(:character_id, nil)
 
     if not _is_access_token_expired?(character_id) do
-      _get(
+      get(
         path,
         auth_opts,
         opts
@@ -437,7 +436,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp _get_corporation_auth_data(corporation_eve_id, info_path, opts),
     do:
-      _get(
+      get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
         [params: opts[:params] || []] ++
           (opts |> _get_auth_opts() |> _with_cache_opts()),
@@ -448,14 +447,14 @@ defmodule WandererApp.Esi.ApiClient do
     opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
   end
 
-  defp _post_esi(path, opts),
+  defp post_esi(path, opts),
     do:
-      _post(
+      post(
         "#{@base_url}#{path}",
         [params: opts[:params] || []] ++ (opts |> _get_auth_opts())
       )
 
-  defp _get(path, api_opts \\ [], opts \\ []) do
+  defp get(path, api_opts \\ [], opts \\ []) do
     try do
       case Req.get("#{@base_url}#{path}", api_opts |> Keyword.merge(@retry_opts)) do
         {:ok, %{status: 200, body: body}} ->
@@ -487,7 +486,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp _post(url, opts) do
+  defp post(url, opts) do
     try do
       case Req.post("#{url}", opts) do
         {:ok, %{status: status, body: body}} when status in [200, 201] ->
@@ -525,7 +524,7 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, token} ->
           auth_opts = [access_token: token.access_token] |> _get_auth_opts()
 
-          _get(
+          get(
             path,
             api_opts |> Keyword.merge(auth_opts),
             opts |> Keyword.merge(retry_count: retry_count + 1)
@@ -600,7 +599,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp _map_route_info(
+  defp map_route_info(
          %{
            "origin" => origin,
            "destination" => destination,
@@ -609,14 +608,14 @@ defmodule WandererApp.Esi.ApiClient do
          } = _route_info
        ),
        do:
-         _map_route_info(%{
+         map_route_info(%{
            origin: origin,
            destination: destination,
            systems: result_systems,
            success: success
          })
 
-  defp _map_route_info(
+  defp map_route_info(
          %{origin: origin, destination: destination, systems: result_systems, success: success} =
            _route_info
        ) do
@@ -638,5 +637,5 @@ defmodule WandererApp.Esi.ApiClient do
     }
   end
 
-  defp _map_route_info(_), do: nil
+  defp map_route_info(_), do: nil
 end
