@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.14.0](https://github.com/wanderer-industries/wanderer/compare/v1.13.12...v1.14.0) (2024-11-05)
+
+
+
+
+### Features:
+
+* ACL: Add an ability to assign member role without DnD
+
 ## [v1.13.12](https://github.com/wanderer-industries/wanderer/compare/v1.13.11...v1.13.12) (2024-11-04)
 
 
