@@ -1,4 +1,5 @@
 defmodule WandererAppWeb.AccessListsLive do
+  alias Pathex.Builder.Viewer
   use WandererAppWeb, :live_view
 
   require Logger
@@ -89,7 +90,10 @@ defmodule WandererAppWeb.AccessListsLive do
       |> assign(:page_title, "Access Lists - Members")
       |> assign(:selected_acl_id, acl_id)
       |> assign(:access_list, access_list)
-      |> assign(:members, members)
+      |> assign(
+        :members,
+        members
+      )
     else
       _ ->
         socket
@@ -145,7 +149,7 @@ defmodule WandererAppWeb.AccessListsLive do
           :send_after,
           [self(), {:search, text}, 100],
           "member_search_#{socket.assigns.selected_acl_id}",
-          500
+          250
         )
 
         [%{label: "Loading...", value: :loading, disabled: true}]
@@ -288,7 +292,11 @@ defmodule WandererAppWeb.AccessListsLive do
   end
 
   @impl true
-  def handle_event("dropped", %{"draggedId" => dragged_id, "dropzoneId" => dropzone_id}, socket) do
+  def handle_event(
+        "dropped",
+        %{"draggedId" => dragged_id, "dropzoneId" => dropzone_id},
+        %{assigns: %{access_list: access_list, members: members}} = socket
+      ) do
     role_atom =
       [:admin, :manager, :member, :viewer, :blocked]
       |> Enum.find(fn role_atom -> to_string(role_atom) == dropzone_id end)
@@ -299,11 +307,25 @@ defmodule WandererAppWeb.AccessListsLive do
 
       role_atom ->
         member =
-          socket.assigns.members
+          members
           |> Enum.find(&(&1.id == dragged_id))
 
-        {:noreply, socket |> maybe_update_role(member, role_atom, socket.assigns.access_list)}
+        {:noreply, socket |> maybe_update_role(member, role_atom, access_list)}
     end
+  end
+
+  @impl true
+  def handle_info(
+        {"update_role", %{member_id: member_id, role: role}},
+        %{assigns: %{access_list: access_list, members: members}} = socket
+      ) do
+    role_atom = role |> String.to_existing_atom()
+
+    member =
+      members
+      |> Enum.find(&(&1.id == member_id))
+
+    {:noreply, socket |> maybe_update_role(member, role_atom, access_list)}
   end
 
   @impl true
@@ -325,10 +347,33 @@ defmodule WandererAppWeb.AccessListsLive do
       |> Enum.map(& &1.id)
       |> Enum.at(0)
 
-    {:ok, options} = search(active_character_id, text)
+    uniq_search_req_id = UUID.uuid4(:default)
 
-    send_update(LiveSelect.Component, options: options, id: socket.assigns.member_search_id)
-    {:noreply, socket |> assign(member_search_options: options)}
+    Task.async(fn ->
+      {:ok, options} = search(active_character_id, text)
+
+      {:search_results, uniq_search_req_id, options}
+    end)
+
+    {:noreply, socket |> assign(uniq_search_req_id: uniq_search_req_id)}
+  end
+
+  def handle_info(
+        {ref, result},
+        %{assigns: %{member_search_id: member_search_id, uniq_search_req_id: uniq_search_req_id}} =
+          socket
+      )
+      when is_reference(ref) do
+    Process.demonitor(ref, [:flush])
+
+    case result do
+      {:search_results, ^uniq_search_req_id, options} ->
+        send_update(LiveSelect.Component, options: options, id: member_search_id)
+        {:noreply, socket |> assign(member_search_options: options)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -403,6 +448,7 @@ defmodule WandererAppWeb.AccessListsLive do
       _ ->
         socket
         |> put_flash(:error, "You're not allowed to assign this role")
+        |> push_navigate(to: ~p"/access-lists/#{socket.assigns.selected_acl_id}")
     end
   end
 
@@ -411,10 +457,11 @@ defmodule WandererAppWeb.AccessListsLive do
          _member,
          _role_atom,
          _access_list
-       ) do
-    socket
-    |> put_flash(:info, "Only Characters can have Admin or Manager roles")
-  end
+       ),
+       do:
+         socket
+         |> put_flash(:info, "Only Characters can have Admin or Manager roles")
+         |> push_navigate(to: ~p"/access-lists/#{socket.assigns.selected_acl_id}")
 
   defp characters_has_role?(character_eve_ids, access_list, role_atom) do
     access_list.members
@@ -613,27 +660,6 @@ defmodule WandererAppWeb.AccessListsLive do
     </div>
     """
   end
-
-  def member_item(assigns) do
-    ~H"""
-    <div class="flex items-center gap-2">
-      <.icon :if={not is_nil(@member.role)} name={member_role_icon(@member.role)} class="w-6 h-6" />
-      <div class="avatar">
-        <div class="rounded-md w-8 h-8">
-          <img src={member_icon_url(@member)} alt={@member.name} />
-        </div>
-      </div>
-      <%= @member.name %>
-    </div>
-    """
-  end
-
-  def member_role_icon(:admin), do: "hero-user-group-solid"
-  def member_role_icon(:manager), do: "hero-academic-cap-solid"
-  def member_role_icon(:member), do: "hero-user-solid"
-  def member_role_icon(:viewer), do: "hero-eye-solid"
-  def member_role_icon(:blocked), do: "hero-no-symbol-solid text-red-500"
-  def member_role_icon(_), do: "hero-cake-solid"
 
   def search_member_icon_url(%{character: true} = option),
     do: member_icon_url(%{eve_character_id: option.value})

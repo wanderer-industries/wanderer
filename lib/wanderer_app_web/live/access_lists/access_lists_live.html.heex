@@ -82,14 +82,20 @@
           id="acl_members"
         >
           <div
-            :for={member <- @members |> Enum.sort(&(&1.name < &2.name))}
+            :for={member <- @members |> Enum.sort_by(&{&1.role, &1.name}, &<=/2)}
             draggable="true"
             id={member.id}
             class="draggable !p-1 h-10 cursor-move bg-black bg-opacity-25 hover:text-white"
             data-dropzone="pool"
           >
             <div class="flex justify-between relative">
-              <.member_item member={member} />
+              <.live_component
+                module={WandererAppWeb.AclMember}
+                id={"select_role_" <> member.id}
+                notify_to={self()}
+                member={member}
+                event_name="update_role"
+              />
               <button
                 :if={can_delete_member?(member, @access_list, @current_user)}
                 class="z-10 absolute top-0 right-2"
@@ -150,6 +156,71 @@
   show
   on_cancel={JS.patch(~p"/access-lists/#{@selected_acl_id}")}
 >
+  <%!-- <div class="mt-4 mb-2 p-tabmenu p-component " data-pc-section="tabmenu">
+    <ul
+      class="p-tabmenu-nav border-none h-[25px] w-full flex"
+      role="menubar"
+      data-pc-section="menu"
+    >
+      <li
+        id="pr_id_17_0"
+        class="p-tabmenuitem p-highlight"
+        role="presentation"
+        data-p-highlight="true"
+        data-p-disabled="false"
+        data-pc-section="menuitem"
+      >
+        <a
+          href="#"
+          role="menuitem"
+          aria-label="Router Link"
+          tabindex="0"
+          class="p-menuitem-link"
+          data-pc-section="action"
+        >
+          <span class="p-menuitem-text" data-pc-section="label">Character</span>
+        </a>
+      </li>
+      <li
+        id="pr_id_17_1"
+        class="p-tabmenuitem"
+        role="presentation"
+        data-p-highlight="false"
+        data-p-disabled="false"
+        data-pc-section="menuitem"
+      >
+        <a
+          href="#"
+          role="menuitem"
+          aria-label="Programmatic"
+          tabindex="-1"
+          class="p-menuitem-link"
+          data-pc-section="action"
+        >
+          <span class="p-menuitem-text" data-pc-section="label">Corporation</span>
+        </a>
+      </li>
+      <li
+        id="pr_id_17_2"
+        class="p-tabmenuitem"
+        role="presentation"
+        data-p-highlight="false"
+        data-p-disabled="false"
+        data-pc-section="menuitem"
+      >
+        <a
+          href="#"
+          role="menuitem"
+          aria-label="External"
+          tabindex="-1"
+          class="p-menuitem-link"
+          data-pc-section="action"
+        >
+          <span class="p-menuitem-text" data-pc-section="label">Alliance</span>
+        </a>
+      </li>
+    </ul>
+  </div> --%>
   <.form :let={f} for={@member_form} phx-submit={@live_action}>
     <.live_select
       field={f[:member_id]}

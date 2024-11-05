@@ -8,7 +8,7 @@ export default {
     const selector = '#' + this.el.id;
 
     const droppable = new Droppable(containers, {
-      delay: 150,
+      delay: 100,
       draggable: '.draggable',
       dropzone: '.dropzone',
       mirror: {
