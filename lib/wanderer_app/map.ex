@@ -8,6 +8,7 @@ defmodule WandererApp.Map do
   defstruct map_id: nil,
             name: nil,
             scope: :none,
+            owner_id: nil,
             characters: [],
             systems: Map.new(),
             hubs: [],
@@ -16,11 +17,12 @@ defmodule WandererApp.Map do
             characters_limit: nil,
             hubs_limit: nil
 
-  def new(%{id: map_id, name: name, scope: scope, acls: acls, hubs: hubs}) do
+  def new(%{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs}) do
     map =
       struct!(__MODULE__,
         map_id: map_id,
         scope: scope,
+        owner_id: owner_id,
         name: name,
         acls: acls,
         hubs: hubs

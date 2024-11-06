@@ -87,4 +87,113 @@ defmodule WandererApp.Permissions do
       delete_map: check_permission(user_permissions, @delete_map)
     }
   end
+
+  def check_characters_access(characters, acls) do
+    character_ids = characters |> Enum.map(& &1.id)
+    character_eve_ids = characters |> Enum.map(& &1.eve_id)
+
+    character_corporation_ids =
+      characters |> Enum.map(& &1.corporation_id) |> Enum.map(&to_string/1)
+
+    character_alliance_ids = characters |> Enum.map(& &1.alliance_id) |> Enum.map(&to_string/1)
+
+    result =
+      acls
+      |> Enum.reduce([0, 0], fn acl, acc ->
+        is_owner? = acl.owner_id in character_ids
+
+        is_character_member? =
+          acl.members |> Enum.any?(fn member -> member.eve_character_id in character_eve_ids end)
+
+        is_corporation_member? =
+          acl.members
+          |> Enum.any?(fn member -> member.eve_corporation_id in character_corporation_ids end)
+
+        is_alliance_member? =
+          acl.members
+          |> Enum.any?(fn member -> member.eve_alliance_id in character_alliance_ids end)
+
+        if is_owner? || is_character_member? || is_corporation_member? || is_alliance_member? do
+          case acc do
+            [_, -1] ->
+              [-1, -1]
+
+            [-1, char_acc] ->
+              char_acl_mask =
+                acl.members
+                |> Enum.filter(fn member ->
+                  member.eve_character_id in character_eve_ids
+                end)
+                |> Enum.reduce(0, fn member, acc ->
+                  case acc do
+                    -1 -> -1
+                    _ -> calc_role_mask(member.role, acc)
+                  end
+                end)
+
+              char_acc =
+                case char_acl_mask do
+                  -1 -> -1
+                  _ -> char_acc ||| char_acl_mask
+                end
+
+              [-1, char_acc]
+
+            [any_acc, char_acc] ->
+              any_acl_mask =
+                acl.members
+                |> Enum.filter(fn member ->
+                  member.eve_character_id in character_eve_ids ||
+                    member.eve_corporation_id in character_corporation_ids ||
+                    member.eve_alliance_id in character_alliance_ids
+                end)
+                |> Enum.reduce(0, fn member, acc ->
+                  case acc do
+                    -1 -> -1
+                    _ -> calc_role_mask(member.role, acc)
+                  end
+                end)
+
+              char_acl_mask =
+                acl.members
+                |> Enum.filter(fn member ->
+                  member.eve_character_id in character_eve_ids
+                end)
+                |> Enum.reduce(0, fn member, acc ->
+                  case acc do
+                    -1 -> -1
+                    _ -> calc_role_mask(member.role, acc)
+                  end
+                end)
+
+              any_acc =
+                case any_acl_mask do
+                  -1 -> -1
+                  _ -> any_acc ||| any_acl_mask
+                end
+
+              char_acc =
+                case char_acl_mask do
+                  -1 -> -1
+                  _ -> char_acc ||| char_acl_mask
+                end
+
+              [any_acc, char_acc]
+          end
+        else
+          acc
+        end
+      end)
+
+    case result do
+      [_, -1] ->
+        [-1]
+
+      [-1, char_acc] ->
+        [char_acc]
+
+      [any_acc, _char_acc] ->
+        [any_acc]
+    end
+  end
 end

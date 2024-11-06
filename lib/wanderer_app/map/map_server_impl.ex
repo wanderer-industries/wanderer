@@ -77,6 +77,7 @@ defmodule WandererApp.Map.Server.Impl do
   # @unknown 100_100
 
   @systems_cleanup_timeout :timer.minutes(30)
+  @characters_cleanup_timeout :timer.minutes(1)
   @connections_cleanup_timeout :timer.minutes(2)
 
   @connection_time_status_eol 1
@@ -112,20 +113,28 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def load_state(%__MODULE__{map_id: map_id} = state) do
-    with {:ok, map} <- WandererApp.MapRepo.get(map_id, [:acls, :characters]),
+    with {:ok, map} <-
+           WandererApp.MapRepo.get(map_id, [
+             :owner,
+             :characters,
+             acls: [
+               :owner_id,
+               members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+             ]
+           ]),
          {:ok, systems} <- WandererApp.MapSystemRepo.get_visible_by_map(map_id),
          {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id),
          {:ok, subscription_settings} <-
            WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id) do
       state
-      |> _init_map(
+      |> init_map(
         map,
         subscription_settings,
         systems,
         connections
       )
-      |> _init_map_systems(systems)
-      |> _init_map_cache()
+      |> init_map_systems(systems)
+      |> init_map_cache()
     else
       error ->
         @logger.error("Failed to load map state: #{inspect(error, pretty: true)}")
@@ -145,6 +154,7 @@ defmodule WandererApp.Map.Server.Impl do
       Process.send_after(self(), :update_presence, @update_presence_timeout)
       Process.send_after(self(), :cleanup_connections, 5000)
       Process.send_after(self(), :cleanup_systems, 10000)
+      Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
       Process.send_after(self(), :backup_state, @backup_state_timeout)
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
@@ -169,7 +179,7 @@ defmodule WandererApp.Map.Server.Impl do
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
     state
-    |> _maybe_stop_rtree()
+    |> maybe_stop_rtree()
   end
 
   def get_map(%{map: map} = _state), do: {:ok, map}
@@ -509,11 +519,11 @@ defmodule WandererApp.Map.Server.Impl do
     |> Enum.map(fn character_id ->
       Task.start_link(fn ->
         character_updates =
-          _maybe_update_online(map_id, character_id) ++
-            _maybe_update_location(map_id, character_id) ++
-            _maybe_update_ship(map_id, character_id) ++
-            _maybe_update_alliance(map_id, character_id) ++
-            _maybe_update_corporation(map_id, character_id)
+          maybe_update_online(map_id, character_id) ++
+            maybe_update_location(map_id, character_id) ++
+            maybe_update_ship(map_id, character_id) ++
+            maybe_update_alliance(map_id, character_id) ++
+            maybe_update_corporation(map_id, character_id)
 
         character_updates
         |> Enum.filter(fn update -> update != :skip end)
@@ -537,9 +547,25 @@ defmodule WandererApp.Map.Server.Impl do
               :broadcast
 
             {:character_alliance, _info} ->
+              WandererApp.Cache.insert_or_update(
+                "map_#{map_id}:invalidate_character_ids",
+                [character_id],
+                fn ids ->
+                  [character_id | ids]
+                end
+              )
+
               :broadcast
 
             {:character_corporation, _info} ->
+              WandererApp.Cache.insert_or_update(
+                "map_#{map_id}:invalidate_character_ids",
+                [character_id],
+                fn ids ->
+                  [character_id | ids]
+                end
+              )
+
               :broadcast
 
             _ ->
@@ -602,17 +628,25 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  def handle_event({:map_acl_updated, added_acls, removed_acls}, %{map: old_map} = state) do
-    {:ok, map} = WandererApp.MapRepo.get(old_map.map_id, [:acls])
+  def handle_event(
+        {:map_acl_updated, added_acls, removed_acls},
+        %{map_id: map_id, map: old_map} = state
+      ) do
+    {:ok, map} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
 
     track_acls(added_acls)
 
     result =
-      [added_acls | removed_acls]
-      |> List.flatten()
+      (added_acls ++ removed_acls)
       |> Task.async_stream(
         fn acl_id ->
-          _update_acl(acl_id)
+          update_acl(acl_id)
         end,
         max_concurrency: 10,
         timeout: :timer.seconds(15)
@@ -641,29 +675,45 @@ defmodule WandererApp.Map.Server.Impl do
               }
 
             error ->
-              @logger.error(
-                "Failed to update map #{old_map.map_id} acl: #{inspect(error, pretty: true)}"
-              )
+              @logger.error("Failed to update map #{map_id} acl: #{inspect(error, pretty: true)}")
 
               acc
           end
         end
       )
 
-    _broadcast_acl_updates({:ok, result})
+    map_update = %{acls: map.acls, scope: map.scope}
 
-    %{state | map: %{old_map | acls: map.acls, scope: map.scope}}
+    WandererApp.Map.update_map(map_id, map_update)
+
+    broadcast_acl_updates({:ok, result}, map_id)
+
+    %{state | map: Map.merge(old_map, map_update)}
   end
 
-  def handle_event({:acl_updated, %{acl_id: acl_id}}, %{map: map} = state) do
+  def handle_event({:acl_updated, %{acl_id: acl_id}}, %{map_id: map_id, map: old_map} = state) do
+    {:ok, map} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
+
     if map.acls |> Enum.map(& &1.id) |> Enum.member?(acl_id) do
+      map_update = %{acls: map.acls}
+
+      WandererApp.Map.update_map(map_id, map_update)
+
       :ok =
         acl_id
-        |> _update_acl()
-        |> _broadcast_acl_updates()
-    end
+        |> update_acl()
+        |> broadcast_acl_updates(map_id)
 
-    state
+      state
+    else
+      state
+    end
   end
 
   def handle_event(:cleanup_connections, %{map_id: map_id} = state) do
@@ -748,6 +798,76 @@ defmodule WandererApp.Map.Server.Impl do
           solar_system_target_id: solar_system_target_id
         })
       end)
+
+    state
+  end
+
+  def handle_event(:cleanup_characters, %{map_id: map_id, map: %{owner_id: owner_id}} = state) do
+    Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
+
+    {:ok, character_ids} =
+      WandererApp.Cache.lookup(
+        "map_#{map_id}:invalidate_character_ids",
+        []
+      )
+
+    character_ids
+    |> Task.async_stream(
+      fn character_id ->
+        character_id
+        |> WandererApp.Character.get_character()
+        |> case do
+          {:ok, character} ->
+            acls =
+              map_id
+              |> WandererApp.Map.get_map!()
+              |> Map.get(:acls, [])
+
+            [character_permissions] =
+              WandererApp.Permissions.check_characters_access([character], acls)
+
+            map_permissions =
+              WandererApp.Permissions.get_map_permissions(
+                character_permissions,
+                owner_id,
+                [character_id]
+              )
+
+            case map_permissions do
+              %{view_system: false} ->
+                {:remove_character, character_id}
+
+              %{track_character: false} ->
+                {:remove_character, character_id}
+
+              _ ->
+                :ok
+            end
+
+          _ ->
+            :ok
+        end
+      end,
+      timeout: :timer.seconds(60),
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task
+    )
+    |> Enum.each(fn
+      {:ok, {:remove_character, character_id}} ->
+        state |> remove_and_untrack_characters([character_id])
+        :ok
+
+      {:ok, _result} ->
+        :ok
+
+      {:error, reason} ->
+        @logger.error("Error in cleanup_characters: #{inspect(reason)}")
+    end)
+
+    WandererApp.Cache.insert(
+      "map_#{map_id}:invalidate_character_ids",
+      []
+    )
 
     state
   end
@@ -837,6 +957,26 @@ defmodule WandererApp.Map.Server.Impl do
     :ok
   end
 
+  defp remove_and_untrack_characters(%{map_id: map_id} = state, character_ids) do
+    map_id
+    |> _untrack_characters(character_ids)
+
+    case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
+           map_id: map_id,
+           character_ids: character_ids
+         }) do
+      {:ok, settings} ->
+        settings
+        |> Enum.map(fn s ->
+          s |> WandererApp.Api.MapCharacterSettings.untrack()
+          state |> remove_character(s.character_id)
+        end)
+
+      _ ->
+        :ok
+    end
+  end
+
   defp get_connection_mark_eol_time(map_id, connection_id) do
     WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
     |> case do
@@ -881,7 +1021,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _maybe_update_location(map_id, character_id) do
+  defp maybe_update_location(map_id, character_id) do
     WandererApp.Cache.lookup!(
       "character:#{character_id}:location_started",
       false
@@ -932,7 +1072,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _maybe_update_alliance(map_id, character_id) do
+  defp maybe_update_alliance(map_id, character_id) do
     with {:ok, old_alliance_id} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:alliance_id"),
          {:ok, %{alliance_id: alliance_id}} <-
@@ -956,7 +1096,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _maybe_update_corporation(map_id, character_id) do
+  defp maybe_update_corporation(map_id, character_id) do
     with {:ok, old_corporation_id} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:corporation_id"),
          {:ok, %{corporation_id: corporation_id}} <-
@@ -980,7 +1120,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _maybe_update_online(map_id, character_id) do
+  defp maybe_update_online(map_id, character_id) do
     with {:ok, old_online} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:online"),
          {:ok, %{online: online}} <-
@@ -1004,7 +1144,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _maybe_update_ship(map_id, character_id) do
+  defp maybe_update_ship(map_id, character_id) do
     with {:ok, old_ship_type_id} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_type_id"),
          {:ok, old_ship_name} <-
@@ -1252,7 +1392,7 @@ defmodule WandererApp.Map.Server.Impl do
     })
   end
 
-  defp _maybe_stop_rtree(%{rtree_name: rtree_name} = state) do
+  defp maybe_stop_rtree(%{rtree_name: rtree_name} = state) do
     case Process.whereis(rtree_name) do
       nil ->
         :ok
@@ -1264,7 +1404,7 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  defp _init_map_cache(%__MODULE__{map_id: map_id} = state) do
+  defp init_map_cache(%__MODULE__{map_id: map_id} = state) do
     case WandererApp.Api.MapState.by_map_id(map_id) do
       {:ok,
        %{
@@ -1296,9 +1436,9 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _init_map(
+  defp init_map(
          state,
-         %{characters: characters} = initial_map,
+         %{id: map_id, characters: characters} = initial_map,
          subscription_settings,
          systems,
          connections
@@ -1319,12 +1459,19 @@ defmodule WandererApp.Map.Server.Impl do
         map_options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom()
     ]
 
+    character_ids =
+      map_id
+      |> WandererApp.Map.get_map!()
+      |> Map.get(:characters, [])
+
+    WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
+
     %{state | map: map, map_opts: map_opts}
   end
 
-  defp _init_map_systems(state, [] = _systems), do: state
+  defp init_map_systems(state, [] = _systems), do: state
 
-  defp _init_map_systems(%__MODULE__{map_id: map_id, rtree_name: rtree_name} = state, systems) do
+  defp init_map_systems(%__MODULE__{map_id: map_id, rtree_name: rtree_name} = state, systems) do
     systems
     |> Enum.each(fn %{id: system_id, solar_system_id: solar_system_id} = system ->
       @ddrt.insert(
@@ -1544,7 +1691,7 @@ defmodule WandererApp.Map.Server.Impl do
             not Enum.member?(presence_character_ids, character_id)
           end)
 
-        _track_characters(presence_character_ids, map_id)
+        track_characters(presence_character_ids, map_id)
 
         map_id
         |> _untrack_characters(not_present_character_ids)
@@ -1566,23 +1713,21 @@ defmodule WandererApp.Map.Server.Impl do
   defp track_acls([]), do: :ok
 
   defp track_acls([acl_id | rest]) do
-    _track_acl(acl_id)
+    track_acl(acl_id)
     track_acls(rest)
   end
 
-  defp _track_acl(acl_id),
-    do:
-      WandererApp.PubSub
-      |> @pubsub_client.subscribe("acls:#{acl_id}")
+  defp track_acl(acl_id),
+    do: @pubsub_client.subscribe(WandererApp.PubSub, "acls:#{acl_id}")
 
-  defp _track_characters([], _map_id), do: :ok
+  defp track_characters([], _map_id), do: :ok
 
-  defp _track_characters([character_id | rest], map_id) do
-    _track_character(character_id, map_id)
-    _track_characters(rest, map_id)
+  defp track_characters([character_id | rest], map_id) do
+    track_character(character_id, map_id)
+    track_characters(rest, map_id)
   end
 
-  defp _track_character(character_id, map_id) do
+  defp track_character(character_id, map_id) do
     WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
       map_id: map_id,
       track: true,
@@ -1773,13 +1918,14 @@ defmodule WandererApp.Map.Server.Impl do
        |> WandererApp.Map.find_system_by_location(old_location)
        |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name, opts)}
 
-  defp _broadcast_acl_updates(
+  defp broadcast_acl_updates(
          {:ok,
           %{
             eve_character_ids: eve_character_ids,
             eve_corporation_ids: eve_corporation_ids,
             eve_alliance_ids: eve_alliance_ids
-          }}
+          }},
+         map_id
        ) do
     eve_character_ids
     |> Enum.uniq()
@@ -1811,12 +1957,19 @@ defmodule WandererApp.Map.Server.Impl do
       )
     end)
 
+    character_ids =
+      map_id
+      |> WandererApp.Map.get_map!()
+      |> Map.get(:characters, [])
+
+    WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
+
     :ok
   end
 
-  defp _broadcast_acl_updates(_), do: :ok
+  defp broadcast_acl_updates(_, _map_id), do: :ok
 
-  defp _update_acl(acl_id) do
+  defp update_acl(acl_id) do
     {:ok, %{owner: owner, members: members}} =
       WandererApp.AccessListRepo.get(acl_id, [:owner, :members])
 

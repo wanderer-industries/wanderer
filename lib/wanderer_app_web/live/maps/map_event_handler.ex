@@ -153,7 +153,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def handle_ui_event(event, body, socket)
       when event in @map_characters_ui_events,
-      do: MapSystemsEventHandler.handle_ui_event(event, body, socket)
+      do: MapCharactersEventHandler.handle_ui_event(event, body, socket)
 
   def handle_ui_event(event, body, socket)
       when event in @map_system_ui_events,
