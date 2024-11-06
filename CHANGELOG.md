@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.14.1](https://github.com/wanderer-industries/wanderer/compare/v1.14.0...v1.14.1) (2024-11-06)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix character tracking permissions
+
 ## [v1.14.0](https://github.com/wanderer-industries/wanderer/compare/v1.13.12...v1.14.0) (2024-11-05)
 
 
