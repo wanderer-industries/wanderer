@@ -61,6 +61,7 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_connection_ui_events [
     "manual_add_connection",
     "manual_delete_connection",
+    "get_connection_info",
     "get_passages",
     "update_connection_time_status",
     "update_connection_mass_status",

@@ -1,13 +1,20 @@
 import classes from './Connections.module.scss';
 import { Sidebar } from 'primereact/sidebar';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import clsx from 'clsx';
-import { ConnectionOutput, OutCommand, Passage, SolarSystemConnection } from '@/hooks/Mapper/types';
+import {
+  ConnectionOutput,
+  ConnectionInfoOutput,
+  OutCommand,
+  Passage,
+  SolarSystemConnection,
+} from '@/hooks/Mapper/types';
 import { PassageCard } from './PassageCard';
 import { InfoDrawer, SystemView } from '@/hooks/Mapper/components/ui-kit';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
+import { TimeAgo } from '@/hooks/Mapper/components/ui-kit';
 
 const sortByDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
 
@@ -69,25 +76,44 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
   }, [connections, selectedConnection]);
 
   const [passages, setPassages] = useState<Passage[]>([]);
+  const [info, setInfo] = useState<ConnectionInfoOutput>(null);
+
+  const loadInfo = useCallback(
+    async (connection: SolarSystemConnection) => {
+      const result = await outCommand<ConnectionInfoOutput>({
+        type: OutCommand.getConnectionInfo,
+        data: {
+          from: connection.source,
+          to: connection.target,
+        },
+      });
+
+      setInfo(result);
+    },
+    [outCommand],
+  );
+
+  const loadPassages = useCallback(
+    async (connection: SolarSystemConnection) => {
+      const result = await outCommand<ConnectionOutput>({
+        type: OutCommand.getPassages,
+        data: {
+          from: connection.source,
+          to: connection.target,
+        },
+      });
+
+      setPassages(result.passages.sort((a, b) => sortByDate(b.inserted_at, a.inserted_at)));
+    },
+    [outCommand],
+  );
 
   useEffect(() => {
     if (!selectedConnection) {
       return;
     }
-
-    const loadInfo = async () => {
-      const result = await outCommand<ConnectionOutput>({
-        type: OutCommand.getPassages,
-        data: {
-          from: selectedConnection.source,
-          to: selectedConnection.target,
-        },
-      });
-
-      setPassages(result.passages.sort((a, b) => sortByDate(b.inserted_at, a.inserted_at)));
-    };
-
-    loadInfo();
+    loadInfo(selectedConnection);
+    loadPassages(selectedConnection);
   }, [selectedConnection]);
 
   const approximateMass = useMemo(() => {
@@ -130,6 +156,10 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
           {/* Connection Info Row */}
           <InfoDrawer title="Approximate mass of passages" rightSide>
             {kgToTons(approximateMass)}
+          </InfoDrawer>
+
+          <InfoDrawer title="Mark EOL Time" rightSide>
+            {info?.marl_eol_time ? <TimeAgo timestamp={info.marl_eol_time} /> : ' unknown '}
           </InfoDrawer>
 
           <div className="flex gap-2"></div>

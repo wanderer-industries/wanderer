@@ -163,6 +163,16 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   end
 
   def handle_ui_event(
+        "get_connection_info",
+        %{"from" => from, "to" => to} = _event,
+        %{assigns: %{map_id: map_id}} = socket
+      ) do
+    {:ok, info} = map_id |> get_connection_info(from, to)
+
+    {:reply, info, socket}
+  end
+
+  def handle_ui_event(
         "get_passages",
         %{"from" => from, "to" => to} = _event,
         %{assigns: %{map_id: map_id}} = socket
@@ -193,5 +203,20 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       end)
 
     {:ok, %{passages: passages}}
+  end
+
+  defp get_connection_info(map_id, from, to) do
+    map_id
+    |> WandererApp.Map.Server.get_connection_info(%{
+      solar_system_source_id: "#{from}" |> String.to_integer(),
+      solar_system_target_id: "#{to}" |> String.to_integer()
+    })
+    |> case do
+      {:ok, info} ->
+        {:ok, info}
+
+      _ ->
+        {:ok, %{}}
+    end
   end
 end

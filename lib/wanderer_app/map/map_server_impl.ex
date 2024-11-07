@@ -153,8 +153,8 @@ defmodule WandererApp.Map.Server.Impl do
       Process.send_after(self(), :update_tracked_characters, 100)
       Process.send_after(self(), :update_presence, @update_presence_timeout)
       Process.send_after(self(), :cleanup_connections, 5000)
-      Process.send_after(self(), :cleanup_systems, 10000)
-      Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
+      Process.send_after(self(), :cleanup_systems, 10_000)
+      Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
       Process.send_after(self(), :backup_state, @backup_state_timeout)
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
@@ -259,37 +259,37 @@ defmodule WandererApp.Map.Server.Impl do
         state,
         update
       ),
-      do: state |> _update_system(:update_name, [:name], update)
+      do: state |> update_system(:update_name, [:name], update)
 
   def update_system_description(
         state,
         update
       ),
-      do: state |> _update_system(:update_description, [:description], update)
+      do: state |> update_system(:update_description, [:description], update)
 
   def update_system_status(
         state,
         update
       ),
-      do: state |> _update_system(:update_status, [:status], update)
+      do: state |> update_system(:update_status, [:status], update)
 
   def update_system_tag(
         state,
         update
       ),
-      do: state |> _update_system(:update_tag, [:tag], update)
+      do: state |> update_system(:update_tag, [:tag], update)
 
   def update_system_locked(
         state,
         update
       ),
-      do: state |> _update_system(:update_locked, [:locked], update)
+      do: state |> update_system(:update_locked, [:locked], update)
 
   def update_system_labels(
         state,
         update
       ),
-      do: state |> _update_system(:update_labels, [:labels], update)
+      do: state |> update_system(:update_labels, [:labels], update)
 
   def update_system_position(
         %{rtree_name: rtree_name} = state,
@@ -297,7 +297,7 @@ defmodule WandererApp.Map.Server.Impl do
       ),
       do:
         state
-        |> _update_system(
+        |> update_system(
           :update_position,
           [:position_x, :position_y],
           update,
@@ -445,12 +445,34 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
+  def get_connection_info(
+        %{map_id: map_id} = _state,
+        %{
+          solar_system_source_id: solar_system_source_id,
+          solar_system_target_id: solar_system_target_id
+        } = _connection_info
+      ) do
+    WandererApp.Map.find_connection(
+      map_id,
+      solar_system_source_id,
+      solar_system_target_id
+    )
+    |> case do
+      {:ok, %{id: connection_id}} ->
+        connection_mark_eol_time = get_connection_mark_eol_time(map_id, connection_id, nil)
+        {:ok, %{marl_eol_time: connection_mark_eol_time}}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
   def update_connection_time_status(
         %{map_id: map_id} = state,
         connection_update
       ),
       do:
-        _update_connection(state, :update_time_status, [:time_status], connection_update, fn
+        update_connection(state, :update_time_status, [:time_status], connection_update, fn
           %{id: connection_id, time_status: time_status} ->
             case time_status == @connection_time_status_eol do
               true ->
@@ -469,25 +491,25 @@ defmodule WandererApp.Map.Server.Impl do
         state,
         connection_update
       ),
-      do: _update_connection(state, :update_mass_status, [:mass_status], connection_update)
+      do: update_connection(state, :update_mass_status, [:mass_status], connection_update)
 
   def update_connection_ship_size_type(
         state,
         connection_update
       ),
-      do: _update_connection(state, :update_ship_size_type, [:ship_size_type], connection_update)
+      do: update_connection(state, :update_ship_size_type, [:ship_size_type], connection_update)
 
   def update_connection_locked(
         state,
         connection_update
       ),
-      do: _update_connection(state, :update_locked, [:locked], connection_update)
+      do: update_connection(state, :update_locked, [:locked], connection_update)
 
   def update_connection_custom_info(
         state,
         connection_update
       ),
-      do: _update_connection(state, :update_custom_info, [:custom_info], connection_update)
+      do: update_connection(state, :update_custom_info, [:custom_info], connection_update)
 
   def import_settings(%{map_id: map_id} = state, settings, user_id) do
     WandererApp.Cache.put(
@@ -497,9 +519,9 @@ defmodule WandererApp.Map.Server.Impl do
 
     state =
       state
-      |> _maybe_import_systems(settings, user_id, nil)
-      |> _maybe_import_connections(settings, user_id)
-      |> _maybe_import_hubs(settings, user_id)
+      |> maybe_import_systems(settings, user_id, nil)
+      |> maybe_import_connections(settings, user_id)
+      |> maybe_import_hubs(settings, user_id)
 
     WandererApp.Cache.take("map_#{map_id}:importing")
 
@@ -531,7 +553,7 @@ defmodule WandererApp.Map.Server.Impl do
           update
           |> case do
             {:character_location, location_info, old_location_info} ->
-              _update_location(
+              update_location(
                 character_id,
                 location_info,
                 old_location_info,
@@ -616,14 +638,14 @@ defmodule WandererApp.Map.Server.Impl do
   def handle_event(:update_presence, %{map_id: map_id} = state) do
     Process.send_after(self(), :update_presence, @update_presence_timeout)
 
-    _update_presence(map_id)
+    update_presence(map_id)
 
     state
   end
 
   def handle_event(:backup_state, state) do
     Process.send_after(self(), :backup_state, @backup_state_timeout)
-    {:ok, _map_state} = state |> _save_map_state()
+    {:ok, _map_state} = state |> save_map_state()
 
     state
   end
@@ -950,7 +972,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def broadcast!(map_id, event, payload \\ nil) do
-    if _can_broadcast?(map_id) do
+    if can_broadcast?(map_id) do
       @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{event: event, payload: payload})
     end
 
@@ -977,23 +999,23 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp get_connection_mark_eol_time(map_id, connection_id) do
+  defp get_connection_mark_eol_time(map_id, connection_id, default \\ DateTime.utc_now()) do
     WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
     |> case do
       nil ->
-        DateTime.utc_now()
+        default
 
       value ->
         value
     end
   end
 
-  defp _can_broadcast?(map_id),
+  defp can_broadcast?(map_id),
     do:
       not WandererApp.Cache.lookup!("map_#{map_id}:importing", false) and
         WandererApp.Cache.lookup!("map_#{map_id}:started", false)
 
-  defp _update_location(
+  defp update_location(
          character_id,
          location,
          old_location,
@@ -1176,7 +1198,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _update_connection(
+  defp update_connection(
          %{map_id: map_id} = state,
          update_method,
          attributes,
@@ -1192,7 +1214,7 @@ defmodule WandererApp.Map.Server.Impl do
              solar_system_source_id,
              solar_system_target_id
            ),
-         {:ok, update_map} <- _get_update_map(update, attributes),
+         {:ok, update_map} <- get_update_map(update, attributes),
          :ok <-
            WandererApp.Map.update_connection(
              map_id,
@@ -1218,7 +1240,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _update_system(
+  defp update_system(
          %{map_id: map_id} = state,
          update_method,
          attributes,
@@ -1231,7 +1253,7 @@ defmodule WandererApp.Map.Server.Impl do
              map_id,
              update.solar_system_id
            ),
-         {:ok, update_map} <- _get_update_map(update, attributes) do
+         {:ok, update_map} <- get_update_map(update, attributes) do
       {:ok, updated_system} =
         apply(WandererApp.MapSystemRepo, update_method, [
           system,
@@ -1242,7 +1264,7 @@ defmodule WandererApp.Map.Server.Impl do
         callback_fn.(updated_system)
       end
 
-      _update_map_system_last_activity(map_id, updated_system)
+      update_map_system_last_activity(map_id, updated_system)
 
       state
     else
@@ -1252,7 +1274,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _get_update_map(update, attributes),
+  defp get_update_map(update, attributes),
     do:
       {:ok,
        Enum.reduce(attributes, Map.new(), fn attribute, map ->
@@ -1358,7 +1380,7 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  defp _save_map_state(%{map_id: map_id} = _state) do
+  defp save_map_state(%{map_id: map_id} = _state) do
     systems_last_activity =
       map_id
       |> WandererApp.Map.list_systems!()
@@ -1489,7 +1511,7 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  def _maybe_import_systems(state, %{"systems" => systems} = _settings, user_id, character_id) do
+  def maybe_import_systems(state, %{"systems" => systems} = _settings, user_id, character_id) do
     state =
       systems
       |> Enum.reduce(state, fn %{
@@ -1533,7 +1555,7 @@ defmodule WandererApp.Map.Server.Impl do
     |> delete_systems(removed_system_ids, user_id, character_id)
   end
 
-  def _maybe_import_connections(state, %{"connections" => connections} = _settings, _user_id) do
+  def maybe_import_connections(state, %{"connections" => connections} = _settings, _user_id) do
     connections
     |> Enum.reduce(state, fn %{
                                "source" => source,
@@ -1569,7 +1591,7 @@ defmodule WandererApp.Map.Server.Impl do
     end)
   end
 
-  def _maybe_import_hubs(state, %{"hubs" => hubs} = _settings, _user_id) do
+  def maybe_import_hubs(state, %{"hubs" => hubs} = _settings, _user_id) do
     hubs
     |> Enum.reduce(state, fn hub, acc ->
       solar_system_id = hub |> String.to_integer()
@@ -1579,7 +1601,7 @@ defmodule WandererApp.Map.Server.Impl do
     end)
   end
 
-  defp _update_map_system_last_activity(
+  defp update_map_system_last_activity(
          map_id,
          updated_system
        ) do
@@ -1673,7 +1695,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  defp _update_presence(map_id) do
+  defp update_presence(map_id) do
     case WandererApp.Cache.lookup!("map_#{map_id}:started", false) and
            WandererApp.Cache.get_and_remove!("map_#{map_id}:presence_updated", false) do
       true ->
@@ -1727,15 +1749,15 @@ defmodule WandererApp.Map.Server.Impl do
     track_characters(rest, map_id)
   end
 
-  defp track_character(character_id, map_id) do
-    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-      map_id: map_id,
-      track: true,
-      track_online: true,
-      track_location: true,
-      track_ship: true
-    })
-  end
+  defp track_character(character_id, map_id),
+    do:
+      WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+        map_id: map_id,
+        track: true,
+        track_online: true,
+        track_location: true,
+        track_ship: true
+      })
 
   defp _update_character(map_id, character_id) do
     {:ok, character} = WandererApp.Character.get_character(character_id)
