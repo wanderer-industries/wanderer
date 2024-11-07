@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.15.0](https://github.com/wanderer-industries/wanderer/compare/v1.14.1...v1.15.0) (2024-11-07)
+
+
+
+
+### Features:
+
+* Connections: Add connection mark EOL time (#56)
+
 ## [v1.14.1](https://github.com/wanderer-industries/wanderer/compare/v1.14.0...v1.14.1) (2024-11-06)
 
 
