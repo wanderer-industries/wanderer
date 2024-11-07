@@ -54,7 +54,14 @@ Now you can visit [`localhost:8000`](http://localhost:8000) from your browser.
 #### Using .devcontainer
 
 - Run devcontainer
-- See how to start server in #setup section
+- Install additional dependencies inside Dev container
+
+`root@0d0a785313b6:/app# apt update`
+`root@0d0a785313b6:/app# curl -sL https://deb.nodesource.com/setup_18.x  | bash -`
+`root@0d0a785313b6:/app# apt-get install nodejs inotify-tools -y`
+`root@0d0a785313b6:/app# mix setup`
+
+- See how to run server in #Run section
 
 #### Using nix flakes
 

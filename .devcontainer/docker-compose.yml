@@ -2,7 +2,7 @@ version: "0.1"
 
 services:
   db:
-    image: postgres:14.3
+    image: postgres:13-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -10,13 +10,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db:/var/lib/postgresql/data
+      - db-new:/var/lib/postgresql/data
 
   wanderer:
     environment:
       PORT: 8000
       DB_HOST: db
-      WEB_APP_URL: "http://localhost:4444"
+      WEB_APP_URL: "http://localhost:8000"
       ERL_AFLAGS: "-kernel shell_history enabled"
     build:
       context: .
@@ -33,4 +33,4 @@ services:
 
 volumes:
   elixir-artifacts: {}
-  db: {}
+  db-new: {}
