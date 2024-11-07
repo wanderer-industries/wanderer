@@ -20,11 +20,11 @@ Interested to learn more? [Check more on our website](https://wanderer.ltd/news)
 
 Wanderer is open source project and we have a free as in beer and self-hosted solution called [Wanderer Community Edition (CE)](https://wanderer.ltd/news/community-edition). Here are the differences between Wanderer and Wanderer CE:
 
-|  | Wanderer Cloud  | Wanderer Community Edition |
-| ------------- | ------------- | ------------- |
-| **Infrastructure management** | Easy and convenient. It takes 2 minutes to register your character and create a map. We manage everything so you don’t have to worry about anything and can focus on gameplay. | You do it all yourself. You need to get a server and you need to manage your infrastructure. You are responsible for installation, maintenance, upgrades, server capacity, uptime, backup, security, stability, consistency, loading time and so on.|
-| **Release schedule** | Continuously developed and improved with new features and updates multiple times per week. | Latest features and improvements won't be immediately available.|
-| **Server location** | All visitor data is exclusively processed on EU-owned cloud infrastructure. We keep your site data on a secure, encrypted and green energy powered server in Germany. This ensures that your site data is protected by the strict European Union data privacy laws and ensures compliance with GDPR. Your website data never leaves the EU. | You have full control and can host your instance on any server in any country that you wish. Host it on a server in your basement or host it with any cloud provider wherever you want, even those that are not GDPR compliant.|
+|                               | Wanderer Cloud                                                                                                                                                                                                                                                                                                                              | Wanderer Community Edition                                                                                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Infrastructure management** | Easy and convenient. It takes 2 minutes to register your character and create a map. We manage everything so you don’t have to worry about anything and can focus on gameplay.                                                                                                                                                              | You do it all yourself. You need to get a server and you need to manage your infrastructure. You are responsible for installation, maintenance, upgrades, server capacity, uptime, backup, security, stability, consistency, loading time and so on. |
+| **Release schedule**          | Continuously developed and improved with new features and updates multiple times per week.                                                                                                                                                                                                                                                  | Latest features and improvements won't be immediately available.                                                                                                                                                                                     |
+| **Server location**           | All visitor data is exclusively processed on EU-owned cloud infrastructure. We keep your site data on a secure, encrypted and green energy powered server in Germany. This ensures that your site data is protected by the strict European Union data privacy laws and ensures compliance with GDPR. Your website data never leaves the EU. | You have full control and can host your instance on any server in any country that you wish. Host it on a server in your basement or host it with any cloud provider wherever you want, even those that are not GDPR compliant.                      |
 
 Interested in self-hosting Wanderer CE on your server? Take a look at our [Wanderer CE installation instructions](https://github.com/wanderer-industries/community-edition/).
 
@@ -55,11 +55,10 @@ Now you can visit [`localhost:8000`](http://localhost:8000) from your browser.
 
 - Run devcontainer
 - Install additional dependencies inside Dev container
-
-`root@0d0a785313b6:/app# apt update`
-`root@0d0a785313b6:/app# curl -sL https://deb.nodesource.com/setup_18.x  | bash -`
-`root@0d0a785313b6:/app# apt-get install nodejs inotify-tools -y`
-`root@0d0a785313b6:/app# mix setup`
+- `root@0d0a785313b6:/app# apt update`
+- `root@0d0a785313b6:/app# curl -sL https://deb.nodesource.com/setup_18.x  | bash -`
+- `root@0d0a785313b6:/app# apt-get install nodejs inotify-tools -y`
+- `root@0d0a785313b6:/app# mix setup`
 
 - See how to run server in #Run section
 
