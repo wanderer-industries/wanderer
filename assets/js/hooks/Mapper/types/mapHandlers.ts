@@ -118,6 +118,7 @@ export enum OutCommand {
   getCharacterJumps = 'get_character_jumps',
   getSignatures = 'get_signatures',
   getSystemStaticInfos = 'get_system_static_infos',
+  getConnectionInfo = 'get_connection_info',
   updateConnectionTimeStatus = 'update_connection_time_status',
   updateConnectionMassStatus = 'update_connection_mass_status',
   updateConnectionShipSizeType = 'update_connection_ship_size_type',

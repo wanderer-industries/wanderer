@@ -11,6 +11,10 @@ export type Passage = {
   character: PassageLimitedCharacterType;
 };
 
+export type ConnectionInfoOutput = {
+  marl_eol_time: string;
+};
+
 export type ConnectionOutput = {
   passages: Passage[];
 };

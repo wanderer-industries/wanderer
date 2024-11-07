@@ -183,6 +183,12 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.delete_connection/2, [connection_info]})
 
+  def get_connection_info(map_id, connection_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.call({&Impl.get_connection_info/2, [connection_info]}, :timer.minutes(1))
+
   def update_connection_time_status(map_id, connection_info) when is_binary(map_id),
     do:
       map_id
