@@ -172,43 +172,65 @@ config :wanderer_app, WandererApp.Scheduler,
   timeout: :infinity
 
 if config_env() == :prod do
-  database_url =
-    System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+  database_unix_socket =
+    System.get_env("DATABASE_UNIX_SOCKET")
 
-  maybe_ipv6 =
-    config_dir
-    |> get_var_from_path_or_env("ECTO_IPV6", "false")
-    |> String.to_existing_atom()
+  database =
+    database_unix_socket
     |> case do
-      true -> [:inet6]
-      _ -> []
-    end
+      nil ->
+        System.get_env("DATABASE_URL") ||
+          raise """
+          environment variable DATABASE_URL is missing.
+          For example: ecto://USER:PASS@HOST/DATABASE
+          """
 
-  db_ssl_enabled =
-    config_dir
-    |> get_var_from_path_or_env("DATABASE_SSL_ENABLED", "false")
-    |> String.to_existing_atom()
-
-  db_ssl_verify_none =
-    config_dir
-    |> get_var_from_path_or_env("DATABASE_SSL_VERIFY_NONE", "false")
-    |> String.to_existing_atom()
-
-  client_opts =
-    if db_ssl_verify_none do
-      [verify: :verify_none]
+      _ ->
+        System.get_env("DATABASE_NAME") ||
+          raise """
+          environment variable DATABASE_NAME is missing.
+          For example: "wanderer"
+          """
     end
 
   config :wanderer_app, WandererApp.Repo,
-    url: database_url,
-    ssl: db_ssl_enabled,
-    ssl_opts: client_opts,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+
+  if not is_nil(database_unix_socket) do
+    config :wanderer_app, WandererApp.Repo,
+      socket_dir: database_unix_socket,
+      database: database
+  else
+    db_ssl_enabled =
+      config_dir
+      |> get_var_from_path_or_env("DATABASE_SSL_ENABLED", "false")
+      |> String.to_existing_atom()
+
+    db_ssl_verify_none =
+      config_dir
+      |> get_var_from_path_or_env("DATABASE_SSL_VERIFY_NONE", "false")
+      |> String.to_existing_atom()
+
+    client_opts =
+      if db_ssl_verify_none do
+        [verify: :verify_none]
+      end
+
+    maybe_ipv6 =
+      config_dir
+      |> get_var_from_path_or_env("ECTO_IPV6", "false")
+      |> String.to_existing_atom()
+      |> case do
+        true -> [:inet6]
+        _ -> []
+      end
+
+    config :wanderer_app, WandererApp.Repo,
+      url: database,
+      ssl: db_ssl_enabled,
+      ssl_opts: client_opts,
+      socket_options: maybe_ipv6
+  end
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
