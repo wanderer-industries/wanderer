@@ -75,7 +75,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         } = socket
       ) do
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
@@ -132,7 +132,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       case character_settings |> Enum.find(&(&1.character_id == character_id)) do
         nil ->
           {:ok, map_character_settings} =
-            WandererApp.Api.MapCharacterSettings.create(%{
+            WandererApp.MapCharacterSettingsRepo.create(%{
               character_id: character_id,
               map_id: map_id,
               tracked: true
@@ -150,7 +150,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
             true ->
               {:ok, map_character_settings} =
                 character_setting
-                |> WandererApp.Api.MapCharacterSettings.untrack()
+                |> WandererApp.MapCharacterSettingsRepo.untrack()
 
               character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
@@ -166,7 +166,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
             _ ->
               {:ok, map_character_settings} =
                 character_setting
-                |> WandererApp.Api.MapCharacterSettings.track()
+                |> WandererApp.MapCharacterSettingsRepo.track()
 
               character = map_character_settings |> Ash.load!(:character) |> Map.get(:character)
 
@@ -184,7 +184,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     user_character_eve_ids = map_characters |> Enum.map(& &1.eve_id)
 
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
@@ -225,10 +225,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   def has_tracked_characters?(_user_characters), do: true
 
   def get_tracked_map_characters(map_id, current_user) do
-    case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
-           map_id: map_id,
-           character_ids: current_user.characters |> Enum.map(& &1.id)
-         }) do
+    case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
+           map_id,
+           current_user.characters |> Enum.map(& &1.id)
+         ) do
       {:ok, settings} ->
         {:ok,
          settings

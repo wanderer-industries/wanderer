@@ -17,12 +17,12 @@ defmodule WandererApp.Api.MapCharacterSettings do
       action: :read_by_map
     )
 
-    define(:tracked_by_map,
-      action: :tracked_by_map
+    define(:tracked_by_map_filtered,
+      action: :tracked_by_map_filtered
     )
 
     define(:tracked_by_map_all,
-      action: :read_tracked_by_map
+      action: :tracked_by_map_all
     )
 
     define(:track, action: :track)
@@ -38,7 +38,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     defaults [:create, :read, :update, :destroy]
 
-    read :tracked_by_map do
+    read :tracked_by_map_filtered do
       argument(:map_id, :string, allow_nil?: false)
       argument(:character_ids, {:array, :uuid}, allow_nil?: false)
 
@@ -52,7 +52,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
       filter(expr(map_id == ^arg(:map_id)))
     end
 
-    read :read_tracked_by_map do
+    read :tracked_by_map_all do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id) and tracked == true))
     end

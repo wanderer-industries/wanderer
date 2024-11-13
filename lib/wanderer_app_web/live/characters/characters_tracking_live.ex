@@ -41,7 +41,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     selected_map = socket.assigns.maps |> Enum.find(&(&1.slug == map_slug))
 
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: selected_map.id}) do
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
         {:ok, settings} ->
           {:ok, settings}
 
@@ -83,7 +83,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
 
     case character_settings |> Enum.find(&(&1.character_id == character_id)) do
       nil ->
-        WandererApp.Api.MapCharacterSettings.create(%{
+        WandererApp.MapCharacterSettingsRepo.create(%{
           character_id: character_id,
           map_id: selected_map.id,
           tracked: true
@@ -95,18 +95,18 @@ defmodule WandererAppWeb.CharactersTrackingLive do
         case character_setting.tracked do
           true ->
             character_setting
-            |> WandererApp.Api.MapCharacterSettings.untrack!()
+            |> WandererApp.MapCharacterSettingsRepo.untrack!()
 
           _ ->
             character_setting
-            |> WandererApp.Api.MapCharacterSettings.track!()
+            |> WandererApp.MapCharacterSettingsRepo.track!()
         end
     end
 
     %{result: characters} = socket.assigns.characters
 
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: selected_map.id}) do
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
