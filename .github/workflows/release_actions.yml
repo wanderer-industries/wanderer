@@ -18,4 +18,4 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            /app/release/linux/deploy.sh ${{ github.event.release.tag_name }}
+            /home/wanderer/app/deploy.sh ${{ github.event.release.tag_name }}
