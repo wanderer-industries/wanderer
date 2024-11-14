@@ -41,10 +41,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
       %{track_character: track_character} ->
         {:ok, map_characters} =
-          case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
-                 map_id: map_id,
-                 character_ids: current_user.characters |> Enum.map(& &1.id)
-               }) do
+          case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
+                 map_id,
+                 current_user.characters |> Enum.map(& &1.id)
+               ) do
             {:ok, settings} ->
               {:ok,
                settings
@@ -258,7 +258,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       )
 
     {:ok, character_settings} =
-      case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
         {:ok, settings} -> {:ok, settings}
         _ -> {:ok, []}
       end
@@ -511,10 +511,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   end
 
   defp get_tracked_map_characters(map_id, current_user) do
-    case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
-           map_id: map_id,
-           character_ids: current_user.characters |> Enum.map(& &1.id)
-         }) do
+    case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
+           map_id,
+           current_user.characters |> Enum.map(& &1.id)
+         ) do
       {:ok, settings} ->
         {:ok,
          settings

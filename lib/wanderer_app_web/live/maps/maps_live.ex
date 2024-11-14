@@ -848,9 +848,9 @@ defmodule WandererAppWeb.MapsLive do
           |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
 
         {:ok, characters_count} =
-          case WandererApp.Api.MapCharacterSettings.tracked_by_map_all(%{
-                 map_id: map.id
-               }) do
+          map.id
+          |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all()
+          |> case do
             {:ok, settings} ->
               {:ok,
                settings

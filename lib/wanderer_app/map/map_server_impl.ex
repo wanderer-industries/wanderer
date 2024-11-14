@@ -617,17 +617,21 @@ defmodule WandererApp.Map.Server.Impl do
     Process.send_after(self(), :update_tracked_characters, @update_tracked_characters_timeout)
 
     Task.start_link(fn ->
-      map_characters =
+      {:ok, map_tracked_character_ids} =
         map_id
-        |> WandererApp.Map.get_map!()
-        |> Map.get(:characters, [])
+        |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all()
+        |> case do
+          {:ok, settings} -> {:ok, settings |> Enum.map(&Map.get(&1, :character_id))}
+          _ -> {:ok, []}
+        end
 
       {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
 
-      map_tracked_characters =
-        map_characters |> Enum.filter(fn character -> character in tracked_characters end)
+      map_active_tracked_characters =
+        map_tracked_character_ids
+        |> Enum.filter(fn character -> character in tracked_characters end)
 
-      WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_tracked_characters)
+      WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
 
       :ok
     end)
@@ -827,13 +831,13 @@ defmodule WandererApp.Map.Server.Impl do
   def handle_event(:cleanup_characters, %{map_id: map_id, map: %{owner_id: owner_id}} = state) do
     Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
 
-    {:ok, character_ids} =
+    {:ok, invalidate_character_ids} =
       WandererApp.Cache.lookup(
         "map_#{map_id}:invalidate_character_ids",
         []
       )
 
-    character_ids
+    invalidate_character_ids
     |> Task.async_stream(
       fn character_id ->
         character_id
@@ -966,7 +970,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def handle_event(msg, state) do
-    @logger.warning("Unhandled event: #{inspect(msg)}")
+    Logger.warning("Unhandled event: #{inspect(msg)}")
 
     state
   end
@@ -980,17 +984,20 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   defp remove_and_untrack_characters(%{map_id: map_id} = state, character_ids) do
+    Logger.warning(fn ->
+      "Map #{map_id} - remove and untrack characters #{inspect(character_ids)}"
+    end)
+
     map_id
     |> _untrack_characters(character_ids)
 
-    case WandererApp.Api.MapCharacterSettings.tracked_by_map(%{
-           map_id: map_id,
-           character_ids: character_ids
-         }) do
+    map_id
+    |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(character_ids)
+    |> case do
       {:ok, settings} ->
         settings
-        |> Enum.map(fn s ->
-          s |> WandererApp.Api.MapCharacterSettings.untrack()
+        |> Enum.each(fn s ->
+          s |> WandererApp.MapCharacterSettingsRepo.untrack()
           state |> remove_character(s.character_id)
         end)
 
