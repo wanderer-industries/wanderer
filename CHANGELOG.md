@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.15.4](https://github.com/wanderer-industries/wanderer/compare/v1.15.3...v1.15.4) (2024-11-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Untracked characters still tracked on map (#63)
+
 ## [v1.15.3](https://github.com/wanderer-industries/wanderer/compare/v1.15.2...v1.15.3) (2024-11-13)
 
 
