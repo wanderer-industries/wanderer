@@ -36,7 +36,7 @@ const settings: Setting[] = [
   { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true },
 ];
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v1';
 
 const defaultSettings = () => {
   return [...settings];
