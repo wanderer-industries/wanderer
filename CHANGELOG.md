@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.16.0](https://github.com/wanderer-industries/wanderer/compare/v1.15.5...v1.16.0) (2024-11-15)
+
+
+
+
+### Features:
+
+* Signatures: Add additional filters support to signature list, show description icon
+
 ## [v1.15.5](https://github.com/wanderer-industries/wanderer/compare/v1.15.4...v1.15.5) (2024-11-14)
 
 
