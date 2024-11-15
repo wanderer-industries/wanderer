@@ -30,7 +30,6 @@ const sortByDist = (a: Route, b: Route) => {
 export const RoutesWidgetContent = () => {
   const {
     data: { selectedSystems, hubs = [], systems, routes },
-    mapRef,
     outCommand,
   } = useMapRootState();
 
@@ -42,7 +41,6 @@ export const RoutesWidgetContent = () => {
   const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers({
     outCommand,
     hubs,
-    mapRef,
   });
 
   const preparedHubs = useMemo(() => {

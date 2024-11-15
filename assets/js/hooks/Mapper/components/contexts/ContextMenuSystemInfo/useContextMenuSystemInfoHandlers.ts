@@ -1,25 +1,25 @@
-import { RefObject, useCallback, useRef, useState } from 'react';
+import * as React from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
-import { Commands, MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { Commands, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
-import * as React from 'react';
 import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
   outCommand: OutCommandHandler;
-  mapRef: RefObject<MapHandlers>;
 }
 
-export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand, mapRef }: UseContextMenuSystemHandlersProps) => {
+export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand }: UseContextMenuSystemHandlersProps) => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
 
   const [system, setSystem] = useState<string>();
   const routeRef = useRef<(SolarSystemStaticInfoRaw | undefined)[]>([]);
 
-  const ref = useRef({ hubs, system, outCommand, mapRef });
-  ref.current = { hubs, system, outCommand, mapRef };
+  const ref = useRef({ hubs, system, outCommand });
+  ref.current = { hubs, system, outCommand };
 
   const open = useCallback(
     (ev: React.SyntheticEvent, systemId: string, route: (SolarSystemStaticInfoRaw | undefined)[]) => {
@@ -48,7 +48,7 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand, mapRef }: U
   }, []);
 
   const onAddSystem = useCallback(() => {
-    const { system: solarSystemId, outCommand, mapRef } = ref.current;
+    const { system: solarSystemId, outCommand } = ref.current;
     if (!solarSystemId) {
       return;
     }
@@ -60,7 +60,11 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand, mapRef }: U
       },
     });
     setTimeout(() => {
-      mapRef.current?.command(Commands.centerSystem, solarSystemId);
+      emitMapEvent({
+        name: Commands.centerSystem,
+        data: solarSystemId,
+      });
+
       setSystem(undefined);
     }, 200);
   }, []);

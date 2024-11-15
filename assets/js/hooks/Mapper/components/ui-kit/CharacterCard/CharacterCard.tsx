@@ -4,7 +4,7 @@ import classes from './CharacterCard.module.scss';
 import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 
 type CharacterCardProps = {
   compact?: boolean;
@@ -34,11 +34,12 @@ export const CharacterCard = ({
   useSystemsCache,
   ...char
 }: CharacterCardProps) => {
-  const { mapRef } = useMapRootState();
-
   const handleSelect = useCallback(() => {
-    mapRef.current?.command(Commands.centerSystem, char?.location?.solar_system_id?.toString());
-  }, [mapRef, char]);
+    emitMapEvent({
+      name: Commands.centerSystem,
+      data: char?.location?.solar_system_id?.toString(),
+    });
+  }, [char]);
 
   return (
     <div className={clsx(classes.CharacterCard, 'w-full text-xs', 'flex flex-col box-border')} onClick={handleSelect}>

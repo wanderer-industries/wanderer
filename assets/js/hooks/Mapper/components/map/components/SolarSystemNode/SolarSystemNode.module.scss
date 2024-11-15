@@ -212,6 +212,14 @@ $tooltip-bg: #202020; // Темный фон для подсказок
     color: #ffb01d;
   }
 
+  /* Firefox kostyl */
+  @-moz-document url-prefix() {
+    .classSystemName {
+      font-family: inherit !important;
+      font-weight: bold;
+    }
+  }
+
   .classSystemName {
     //font-weight: bold;
   }
@@ -262,6 +270,13 @@ $tooltip-bg: #202020; // Темный фон для подсказок
   & > * {
     line-height: 10px;
   }
+
+  /* Firefox kostyl */
+  @-moz-document url-prefix() {
+    position: relative;
+    top: -1px;
+  }
+
 }
 
 .Handlers {
@@ -298,5 +313,26 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 
   &.HandleLeft {
     left: -2px;
+  }
+
+  &.Tick {
+    width: 7px;
+    height: 7px;
+
+    &.HandleTop {
+      top: -3px;
+    }
+
+    &.HandleRight {
+      right: -3px;
+    }
+
+    &.HandleBottom {
+      bottom: -3px;
+    }
+
+    &.HandleLeft {
+      left: -3px;
+    }
   }
 }

@@ -31,24 +31,26 @@ export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
   isShowMinimap = 'isShowMinimap',
   isShowKSpace = 'isShowKSpace',
+  isThickConnections = 'isThickConnections',
 }
 
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowMinimap: boolean;
   isShowKSpace: boolean;
+  isThickConnections: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
   isShowMinimap: true,
   isShowKSpace: false,
+  isThickConnections: false,
 };
 
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;
   data: MapRootData;
-  mapRef: RefObject<MapHandlers>;
   outCommand: OutCommandHandler;
   interfaceSettings: InterfaceStoredSettings;
   setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
@@ -57,7 +59,6 @@ export interface MapRootContextProps {
 const MapRootContext = createContext<MapRootContextProps>({
   update: () => {},
   data: { ...INITIAL_DATA },
-  mapRef: { current: null },
   // @ts-ignore
   outCommand: async () => void 0,
   interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
@@ -67,7 +68,6 @@ const MapRootContext = createContext<MapRootContextProps>({
 type MapRootProviderProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fwdRef: ForwardedRef<any>;
-  mapRef: RefObject<MapHandlers>;
   outCommand: OutCommandHandler;
 } & WithChildren;
 
@@ -78,7 +78,7 @@ const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: Forwarde
 });
 
 // eslint-disable-next-line react/display-name
-export const MapRootProvider = ({ children, fwdRef, mapRef, outCommand }: MapRootProviderProps) => {
+export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProviderProps) => {
   const { update, ref } = useContextStore<MapRootData>({ ...INITIAL_DATA });
 
   const [interfaceSettings, setInterfaceSettings] = useLocalStorageState<InterfaceStoredSettings>(
@@ -94,7 +94,6 @@ export const MapRootProvider = ({ children, fwdRef, mapRef, outCommand }: MapRoo
         update,
         data: ref,
         outCommand: outCommand,
-        mapRef: mapRef,
         setInterfaceSettings,
         interfaceSettings,
       }}

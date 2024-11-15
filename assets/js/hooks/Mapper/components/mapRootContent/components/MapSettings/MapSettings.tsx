@@ -61,6 +61,7 @@ const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [
 
 const UI_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: InterfaceStoredSettingsProps.isShowMenu, label: 'Enable compact map menu bar' },
+  { prop: InterfaceStoredSettingsProps.isThickConnections, label: 'Tick connections' },
 ];
 
 export const MapSettings = ({ show, onHide }: MapSettingsProps) => {

@@ -21,7 +21,7 @@
   }
 
   &.Frigate {
-    stroke: #4e62c9;
+    stroke: #d4f0ff;
   }
 
   &.Hovered {
@@ -37,9 +37,16 @@
     }
 
     &.Frigate {
-      stroke: #41acd7;
+      stroke: #d4f0ff;
     }
+  }
 
+  &.Tick {
+    stroke-width: 3px;
+
+    &.Hovered {
+      stroke-width: 3px;
+    }
   }
 }
 
@@ -59,6 +66,14 @@
 
     &.TimeCrit {
       stroke: #ef7dce;
+    }
+  }
+
+  &.Tick {
+    stroke-width: 5px;
+
+    &.TimeCrit {
+      stroke-width: 6px;
     }
   }
 }
@@ -93,5 +108,14 @@
   width: 5px;
   height: 5px;
   z-index: 1001;
+
+  &.Tick {
+    width: 7px;
+    height: 7px;
+
+    &.Right {
+      margin-left: 0px;
+    }
+  }
 }
 
