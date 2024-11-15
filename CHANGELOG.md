@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.16.1](https://github.com/wanderer-industries/wanderer/compare/v1.16.0...v1.16.1) (2024-11-15)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fix signature stored filters
+
 ## [v1.16.0](https://github.com/wanderer-industries/wanderer/compare/v1.15.5...v1.16.0) (2024-11-15)
 
 
