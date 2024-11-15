@@ -1,5 +1,9 @@
+import { PrimeIcons } from 'primereact/api';
 import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { SystemViewStandalone, WHClassView } from '@/hooks/Mapper/components/ui-kit';
+
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
+
 import clsx from 'clsx';
 import { renderName } from './renderName.tsx';
 import classes from './renderInfoColumn.module.scss';
@@ -32,13 +36,23 @@ export const renderInfoColumn = (row: SystemSignature) => {
             </span>
           </>
         )}
+        {row.description && (
+          <WdTooltipWrapper content={row.description}>
+            <span className={clsx(PrimeIcons.EXCLAMATION_CIRCLE, 'text-[12px]')}></span>
+          </WdTooltipWrapper>
+        )}
       </div>
     );
   }
 
-  if (row.description != null && row.description.length > 0) {
-    return <span title={row.description}>{row.description}</span>;
-  }
-
-  return renderName(row);
+  return (
+    <div className="flex gap-1 items-center">
+      {renderName(row)}{' '}
+      {row.description && (
+        <WdTooltipWrapper content={row.description}>
+          <span className={clsx(PrimeIcons.EXCLAMATION_CIRCLE, 'text-[12px]')}></span>
+        </WdTooltipWrapper>
+      )}
+    </div>
+  );
 };

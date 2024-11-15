@@ -10,13 +10,17 @@ import {
   Setting,
   COSMIC_SIGNATURE,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
+import { SignatureGroup } from '@/hooks/Mapper/types';
 
 interface SystemLinkSignatureDialogProps {
   data: CommandLinkSignatureToSystem;
   setVisible: (visible: boolean) => void;
 }
 
-const signatureSettings: Setting[] = [{ key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true }];
+const signatureSettings: Setting[] = [
+  { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true },
+  { key: SignatureGroup.Wormhole, name: 'Wormhole', value: true },
+];
 
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const { outCommand } = useMapRootState();
@@ -59,6 +63,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     >
       <SystemSignaturesContent
         systemId={`${data.solar_system_source}`}
+        hideLinkedSignatures
         settings={signatureSettings}
         onSelect={handleSelect}
         selectable={true}

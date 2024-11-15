@@ -225,6 +225,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
             |> Enum.each(fn s ->
               s
+              |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
               |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
                 linked_system_id: solar_system_target
               })

@@ -3,6 +3,7 @@ import { useClipboard } from '@/hooks/Mapper/hooks/useClipboard';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
+import { GROUPS_LIST } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 import { DataTable, DataTableRowClickEvent, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -30,6 +31,7 @@ import { PrimeIcons } from 'primereact/api';
 import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
+import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
 
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -44,10 +46,17 @@ const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
 interface SystemSignaturesContentProps {
   systemId: string;
   settings: Setting[];
+  hideLinkedSignatures?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
 }
-export const SystemSignaturesContent = ({ systemId, settings, selectable, onSelect }: SystemSignaturesContentProps) => {
+export const SystemSignaturesContent = ({
+  systemId,
+  settings,
+  hideLinkedSignatures,
+  selectable,
+  onSelect,
+}: SystemSignaturesContentProps) => {
   const { outCommand } = useMapRootState();
 
   const [signatures, setSignatures, signaturesRef] = useRefState<SystemSignature[]>([]);
@@ -80,13 +89,32 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
     }
   }, []);
 
+  const groupSettings = useMemo(() => settings.filter(s => (GROUPS_LIST as string[]).includes(s.key)), [settings]);
+
   const filteredSignatures = useMemo(() => {
     return signatures
-      .filter(x => settings.find(y => y.key === x.kind)?.value)
+      .filter(x => {
+        if (hideLinkedSignatures && !!x.linked_system) {
+          return false;
+        }
+
+        const isCosmicSignature = x.kind === COSMIC_SIGNATURE;
+
+        if (isCosmicSignature) {
+          const showCosmicSignatures = settings.find(y => y.key === COSMIC_SIGNATURE)?.value;
+          if (showCosmicSignatures) {
+            return !x.group || groupSettings.find(y => y.key === x.group)?.value;
+          } else {
+            return !!x.group && groupSettings.find(y => y.key === x.group)?.value;
+          }
+        }
+
+        return settings.find(y => y.key === x.kind)?.value;
+      })
       .sort((a, b) => {
         return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
       });
-  }, [signatures, settings]);
+  }, [signatures, settings, groupSettings, hideLinkedSignatures]);
 
   const handleGetSignatures = useCallback(async () => {
     const { signatures } = await outCommand({
@@ -354,13 +382,15 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
                 sortable
               ></Column>
 
-              <Column
-                bodyClassName="p-0 pl-1 pr-2"
-                field="group"
-                body={renderToolbar}
-                // headerClassName={headerClasses}
-                style={{ maxWidth: 26, minWidth: 26, width: 26 }}
-              ></Column>
+              {!selectable && (
+                <Column
+                  bodyClassName="p-0 pl-1 pr-2"
+                  field="group"
+                  body={renderToolbar}
+                  // headerClassName={headerClasses}
+                  style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+                ></Column>
+              )}
             </DataTable>
           </>
         )}
@@ -370,12 +400,14 @@ export const SystemSignaturesContent = ({ systemId, settings, selectable, onSele
           content={hoveredSig ? <SignatureView {...hoveredSig} /> : null}
         />
 
-        <SignatureSettings
-          systemId={systemId}
-          show={showSignatureSettings}
-          onHide={() => setShowSignatureSettings(false)}
-          signatureData={selectedSignature}
-        />
+        {showSignatureSettings && (
+          <SignatureSettings
+            systemId={systemId}
+            show
+            onHide={() => setShowSignatureSettings(false)}
+            signatureData={selectedSignature}
+          />
+        )}
 
         {askUser && (
           <div className="absolute left-[1px] top-[29px] h-[calc(100%-30px)] w-[calc(100%-3px)] bg-stone-900/10 backdrop-blur-sm">

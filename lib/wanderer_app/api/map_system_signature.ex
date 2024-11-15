@@ -16,6 +16,7 @@ defmodule WandererApp.Api.MapSystemSignature do
     define(:update, action: :update)
     define(:update_linked_system, action: :update_linked_system)
     define(:update_type, action: :update_type)
+    define(:update_group, action: :update_group)
 
     define(:by_id,
       get_by: [:id],
@@ -84,6 +85,10 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     update :update_type do
       accept [:type]
+    end
+
+    update :update_group do
+      accept [:group]
     end
 
     read :by_system_id do

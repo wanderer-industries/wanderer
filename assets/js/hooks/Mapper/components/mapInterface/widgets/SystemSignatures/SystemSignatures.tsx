@@ -12,6 +12,7 @@ import {
   SHIP,
   DRONE,
 } from './SystemSignatureSettingsDialog';
+import { SignatureGroup } from '@/hooks/Mapper/types';
 
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -27,6 +28,12 @@ const settings: Setting[] = [
   { key: STARBASE, name: 'Show Starbase', value: true },
   { key: SHIP, name: 'Show Ships', value: true },
   { key: DRONE, name: 'Show Drones And Charges', value: true },
+  { key: SignatureGroup.Wormhole, name: 'Show Wormholes', value: true },
+  { key: SignatureGroup.RelicSite, name: 'Show Relic Sites', value: true },
+  { key: SignatureGroup.DataSite, name: 'Show Data Sites', value: true },
+  { key: SignatureGroup.OreSite, name: 'Show Ore Sites', value: true },
+  { key: SignatureGroup.GasSite, name: 'Show Gas Sites', value: true },
+  { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true },
 ];
 
 const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings';
@@ -91,8 +98,7 @@ export const SystemSignatures = () => {
                     </InfoDrawer>
                     <InfoDrawer title={<b className="text-slate-50">How to delete?</b>}>
                       For delete any signature first of all you need select before
-                      <br /> and then use <b className="text-sky-500">Del</b> or{' '}
-                      <b className="text-sky-500">Backspace</b>
+                      <br /> and then use <b className="text-sky-500">Backspace</b>
                     </InfoDrawer>
                   </div>
                 ) as React.ReactNode,
