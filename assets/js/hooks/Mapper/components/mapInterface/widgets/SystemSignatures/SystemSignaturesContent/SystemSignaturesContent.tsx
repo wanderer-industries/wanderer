@@ -22,6 +22,7 @@ import {
   getRowColorByTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/helpers';
 import {
+  renderDescription,
   renderIcon,
   renderInfoColumn,
   renderTimeLeft,
@@ -32,7 +33,7 @@ import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/comp
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
-
+import { SHOW_DESCRIPTION_COLUMN_SETTING } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
   sortOrder: SortOrder;
@@ -90,6 +91,10 @@ export const SystemSignaturesContent = ({
   }, []);
 
   const groupSettings = useMemo(() => settings.filter(s => (GROUPS_LIST as string[]).includes(s.key)), [settings]);
+  const showDescriptionColumn = useMemo(
+    () => settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value,
+    [settings],
+  );
 
   const filteredSignatures = useMemo(() => {
     return signatures
@@ -125,26 +130,6 @@ export const SystemSignaturesContent = ({
     setAskUser(false);
     setSignatures(signatures);
   }, [outCommand, systemId]);
-
-  // const updateSignatures = useCallback(
-  //   async (newSignatures: SystemSignature[], updateOnly: boolean) => {
-  //     const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures, updateOnly);
-
-  //     const { signatures: updatedSignatures } = await outCommand({
-  //       type: OutCommand.updateSignatures,
-  //       data: {
-  //         system_id: systemId,
-  //         added,
-  //         updated,
-  //         removed,
-  //       },
-  //     });
-
-  //     setSignatures(() => updatedSignatures);
-  //     setSelectedSignatures([]);
-  //   },
-  //   [outCommand, systemId],
-  // );
 
   const handleUpdateSignatures = useCallback(
     async (newSignatures: SystemSignature[], updateOnly: boolean) => {
@@ -209,7 +194,7 @@ export const SystemSignaturesContent = ({
 
   useHotkey(true, ['a'], handleSelectAll);
 
-  useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
+  useHotkey(false, ['Backspace'], handleDeleteSelected);
 
   useEffect(() => {
     if (selectable) {
@@ -373,6 +358,16 @@ export const SystemSignaturesContent = ({
                 style={{ maxWidth: nameColumnWidth }}
                 hidden={compact || medium}
               ></Column>
+              {showDescriptionColumn && (
+                <Column
+                  field="description"
+                  header="Description"
+                  bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                  body={renderDescription}
+                  hidden={compact}
+                  sortable
+                ></Column>
+              )}
               <Column
                 field="updated_at"
                 header="Updated"

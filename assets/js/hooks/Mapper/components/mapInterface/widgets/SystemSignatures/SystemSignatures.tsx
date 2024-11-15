@@ -20,23 +20,25 @@ import { PrimeIcons } from 'primereact/api';
 
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
-const settings: Setting[] = [
-  { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true },
-  { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true },
-  { key: DEPLOYABLE, name: 'Show Deployables', value: true },
-  { key: STRUCTURE, name: 'Show Structures', value: true },
-  { key: STARBASE, name: 'Show Starbase', value: true },
-  { key: SHIP, name: 'Show Ships', value: true },
-  { key: DRONE, name: 'Show Drones And Charges', value: true },
-  { key: SignatureGroup.Wormhole, name: 'Show Wormholes', value: true },
-  { key: SignatureGroup.RelicSite, name: 'Show Relic Sites', value: true },
-  { key: SignatureGroup.DataSite, name: 'Show Data Sites', value: true },
-  { key: SignatureGroup.OreSite, name: 'Show Ore Sites', value: true },
-  { key: SignatureGroup.GasSite, name: 'Show Gas Sites', value: true },
-  { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true },
-];
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v3';
+export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v1';
+const settings: Setting[] = [
+  { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
+  { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
+  { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },
+  { key: DEPLOYABLE, name: 'Show Deployables', value: true, isFilter: true },
+  { key: STRUCTURE, name: 'Show Structures', value: true, isFilter: true },
+  { key: STARBASE, name: 'Show Starbase', value: true, isFilter: true },
+  { key: SHIP, name: 'Show Ships', value: true, isFilter: true },
+  { key: DRONE, name: 'Show Drones And Charges', value: true, isFilter: true },
+  { key: SignatureGroup.Wormhole, name: 'Show Wormholes', value: true, isFilter: true },
+  { key: SignatureGroup.RelicSite, name: 'Show Relic Sites', value: true, isFilter: true },
+  { key: SignatureGroup.DataSite, name: 'Show Data Sites', value: true, isFilter: true },
+  { key: SignatureGroup.OreSite, name: 'Show Ore Sites', value: true, isFilter: true },
+  { key: SignatureGroup.GasSite, name: 'Show Gas Sites', value: true, isFilter: true },
+  { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true, isFilter: true },
+];
 
 const defaultSettings = () => {
   return [...settings];
