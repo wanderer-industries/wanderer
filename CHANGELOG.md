@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.17.0](https://github.com/wanderer-industries/wanderer/compare/v1.16.1...v1.17.0) (2024-11-15)
+
+
+
+
+### Features:
+
+* Signatures: Add user setting to show Description in a separate column
+
 ## [v1.16.1](https://github.com/wanderer-industries/wanderer/compare/v1.16.0...v1.16.1) (2024-11-15)
 
 
