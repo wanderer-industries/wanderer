@@ -322,6 +322,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           :kind,
           :group,
           :type,
+          :custom_info,
           :updated_at
         ])
         |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
@@ -345,6 +346,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           kind: kind,
           group: group,
           type: Map.get(signature, "type"),
+          custom_info: Map.get(signature, "custom_info"),
           character_eve_id: character_eve_id
         }
       end)

@@ -17,6 +17,7 @@ defmodule WandererApp.Api.MapSystemSignature do
     define(:update_linked_system, action: :update_linked_system)
     define(:update_type, action: :update_type)
     define(:update_group, action: :update_group)
+    define(:update_custom_info, action: :update_custom_info)
 
     define(:by_id,
       get_by: [:id],
@@ -40,10 +41,6 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     defaults [:read, :destroy]
 
-    read :all_active do
-      prepare build(sort: [updated_at: :desc])
-    end
-
     create :create do
       primary? true
 
@@ -61,6 +58,16 @@ defmodule WandererApp.Api.MapSystemSignature do
       argument :system_id, :uuid, allow_nil?: false
 
       change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
+    end
+
+    read :all_active do
+      prepare build(sort: [updated_at: :desc])
+    end
+
+    read :by_system_id do
+      argument(:system_id, :string, allow_nil?: false)
+
+      filter(expr(system_id == ^arg(:system_id)))
     end
 
     update :update do
@@ -91,10 +98,8 @@ defmodule WandererApp.Api.MapSystemSignature do
       accept [:group]
     end
 
-    read :by_system_id do
-      argument(:system_id, :string, allow_nil?: false)
-
-      filter(expr(system_id == ^arg(:system_id)))
+    update :update_custom_info do
+      accept [:custom_info]
     end
   end
 
@@ -127,6 +132,10 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     attribute :kind, :string
     attribute :group, :string
+
+    attribute :custom_info, :string do
+      allow_nil? true
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
