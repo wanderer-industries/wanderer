@@ -8,6 +8,7 @@ export type MapData = MapUnionTypes & {
   hoverNodeId: string | null;
   visibleNodes: Set<string>;
   showKSpaceBG: boolean;
+  isThickConnections: boolean;
 };
 
 interface MapProviderProps {
@@ -17,6 +18,7 @@ interface MapProviderProps {
 
 const INITIAL_DATA: MapData = {
   wormholesData: {},
+  wormholes: [],
   effects: {},
   characters: [],
   userCharacters: [],
@@ -29,6 +31,7 @@ const INITIAL_DATA: MapData = {
   hoverNodeId: null,
   visibleNodes: new Set(),
   showKSpaceBG: false,
+  isThickConnections: false,
 };
 
 export interface MapContextProps {

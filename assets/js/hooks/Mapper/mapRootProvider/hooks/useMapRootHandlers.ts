@@ -44,87 +44,79 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
       return {
         command(type, data) {
           switch (type) {
-            case Commands.init:
+            case Commands.init: // USED
               mapInit(data as CommandInit);
               break;
-            case Commands.addSystems:
+            case Commands.addSystems: // USED
               addSystems(data as CommandAddSystems);
-              setTimeout(() => {
-                emitMapEvent({ name: Commands.addSystems, data });
-              }, 100);
               break;
-            case Commands.updateSystems:
+            case Commands.updateSystems: // USED
               updateSystems(data as CommandUpdateSystems);
               break;
-            case Commands.removeSystems:
+            case Commands.removeSystems: // USED
               removeSystems(data as CommandRemoveSystems);
-              setTimeout(() => {
-                emitMapEvent({ name: Commands.removeSystems, data });
-              }, 100);
-
               break;
-            case Commands.addConnections:
+            case Commands.addConnections: // USED
               addConnections(data as CommandAddConnections);
-              setTimeout(() => {
-                emitMapEvent({ name: Commands.addConnections, data });
-              }, 100);
               break;
-            case Commands.removeConnections:
+            case Commands.removeConnections: // USED
               removeConnections(data as CommandRemoveConnections);
               break;
-            case Commands.updateConnection:
+            case Commands.updateConnection: // USED
               updateConnection(data as CommandUpdateConnection);
               break;
-            case Commands.charactersUpdated:
+            case Commands.charactersUpdated: // USED
               charactersUpdated(data as CommandCharactersUpdated);
               break;
-            case Commands.characterAdded:
+            case Commands.characterAdded: // USED
               characterAdded(data as CommandCharacterAdded);
               break;
-            case Commands.characterRemoved:
+            case Commands.characterRemoved: // USED
               characterRemoved(data as CommandCharacterRemoved);
               break;
-            case Commands.characterUpdated:
+            case Commands.characterUpdated: // USED
               characterUpdated(data as CommandCharacterUpdated);
               break;
-            case Commands.presentCharacters:
+            case Commands.presentCharacters: // USED
               presentCharacters(data as CommandPresentCharacters);
               break;
-            case Commands.mapUpdated:
+            case Commands.mapUpdated: // USED
               mapUpdated(data as CommandMapUpdated);
               break;
             case Commands.routes:
               mapRoutes(data as CommandRoutes);
               break;
 
-            case Commands.centerSystem:
+            case Commands.centerSystem: // USED
               // do nothing here
               break;
 
-            case Commands.selectSystem:
+            case Commands.selectSystem: // USED
               // do nothing here
               break;
 
-            case Commands.linkSignatureToSystem:
-              // TODO command data type lost
-              // @ts-ignore
-              emitMapEvent({ name: Commands.linkSignatureToSystem, data });
-              break;
+            // case Commands.linkSignatureToSystem:
+            //   // TODO command data type lost
+            //   // @ts-ignore
+            //   emitMapEvent({ name: Commands.linkSignatureToSystem, data });
+            //   break;
 
             case Commands.killsUpdated:
               // do nothing here
               break;
 
-            case Commands.signaturesUpdated:
-              // TODO command data type lost
-              // @ts-ignore
-              emitMapEvent({ name: Commands.signaturesUpdated, data });
-              break;
+            // case Commands.signaturesUpdated:
+            //   // TODO command data type lost
+            //   // @ts-ignore
+            //   emitMapEvent({ name: Commands.signaturesUpdated, data });
+            //   break;
 
             default:
               console.warn(`JOipP Interface handlers: Unknown command: ${type}`, data);
               break;
           }
+
+          emitMapEvent({ name: type, data });
         },
       };
     },

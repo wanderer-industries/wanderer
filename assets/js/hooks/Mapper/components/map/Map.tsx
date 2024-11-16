@@ -1,10 +1,11 @@
-import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useRef } from 'react';
+import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
 import ReactFlow, {
   Background,
   ConnectionMode,
   Edge,
   MiniMap,
   Node,
+  NodeChange,
   NodeDragHandler,
   OnConnect,
   OnMoveEnd,
@@ -13,7 +14,6 @@ import ReactFlow, {
   SelectionMode,
   useEdgesState,
   useNodesState,
-  NodeChange,
   useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -21,7 +21,6 @@ import classes from './Map.module.scss';
 import './styles/neon-theme.scss';
 import './styles/eve-common.scss';
 import { MapProvider, useMapState } from './MapProvider';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapHandlers, useUpdateNodes } from './hooks';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
@@ -37,7 +36,6 @@ import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
-import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -93,12 +91,14 @@ interface MapCompProps {
   refn: ForwardedRef<MapHandlers>;
   onCommand: OutCommandHandler;
   onSelectionChange: OnMapSelectionChange;
+  onManualDelete(systems: string[]): void;
   onConnectionInfoClick?(e: SolarSystemConnection): void;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
   minimapClasses?: string;
   isShowMinimap?: boolean;
   onSystemContextMenu: (event: MouseEvent<Element>, systemId: string) => void;
   showKSpaceBG?: boolean;
+  isThickConnections?: boolean;
 }
 
 const MapComp = ({
@@ -109,8 +109,10 @@ const MapComp = ({
   onSystemContextMenu,
   onConnectionInfoClick,
   onSelectionContextMenu,
+  onManualDelete,
   isShowMinimap,
   showKSpaceBG,
+  isThickConnections,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<SolarSystemRawType>(initialNodes);
@@ -121,14 +123,6 @@ const MapComp = ({
   const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers();
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
-  const {
-    data: { systems },
-  } = useMapRootState();
-
-  const { deleteSystems } = useDeleteSystems();
-
-  const systemsRef = useRef({ systems });
-  systemsRef.current = { systems };
 
   const onConnect: OnConnect = useCallback(
     params => {
@@ -186,35 +180,41 @@ const MapComp = ({
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const systemsIdsToRemove: string[] = [];
+
       const nextChanges = changes.reduce((acc, change) => {
-        if (change.type === 'remove') {
-          const node = getNode(change.id);
-          const { systems = [] } = systemsRef.current;
-          if (node?.data?.id && !systems.map(s => s.id).includes(node?.data?.id)) {
-            return [...acc, change];
-          } else if (!node?.data?.locked) {
-            systemsIdsToRemove.push(node?.data?.id);
-          }
+        if (change.type !== 'remove') {
+          return [...acc, change];
+        }
+
+        const node = getNode(change.id);
+        if (!node) {
+          return [...acc, change];
+        }
+
+        if (node.data.locked) {
           return acc;
         }
+
+        systemsIdsToRemove.push(node.data.id);
         return [...acc, change];
       }, [] as NodeChange[]);
 
-      if (systemsIdsToRemove.length) {
-        deleteSystems(systemsIdsToRemove);
+      if (systemsIdsToRemove.length > 0) {
+        onManualDelete(systemsIdsToRemove);
       }
 
       onNodesChange(nextChanges);
     },
-    [deleteSystems, getNode, onNodesChange],
+    [getNode, onManualDelete, onNodesChange],
   );
 
   useEffect(() => {
     update(x => ({
       ...x,
       showKSpaceBG: showKSpaceBG,
+      isThickConnections: isThickConnections,
     }));
-  }, [showKSpaceBG, update]);
+  }, [showKSpaceBG, isThickConnections, update]);
 
   return (
     <>
@@ -238,6 +238,7 @@ const MapComp = ({
           onConnectStart={() => update({ isConnecting: true })}
           onConnectEnd={() => update({ isConnecting: false })}
           onNodeMouseEnter={(_, node) => update({ hoverNodeId: node.id })}
+          // onKeyUp=
           onNodeMouseLeave={() => update({ hoverNodeId: null })}
           onEdgeClick={(_, t) => {
             onConnectionInfoClick?.(t.data);

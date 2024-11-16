@@ -1,20 +1,19 @@
 import { useCallback } from 'react';
 import clsx from 'clsx';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 
 const Characters = ({ data }: { data: CharacterTypeRaw[] }) => {
   const [parent] = useAutoAnimate();
-  const { mapRef } = useMapRootState();
 
-  const handleSelect = useCallback(
-    (character: CharacterTypeRaw) => {
-      mapRef.current?.command(Commands.centerSystem, character?.location?.solar_system_id?.toString());
-    },
-    [mapRef],
-  );
+  const handleSelect = useCallback((character: CharacterTypeRaw) => {
+    emitMapEvent({
+      name: Commands.centerSystem,
+      data: character?.location?.solar_system_id?.toString(),
+    });
+  }, []);
 
   const items = data.map(character => (
     <li

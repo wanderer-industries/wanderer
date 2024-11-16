@@ -15,11 +15,10 @@ const ErrorFallback = () => {
 };
 
 export default function MapRoot({ hooks }) {
-  const mapRef = useRef<MapHandlers>(null);
   const providerRef = useRef<MapHandlers>(null);
   const hooksRef = useRef<any>(hooks);
 
-  const mapperHandlerRefs = useRef([mapRef, providerRef]);
+  const mapperHandlerRefs = useRef([providerRef]);
 
   const { handleCommand, handleMapEvent, handleMapEvents } = useMapperHandlers(mapperHandlerRefs.current, hooksRef);
 
@@ -41,7 +40,7 @@ export default function MapRoot({ hooks }) {
 
   return (
     <PrimeReactProvider>
-      <MapRootProvider fwdRef={providerRef} outCommand={handleCommand} mapRef={mapRef}>
+      <MapRootProvider fwdRef={providerRef} outCommand={handleCommand}>
         <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
           <ReactFlowProvider>
             <MapRootContent />

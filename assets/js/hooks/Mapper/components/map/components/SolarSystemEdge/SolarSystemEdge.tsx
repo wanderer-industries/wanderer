@@ -7,33 +7,54 @@ import clsx from 'clsx';
 import { MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
+import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 
 const MAP_TRANSLATES: Record<string, string> = {
-  [Position.Top]: 'translate(-50%, 0%)',
+  [Position.Top]: 'translate(-48%, 0%)',
   [Position.Bottom]: 'translate(-50%, -100%)',
   [Position.Left]: 'translate(0%, -50%)',
   [Position.Right]: 'translate(-100%, -50%)',
+};
+
+const MAP_OFFSETS_TICK: Record<string, { x: number; y: number }> = {
+  [Position.Top]: { x: 0, y: 3 },
+  [Position.Bottom]: { x: 0, y: -3 },
+  [Position.Left]: { x: 3, y: 0 },
+  [Position.Right]: { x: -3, y: 0 },
+};
+
+const MAP_OFFSETS: Record<string, { x: number; y: number }> = {
+  [Position.Top]: { x: 0, y: 0 },
+  [Position.Bottom]: { x: 0, y: 0 },
+  [Position.Left]: { x: 0, y: 0 },
+  [Position.Right]: { x: 0, y: 0 },
 };
 
 export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: EdgeProps<SolarSystemConnection>) => {
   const sourceNode = useStore(useCallback(store => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback(store => store.nodeInternals.get(target), [target]));
 
+  const {
+    data: { isThickConnections },
+  } = useMapState();
+
   const [hovered, setHovered] = useState(false);
 
   const [path, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos] = useMemo(() => {
     const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
 
+    const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
+
     const [edgePath, labelX, labelY] = getBezierPath({
-      sourceX: sx,
-      sourceY: sy,
+      sourceX: sx - offset.x,
+      sourceY: sy - offset.y,
       sourcePosition: sourcePos,
       targetPosition: targetPos,
-      targetX: tx,
-      targetY: ty,
+      targetX: tx + offset.x,
+      targetY: ty + offset.y,
     });
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
-  }, [sourceNode, targetNode]);
+  }, [isThickConnections, sourceNode, targetNode]);
 
   if (!sourceNode || !targetNode || !data) {
     return null;
@@ -44,6 +65,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
       <path
         id={`back_${id}`}
         className={clsx(classes.EdgePathBack, {
+          [classes.Tick]: isThickConnections,
           [classes.TimeCrit]: data.time_status === TimeStatus.eol,
           [classes.Hovered]: hovered,
         })}
@@ -54,6 +76,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
       <path
         id={`front_${id}`}
         className={clsx(classes.EdgePathFront, {
+          [classes.Tick]: isThickConnections,
           [classes.Hovered]: hovered,
           [classes.MassVerge]: data.mass_status === MassState.verge,
           [classes.MassHalf]: data.mass_status === MassState.half,
@@ -75,11 +98,19 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
 
       <EdgeLabelRenderer>
         <div
-          className={clsx(classes.Handle, 'react-flow__handle absolute nodrag pointer-events-none')}
+          className={clsx(
+            classes.Handle,
+            { [classes.Tick]: isThickConnections, [classes.Right]: Position.Right === sourcePos },
+            'react-flow__handle absolute nodrag pointer-events-none',
+          )}
           style={{ transform: `${MAP_TRANSLATES[sourcePos]} translate(${sx}px,${sy}px)` }}
         />
         <div
-          className={clsx(classes.Handle, 'react-flow__handle absolute nodrag pointer-events-none')}
+          className={clsx(
+            classes.Handle,
+            { [classes.Tick]: isThickConnections },
+            'react-flow__handle absolute nodrag pointer-events-none',
+          )}
           style={{ transform: `${MAP_TRANSLATES[targetPos]} translate(${tx}px,${ty}px)` }}
         />
 

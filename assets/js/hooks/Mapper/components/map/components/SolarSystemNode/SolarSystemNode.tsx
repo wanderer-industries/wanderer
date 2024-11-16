@@ -79,6 +79,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
       hoverNodeId,
       visibleNodes,
       showKSpaceBG,
+      isThickConnections,
     },
     outCommand,
   } = useMapState();
@@ -239,28 +240,40 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
       <div onMouseDownCapture={dbClick} className={classes.Handlers}>
         <Handle
           type="source"
-          className={clsx(classes.Handle, classes.HandleTop, { [classes.selected]: selected })}
+          className={clsx(classes.Handle, classes.HandleTop, {
+            [classes.selected]: selected,
+            [classes.Tick]: isThickConnections,
+          })}
           style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
           position={Position.Top}
           id="a"
         />
         <Handle
           type="source"
-          className={clsx(classes.Handle, classes.HandleRight, { [classes.selected]: selected })}
+          className={clsx(classes.Handle, classes.HandleRight, {
+            [classes.selected]: selected,
+            [classes.Tick]: isThickConnections,
+          })}
           style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
           position={Position.Right}
           id="b"
         />
         <Handle
           type="source"
-          className={clsx(classes.Handle, classes.HandleBottom, { [classes.selected]: selected })}
+          className={clsx(classes.Handle, classes.HandleBottom, {
+            [classes.selected]: selected,
+            [classes.Tick]: isThickConnections,
+          })}
           style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
           position={Position.Bottom}
           id="c"
         />
         <Handle
           type="source"
-          className={clsx(classes.Handle, classes.HandleLeft, { [classes.selected]: selected })}
+          className={clsx(classes.Handle, classes.HandleLeft, {
+            [classes.selected]: selected,
+            [classes.Tick]: isThickConnections,
+          })}
           style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
           position={Position.Left}
           id="d"

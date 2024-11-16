@@ -1,14 +1,14 @@
 import { Map } from '@/hooks/Mapper/components/map/Map.tsx';
-import { ForwardedRef, useCallback, useRef, useState } from 'react';
-import { MapHandlers, OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
+import { useCallback, useRef, useState } from 'react';
+import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
 import isEqual from 'lodash.isequal';
 import { ContextMenuSystem, useContextMenuSystemHandlers } from '@/hooks/Mapper/components/contexts';
 import {
   SystemCustomLabelDialog,
-  SystemSettingsDialog,
   SystemLinkSignatureDialog,
+  SystemSettingsDialog,
 } from '@/hooks/Mapper/components/mapInterface/components';
 import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
@@ -20,25 +20,45 @@ import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
-
-interface MapWrapperProps {
-  refn: ForwardedRef<MapHandlers>;
-}
+import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
+import { useCommonMapEventProcessor } from '@/hooks/Mapper/components/mapWrapper/hooks/useCommonMapEventProcessor.ts';
 
 // TODO: INFO - this component needs for abstract work with Map instance
-export const MapWrapper = ({ refn }: MapWrapperProps) => {
+export const MapWrapper = () => {
   const {
     update,
     outCommand,
     data: { selectedConnections, selectedSystems, hubs, systems },
-    interfaceSettings: { isShowMenu, isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap, isShowKSpace },
+    interfaceSettings: {
+      isShowMenu,
+      isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
+      isShowKSpace,
+      isThickConnections,
+    },
   } = useMapRootState();
+  const { deleteSystems } = useDeleteSystems();
+  const { mapRef, runCommand } = useCommonMapEventProcessor();
 
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
-  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems });
-  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems };
+  const [openSettings, setOpenSettings] = useState<string | null>(null);
+  const [openLinkSignatures, setOpenLinkSignatures] = useState<any | null>(null);
+  const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
+  const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
+
+  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems });
+  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems };
+
+  useMapEventListener(event => {
+    switch (event.name) {
+      case Commands.linkSignatureToSystem:
+        setOpenLinkSignatures(event.data);
+        return true;
+    }
+
+    runCommand(event);
+  });
 
   const onSelectionChange: OnMapSelectionChange = useCallback(
     ({ systems, connections }) => {
@@ -59,9 +79,6 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
     [update],
   );
 
-  const [openSettings, setOpenSettings] = useState<string | null>(null);
-  const [openLinkSignatures, setOpenLinkSignatures] = useState<any | null>(null);
-  const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
   const handleCommand: OutCommandHandler = useCallback(
     event => {
       switch (event.type) {
@@ -95,22 +112,19 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
     [open],
   );
 
-  const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
-
   const handleConnectionDbClick = useCallback((e: SolarSystemConnection) => setSelectedConnection(e), []);
 
-  useMapEventListener(event => {
-    switch (event.name) {
-      case Commands.linkSignatureToSystem:
-        setOpenLinkSignatures(event.data);
-        return true;
+  const handleManualDelete = useCallback((toDelete: string[]) => {
+    const restDel = toDelete.filter(x => ref.current.systems.some(y => y.id === x));
+    if (restDel.length > 0) {
+      ref.current.deleteSystems(restDel);
     }
-  });
+  }, []);
 
   return (
     <>
       <Map
-        ref={refn}
+        ref={mapRef}
         onCommand={handleCommand}
         onSelectionChange={onSelectionChange}
         onConnectionInfoClick={handleConnectionDbClick}
@@ -119,6 +133,8 @@ export const MapWrapper = ({ refn }: MapWrapperProps) => {
         minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
         isShowMinimap={isShowMinimap}
         showKSpaceBG={isShowKSpace}
+        onManualDelete={handleManualDelete}
+        isThickConnections={isThickConnections}
       />
 
       {openSettings != null && (

@@ -5,7 +5,7 @@ import { SystemViewStandalone, WdTooltip, WdTooltipHandlers } from '@/hooks/Mapp
 import { getBackgroundClass, getShapeClass } from '@/hooks/Mapper/components/map/helpers';
 import { MouseEvent, useCallback, useRef, useState } from 'react';
 import { Commands } from '@/hooks/Mapper/types';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 
 export type RouteSystemProps = {
   destination: number;
@@ -88,11 +88,10 @@ export interface RoutesListProps {
 
 export const RoutesList = ({ data, onContextMenu }: RoutesListProps) => {
   const [selected, setSelected] = useState<number | null>(null);
-  const { mapRef } = useMapRootState();
 
   const handleClick = useCallback(
-    (systemId: number) => mapRef.current?.command(Commands.centerSystem, systemId.toString()),
-    [mapRef],
+    (systemId: number) => emitMapEvent({ name: Commands.centerSystem, data: systemId?.toString() }),
+    [],
   );
 
   if (!data.has_connection) {
