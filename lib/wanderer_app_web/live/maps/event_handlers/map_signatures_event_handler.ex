@@ -144,8 +144,13 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
               updated = updated_signatures |> Enum.find(fn u -> u.eve_id == s.eve_id end)
 
               if not is_nil(updated) do
+                IO.puts("Updating #{s.eve_id}")
+
                 s
-                |> WandererApp.Api.MapSystemSignature.update(updated)
+                |> WandererApp.Api.MapSystemSignature.update(
+                  updated
+                  |> Map.put(:updated, System.os_time())
+                )
               end
             end)
 
@@ -313,7 +318,11 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     do:
       system_id
       |> WandererApp.Api.MapSystemSignature.by_system_id!()
-      |> Enum.map(fn %{updated_at: updated_at, linked_system_id: linked_system_id} = s ->
+      |> Enum.map(fn %{
+                       inserted_at: inserted_at,
+                       updated_at: updated_at,
+                       linked_system_id: linked_system_id
+                     } = s ->
         s
         |> Map.take([
           :eve_id,
@@ -321,10 +330,10 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           :description,
           :kind,
           :group,
-          :type,
-          :updated_at
+          :type
         ])
         |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
+        |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
         |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
       end)
 

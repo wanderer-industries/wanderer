@@ -20,10 +20,12 @@ import { PrimeIcons } from 'primereact/api';
 
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v3';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v4_1';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
+export const SHOW_INSERTED_COLUMN_SETTING = 'show_inserted_column_setting';
 
 const settings: Setting[] = [
+  { key: SHOW_INSERTED_COLUMN_SETTING, name: 'Show Inserted Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },

@@ -25,5 +25,6 @@ export type SystemSignature = {
   group: SignatureGroup;
   type: string;
   linked_system?: SolarSystemStaticInfoRaw;
+  inserted_at?: string;
   updated_at?: string;
 };

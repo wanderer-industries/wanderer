@@ -72,7 +72,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :description,
         :kind,
         :group,
-        :type
+        :type,
+        :updated
       ]
 
       primary? true
@@ -127,6 +128,8 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     attribute :kind, :string
     attribute :group, :string
+
+    attribute :updated, :integer
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
