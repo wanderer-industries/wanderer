@@ -11,44 +11,50 @@ export const useCommandsSystems = () => {
 
   const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
 
-  const ref = useRef({ systems, update });
-  ref.current = { systems, update };
+  const ref = useRef({ systems, update, addSystemStatic });
+  ref.current = { systems, update, addSystemStatic };
 
-  const addSystems = useCallback(
-    (addSystems: CommandAddSystems) => {
-      addSystems.forEach(sys => {
+  const addSystems = useCallback((systemsToAdd: CommandAddSystems) => {
+    const { update, addSystemStatic, systems } = ref.current;
+
+    systemsToAdd.forEach(sys => {
+      if (sys.system_static_info) {
         addSystemStatic(sys.system_static_info);
-      });
+      }
+    });
 
-      update({
-        systems: [...ref.current.systems.filter(sys => !addSystems.some(x => sys.id === x.id)), ...addSystems],
-      });
-    },
-    [addSystemStatic, update],
-  );
+    update(
+      {
+        systems: [...systems.filter(sys => !systemsToAdd.some(x => sys.id === x.id)), ...systemsToAdd],
+      },
+      true,
+    );
+  }, []);
 
   const removeSystems = useCallback((toRemove: CommandRemoveSystems) => {
     const { update, systems } = ref.current;
-    update({
-      systems: systems.filter(x => !toRemove.includes(parseInt(x.id))),
-    });
+    update(
+      {
+        systems: systems.filter(x => !toRemove.includes(parseInt(x.id))),
+      },
+      true,
+    );
   }, []);
 
-  const updateSystems = useCallback(
-    (systems: CommandUpdateSystems) => {
-      const out = ref.current.systems.map(current => {
-        const newSystem = systems.find(x => current.id === x.id);
-        if (!newSystem) {
-          return current;
-        }
+  const updateSystems = useCallback((updatedSystems: CommandUpdateSystems) => {
+    const { update, systems } = ref.current;
 
-        return newSystem;
-      });
+    const out = systems.map(current => {
+      const newSystem = updatedSystems.find(x => current.id === x.id);
+      if (!newSystem) {
+        return current;
+      }
 
-      update({ systems: out });
-    },
-    [update],
-  );
+      return newSystem;
+    });
+
+    update({ systems: out }, true);
+  }, []);
 
   return { addSystems, removeSystems, updateSystems };
 };
