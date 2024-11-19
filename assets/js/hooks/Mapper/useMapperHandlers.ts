@@ -1,7 +1,6 @@
 import { RefObject, useCallback } from 'react';
 
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { getQueryVariable } from './utils';
 
 export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRef: RefObject<any>) => {
   const handleCommand = useCallback(
@@ -16,10 +15,6 @@ export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRe
   );
 
   const handleMapEvent = useCallback(({ type, body }) => {
-    if (getQueryVariable('debug') === 'true') {
-      console.log(type, body);
-    }
-
     handlerRefs.forEach(ref => {
       if (!ref.current) {
         return;

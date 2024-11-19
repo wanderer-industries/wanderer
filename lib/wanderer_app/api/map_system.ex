@@ -12,6 +12,7 @@ defmodule WandererApp.Api.MapSystem do
 
   code_interface do
     define(:create, action: :create)
+    define(:destroy, action: :destroy)
 
     define(:by_id,
       get_by: [:id],

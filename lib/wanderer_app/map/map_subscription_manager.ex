@@ -237,7 +237,7 @@ defmodule WandererApp.Map.SubscriptionManager do
   defp _renew_subscription(%{auto_renew?: true} = subscription) when is_map(subscription) do
     with {:ok, %{map: map}} <-
            subscription |> WandererApp.MapSubscriptionRepo.load_relationships([:map]),
-         {:ok, estimated_price} <- estimate_price(subscription, true),
+         {:ok, estimated_price, discount} <- estimate_price(subscription, true),
          {:ok, map_balance} <- get_balance(map) do
       case map_balance >= estimated_price do
         true ->
@@ -245,7 +245,7 @@ defmodule WandererApp.Map.SubscriptionManager do
             WandererApp.MapTransactionRepo.create(%{
               map_id: map.id,
               user_id: nil,
-              amount: estimated_price,
+              amount: estimated_price - discount,
               type: :out
             })
 
@@ -267,7 +267,7 @@ defmodule WandererApp.Map.SubscriptionManager do
 
           :telemetry.execute([:wanderer_app, :map, :subscription, :renew], %{count: 1}, %{
             map_id: map.id,
-            amount: estimated_price
+            amount: estimated_price - discount
           })
 
           :ok

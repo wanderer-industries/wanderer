@@ -19,6 +19,8 @@ export const getActualSigs = (
       const isNeedUpgrade = getState(GROUPS_LIST, newSig) > getState(GROUPS_LIST, oldSig);
       if (isNeedUpgrade) {
         updated.push({ ...oldSig, group: newSig.group, name: newSig.name });
+      } else {
+        updated.push({ ...oldSig });
       }
     } else {
       if (!updateOnly) {

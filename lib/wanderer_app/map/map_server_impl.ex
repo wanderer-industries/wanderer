@@ -1878,6 +1878,7 @@ defmodule WandererApp.Map.Server.Impl do
                 position_y: position.y
               })
               |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+              |> WandererApp.MapSystemRepo.update_visible!(%{visible: true})
               |> WandererApp.MapSystemRepo.cleanup_tags()
 
             @ddrt.insert(
@@ -1895,8 +1896,9 @@ defmodule WandererApp.Map.Server.Impl do
               ttl: @system_inactive_timeout
             )
 
-            broadcast!(map_id, :add_system, updated_system)
             WandererApp.Map.add_system(map_id, updated_system)
+            broadcast!(map_id, :add_system, updated_system)
+            :ok
 
           _ ->
             {:ok, solar_system_info} =
@@ -1923,11 +1925,13 @@ defmodule WandererApp.Map.Server.Impl do
                   ttl: @system_inactive_timeout
                 )
 
-                broadcast!(map_id, :add_system, new_system)
                 WandererApp.Map.add_system(map_id, new_system)
+                broadcast!(map_id, :add_system, new_system)
+
+                :ok
 
               error ->
-                @logger.debug("Failed to create system: #{inspect(error, pretty: true)}")
+                @logger.warning("Failed to create system: #{inspect(error, pretty: true)}")
                 :ok
             end
         end

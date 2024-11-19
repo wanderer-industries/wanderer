@@ -25,7 +25,8 @@ import {
   renderDescription,
   renderIcon,
   renderInfoColumn,
-  renderTimeLeft,
+  renderInsertedTimeLeft,
+  renderUpdatedTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
 import useLocalStorageState from 'use-local-storage-state';
 import { PrimeIcons } from 'primereact/api';
@@ -33,7 +34,10 @@ import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/comp
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
-import { SHOW_DESCRIPTION_COLUMN_SETTING } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
+import {
+  SHOW_DESCRIPTION_COLUMN_SETTING,
+  SHOW_INSERTED_COLUMN_SETTING,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
   sortOrder: SortOrder;
@@ -93,6 +97,11 @@ export const SystemSignaturesContent = ({
   const groupSettings = useMemo(() => settings.filter(s => (GROUPS_LIST as string[]).includes(s.key)), [settings]);
   const showDescriptionColumn = useMemo(
     () => settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value,
+    [settings],
+  );
+
+  const showInsertedColumn = useMemo(
+    () => settings.find(s => s.key === SHOW_INSERTED_COLUMN_SETTING)?.value,
     [settings],
   );
 
@@ -368,12 +377,24 @@ export const SystemSignaturesContent = ({
                   sortable
                 ></Column>
               )}
+
+              {showInsertedColumn && (
+                <Column
+                  field="inserted_at"
+                  header="Inserted"
+                  dataType="date"
+                  bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
+                  body={renderInsertedTimeLeft}
+                  sortable
+                ></Column>
+              )}
+
               <Column
                 field="updated_at"
                 header="Updated"
                 dataType="date"
                 bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
-                body={renderTimeLeft}
+                body={renderUpdatedTimeLeft}
                 sortable
               ></Column>
 

@@ -24,7 +24,7 @@ interface UseLoadSystemStaticProps {
   systems: (number | string)[];
 }
 
-export const useLoadSystemStatic = ({ systems }: UseLoadSystemStaticProps) => {
+export const useLoadSystemStatic = ({ systems = [] }: UseLoadSystemStaticProps) => {
   const { outCommand } = useMapRootState();
   const [loading, setLoading] = useState(false);
   const [lastUpdateKey, setLastUpdateKey] = useState(0);
@@ -51,6 +51,9 @@ export const useLoadSystemStatic = ({ systems }: UseLoadSystemStaticProps) => {
   }, []);
 
   useEffect(() => {
+    if (!systems.length) {
+      return;
+    }
     loadSystems(systems);
     // eslint-disable-next-line
   }, [systems]);

@@ -12,8 +12,6 @@ import ReactFlow, {
   OnSelectionChangeFunc,
   SelectionDragHandler,
   SelectionMode,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -21,7 +19,7 @@ import classes from './Map.module.scss';
 import './styles/neon-theme.scss';
 import './styles/eve-common.scss';
 import { MapProvider, useMapState } from './MapProvider';
-import { useMapHandlers, useUpdateNodes } from './hooks';
+import { useNodesState, useEdgesState, useMapHandlers, useUpdateNodes } from './hooks';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
   ContextMenuConnection,
@@ -115,8 +113,8 @@ const MapComp = ({
   isThickConnections,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
-  const [nodes, , onNodesChange] = useNodesState<SolarSystemRawType>(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>[]>(initialEdges);
+  const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
