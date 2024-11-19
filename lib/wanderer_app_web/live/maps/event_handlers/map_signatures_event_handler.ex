@@ -144,8 +144,6 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
               updated = updated_signatures |> Enum.find(fn u -> u.eve_id == s.eve_id end)
 
               if not is_nil(updated) do
-                IO.puts("Updating #{s.eve_id}")
-
                 s
                 |> WandererApp.Api.MapSystemSignature.update(
                   updated

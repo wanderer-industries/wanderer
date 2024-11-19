@@ -1,6 +1,7 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef } from 'react';
 import { CommandAddSystems, CommandRemoveSystems, CommandUpdateSystems } from '@/hooks/Mapper/types';
+import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
 
 export const useCommandsSystems = () => {
   const {
@@ -8,16 +9,22 @@ export const useCommandsSystems = () => {
     data: { systems },
   } = useMapRootState();
 
+  const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
+
   const ref = useRef({ systems, update });
   ref.current = { systems, update };
 
   const addSystems = useCallback(
     (addSystems: CommandAddSystems) => {
+      addSystems.forEach(sys => {
+        addSystemStatic(sys.system_static_info);
+      });
+
       update({
-        systems: [...ref.current.systems.filter(sys => addSystems.some(x => sys.id !== x.id)), ...addSystems],
+        systems: [...ref.current.systems.filter(sys => !addSystems.some(x => sys.id === x.id)), ...addSystems],
       });
     },
-    [update],
+    [addSystemStatic, update],
   );
 
   const removeSystems = useCallback((toRemove: CommandRemoveSystems) => {
