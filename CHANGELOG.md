@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.19.3](https://github.com/wanderer-industries/wanderer/compare/v1.19.2...v1.19.3) (2024-11-20)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix adding systems on splash (#71)
+
+* Core: Fix adding systems on splash
+
 ## [v1.19.2](https://github.com/wanderer-industries/wanderer/compare/v1.19.1...v1.19.2) (2024-11-19)
 
 
