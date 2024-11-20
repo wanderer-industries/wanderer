@@ -34,6 +34,7 @@ import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import { Provider } from 'jotai';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -282,8 +283,10 @@ export type MapPropsType = Omit<MapCompProps, 'refn'>;
 // eslint-disable-next-line react/display-name
 export const Map = forwardRef((props: MapPropsType, ref: ForwardedRef<MapHandlers>) => {
   return (
-    <MapProvider onCommand={props.onCommand}>
-      <MapComp refn={ref} {...props} />
-    </MapProvider>
+    <Provider>
+      <MapProvider onCommand={props.onCommand}>
+        <MapComp refn={ref} {...props} />
+      </MapProvider>
+    </Provider>
   );
 });
