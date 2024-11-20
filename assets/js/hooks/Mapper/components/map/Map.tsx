@@ -1,8 +1,8 @@
 import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
-
 import ReactFlow, {
   Background,
   ConnectionMode,
+  Edge,
   MiniMap,
   Node,
   NodeChange,
@@ -34,7 +34,6 @@ import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
-import { Provider } from 'jotai';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -114,8 +113,8 @@ const MapComp = ({
   isThickConnections,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
@@ -283,10 +282,8 @@ export type MapPropsType = Omit<MapCompProps, 'refn'>;
 // eslint-disable-next-line react/display-name
 export const Map = forwardRef((props: MapPropsType, ref: ForwardedRef<MapHandlers>) => {
   return (
-    <Provider>
-      <MapProvider onCommand={props.onCommand}>
-        <MapComp refn={ref} {...props} />
-      </MapProvider>
-    </Provider>
+    <MapProvider onCommand={props.onCommand}>
+      <MapComp refn={ref} {...props} />
+    </MapProvider>
   );
 });
