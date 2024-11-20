@@ -1,8 +1,8 @@
 import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
+
 import ReactFlow, {
   Background,
   ConnectionMode,
-  Edge,
   MiniMap,
   Node,
   NodeChange,
@@ -113,8 +113,8 @@ const MapComp = ({
   isThickConnections,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
-  const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);

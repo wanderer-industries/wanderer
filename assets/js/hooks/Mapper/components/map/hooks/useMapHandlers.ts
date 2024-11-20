@@ -119,6 +119,10 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               // do nothing here
               break;
 
+            case Commands.signaturesUpdated:
+              // do nothing here
+              break;
+
             case Commands.linkSignatureToSystem:
               // do nothing here
               break;
