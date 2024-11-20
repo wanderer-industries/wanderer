@@ -87,6 +87,14 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               mapRoutes(data as CommandRoutes);
               break;
 
+            case Commands.signaturesUpdated: // USED
+              // do nothing here
+              break;
+
+            case Commands.linkSignatureToSystem: // USED
+              // do nothing here
+              break;
+
             case Commands.centerSystem: // USED
               // do nothing here
               break;
@@ -95,21 +103,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               // do nothing here
               break;
 
-            // case Commands.linkSignatureToSystem:
-            //   // TODO command data type lost
-            //   // @ts-ignore
-            //   emitMapEvent({ name: Commands.linkSignatureToSystem, data });
-            //   break;
-
             case Commands.killsUpdated:
               // do nothing here
               break;
-
-            // case Commands.signaturesUpdated:
-            //   // TODO command data type lost
-            //   // @ts-ignore
-            //   emitMapEvent({ name: Commands.signaturesUpdated, data });
-            //   break;
 
             default:
               console.warn(`JOipP Interface handlers: Unknown command: ${type}`, data);

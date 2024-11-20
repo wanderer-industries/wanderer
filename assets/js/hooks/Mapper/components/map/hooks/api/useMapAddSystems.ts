@@ -12,6 +12,7 @@ export const useMapAddSystems = () => {
   return useCallback((systems: CommandAddSystems) => {
     const { rf } = ref.current;
     const nodes = rf.getNodes();
+
     const prepared: Node[] = systems.filter(x => !nodes.some(y => x.id === y.id)).map(convertSystem2Node);
     rf.addNodes(prepared);
   }, []);

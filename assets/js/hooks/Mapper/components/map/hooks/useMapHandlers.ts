@@ -112,10 +112,14 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
                   connections: [],
                 });
                 selectSystem(systemId as CommandSelectSystem);
-              }, 100);
+              }, 500);
               break;
 
             case Commands.routes:
+              // do nothing here
+              break;
+
+            case Commands.signaturesUpdated:
               // do nothing here
               break;
 

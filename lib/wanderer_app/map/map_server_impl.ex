@@ -1897,6 +1897,7 @@ defmodule WandererApp.Map.Server.Impl do
             )
 
             WandererApp.Map.add_system(map_id, updated_system)
+
             broadcast!(map_id, :add_system, updated_system)
             :ok
 
