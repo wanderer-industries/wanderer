@@ -195,6 +195,12 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.update_connection_time_status/2, [connection_info]})
 
+  def update_connection_type(map_id, connection_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.update_connection_type/2, [connection_info]})
+
   def update_connection_mass_status(map_id, connection_info) when is_binary(map_id),
     do:
       map_id

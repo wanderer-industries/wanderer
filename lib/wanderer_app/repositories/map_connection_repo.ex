@@ -27,6 +27,7 @@ defmodule WandererApp.MapConnectionRepo do
     end
   end
 
+  def create(connection), do: connection |> WandererApp.Api.MapConnection.create()
   def create!(connection), do: connection |> WandererApp.Api.MapConnection.create!()
 
   def destroy(map_id, connection) when not is_nil(connection) do
@@ -69,6 +70,11 @@ defmodule WandererApp.MapConnectionRepo do
     do:
       connection
       |> WandererApp.Api.MapConnection.update_time_status(update)
+
+  def update_type(connection, update),
+    do:
+      connection
+      |> WandererApp.Api.MapConnection.update_type(update)
 
   def update_mass_status(connection, update),
     do:

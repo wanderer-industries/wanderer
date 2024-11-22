@@ -30,25 +30,35 @@ defmodule WandererAppWeb.Layouts do
       phx-hook="NewVersionUpdate"
       phx-update="ignore"
       data-version={@app_version}
-      class="!z-100 hidden group alert items-center fixed bottom-52 left-2 fade-in-scale text-white !bg-opacity-70 w-10 h-10 hover:w-[250px] hover:h-[70px] rounded p-px overflow-hidden"
+      class="!z-1000 hidden absolute top-0 left-0 w-full h-full group items-center fade-in-scale text-white !bg-opacity-70 rounded p-px overflow-hidden flex items-center"
     >
-      <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#0ea5e9_20deg,transparent_120deg)] group-hover:bg-[#0ea5e9]" />
-
-      <div class="!bg-black  rounded w-9 h-9 hover:m-0 group-hover:w-[246px] group-hover:h-[66px] flex items-center justify-center p-2 relative z-20">
-        <.icon name="hero-bell-alert" class="animate-pulse group-hover:hidden absolute top-2 h-5 w-5" />
-        <div class="opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center w-[250px] h-full">
-          <div class="text-white text-nowrap text-sm">
-            New Version Available
-          </div>
-          <a href="/changelog" target="_blank" class="text-sm link-secondary">What's new?</a>
+      <div class="hs-overlay-backdrop transition duration absolute left-0 top-0 w-full h-full bg-gray-900 bg-opacity-50 dark:bg-opacity-80 dark:bg-neutral-900">
+      </div>
+      <div class="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex items-center">
+        <div class="rounded w-9 h-9 w-[80px] h-[66px] flex items-center justify-center relative z-20">
+          <.icon name="hero-chevron-double-right" class="w-9 h-9 mr-[-40px]" />
+        </div>
+        <div id="refresh-area">
+          <.live_component module={WandererAppWeb.MapRefresh} id="map-refresh" />
         </div>
 
-        <button
-          type="button"
-          class="invisible group-hover:visible update-button p-button p-component p-button-outlined p-button-sm p-0 px-1 w-[76px]"
-        >
-          Update
-        </button>
+        <div class="rounded h-[66px] flex items-center justify-center relative z-20">
+          <div class=" flex items-center w-[200px] h-full">
+            <.icon name="hero-chevron-double-left" class="w-9 h-9 mr-[20px]" />
+            <div class=" flex flex-col items-center justify-center h-full">
+              <div class="text-white text-nowrap text-sm [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                Update Required
+              </div>
+              <a
+                href="/changelog"
+                target="_blank"
+                class="text-sm link-secondary [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+              >
+                What's new?
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """

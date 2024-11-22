@@ -120,6 +120,7 @@ export enum OutCommand {
   getSystemStaticInfos = 'get_system_static_infos',
   getConnectionInfo = 'get_connection_info',
   updateConnectionTimeStatus = 'update_connection_time_status',
+  updateConnectionType = 'update_connection_type',
   updateConnectionMassStatus = 'update_connection_mass_status',
   updateConnectionShipSizeType = 'update_connection_ship_size_type',
   updateConnectionLocked = 'update_connection_locked',

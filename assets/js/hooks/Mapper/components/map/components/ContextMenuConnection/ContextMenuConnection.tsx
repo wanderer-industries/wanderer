@@ -3,7 +3,7 @@ import { ContextMenu } from 'primereact/contextmenu';
 import { PrimeIcons } from 'primereact/api';
 import { MenuItem } from 'primereact/menuitem';
 import { Edge } from '@reactflow/core/dist/esm/types/edges';
-import { MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import clsx from 'clsx';
 import classes from './ContextMenuConnection.module.scss';
 import { MASS_STATE_NAMES, MASS_STATE_NAMES_ORDER } from '@/hooks/Mapper/components/map/constants.ts';
@@ -35,36 +35,49 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
     }
 
     const isFrigateSize = edge.data?.ship_size_type === ShipSizeStatus.small;
+    const isWormhole = edge.data?.type !== ConnectionType.gate;
 
     return [
-      {
-        label: `EOL`,
-        className: clsx({
-          [classes.ConnectionTimeEOL]: edge.data?.time_status === TimeStatus.eol,
-        }),
-        icon: PrimeIcons.CLOCK,
-        command: onChangeTimeState,
-      },
-      {
-        label: `Frigate`,
-        className: clsx({
-          [classes.ConnectionFrigate]: isFrigateSize,
-        }),
-        icon: PrimeIcons.CLOUD,
-        command: () =>
-          onChangeShipSizeStatus(
-            edge.data?.ship_size_type === ShipSizeStatus.small ? ShipSizeStatus.normal : ShipSizeStatus.small,
-          ),
-      },
-      {
-        label: `Save mass`,
-        className: clsx({
-          [classes.ConnectionSave]: edge.data?.locked,
-        }),
-        icon: PrimeIcons.LOCK,
-        command: () => onToggleMassSave(!edge.data?.locked),
-      },
-      ...(!isFrigateSize
+      ...(isWormhole
+        ? [
+            {
+              label: `EOL`,
+              className: clsx({
+                [classes.ConnectionTimeEOL]: edge.data?.time_status === TimeStatus.eol,
+              }),
+              icon: PrimeIcons.CLOCK,
+              command: onChangeTimeState,
+            },
+          ]
+        : []),
+      ...(isWormhole
+        ? [
+            {
+              label: `Frigate`,
+              className: clsx({
+                [classes.ConnectionFrigate]: isFrigateSize,
+              }),
+              icon: PrimeIcons.CLOUD,
+              command: () =>
+                onChangeShipSizeStatus(
+                  edge.data?.ship_size_type === ShipSizeStatus.small ? ShipSizeStatus.normal : ShipSizeStatus.small,
+                ),
+            },
+          ]
+        : []),
+      ...(isWormhole
+        ? [
+            {
+              label: `Save mass`,
+              className: clsx({
+                [classes.ConnectionSave]: edge.data?.locked,
+              }),
+              icon: PrimeIcons.LOCK,
+              command: () => onToggleMassSave(!edge.data?.locked),
+            },
+          ]
+        : []),
+      ...(isWormhole && !isFrigateSize
         ? [
             {
               label: `Mass status`,

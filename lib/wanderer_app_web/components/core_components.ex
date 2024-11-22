@@ -146,7 +146,12 @@ defmodule WandererAppWeb.CoreComponents do
       class="flex flex-col p-4 items-center absolute bottom-16 left-1 gap-2 tooltip tooltip-right"
       data-tip="server: Tranquility"
     >
-      <div class={"block w-4 h-4 rounded-full shadow-inner  #{if @online, do: " bg-green-500 animate-pulse", else: "bg-red-500"}"}>
+      <div
+        :if={@online}
+        class="absolute block w-4 h-4 rounded-full shadow-inner bg-green-500 animate-ping"
+      >
+      </div>
+      <div class={"block w-4 h-4 rounded-full shadow-inner  #{if @online, do: " bg-green-500", else: "bg-red-500"}"}>
       </div>
     </div>
     """

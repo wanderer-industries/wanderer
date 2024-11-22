@@ -29,13 +29,16 @@ defmodule WandererApp.Api.MapConnection do
     define(:update_ship_size_type, action: :update_ship_size_type)
     define(:update_locked, action: :update_locked)
     define(:update_custom_info, action: :update_custom_info)
+    define(:update_type, action: :update_type)
+    define(:update_wormhole_type, action: :update_wormhole_type)
   end
 
   actions do
     default_accept [
       :map_id,
       :solar_system_source,
-      :solar_system_target
+      :solar_system_target,
+      :type
     ]
 
     defaults [:create, :read, :update, :destroy]
@@ -92,6 +95,14 @@ defmodule WandererApp.Api.MapConnection do
     update :update_custom_info do
       accept [:custom_info]
     end
+
+    update :update_type do
+      accept [:type]
+    end
+
+    update :update_wormhole_type do
+      accept [:wormhole_type]
+    end
   end
 
   attributes do
@@ -122,6 +133,14 @@ defmodule WandererApp.Api.MapConnection do
     # where 2 - Capital
     attribute :ship_size_type, :integer do
       default(1)
+
+      allow_nil?(true)
+    end
+
+    # where 0 - Wormhole
+    # where 1 - Gate
+    attribute :type, :integer do
+      default(0)
 
       allow_nil?(true)
     end

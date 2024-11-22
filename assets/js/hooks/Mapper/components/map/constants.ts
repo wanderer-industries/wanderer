@@ -1,4 +1,4 @@
-import { MassState } from '@/hooks/Mapper/types';
+import { ConnectionType, MassState } from '@/hooks/Mapper/types';
 
 export enum SOLAR_SYSTEM_CLASS_IDS {
   ccp1 = -1,
@@ -710,6 +710,13 @@ export const STATUS_CLASSES: Record<number, string> = {
   [STATUSES.warning]: 'eve-system-status-warning',
   [STATUSES.target]: 'eve-system-status-target',
   [STATUSES.dangerous]: 'eve-system-status-dangerous',
+};
+
+export const TYPE_NAMES_ORDER = [ConnectionType.wormhole, ConnectionType.gate];
+
+export const TYPE_NAMES = {
+  [ConnectionType.wormhole]: 'Wormhole',
+  [ConnectionType.gate]: 'Gate',
 };
 
 export const MASS_STATE_NAMES_ORDER = [MassState.verge, MassState.half, MassState.normal];

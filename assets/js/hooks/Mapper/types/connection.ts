@@ -1,3 +1,8 @@
+export enum ConnectionType {
+  wormhole,
+  gate,
+}
+
 export enum MassState {
   normal,
   half,
@@ -32,4 +37,6 @@ export type SolarSystemConnection = {
 
   source: string;
   target: string;
+
+  type?: ConnectionType;
 };

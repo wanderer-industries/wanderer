@@ -64,6 +64,7 @@ defmodule WandererAppWeb.MapEventHandler do
     "get_connection_info",
     "get_passages",
     "update_connection_time_status",
+    "update_connection_type",
     "update_connection_mass_status",
     "update_connection_ship_size_type",
     "update_connection_locked",
@@ -215,6 +216,7 @@ defmodule WandererAppWeb.MapEventHandler do
           solar_system_target: solar_system_target,
           mass_status: mass_status,
           time_status: time_status,
+          type: type,
           ship_size_type: ship_size_type,
           locked: locked
         } = _connection
@@ -223,6 +225,7 @@ defmodule WandererAppWeb.MapEventHandler do
         id: "#{solar_system_source}_#{solar_system_target}",
         mass_status: mass_status,
         time_status: time_status,
+        type: type,
         ship_size_type: ship_size_type,
         locked: locked,
         source: "#{solar_system_source}",

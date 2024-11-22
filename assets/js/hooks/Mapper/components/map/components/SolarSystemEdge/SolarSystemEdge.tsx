@@ -4,7 +4,7 @@ import classes from './SolarSystemEdge.module.scss';
 import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
 import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
 import clsx from 'clsx';
-import { MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
@@ -33,6 +33,7 @@ const MAP_OFFSETS: Record<string, { x: number; y: number }> = {
 export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: EdgeProps<SolarSystemConnection>) => {
   const sourceNode = useStore(useCallback(store => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback(store => store.nodeInternals.get(target), [target]));
+  const isWormhole = data?.type !== ConnectionType.gate;
 
   const {
     data: { isThickConnections },
@@ -66,7 +67,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         id={`back_${id}`}
         className={clsx(classes.EdgePathBack, {
           [classes.Tick]: isThickConnections,
-          [classes.TimeCrit]: data.time_status === TimeStatus.eol,
+          [classes.TimeCrit]: isWormhole && data.time_status === TimeStatus.eol,
           [classes.Hovered]: hovered,
         })}
         d={path}
@@ -78,9 +79,9 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         className={clsx(classes.EdgePathFront, {
           [classes.Tick]: isThickConnections,
           [classes.Hovered]: hovered,
-          [classes.MassVerge]: data.mass_status === MassState.verge,
-          [classes.MassHalf]: data.mass_status === MassState.half,
-          [classes.Frigate]: data.ship_size_type === ShipSizeStatus.small,
+          [classes.MassVerge]: isWormhole && data.mass_status === MassState.verge,
+          [classes.MassHalf]: isWormhole && data.mass_status === MassState.half,
+          [classes.Frigate]: isWormhole && data.ship_size_type === ShipSizeStatus.small,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -120,7 +121,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}
         >
-          {data.locked && (
+          {isWormhole && data.locked && (
             <WdTooltipWrapper
               content="Save mass"
               className={clsx(

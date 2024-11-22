@@ -4,13 +4,26 @@ export default {
   mounted() {
     const hook = this;
 
-    const button = hook.el.querySelector('.update-button');
+    const refreshZone = hook.el.querySelector('#refresh-area');
 
-    button.addEventListener('click', function () {
-      const lastVersion = hook.el.dataset.version;
-      localStorage.setItem(LAST_VERSION_KEY, lastVersion);
-      window.location.reload();
-    });
+    const handleUpdate = function (e: Event) {
+      const hexBricks = hook.el.querySelectorAll('.hex-brick');
+
+      // Add a new class to each element
+      hexBricks.forEach(el => {
+        el.classList.add('hex-brick--active');
+      });
+
+      setTimeout(() => {
+        const lastVersion = hook.el.dataset.version;
+        localStorage.setItem(LAST_VERSION_KEY, lastVersion);
+
+        window.location.reload();
+      }, 2000);
+    };
+
+    refreshZone.addEventListener('click', handleUpdate);
+    refreshZone.addEventListener('mouseover', handleUpdate);
 
     this.updated();
   },

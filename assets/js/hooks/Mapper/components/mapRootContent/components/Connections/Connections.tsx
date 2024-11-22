@@ -5,12 +5,14 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import clsx from 'clsx';
 import {
+  ConnectionType,
   ConnectionOutput,
   ConnectionInfoOutput,
   OutCommand,
   Passage,
   SolarSystemConnection,
 } from '@/hooks/Mapper/types';
+
 import { PassageCard } from './PassageCard';
 import { InfoDrawer, SystemView } from '@/hooks/Mapper/components/ui-kit';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
@@ -74,6 +76,10 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
 
     return connections.find(x => x.source === selectedConnection.source && x.target === selectedConnection.target);
   }, [connections, selectedConnection]);
+
+  const isWormhole = useMemo(() => {
+    return cnInfo?.type !== ConnectionType.gate;
+  }, [cnInfo]);
 
   const [passages, setPassages] = useState<Passage[]>([]);
   const [info, setInfo] = useState<ConnectionInfoOutput>(null);
@@ -154,13 +160,17 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
           </InfoDrawer>
 
           {/* Connection Info Row */}
-          <InfoDrawer title="Approximate mass of passages" rightSide>
-            {kgToTons(approximateMass)}
-          </InfoDrawer>
+          {isWormhole && (
+            <>
+              <InfoDrawer title="Approximate mass of passages" rightSide>
+                {kgToTons(approximateMass)}
+              </InfoDrawer>
 
-          <InfoDrawer title="Mark EOL Time" rightSide>
-            {info?.marl_eol_time ? <TimeAgo timestamp={info.marl_eol_time} /> : ' unknown '}
-          </InfoDrawer>
+              <InfoDrawer title="Mark EOL Time" rightSide>
+                {info?.marl_eol_time ? <TimeAgo timestamp={info.marl_eol_time} /> : ' unknown '}
+              </InfoDrawer>
+            </>
+          )}
 
           <div className="flex gap-2"></div>
         </div>

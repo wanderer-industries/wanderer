@@ -48,6 +48,7 @@ const restoreWindowsFromLS = (): WidgetGridItem[] => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const raw = localStorage.getItem(SESSION_KEY.windows);
   if (!raw) {
+    console.warn('No windows found in local storage!!');
     return DEFAULT_WINDOWS;
   }
 
@@ -63,7 +64,7 @@ const restoreWindowsFromLS = (): WidgetGridItem[] => {
 };
 
 export const MapInterface = () => {
-  const [items, setItems] = useState<WidgetGridItem[]>(restoreWindowsFromLS());
+  const [items, setItems] = useState<WidgetGridItem[]>(restoreWindowsFromLS);
 
   return (
     <WidgetsGrid

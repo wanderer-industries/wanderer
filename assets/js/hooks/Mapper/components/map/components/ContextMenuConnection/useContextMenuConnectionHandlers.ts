@@ -4,7 +4,7 @@ import { ContextMenu } from 'primereact/contextmenu';
 import { useMapState } from '../../MapProvider.tsx';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { Edge } from '@reactflow/core/dist/esm/types/edges';
-import { MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 
 export const useContextMenuConnectionHandlers = () => {
@@ -46,6 +46,23 @@ export const useContextMenuConnectionHandlers = () => {
     });
     setEdge(undefined);
   };
+
+  const onChangeType = useCallback((type: ConnectionType) => {
+    const { edge, outCommand } = ref.current;
+
+    if (!edge) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.updateConnectionType,
+      data: {
+        source: edge.source,
+        target: edge.target,
+        value: type,
+      },
+    });
+  }, []);
 
   const onChangeMassState = useCallback((status: MassState) => {
     const { edge, outCommand } = ref.current;
@@ -118,6 +135,7 @@ export const useContextMenuConnectionHandlers = () => {
     contextMenuRef,
     onDeleteConnection,
     onChangeTimeState,
+    onChangeType,
     onChangeMassState,
     onChangeShipSizeStatus,
     onToggleMassSave,

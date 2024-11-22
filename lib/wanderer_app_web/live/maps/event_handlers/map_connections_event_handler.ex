@@ -54,7 +54,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     map_id
     |> WandererApp.Map.Server.add_connection(%{
       solar_system_source_id: solar_system_source_id |> String.to_integer(),
-      solar_system_target_id: solar_system_target_id |> String.to_integer()
+      solar_system_target_id: solar_system_target_id |> String.to_integer(),
+      character_id: tracked_character_ids |> List.first()
     })
 
     {:ok, _} =
@@ -122,6 +123,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     method_atom =
       case param do
         "time_status" -> :update_connection_time_status
+        "type" -> :update_connection_type
         "mass_status" -> :update_connection_mass_status
         "ship_size_type" -> :update_connection_ship_size_type
         "locked" -> :update_connection_locked
@@ -132,6 +134,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     key_atom =
       case param do
         "time_status" -> :time_status
+        "type" -> :type
         "mass_status" -> :mass_status
         "ship_size_type" -> :ship_size_type
         "locked" -> :locked
