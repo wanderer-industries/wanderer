@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.20.0](https://github.com/wanderer-industries/wanderer/compare/v1.19.3...v1.20.0) (2024-11-22)
+
+
+
+
+### Features:
+
+* Core: Add connection type for Gates, add new Update logic
+
 ## [v1.19.3](https://github.com/wanderer-industries/wanderer/compare/v1.19.2...v1.19.3) (2024-11-20)
 
 
