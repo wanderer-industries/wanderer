@@ -504,7 +504,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       state
     else
       {:error, error} ->
-        @logger.error("Failed to update connection: #{inspect(error, pretty: true)}")
+        Logger.error("Failed to update connection: #{inspect(error, pretty: true)}")
 
         state
     end
