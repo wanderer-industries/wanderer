@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.21.0](https://github.com/wanderer-industries/wanderer/compare/v1.20.1...v1.21.0) (2024-11-24)
+
+
+
+
+### Features:
+
+* Map: add new gate design, change EOL placement
+
 ## [v1.20.1](https://github.com/wanderer-industries/wanderer/compare/v1.20.0...v1.20.1) (2024-11-22)
 
 
