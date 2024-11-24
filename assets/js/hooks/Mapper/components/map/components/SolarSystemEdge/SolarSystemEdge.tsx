@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import classes from './SolarSystemEdge.module.scss';
-import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
+import { EdgeLabelRenderer, EdgeProps, getBezierPath, getSmoothStepPath, Position, useStore } from 'reactflow';
 import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
 import clsx from 'clsx';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
@@ -46,7 +46,9 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
-    const [edgePath, labelX, labelY] = getBezierPath({
+    const method = isWormhole ? getBezierPath : getSmoothStepPath;
+
+    const [edgePath, labelX, labelY] = method({
       sourceX: sx - offset.x,
       sourceY: sy - offset.y,
       sourcePosition: sourcePos,
@@ -54,8 +56,9 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
       targetX: tx + offset.x,
       targetY: ty + offset.y,
     });
+
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
-  }, [isThickConnections, sourceNode, targetNode]);
+  }, [isThickConnections, sourceNode, targetNode, isWormhole]);
 
   if (!sourceNode || !targetNode || !data) {
     return null;
@@ -69,6 +72,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.Tick]: isThickConnections,
           [classes.TimeCrit]: isWormhole && data.time_status === TimeStatus.eol,
           [classes.Hovered]: hovered,
+          [classes.Gate]: !isWormhole,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -82,6 +86,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.MassVerge]: isWormhole && data.mass_status === MassState.verge,
           [classes.MassHalf]: isWormhole && data.mass_status === MassState.half,
           [classes.Frigate]: isWormhole && data.ship_size_type === ShipSizeStatus.small,
+          [classes.Gate]: !isWormhole,
         })}
         d={path}
         markerEnd={markerEnd}
