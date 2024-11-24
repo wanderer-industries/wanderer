@@ -24,6 +24,10 @@
     stroke: #d4f0ff;
   }
 
+  &.Gate {
+    stroke: #1c1e15;
+  }
+
   &.Hovered {
     stroke: #4e5d6c;
     stroke-width: 2px;
@@ -76,6 +80,11 @@
       stroke-width: 6px;
     }
   }
+
+  &.Gate {
+    stroke: #9aff40;
+  }
+
 }
 
 .ClickPath {

@@ -82,7 +82,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
   }, [cnInfo]);
 
   const [passages, setPassages] = useState<Passage[]>([]);
-  const [info, setInfo] = useState<ConnectionInfoOutput>(null);
+  const [info, setInfo] = useState<ConnectionInfoOutput | null>(null);
 
   const loadInfo = useCallback(
     async (connection: SolarSystemConnection) => {
@@ -141,7 +141,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
     >
       <div className={clsx(classes.SidebarContent, '')}>
         {/* Connection Info */}
-        <div className="px-2 pb-3 flex flex-col gap-2">
+        <div className="px-2 flex flex-col gap-2">
           {/* Connection Info Row */}
           <InfoDrawer title="Connection" rightSide>
             <div className="flex justify-end gap-2 items-center">
@@ -159,18 +159,25 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
             </div>
           </InfoDrawer>
 
-          {/* Connection Info Row */}
-          {isWormhole && (
-            <>
-              <InfoDrawer title="Approximate mass of passages" rightSide>
-                {kgToTons(approximateMass)}
-              </InfoDrawer>
+          <div className="flex justify-between gap-2">
+            {/*Left column*/}
+            <div>
+              {isWormhole && info?.marl_eol_time && (
+                <InfoDrawer title="Mark EOL Time">
+                  <TimeAgo timestamp={info.marl_eol_time} />
+                </InfoDrawer>
+              )}
+            </div>
 
-              <InfoDrawer title="Mark EOL Time" rightSide>
-                {info?.marl_eol_time ? <TimeAgo timestamp={info.marl_eol_time} /> : ' unknown '}
-              </InfoDrawer>
-            </>
-          )}
+            {/*Right column*/}
+            <div>
+              {isWormhole && (
+                <InfoDrawer title="Approximate mass of passages" rightSide>
+                  {kgToTons(approximateMass)}
+                </InfoDrawer>
+              )}
+            </div>
+          </div>
 
           <div className="flex gap-2"></div>
         </div>
