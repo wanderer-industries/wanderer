@@ -96,7 +96,7 @@
   on_cancel={JS.push("hide_tracking")}
 >
   <.async_result :let={characters} assign={@characters}>
-    <:loading>Loading...</:loading>
+    <:loading><span class="loading loading-dots loading-xs" />.</:loading>
     <:failed :let={reason}><%= reason %></:failed>
 
     <.table

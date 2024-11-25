@@ -32,6 +32,7 @@ const INITIAL_DATA: MapData = {
   visibleNodes: new Set(),
   showKSpaceBG: false,
   isThickConnections: false,
+  userPermissions: {},
 };
 
 export interface MapContextProps {

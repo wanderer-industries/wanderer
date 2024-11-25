@@ -217,7 +217,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
             current_user: current_user,
             tracked_character_ids: tracked_character_ids,
             has_tracked_characters?: true,
-            user_permissions: %{update_system: true}
+            user_permissions: %{update_system: true} = user_permissions
           }
         } =
           socket
@@ -244,23 +244,25 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         _ -> :none
       end
 
-    apply(WandererApp.Map.Server, method_atom, [
-      map_id,
-      %{
-        solar_system_id: "#{solar_system_id}" |> String.to_integer()
-      }
-      |> Map.put_new(key_atom, value)
-    ])
+    if can_update_system?(key_atom, user_permissions) do
+      apply(WandererApp.Map.Server, method_atom, [
+        map_id,
+        %{
+          solar_system_id: "#{solar_system_id}" |> String.to_integer()
+        }
+        |> Map.put_new(key_atom, value)
+      ])
 
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:system_updated, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
-        map_id: map_id,
-        solar_system_id: "#{solar_system_id}" |> String.to_integer(),
-        key: key_atom,
-        value: value
-      })
+      {:ok, _} =
+        WandererApp.User.ActivityTracker.track_map_event(:system_updated, %{
+          character_id: tracked_character_ids |> List.first(),
+          user_id: current_user.id,
+          map_id: map_id,
+          solar_system_id: "#{solar_system_id}" |> String.to_integer(),
+          key: key_atom,
+          value: value
+        })
+    end
 
     {:noreply, socket}
   end
@@ -304,6 +306,9 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+
+  defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
+  defp can_update_system?(_key, _user_permissions), do: true
 
   defp update_system_positions(_map_id, []), do: :ok
 

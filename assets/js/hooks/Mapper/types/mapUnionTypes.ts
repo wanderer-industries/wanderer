@@ -4,6 +4,7 @@ import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { SolarSystemRawType } from '@/hooks/Mapper/types/system.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
+import { UserPermissions } from '@/hooks/Mapper/types';
 
 export type MapUnionTypes = {
   wormholesData: Record<string, WormholeDataRaw>;
@@ -17,4 +18,5 @@ export type MapUnionTypes = {
   routes?: RoutesList;
   kills: Record<number, number>;
   connections: SolarSystemConnection[];
+  userPermissions: Partial<UserPermissions>;
 };
