@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 
-export const useMapCheckPermissions = () => {
+export const useMapCheckPermissions = (permissions: UserPermission[]) => {
   const {
     data: { userPermissions },
   } = useMapRootState();
 
-  return useCallback((permissions: UserPermission[]) => permissions.every(x => userPermissions[x]), [userPermissions]);
+  return useMemo(() => permissions.every(x => userPermissions[x]), [permissions, userPermissions]);
 };

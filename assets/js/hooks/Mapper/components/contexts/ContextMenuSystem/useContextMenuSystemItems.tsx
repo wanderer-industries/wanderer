@@ -27,8 +27,7 @@ export const useContextMenuSystemItems = ({
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus);
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
-  const checkMapPermission = useMapCheckPermissions();
-  const canLockSystem = useMemo(() => checkMapPermission([UserPermission.LOCK_SYSTEM]), [checkMapPermission]);
+  const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
 
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
