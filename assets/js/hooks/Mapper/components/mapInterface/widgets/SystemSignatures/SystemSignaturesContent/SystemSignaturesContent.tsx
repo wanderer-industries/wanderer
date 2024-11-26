@@ -1,5 +1,4 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useClipboard } from '@/hooks/Mapper/hooks/useClipboard';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
@@ -22,10 +21,10 @@ import {
   getRowColorByTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/helpers';
 import {
+  renderAddedTimeLeft,
   renderDescription,
   renderIcon,
   renderInfoColumn,
-  renderInsertedTimeLeft,
   renderUpdatedTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
 import useLocalStorageState from 'use-local-storage-state';
@@ -36,7 +35,7 @@ import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrap
 import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
 import {
   SHOW_DESCRIPTION_COLUMN_SETTING,
-  SHOW_INSERTED_COLUMN_SETTING,
+  SHOW_UPDATED_COLUMN_SETTING,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -44,7 +43,7 @@ type SystemSignaturesSortSettings = {
 };
 
 const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
-  sortField: 'updated_at',
+  sortField: 'inserted_at',
   sortOrder: -1,
 };
 
@@ -80,10 +79,10 @@ export const SystemSignaturesContent = ({
   const tableRef = useRef<HTMLDivElement>(null);
   const compact = useMaxWidth(tableRef, 260);
   const medium = useMaxWidth(tableRef, 380);
+  const refData = useRef({ selectable });
+  refData.current = { selectable };
 
   const tooltipRef = useRef<WdTooltipHandlers>(null);
-
-  const { clipboardContent } = useClipboard();
 
   const handleResize = useCallback(() => {
     if (tableRef.current) {
@@ -100,10 +99,7 @@ export const SystemSignaturesContent = ({
     [settings],
   );
 
-  const showInsertedColumn = useMemo(
-    () => settings.find(s => s.key === SHOW_INSERTED_COLUMN_SETTING)?.value,
-    [settings],
-  );
+  const showUpdatedColumn = useMemo(() => settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value, [settings]);
 
   const filteredSignatures = useMemo(() => {
     return signatures
@@ -160,19 +156,26 @@ export const SystemSignaturesContent = ({
     [outCommand, systemId],
   );
 
-  const handleDeleteSelected = useCallback(async () => {
-    if (selectable) {
-      return;
-    }
-    if (selectedSignatures.length === 0) {
-      return;
-    }
-    const selectedSignaturesEveIds = selectedSignatures.map(x => x.eve_id);
-    await handleUpdateSignatures(
-      signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)),
-      false,
-    );
-  }, [handleUpdateSignatures, selectable, signatures, selectedSignatures]);
+  const handleDeleteSelected = useCallback(
+    async (e: KeyboardEvent) => {
+      if (selectable) {
+        return;
+      }
+      if (selectedSignatures.length === 0) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const selectedSignaturesEveIds = selectedSignatures.map(x => x.eve_id);
+      await handleUpdateSignatures(
+        signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)),
+        false,
+      );
+    },
+    [handleUpdateSignatures, selectable, signatures, selectedSignatures],
+  );
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
@@ -201,12 +204,9 @@ export const SystemSignaturesContent = ({
     [onSelect, selectable],
   );
 
-  useHotkey(true, ['a'], handleSelectAll);
-
-  useHotkey(false, ['Backspace'], handleDeleteSelected);
-
-  useEffect(() => {
-    if (selectable) {
+  const handlePaste = async () => {
+    const clipboardContent = await navigator.clipboard.readText();
+    if (refData.current.selectable) {
       return;
     }
 
@@ -227,7 +227,12 @@ export const SystemSignaturesContent = ({
       setParsedSignatures(newSignatures);
       setAskUser(true);
     }
-  }, [clipboardContent, selectable]);
+  };
+
+  useHotkey(true, ['a'], handleSelectAll);
+  useHotkey(true, ['v'], handlePaste);
+
+  useHotkey(false, ['Delete'], handleDeleteSelected);
 
   useEffect(() => {
     if (!systemId) {
@@ -330,7 +335,7 @@ export const SystemSignaturesContent = ({
                   return clsx(classes.TableRowCompact, 'bg-amber-500/50 hover:bg-amber-500/70 transition duration-200');
                 }
 
-                const dateClass = getRowColorByTimeLeft(row.updated_at ? new Date(row.updated_at) : undefined);
+                const dateClass = getRowColorByTimeLeft(row.inserted_at ? new Date(row.inserted_at) : undefined);
                 if (!dateClass) {
                   return clsx(classes.TableRowCompact, 'hover:bg-purple-400/20 transition duration-200');
                 }
@@ -357,6 +362,7 @@ export const SystemSignaturesContent = ({
                 header="Group"
                 bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
                 hidden={compact}
+                style={{ maxWidth: 110, minWidth: 110, width: 110 }}
                 sortable
               ></Column>
               <Column
@@ -378,25 +384,25 @@ export const SystemSignaturesContent = ({
                 ></Column>
               )}
 
-              {showInsertedColumn && (
+              <Column
+                field="inserted_at"
+                header="Added"
+                dataType="date"
+                bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
+                body={renderAddedTimeLeft}
+                sortable
+              ></Column>
+
+              {showUpdatedColumn && (
                 <Column
-                  field="inserted_at"
-                  header="Inserted"
+                  field="updated_at"
+                  header="Updated"
                   dataType="date"
                   bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
-                  body={renderInsertedTimeLeft}
+                  body={renderUpdatedTimeLeft}
                   sortable
                 ></Column>
               )}
-
-              <Column
-                field="updated_at"
-                header="Updated"
-                dataType="date"
-                bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
-                body={renderUpdatedTimeLeft}
-                sortable
-              ></Column>
 
               {!selectable && (
                 <Column
