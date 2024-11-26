@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.22.0](https://github.com/wanderer-industries/wanderer/compare/v1.21.0...v1.22.0) (2024-11-26)
+
+
+
+
+### Features:
+
+* Map: Rework design of checkboxes in Signatures settings dialog. Rework design of checkboxes in Routes settings dialog. Now signature will deleteing by Delete hotkey was Backspace. Fixed size of group column in signatures list. Instead Updated column will be Added, updated may be turn on in settings. (#76)
+
 ## [v1.21.0](https://github.com/wanderer-industries/wanderer/compare/v1.20.1...v1.21.0) (2024-11-24)
 
 

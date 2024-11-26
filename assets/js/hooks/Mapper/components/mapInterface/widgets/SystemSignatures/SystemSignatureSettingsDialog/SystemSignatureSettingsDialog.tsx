@@ -1,9 +1,9 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Checkbox } from 'primereact/checkbox';
 import { TabPanel, TabView } from 'primereact/tabview';
 import styles from './SystemSignatureSettingsDialog.module.scss';
+import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 
 export type Setting = { key: string; name: string; value: boolean; isFilter?: boolean };
 
@@ -41,8 +41,8 @@ export const SystemSignatureSettingsDialog = ({
   }, [onSave, settings]);
 
   return (
-    <Dialog header="System Signatures Settings" visible={true} onHide={onCancel} className="w-full max-w-lg">
-      <div className="flex flex-col gap-3">
+    <Dialog header="System Signatures Settings" visible={true} onHide={onCancel} className="w-full max-w-lg h-[500px]">
+      <div className="flex flex-col gap-3 justify-between h-full">
         <div className="flex flex-col gap-2">
           <div className={styles.verticalTabsContainer}>
             <TabView
@@ -54,16 +54,12 @@ export const SystemSignatureSettingsDialog = ({
                 <div className="w-full h-full flex flex-col gap-1">
                   {filterSettings.map(setting => {
                     return (
-                      <div key={setting.key} className="flex items-center">
-                        <Checkbox
-                          inputId={setting.key}
-                          checked={setting.value}
-                          onChange={() => handleSettingsChange(setting.key)}
-                        />
-                        <label htmlFor={setting.key} className="ml-2">
-                          {setting.name}
-                        </label>
-                      </div>
+                      <PrettySwitchbox
+                        key={setting.key}
+                        label={setting.name}
+                        checked={setting.value}
+                        setChecked={() => handleSettingsChange(setting.key)}
+                      />
                     );
                   })}
                 </div>
@@ -72,16 +68,12 @@ export const SystemSignatureSettingsDialog = ({
                 <div className="w-full h-full flex flex-col gap-1">
                   {userSettings.map(setting => {
                     return (
-                      <div key={setting.key} className="flex items-center">
-                        <Checkbox
-                          inputId={setting.key}
-                          checked={setting.value}
-                          onChange={() => handleSettingsChange(setting.key)}
-                        />
-                        <label htmlFor={setting.key} className="ml-2">
-                          {setting.name}
-                        </label>
-                      </div>
+                      <PrettySwitchbox
+                        key={setting.key}
+                        label={setting.name}
+                        checked={setting.value}
+                        setChecked={() => handleSettingsChange(setting.key)}
+                      />
                     );
                   })}
                 </div>
