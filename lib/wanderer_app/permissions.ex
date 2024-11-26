@@ -15,6 +15,8 @@ defmodule WandererApp.Permissions do
   @add_acl 1024
   @delete_acl 2048
   @delete_map 4096
+  @manage_map 8192
+  @admin_map 16384
 
   @viewer_role [@view_system, @view_character, @view_connection]
   @member_role @viewer_role ++
@@ -24,11 +26,10 @@ defmodule WandererApp.Permissions do
                    @update_system,
                    @track_character,
                    @delete_connection,
-                   @delete_system,
-                   @lock_system
+                   @delete_system
                  ]
-  @manager_role @member_role
-  @admin_role @manager_role ++ [@add_acl, @delete_acl, @delete_map]
+  @manager_role @member_role ++ [@lock_system, @manage_map]
+  @admin_role @manager_role ++ [@add_acl, @delete_acl, @delete_map, @admin_map]
 
   @viewer_role_mask @viewer_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
   @member_role_mask @member_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
@@ -72,6 +73,8 @@ defmodule WandererApp.Permissions do
 
   def get_permissions(user_permissions) do
     %{
+      admin_map: check_permission(user_permissions, @admin_map),
+      manage_map: check_permission(user_permissions, @manage_map),
       view_system: check_permission(user_permissions, @view_system),
       view_character: check_permission(user_permissions, @view_character),
       view_connection: check_permission(user_permissions, @view_connection),

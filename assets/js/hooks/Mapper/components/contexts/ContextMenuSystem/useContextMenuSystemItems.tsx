@@ -6,6 +6,8 @@ import { PrimeIcons } from 'primereact/api';
 import { ContextMenuSystemProps } from '@/hooks/Mapper/components/contexts';
 import { useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
+import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
@@ -25,6 +27,7 @@ export const useContextMenuSystemItems = ({
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus);
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
+  const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
 
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
@@ -58,19 +61,25 @@ export const useContextMenuSystemItems = ({
         command: onHubToggle,
       },
       ...(system.locked
-        ? [
-            {
-              label: 'Unlock',
-              icon: PrimeIcons.LOCK_OPEN,
-              command: onLockToggle,
-            },
-          ]
+        ? canLockSystem
+          ? [
+              {
+                label: 'Unlock',
+                icon: PrimeIcons.LOCK_OPEN,
+                command: onLockToggle,
+              },
+            ]
+          : []
         : [
-            {
-              label: 'Lock',
-              icon: PrimeIcons.LOCK,
-              command: onLockToggle,
-            },
+            ...(canLockSystem
+              ? [
+                  {
+                    label: 'Lock',
+                    icon: PrimeIcons.LOCK,
+                    command: onLockToggle,
+                  },
+                ]
+              : []),
             { separator: true },
             {
               label: 'Delete',
@@ -80,6 +89,7 @@ export const useContextMenuSystemItems = ({
           ]),
     ];
   }, [
+    canLockSystem,
     systems,
     systemId,
     getTags,

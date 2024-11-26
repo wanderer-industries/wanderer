@@ -1,7 +1,6 @@
 defmodule WandererApp.Map.Server.ConnectionsImpl do
-  @moduledoc """
-  Holds state for a map and exposes an interface to managing the map instance
-  """
+  @moduledoc false
+
   require Logger
 
   alias WandererApp.Map.Server.Impl

@@ -74,22 +74,19 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
-    {:ok, character_settings} =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
-        {:ok, settings} -> {:ok, settings}
-        _ -> {:ok, []}
-      end
-
     {:noreply,
      socket
-     |> assign(
-       show_tracking?: true,
-       character_settings: character_settings
-     )
+     |> assign(show_tracking?: true)
      |> assign_async(:characters, fn ->
        {:ok, map} =
          map_id
          |> WandererApp.MapRepo.get([:acls])
+
+       {:ok, character_settings} =
+         case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
+           {:ok, settings} -> {:ok, settings}
+           _ -> {:ok, []}
+         end
 
        map
        |> WandererApp.Maps.load_characters(
@@ -122,12 +119,17 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            character_settings: character_settings,
             current_user: current_user,
             only_tracked_characters: only_tracked_characters
           }
         } = socket
       ) do
+    {:ok, character_settings} =
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
+        {:ok, settings} -> {:ok, settings}
+        _ -> {:ok, []}
+      end
+
     socket =
       case character_settings |> Enum.find(&(&1.character_id == character_id)) do
         nil ->
@@ -202,7 +204,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
      socket
      |> assign(user_characters: user_character_eve_ids)
      |> assign(has_tracked_characters?: has_tracked_characters?(user_character_eve_ids))
-     |> assign(character_settings: character_settings)
      |> assign_async(:characters, fn ->
        {:ok, %{characters: characters}}
      end)

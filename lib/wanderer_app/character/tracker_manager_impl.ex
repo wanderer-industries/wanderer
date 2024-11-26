@@ -83,22 +83,28 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def stop_tracking(%__MODULE__{} = state, character_id) do
-    {:ok, %{start_time: start_time}} = WandererApp.Character.get_character_state(character_id)
+    {:ok, character_state} = WandererApp.Character.get_character_state(character_id, false)
 
-    duration = DateTime.diff(DateTime.utc_now(), start_time, :second)
-    :telemetry.execute([:wanderer_app, :character, :tracker, :running], %{duration: duration})
-    :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
-    Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
+    case character_state do
+      nil ->
+        state
 
-    WandererApp.Cache.delete("character:#{character_id}:location_started")
-    WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
-    WandererApp.Character.delete_character_state(character_id)
+      %{start_time: start_time} ->
+        duration = DateTime.diff(DateTime.utc_now(), start_time, :second)
+        :telemetry.execute([:wanderer_app, :character, :tracker, :running], %{duration: duration})
+        :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
+        Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
 
-    tracked_characters = state.characters |> Enum.reject(fn c_id -> c_id == character_id end)
+        WandererApp.Cache.delete("character:#{character_id}:location_started")
+        WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
+        WandererApp.Character.delete_character_state(character_id)
 
-    WandererApp.Cache.insert("tracked_characters", tracked_characters)
+        tracked_characters = state.characters |> Enum.reject(fn c_id -> c_id == character_id end)
 
-    %{state | characters: tracked_characters}
+        WandererApp.Cache.insert("tracked_characters", tracked_characters)
+
+        %{state | characters: tracked_characters}
+    end
   end
 
   def update_track_settings(
@@ -429,8 +435,19 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def handle_info({:stop_track, character_id}, state) do
-    @logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
-    stop_tracking(state, character_id)
+    WandererApp.Cache.has_key?("character:#{character_id}:is_stop_tracking")
+    |> case do
+      false ->
+        WandererApp.Cache.insert("character:#{character_id}:is_stop_tracking", true)
+        Logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
+        state = state |> stop_tracking(character_id)
+        WandererApp.Cache.delete("character:#{character_id}:is_stop_tracking")
+
+        state
+
+      _ ->
+        state
+    end
   end
 
   def handle_info(_event, state),

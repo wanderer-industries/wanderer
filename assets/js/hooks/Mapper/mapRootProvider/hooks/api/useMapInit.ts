@@ -19,6 +19,7 @@ export const useMapInit = () => {
       user_characters,
       present_characters,
       hubs,
+      user_permissions,
     }: CommandInit) => {
       const updateData: Partial<MapRootData> = {};
 
@@ -49,6 +50,10 @@ export const useMapInit = () => {
 
       if (connections) {
         updateData.connections = connections;
+      }
+
+      if (user_permissions) {
+        updateData.userPermissions = user_permissions;
       }
 
       if (hubs) {

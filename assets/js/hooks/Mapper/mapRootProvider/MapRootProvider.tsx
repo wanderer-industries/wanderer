@@ -1,6 +1,6 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
-import { createContext, Dispatch, ForwardedRef, forwardRef, RefObject, SetStateAction, useContext } from 'react';
-import { MapHandlers, MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
+import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext } from 'react';
+import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
@@ -25,6 +25,7 @@ const INITIAL_DATA: MapRootData = {
 
   selectedSystems: [],
   selectedConnections: [],
+  userPermissions: {},
 };
 
 export enum InterfaceStoredSettingsProps {

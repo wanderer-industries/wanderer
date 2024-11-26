@@ -4,6 +4,7 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { Kill } from '@/hooks/Mapper/types/kills.ts';
+import { UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
@@ -58,7 +59,7 @@ export type CommandInit = {
   characters: CharacterTypeRaw[];
   present_characters: string[];
   user_characters: string[];
-  user_permissions: any;
+  user_permissions: UserPermissions;
   hubs: string[];
   routes: RoutesList;
   reset?: boolean;
