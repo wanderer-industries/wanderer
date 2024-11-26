@@ -25,7 +25,6 @@ export const SystemViewStandalone = ({
   className,
   hideRegion,
   customName,
-
   class_title,
   system_class,
   solar_system_name,
@@ -38,6 +37,7 @@ export const SystemViewStandalone = ({
   ...props
 }: SystemViewStandaloneProps) => {
   const classTitleColor = getSystemClassStyles({ systemClass: system_class, security });
+
   const isWH = isWormholeSpace(system_class);
 
   const handleClick = useCallback(
