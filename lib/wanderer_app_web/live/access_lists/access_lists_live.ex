@@ -222,7 +222,7 @@ defmodule WandererAppWeb.AccessListsLive do
 
   def handle_event(
         "add_members",
-        %{"member_id" => member_id} = _params,
+        %{"member_id" => [member_id]} = _params,
         %{assigns: assigns} = socket
       )
       when is_binary(member_id) and member_id != "" do

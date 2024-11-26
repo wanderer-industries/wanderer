@@ -61,12 +61,18 @@ defmodule WandererApp.Character do
     end)
   end
 
-  def get_character_state(character_id) do
+  def get_character_state(character_id, init_if_empty? \\ true) do
     case Cachex.get(:character_state_cache, character_id) do
       {:ok, nil} ->
-        character_state = WandererApp.Character.Tracker.init(character_id: character_id)
-        Cachex.put(:character_state_cache, character_id, character_state)
-        {:ok, character_state}
+        case init_if_empty? do
+          true ->
+            character_state = WandererApp.Character.Tracker.init(character_id: character_id)
+            Cachex.put(:character_state_cache, character_id, character_state)
+            {:ok, character_state}
+
+          _ ->
+            {:ok, nil}
+        end
 
       {:ok, character_state} ->
         {:ok, character_state}

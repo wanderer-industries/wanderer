@@ -66,7 +66,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_ui_event(
         "add_system",
-        %{"system_id" => solar_system_id} = _event,
+        %{"system_id" => [solar_system_id]} = _event,
         %{
           assigns:
             %{
