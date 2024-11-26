@@ -1,12 +1,11 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
-import { WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
 import {
   RoutesType,
   useRouteProvider,
 } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
-import { CheckboxChangeEvent } from 'primereact/checkbox';
+import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 
 interface RoutesSettingsDialog {
   visible: boolean;
@@ -38,8 +37,8 @@ export const RoutesSettingsDialog = ({ visible, setVisible }: RoutesSettingsDial
   currentData.current = data;
 
   const handleChangeEvent = useCallback(
-    (propName: keyof RoutesType) => (event: CheckboxChangeEvent) => {
-      optionsRef.current = { ...optionsRef.current, [propName]: event.checked };
+    (propName: keyof RoutesType) => (event: boolean) => {
+      optionsRef.current = { ...optionsRef.current, [propName]: event };
       updateKey(x => x + 1);
     },
     [],
@@ -71,14 +70,14 @@ export const RoutesSettingsDialog = ({ visible, setVisible }: RoutesSettingsDial
         setVisible(false);
       }}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3 p-2.5">
+        <div className="flex flex-col gap-2 mb-2">
           {checkboxes.map(({ label, propName }) => (
-            <WdCheckbox
+            <PrettySwitchbox
               key={propName}
               label={label}
-              value={optionsRef.current[propName]}
-              onChange={handleChangeEvent(propName)}
+              checked={optionsRef.current[propName]}
+              setChecked={handleChangeEvent(propName)}
             />
           ))}
         </div>
