@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export const useHotkey = (isMetaKey: boolean, hotkeys: string[], callback: () => void) => {
+export const useHotkey = (isMetaKey: boolean, hotkeys: string[], callback: (e: KeyboardEvent) => void) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((!isMetaKey || event.ctrlKey || event.metaKey) && hotkeys.includes(event.key)) {
@@ -8,14 +8,14 @@ export const useHotkey = (isMetaKey: boolean, hotkeys: string[], callback: () =>
           return;
         }
         event.preventDefault();
-        callback();
+        callback(event);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [isMetaKey, hotkeys, callback]);
 };
