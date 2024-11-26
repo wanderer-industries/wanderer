@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.23.0](https://github.com/wanderer-industries/wanderer/compare/v1.22.0...v1.23.0) (2024-11-26)
+
+
+
+
+### Features:
+
+* Map: Lock systems available to manager/admin roles only (#75)
+
+* Map: Lock systems available to manager/admin roles only
+
+* Map: Fix add system & add acl member select behaviour
+
 ## [v1.22.0](https://github.com/wanderer-industries/wanderer/compare/v1.21.0...v1.22.0) (2024-11-26)
 
 
