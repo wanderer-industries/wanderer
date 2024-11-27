@@ -6,6 +6,7 @@ export const getActualSigs = (
   oldSignatures: SystemSignature[],
   newSignatures: SystemSignature[],
   updateOnly: boolean,
+  skipUpdateUntouched?: boolean,
 ): { added: SystemSignature[]; updated: SystemSignature[]; removed: SystemSignature[] } => {
   const updated: SystemSignature[] = [];
   const removed: SystemSignature[] = [];
@@ -19,7 +20,7 @@ export const getActualSigs = (
       const isNeedUpgrade = getState(GROUPS_LIST, newSig) > getState(GROUPS_LIST, oldSig);
       if (isNeedUpgrade) {
         updated.push({ ...oldSig, group: newSig.group, name: newSig.name });
-      } else {
+      } else if (!skipUpdateUntouched) {
         updated.push({ ...oldSig });
       }
     } else {
