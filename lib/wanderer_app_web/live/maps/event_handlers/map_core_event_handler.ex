@@ -120,7 +120,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       do: socket
 
   def handle_server_event(event, socket) do
-    Logger.warning(fn -> "unhandled map core event: #{inspect(event)}" end)
+    Logger.warning(fn -> "unhandled map core event: #{inspect(event)} #{inspect(socket)} " end)
     socket
   end
 

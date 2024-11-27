@@ -328,7 +328,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           :description,
           :kind,
           :group,
-          :type
+          :type,
+          :custom_info
         ])
         |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
         |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
@@ -352,6 +353,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           kind: kind,
           group: group,
           type: Map.get(signature, "type"),
+          custom_info: Map.get(signature, "custom_info"),
           character_eve_id: character_eve_id
         }
       end)

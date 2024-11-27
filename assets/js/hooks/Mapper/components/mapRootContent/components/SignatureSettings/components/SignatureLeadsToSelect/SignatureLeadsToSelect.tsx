@@ -13,13 +13,14 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 // @ts-ignore
 const renderLinkedSystemItem = (option: { value: string }) => {
-  if (option.value == null) {
-    return <div className="flex gap-2 items-center">No linked system</div>;
+  const { value } = option;
+  if (value == null) {
+    return <div className="flex gap-2 items-center">- Unknown -</div>;
   }
 
   return (
     <div className="flex gap-2 items-center">
-      <SystemView systemId={option.value} className={classes.SystemView} />
+      <SystemView systemId={value} className={classes.SystemView} />
     </div>
   );
 };
@@ -65,6 +66,7 @@ export const SignatureLeadsToSelect = ({ name, defaultValue = '' }: SignatureLea
   const leadsToOptions = useMemo(() => {
     return [
       { value: null },
+
       ...leadsTo
         .filter(systemId => {
           const systemStatic = systemStatics.get(parseInt(systemId));

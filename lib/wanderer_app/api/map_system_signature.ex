@@ -73,6 +73,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :kind,
         :group,
         :type,
+        :custom_info,
         :updated
       ]
 
@@ -128,6 +129,10 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     attribute :kind, :string
     attribute :group, :string
+
+    attribute :custom_info, :string do
+      allow_nil? true
+    end
 
     attribute :updated, :integer
 

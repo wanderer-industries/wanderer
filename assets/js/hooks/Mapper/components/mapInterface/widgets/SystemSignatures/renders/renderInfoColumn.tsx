@@ -2,6 +2,10 @@ import { PrimeIcons } from 'primereact/api';
 import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { SystemViewStandalone, WHClassView } from '@/hooks/Mapper/components/ui-kit';
 
+import {
+  k162Types,
+  renderK162Type,
+} from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 import clsx from 'clsx';
@@ -10,6 +14,14 @@ import classes from './renderInfoColumn.module.scss';
 
 export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
+    let k162TypeOption = null;
+    if (row.custom_info) {
+      const customInfo = JSON.parse(row.custom_info);
+      if (customInfo.k162Type) {
+        k162TypeOption = k162Types.find(x => x.value === customInfo.k162Type);
+      }
+    }
+
     return (
       <div className="flex justify-start items-center gap-[6px]">
         {row.type && (
@@ -23,6 +35,8 @@ export const renderInfoColumn = (row: SystemSignature) => {
             useShortTitle
           />
         )}
+
+        {!row.linked_system && !!k162TypeOption && <>{renderK162Type(k162TypeOption, 'text-[11px]')}</>}
 
         {row.linked_system && (
           <>
