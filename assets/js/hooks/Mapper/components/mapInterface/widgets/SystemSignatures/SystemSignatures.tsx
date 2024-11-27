@@ -1,5 +1,11 @@
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
-import { InfoDrawer, LayoutEventBlocker, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import {
+  InfoDrawer,
+  LayoutEventBlocker,
+  TooltipPosition,
+  WdImgButton,
+  WdCheckbox,
+} from '@/hooks/Mapper/components/ui-kit';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
 import {
   Setting,
@@ -14,19 +20,22 @@ import {
 } from './SystemSignatureSettingsDialog';
 import { SignatureGroup } from '@/hooks/Mapper/types';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 
 import { PrimeIcons } from 'primereact/api';
 
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { CheckboxChangeEvent } from 'primereact/checkbox';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v4_1';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
+export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
 
 const settings: Setting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
+  { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },
   { key: DEPLOYABLE, name: 'Show Deployables', value: true, isFilter: true },
@@ -58,10 +67,23 @@ export const SystemSignatures = () => {
 
   const isNotSelectedSystem = selectedSystems.length !== 1;
 
+  const lazyDeleteValue = useMemo(() => {
+    return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)!.value;
+  }, [settings]);
+
   const handleSettingsChange = useCallback((settings: Setting[]) => {
     setSettings(settings);
     localStorage.setItem(SIGNATURE_SETTINGS_KEY, JSON.stringify(settings));
     setVisible(false);
+  }, []);
+
+  const handleLazyDeleteChange = useCallback((event: CheckboxChangeEvent) => {
+    setSettings(settings => {
+      const lazyDelete = settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)!;
+      lazyDelete.value = !!event.checked;
+      localStorage.setItem(SIGNATURE_SETTINGS_KEY, JSON.stringify(settings));
+      return [...settings];
+    });
   }, []);
 
   useEffect(() => {
@@ -79,6 +101,15 @@ export const SystemSignatures = () => {
           <div className="flex gap-1">System Signatures</div>
 
           <LayoutEventBlocker className="flex gap-2.5">
+            <WdCheckbox
+              size="xs"
+              labelSide="left"
+              label={'Lazy delete'}
+              value={lazyDeleteValue}
+              classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+              onChange={handleLazyDeleteChange}
+            />
+
             <WdImgButton
               className={PrimeIcons.QUESTION_CIRCLE}
               tooltip={{
@@ -102,7 +133,7 @@ export const SystemSignatures = () => {
                     </InfoDrawer>
                     <InfoDrawer title={<b className="text-slate-50">How to delete?</b>}>
                       For delete any signature first of all you need select before
-                      <br /> and then use <b className="text-sky-500">Backspace</b>
+                      <br /> and then use <b className="text-sky-500">Del</b>
                     </InfoDrawer>
                   </div>
                 ) as React.ReactNode,

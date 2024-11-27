@@ -36,6 +36,7 @@ import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets
 import {
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
+  LAZY_DELETE_SIGNATURES_SETTING,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -66,8 +67,6 @@ export const SystemSignaturesContent = ({
   const [signatures, setSignatures, signaturesRef] = useRefState<SystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<SystemSignature[]>([]);
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
-  const [parsedSignatures, setParsedSignatures] = useState<SystemSignature[]>([]);
-  const [askUser, setAskUser] = useState(false);
   const [selectedSignature, setSelectedSignature] = useState<SystemSignature | null>(null);
 
   const [hoveredSig, setHoveredSig] = useState<SystemSignature | null>(null);
@@ -83,6 +82,10 @@ export const SystemSignaturesContent = ({
   refData.current = { selectable };
 
   const tooltipRef = useRef<WdTooltipHandlers>(null);
+
+  const lazyDeleteValue = useMemo(() => {
+    return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)!.value;
+  }, [settings]);
 
   const handleResize = useCallback(() => {
     if (tableRef.current) {
@@ -132,13 +135,17 @@ export const SystemSignaturesContent = ({
       data: { system_id: systemId },
     });
 
-    setAskUser(false);
     setSignatures(signatures);
   }, [outCommand, systemId]);
 
   const handleUpdateSignatures = useCallback(
-    async (newSignatures: SystemSignature[], updateOnly: boolean) => {
-      const { added, updated, removed } = getActualSigs(signaturesRef.current, newSignatures, updateOnly);
+    async (newSignatures: SystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
+      const { added, updated, removed } = getActualSigs(
+        signaturesRef.current,
+        newSignatures,
+        updateOnly,
+        skipUpdateUntouched,
+      );
 
       const { signatures: updatedSignatures } = await outCommand({
         type: OutCommand.updateSignatures,
@@ -172,6 +179,7 @@ export const SystemSignaturesContent = ({
       await handleUpdateSignatures(
         signatures.filter(x => !selectedSignaturesEveIds.includes(x.eve_id)),
         false,
+        true,
       );
     },
     [handleUpdateSignatures, selectable, signatures, selectedSignatures],
@@ -180,16 +188,6 @@ export const SystemSignaturesContent = ({
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
   }, [signatures]);
-
-  const handleReplaceAll = useCallback(() => {
-    handleUpdateSignatures(parsedSignatures, false);
-    setAskUser(false);
-  }, [parsedSignatures, handleUpdateSignatures]);
-
-  const handleUpdateOnly = useCallback(() => {
-    handleUpdateSignatures(parsedSignatures, true);
-    setAskUser(false);
-  }, [parsedSignatures, handleUpdateSignatures]);
 
   const handleSelectSignatures = useCallback(
     // TODO still will be good to define types if we use typescript
@@ -219,14 +217,7 @@ export const SystemSignaturesContent = ({
       settings.map(x => x.key),
     );
 
-    const { removed } = getActualSigs(signaturesRef.current, newSignatures, false);
-
-    if (!signaturesRef.current || !signaturesRef.current.length || !removed.length) {
-      handleUpdateSignatures(newSignatures, false);
-    } else {
-      setParsedSignatures(newSignatures);
-      setAskUser(true);
-    }
+    handleUpdateSignatures(newSignatures, !lazyDeleteValue);
   };
 
   useHotkey(true, ['a'], handleSelectAll);
@@ -237,7 +228,6 @@ export const SystemSignaturesContent = ({
   useEffect(() => {
     if (!systemId) {
       setSignatures([]);
-      setAskUser(false);
       return;
     }
 
@@ -429,27 +419,6 @@ export const SystemSignaturesContent = ({
             onHide={() => setShowSignatureSettings(false)}
             signatureData={selectedSignature}
           />
-        )}
-
-        {askUser && (
-          <div className="absolute left-[1px] top-[29px] h-[calc(100%-30px)] w-[calc(100%-3px)] bg-stone-900/10 backdrop-blur-sm">
-            <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-              <div className="text-stone-400/80 text-sm">
-                <div className="flex flex-col text-center gap-2">
-                  <button className="p-button p-component p-button-outlined p-button-sm btn-wide">
-                    <span className="p-button-label p-c" onClick={handleUpdateOnly}>
-                      Update
-                    </span>
-                  </button>
-                  <button className="p-button p-component p-button-outlined p-button-sm btn-wide">
-                    <span className="p-button-label p-c" onClick={handleReplaceAll}>
-                      Update & Delete missing
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </>
