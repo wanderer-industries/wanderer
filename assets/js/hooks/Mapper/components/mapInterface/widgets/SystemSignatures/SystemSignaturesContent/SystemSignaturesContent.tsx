@@ -11,6 +11,7 @@ import useRefState from 'react-usestateref';
 import { Setting } from '../SystemSignatureSettingsDialog';
 import { useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { useClipboard } from '@/hooks/Mapper/hooks/useClipboard';
 
 import classes from './SystemSignaturesContent.module.scss';
 import clsx from 'clsx';
@@ -82,6 +83,8 @@ export const SystemSignaturesContent = ({
   refData.current = { selectable };
 
   const tooltipRef = useRef<WdTooltipHandlers>(null);
+
+  const { clipboardContent } = useClipboard();
 
   const lazyDeleteValue = useMemo(() => {
     return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
@@ -202,16 +205,19 @@ export const SystemSignaturesContent = ({
     [onSelect, selectable],
   );
 
-  const handlePaste = async () => {
-    const clipboardContent = await navigator.clipboard.readText();
+  useEffect(() => {
     if (refData.current.selectable) {
       return;
     }
 
-    if (!clipboardContent) {
+    if (!clipboardContent?.text) {
       return;
     }
 
+    handlePaste(clipboardContent.text);
+  }, [clipboardContent, selectable, lazyDeleteValue]);
+
+  const handlePaste = async (clipboardContent: string) => {
     const newSignatures = parseSignatures(
       clipboardContent,
       settings.map(x => x.key),
@@ -221,8 +227,6 @@ export const SystemSignaturesContent = ({
   };
 
   useHotkey(true, ['a'], handleSelectAll);
-  useHotkey(true, ['v'], handlePaste);
-
   useHotkey(false, ['Delete'], handleDeleteSelected);
 
   useEffect(() => {

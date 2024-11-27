@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useClipboard = () => {
-  const [clipboardContent, setClipboardContent] = useState<string | null>(null);
+  const [clipboardContent, setClipboardContent] = useState<{ text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const getClipboardContent = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
-      setClipboardContent(text);
+      setClipboardContent({ text });
       setError(null);
     } catch (err) {
       setError('Failed to read clipboard content.');
@@ -18,7 +18,7 @@ export const useClipboard = () => {
     const handlePaste = (event: ClipboardEvent) => {
       const text = event.clipboardData?.getData('text');
       if (text) {
-        setClipboardContent(text);
+        setClipboardContent({ text });
         setError(null);
       }
     };
