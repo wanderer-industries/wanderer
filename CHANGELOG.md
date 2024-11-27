@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.24.2](https://github.com/wanderer-industries/wanderer/compare/v1.24.1...v1.24.2) (2024-11-27)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fix paste signatures
+
 ## [v1.24.1](https://github.com/wanderer-industries/wanderer/compare/v1.24.0...v1.24.1) (2024-11-27)
 
 
