@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.24.0](https://github.com/wanderer-industries/wanderer/compare/v1.23.0...v1.24.0) (2024-11-27)
+
+
+
+
+### Features:
+
+* Signatures: Added "Lazy delete" option & got rid of update popup
+
 ## [v1.23.0](https://github.com/wanderer-industries/wanderer/compare/v1.22.0...v1.23.0) (2024-11-26)
 
 
