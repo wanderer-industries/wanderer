@@ -7,24 +7,24 @@ import classes from './SignatureK162TypeSelect.module.scss';
 import { SystemSignature } from '@/hooks/Mapper/types';
 import { SOLAR_SYSTEM_CLASS_IDS } from '@/hooks/Mapper/components/map/constants.ts';
 
-const k162Types = [
+export const k162Types = [
   {
     label: 'Hi-Sec',
     value: 'hs',
     system_class: SOLAR_SYSTEM_CLASS_IDS.hs,
-    security: '1.0',
+    security: '0.8',
   },
   {
     label: 'Low-Sec',
     value: 'ls',
     system_class: SOLAR_SYSTEM_CLASS_IDS.ls,
-    security: '0.3',
+    security: '0.4',
   },
   {
     label: 'Null-Sec',
     value: 'ns',
     system_class: SOLAR_SYSTEM_CLASS_IDS.ns,
-    security: '0.0',
+    security: '-0.5',
   },
   {
     label: 'C1',
@@ -70,10 +70,18 @@ const k162Types = [
 
 import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 
-const renderNoValue = () => <div className="flex gap-2 items-center ml-[1rem]">-Unknown-</div>;
+const renderNoValue = () => <div className="flex gap-2 items-center">-Unknown-</div>;
 
 // @ts-ignore
-const renderOption = (option: { label?: string; value: string; security?: string; system_class?: number }) => {
+export const renderK162Type = (
+  option: {
+    label?: string;
+    value: string;
+    security?: string;
+    system_class?: number;
+  },
+  className?: string,
+) => {
   if (!option) {
     return renderNoValue();
   }
@@ -103,10 +111,15 @@ const renderOption = (option: { label?: string; value: string; security?: string
     solar_system_name_lc: '',
   };
   return (
-    <div className="flex gap-2 items-center ml-[1rem]">
-      <SystemView systemId="" className={classes.SystemView} showCustomName hideRegion systemInfo={systemInfo} />
+    <div className="flex gap-2 items-center">
+      <SystemView systemId="" className={className} showCustomName hideRegion systemInfo={systemInfo} />
     </div>
   );
+};
+
+// @ts-ignore
+export const renderK162TypeOption = option => {
+  return renderK162Type(option, classes.SystemView);
 };
 
 export interface SignatureK162TypeSelectProps {
@@ -134,11 +147,11 @@ export const SignatureK162TypeSelect = ({ name, defaultValue = '' }: SignatureK1
             onChange={field.onChange}
             options={options}
             optionValue="value"
-            placeholder="Select Leads To wormhole"
+            placeholder="Select K162 type"
             className={clsx('w-full')}
             scrollHeight="240px"
-            itemTemplate={renderOption}
-            valueTemplate={renderOption}
+            itemTemplate={renderK162TypeOption}
+            valueTemplate={renderK162TypeOption}
           />
         );
       }}

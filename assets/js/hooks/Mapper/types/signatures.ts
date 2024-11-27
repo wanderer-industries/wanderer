@@ -21,6 +21,7 @@ export type SystemSignature = {
   eve_id: string;
   kind: string;
   name: string;
+  custom_info?: string;
   description?: string;
   group: SignatureGroup;
   type: string;

@@ -49,6 +49,13 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             });
           }
 
+          out = {
+            ...out,
+            custom_info: JSON.stringify({
+              k162Type: values.k162Type,
+            }),
+          };
+
           if (values.type != null) {
             out = { ...out, type: values.type };
           }
@@ -117,10 +124,17 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       return;
     }
 
-    const { linked_system, ...rest } = signatureData;
+    const { linked_system, custom_info, ...rest } = signatureData;
+
+    let k162Type = null;
+    if (custom_info) {
+      const customInfo = JSON.parse(custom_info);
+      k162Type = customInfo.k162Type;
+    }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
+      k162Type: k162Type,
       ...rest,
     });
   }, [signatureForm, signatureData]);

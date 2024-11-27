@@ -84,7 +84,7 @@ export const SystemSignaturesContent = ({
   const tooltipRef = useRef<WdTooltipHandlers>(null);
 
   const lazyDeleteValue = useMemo(() => {
-    return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)!.value;
+    return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
   }, [settings]);
 
   const handleResize = useCallback(() => {

@@ -15,11 +15,11 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 const renderLinkedSystemItem = (option: { value: string }) => {
   const { value } = option;
   if (value == null) {
-    return <div className="flex gap-2 items-center ml-[1rem]">- Unknown -</div>;
+    return <div className="flex gap-2 items-center">- Unknown -</div>;
   }
 
   return (
-    <div className="flex gap-2 items-center ml-[1rem]">
+    <div className="flex gap-2 items-center">
       <SystemView systemId={value} className={classes.SystemView} />
     </div>
   );

@@ -6,6 +6,7 @@ import { SystemSignature } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem } from '@/hooks/Mapper/types';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
+import { SHOW_DESCRIPTION_COLUMN_SETTING } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatures';
 import {
   Setting,
   COSMIC_SIGNATURE,
@@ -20,6 +21,7 @@ interface SystemLinkSignatureDialogProps {
 const signatureSettings: Setting[] = [
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true },
   { key: SignatureGroup.Wormhole, name: 'Wormhole', value: true },
+  { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: true, isFilter: false },
 ];
 
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
