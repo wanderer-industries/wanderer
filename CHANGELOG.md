@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.25.1](https://github.com/wanderer-industries/wanderer/compare/v1.25.0...v1.25.1) (2024-11-28)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fix colors & add 'Backspace' hotkey to delete signatures
+
 ## [v1.25.0](https://github.com/wanderer-industries/wanderer/compare/v1.24.2...v1.25.0) (2024-11-28)
 
 
