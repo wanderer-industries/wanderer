@@ -224,6 +224,19 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       WandererApp.MapConnectionRepo.destroy(map_id, connection)
     end)
 
+    removed_ids
+    |> Enum.map(fn solar_system_id ->
+      WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
+    end)
+    |> List.flatten()
+    |> Enum.uniq_by(& &1.system_id)
+    |> Enum.each(fn s ->
+      {:ok, %{system: system}} = s |> Ash.load([:system])
+      Ash.destroy!(s)
+
+      Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+    end)
+
     @ddrt.delete(removed_ids, rtree_name)
 
     Impl.broadcast!(map_id, :remove_connections, connections_to_remove)

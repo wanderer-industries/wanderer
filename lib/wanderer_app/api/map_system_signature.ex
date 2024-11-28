@@ -24,6 +24,7 @@ defmodule WandererApp.Api.MapSystemSignature do
     )
 
     define(:by_system_id, action: :by_system_id, args: [:system_id])
+    define(:by_linked_system_id, action: :by_linked_system_id, args: [:linked_system_id])
   end
 
   actions do
@@ -98,6 +99,12 @@ defmodule WandererApp.Api.MapSystemSignature do
       argument(:system_id, :string, allow_nil?: false)
 
       filter(expr(system_id == ^arg(:system_id)))
+    end
+
+    read :by_linked_system_id do
+      argument(:linked_system_id, :integer, allow_nil?: false)
+
+      filter(expr(linked_system_id == ^arg(:linked_system_id)))
     end
   end
 
