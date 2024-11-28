@@ -10,7 +10,6 @@ import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrap
 
 import clsx from 'clsx';
 import { renderName } from './renderName.tsx';
-import classes from './renderInfoColumn.module.scss';
 
 export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
@@ -23,12 +22,11 @@ export const renderInfoColumn = (row: SystemSignature) => {
     }
 
     return (
-      <div className="flex justify-start items-center gap-[6px]">
+      <div className="flex justify-start items-center gap-[4px]">
         {row.type && (
           <WHClassView
             className="text-[11px]"
-            classNameWh={classes.whFontSize}
-            highlightName
+            classNameWh="!text-[11px] !font-bold"
             hideWhClass={!!row.linked_system}
             whClassName={row.type}
             noOffset
@@ -36,11 +34,10 @@ export const renderInfoColumn = (row: SystemSignature) => {
           />
         )}
 
-        {!row.linked_system && !!k162TypeOption && <>{renderK162Type(k162TypeOption, 'text-[11px]')}</>}
+        {!row.linked_system && row.type === 'K162' && !!k162TypeOption && <>{renderK162Type(k162TypeOption)}</>}
 
         {row.linked_system && (
           <>
-            {/*<span className="w-4 h-4 hero-arrow-long-right"></span>*/}
             <span title={row.linked_system?.solar_system_name}>
               <SystemViewStandalone
                 className={clsx('select-none text-center cursor-context-menu')}

@@ -227,7 +227,7 @@ export const SystemSignaturesContent = ({
   };
 
   useHotkey(true, ['a'], handleSelectAll);
-  useHotkey(false, ['Delete'], handleDeleteSelected);
+  useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
 
   useEffect(() => {
     if (!systemId) {

@@ -124,12 +124,12 @@ defmodule WandererApp.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": [
-        "cmd npm install --prefix assets"
+        "cmd yarn install --cwd assets"
       ],
       "assets.build": [],
       "assets.deploy": [
         "assets.setup",
-        "cmd --cd assets npm run build",
+        "cmd --cd assets yarn run build",
         "phx.digest"
       ]
     ]

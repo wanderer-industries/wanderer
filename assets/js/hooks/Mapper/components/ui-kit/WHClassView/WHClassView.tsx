@@ -18,7 +18,9 @@ export interface WHClassViewProps {
   whClassName: string;
   noOffset?: boolean;
   useShortTitle?: boolean;
+  hideTooltip?: boolean;
   hideWhClass?: boolean;
+  hideWhClassName?: boolean;
   highlightName?: boolean;
   className?: string;
   classNameWh?: string;
@@ -28,7 +30,9 @@ export const WHClassView = ({
   whClassName,
   noOffset,
   useShortTitle,
+  hideTooltip,
   hideWhClass,
+  hideWhClassName,
   highlightName,
   className,
   classNameWh,
@@ -36,6 +40,8 @@ export const WHClassView = ({
   const {
     data: { wormholesData },
   } = useMapRootState();
+
+  console.log(whClassName);
 
   const whData = useMemo(() => wormholesData[whClassName], [whClassName, wormholesData]);
   const whClass = useMemo(() => WORMHOLES_ADDITIONAL_INFO[whData.dest], [whData.dest]);
@@ -45,25 +51,27 @@ export const WHClassView = ({
 
   return (
     <div className={clsx(classes.WHClassViewRoot, className)}>
-      <Tooltip
-        target={`.wh-name${whClassName}${uid}`}
-        position="right"
-        mouseTrack
-        mouseTrackLeft={20}
-        mouseTrackTop={30}
-        className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-90 "
-      >
-        <div className="flex gap-3">
-          <div className="flex flex-col gap-1">
-            <InfoDrawer title="Total mass">{prepareMass(whData.total_mass)}</InfoDrawer>
-            <InfoDrawer title="Jump mass">{prepareMass(whData.max_mass_per_jump)}</InfoDrawer>
+      {!hideTooltip && (
+        <Tooltip
+          target={`.wh-name${whClassName}${uid}`}
+          position="right"
+          mouseTrack
+          mouseTrackLeft={20}
+          mouseTrackTop={30}
+          className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-90 "
+        >
+          <div className="flex gap-3">
+            <div className="flex flex-col gap-1">
+              <InfoDrawer title="Total mass">{prepareMass(whData.total_mass)}</InfoDrawer>
+              <InfoDrawer title="Jump mass">{prepareMass(whData.max_mass_per_jump)}</InfoDrawer>
+            </div>
+            <div className="flex flex-col gap-1">
+              <InfoDrawer title="Lifetime">{whData.lifetime}h</InfoDrawer>
+              <InfoDrawer title="Mass regen">{prepareMass(whData.mass_regen)}</InfoDrawer>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <InfoDrawer title="Lifetime">{whData.lifetime}h</InfoDrawer>
-            <InfoDrawer title="Mass regen">{prepareMass(whData.mass_regen)}</InfoDrawer>
-          </div>
-        </div>
-      </Tooltip>
+        </Tooltip>
+      )}
 
       <div
         className={clsx(
@@ -73,7 +81,7 @@ export const WHClassView = ({
           `wh-name${whClassName}${uid}`,
         )}
       >
-        <span className={clsx({ [whClassStyle]: highlightName })}>{whClassName}</span>
+        {!hideWhClassName && <span className={clsx({ [whClassStyle]: highlightName })}>{whClassName}</span>}
         {!hideWhClass && whClass && (
           <span className={clsx(classes.WHClassName, whClassStyle, classNameWh)}>
             {useShortTitle ? whClass.shortTitle : whClass.shortName}

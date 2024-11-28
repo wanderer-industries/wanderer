@@ -2,124 +2,100 @@ import { Dropdown } from 'primereact/dropdown';
 import clsx from 'clsx';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useMemo } from 'react';
-import { SystemView } from '@/hooks/Mapper/components/ui-kit';
-import classes from './SignatureK162TypeSelect.module.scss';
 import { SystemSignature } from '@/hooks/Mapper/types';
-import { SOLAR_SYSTEM_CLASS_IDS } from '@/hooks/Mapper/components/map/constants.ts';
+import { WHClassView } from '@/hooks/Mapper/components/ui-kit';
 
 export const k162Types = [
   {
     label: 'Hi-Sec',
     value: 'hs',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.hs,
-    security: '0.8',
+    whClassName: 'A641',
   },
   {
     label: 'Low-Sec',
     value: 'ls',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.ls,
-    security: '0.4',
+    whClassName: 'J377',
   },
   {
     label: 'Null-Sec',
     value: 'ns',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.ns,
-    security: '-0.5',
+    whClassName: 'C248',
   },
   {
     label: 'C1',
     value: 'c1',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c1,
+    whClassName: 'E004',
   },
   {
     label: 'C2',
     value: 'c2',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c2,
+    whClassName: 'D382',
   },
   {
     label: 'C3',
     value: 'c3',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c3,
+    whClassName: 'L477',
   },
   {
     label: 'C4',
     value: 'c4',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c4,
+    whClassName: 'M001',
   },
   {
     label: 'C5',
     value: 'c5',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c5,
+    whClassName: 'L614',
   },
   {
     label: 'C6',
     value: 'c6',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.c6,
+    whClassName: 'G008',
+  },
+  {
+    label: 'C13',
+    value: 'c13',
+    whClassName: 'A009',
   },
   {
     label: 'Thera',
     value: 'thera',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.thera,
+    whClassName: 'F353',
   },
   {
     label: 'Pochven',
     value: 'pochven',
-    system_class: SOLAR_SYSTEM_CLASS_IDS.pochven,
+    whClassName: 'F216',
   },
 ];
-
-import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 
 const renderNoValue = () => <div className="flex gap-2 items-center">-Unknown-</div>;
 
 // @ts-ignore
-export const renderK162Type = (
-  option: {
-    label?: string;
-    value: string;
-    security?: string;
-    system_class?: number;
-  },
-  className?: string,
-) => {
+export const renderK162Type = (option: {
+  label?: string;
+  value: string;
+  security?: string;
+  system_class?: number;
+  whClassName?: string;
+}) => {
   if (!option) {
     return renderNoValue();
   }
-  const { value, label = '', system_class = 0, security = '1.0' } = option;
+  const { value, whClassName = '' } = option;
   if (value == null) {
     return renderNoValue();
   }
 
-  const systemInfo: SolarSystemStaticInfoRaw = {
-    region_id: 0,
-    constellation_id: 0,
-    solar_system_id: 0,
-    constellation_name: '',
-    region_name: '',
-    system_class: system_class,
-    security: security,
-    type_description: '',
-    class_title: label,
-    is_shattered: false,
-    effect_name: '',
-    effect_power: 0,
-    statics: [],
-    wandering: [],
-    triglavian_invasion_status: '',
-    sun_type_id: 0,
-    solar_system_name: '',
-    solar_system_name_lc: '',
-  };
   return (
-    <div className="flex gap-2 items-center">
-      <SystemView systemId="" className={className} showCustomName hideRegion systemInfo={systemInfo} />
-    </div>
+    <WHClassView
+      classNameWh="!text-[11px] !font-bold"
+      hideWhClassName
+      hideTooltip
+      whClassName={whClassName}
+      noOffset
+      useShortTitle
+    />
   );
-};
-
-// @ts-ignore
-export const renderK162TypeOption = option => {
-  return renderK162Type(option, classes.SystemView);
 };
 
 export interface SignatureK162TypeSelectProps {
@@ -150,8 +126,8 @@ export const SignatureK162TypeSelect = ({ name, defaultValue = '' }: SignatureK1
             placeholder="Select K162 type"
             className={clsx('w-full')}
             scrollHeight="240px"
-            itemTemplate={renderK162TypeOption}
-            valueTemplate={renderK162TypeOption}
+            itemTemplate={renderK162Type}
+            valueTemplate={renderK162Type}
           />
         );
       }}
