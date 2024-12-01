@@ -30,5 +30,5 @@ export const useClipboard = () => {
     };
   }, []);
 
-  return { clipboardContent, error, getClipboardContent };
+  return { clipboardContent, error, getClipboardContent, setClipboardContent };
 };

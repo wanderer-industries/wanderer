@@ -84,7 +84,7 @@ export const SystemSignaturesContent = ({
 
   const tooltipRef = useRef<WdTooltipHandlers>(null);
 
-  const { clipboardContent } = useClipboard();
+  const { clipboardContent, setClipboardContent } = useClipboard();
 
   const lazyDeleteValue = useMemo(() => {
     return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
@@ -205,6 +205,28 @@ export const SystemSignaturesContent = ({
     [onSelect, selectable],
   );
 
+  const handlePaste = async (clipboardContent: string) => {
+    const newSignatures = parseSignatures(
+      clipboardContent,
+      settings.map(x => x.key),
+    );
+
+    handleUpdateSignatures(newSignatures, !lazyDeleteValue);
+  };
+
+  const handleEnterRow = useCallback(
+    (e: DataTableRowMouseEvent) => {
+      setHoveredSig(filteredSignatures[e.index]);
+      tooltipRef.current?.show(e.originalEvent);
+    },
+    [filteredSignatures],
+  );
+
+  const handleLeaveRow = useCallback((e: DataTableRowMouseEvent) => {
+    tooltipRef.current?.hide(e.originalEvent);
+    setHoveredSig(null);
+  }, []);
+
   useEffect(() => {
     if (refData.current.selectable) {
       return;
@@ -215,16 +237,8 @@ export const SystemSignaturesContent = ({
     }
 
     handlePaste(clipboardContent.text);
+    setClipboardContent(null);
   }, [clipboardContent, selectable, lazyDeleteValue]);
-
-  const handlePaste = async (clipboardContent: string) => {
-    const newSignatures = parseSignatures(
-      clipboardContent,
-      settings.map(x => x.key),
-    );
-
-    handleUpdateSignatures(newSignatures, !lazyDeleteValue);
-  };
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
@@ -263,19 +277,6 @@ export const SystemSignaturesContent = ({
         observer.unobserve(tableRef.current);
       }
     };
-  }, []);
-
-  const handleEnterRow = useCallback(
-    (e: DataTableRowMouseEvent) => {
-      setHoveredSig(filteredSignatures[e.index]);
-      tooltipRef.current?.show(e.originalEvent);
-    },
-    [filteredSignatures],
-  );
-
-  const handleLeaveRow = useCallback((e: DataTableRowMouseEvent) => {
-    tooltipRef.current?.hide(e.originalEvent);
-    setHoveredSig(null);
   }, []);
 
   const renderToolbar = (/*row: SystemSignature*/) => {
