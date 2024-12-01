@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.25.2](https://github.com/wanderer-industries/wanderer/compare/v1.25.1...v1.25.2) (2024-12-01)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fix lazy delete on system switch
+
 ## [v1.25.1](https://github.com/wanderer-industries/wanderer/compare/v1.25.0...v1.25.1) (2024-11-28)
 
 
