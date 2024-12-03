@@ -38,6 +38,7 @@ import {
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
   LAZY_DELETE_SIGNATURES_SETTING,
+  KEEP_LAZY_DELETE_SETTING,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -55,6 +56,7 @@ interface SystemSignaturesContentProps {
   hideLinkedSignatures?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
+  onLazyDeleteChange?: (value: boolean) => void;
 }
 export const SystemSignaturesContent = ({
   systemId,
@@ -62,6 +64,7 @@ export const SystemSignaturesContent = ({
   hideLinkedSignatures,
   selectable,
   onSelect,
+  onLazyDeleteChange,
 }: SystemSignaturesContentProps) => {
   const { outCommand } = useMapRootState();
 
@@ -88,6 +91,10 @@ export const SystemSignaturesContent = ({
 
   const lazyDeleteValue = useMemo(() => {
     return settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
+  }, [settings]);
+
+  const keepLazyDeleteValue = useMemo(() => {
+    return settings.find(setting => setting.key === KEEP_LAZY_DELETE_SETTING)!.value;
   }, [settings]);
 
   const handleResize = useCallback(() => {
@@ -212,6 +219,10 @@ export const SystemSignaturesContent = ({
     );
 
     handleUpdateSignatures(newSignatures, !lazyDeleteValue);
+
+    if (lazyDeleteValue && !keepLazyDeleteValue) {
+      onLazyDeleteChange?.(false);
+    }
   };
 
   const handleEnterRow = useCallback(
@@ -238,7 +249,7 @@ export const SystemSignaturesContent = ({
 
     handlePaste(clipboardContent.text);
     setClipboardContent(null);
-  }, [clipboardContent, selectable, lazyDeleteValue]);
+  }, [clipboardContent, selectable, lazyDeleteValue, keepLazyDeleteValue]);
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);

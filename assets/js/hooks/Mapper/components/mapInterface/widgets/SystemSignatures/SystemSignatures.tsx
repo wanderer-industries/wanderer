@@ -27,15 +27,17 @@ import { PrimeIcons } from 'primereact/api';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CheckboxChangeEvent } from 'primereact/checkbox';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_2';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
 export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
+export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
 
 const settings: Setting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
+  { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },
   { key: DEPLOYABLE, name: 'Show Deployables', value: true, isFilter: true },
@@ -77,10 +79,10 @@ export const SystemSignatures = () => {
     setVisible(false);
   }, []);
 
-  const handleLazyDeleteChange = useCallback((event: CheckboxChangeEvent) => {
+  const handleLazyDeleteChange = useCallback((value: boolean) => {
     setSettings(settings => {
       const lazyDelete = settings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)!;
-      lazyDelete.value = !!event.checked;
+      lazyDelete.value = value;
       localStorage.setItem(SIGNATURE_SETTINGS_KEY, JSON.stringify(settings));
       return [...settings];
     });
@@ -107,7 +109,7 @@ export const SystemSignatures = () => {
               label={'Lazy delete'}
               value={lazyDeleteValue}
               classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-              onChange={handleLazyDeleteChange}
+              onChange={(event: CheckboxChangeEvent) => handleLazyDeleteChange(!!event.checked)}
             />
 
             <WdImgButton
@@ -149,7 +151,7 @@ export const SystemSignatures = () => {
           System is not selected
         </div>
       ) : (
-        <SystemSignaturesContent systemId={systemId} settings={settings} />
+        <SystemSignaturesContent systemId={systemId} settings={settings} onLazyDeleteChange={handleLazyDeleteChange} />
       )}
       {visible && (
         <SystemSignatureSettingsDialog
