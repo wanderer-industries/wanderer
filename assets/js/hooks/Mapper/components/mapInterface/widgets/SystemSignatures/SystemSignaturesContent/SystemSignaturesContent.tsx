@@ -94,7 +94,7 @@ export const SystemSignaturesContent = ({
   }, [settings]);
 
   const keepLazyDeleteValue = useMemo(() => {
-    return settings.find(setting => setting.key === KEEP_LAZY_DELETE_SETTING)!.value;
+    return settings.find(setting => setting.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
   }, [settings]);
 
   const handleResize = useCallback(() => {
