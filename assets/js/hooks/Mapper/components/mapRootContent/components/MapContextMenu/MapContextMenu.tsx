@@ -5,6 +5,8 @@ import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrap
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { MenuItem } from 'primereact/menuitem';
+import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 
 export interface MapContextMenuProps {
   onShowOnTheMap?: () => void;
@@ -13,6 +15,8 @@ export interface MapContextMenuProps {
 
 export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContextMenuProps) => {
   const { outCommand, setInterfaceSettings } = useMapRootState();
+
+  const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 
   const menuRight = useRef<Menu>(null);
 
@@ -24,33 +28,39 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
   }, [outCommand]);
 
   const items = useMemo(() => {
-    return [
-      {
-        label: 'Tracking',
-        icon: 'pi pi-user-plus',
-        command: handleAddCharacter,
-      },
-      {
-        label: 'On the map',
-        icon: 'pi pi-hashtag',
-        command: onShowOnTheMap,
-      },
-      { separator: true },
-      {
-        label: 'Settings',
-        icon: `pi pi-cog`,
-        command: onShowMapSettings,
-      },
-      {
-        label: 'Dock menu',
-        icon: 'pi pi-window-maximize',
-        command: () =>
-          setInterfaceSettings(x => ({
-            ...x,
-            isShowMenu: !x.isShowMenu,
-          })),
-      },
-    ] as MenuItem[];
+    return (
+      [
+        {
+          label: 'Tracking',
+          icon: 'pi pi-user-plus',
+          command: handleAddCharacter,
+          visible: true,
+        },
+        {
+          label: 'On the map',
+          icon: 'pi pi-hashtag',
+          command: onShowOnTheMap,
+          visible: canTrackCharacters,
+        },
+        { separator: true, visible: true },
+        {
+          label: 'Settings',
+          icon: `pi pi-cog`,
+          command: onShowMapSettings,
+          visible: true,
+        },
+        {
+          label: 'Dock menu',
+          icon: 'pi pi-window-maximize',
+          command: () =>
+            setInterfaceSettings(x => ({
+              ...x,
+              isShowMenu: !x.isShowMenu,
+            })),
+          visible: true,
+        },
+      ] as MenuItem[]
+    ).filter(item => item.visible);
   }, [handleAddCharacter, onShowMapSettings, onShowOnTheMap, setInterfaceSettings]);
 
   return (

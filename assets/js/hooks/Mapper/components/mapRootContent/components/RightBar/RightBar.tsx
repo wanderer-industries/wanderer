@@ -6,6 +6,9 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
+import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+
 interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
@@ -13,6 +16,8 @@ interface RightBarProps {
 
 export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) => {
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+
+  const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 
   const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
 
@@ -64,15 +69,17 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
           </button>
         </WdTooltipWrapper>
 
-        <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={onShowOnTheMap}
-          >
-            <i className="pi pi-hashtag"></i>
-          </button>
-        </WdTooltipWrapper>
+        {canTrackCharacters && (
+          <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
+            <button
+              className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+              type="button"
+              onClick={onShowOnTheMap}
+            >
+              <i className="pi pi-hashtag"></i>
+            </button>
+          </WdTooltipWrapper>
+        )}
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
