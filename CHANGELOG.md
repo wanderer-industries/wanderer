@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.26.1](https://github.com/wanderer-industries/wanderer/compare/v1.26.0...v1.26.1) (2024-12-03)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fix error on splash wh
+
 ## [v1.26.0](https://github.com/wanderer-industries/wanderer/compare/v1.25.2...v1.26.0) (2024-12-03)
 
 
