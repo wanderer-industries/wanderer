@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.26.0](https://github.com/wanderer-industries/wanderer/compare/v1.25.2...v1.26.0) (2024-12-03)
+
+
+
+
+### Features:
+
+* Signatures: Keep 'Lazy delete' enabled setting
+
 ## [v1.25.2](https://github.com/wanderer-industries/wanderer/compare/v1.25.1...v1.25.2) (2024-12-01)
 
 
