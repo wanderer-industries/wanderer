@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.27.0](https://github.com/wanderer-industries/wanderer/compare/v1.26.1...v1.27.0) (2024-12-03)
+
+
+
+
+### Features:
+
+* Map: Hide 'On the map' list for 'Viewer' role
+
 ## [v1.26.1](https://github.com/wanderer-industries/wanderer/compare/v1.26.0...v1.26.1) (2024-12-03)
 
 
