@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.28.0](https://github.com/wanderer-industries/wanderer/compare/v1.27.1...v1.28.0) (2024-12-04)
+
+
+
+
+### Features:
+
+* Map: Added an option to show 'Offline characters' to map admins & managers only
+
 ## [v1.27.1](https://github.com/wanderer-industries/wanderer/compare/v1.27.0...v1.27.1) (2024-12-04)
 
 
