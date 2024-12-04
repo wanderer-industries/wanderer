@@ -61,7 +61,7 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
         },
       ] as MenuItem[]
     ).filter(item => item.visible);
-  }, [handleAddCharacter, onShowMapSettings, onShowOnTheMap, setInterfaceSettings]);
+  }, [canTrackCharacters, handleAddCharacter, onShowMapSettings, onShowOnTheMap, setInterfaceSettings]);
 
   return (
     <div className="ml-1">
