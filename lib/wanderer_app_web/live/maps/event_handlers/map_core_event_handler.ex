@@ -434,7 +434,19 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       socket
       |> handle_map_start_events(map_id, events)
 
-    map_characters = map_id |> WandererApp.Map.list_characters()
+    {:ok, options} =
+      map_id
+      |> WandererApp.Map.get_options()
+
+    user_permissions =
+      initial_data
+      |> Map.get(:user_permissions)
+
+    map_characters =
+      map_id
+      |> WandererApp.Map.list_characters()
+      |> filter_map_characters(user_character_eve_ids, user_permissions, options)
+      |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
 
     socket
     |> assign(
@@ -447,10 +459,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     |> MapEventHandler.push_map_event(
       "init",
       initial_data
-      |> Map.put(
-        :characters,
-        map_characters |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
-      )
+      |> Map.put(:characters, map_characters)
     )
     |> push_event("js-exec", %{
       to: "#map-loader",
@@ -525,6 +534,26 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       _ ->
         {:ok, []}
     end
+  end
+
+  defp filter_map_characters(
+         characters,
+         user_character_eve_ids,
+         %{
+           manage_map: manage_map_permission
+         } = _user_permissions,
+         %{
+           "restrict_offline_showing" => restrict_offline_showing
+         } = _options
+       ) do
+    show_offline? =
+      not (restrict_offline_showing |> String.to_existing_atom()) or manage_map_permission
+
+    characters
+    |> Enum.filter(fn character ->
+      show_offline? || character.online ||
+        user_character_eve_ids |> Enum.member?(character.eve_id)
+    end)
   end
 
   defp map_system(
