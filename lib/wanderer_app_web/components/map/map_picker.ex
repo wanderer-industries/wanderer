@@ -48,7 +48,7 @@ defmodule WandererAppWeb.MapPicker do
             :if={maps}
             type="select"
             field={f[:map_slug]}
-            class="select h-8 min-h-[0px] !pt-1 !pb-1 text-sm bg-neutral-900"
+            class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
             placeholder="Select a map..."
             options={Enum.map(@maps.result, fn map -> {map.label, map.value} end)}
           />

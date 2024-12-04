@@ -20,6 +20,7 @@ export const useMapInit = () => {
       present_characters,
       hubs,
       user_permissions,
+      options,
     }: CommandInit) => {
       const updateData: Partial<MapRootData> = {};
 
@@ -58,6 +59,10 @@ export const useMapInit = () => {
 
       if (hubs) {
         updateData.hubs = hubs;
+      }
+
+      if (options) {
+        updateData.options = options;
       }
 
       if (system_static_infos) {

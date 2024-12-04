@@ -277,15 +277,11 @@ defmodule WandererApp.Map.Server.Impl do
     }
   end
 
-  def handle_event({:options_updated, options}, state),
-    do: %{
-      state
-      | map_opts: [
-          layout: options |> Map.get("layout", "left_to_right"),
-          store_custom_labels:
-            options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom()
-        ]
-    }
+  def handle_event({:options_updated, options}, %{map: map} = state) do
+    map |> WandererApp.Map.update_options!(options)
+
+    %{state | map_opts: map_options(options)}
+  end
 
   def handle_event({ref, _result}, %{map_id: _map_id} = state) do
     Process.demonitor(ref, [:flush])
@@ -318,6 +314,16 @@ defmodule WandererApp.Map.Server.Impl do
        Enum.reduce(attributes, Map.new(), fn attribute, map ->
          map |> Map.put_new(attribute, get_in(update, [Access.key(attribute)]))
        end)}
+
+  defp map_options(options) do
+    [
+      layout: options |> Map.get("layout", "left_to_right"),
+      store_custom_labels:
+        options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom(),
+      restrict_offline_showing:
+        options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom()
+    ]
+  end
 
   defp save_map_state(%{map_id: map_id} = _state) do
     systems_last_activity =
@@ -389,21 +395,16 @@ defmodule WandererApp.Map.Server.Impl do
          systems,
          connections
        ) do
+    {:ok, options} = WandererApp.MapRepo.options_to_form_data(initial_map)
+
     map =
       initial_map
       |> WandererApp.Map.new()
+      |> WandererApp.Map.update_options!(options)
       |> WandererApp.Map.update_subscription_settings!(subscription_settings)
       |> WandererApp.Map.add_systems!(systems)
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
-
-    {:ok, map_options} = WandererApp.MapRepo.options_to_form_data(initial_map)
-
-    map_opts = [
-      layout: map_options |> Map.get("layout", "left_to_right"),
-      store_custom_labels:
-        map_options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom()
-    ]
 
     character_ids =
       map_id
@@ -412,7 +413,7 @@ defmodule WandererApp.Map.Server.Impl do
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
-    %{state | map: map, map_opts: map_opts}
+    %{state | map: map, map_opts: map_options(options)}
   end
 
   def maybe_import_systems(state, %{"systems" => systems} = _settings, user_id, character_id) do

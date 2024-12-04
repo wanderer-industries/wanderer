@@ -41,8 +41,6 @@ export const WHClassView = ({
     data: { wormholesData },
   } = useMapRootState();
 
-  console.log(whClassName);
-
   const whData = useMemo(() => wormholesData[whClassName], [whClassName, wormholesData]);
   const whClass = useMemo(() => WORMHOLES_ADDITIONAL_INFO[whData.dest], [whData.dest]);
   const whClassStyle = WORMHOLE_CLASS_STYLES[whClass?.wormholeClassID] ?? '';

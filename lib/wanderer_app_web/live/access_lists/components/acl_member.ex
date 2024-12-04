@@ -39,7 +39,8 @@ defmodule WandererAppWeb.AclMember do
         <.input
           type="select"
           field={f[:role]}
-          class="select h-8 min-h-[0px] !pt-1 !pb-1 text-sm bg-neutral-900 w-[70px]"
+          class="select h-8 min-h-[0px] !pt-1 !pb-1 text-sm bg-neutral-900"
+          wrapper_class="w-[60px] mr-16"
           placeholder="Select a role..."
           options={Enum.map(@roles, fn role -> {role.label, role.value} end)}
         />

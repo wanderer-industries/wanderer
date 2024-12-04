@@ -128,7 +128,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
 
   return (
     <Dialog
-      header="Map settings"
+      header="Map user settings"
       visible={show}
       draggable={false}
       style={{ width: '550px' }}

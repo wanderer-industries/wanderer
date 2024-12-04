@@ -500,13 +500,15 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
+    {:ok, options} = map_id |> WandererApp.Map.get_options()
 
     %{
       systems:
         systems
         |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, include_static_data?) end),
       hubs: hubs,
-      connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1)
+      connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1),
+      options: options
     }
   end
 

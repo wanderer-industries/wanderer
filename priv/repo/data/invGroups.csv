@@ -31,10 +31,10 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 31,6,Shuttle,0,0,0,0,0,1
 32,1,Alliance,None,0,0,0,0,0
 38,7,Shield Extender,82,0,0,0,0,1
-39,7,Shield Recharger,83,0,0,0,0,1
+39,7,Shield Recharger,26451,0,0,0,0,1
 40,7,Shield Booster,84,0,0,0,0,1
 41,7,Remote Shield Booster,86,0,0,0,0,1
-43,7,Capacitor Recharger,90,0,0,0,0,1
+43,7,Capacitor Recharger,26457,0,0,0,0,1
 46,7,Propulsion Module,96,0,0,0,0,1
 47,7,Cargo Scanner,106,0,0,0,0,1
 48,7,Ship Scanner,107,0,0,0,0,1
@@ -44,8 +44,8 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 54,7,Mining Laser,138,0,0,0,0,1
 55,7,Projectile Weapon,384,0,0,0,0,1
 56,7,Missile Launcher,168,0,0,0,0,0
-57,7,Shield Power Relay,0,0,0,0,0,1
-59,7,Gyrostabilizer,0,0,0,0,0,1
+57,7,Shield Power Relay,26450,0,0,0,0,1
+59,7,Gyrostabilizer,26452,0,0,0,0,1
 60,7,Damage Control,0,0,0,0,0,1
 61,7,Capacitor Battery,0,0,0,0,0,1
 62,7,Armor Repair Unit,0,1,0,0,0,1
@@ -86,10 +86,10 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 110,9,Titan Blueprint,None,1,0,0,0,1
 111,9,Shuttle Blueprint,0,1,0,0,0,1
 118,9,Shield Extender Blueprint,82,1,0,0,0,1
-119,9,Shield Recharger Blueprint,83,1,0,0,0,1
+119,9,Shield Recharger Blueprint,26451,1,0,0,0,1
 120,9,Shield Booster Blueprint,84,1,0,0,0,1
 121,9,Remote Shield Booster Blueprint,86,1,0,0,0,1
-123,9,Capacitor Recharger Blueprint,90,1,0,0,0,1
+123,9,Capacitor Recharger Blueprint,26457,1,0,0,0,1
 126,9,Propulsion Module Blueprint,96,1,0,0,0,1
 127,9,Cargo Scanner Blueprint,106,1,0,0,0,1
 128,9,Ship Scanner Blueprint,107,1,0,0,0,1
@@ -149,14 +149,14 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 201,7,ECM,0,0,0,0,0,1
 202,7,ECCM,0,0,0,0,0,1
 203,7,Sensor Backup Array,0,0,0,0,0,1
-205,7,Heat Sink,0,0,0,0,0,1
+205,7,Heat Sink,26453,0,0,0,0,1
 208,7,Sensor Dampener,105,0,0,0,0,1
 209,7,Remote Tracking Computer,3346,0,0,0,0,1
 210,7,Signal Amplifier,0,0,0,0,0,1
 211,7,Tracking Enhancer,0,0,0,0,0,1
 212,7,Sensor Booster,74,0,0,0,0,1
 213,7,Tracking Computer,3346,0,0,0,0,1
-218,9,Heat Sink Blueprint,0,1,0,0,0,1
+218,9,Heat Sink Blueprint,26453,1,0,0,0,1
 223,9,Sensor Booster Blueprint,0,1,0,0,0,1
 224,9,Tracking Computer Blueprint,0,1,0,0,0,1
 225,7,Cheat Module Group,0,0,0,0,0,0
@@ -197,7 +197,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 299,18,Repair Drone,0,0,0,0,0,0
 300,20,Cyberimplant,0,1,0,0,0,1
 301,11,Concord Drone,0,0,0,0,0,0
-302,7,Magnetic Field Stabilizer,0,0,0,0,0,1
+302,7,Magnetic Field Stabilizer,26454,0,0,0,0,1
 303,20,Booster,0,0,0,0,0,1
 304,20,DNA Mutator,0,0,0,0,0,0
 305,2,Comet,0,0,0,0,0,0
@@ -595,10 +595,10 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 764,7,Overdrive Injector System,0,0,0,0,0,1
 765,7,Expanded Cargohold,0,0,0,0,0,1
 766,7,Power Diagnostic System,0,0,0,0,0,1
-767,7,Capacitor Power Relay,0,0,0,0,0,1
-768,7,Capacitor Flux Coil,0,0,0,0,0,1
+767,7,Capacitor Power Relay,26455,0,0,0,0,1
+768,7,Capacitor Flux Coil,26456,0,0,0,0,1
 769,7,Reactor Control Unit,0,0,0,0,0,1
-770,7,Shield Flux Coil,0,0,0,0,0,1
+770,7,Shield Flux Coil,26449,0,0,0,0,1
 771,7,Missile Launcher Heavy Assault,3241,0,0,0,0,1
 772,8,Heavy Assault Missile,3237,0,0,0,1,1
 773,7,Rig Armor,0,0,0,0,0,1
@@ -1322,7 +1322,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 1962,66,Structure QA Modules,None,0,0,0,0,0
 1964,17,Mutaplasmids,None,0,0,0,0,1
 1966,66,Structure Capacitor Battery,None,0,0,0,0,1
-1967,66,Structure Capacitor Power Relay,None,0,0,0,0,1
+1967,66,Structure Capacitor Power Relay,26455,0,0,0,0,1
 1968,66,Structure Armor Reinforcer,None,0,0,0,0,1
 1969,7,Abyssal Modules,None,0,0,0,0,0
 1971,2,Abyssal Hazards,None,0,0,0,0,0
@@ -1523,6 +1523,12 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4802,11,Asteroid Sansha's Nation Officer Frigate,None,0,0,0,0,0
 4803,11,Asteroid Serpentis Officer Cruiser,None,0,0,0,0,0
 4804,11,Asteroid Serpentis Officer Frigate,None,0,0,0,0,0
+4807,7,Breacher Pod Launchers,None,0,0,0,0,1
+4808,8,SCARAB Breacher Pods,None,0,0,0,1,1
+4810,22,Mercenary Den,None,0,0,0,0,1
+4811,9,Mercenary Den Blueprint,None,1,0,0,0,1
+4820,9,Mutaplasmid Blueprint,None,1,0,0,0,1
+4821,17,Atavum,None,1,0,0,0,1
 350858,350001,Infantry Weapons,None,1,0,0,0,0
 351064,350001,Infantry Dropsuits,None,1,0,0,0,0
 351121,350001,Infantry Modules,None,1,0,0,0,0

@@ -14,6 +14,7 @@ defmodule WandererApp.Map do
             hubs: [],
             connections: Map.new(),
             acls: [],
+            options: Map.new(),
             characters_limit: nil,
             hubs_limit: nil
 
@@ -68,6 +69,9 @@ defmodule WandererApp.Map do
 
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 100)}
+
+  def get_options(map_id),
+    do: {:ok, map_id |> get_map!() |> Map.get(:options, Map.new())}
 
   @doc """
   Returns a full list of characters in the map
@@ -247,6 +251,13 @@ defmodule WandererApp.Map do
       }) do
     map_id
     |> update_map(%{characters_limit: characters_limit, hubs_limit: hubs_limit})
+
+    map
+  end
+
+  def update_options!(%{map_id: map_id} = map, options) do
+    map_id
+    |> update_map(%{options: options})
 
     map
   end

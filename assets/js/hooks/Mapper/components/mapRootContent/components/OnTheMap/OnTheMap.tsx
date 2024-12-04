@@ -8,6 +8,8 @@ import clsx from 'clsx';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { CharacterCard, WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
 import useLocalStorageState from 'use-local-storage-state';
+import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 
 type WindowLocalSettingsType = {
   compact: boolean;
@@ -50,14 +52,22 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
     defaultValue: STORED_DEFAULT_VALUES,
   });
 
+  const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
+  const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
+
+  const showOffline = useMemo(
+    () => !restrictOfflineShowing || isAdminOrManager,
+    [isAdminOrManager, restrictOfflineShowing],
+  );
+
   const sorted = useMemo(() => {
     const out = characters.map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id) })).sort(sortCharacters);
-    if (!settings.hideOffline) {
+    if (showOffline && !settings.hideOffline) {
       return out;
     }
 
     return out.filter(x => x.online);
-  }, [characters, settings.hideOffline, userCharacters]);
+  }, [showOffline, characters, settings.hideOffline, userCharacters]);
 
   return (
     <Sidebar
@@ -70,14 +80,16 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
     >
       <div className={clsx(classes.SidebarContent, '')}>
         <div className={'flex justify-end items-center gap-2 px-3'}>
-          <WdCheckbox
-            size="m"
-            labelSide="left"
-            label={'Hide offline'}
-            value={settings.hideOffline}
-            classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-            onChange={() => setSettings(() => ({ ...settings, hideOffline: !settings.hideOffline }))}
-          />
+          {showOffline && (
+            <WdCheckbox
+              size="m"
+              labelSide="left"
+              label={'Hide offline'}
+              value={settings.hideOffline}
+              classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+              onChange={() => setSettings(() => ({ ...settings, hideOffline: !settings.hideOffline }))}
+            />
+          )}
         </div>
 
         <VirtualScroller

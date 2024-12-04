@@ -280,14 +280,17 @@ defmodule WandererAppWeb.MapsLive do
     do:
       {:noreply,
        socket
-       |> assign(:amounts, [
-         %{label: "150M", value: 150_000_000},
-         %{label: "300M", value: 300_000_000},
-         %{label: "600M", value: 600_000_000},
-         %{label: "1.2B", value: 1_200_000_000},
-         %{label: "2.4B", value: 2_400_000_000},
-         %{label: "5B", value: 5_000_000_000}
-       ])
+       |> assign(
+         :amounts,
+         [
+           {"150M", 150_000_000},
+           {"300M", 300_000_000},
+           {"600M", 600_000_000},
+           {"1.2B", 1_200_000_000},
+           {"2.4B", 2_400_000_000},
+           {"5B", 5_000_000_000}
+         ]
+       )
        |> assign(is_topping_up?: true)}
 
   @impl true
@@ -654,7 +657,7 @@ defmodule WandererAppWeb.MapsLive do
       ) do
     options =
       options_form
-      |> Map.take(["layout", "store_custom_labels"])
+      |> Map.take(["layout", "store_custom_labels", "restrict_offline_showing"])
 
     {:ok, updated_map} = WandererApp.MapRepo.update_options(map, options)
 

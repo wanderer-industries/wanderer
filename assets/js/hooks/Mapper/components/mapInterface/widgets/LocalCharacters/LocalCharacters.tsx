@@ -8,6 +8,8 @@ import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { CharacterCard, LayoutEventBlocker, WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
 import { sortCharacters } from '@/hooks/Mapper/components/mapInterface/helpers/sortCharacters.ts';
 import useLocalStorageState from 'use-local-storage-state';
+import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 
 type CharItemProps = {
   compact: boolean;
@@ -62,6 +64,14 @@ export const LocalCharacters = () => {
 
   const [systemId] = selectedSystems;
 
+  const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
+  const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
+
+  const showOffline = useMemo(
+    () => !restrictOfflineShowing || isAdminOrManager,
+    [isAdminOrManager, restrictOfflineShowing],
+  );
+
   const itemTemplate = useItemTemplate();
 
   const sorted = useMemo(() => {
@@ -70,13 +80,13 @@ export const LocalCharacters = () => {
       .map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id), compact: settings.compact }))
       .sort(sortCharacters);
 
-    if (!settings.showOffline) {
+    if (!showOffline || !settings.showOffline) {
       return sorted.filter(c => c.online);
     }
 
     return sorted;
     // eslint-disable-next-line
-  }, [characters, settings.showOffline, settings.compact, systemId, userCharacters, presentCharacters]);
+  }, [showOffline, characters, settings.showOffline, settings.compact, systemId, userCharacters, presentCharacters]);
 
   const isNobodyHere = sorted.length === 0;
   const isNotSelectedSystem = selectedSystems.length !== 1;
@@ -88,14 +98,16 @@ export const LocalCharacters = () => {
         <div className="flex justify-between items-center text-xs w-full">
           <span className="select-none">Local{showList ? ` [${sorted.length}]` : ''}</span>
           <LayoutEventBlocker className="flex items-center gap-2">
-            <WdCheckbox
-              size="xs"
-              labelSide="left"
-              label={'Show offline'}
-              value={settings.showOffline}
-              classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-              onChange={() => setSettings(() => ({ ...settings, showOffline: !settings.showOffline }))}
-            />
+            {showOffline && (
+              <WdCheckbox
+                size="xs"
+                labelSide="left"
+                label={'Show offline'}
+                value={settings.showOffline}
+                classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+                onChange={() => setSettings(() => ({ ...settings, showOffline: !settings.showOffline }))}
+              />
+            )}
 
             <span
               className={clsx('w-4 h-4 cursor-pointer', {
@@ -115,7 +127,9 @@ export const LocalCharacters = () => {
       )}
 
       {isNobodyHere && !isNotSelectedSystem && (
-        <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">Nobody here</div>
+        <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">
+          Nobody here
+        </div>
       )}
 
       {showList && (

@@ -136,8 +136,10 @@
     <.input
       type="select"
       field={f[:owner_id]}
-      class="p-dropdown p-component p-inputwrapper mt-8"
-      placeholder="Select a map owner"
+      class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+      wrapper_class="mt-2"
+      label="Owner"
+      placeholder="Select an owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
     <div class="modal-action">

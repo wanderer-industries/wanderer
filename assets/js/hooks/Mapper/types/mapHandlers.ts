@@ -62,6 +62,7 @@ export type CommandInit = {
   user_permissions: UserPermissions;
   hubs: string[];
   routes: RoutesList;
+  options: Record<string, string | boolean>;
   reset?: boolean;
 };
 export type CommandAddSystems = SolarSystemRawType[];

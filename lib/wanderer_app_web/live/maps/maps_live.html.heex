@@ -139,14 +139,18 @@
     <.input
       type="select"
       field={f[:owner_id]}
-      class="p-dropdown p-component p-inputwrapper mt-8"
+      class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+      wrapper_class="mt-2"
+      label="Map owner"
       placeholder="Select a map owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
     <.input
       type="select"
       field={f[:scope]}
-      class="p-dropdown p-component p-inputwrapper  mt-8"
+      class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+      wrapper_class="mt-2"
+      label="Map scope"
       placeholder="Select a map scope"
       options={Enum.map(@scopes, fn scope -> {scope, scope} end)}
     />
@@ -182,203 +186,411 @@
 <.modal
   :if={@live_action in [:settings]}
   title="Map Settings"
-  class="!w-[800px]"
+  class="!min-w-[700px]"
   id="map-settings-modal"
   show
   on_cancel={JS.patch(~p"/maps")}
 >
-  <div role="tablist" class="tabs tabs-bordered">
-    <a
-      role="tab"
-      phx-click="change_settings_tab"
-      phx-value-tab="general"
-      class={[
-        "tab",
-        classes("tab-active": @active_settings_tab == "general")
-      ]}
-    >
-      <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
-    </a>
-    <a
-      role="tab"
-      phx-click="change_settings_tab"
-      phx-value-tab="import"
-      class={[
-        "tab",
-        classes("tab-active": @active_settings_tab == "import")
-      ]}
-    >
-      <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
-    </a>
-    <a
-      :if={@map_subscriptions_enabled?}
-      role="tab"
-      phx-click="change_settings_tab"
-      phx-value-tab="balance"
-      class={[
-        "tab",
-        classes("tab-active": @active_settings_tab == "balance")
-      ]}
-    >
-      <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
-    </a>
-    <a
-      :if={@map_subscriptions_enabled?}
-      role="tab"
-      phx-click="change_settings_tab"
-      phx-value-tab="subscription"
-      class={[
-        "tab",
-        classes("tab-active": @active_settings_tab == "subscription")
-      ]}
-    >
-      <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
-    </a>
-  </div>
-  <.header :if={@active_settings_tab == "general"} class="bordered border-1 border-zinc-800">
-    <:actions>
-      <.form
-        :let={f}
-        :if={assigns |> Map.get(:options_form, false)}
-        for={@options_form}
-        phx-change="update_options"
-      >
-        <div>
-          <div class="stat-title">Map systems layout</div>
-          <div class="stat-value text-white">
-            <.input
-              type="select"
-              field={f[:layout]}
-              class="p-dropdown p-component p-inputwrapper"
-              placeholder="Map default layout"
-              options={@layout_options}
-            />
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-col gap-2">
+      <div class="_verticalTabsContainer_1o01l_2">
+        <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
+          <div class="p-tabview-nav-container" data-pc-section="navcontainer">
+            <div class="p-tabview-nav-content" data-pc-section="navcontent">
+              <ul class="p-tabview-nav" role="tablist" data-pc-section="nav">
+                <li
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "general")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="0"
+                    aria-controls="pr_id_330_content"
+                    aria-selected="true"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="general"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
+                    </span>
+                  </a>
+                </li>
+
+                <li
+                  :if={@map_subscriptions_enabled?}
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "balance")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="pr_id_332_content"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="balance"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
+                    </span>
+                  </a>
+                </li>
+
+                <li
+                  :if={@map_subscriptions_enabled?}
+                  class={[
+                    "p-unselectable-text",
+                    classes(
+                      "p-tabview-selected p-highlight": @active_settings_tab == "subscription"
+                    )
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="pr_id_334_content"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="subscription"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
+                    </span>
+                  </a>
+                </li>
+
+                <li
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "import")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="pr_id_331_content"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="import"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
+                    </span>
+                  </a>
+                </li>
+                <li
+                  aria-hidden="true"
+                  role="presentation"
+                  class="p-tabview-ink-bar"
+                  data-pc-section="inkbar"
+                  style="width: 146px; left: 0px;"
+                >
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="p-tabview-panels" data-pc-section="panelcontainer">
+            <div
+              id="pr_id_330_content"
+              class="p-tabview-panel"
+              role="tabpanel"
+              aria-labelledby="pr_id_33_header_0"
+              data-pc-name=""
+              data-pc-section="content"
+            >
+              <div :if={@active_settings_tab == "general"}>
+                <.form
+                  :let={f}
+                  :if={assigns |> Map.get(:options_form, false)}
+                  for={@options_form}
+                  phx-change="update_options"
+                >
+                  <.input
+                    type="select"
+                    field={f[:layout]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Map systems layout"
+                    placeholder="Map default layout"
+                    options={@layout_options}
+                  />
+                  <.input
+                    type="checkbox"
+                    field={f[:store_custom_labels]}
+                    label="Store system custom labels"
+                  />
+                  <.input
+                    type="checkbox"
+                    field={f[:restrict_offline_showing]}
+                    label="Show offline characters to admins & managers only"
+                  />
+                </.form>
+              </div>
+
+              <div :if={@active_settings_tab == "import"}>
+                <.form
+                  :if={assigns |> Map.get(:import_form, false)}
+                  for={@import_form}
+                  phx-change="import"
+                >
+                  <div phx-drop-target="{@uploads.settings.ref}">
+                    <.live_file_input upload={@uploads.settings} />
+                  </div>
+                </.form>
+                <progress :if={@importing} class="progress w-56"></progress>
+                <.button
+                  id="export-settings-btn"
+                  class="mt-8"
+                  type="button"
+                  disabled={@importing}
+                  phx-hook="DownloadJson"
+                  data-name={@map_slug}
+                  data-content={Jason.encode!(assigns[:export_settings] || %{})}
+                >
+                  <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" /> Export Settings
+                </.button>
+              </div>
+
+              <div :if={@active_settings_tab == "balance"}>
+                <div class="stats w-full bg-primary text-primary-content">
+                  <div class="stat">
+                    <div class="stat-figure text-primary">
+                      <.button
+                        :if={not @is_topping_up?}
+                        class="mt-2"
+                        type="button"
+                        phx-click="show_topup"
+                      >
+                        <.icon name="hero-banknotes-solid" class="w-4 h-4" /> Top Up
+                      </.button>
+                    </div>
+                    <div class="stat-title">Map balance</div>
+                    <div class="stat-value text-white">
+                      ISK <%= @map_balance
+                      |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                    </div>
+                    <div class="stat-actions text-end"></div>
+                  </div>
+                </div>
+
+                <.form
+                  :let={f}
+                  :if={@is_topping_up?}
+                  for={@topup_form}
+                  class="mt-2"
+                  phx-change="validate_topup"
+                  phx-submit="topup"
+                >
+                  <.input
+                    type="select"
+                    field={f[:amount]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Topup amount"
+                    placeholder="Select topup amount"
+                    options={@amounts}
+                  />
+                  <div class="modal-action">
+                    <.button class="mt-2" type="button" phx-click="hide_topup">
+                      Cancel
+                    </.button>
+                    <.button class="mt-2" type="submit">
+                      Top Up
+                    </.button>
+                  </div>
+                </.form>
+              </div>
+
+              <.table
+                :if={@active_settings_tab == "subscription"}
+                class="!max-h-[300px] !overflow-y-auto"
+                empty_label="No active subscriptions, using alpha plan by default."
+                id="active-subscriptions-tbl"
+                rows={@map_subscriptions}
+              >
+                <:col :let={subscription} label="Subscription Plan">
+                  <%= subscription.plan %>
+                </:col>
+                <:col :let={subscription} label="Status">
+                  <%= subscription.status %>
+                </:col>
+                <:col :let={subscription} label="Characters Limit">
+                  <%= subscription.characters_limit %>
+                </:col>
+                <:col :let={subscription} label="Hubs Limit">
+                  <%= subscription.hubs_limit %>
+                </:col>
+                <:col :let={subscription} label="Active Till">
+                  <.local_time
+                    :if={subscription.active_till}
+                    id={"subscription-active-till-#{subscription.id}"}
+                    at={subscription.active_till}
+                  >
+                    <%= subscription.active_till %>
+                  </.local_time>
+                </:col>
+                <:col :let={subscription} label="Auto Renew">
+                  <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+                </:col>
+                <:action :let={subscription}>
+                  <div class="tooltip tooltip-left" data-tip="Edit subscription">
+                    <button
+                      :if={subscription.status == :active && subscription.plan != :alpha}
+                      phx-click="edit-subscription"
+                      phx-value-id={subscription.id}
+                    >
+                      <.icon name="hero-pencil-square-solid" class="w-4 h-4 hover:text-white" />
+                    </button>
+                  </div>
+                </:action>
+                <:action :let={subscription}>
+                  <div class="tooltip tooltip-left" data-tip="Cancel subscription">
+                    <button
+                      :if={subscription.status == :active && subscription.plan != :alpha}
+                      phx-click="cancel-subscription"
+                      phx-value-id={subscription.id}
+                      data={[confirm: "Please confirm to cancel subscription!"]}
+                    >
+                      <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
+                    </button>
+                  </div>
+                </:action>
+              </.table>
+
+              <.header
+                :if={@active_settings_tab == "subscription" && @is_adding_subscription?}
+                class="bordered border-1 flex flex-col gap-4"
+              >
+                <div :if={is_nil(@selected_subscription)}>
+                  Add subscription
+                  <div class="badge badge-secondary">Limited time offer: 50%</div>
+                </div>
+                <div :if={not is_nil(@selected_subscription)}>
+                  Edit subscription
+                  <div class="badge badge-secondary">Limited time offer: 50%</div>
+                </div>
+                <.form
+                  :let={f}
+                  for={@subscription_form}
+                  phx-change="validate_subscription"
+                  phx-submit={
+                    if is_nil(@selected_subscription),
+                      do: "subscribe",
+                      else: "update_subscription"
+                  }
+                >
+                  <.input
+                    :if={is_nil(@selected_subscription)}
+                    type="select"
+                    field={f[:period]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Subscription period"
+                    options={@subscription_periods}
+                  />
+                  <.input
+                    field={f[:characters_limit]}
+                    label="Characters limit"
+                    show_value={true}
+                    type="range"
+                    min="300"
+                    max="5000"
+                    step="100"
+                    class="range range-xs"
+                  />
+                  <.input
+                    field={f[:hubs_limit]}
+                    label="Hubs limit"
+                    show_value={true}
+                    type="range"
+                    min="20"
+                    max="50"
+                    step="10"
+                    class="range range-xs"
+                  />
+                  <.input field={f[:auto_renew?]} label="Auto Renew" type="checkbox" />
+                  <div
+                    :if={is_nil(@selected_subscription)}
+                    class="stats w-full bg-primary text-primary-content mt-2"
+                  >
+                    <div class="stat">
+                      <div class="stat-figure text-primary">
+                        <.button type="submit">
+                          Subscribe
+                        </.button>
+                      </div>
+                      <div class="flex gap-8">
+                        <div>
+                          <div class="stat-title">Estimated price</div>
+                          <div class="stat-value text-white">
+                            ISK <%= (@estimated_price - @discount)
+                            |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                          </div>
+                        </div>
+                        <div>
+                          <div class="stat-title">Discount</div>
+                          <div class="stat-value text-white relative">
+                            ISK <%= @discount
+                            |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                            <span class="absolute top-0 right-0 text-xs text-white discount" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    :if={not is_nil(@selected_subscription)}
+                    class="stats w-full bg-primary text-primary-content"
+                  >
+                    <div class="stat">
+                      <div class="stat-figure text-primary">
+                        <.button type="button" phx-click="cancel_edit_subscription">
+                          Cancel
+                        </.button>
+                        <.button type="submit">
+                          Update
+                        </.button>
+                      </div>
+                      <div class="stat-title">Additional price (mounthly)</div>
+                      <div class="stat-value text-white">
+                        ISK <%= @additional_price
+                        |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                      </div>
+                      <div class="stat-actions text-end"></div>
+                    </div>
+                  </div>
+                </.form>
+              </.header>
+            </div>
           </div>
         </div>
-        <.input
-          type="checkbox"
-          field={f[:store_custom_labels]}
-          label="Store system custom labels"
-        />
-      </.form>
-    </:actions>
-  </.header>
-  <.header :if={@active_settings_tab == "import"} class="bordered border-1 border-zinc-800">
-    Import/Export Map Settings
-    <:actions>
-      <.form :if={assigns |> Map.get(:import_form, false)} for={@import_form} phx-change="import">
-        <div phx-drop-target="{@uploads.settings.ref}">
-          <.live_file_input upload={@uploads.settings} />
-        </div>
-      </.form>
-      <progress :if={@importing} class="progress w-56"></progress>
-      <.button
-        id="export-settings-btn"
-        class="mt-8"
-        type="button"
-        disabled={@importing}
-        phx-hook="DownloadJson"
-        data-name={@map_slug}
-        data-content={Jason.encode!(assigns[:export_settings] || %{})}
-      >
-        <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" /> Export Settings
-      </.button>
-    </:actions>
-  </.header>
-  <.header :if={@active_settings_tab == "balance"} class="bordered border-1 border-zinc-800">
-    <div class="stats w-full bg-primary text-primary-content">
-      <div class="stat">
-        <div class="stat-figure text-primary">
-          <.button :if={not @is_topping_up?} class="mt-2" type="button" phx-click="show_topup">
-            <.icon name="hero-banknotes-solid" class="w-4 h-4" /> Top Up
-          </.button>
-        </div>
-        <div class="stat-title">Map balance</div>
-        <div class="stat-value text-white">
-          ISK <%= @map_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
-        </div>
-        <div class="stat-actions text-end"></div>
       </div>
     </div>
-
-    <.form
-      :let={f}
-      :if={@is_topping_up?}
-      for={@topup_form}
-      phx-change="validate_topup"
-      phx-submit="topup"
-    >
-      <.live_select
-        field={f[:amount]}
-        update_min_len={0}
-        options={@amounts}
-        placeholder="Select topup amount"
-      />
-      <div class="modal-action">
-        <.button class="mt-2" type="button" phx-click="hide_topup">
-          Cancel
-        </.button>
-        <.button class="mt-2" type="submit">
-          Top Up
-        </.button>
-      </div>
-    </.form>
-  </.header>
-  <.table
-    :if={@active_settings_tab == "subscription"}
-    class="!max-h-[20vh] !overflow-y-auto"
-    empty_label="No active subscriptions, using alpha plan by default."
-    id="active-subscriptions-tbl"
-    rows={@map_subscriptions}
-  >
-    <:col :let={subscription} label="Subscription Plan">
-      <%= subscription.plan %>
-    </:col>
-    <:col :let={subscription} label="Status">
-      <%= subscription.status %>
-    </:col>
-    <:col :let={subscription} label="Characters Limit">
-      <%= subscription.characters_limit %>
-    </:col>
-    <:col :let={subscription} label="Hubs Limit">
-      <%= subscription.hubs_limit %>
-    </:col>
-    <:col :let={subscription} label="Active Till">
-      <.local_time
-        :if={subscription.active_till}
-        id={"subscription-active-till-#{subscription.id}"}
-        at={subscription.active_till}
-      >
-        <%= subscription.active_till %>
-      </.local_time>
-    </:col>
-    <:col :let={subscription} label="Auto Renew">
-      <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
-    </:col>
-    <:action :let={subscription}>
-      <div class="tooltip tooltip-left" data-tip="Edit subscription">
-        <button
-          :if={subscription.status == :active && subscription.plan != :alpha}
-          phx-click="edit-subscription"
-          phx-value-id={subscription.id}
-        >
-          <.icon name="hero-pencil-square-solid" class="w-4 h-4 hover:text-white" />
-        </button>
-      </div>
-    </:action>
-    <:action :let={subscription}>
-      <div class="tooltip tooltip-left" data-tip="Cancel subscription">
-        <button
-          :if={subscription.status == :active && subscription.plan != :alpha}
-          phx-click="cancel-subscription"
-          phx-value-id={subscription.id}
-          data={[confirm: "Please confirm to cancel subscription!"]}
-        >
-          <.icon name="hero-trash-solid" class="w-4 h-4 hover:text-white" />
-        </button>
-      </div>
-    </:action>
-  </.table>
+  </div>
 
   <div class="modal-action">
     <div
@@ -402,102 +614,4 @@
       </.button>
     </div>
   </div>
-
-  <.header
-    :if={@active_settings_tab == "subscription" && @is_adding_subscription?}
-    class="bordered border-1 flex flex-col gap-4"
-  >
-    <div :if={is_nil(@selected_subscription)}>
-      Add subscription
-      <div class="badge badge-secondary">Limited time offer: 50%</div>
-    </div>
-    <div :if={not is_nil(@selected_subscription)}>
-      Edit subscription
-      <div class="badge badge-secondary">Limited time offer: 50%</div>
-    </div>
-    <.form
-      :let={f}
-      for={@subscription_form}
-      phx-change="validate_subscription"
-      phx-submit={if is_nil(@selected_subscription), do: "subscribe", else: "update_subscription"}
-    >
-      <.input
-        :if={is_nil(@selected_subscription)}
-        type="select"
-        field={f[:period]}
-        class="p-dropdown p-component p-inputwrapper"
-        placeholder="Subscription period"
-        options={@subscription_periods}
-      />
-      <.input
-        field={f[:characters_limit]}
-        label="Characters limit"
-        show_value={true}
-        type="range"
-        min="300"
-        max="5000"
-        step="100"
-        class="range range-xs"
-      />
-      <.input
-        field={f[:hubs_limit]}
-        label="Hubs limit"
-        show_value={true}
-        type="range"
-        min="20"
-        max="50"
-        step="10"
-        class="range range-xs"
-      />
-      <.input field={f[:auto_renew?]} label="Auto Renew" type="checkbox" />
-      <div
-        :if={is_nil(@selected_subscription)}
-        class="stats w-full bg-primary text-primary-content"
-      >
-        <div class="stat">
-          <div class="stat-figure text-primary">
-            <.button type="submit">
-              Subscribe
-            </.button>
-          </div>
-          <div class="flex gap-8">
-            <div>
-              <div class="stat-title">Estimated price</div>
-              <div class="stat-value text-white">
-                ISK <%= (@estimated_price - @discount)
-                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
-              </div>
-            </div>
-            <div>
-              <div class="stat-title">Discount</div>
-              <div class="stat-value text-white relative">
-                ISK <%= @discount |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
-                <span class="absolute top-0 right-0 text-xs text-white discount" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        :if={not is_nil(@selected_subscription)}
-        class="stats w-full bg-primary text-primary-content"
-      >
-        <div class="stat">
-          <div class="stat-figure text-primary">
-            <.button type="button" phx-click="cancel_edit_subscription">
-              Cancel
-            </.button>
-            <.button type="submit">
-              Update
-            </.button>
-          </div>
-          <div class="stat-title">Additional price (mounthly)</div>
-          <div class="stat-value text-white">
-            ISK <%= @additional_price |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
-          </div>
-          <div class="stat-actions text-end"></div>
-        </div>
-      </div>
-    </.form>
-  </.header>
 </.modal>

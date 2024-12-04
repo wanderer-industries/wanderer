@@ -26,6 +26,7 @@ const INITIAL_DATA: MapRootData = {
   selectedSystems: [],
   selectedConnections: [],
   userPermissions: {},
+  options: {},
 };
 
 export enum InterfaceStoredSettingsProps {

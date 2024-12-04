@@ -19,4 +19,5 @@ export type MapUnionTypes = {
   kills: Record<number, number>;
   connections: SolarSystemConnection[];
   userPermissions: Partial<UserPermissions>;
+  options: Record<string, string | boolean>;
 };

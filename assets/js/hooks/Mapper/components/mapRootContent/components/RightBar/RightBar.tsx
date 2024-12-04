@@ -83,7 +83,7 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
-        <WdTooltipWrapper content="User settings" position={TooltipPosition.left}>
+        <WdTooltipWrapper content="Map user settings" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
             type="button"
