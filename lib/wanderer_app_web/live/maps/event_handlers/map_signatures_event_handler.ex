@@ -312,7 +312,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  defp get_system_signatures(system_id),
+  def get_system_signatures(system_id),
     do:
       system_id
       |> WandererApp.Api.MapSystemSignature.by_system_id!()

@@ -6,7 +6,7 @@ $pastel-green: #88b04b;
 $pastel-yellow: #ffdd59;
 $dark-bg: #2d2d2d;
 $text-color: #ffffff;
-$tooltip-bg: #202020; // Темный фон для подсказок
+$tooltip-bg: #202020; // Dark background for tooltips
 
 .RootCustomNode {
   display: flex;
@@ -136,7 +136,7 @@ $tooltip-bg: #202020; // Темный фон для подсказок
 .Bookmarks {
   position: absolute;
   width: 100%;
-  z-index: 0;
+  z-index: 1;
   display: flex;
   left: 4px;
 
@@ -178,6 +178,42 @@ $tooltip-bg: #202020; // Темный фон для подсказок
     & > .text {
       margin-top: 1px;
       font-size: 9px;
+    }
+  }
+}
+
+.Unsplashed {
+  position: absolute;
+  width: calc(50% - 4px);
+  z-index: -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  left: 2px;
+
+  &--right {
+    left: calc(50% + 6px);
+  }
+
+  & > .Signature {
+    width: 13px;
+    height: 4px;
+    position: relative;
+    top: 3px;
+    border-radius: 5px;
+    color: #ffffff;
+    font-size: 8px;
+    text-align: center;
+    padding-top: 2px;
+    font-weight: bolder;
+    padding-left: 3px;
+    padding-right: 3px;
+    display: block;
+
+    background-color: #833ca4;
+
+    &:not(:first-child) {
+      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
     }
   }
 }
@@ -276,7 +312,6 @@ $tooltip-bg: #202020; // Темный фон для подсказок
     position: relative;
     top: -1px;
   }
-
 }
 
 .Handlers {

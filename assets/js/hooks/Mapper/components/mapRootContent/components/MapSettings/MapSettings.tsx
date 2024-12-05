@@ -53,6 +53,7 @@ const SYSTEMS_CHECKBOXES_PROPS: CheckboxesList = [
 
 const SIGNATURES_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: UserSettingsRemoteProps.link_signature_on_splash, label: 'Link signature on splash' },
+  { prop: InterfaceStoredSettingsProps.isShowUnsplashedSignatures, label: 'Show unsplashed signatures' },
 ];
 
 const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [

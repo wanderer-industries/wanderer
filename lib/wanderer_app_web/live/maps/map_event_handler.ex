@@ -234,6 +234,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def map_ui_system(
         %{
+          id: system_id,
           solar_system_id: solar_system_id,
           name: name,
           description: description,
@@ -249,12 +250,20 @@ defmodule WandererAppWeb.MapEventHandler do
       ) do
     system_static_info = get_system_static_info(solar_system_id)
 
+    system_signatures =
+      system_id
+      |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
+      |> Enum.filter(fn signature ->
+        is_nil(signature.linked_system) && signature.group == "Wormhole"
+      end)
+
     %{
       id: "#{solar_system_id}",
       position: %{x: position_x, y: position_y},
       description: description,
       name: name,
       system_static_info: system_static_info,
+      system_signatures: system_signatures,
       labels: labels,
       locked: locked,
       status: status,

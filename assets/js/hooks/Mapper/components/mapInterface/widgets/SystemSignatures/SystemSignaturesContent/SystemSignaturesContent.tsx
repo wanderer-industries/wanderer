@@ -373,7 +373,6 @@ export const SystemSignaturesContent = ({
               ></Column>
               <Column
                 field="info"
-                // header="Info"
                 bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
                 body={renderInfoColumn}
                 style={{ maxWidth: nameColumnWidth }}

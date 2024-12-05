@@ -8,7 +8,8 @@ defmodule WandererAppWeb.UserActivity do
   end
 
   @impl true
-  def update(assigns,
+  def update(
+        assigns,
         socket
       ) do
     {:ok,
@@ -116,7 +117,6 @@ defmodule WandererAppWeb.UserActivity do
         <h6 class="text-base leading-[150%] font-semibold dark:text-white">
           <%= _get_event_data(@event_type, Jason.decode!(@event_data) |> Map.drop(["character_id"])) %>
         </h6>
-
       </div>
     </div>
     """
@@ -125,7 +125,6 @@ defmodule WandererAppWeb.UserActivity do
   @impl true
   def handle_event("undo", %{"event-data" => event_data} = _params, socket) do
     # notify_to(socket.assigns.notify_to, socket.assigns.event_name, map_slug)
-    IO.inspect(event_data)
 
     {:noreply, socket}
   end

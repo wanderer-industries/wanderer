@@ -1,5 +1,7 @@
 import { XYPosition } from 'reactflow';
 
+import { SystemSignature } from '@/hooks/Mapper/types/signatures';
+
 export enum SolarSystemStaticInfoRawNames {
   regionId = 'region_id',
   constellationId = 'constellation_id',
@@ -116,4 +118,5 @@ export type SolarSystemRawType = {
   name: string | null;
 
   system_static_info: SolarSystemStaticInfoRaw;
+  system_signatures: SystemSignature[];
 };

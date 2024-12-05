@@ -1,0 +1,18 @@
+@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
+
+.Signature {
+  position: relative;
+  top: 3px;
+  display: block;
+
+  & > .Box {
+    width: 13px;
+    height: 4px;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 8px;
+    text-align: center;
+    font-weight: bolder;
+    display: block;
+  }
+}

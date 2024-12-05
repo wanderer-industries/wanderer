@@ -2,11 +2,14 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef } from 'react';
 import { CommandAddSystems, CommandRemoveSystems, CommandUpdateSystems } from '@/hooks/Mapper/types';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
-
+import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { emitMapEvent } from '@/hooks/Mapper/events';
+import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 export const useCommandsSystems = () => {
   const {
     update,
     data: { systems },
+    outCommand,
   } = useMapRootState();
 
   const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
@@ -56,5 +59,29 @@ export const useCommandsSystems = () => {
     update({ systems: out }, true);
   }, []);
 
-  return { addSystems, removeSystems, updateSystems };
+  const updateSystemSignatures = useCallback(
+    async (systemId: string) => {
+      const { update, systems } = ref.current;
+
+      const { signatures } = await outCommand({
+        type: OutCommand.getSignatures,
+        data: { system_id: `${systemId}` },
+      });
+
+      const out = systems.map(current => {
+        if (current.id === `${systemId}`) {
+          return { ...current, system_signatures: signatures };
+        }
+
+        return current;
+      });
+
+      update({ systems: out }, true);
+
+      emitMapEvent({ name: Commands.updateSystems, data: out });
+    },
+    [outCommand],
+  );
+
+  return { addSystems, removeSystems, updateSystems, updateSystemSignatures };
 };

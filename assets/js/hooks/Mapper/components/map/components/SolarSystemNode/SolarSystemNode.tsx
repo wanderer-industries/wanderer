@@ -3,6 +3,8 @@ import { Handle, Position, WrapNodeProps } from 'reactflow';
 import { MapSolarSystemType } from '../../map.types';
 import classes from './SolarSystemNode.module.scss';
 import clsx from 'clsx';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+
 import {
   EFFECT_BACKGROUND_STYLES,
   LABELS_INFO,
@@ -12,8 +14,9 @@ import {
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
+import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
-import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
+import { getSystemClassStyles, prepareUnsplashedChunks } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
 import { PrimeIcons } from 'primereact/api';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
@@ -50,6 +53,9 @@ export const getActivityType = (count: number) => {
 
 // eslint-disable-next-line react/display-name
 export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarSystemType>) => {
+  const { interfaceSettings } = useMapRootState();
+  const { isShowUnsplashedSignatures } = interfaceSettings;
+
   const {
     system_class,
     security,
@@ -62,6 +68,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
     is_shattered,
     solar_system_name,
   } = data.system_static_info;
+
+  const signatures = data.system_signatures;
 
   const { locked, name, tag, status, labels, id } = data || {};
 
@@ -127,6 +135,22 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
+
+  const [unsplashedLeft, unsplashedRight] = useMemo(() => {
+    if (!isShowUnsplashedSignatures) {
+      return [[], []];
+    }
+
+    return prepareUnsplashedChunks(
+      signatures
+        .filter(s => s.group === 'Wormhole' && !s.linked_system)
+        .map(s => ({
+          eve_id: s.eve_id,
+          type: s.type,
+          custom_info: s.custom_info,
+        })),
+    );
+  }, [isShowUnsplashedSignatures, signatures]);
 
   return (
     <>
@@ -236,6 +260,22 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
           </>
         )}
       </div>
+
+      {visible && isShowUnsplashedSignatures && (
+        <div className={classes.Unsplashed}>
+          {unsplashedLeft.map(x => (
+            <UnsplashedSignature key={x.sig_id} signature={x} />
+          ))}
+        </div>
+      )}
+
+      {visible && isShowUnsplashedSignatures && (
+        <div className={clsx([classes.Unsplashed, classes['Unsplashed--right']])}>
+          {unsplashedRight.map(x => (
+            <UnsplashedSignature key={x.sig_id} signature={x} />
+          ))}
+        </div>
+      )}
 
       <div onMouseDownCapture={dbClick} className={classes.Handlers}>
         <Handle

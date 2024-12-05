@@ -34,6 +34,7 @@ export enum InterfaceStoredSettingsProps {
   isShowMinimap = 'isShowMinimap',
   isShowKSpace = 'isShowKSpace',
   isThickConnections = 'isThickConnections',
+  isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
 }
 
 export type InterfaceStoredSettings = {
@@ -41,6 +42,7 @@ export type InterfaceStoredSettings = {
   isShowMinimap: boolean;
   isShowKSpace: boolean;
   isThickConnections: boolean;
+  isShowUnsplashedSignatures: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
@@ -48,6 +50,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMinimap: true,
   isShowKSpace: false,
   isThickConnections: false,
+  isShowUnsplashedSignatures: false,
 };
 
 export interface MapRootContextProps {

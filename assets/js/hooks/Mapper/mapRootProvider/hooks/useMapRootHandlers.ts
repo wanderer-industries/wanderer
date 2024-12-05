@@ -13,6 +13,7 @@ import {
   CommandRemoveSystems,
   CommandRoutes,
   Commands,
+  CommandSignaturesUpdated,
   CommandUpdateConnection,
   CommandUpdateSystems,
   MapHandlers,
@@ -31,7 +32,7 @@ import { emitMapEvent } from '@/hooks/Mapper/events';
 
 export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapInit = useMapInit();
-  const { addSystems, removeSystems, updateSystems } = useCommandsSystems();
+  const { addSystems, removeSystems, updateSystems, updateSystemSignatures } = useCommandsSystems();
   const { addConnections, removeConnections, updateConnection } = useCommandsConnections();
   const { charactersUpdated, characterAdded, characterRemoved, characterUpdated, presentCharacters } =
     useCommandsCharacters();
@@ -88,7 +89,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
 
             case Commands.signaturesUpdated: // USED
-              // do nothing here
+              updateSystemSignatures(data as CommandSignaturesUpdated);
               break;
 
             case Commands.linkSignatureToSystem: // USED
