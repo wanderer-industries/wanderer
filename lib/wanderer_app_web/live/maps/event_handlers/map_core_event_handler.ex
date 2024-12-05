@@ -542,12 +542,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          %{
            manage_map: manage_map_permission
          } = _user_permissions,
-         %{
-           "restrict_offline_showing" => restrict_offline_showing
-         } = _options
+         options
        ) do
-    show_offline? =
-      not (restrict_offline_showing |> String.to_existing_atom()) or manage_map_permission
+    restrict_offline_showing =
+      options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom()
+
+    show_offline? = not restrict_offline_showing or manage_map_permission
 
     characters
     |> Enum.filter(fn character ->
