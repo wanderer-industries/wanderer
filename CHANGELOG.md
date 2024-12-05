@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.29.0](https://github.com/wanderer-industries/wanderer/compare/v1.28.1...v1.29.0) (2024-12-05)
+
+
+
+
+### Features:
+
+* Signatures: Show 'Unsplashed' signatures on the map (optionally)
+
 ## [v1.28.1](https://github.com/wanderer-industries/wanderer/compare/v1.28.0...v1.28.1) (2024-12-04)
 
 
