@@ -49,7 +49,7 @@ defmodule WandererApp.EveDataService do
         end)
       end)
 
-    Task.await_many(tasks, :timer.minutes(1))
+    Task.await_many(tasks, :timer.minutes(30))
   end
 
   def download_file(file_name) do
