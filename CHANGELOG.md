@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.29.3](https://github.com/wanderer-industries/wanderer/compare/v1.29.2...v1.29.3) (2024-12-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Increased eve DB data download timeout
+
 ## [v1.29.2](https://github.com/wanderer-industries/wanderer/compare/v1.29.1...v1.29.2) (2024-12-07)
 
 
