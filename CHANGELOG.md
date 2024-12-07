@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.29.2](https://github.com/wanderer-industries/wanderer/compare/v1.29.1...v1.29.2) (2024-12-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix unpkg CDN issues, fix Abyssals sites adding as systems on map
+
 ## [v1.29.1](https://github.com/wanderer-industries/wanderer/compare/v1.29.0...v1.29.1) (2024-12-05)
 
 
