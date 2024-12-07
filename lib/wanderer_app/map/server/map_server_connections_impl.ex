@@ -356,8 +356,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   def can_add_location(_scope, nil), do: false
 
-  def can_add_location(:all, _solar_system_id), do: true
-
   def can_add_location(:none, _solar_system_id), do: false
 
   def can_add_location(scope, solar_system_id) do
@@ -379,6 +377,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       :stargates ->
         not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class)) and
           @known_space |> Enum.member?(system_static_info.system_class)
+
+      :all ->
+        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class))
 
       _ ->
         false

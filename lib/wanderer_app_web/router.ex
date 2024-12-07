@@ -57,6 +57,7 @@ defmodule WandererAppWeb.Router do
           @script_src,
           ~w('unsafe-inline'),
           ~w(https://unpkg.com),
+          ~w(https://cdn.jsdelivr.net),
           ~w(https://w.appzi.io),
           ~w(https://www.googletagmanager.com),
           ~w(https://cdnjs.cloudflare.com)
