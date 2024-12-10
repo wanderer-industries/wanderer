@@ -446,8 +446,13 @@ defmodule WandererApp.Character.Tracker do
         |> Map.merge(%{alliance_id: alliance_id, corporation_id: corporation_id})
         |> maybe_update_alliance()
 
-      _error ->
-        Logger.warning("Failed to get corporation info for #{corporation_id}")
+      error ->
+        Logger.warning(
+          "Failed to get corporation info for character #{character_id}: #{inspect(error)}",
+          character_id: character_id,
+          corporation_id: corporation_id
+        )
+
         state
     end
   end

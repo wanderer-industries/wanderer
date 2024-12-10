@@ -197,11 +197,13 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply, socket}
   end
 
-  def handle_event("validate", %{"form" => params} = _params, socket) do
+  def handle_event("validate", %{"form" => form} = _params, socket) do
     form =
       AshPhoenix.Form.validate(
         socket.assigns.form,
-        params |> Map.put("acls", params["acls"] || [])
+        form
+        |> Map.put("acls", form["acls"] || [])
+        |> Map.put("only_tracked_characters", form["only_tracked_characters"] || false)
       )
 
     {:noreply, socket |> assign(form: form)}
