@@ -12,9 +12,14 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
   code_interface do
     define(:create, action: :create)
+    define(:destroy, action: :destroy)
 
     define(:read_by_map,
       action: :read_by_map
+    )
+
+    define(:by_map_filtered,
+      action: :by_map_filtered
     )
 
     define(:tracked_by_map_filtered,
@@ -37,6 +42,13 @@ defmodule WandererApp.Api.MapCharacterSettings do
     ]
 
     defaults [:create, :read, :update, :destroy]
+
+    read :by_map_filtered do
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:character_ids, {:array, :uuid}, allow_nil?: false)
+
+      filter(expr(map_id == ^arg(:map_id) and character_id in ^arg(:character_ids)))
+    end
 
     read :tracked_by_map_filtered do
       argument(:map_id, :string, allow_nil?: false)

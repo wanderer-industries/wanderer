@@ -89,6 +89,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         []
       )
 
+    acls =
+      map_id
+      |> WandererApp.Map.get_map!()
+      |> Map.get(:acls, [])
+
     invalidate_character_ids
     |> Task.async_stream(
       fn character_id ->
@@ -96,11 +101,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         |> WandererApp.Character.get_character()
         |> case do
           {:ok, character} ->
-            acls =
-              map_id
-              |> WandererApp.Map.get_map!()
-              |> Map.get(:acls, [])
-
             [character_permissions] =
               WandererApp.Permissions.check_characters_access([character], acls)
 
@@ -157,12 +157,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     |> untrack_characters(character_ids)
 
     map_id
-    |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(character_ids)
+    |> WandererApp.MapCharacterSettingsRepo.get_by_map_filtered(character_ids)
     |> case do
       {:ok, settings} ->
         settings
         |> Enum.each(fn s ->
-          WandererApp.MapCharacterSettingsRepo.untrack(s)
+          WandererApp.MapCharacterSettingsRepo.destroy!(s)
           remove_character(map_id, s.character_id)
         end)
 

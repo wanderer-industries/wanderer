@@ -486,7 +486,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       state
     else
       error ->
-        Logger.error("Fail ed to update system: #{inspect(error, pretty: true)}")
+        Logger.error("Failed to update system: #{inspect(error, pretty: true)}")
         state
     end
   end

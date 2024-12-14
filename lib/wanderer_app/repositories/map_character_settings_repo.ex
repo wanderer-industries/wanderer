@@ -11,6 +11,13 @@ defmodule WandererApp.MapCharacterSettingsRepo do
         character_ids: character_ids
       })
 
+  def get_by_map_filtered(map_id, character_ids),
+    do:
+      WandererApp.Api.MapCharacterSettings.by_map_filtered(%{
+        map_id: map_id,
+        character_ids: character_ids
+      })
+
   def get_all_by_map(map_id),
     do: WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id})
 
@@ -22,4 +29,6 @@ defmodule WandererApp.MapCharacterSettingsRepo do
 
   def track!(settings), do: settings |> WandererApp.Api.MapCharacterSettings.track!()
   def untrack!(settings), do: settings |> WandererApp.Api.MapCharacterSettings.untrack!()
+
+  def destroy!(settings), do: settings |> WandererApp.Api.MapCharacterSettings.destroy!()
 end

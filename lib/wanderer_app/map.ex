@@ -191,7 +191,7 @@ defmodule WandererApp.Map do
     case characters |> Enum.member?(character_id) do
       true ->
         map_id
-        |> update_map(%{characters: Enum.reject(characters, fn id -> id == character_id end)})
+        |> update_map(%{characters: characters |> Enum.reject(fn id -> id == character_id end)})
 
         :ok
 
