@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.29.5](https://github.com/wanderer-industries/wanderer/compare/v1.29.4...v1.29.5) (2024-12-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix character trackers cleanup
+
 ## [v1.29.4](https://github.com/wanderer-industries/wanderer/compare/v1.29.3...v1.29.4) (2024-12-10)
 
 
