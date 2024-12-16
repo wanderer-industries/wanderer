@@ -33,9 +33,6 @@ export const useContextMenuSystemItems = ({
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
-    // eslint-disable-next-line no-console
-    console.log('JOipP', `system`, system);
-
     if (!system || !systemId) {
       return [];
     }
