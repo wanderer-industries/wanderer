@@ -2,6 +2,27 @@
 
 <!-- changelog -->
 
+## [v1.30.0](https://github.com/wanderer-industries/wanderer/compare/v1.29.5...v1.30.0) (2024-12-16)
+
+
+
+
+### Features:
+
+* Map: Fixed incorrect wrapping labels of checkboxes in System Signatures, Local and Routes. Also changed dotlan links for k-spacem now it leads to region map before, for wh all stay as it was. Added ability to chane to softer background and remove dots on background of map. Also some small design issues. #2
+
+* Map: Fixed incorrect wrapping labels of checkboxes in System Signatures, Local and Routes. Also changed dotlan links for k-spacem now it leads to region map before, for wh all stay as it was. Added ability to chane to softer background and remove dots on background of map. Also some small design issues.
+
+### Bug Fixes:
+
+* Map: fixed U210, K346 for C4 shattered systems
+
+* Map: fixed U210, K346 for shattered systems. Fixed mass of mediums chains. Fixed size of some capital chains from 3M to 3.3M. Based on https://whtype.info/ data.
+
+* Map: removed unnecessary log
+
+* Map: Uncomment what should not be commented
+
 ## [v1.29.5](https://github.com/wanderer-industries/wanderer/compare/v1.29.4...v1.29.5) (2024-12-14)
 
 
