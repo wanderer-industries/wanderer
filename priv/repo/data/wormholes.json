@@ -409,7 +409,7 @@
   {
     "mass_regen": 0,
     "dest": "ns",
-    "src": ["c3", "c5-shattered", "c6-shattered"],
+    "src": ["c3", "c4-shattered", "c5-shattered", "c6-shattered"],
     "static": true,
     "max_mass_per_jump": 300000000,
     "lifetime": "16",
@@ -805,7 +805,7 @@
   {
     "mass_regen": 0,
     "dest": "ls",
-    "src": ["c3", "c5-shattered"],
+    "src": ["c3", "c4-shattered", "c5-shattered"],
     "static": true,
     "max_mass_per_jump": 300000000,
     "lifetime": "24",
