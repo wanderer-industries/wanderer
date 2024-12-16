@@ -12,24 +12,24 @@ services:
     volumes:
       - db-new:/var/lib/postgresql/data
 
-  wanderer:
-    environment:
-      PORT: 8000
-      DB_HOST: db
-      WEB_APP_URL: "http://localhost:8000"
-      ERL_AFLAGS: "-kernel shell_history enabled"
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - 8000:8000
-    volumes:
-      - ..:/app:delegated
-      - ~/.gitconfig:/root/.gitconfig
-      - ~/.gitignore:/root/.gitignore
-      - ~/.ssh:/root/.ssh
-      - elixir-artifacts:/opt/elixir-artifacts
-    command: sleep infinity
+#  wanderer:
+#    environment:
+#      PORT: 8000
+#      DB_HOST: db
+#      WEB_APP_URL: "http://localhost:8000"
+#      ERL_AFLAGS: "-kernel shell_history enabled"
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - 8000:8000
+#    volumes:
+#      - ..:/app:delegated2
+#      - ~/.gitconfig:/root/.gitconfig
+#      - ~/.gitignore:/root/.gitignore
+#      - ~/.ssh:/root/.ssh
+#      - elixir-artifacts:/opt/elixir-artifacts
+#    command: sleep infinity
 
 volumes:
   elixir-artifacts: {}

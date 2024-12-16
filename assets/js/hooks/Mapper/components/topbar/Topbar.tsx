@@ -18,7 +18,7 @@ const Topbar = ({ children }: WithChildren) => {
     <nav
       className={clsx(
         'px-2 flex items-center justify-center min-w-0 h-12 pointer-events-auto',
-        'border-b border-gray-900 bg-gray-800 bg-opacity-5',
+        'border-b border-stone-800 bg-gray-800 bg-opacity-5',
         'bg-opacity-70 bg-neutral-900',
       )}
     >

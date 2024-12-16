@@ -34,6 +34,7 @@ import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import clsx from 'clsx';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -97,6 +98,8 @@ interface MapCompProps {
   onSystemContextMenu: (event: MouseEvent<Element>, systemId: string) => void;
   showKSpaceBG?: boolean;
   isThickConnections?: boolean;
+  isShowBackgroundPattern?: boolean;
+  isSoftBackground?: boolean;
 }
 
 const MapComp = ({
@@ -111,6 +114,8 @@ const MapComp = ({
   isShowMinimap,
   showKSpaceBG,
   isThickConnections,
+  isShowBackgroundPattern,
+  isSoftBackground,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -216,7 +221,7 @@ const MapComp = ({
 
   return (
     <>
-      <div className={classes.MapRoot}>
+      <div className={clsx(classes.MapRoot, { ['bg-neutral-900']: isSoftBackground })}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -263,7 +268,7 @@ const MapComp = ({
           selectionMode={SelectionMode.Partial}
         >
           {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
-          <Background />
+          {isShowBackgroundPattern && <Background />}
         </ReactFlow>
         {/* <button className="z-auto btn btn-primary absolute top-20 right-20" onClick={handleGetPassages}>
           Test // DON NOT REMOVE

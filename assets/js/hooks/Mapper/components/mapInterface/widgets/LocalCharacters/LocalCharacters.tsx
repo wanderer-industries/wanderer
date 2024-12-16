@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
@@ -10,6 +10,8 @@ import { sortCharacters } from '@/hooks/Mapper/components/mapInterface/helpers/s
 import useLocalStorageState from 'use-local-storage-state';
 import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 type CharItemProps = {
   compact: boolean;
@@ -92,21 +94,26 @@ export const LocalCharacters = () => {
   const isNotSelectedSystem = selectedSystems.length !== 1;
   const showList = sorted.length > 0 && selectedSystems.length === 1;
 
+  const ref = useRef<HTMLDivElement>(null);
+  const compact = useMaxWidth(ref, 145);
+
   return (
     <Widget
       label={
-        <div className="flex justify-between items-center text-xs w-full">
+        <div className="flex justify-between items-center text-xs w-full" ref={ref}>
           <span className="select-none">Local{showList ? ` [${sorted.length}]` : ''}</span>
           <LayoutEventBlocker className="flex items-center gap-2">
             {showOffline && (
-              <WdCheckbox
-                size="xs"
-                labelSide="left"
-                label={'Show offline'}
-                value={settings.showOffline}
-                classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-                onChange={() => setSettings(() => ({ ...settings, showOffline: !settings.showOffline }))}
-              />
+              <WdTooltipWrapper content="Show offline characters in system">
+                <WdCheckbox
+                  size="xs"
+                  labelSide="left"
+                  label={compact ? '' : 'Show offline'}
+                  value={settings.showOffline}
+                  classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+                  onChange={() => setSettings(() => ({ ...settings, showOffline: !settings.showOffline }))}
+                />
+              </WdTooltipWrapper>
             )}
 
             <span

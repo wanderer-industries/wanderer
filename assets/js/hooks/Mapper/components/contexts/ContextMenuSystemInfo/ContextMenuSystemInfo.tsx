@@ -10,6 +10,7 @@ import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/ty
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
 import { useJumpPlannerMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
+import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 
 export interface ContextMenuSystemInfoProps {
   systemStatics: Map<number, SolarSystemStaticInfoRaw>;
@@ -48,7 +49,6 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
     if (!systemId || !system) {
       return [];
     }
-
     return [
       {
         className: classes.FastActions,
@@ -57,6 +57,8 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
             <FastSystemActions
               systemId={systemId}
               systemName={system.solar_system_name}
+              regionName={system.region_name}
+              isWH={isWormholeSpace(system.system_class)}
               onOpenSettings={onOpenSettings}
             />
           );
