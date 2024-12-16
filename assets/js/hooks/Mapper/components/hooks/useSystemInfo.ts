@@ -14,6 +14,9 @@ export const useSystemInfo = ({ systemId }: UseSystemInfoProps) => {
 
   const { systems: systemStatics } = useLoadSystemStatic({ systems: [systemId] });
 
+  // eslint-disable-next-line no-console
+  console.log('JOipP', `systemStatics`, systemStatics);
+
   return useMemo(() => {
     const staticInfo = systemStatics.get(parseInt(systemId));
     const dynamicInfo = getSystemById(systems, systemId);

@@ -35,6 +35,8 @@ export enum InterfaceStoredSettingsProps {
   isShowKSpace = 'isShowKSpace',
   isThickConnections = 'isThickConnections',
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
+  isShowBackgroundPattern = 'isShowBackgroundPattern',
+  isSoftBackground = 'isSoftBackground',
 }
 
 export type InterfaceStoredSettings = {
@@ -43,6 +45,8 @@ export type InterfaceStoredSettings = {
   isShowKSpace: boolean;
   isThickConnections: boolean;
   isShowUnsplashedSignatures: boolean;
+  isShowBackgroundPattern: boolean;
+  isSoftBackground: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
@@ -51,6 +55,8 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowKSpace: false,
   isThickConnections: false,
   isShowUnsplashedSignatures: false,
+  isShowBackgroundPattern: true,
+  isSoftBackground: false,
 };
 
 export interface MapRootContextProps {

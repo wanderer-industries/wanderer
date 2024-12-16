@@ -34,6 +34,8 @@ export const MapWrapper = () => {
       isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
       isShowKSpace,
       isThickConnections,
+      isShowBackgroundPattern,
+      isSoftBackground,
     },
   } = useMapRootState();
   const { deleteSystems } = useDeleteSystems();
@@ -135,6 +137,8 @@ export const MapWrapper = () => {
         showKSpaceBG={isShowKSpace}
         onManualDelete={handleManualDelete}
         isThickConnections={isThickConnections}
+        isShowBackgroundPattern={isShowBackgroundPattern}
+        isSoftBackground={isSoftBackground}
       />
 
       {openSettings != null && (

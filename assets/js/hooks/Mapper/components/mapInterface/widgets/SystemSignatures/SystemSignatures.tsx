@@ -20,12 +20,14 @@ import {
 } from './SystemSignatureSettingsDialog';
 import { SignatureGroup } from '@/hooks/Mapper/types';
 
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 
 import { PrimeIcons } from 'primereact/api';
 
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CheckboxChangeEvent } from 'primereact/checkbox';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_2';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
@@ -96,21 +98,26 @@ export const SystemSignatures = () => {
     }
   }, []);
 
+  const ref = useRef<HTMLDivElement>(null);
+  const compact = useMaxWidth(ref, 260);
+
   return (
     <Widget
       label={
-        <div className="flex justify-between items-center text-xs w-full h-full">
-          <div className="flex gap-1">System Signatures</div>
+        <div className="flex justify-between items-center text-xs w-full h-full" ref={ref}>
+          <div className="flex gap-1 whitespace-nowrap text-ellipsis overflow-hidden">System Signatures</div>
 
           <LayoutEventBlocker className="flex gap-2.5">
-            <WdCheckbox
-              size="xs"
-              labelSide="left"
-              label={'Lazy delete'}
-              value={lazyDeleteValue}
-              classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-              onChange={(event: CheckboxChangeEvent) => handleLazyDeleteChange(!!event.checked)}
-            />
+            <WdTooltipWrapper content="Enable Lazy delete">
+              <WdCheckbox
+                size="xs"
+                labelSide="left"
+                label={compact ? '' : 'Lazy delete'}
+                value={lazyDeleteValue}
+                classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300 whitespace-nowrap text-ellipsis overflow-hidden"
+                onChange={(event: CheckboxChangeEvent) => handleLazyDeleteChange(!!event.checked)}
+              />
+            </WdTooltipWrapper>
 
             <WdImgButton
               className={PrimeIcons.QUESTION_CIRCLE}

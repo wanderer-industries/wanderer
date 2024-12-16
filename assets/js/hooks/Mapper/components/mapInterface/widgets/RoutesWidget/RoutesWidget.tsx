@@ -19,6 +19,8 @@ import { PrimeIcons } from 'primereact/api';
 import { RoutesSettingsDialog } from './RoutesSettingsDialog';
 import { RoutesProvider, useRouteProvider } from './RoutesProvider.tsx';
 import { ContextMenuSystemInfo, useContextMenuSystemInfoHandlers } from '@/hooks/Mapper/components/contexts';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 const sortByDist = (a: Route, b: Route) => {
   const distA = a.has_connection ? a.systems?.length || 0 : Infinity;
@@ -170,20 +172,25 @@ export const RoutesWidgetComp = () => {
     });
   }, [data, update]);
 
+  const ref = useRef<HTMLDivElement>(null);
+  const compact = useMaxWidth(ref, 155);
+
   return (
     <Widget
       label={
-        <div className="flex justify-between items-center text-xs w-full">
+        <div className="flex justify-between items-center text-xs w-full" ref={ref}>
           <span className="select-none">Routes</span>
           <LayoutEventBlocker className="flex items-center gap-2">
-            <WdCheckbox
-              size="xs"
-              labelSide="left"
-              label={'Show shortest'}
-              value={!isSecure}
-              onChange={handleSecureChange}
-              classNameLabel={clsx('text-red-400')}
-            />
+            <WdTooltipWrapper content="Show shortest route">
+              <WdCheckbox
+                size="xs"
+                labelSide="left"
+                label={compact ? '' : 'Show shortest'}
+                value={!isSecure}
+                onChange={handleSecureChange}
+                classNameLabel={clsx('text-red-400')}
+              />
+            </WdTooltipWrapper>
             <WdImgButton className={PrimeIcons.SLIDERS_H} onClick={() => setRouteSettingsVisible(true)} />
           </LayoutEventBlocker>
         </div>
