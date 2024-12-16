@@ -8,6 +8,7 @@ import { useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
@@ -32,6 +33,9 @@ export const useContextMenuSystemItems = ({
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
+    // eslint-disable-next-line no-console
+    console.log('JOipP', `system`, system);
+
     if (!system || !systemId) {
       return [];
     }
@@ -44,6 +48,8 @@ export const useContextMenuSystemItems = ({
             <FastSystemActions
               systemId={systemId}
               systemName={system.system_static_info.solar_system_name}
+              regionName={system.system_static_info.region_name}
+              isWH={isWormholeSpace(system.system_static_info.system_class)}
               showEdit
               onOpenSettings={onOpenSettings}
             />
