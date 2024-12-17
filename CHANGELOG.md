@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.30.2](https://github.com/wanderer-industries/wanderer/compare/v1.30.1...v1.30.2) (2024-12-17)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with ship size change.
+
 ## [v1.30.1](https://github.com/wanderer-industries/wanderer/compare/v1.30.0...v1.30.1) (2024-12-17)
 
 
