@@ -97,14 +97,16 @@ export const useContextMenuConnectionHandlers = () => {
       },
     });
 
-    outCommand({
-      type: OutCommand.updateConnectionMassStatus,
-      data: {
-        source: edge.source,
-        target: edge.target,
-        value: MassState.normal,
-      },
-    });
+    if (status === ShipSizeStatus.small) {
+      outCommand({
+        type: OutCommand.updateConnectionMassStatus,
+        data: {
+          source: edge.source,
+          target: edge.target,
+          value: MassState.normal,
+        },
+      });
+    }
   }, []);
 
   const onToggleMassSave = useCallback((locked: boolean) => {
