@@ -2,25 +2,26 @@ import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import {
   InfoDrawer,
   LayoutEventBlocker,
+  SystemView,
   TooltipPosition,
-  WdImgButton,
   WdCheckbox,
+  WdImgButton,
 } from '@/hooks/Mapper/components/ui-kit';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
 import {
-  Setting,
-  SystemSignatureSettingsDialog,
-  COSMIC_SIGNATURE,
   COSMIC_ANOMALY,
+  COSMIC_SIGNATURE,
   DEPLOYABLE,
-  STRUCTURE,
-  STARBASE,
-  SHIP,
   DRONE,
+  Setting,
+  SHIP,
+  STARBASE,
+  STRUCTURE,
+  SystemSignatureSettingsDialog,
 } from './SystemSignatureSettingsDialog';
 import { SignatureGroup } from '@/hooks/Mapper/types';
 
-import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { PrimeIcons } from 'primereact/api';
 
@@ -105,7 +106,14 @@ export const SystemSignatures = () => {
     <Widget
       label={
         <div className="flex justify-between items-center text-xs w-full h-full" ref={ref}>
-          <div className="flex gap-1 whitespace-nowrap text-ellipsis overflow-hidden">System Signatures</div>
+          <div className="flex justify-between items-center gap-1">
+            {!compact && (
+              <div className="flex whitespace-nowrap text-ellipsis overflow-hidden text-stone-400">
+                Signatures {isNotSelectedSystem ? '' : 'in'}
+              </div>
+            )}
+            {!isNotSelectedSystem && <SystemView systemId={systemId} className="select-none text-center" hideRegion />}
+          </div>
 
           <LayoutEventBlocker className="flex gap-2.5">
             <WdTooltipWrapper content="Enable Lazy delete">
