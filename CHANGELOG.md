@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.30.1](https://github.com/wanderer-industries/wanderer/compare/v1.30.0...v1.30.1) (2024-12-17)
+
+
+
+
+### Bug Fixes:
+
+* Map: Little rework Signatures header: change System Signatures to Signatures, and show selected system name instead.
+
+* Map: update default size of connections
+
+* Map: add ability set the size of wormhole and mark connection with label
+
 ## [v1.30.0](https://github.com/wanderer-industries/wanderer/compare/v1.29.5...v1.30.0) (2024-12-16)
 
 
