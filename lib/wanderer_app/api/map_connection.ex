@@ -128,11 +128,13 @@ defmodule WandererApp.Api.MapConnection do
       allow_nil?(true)
     end
 
-    # where 0 - Frigate
-    # where 1 - Medium and Large
-    # where 2 - Capital
+    # where 0 - Frigate (small
+    # where 1 - Medium
+    # where 2 - Large
+    # where 3 - Freight
+    # where 4 - Capital
     attribute :ship_size_type, :integer do
-      default(1)
+      default(2)
 
       allow_nil?(true)
     end
