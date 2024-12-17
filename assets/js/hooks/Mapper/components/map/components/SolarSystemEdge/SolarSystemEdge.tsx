@@ -8,6 +8,7 @@ import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeS
 import { PrimeIcons } from 'primereact/api';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
+import { SHIP_SIZES_DESCRIPTION, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants.ts';
 
 const MAP_TRANSLATES: Record<string, string> = {
   [Position.Top]: 'translate(-48%, 0%)',
@@ -28,6 +29,14 @@ const MAP_OFFSETS: Record<string, { x: number; y: number }> = {
   [Position.Bottom]: { x: 0, y: 0 },
   [Position.Left]: { x: 0, y: 0 },
   [Position.Right]: { x: 0, y: 0 },
+};
+
+export const SHIP_SIZES_COLORS = {
+  [ShipSizeStatus.small]: 'bg-indigo-400',
+  [ShipSizeStatus.medium]: 'bg-cyan-500',
+  [ShipSizeStatus.large]: '',
+  [ShipSizeStatus.freight]: 'bg-lime-400',
+  [ShipSizeStatus.capital]: 'bg-red-400',
 };
 
 export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: EdgeProps<SolarSystemConnection>) => {
@@ -135,6 +144,19 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
               )}
             >
               <span className={clsx(PrimeIcons.LOCK, classes.icon)} />
+            </WdTooltipWrapper>
+          )}
+
+          {isWormhole && data.ship_size_type !== ShipSizeStatus.large && (
+            <WdTooltipWrapper
+              content={SHIP_SIZES_DESCRIPTION[data.ship_size_type]}
+              className={clsx(
+                classes.LinkLabel,
+                'pointer-events-auto rounded opacity-100 cursor-auto text-neutral-900 font-bold',
+                SHIP_SIZES_COLORS[data.ship_size_type],
+              )}
+            >
+              {SHIP_SIZES_NAMES_SHORT[data.ship_size_type]}
             </WdTooltipWrapper>
           )}
         </div>

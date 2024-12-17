@@ -21,9 +21,6 @@ const getPossibleWormholes = (systemStatic: SolarSystemStaticInfoRaw, wormholes:
     return x.src.some(x => {
       const [group, type] = x.split('-');
 
-      // eslint-disable-next-line no-console
-      console.log('JOipP', `group, type`, group, type);
-
       if (type === 'shattered') {
         return systemStatic.is_shattered && group === spawnClassGroup;
       }
@@ -31,11 +28,6 @@ const getPossibleWormholes = (systemStatic: SolarSystemStaticInfoRaw, wormholes:
       return group === spawnClassGroup;
     });
   });
-
-  // eslint-disable-next-line no-console
-  console.log('JOipP', `possibleWHTypes`, possibleWHTypes);
-
-  // debugger;
 
   return {
     statics: possibleWHTypes
