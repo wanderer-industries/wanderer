@@ -98,6 +98,34 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_ui_event(
         "manual_add_system",
+        %{"solar_system_id" => solar_system_id, "coordinates" => coordinates} = _event,
+        %{
+          assigns: %{
+            current_user: current_user,
+            has_tracked_characters?: true,
+            map_id: map_id,
+            tracked_character_ids: tracked_character_ids,
+            user_permissions: %{add_system: true}
+          }
+        } =
+          socket
+      )
+      when is_binary(solar_system_id) do
+    WandererApp.Map.Server.add_system(
+      map_id,
+      %{
+        solar_system_id: solar_system_id,
+        coordinates: coordinates
+      },
+      current_user.id,
+      tracked_character_ids |> List.first()
+    )
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
+        "manual_add_system",
         %{"coordinates" => coordinates} = _event,
         %{
           assigns: %{
@@ -281,6 +309,19 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "search_systems",
+        %{"text" => text} = _event,
+        socket
+      ) do
+    systems =
+      WandererApp.Api.MapSolarSystem.find_by_name!(%{name: text})
+      |> Enum.take(100)
+      |> Enum.map(&map_system/1)
+
+    {:reply, %{systems: systems}, socket}
+  end
+
+  def handle_ui_event(
         "delete_systems",
         solar_system_ids,
         %{
@@ -306,6 +347,23 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+
+  defp map_system(
+         %{
+           solar_system_name: solar_system_name,
+           constellation_name: constellation_name,
+           region_name: region_name,
+           solar_system_id: solar_system_id,
+           class_title: class_title
+         } = _system
+       ),
+       do: %{
+         label: solar_system_name,
+         value: solar_system_id,
+         constellation_name: constellation_name,
+         region_name: region_name,
+         class_title: class_title
+       }
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true

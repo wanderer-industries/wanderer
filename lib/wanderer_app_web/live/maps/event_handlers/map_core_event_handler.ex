@@ -555,21 +555,4 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         user_character_eve_ids |> Enum.member?(character.eve_id)
     end)
   end
-
-  defp map_system(
-         %{
-           solar_system_name: solar_system_name,
-           constellation_name: constellation_name,
-           region_name: region_name,
-           solar_system_id: solar_system_id,
-           class_title: class_title
-         } = _system
-       ),
-       do: %{
-         label: solar_system_name,
-         value: solar_system_id,
-         constellation_name: constellation_name,
-         region_name: region_name,
-         class_title: class_title
-       }
 end
