@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler}
+  alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler, MapSystemsEventHandler}
 
   def handle_server_event(:update_permissions, socket) do
     DebounceAndThrottle.Debounce.apply(
@@ -147,7 +147,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     options =
       WandererApp.Api.MapSolarSystem.find_by_name!(%{name: text})
       |> Enum.take(100)
-      |> Enum.map(&map_system/1)
+      |> Enum.map(&MapSystemsEventHandler.map_system/1)
 
     send_update(LiveSelect.Component, options: options, id: id)
 

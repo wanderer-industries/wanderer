@@ -348,22 +348,22 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  defp map_system(
-         %{
-           solar_system_name: solar_system_name,
-           constellation_name: constellation_name,
-           region_name: region_name,
-           solar_system_id: solar_system_id,
-           class_title: class_title
-         } = _system
-       ),
-       do: %{
-         label: solar_system_name,
-         value: solar_system_id,
-         constellation_name: constellation_name,
-         region_name: region_name,
-         class_title: class_title
-       }
+  def map_system(
+        %{
+          solar_system_name: solar_system_name,
+          constellation_name: constellation_name,
+          region_name: region_name,
+          solar_system_id: solar_system_id,
+          class_title: class_title
+        } = _system
+      ),
+      do: %{
+        label: solar_system_name,
+        value: solar_system_id,
+        constellation_name: constellation_name,
+        region_name: region_name,
+        class_title: class_title
+      }
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true
