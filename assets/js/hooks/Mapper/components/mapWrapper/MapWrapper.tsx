@@ -1,5 +1,5 @@
 import { Map } from '@/hooks/Mapper/components/map/Map.tsx';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
@@ -32,6 +32,7 @@ export const MapWrapper = () => {
     interfaceSettings: {
       isShowMenu,
       isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
+      isStickMinimapToLeft = STORED_INTERFACE_DEFAULT_VALUES.isStickMinimapToLeft,
       isShowKSpace,
       isThickConnections,
       isShowBackgroundPattern,
@@ -61,6 +62,18 @@ export const MapWrapper = () => {
 
     runCommand(event);
   });
+
+  const minimapClasses = useMemo(() => {
+    if (isStickMinimapToLeft) {
+      return classes['MiniMap--left'];
+    }
+
+    if (!isShowMenu) {
+      return classes.MiniMap;
+    }
+
+    return undefined;
+  }, [isShowMenu, isStickMinimapToLeft]);
 
   const onSelectionChange: OnMapSelectionChange = useCallback(
     ({ systems, connections }) => {
@@ -132,7 +145,7 @@ export const MapWrapper = () => {
         onConnectionInfoClick={handleConnectionDbClick}
         onSystemContextMenu={handleSystemContextMenu}
         onSelectionContextMenu={handleSystemMultipleContext}
-        minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
+        minimapClasses={minimapClasses}
         isShowMinimap={isShowMinimap}
         showKSpaceBG={isShowKSpace}
         onManualDelete={handleManualDelete}

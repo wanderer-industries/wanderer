@@ -1,3 +1,8 @@
 .MiniMap {
   right: 3.5rem !important;
+
+  &--left {
+    left: 3.5rem !important;
+    width: 200px !important;
+  }
 }

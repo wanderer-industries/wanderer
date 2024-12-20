@@ -32,6 +32,7 @@ const INITIAL_DATA: MapRootData = {
 export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
   isShowMinimap = 'isShowMinimap',
+  isStickMinimapToLeft = 'isStickMinimapToLeft',
   isShowKSpace = 'isShowKSpace',
   isThickConnections = 'isThickConnections',
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
@@ -42,6 +43,7 @@ export enum InterfaceStoredSettingsProps {
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowMinimap: boolean;
+  isStickMinimapToLeft: boolean;
   isShowKSpace: boolean;
   isThickConnections: boolean;
   isShowUnsplashedSignatures: boolean;
@@ -52,6 +54,7 @@ export type InterfaceStoredSettings = {
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
   isShowMinimap: true,
+  isStickMinimapToLeft: false,
   isShowKSpace: false,
   isThickConnections: false,
   isShowUnsplashedSignatures: false,

@@ -44,6 +44,7 @@ type CheckboxesList = {
 
 const COMMON_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: InterfaceStoredSettingsProps.isShowMinimap, label: 'Show Minimap' },
+  { prop: InterfaceStoredSettingsProps.isStickMinimapToLeft, label: 'Stick Minimap to left' },
 ];
 
 const SYSTEMS_CHECKBOXES_PROPS: CheckboxesList = [
