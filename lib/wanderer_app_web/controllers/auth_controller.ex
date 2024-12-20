@@ -93,13 +93,9 @@ defmodule WandererAppWeb.AuthController do
     |> redirect(to: ~p"/")
   end
 
-  def maybe_update_character_user_id(character, user_id) do
-    case character.user_id do
-      nil ->
-        WandererApp.Api.Character.assign_user!(character, %{user_id: user_id})
-
-      _ ->
-        Logger.debug("character already has user_id")
-    end
+  def maybe_update_character_user_id(character, user_id) when not is_nil(user_id) do
+    WandererApp.Api.Character.assign_user!(character, %{user_id: user_id})
   end
+
+  def maybe_update_character_user_id(_character, _user_id), do: :ok
 end
