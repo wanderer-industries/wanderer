@@ -356,14 +356,18 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           solar_system_id: solar_system_id,
           class_title: class_title
         } = _system
-      ),
-      do: %{
-        label: solar_system_name,
-        value: solar_system_id,
-        constellation_name: constellation_name,
-        region_name: region_name,
-        class_title: class_title
-      }
+      ) do
+    system_static_info = MapEventHandler.get_system_static_info(solar_system_id)
+
+    %{
+      label: solar_system_name,
+      value: solar_system_id,
+      constellation_name: constellation_name,
+      region_name: region_name,
+      class_title: class_title,
+      system_static_info: system_static_info
+    }
+  end
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true

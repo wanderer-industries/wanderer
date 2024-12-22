@@ -359,14 +359,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   def can_add_location(:none, _solar_system_id), do: false
 
   def can_add_location(scope, solar_system_id) do
-    system_static_info =
-      case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
-        {:ok, system_static_info} when not is_nil(system_static_info) ->
-          system_static_info
-
-        _ ->
-          %{system_class: nil}
-      end
+    {:ok, system_static_info} = get_system_static_info(solar_system_id)
 
     case scope do
       :wormholes ->
@@ -414,24 +407,21 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         current_system_id: to_solar_system_id
       })
 
-    system_static_info =
-      case WandererApp.CachedInfo.get_system_static_info(to_solar_system_id) do
-        {:ok, system_static_info} when not is_nil(system_static_info) ->
-          system_static_info
-
-        _ ->
-          %{system_class: nil}
-      end
+    {:ok, from_system_static_info} = get_system_static_info(from_solar_system_id)
+    {:ok, to_system_static_info} = get_system_static_info(to_solar_system_id)
 
     case scope do
       :wormholes ->
-        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class)) and
+        not (@prohibited_system_classes |> Enum.member?(from_system_static_info.system_class)) and
+          not (@prohibited_system_classes |> Enum.member?(to_system_static_info.system_class)) and
+          not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
           not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
           known_jumps |> Enum.empty?() and to_solar_system_id != @jita and
           from_solar_system_id != @jita
 
       :stargates ->
-        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class)) and
+        not (@prohibited_system_classes |> Enum.member?(from_system_static_info.system_class)) and
+          not (@prohibited_system_classes |> Enum.member?(to_system_static_info.system_class)) and
           not (known_jumps |> Enum.empty?())
     end
   end
@@ -444,6 +434,16 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
       value ->
         value
+    end
+  end
+
+  defp get_system_static_info(solar_system_id) do
+    case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+      {:ok, system_static_info} when not is_nil(system_static_info) ->
+        {:ok, system_static_info}
+
+      _ ->
+        {:ok, %{system_class: nil}}
     end
   end
 
