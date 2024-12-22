@@ -363,20 +363,24 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
     case scope do
       :wormholes ->
-        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class)) and
+        not is_prohibited_system_class?(system_static_info.system_class) and
           not (@prohibited_systems |> Enum.member?(solar_system_id)) and
           @wh_space |> Enum.member?(system_static_info.system_class)
 
       :stargates ->
-        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class)) and
+        not is_prohibited_system_class?(system_static_info.system_class) and
           @known_space |> Enum.member?(system_static_info.system_class)
 
       :all ->
-        not (@prohibited_system_classes |> Enum.member?(system_static_info.system_class))
+        not is_prohibited_system_class?(system_static_info.system_class)
 
       _ ->
         false
     end
+  end
+
+  def is_prohibited_system_class?(system_class) do
+    @prohibited_system_classes |> Enum.member?(system_class)
   end
 
   def is_connection_exist(map_id, from_solar_system_id, to_solar_system_id),
@@ -412,16 +416,16 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
     case scope do
       :wormholes ->
-        not (@prohibited_system_classes |> Enum.member?(from_system_static_info.system_class)) and
-          not (@prohibited_system_classes |> Enum.member?(to_system_static_info.system_class)) and
+        not is_prohibited_system_class?(from_system_static_info.system_class) and
+          not is_prohibited_system_class?(to_system_static_info.system_class) and
           not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
           not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
           known_jumps |> Enum.empty?() and to_solar_system_id != @jita and
           from_solar_system_id != @jita
 
       :stargates ->
-        not (@prohibited_system_classes |> Enum.member?(from_system_static_info.system_class)) and
-          not (@prohibited_system_classes |> Enum.member?(to_system_static_info.system_class)) and
+        not is_prohibited_system_class?(from_system_static_info.system_class) and
+          not is_prohibited_system_class?(to_system_static_info.system_class) and
           not (known_jumps |> Enum.empty?())
     end
   end

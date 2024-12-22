@@ -317,6 +317,12 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       WandererApp.Api.MapSolarSystem.find_by_name!(%{name: text})
       |> Enum.take(100)
       |> Enum.map(&map_system/1)
+      |> Enum.filter(fn system ->
+        not is_nil(system) && not is_nil(system.system_static_info) &&
+          not WandererApp.Map.Server.ConnectionsImpl.is_prohibited_system_class?(
+            system.system_static_info.system_class
+          )
+      end)
 
     {:reply, %{systems: systems}, socket}
   end
