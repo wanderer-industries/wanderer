@@ -41,6 +41,10 @@ defmodule WandererApp.Api.MapSystem do
       action: :read_by_map_and_solar_system
     )
 
+    define(:search_by_map,
+      action: :search_by_map
+    )
+
     define(:update_name, action: :update_name)
     define(:update_description, action: :update_description)
     define(:update_locked, action: :update_locked)
@@ -71,6 +75,20 @@ defmodule WandererApp.Api.MapSystem do
     read :read_visible_by_map do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id) and visible == true))
+    end
+
+    read :search_by_map do
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:text, :string, allow_nil?: false)
+
+      filter(
+        expr(
+          (map_id == ^arg(:map_id) and
+             contains(string_downcase(name), string_downcase(^arg(:text)))) or
+            contains(string_downcase(custom_name), string_downcase(^arg(:text))) or
+            contains(string_downcase(description), string_downcase(^arg(:text)))
+        )
+      )
     end
 
     read :read_by_map_and_solar_system do

@@ -268,6 +268,28 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "get_all_systems",
+        _event,
+        %{
+          assigns: %{
+            map_id: map_id
+          }
+        } =
+          socket
+      ) do
+    {:ok, systems} = WandererApp.MapSystemRepo.get_all_by_map(map_id)
+
+    systems =
+      systems
+      |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, false) end)
+
+    {:reply,
+     %{
+       systems: systems
+     }, socket}
+  end
+
+  def handle_ui_event(
         "get_system_static_infos",
         %{"solar_system_ids" => solar_system_ids} = _event,
         socket

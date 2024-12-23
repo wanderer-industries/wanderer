@@ -523,7 +523,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     %{
       systems:
         systems
-        |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, include_static_data?) end),
+        |> Enum.map(fn system -> MapEventHandler.map_ui_system(system) end),
       hubs: hubs,
       connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1),
       options: options

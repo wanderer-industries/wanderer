@@ -41,6 +41,7 @@ defmodule WandererAppWeb.MapEventHandler do
     "add_system",
     "delete_systems",
     "manual_add_system",
+    "get_all_systems",
     "get_system_static_infos",
     "update_system_position",
     "update_system_positions",
@@ -246,16 +247,23 @@ defmodule WandererAppWeb.MapEventHandler do
           status: status,
           visible: visible
         } = _system,
-        _include_static_data? \\ true
+        include_signatures? \\ true
       ) do
     system_static_info = get_system_static_info(solar_system_id)
 
     system_signatures =
-      system_id
-      |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
-      |> Enum.filter(fn signature ->
-        is_nil(signature.linked_system) && signature.group == "Wormhole"
-      end)
+      include_signatures?
+      |> case do
+        true ->
+          system_id
+          |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
+          |> Enum.filter(fn signature ->
+            is_nil(signature.linked_system) && signature.group == "Wormhole"
+          end)
+
+        _ ->
+          []
+      end
 
     %{
       id: "#{solar_system_id}",
