@@ -120,3 +120,13 @@ export type SolarSystemRawType = {
   system_static_info: SolarSystemStaticInfoRaw;
   system_signatures: SystemSignature[];
 };
+
+export type SearchSystemItem = {
+  class_title: string;
+  constellation_name: string;
+  label: string;
+  region_name: string;
+  system_static_info: SolarSystemStaticInfoRaw;
+  value: number;
+};
+

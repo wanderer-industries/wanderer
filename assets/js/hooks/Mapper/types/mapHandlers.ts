@@ -153,6 +153,7 @@ export enum OutCommand {
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',
+  searchSystems = 'search_systems',
 }
 
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;

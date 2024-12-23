@@ -31,12 +31,15 @@ const prepareEffects = (effects: Record<string, EffectRaw>, effectName: string, 
   return out;
 };
 
+let counter = 0;
+
 export interface WHEffectViewProps {
   effectName: string;
   effectPower: number;
+  className?: string;
 }
 
-export const WHEffectView = ({ effectName, effectPower }: WHEffectViewProps) => {
+export const WHEffectView = ({ effectName, effectPower, className }: WHEffectViewProps) => {
   const {
     data: { effects },
   } = useMapRootState();
@@ -49,7 +52,7 @@ export const WHEffectView = ({ effectName, effectPower }: WHEffectViewProps) => 
     [effectName, effectPower, effects],
   );
 
-  const targetClass = `wh-effect-name${effectInfo.id}`;
+  const targetClass = useMemo(() => `wh-effect-name${effectInfo.id}-${counter++}`, []);
 
   return (
     <div className={classes.WHEffectViewRoot}>
@@ -84,7 +87,7 @@ export const WHEffectView = ({ effectName, effectPower }: WHEffectViewProps) => 
         </div>
       </FixedTooltip>
 
-      <div className={clsx('font-bold select-none cursor-help w-min-content', effectClass, targetClass)}>
+      <div className={clsx('font-bold select-none cursor-help w-min-content', effectClass, targetClass, className)}>
         {effectName}
       </div>
     </div>

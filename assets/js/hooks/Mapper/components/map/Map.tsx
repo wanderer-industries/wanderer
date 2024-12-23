@@ -29,7 +29,7 @@ import {
   useContextMenuConnectionHandlers,
   useContextMenuRootHandlers,
 } from './components';
-import { OnMapSelectionChange } from './map.types';
+import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
@@ -92,6 +92,7 @@ interface MapCompProps {
   onSelectionChange: OnMapSelectionChange;
   onManualDelete(systems: string[]): void;
   onConnectionInfoClick?(e: SolarSystemConnection): void;
+  onAddSystem?: OnMapAddSystemCallback;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
   minimapClasses?: string;
   isShowMinimap?: boolean;
@@ -116,6 +117,7 @@ const MapComp = ({
   isThickConnections,
   isShowBackgroundPattern,
   isSoftBackground,
+  onAddSystem,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -123,7 +125,7 @@ const MapComp = ({
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
-  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers();
+  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
 
