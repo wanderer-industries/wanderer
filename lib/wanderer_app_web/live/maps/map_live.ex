@@ -100,13 +100,6 @@ defmodule WandererAppWeb.MapLive do
     |> assign(:active_page, :map)
   end
 
-  defp apply_action(socket, :add_system, _params) do
-    socket
-    |> assign(:active_page, :map)
-    |> assign(:page_title, "Add System")
-    |> assign(:add_system_form, to_form(%{"system_id" => nil}))
-  end
-
   def character_item(assigns) do
     ~H"""
     <div class="flex items-center gap-3">

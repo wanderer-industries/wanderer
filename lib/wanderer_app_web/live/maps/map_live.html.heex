@@ -32,41 +32,6 @@
 </div>
 
 <.modal
-  :if={@live_action in [:add_system] && not is_nil(assigns |> Map.get(:map_slug)) && @map_loaded?}
-  id="add-system-modal"
-  class="!w-[400px]"
-  title="Add System"
-  show
-  on_cancel={JS.patch(~p"/#{@map_slug}")}
->
-  <.form :let={f} for={@add_system_form} phx-submit="add_system">
-    <.live_select
-      label="Search system"
-      field={f[:system_id]}
-      update_min_len={2}
-      available_option_class="w-full text-sm"
-      debounce={200}
-      mode={:tags}
-    >
-      <:option :let={option}>
-        <div class="gap-1 w-full flex flex-align-center p-autocomplete-item  text-sm">
-          <div class="eve-wh-type-color-c1 text-gray-400 w-8"><%= option.class_title %></div>
-          <div class="text-white w-16"><%= option.label %></div>
-          <div class="text-gray-600 w-20"><%= option.constellation_name %></div>
-          <div class="text-gray-600"><%= option.region_name %></div>
-        </div>
-      </:option>
-    </.live_select>
-    <div class="mt-2 bg-neutral text-neutral-content rounded-md p-1 text-xs w-full">
-      * Start search system. You should type at least 2 symbols.
-    </div>
-    <div class="modal-action mt-0">
-      <.button class="mt-2" type="submit">Add</.button>
-    </div>
-  </.form>
-</.modal>
-
-<.modal
   :if={assigns |> Map.get(:show_activity?, false)}
   id="map-activity-modal"
   title="Activity of Characters"
