@@ -109,8 +109,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      )
-      when is_binary(solar_system_id) do
+      ) do
     WandererApp.Map.Server.add_system(
       map_id,
       %{
