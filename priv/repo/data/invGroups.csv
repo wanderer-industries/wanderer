@@ -755,11 +755,11 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 944,9,Capital Industrial Ship Blueprint,None,1,0,0,0,1
 945,9,Industrial Command Ship Blueprint,None,1,0,0,0,1
 952,11,Mission Container,0,0,1,0,0,0
-954,32,Defensive Subsystem,None,0,0,0,0,1
+954,32,Defensive Subsystem,3631,0,0,0,0,1
 955,17,Depricated Subsystems,None,0,0,0,0,0
-956,32,Offensive Subsystem,None,0,0,0,0,1
-957,32,Propulsion Subsystem,None,0,0,0,0,1
-958,32,Core Subsystem,None,0,0,0,0,1
+956,32,Offensive Subsystem,3641,0,0,0,0,1
+957,32,Propulsion Subsystem,3646,0,0,0,0,1
+958,32,Core Subsystem,3636,0,0,0,0,1
 959,11,Deadspace Sleeper Sleepless Sentinel,0,0,0,0,0,0
 960,11,Deadspace Sleeper Awakened Sentinel,0,0,0,0,0,0
 961,11,Deadspace Sleeper Emergent Sentinel,0,0,0,0,0,0
@@ -1529,6 +1529,8 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4811,9,Mercenary Den Blueprint,None,1,0,0,0,1
 4820,9,Mutaplasmid Blueprint,None,1,0,0,0,1
 4821,17,Atavum,None,1,0,0,0,1
+4824,17,Infomorph Systems,None,1,0,0,0,1
+4825,2,Local Beacon,None,0,1,0,0,0
 350858,350001,Infantry Weapons,None,1,0,0,0,0
 351064,350001,Infantry Dropsuits,None,1,0,0,0,0
 351121,350001,Infantry Modules,None,1,0,0,0,0

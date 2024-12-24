@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.31.0](https://github.com/wanderer-industries/wanderer/compare/v1.30.2...v1.31.0) (2024-12-20)
+
+
+
+
+### Features:
+
+* Core: Show tracking for new users by default. Auto link characters to account fix. Add character loading indicators.
+
 ## [v1.30.2](https://github.com/wanderer-industries/wanderer/compare/v1.30.1...v1.30.2) (2024-12-17)
 
 

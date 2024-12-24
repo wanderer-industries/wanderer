@@ -57,12 +57,12 @@
 <.modal
   :if={assigns |> Map.get(:show_tracking?, false)}
   id="map-tracking-modal"
-  title="Characters tracking"
+  title="Track Characters"
   show
   on_cancel={JS.push("hide_tracking")}
 >
   <.async_result :let={characters} assign={@characters}>
-    <:loading><span class="loading loading-dots loading-xs" />.</:loading>
+    <:loading><span class="loading loading-dots loading-xs" /></:loading>
     <:failed :let={reason}><%= reason %></:failed>
 
     <.table
@@ -71,7 +71,7 @@
       class="h-[400px] !overflow-y-auto"
       rows={characters}
     >
-      <:col :let={character} label="Tracked">
+      <:col :let={character} label="Track">
         <label class="flex items-center gap-3">
           <input
             type="checkbox"
