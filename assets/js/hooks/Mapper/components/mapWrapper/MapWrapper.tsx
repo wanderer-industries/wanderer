@@ -2,7 +2,7 @@ import { Map } from '@/hooks/Mapper/components/map/Map.tsx';
 import { useCallback, useRef, useState } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
+import { OnMapAddSystemCallback, OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
 import isEqual from 'lodash.isequal';
 import { ContextMenuSystem, useContextMenuSystemHandlers } from '@/hooks/Mapper/components/contexts';
 import {
@@ -14,14 +14,18 @@ import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
-import { Node } from 'reactflow';
+import { Node, XYPosition } from 'reactflow';
 
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { useMapEventListener } from '@/hooks/Mapper/events';
+import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
 
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 import { useCommonMapEventProcessor } from '@/hooks/Mapper/components/mapWrapper/hooks/useCommonMapEventProcessor.ts';
+import {
+  AddSystemDialog,
+  SearchOnSubmitCallback,
+} from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
@@ -47,6 +51,7 @@ export const MapWrapper = () => {
   const [openSettings, setOpenSettings] = useState<string | null>(null);
   const [openLinkSignatures, setOpenLinkSignatures] = useState<any | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
+  const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
 
   const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems });
@@ -123,6 +128,28 @@ export const MapWrapper = () => {
     }
   }, []);
 
+  const onAddSystem: OnMapAddSystemCallback = useCallback(({ coordinates }) => {
+    setOpenAddSystem(coordinates);
+  }, []);
+
+  const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
+    async item => {
+      if (ref.current.systems.some(x => x.system_static_info.solar_system_id === item.value)) {
+        emitMapEvent({
+          name: Commands.centerSystem,
+          data: item.value.toString(),
+        });
+        return;
+      }
+
+      await outCommand({
+        type: OutCommand.manualAddSystem,
+        data: { coordinates: openAddSystem, solar_system_id: item.value },
+      });
+    },
+    [openAddSystem, outCommand],
+  );
+
   return (
     <>
       <Map
@@ -139,6 +166,7 @@ export const MapWrapper = () => {
         isThickConnections={isThickConnections}
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
+        onAddSystem={onAddSystem}
       />
 
       {openSettings != null && (
@@ -152,6 +180,12 @@ export const MapWrapper = () => {
       {openLinkSignatures != null && (
         <SystemLinkSignatureDialog data={openLinkSignatures} setVisible={() => setOpenLinkSignatures(null)} />
       )}
+
+      <AddSystemDialog
+        visible={!!openAddSystem}
+        setVisible={() => setOpenAddSystem(null)}
+        onSubmit={handleSubmitAddSystem}
+      />
 
       <Connections selectedConnection={selectedConnection} onHide={() => setSelectedConnection(null)} />
 

@@ -197,7 +197,6 @@ defmodule WandererAppWeb.Router do
       live("/profile/deposit", ProfileLive, :deposit)
       live("/profile/subscribe", ProfileLive, :subscribe)
       live("/:slug/audit", MapAuditLive, :index)
-      live("/:slug/add-system", MapLive, :add_system)
       live("/:slug", MapLive, :index)
     end
   end
