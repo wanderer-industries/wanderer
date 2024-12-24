@@ -17,7 +17,7 @@ import { getSystemById } from '@/hooks/Mapper/helpers';
 import { Node, XYPosition } from 'reactflow';
 
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { useMapEventListener } from '@/hooks/Mapper/events';
+import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
 
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
@@ -134,6 +134,14 @@ export const MapWrapper = () => {
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
     async item => {
+      if (ref.current.systems.some(x => x.system_static_info.solar_system_id === item.value)) {
+        emitMapEvent({
+          name: Commands.centerSystem,
+          data: item.value.toString(),
+        });
+        return;
+      }
+
       await outCommand({
         type: OutCommand.manualAddSystem,
         data: { coordinates: openAddSystem, solar_system_id: item.value },

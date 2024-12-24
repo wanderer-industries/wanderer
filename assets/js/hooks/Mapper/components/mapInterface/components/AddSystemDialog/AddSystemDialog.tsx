@@ -15,12 +15,20 @@ import { sortWHClasses } from '@/hooks/Mapper/helpers';
 export type SearchOnSubmitCallback = (item: SearchSystemItem) => void;
 
 interface AddSystemDialogProps {
+  title?: string;
   visible: boolean;
   setVisible: (visible: boolean) => void;
   onSubmit?: SearchOnSubmitCallback;
+  excludedSystems?: number[];
 }
 
-export const AddSystemDialog = ({ visible, setVisible, onSubmit }: AddSystemDialogProps) => {
+export const AddSystemDialog = ({
+  title = 'Add system',
+  visible,
+  setVisible,
+  onSubmit,
+  excludedSystems = [],
+}: AddSystemDialogProps) => {
   const {
     outCommand,
     data: { wormholesData },
@@ -54,20 +62,24 @@ export const AddSystemDialog = ({ visible, setVisible, onSubmit }: AddSystemDial
             },
           });
 
-          const sorted = (result.systems as SearchSystemItem[]).sort((a, b) => {
+          let prepared = (result.systems as SearchSystemItem[]).sort((a, b) => {
             const amatch = a.label.indexOf(query);
             const bmatch = b.label.indexOf(query);
             return amatch - bmatch;
           });
 
-          setFilteredItems(sorted);
+          if (excludedSystems) {
+            prepared = prepared.filter(x => !excludedSystems.includes(x.system_static_info.solar_system_id));
+          }
+
+          setFilteredItems(prepared);
         } catch (error) {
           console.error('Error fetching data:', error);
           setFilteredItems([]);
         }
       }
     },
-    [outCommand],
+    [excludedSystems, outCommand],
   );
 
   const ref = useRef({ onSubmit, selectedItem });
@@ -89,7 +101,7 @@ export const AddSystemDialog = ({ visible, setVisible, onSubmit }: AddSystemDial
 
   return (
     <Dialog
-      header="Add system"
+      header={title}
       visible={visible}
       draggable={false}
       style={{ width: '520px' }}
