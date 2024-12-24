@@ -2,6 +2,23 @@
 
 <!-- changelog -->
 
+## [v1.32.0](https://github.com/wanderer-industries/wanderer/compare/v1.31.0...v1.32.0) (2024-12-24)
+
+
+
+
+### Features:
+
+* Map: Add search & update manual adding systems API
+
+* Map: Add search & update manual adding systems API
+
+### Bug Fixes:
+
+* Map: Added ability to add new system to routes via routes widget
+
+* Map: Reworked add system to map
+
 ## [v1.31.0](https://github.com/wanderer-industries/wanderer/compare/v1.30.2...v1.31.0) (2024-12-20)
 
 
