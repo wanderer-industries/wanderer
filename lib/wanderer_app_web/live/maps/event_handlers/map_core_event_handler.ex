@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler}
+  alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler, MapSystemsEventHandler}
 
   def handle_server_event(:update_permissions, socket) do
     DebounceAndThrottle.Debounce.apply(
@@ -147,7 +147,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     options =
       WandererApp.Api.MapSolarSystem.find_by_name!(%{name: text})
       |> Enum.take(100)
-      |> Enum.map(&map_system/1)
+      |> Enum.map(&MapSystemsEventHandler.map_system/1)
 
     send_update(LiveSelect.Component, options: options, id: id)
 
@@ -221,8 +221,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          socket
          |> put_flash(
            :error,
-           "You should enable tracking for at least one character."
-         )}
+           "You should enable tracking for at least one character!"
+         )
+         |> MapCharactersEventHandler.add_character()}
 
   def handle_ui_event(event, body, socket) do
     Logger.warning(fn -> "unhandled map ui event: #{event} #{inspect(body)}" end)
@@ -448,23 +449,35 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       |> filter_map_characters(user_character_eve_ids, user_permissions, options)
       |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
 
-    socket
-    |> assign(
-      map_loaded?: true,
-      map_user_settings: map_user_settings,
-      user_characters: user_character_eve_ids,
-      has_tracked_characters?:
-        MapCharactersEventHandler.has_tracked_characters?(user_character_eve_ids)
-    )
-    |> MapEventHandler.push_map_event(
-      "init",
-      initial_data
-      |> Map.put(:characters, map_characters)
-    )
-    |> push_event("js-exec", %{
-      to: "#map-loader",
-      attr: "data-loaded"
-    })
+    has_tracked_characters? =
+      MapCharactersEventHandler.has_tracked_characters?(user_character_eve_ids)
+
+    socket =
+      socket
+      |> assign(
+        map_loaded?: true,
+        map_user_settings: map_user_settings,
+        user_characters: user_character_eve_ids,
+        has_tracked_characters?: has_tracked_characters?
+      )
+      |> MapEventHandler.push_map_event(
+        "init",
+        initial_data
+        |> Map.put(:characters, map_characters)
+      )
+      |> push_event("js-exec", %{
+        to: "#map-loader",
+        attr: "data-loaded"
+      })
+
+    case not has_tracked_characters? && user_permissions.track_character do
+      true ->
+        socket
+        |> MapCharactersEventHandler.add_character()
+
+      _ ->
+        socket
+    end
   end
 
   defp handle_map_start_events(socket, map_id, events) do
@@ -487,10 +500,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
         :empty_tracked_characters ->
           socket
-          |> put_flash(
-            :info,
-            "You should enable tracking for at least one character to work with map."
-          )
 
         :map_character_limit ->
           socket
@@ -555,21 +564,4 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         user_character_eve_ids |> Enum.member?(character.eve_id)
     end)
   end
-
-  defp map_system(
-         %{
-           solar_system_name: solar_system_name,
-           constellation_name: constellation_name,
-           region_name: region_name,
-           solar_system_id: solar_system_id,
-           class_title: class_title
-         } = _system
-       ),
-       do: %{
-         label: solar_system_name,
-         value: solar_system_id,
-         constellation_name: constellation_name,
-         region_name: region_name,
-         class_title: class_title
-       }
 end

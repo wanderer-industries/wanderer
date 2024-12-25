@@ -6,7 +6,14 @@ import { Edge } from '@reactflow/core/dist/esm/types/edges';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import clsx from 'clsx';
 import classes from './ContextMenuConnection.module.scss';
-import { MASS_STATE_NAMES, MASS_STATE_NAMES_ORDER } from '@/hooks/Mapper/components/map/constants.ts';
+import {
+  MASS_STATE_NAMES,
+  MASS_STATE_NAMES_ORDER,
+  SHIP_SIZES_NAMES,
+  SHIP_SIZES_NAMES_ORDER,
+  SHIP_SIZES_NAMES_SHORT,
+  SHIP_SIZES_SIZE,
+} from '@/hooks/Mapper/components/map/constants.ts';
 
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
@@ -48,10 +55,6 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
               icon: PrimeIcons.CLOCK,
               command: onChangeTimeState,
             },
-          ]
-        : []),
-      ...(isWormhole
-        ? [
             {
               label: `Frigate`,
               className: clsx({
@@ -60,13 +63,9 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
               icon: PrimeIcons.CLOUD,
               command: () =>
                 onChangeShipSizeStatus(
-                  edge.data?.ship_size_type === ShipSizeStatus.small ? ShipSizeStatus.normal : ShipSizeStatus.small,
+                  edge.data?.ship_size_type === ShipSizeStatus.small ? ShipSizeStatus.large : ShipSizeStatus.small,
                 ),
             },
-          ]
-        : []),
-      ...(isWormhole
-        ? [
             {
               label: `Save mass`,
               className: clsx({
@@ -75,19 +74,40 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
               icon: PrimeIcons.LOCK,
               command: () => onToggleMassSave(!edge.data?.locked),
             },
-          ]
-        : []),
-      ...(isWormhole && !isFrigateSize
-        ? [
+            ...(!isFrigateSize
+              ? [
+                  {
+                    label: `Mass status`,
+                    icon: PrimeIcons.CHART_PIE,
+                    items: MASS_STATE_NAMES_ORDER.map(x => ({
+                      label: MASS_STATE_NAMES[x],
+                      className: clsx({
+                        [classes.SelectedItem]: edge.data?.mass_status === x,
+                      }),
+                      command: () => onChangeMassState(x),
+                    })),
+                  },
+                ]
+              : []),
+
             {
-              label: `Mass status`,
-              icon: PrimeIcons.CHART_PIE,
-              items: MASS_STATE_NAMES_ORDER.map(x => ({
-                label: MASS_STATE_NAMES[x],
+              label: `Ship Size`,
+              icon: PrimeIcons.CLOUD,
+              items: SHIP_SIZES_NAMES_ORDER.map(x => ({
+                label: (
+                  <div className="grid grid-cols-[20px_120px_1fr_40px] gap-2 items-center">
+                    <div className="text-[12px] font-bold text-stone-400">{SHIP_SIZES_NAMES_SHORT[x]}</div>
+                    <div>{SHIP_SIZES_NAMES[x]}</div>
+                    <div></div>
+                    <div className="flex justify-end whitespace-nowrap text-[12px] font-bold text-stone-500">
+                      {SHIP_SIZES_SIZE[x]} t.
+                    </div>
+                  </div>
+                ) as unknown as string, // TODO my lovely kostyl
                 className: clsx({
-                  [classes.SelectedItem]: edge.data?.mass_status === x,
+                  [classes.SelectedItem]: edge.data?.ship_size_type === x,
                 }),
-                command: () => onChangeMassState(x),
+                command: () => onChangeShipSizeStatus(x),
               })),
             },
           ]
@@ -98,7 +118,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
         command: onDeleteConnection,
       },
     ];
-  }, [edge, onChangeTimeState, onDeleteConnection, onChangeMassState, onChangeShipSizeStatus]);
+  }, [edge, onChangeTimeState, onDeleteConnection, onChangeShipSizeStatus, onToggleMassSave, onChangeMassState]);
 
   return (
     <>

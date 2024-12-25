@@ -58,11 +58,13 @@ const SIGNATURES_CHECKBOXES_PROPS: CheckboxesList = [
 
 const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: UserSettingsRemoteProps.delete_connection_with_sigs, label: 'Delete connections to linked signatures' },
+  { prop: InterfaceStoredSettingsProps.isThickConnections, label: 'Thicker connections' },
 ];
 
 const UI_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: InterfaceStoredSettingsProps.isShowMenu, label: 'Enable compact map menu bar' },
-  { prop: InterfaceStoredSettingsProps.isThickConnections, label: 'Thicker connections' },
+  { prop: InterfaceStoredSettingsProps.isShowBackgroundPattern, label: 'Show background pattern' },
+  { prop: InterfaceStoredSettingsProps.isSoftBackground, label: 'Enable soft background' },
 ];
 
 export const MapSettings = ({ show, onHide }: MapSettingsProps) => {

@@ -38,10 +38,10 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_system_ui_events [
     "add_hub",
     "delete_hub",
-    "add_system",
     "delete_systems",
-    "manual_add_system",
     "get_system_static_infos",
+    "manual_add_system",
+    "search_systems",
     "update_system_position",
     "update_system_positions",
     "update_system_name",

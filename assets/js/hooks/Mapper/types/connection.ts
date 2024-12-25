@@ -14,16 +14,12 @@ export enum TimeStatus {
   eol,
 }
 
-// export enum ShipSizeStatus {
-//   small, // frigates, destroyers - less than 5K t
-//   medium, // less than 20K t
-//   large, // less than 375K t
-//   capital, // less than 1.8M t
-// }
-
 export enum ShipSizeStatus {
-  small, // frigates, destroyers - less than 5K t
-  normal,
+  small = 0, // frigates, destroyers - less than 5K t
+  medium = 1, // less than 62K t
+  large = 2, // less than 375K t
+  freight = 3, // less than 1M t
+  capital = 4, // less than 1.8M t
 }
 
 export type SolarSystemConnection = {

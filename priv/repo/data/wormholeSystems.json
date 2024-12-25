@@ -4417,7 +4417,8 @@
 		],
 		"solarSystemID": 31002576,
 		"statics": [
-			"W237"
+			"W237",
+      "K346"
 		],
 		"systemName": "J010366",
 		"effectName": null
@@ -13395,7 +13396,6 @@
 		],
 		"solarSystemID": 31002559,
 		"statics": [
-			"D792",
 			"K346",
 			"M267"
 		],
@@ -13718,7 +13718,8 @@
 		],
 		"solarSystemID": 31002566,
 		"statics": [
-			"E175"
+			"E175",
+      "K346"
 		],
 		"systemName": "J012773",
 		"effectName": "Wolf-Rayet Star"
@@ -23262,7 +23263,8 @@
 		],
 		"solarSystemID": 31002568,
 		"statics": [
-			"U210"
+			"U210",
+			"H296"
 		],
 		"systemName": "J005663",
 		"effectName": null

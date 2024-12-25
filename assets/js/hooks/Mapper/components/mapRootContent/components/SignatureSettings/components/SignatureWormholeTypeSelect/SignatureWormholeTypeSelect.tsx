@@ -17,7 +17,17 @@ const getPossibleWormholes = (systemStatic: SolarSystemStaticInfoRaw, wormholes:
 
   // @ts-ignore
   const spawnClassGroup = SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS[whType];
-  const possibleWHTypes = wormholes.filter(x => x.src.includes(spawnClassGroup));
+  const possibleWHTypes = wormholes.filter(x => {
+    return x.src.some(x => {
+      const [group, type] = x.split('-');
+
+      if (type === 'shattered') {
+        return systemStatic.is_shattered && group === spawnClassGroup;
+      }
+
+      return group === spawnClassGroup;
+    });
+  });
 
   return {
     statics: possibleWHTypes

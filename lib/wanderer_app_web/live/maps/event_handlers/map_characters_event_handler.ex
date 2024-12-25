@@ -66,35 +66,9 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   def handle_ui_event(
         "add_character",
         _,
-        %{
-          assigns: %{
-            current_user: current_user,
-            map_id: map_id,
-            user_permissions: %{track_character: true}
-          }
-        } = socket
-      ) do
-    {:noreply,
-     socket
-     |> assign(show_tracking?: true)
-     |> assign_async(:characters, fn ->
-       {:ok, map} =
-         map_id
-         |> WandererApp.MapRepo.get([:acls])
-
-       {:ok, character_settings} =
-         case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
-           {:ok, settings} -> {:ok, settings}
-           _ -> {:ok, []}
-         end
-
-       map
-       |> WandererApp.Maps.load_characters(
-         character_settings,
-         current_user.id
-       )
-     end)}
-  end
+        socket
+      ),
+      do: {:noreply, socket |> add_character()}
 
   def handle_ui_event(
         "add_character",
@@ -221,6 +195,38 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+
+  def add_character(
+        %{
+          assigns: %{
+            current_user: current_user,
+            map_id: map_id,
+            user_permissions: %{track_character: true}
+          }
+        } = socket
+      ),
+      do:
+        socket
+        |> assign(show_tracking?: true)
+        |> assign_async(:characters, fn ->
+          {:ok, map} =
+            map_id
+            |> WandererApp.MapRepo.get([:acls])
+
+          {:ok, character_settings} =
+            case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
+              {:ok, settings} -> {:ok, settings}
+              _ -> {:ok, []}
+            end
+
+          map
+          |> WandererApp.Maps.load_characters(
+            character_settings,
+            current_user.id
+          )
+        end)
+
+  def add_character(socket), do: socket
 
   def has_tracked_characters?([]), do: false
   def has_tracked_characters?(_user_characters), do: true

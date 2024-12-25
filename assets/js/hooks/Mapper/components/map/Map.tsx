@@ -29,11 +29,12 @@ import {
   useContextMenuConnectionHandlers,
   useContextMenuRootHandlers,
 } from './components';
-import { OnMapSelectionChange } from './map.types';
+import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import clsx from 'clsx';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -91,12 +92,15 @@ interface MapCompProps {
   onSelectionChange: OnMapSelectionChange;
   onManualDelete(systems: string[]): void;
   onConnectionInfoClick?(e: SolarSystemConnection): void;
+  onAddSystem?: OnMapAddSystemCallback;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
   minimapClasses?: string;
   isShowMinimap?: boolean;
   onSystemContextMenu: (event: MouseEvent<Element>, systemId: string) => void;
   showKSpaceBG?: boolean;
   isThickConnections?: boolean;
+  isShowBackgroundPattern?: boolean;
+  isSoftBackground?: boolean;
 }
 
 const MapComp = ({
@@ -111,6 +115,9 @@ const MapComp = ({
   isShowMinimap,
   showKSpaceBG,
   isThickConnections,
+  isShowBackgroundPattern,
+  isSoftBackground,
+  onAddSystem,
 }: MapCompProps) => {
   const { getNode } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -118,7 +125,7 @@ const MapComp = ({
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
-  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers();
+  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
 
@@ -216,7 +223,7 @@ const MapComp = ({
 
   return (
     <>
-      <div className={classes.MapRoot}>
+      <div className={clsx(classes.MapRoot, { ['bg-neutral-900']: isSoftBackground })}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -263,7 +270,7 @@ const MapComp = ({
           selectionMode={SelectionMode.Partial}
         >
           {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
-          <Background />
+          {isShowBackgroundPattern && <Background />}
         </ReactFlow>
         {/* <button className="z-auto btn btn-primary absolute top-20 right-20" onClick={handleGetPassages}>
           Test // DON NOT REMOVE

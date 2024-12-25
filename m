@@ -15,6 +15,15 @@ case $COMMAND in
   deps)
     MIX_ENV=dev mix deps.get
     ;;
+  setup)
+    MIX_ENV=dev mix setup
+    ;;
+  createdb)
+    MIX_ENV=dev mix ecto.create
+    ;;
+  testdb)
+    MIX_ENV=dev mix ash.codegen test111
+    ;;
   depsf)
     MIX_ENV=dev mix deps.compile syslog --force
     ;;

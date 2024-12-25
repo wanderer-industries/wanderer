@@ -8,6 +8,7 @@ import CopyToClipboard from './copyToClipboard';
 import DownloadJson from './downloadJson';
 import NewVersionUpdate from './newVersionUpdate';
 import MapAction from './maps/mapAction';
+import ShowCharactersAddAlert from './showCharactersAddAlert';
 
 export default {
   DownloadJson,
@@ -20,4 +21,5 @@ export default {
   Ping,
   CopyToClipboard,
   NewVersionUpdate,
+  ShowCharactersAddAlert,
 };

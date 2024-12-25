@@ -65,54 +65,31 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
-        "add_system",
-        %{"system_id" => [solar_system_id]} = _event,
+        "manual_add_system",
+        %{"solar_system_id" => solar_system_id, "coordinates" => coordinates} = _event,
         %{
-          assigns:
-            %{
-              map_id: map_id,
-              map_slug: map_slug,
-              current_user: current_user,
-              tracked_character_ids: tracked_character_ids,
-              user_permissions: %{add_system: true}
-            } = assigns
-        } = socket
-      )
-      when is_binary(solar_system_id) and solar_system_id != "" do
-    coordinates = Map.get(assigns, :coordinates)
-
+          assigns: %{
+            current_user: current_user,
+            has_tracked_characters?: true,
+            map_id: map_id,
+            tracked_character_ids: tracked_character_ids,
+            user_permissions: %{add_system: true}
+          }
+        } =
+          socket
+      ) do
     WandererApp.Map.Server.add_system(
       map_id,
       %{
-        solar_system_id: solar_system_id |> String.to_integer(),
+        solar_system_id: solar_system_id,
         coordinates: coordinates
       },
       current_user.id,
       tracked_character_ids |> List.first()
     )
 
-    {:noreply,
-     socket
-     |> push_patch(to: ~p"/#{map_slug}")}
+    {:noreply, socket}
   end
-
-  def handle_ui_event(
-        "manual_add_system",
-        %{"coordinates" => coordinates} = _event,
-        %{
-          assigns: %{
-            has_tracked_characters?: true,
-            map_slug: map_slug,
-            user_permissions: %{add_system: true}
-          }
-        } =
-          socket
-      ),
-      do:
-        {:noreply,
-         socket
-         |> assign(coordinates: coordinates)
-         |> push_patch(to: ~p"/#{map_slug}/add-system")}
 
   def handle_ui_event(
         "add_hub",
@@ -281,6 +258,25 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "search_systems",
+        %{"text" => text} = _event,
+        socket
+      ) do
+    systems =
+      WandererApp.Api.MapSolarSystem.find_by_name!(%{name: text})
+      |> Enum.take(100)
+      |> Enum.map(&map_system/1)
+      |> Enum.filter(fn system ->
+        not is_nil(system) && not is_nil(system.system_static_info) &&
+          not WandererApp.Map.Server.ConnectionsImpl.is_prohibited_system_class?(
+            system.system_static_info.system_class
+          )
+      end)
+
+    {:reply, %{systems: systems}, socket}
+  end
+
+  def handle_ui_event(
         "delete_systems",
         solar_system_ids,
         %{
@@ -306,6 +302,27 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+
+  def map_system(
+        %{
+          solar_system_name: solar_system_name,
+          constellation_name: constellation_name,
+          region_name: region_name,
+          solar_system_id: solar_system_id,
+          class_title: class_title
+        } = _system
+      ) do
+    system_static_info = MapEventHandler.get_system_static_info(solar_system_id)
+
+    %{
+      label: solar_system_name,
+      value: solar_system_id,
+      constellation_name: constellation_name,
+      region_name: region_name,
+      class_title: class_title,
+      system_static_info: system_static_info
+    }
+  end
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true

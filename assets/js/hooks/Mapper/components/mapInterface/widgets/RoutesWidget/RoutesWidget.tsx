@@ -19,6 +19,13 @@ import { PrimeIcons } from 'primereact/api';
 import { RoutesSettingsDialog } from './RoutesSettingsDialog';
 import { RoutesProvider, useRouteProvider } from './RoutesProvider.tsx';
 import { ContextMenuSystemInfo, useContextMenuSystemInfoHandlers } from '@/hooks/Mapper/components/contexts';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
+import {
+  AddSystemDialog,
+  SearchOnSubmitCallback,
+} from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
+import { OutCommand } from '@/hooks/Mapper/types';
 
 const sortByDist = (a: Route, b: Route) => {
   const distA = a.has_connection ? a.systems?.length || 0 : Infinity;
@@ -161,6 +168,12 @@ export const RoutesWidgetContent = () => {
 export const RoutesWidgetComp = () => {
   const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
   const { data, update } = useRouteProvider();
+  const {
+    data: { hubs = [] },
+    outCommand,
+  } = useMapRootState();
+
+  const preparedHubs = useMemo(() => hubs.map(x => parseInt(x)), [hubs]);
 
   const isSecure = data.path_type === 'secure';
   const handleSecureChange = useCallback(() => {
@@ -170,27 +183,70 @@ export const RoutesWidgetComp = () => {
     });
   }, [data, update]);
 
+  const ref = useRef<HTMLDivElement>(null);
+  const compact = useMaxWidth(ref, 155);
+  const [openAddSystem, setOpenAddSystem] = useState<boolean>(false);
+
+  const onAddSystem = useCallback(() => setOpenAddSystem(true), []);
+
+  const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
+    async item => {
+      if (preparedHubs.includes(item.value)) {
+        return;
+      }
+
+      await outCommand({
+        type: OutCommand.addHub,
+        data: { system_id: item.value },
+      });
+    },
+    [hubs, outCommand],
+  );
+
   return (
     <Widget
       label={
-        <div className="flex justify-between items-center text-xs w-full">
+        <div className="flex justify-between items-center text-xs w-full" ref={ref}>
           <span className="select-none">Routes</span>
           <LayoutEventBlocker className="flex items-center gap-2">
-            <WdCheckbox
-              size="xs"
-              labelSide="left"
-              label={'Show shortest'}
-              value={!isSecure}
-              onChange={handleSecureChange}
-              classNameLabel={clsx('text-red-400')}
+            <WdImgButton
+              className={PrimeIcons.PLUS_CIRCLE}
+              onClick={onAddSystem}
+              tooltip={{
+                content: 'Click here to add new system to routes',
+              }}
             />
-            <WdImgButton className={PrimeIcons.SLIDERS_H} onClick={() => setRouteSettingsVisible(true)} />
+
+            <WdTooltipWrapper content="Show shortest route">
+              <WdCheckbox
+                size="xs"
+                labelSide="left"
+                label={compact ? '' : 'Show shortest'}
+                value={!isSecure}
+                onChange={handleSecureChange}
+                classNameLabel={clsx('text-red-400')}
+              />
+            </WdTooltipWrapper>
+            <WdImgButton
+              className={PrimeIcons.SLIDERS_H}
+              onClick={() => setRouteSettingsVisible(true)}
+              tooltip={{
+                content: 'Click here to open Routes settings',
+              }}
+            />
           </LayoutEventBlocker>
         </div>
       }
     >
       <RoutesWidgetContent />
       <RoutesSettingsDialog visible={routeSettingsVisible} setVisible={setRouteSettingsVisible} />
+
+      <AddSystemDialog
+        title="Add system to routes"
+        visible={openAddSystem}
+        setVisible={() => setOpenAddSystem(false)}
+        onSubmit={handleSubmitAddSystem}
+      />
     </Widget>
   );
 };

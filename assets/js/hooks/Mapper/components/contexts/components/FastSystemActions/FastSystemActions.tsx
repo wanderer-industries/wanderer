@@ -9,13 +9,22 @@ import { PrimeIcons } from 'primereact/api';
 export interface FastSystemActionsProps {
   systemId: string;
   systemName: string;
+  regionName: string;
+  isWH: boolean;
   showEdit?: boolean;
   onOpenSettings(): void;
 }
 
-export const FastSystemActions = ({ systemId, systemName, onOpenSettings, showEdit }: FastSystemActionsProps) => {
-  const ref = useRef({ systemId, systemName });
-  ref.current = { systemId, systemName };
+export const FastSystemActions = ({
+  systemId,
+  systemName,
+  regionName,
+  isWH,
+  onOpenSettings,
+  showEdit,
+}: FastSystemActionsProps) => {
+  const ref = useRef({ systemId, systemName, regionName, isWH });
+  ref.current = { systemId, systemName, regionName, isWH };
 
   const handleOpenZKB = useCallback(
     () => window.open(`https://zkillboard.com/system/${ref.current.systemId}`, '_blank'),
@@ -27,10 +36,17 @@ export const FastSystemActions = ({ systemId, systemName, onOpenSettings, showEd
     [],
   );
 
-  const handleOpenDotlan = useCallback(
-    () => window.open(`https://evemaps.dotlan.net/system/${ref.current.systemName}`, '_blank'),
-    [],
-  );
+  const handleOpenDotlan = useCallback(() => {
+    if (ref.current.isWH) {
+      window.open(`https://evemaps.dotlan.net/system/${ref.current.systemName}`, '_blank');
+      return;
+    }
+
+    return window.open(
+      `https://evemaps.dotlan.net/map/${ref.current.regionName.replace(/ /gim, '_')}/${ref.current.systemName}#jumps`,
+      '_blank',
+    );
+  }, []);
 
   const copySystemNameToClipboard = useCallback(async () => {
     try {
@@ -43,9 +59,9 @@ export const FastSystemActions = ({ systemId, systemName, onOpenSettings, showEd
   return (
     <LayoutEventBlocker className={clsx('flex px-2 gap-2 justify-between items-center h-full')}>
       <div className={clsx('flex gap-2 items-center h-full', classes.Links)}>
-        <WdImgButton source={ZKB_ICON} onClick={handleOpenZKB} />
-        <WdImgButton source={ANOIK_ICON} onClick={handleOpenAnoikis} />
-        <WdImgButton source={DOTLAN_ICON} onClick={handleOpenDotlan} />
+        <WdImgButton tooltip={{ content: 'Open zkillboard' }} source={ZKB_ICON} onClick={handleOpenZKB} />
+        <WdImgButton tooltip={{ content: 'Open Anoikis' }} source={ANOIK_ICON} onClick={handleOpenAnoikis} />
+        <WdImgButton tooltip={{ content: 'Open Dotlan' }} source={DOTLAN_ICON} onClick={handleOpenDotlan} />
       </div>
 
       <div className="flex gap-2 items-center pl-1">

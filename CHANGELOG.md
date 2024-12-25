@@ -2,6 +2,75 @@
 
 <!-- changelog -->
 
+## [v1.32.0](https://github.com/wanderer-industries/wanderer/compare/v1.31.0...v1.32.0) (2024-12-24)
+
+
+
+
+### Features:
+
+* Map: Add search & update manual adding systems API
+
+* Map: Add search & update manual adding systems API
+
+### Bug Fixes:
+
+* Map: Added ability to add new system to routes via routes widget
+
+* Map: Reworked add system to map
+
+## [v1.31.0](https://github.com/wanderer-industries/wanderer/compare/v1.30.2...v1.31.0) (2024-12-20)
+
+
+
+
+### Features:
+
+* Core: Show tracking for new users by default. Auto link characters to account fix. Add character loading indicators.
+
+## [v1.30.2](https://github.com/wanderer-industries/wanderer/compare/v1.30.1...v1.30.2) (2024-12-17)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with ship size change.
+
+## [v1.30.1](https://github.com/wanderer-industries/wanderer/compare/v1.30.0...v1.30.1) (2024-12-17)
+
+
+
+
+### Bug Fixes:
+
+* Map: Little rework Signatures header: change System Signatures to Signatures, and show selected system name instead.
+
+* Map: update default size of connections
+
+* Map: add ability set the size of wormhole and mark connection with label
+
+## [v1.30.0](https://github.com/wanderer-industries/wanderer/compare/v1.29.5...v1.30.0) (2024-12-16)
+
+
+
+
+### Features:
+
+* Map: Fixed incorrect wrapping labels of checkboxes in System Signatures, Local and Routes. Also changed dotlan links for k-spacem now it leads to region map before, for wh all stay as it was. Added ability to chane to softer background and remove dots on background of map. Also some small design issues. #2
+
+* Map: Fixed incorrect wrapping labels of checkboxes in System Signatures, Local and Routes. Also changed dotlan links for k-spacem now it leads to region map before, for wh all stay as it was. Added ability to chane to softer background and remove dots on background of map. Also some small design issues.
+
+### Bug Fixes:
+
+* Map: fixed U210, K346 for C4 shattered systems
+
+* Map: fixed U210, K346 for shattered systems. Fixed mass of mediums chains. Fixed size of some capital chains from 3M to 3.3M. Based on https://whtype.info/ data.
+
+* Map: removed unnecessary log
+
+* Map: Uncomment what should not be commented
+
 ## [v1.29.5](https://github.com/wanderer-industries/wanderer/compare/v1.29.4...v1.29.5) (2024-12-14)
 
 

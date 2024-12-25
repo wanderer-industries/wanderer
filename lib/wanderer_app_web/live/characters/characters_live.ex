@@ -28,6 +28,7 @@ defmodule WandererAppWeb.CharactersLive do
     {:ok,
      socket
      |> assign(
+       show_characters_add_alert: true,
        mode: :blocks,
        wallet_tracking_enabled?: WandererApp.Env.wallet_tracking_enabled?(),
        characters: characters |> Enum.sort_by(& &1.name, :asc) |> Enum.map(&map_ui_character/1),
@@ -43,6 +44,13 @@ defmodule WandererAppWeb.CharactersLive do
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_event("restore_show_characters_add_alert", %{"value" => value}, socket) do
+    {:noreply,
+     socket
+     |> assign(show_characters_add_alert: value)}
   end
 
   @impl true

@@ -1,4 +1,4 @@
-import { ConnectionType, MassState } from '@/hooks/Mapper/types';
+import { ConnectionType, MassState, ShipSizeStatus } from '@/hooks/Mapper/types';
 
 export enum SOLAR_SYSTEM_CLASS_IDS {
   ccp1 = -1,
@@ -727,16 +727,41 @@ export const MASS_STATE_NAMES = {
   [MassState.verge]: 'Verge of collapse',
 };
 
-// export const SHIP_SIZES_NAMES_ORDER = [
-//   ShipSizeStatus.small,
-//   ShipSizeStatus.normal,
-//   // ShipSizeStatus.large,
-//   // ShipSizeStatus.capital,
-// ];
-//
-// export const SHIP_SIZES_NAMES = {
-//   [ShipSizeStatus.small]: 'Frigate',
-//   [ShipSizeStatus.normal]: 'Normal',
-//   // [ShipSizeStatus.large]: 'Normal',
-//   // [ShipSizeStatus.capital]: 'Normal',
-// };
+export const SHIP_SIZES_NAMES_ORDER = [
+  ShipSizeStatus.small,
+  ShipSizeStatus.medium,
+  ShipSizeStatus.large,
+  ShipSizeStatus.freight,
+  ShipSizeStatus.capital,
+];
+
+export const SHIP_SIZES_NAMES = {
+  [ShipSizeStatus.small]: 'Frigate',
+  [ShipSizeStatus.medium]: 'Medium',
+  [ShipSizeStatus.large]: 'Normal',
+  [ShipSizeStatus.freight]: 'Huge',
+  [ShipSizeStatus.capital]: 'Capital',
+};
+export const SHIP_SIZES_SIZE = {
+  [ShipSizeStatus.small]: '5K',
+  [ShipSizeStatus.medium]: '62K',
+  [ShipSizeStatus.large]: '375K',
+  [ShipSizeStatus.freight]: '1M',
+  [ShipSizeStatus.capital]: '2M',
+};
+
+export const SHIP_SIZES_DESCRIPTION = {
+  [ShipSizeStatus.small]: 'Frigate wormhole - up to Destroyer | 5K t.',
+  [ShipSizeStatus.medium]: 'Cruise wormhole - up to Battlecruiser | 62K t.',
+  [ShipSizeStatus.large]: 'Large wormhole - up to Battleship | 375K t.',
+  [ShipSizeStatus.freight]: 'Huge wormhole - up to Freighter | 1M t.',
+  [ShipSizeStatus.capital]: 'Capital wormhole - up to Capital | 2M t.',
+};
+
+export const SHIP_SIZES_NAMES_SHORT = {
+  [ShipSizeStatus.small]: 'S',
+  [ShipSizeStatus.medium]: 'M',
+  [ShipSizeStatus.large]: 'L',
+  [ShipSizeStatus.freight]: 'H',
+  [ShipSizeStatus.capital]: 'XL',
+};

@@ -1,4 +1,4 @@
-<nav class="px-6 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-gray-900  bg-opacity-70 bg-neutral-900">
+<nav class="px-6 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-stone-800  bg-opacity-70 bg-neutral-900">
   <span className="w-full"></span>
   <span className="mr-2"></span>
   <div class="flex gap-2">
@@ -30,8 +30,44 @@
   class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
 >
   <div
+    :if={@show_characters_add_alert}
+    role="alert"
+    class="alert"
+    id="characters-add-alert"
+    phx-hook="ShowCharactersAddAlert"
+    phx-ignore
+    data-key="show_characters_add_alert"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      class="h-6 w-6 shrink-0 stroke-current"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      >
+      </path>
+    </svg>
+    <span>
+      All added characters will be automatically linked to your user account. You can't have same characters linked to several accounts.
+    </span>
+    <div>
+      <button
+        class="btn btn-sm"
+        id="characters-add-alert-hide"
+        phx-click={JS.toggle_class("hidden", to: "#characters-add-alert")}
+      >
+        Hide
+      </button>
+    </div>
+  </div>
+  <div
     :if={@mode == :blocks}
-    class="gap-4 grid grid-cols-1 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 "
+    class="gap-4 grid grid-cols-1 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 mt-4"
   >
     <.link patch={~p"/characters/authorize"}>
       <div class="card card-side rounded-none h-full items-center hover:text-white bg-gradient-to-l from-stone-950 to-stone-900 transform transition duration-500">
@@ -51,9 +87,24 @@
         <div class="absolute left-0 bottom-0 w-full h-30 bg-opacity-60 bg-gray-900">
           <h2 class="absolute w-full flex justify-between px-4 left-0 top-10 text-xs">
             Corporation:
+            <span
+              :if={
+                is_nil(
+                  character
+                  |> get(
+                    path(:corporation_name),
+                    nil
+                  )
+                )
+              }
+              class="loading loading-dots loading-xs"
+            />
             <span>
               <%= character
-              |> get(path(:corporation_name), "-") %>
+              |> get(
+                path(:corporation_name),
+                ""
+              ) %>
             </span>
           </h2>
           <h2 class="absolute w-full flex justify-between px-4 left-0 top-16 text-xs">
@@ -65,9 +116,21 @@
           </h2>
           <h2 class="absolute left-0 bottom-12 px-4 text-xs w-full flex justify-between">
             Location:
+            <span
+              :if={
+                is_nil(
+                  character
+                  |> get(
+                    path(:location / :solar_system_info / :solar_system_name, :map),
+                    nil
+                  )
+                )
+              }
+              class="loading loading-dots loading-xs"
+            />
             <span>
               <%= character
-              |> get(path(:location / :solar_system_info / :solar_system_name, :map), "-") %>
+              |> get(path(:location / :solar_system_info / :solar_system_name, :map), "") %>
             </span>
           </h2>
           <h2
@@ -126,7 +189,7 @@
     </div>
   </div>
 
-  <div :if={@mode == :table} class="flex flex-col gap-4">
+  <div :if={@mode == :table} class="flex flex-col gap-4  mt-4">
     <.link patch={~p"/characters/authorize"}>
       <button
         type="button"

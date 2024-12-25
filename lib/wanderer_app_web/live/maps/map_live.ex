@@ -6,7 +6,7 @@ defmodule WandererAppWeb.MapLive do
 
   @impl true
   def mount(%{"slug" => map_slug} = _params, _session, socket) when is_connected?(socket) do
-    Process.send_after(self(), %{event: :load_map}, Enum.random(10..500))
+    Process.send_after(self(), %{event: :load_map}, Enum.random(10..800))
 
     {:ok,
      socket
@@ -76,13 +76,15 @@ defmodule WandererAppWeb.MapLive do
 
   def handle_info(:not_all_characters_tracked, %{assigns: %{map_slug: map_slug}} = socket),
     do:
-      {:noreply,
-       socket
-       |> put_flash(
-         :error,
-         "You should enable tracking for all characters that have access to this map first!"
-       )
-       |> push_navigate(to: ~p"/tracking/#{map_slug}")}
+      WandererAppWeb.MapEventHandler.handle_ui_event(
+        %{event: "add_character"},
+        nil,
+        socket
+        |> put_flash(
+          :error,
+          "You should enable tracking for all characters that have access to this map first!"
+        )
+      )
 
   @impl true
   def handle_info(info, socket),
@@ -98,13 +100,6 @@ defmodule WandererAppWeb.MapLive do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:active_page, :map)
-  end
-
-  defp apply_action(socket, :add_system, _params) do
-    socket
-    |> assign(:active_page, :map)
-    |> assign(:page_title, "Add System")
-    |> assign(:add_system_form, to_form(%{"system_id" => nil}))
   end
 
   def character_item(assigns) do
