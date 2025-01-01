@@ -331,11 +331,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         WandererApp.Map.add_connection(map_id, connection)
 
-        # added new_connection parameter for select on splash logic
         Impl.broadcast!(map_id, :maybe_select_system, %{
           character_id: character_id,
           solar_system_id: location.solar_system_id,
-          new_connection: true
         })
 
         Impl.broadcast!(map_id, :add_connection, connection)
@@ -348,9 +346,20 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         :ok
 
-      {:error, error} ->
-        Logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)
-        :ok
+        {:error, :already_exists} ->
+          # Still broadcast location change in case of followed character
+          Impl.broadcast!(map_id, :maybe_select_system, %{
+            character_id: character_id,
+            solar_system_id: location.solar_system_id
+          })
+
+          :ok
+
+        {:error, error} ->
+          Logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)
+
+          :ok
+
     end
   end
 

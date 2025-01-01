@@ -383,13 +383,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
               {:character_location, %{solar_system_id: solar_system_id},
                %{solar_system_id: old_solar_system_id}}
             ]
-
-          # broadcast for all location changes, but will only select system for characters that are followed
-          Impl.broadcast!(map_id, :maybe_select_system, %{
-            character_id: character_id,
-            solar_system_id: solar_system_id
-          })
-
           _ ->
             [:skip]
         end

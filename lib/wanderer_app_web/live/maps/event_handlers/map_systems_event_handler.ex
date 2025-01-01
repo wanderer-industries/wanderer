@@ -26,13 +26,10 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         payload: %{
           character_id: character_id,
           solar_system_id: solar_system_id
-        } = payload
+        }
       },
       %{assigns: %{current_user: current_user, map_id: map_id, map_user_settings: map_user_settings}} = socket
     ) do
-
-      # ensures select on splash is only used when it's a new connection
-      new_connection = Map.get(payload, :new_connection, false)
 
       is_user_character =
         current_user.characters
@@ -50,7 +47,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           _ -> false
         end
 
-      must_select? = is_user_character && (is_select_on_spash && new_connection || is_followed)
+      must_select? = is_user_character && (is_select_on_spash || is_followed)
       if not must_select? do
         socket
       else
