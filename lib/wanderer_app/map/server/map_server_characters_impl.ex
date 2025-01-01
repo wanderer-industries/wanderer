@@ -15,13 +15,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character
+               tracked: track_character,
+               followed: false
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
-
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
-
         :ok
       else
         _error ->
@@ -78,7 +77,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       |> Enum.each(fn character_id ->
         WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
           map_id: map_id,
-          track: false
+          track: false,
+          followed: false
         })
       end)
 
@@ -297,6 +297,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
         map_id: map_id,
         track: true,
+        followed: false,
         track_online: true,
         track_location: true,
         track_ship: true
@@ -403,6 +404,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           [
             {:character_location, %{solar_system_id: solar_system_id}, %{solar_system_id: nil}}
           ]
+          # broadcast for all location changes, but will only select system for characters that are followed
+          Impl.broadcast!(map_id, :maybe_select_system, %{
+            character_id: character_id,
+            solar_system_id: solar_system_id
+          })
         else
           [:skip]
         end

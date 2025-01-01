@@ -32,38 +32,19 @@
 </div>
 
 <.modal
-  :if={assigns |> Map.get(:show_activity?, false)}
-  id="map-activity-modal"
-  title="Activity of Characters"
-  class="!w-[500px]"
-  show
-  on_cancel={JS.push("hide_activity")}
->
-  <.table
-    :if={not (assigns |> Map.get(:character_activity) |> is_nil())}
-    class="!max-h-[80vh] !overflow-y-auto"
-    id="activity-tbl"
-    rows={@character_activity.jumps}
-  >
-    <:col :let={activity} label="Character">
-      <.character_item character={activity.character} />
-    </:col>
-    <:col :let={activity} label="Passages">
-      <%= activity.count %>
-    </:col>
-  </.table>
-</.modal>
-
-<.modal
   :if={assigns |> Map.get(:show_tracking?, false)}
   id="map-tracking-modal"
-  title="Track Characters"
+  title="Track and Follow Characters"
   show
   on_cancel={JS.push("hide_tracking")}
 >
   <.async_result :let={characters} assign={@characters}>
-    <:loading><span class="loading loading-dots loading-xs" /></:loading>
-    <:failed :let={reason}><%= reason %></:failed>
+    <:loading>
+      <span class="loading loading-dots loading-xs" />
+    </:loading>
+    <:failed :let={reason}>
+      <%= reason %>
+    </:failed>
 
     <.table
       :if={characters}
@@ -72,7 +53,7 @@
       rows={characters}
     >
       <:col :let={character} label="Track">
-        <label class="flex items-center gap-3">
+        <label class="flex items-center gap-2 justify-center">
           <input
             type="checkbox"
             class="checkbox"
@@ -81,16 +62,33 @@
             id={"character-track-#{character.id}"}
             checked={character.tracked}
           />
-          <div class="flex items-center gap-3">
-            <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
-            <div>
-              <div class="font-bold">
-                <%= character.name %><span class="ml-1 text-gray-400">[<%= character.corporation_ticker %>]</span>
-              </div>
-              <div class="text-sm opacity-50"></div>
-            </div>
-          </div>
         </label>
+      </:col>
+      <:col :let={character} label="Follow">
+        <label class="flex items-center gap-2 justify-center">
+          <input
+            type="radio"
+            name="followed_character"
+            class="radio"
+            phx-click="toggle_follow"
+            phx-value-character-id={character.id}
+            checked={Map.get(character, :followed, false)}
+          />
+        </label>
+      </:col>
+      <:col :let={character} label="Character">
+        <div class="flex items-center gap-3">
+          <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
+          <div>
+            <div class="font-bold">
+              <%= character.name %>
+              <span class="ml-1 text-gray-400">
+                [<%= character.corporation_ticker %>]
+              </span>
+            </div>
+            <div class="text-sm opacity-50"></div>
+          </div>
+        </div>
       </:col>
     </.table>
   </.async_result>

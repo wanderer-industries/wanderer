@@ -84,20 +84,22 @@ defmodule WandererApp.Maps do
         id: id,
         eve_id: eve_id,
         corporation_ticker: corporation_ticker,
-        tracked: false
+        tracked: false,
+        followed: false
       }
 
   def map_character(
         %{name: name, id: id, eve_id: eve_id, corporation_ticker: corporation_ticker} =
           _character,
-        %{tracked: tracked} = _character_settings
+        %{tracked: tracked, followed: followed} = _character_settings
       ),
       do: %{
         name: name,
         id: id,
         eve_id: eve_id,
         corporation_ticker: corporation_ticker,
-        tracked: tracked
+        tracked: tracked,
+        followed: followed
       }
 
   @decorate cacheable(

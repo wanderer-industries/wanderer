@@ -489,7 +489,7 @@ defmodule WandererApp.Character.Tracker do
 
   defp maybe_update_location(
          %{
-           character_id: character_id
+           character_id: character_id,
          } =
            state,
          location
@@ -682,7 +682,7 @@ defmodule WandererApp.Character.Tracker do
 
   defp maybe_update_active_maps(
          %{character_id: character_id, active_maps: active_maps} = state,
-         %{map_id: map_id, track: false} = _track_settings
+         %{map_id: map_id, track: false, followed: false} = _track_settings
        ) do
     WandererApp.Cache.take("character:#{character_id}:map:#{map_id}:tracking_start_time")
     |> case do

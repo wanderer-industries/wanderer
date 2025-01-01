@@ -420,7 +420,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         {:ok, character_state} =
           WandererApp.Character.Tracker.update_track_settings(character_id, %{
             map_id: map_id,
-            track: false
+            track: false,
+            followed: false
           })
 
         WandererApp.Character.update_character_state(character_id, character_state)
