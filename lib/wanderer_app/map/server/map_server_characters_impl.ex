@@ -77,8 +77,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       |> Enum.each(fn character_id ->
         WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
           map_id: map_id,
-          track: false,
-          followed: false
+          track: false
         })
       end)
 
@@ -297,7 +296,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
         map_id: map_id,
         track: true,
-        followed: false,
         track_online: true,
         track_location: true,
         track_ship: true
