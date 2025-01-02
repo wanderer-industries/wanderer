@@ -203,7 +203,10 @@ defmodule WandererAppWeb.MapsLive do
         socket.assigns.form,
         form
         |> Map.put("acls", form["acls"] || [])
-        |> Map.put("only_tracked_characters", form["only_tracked_characters"] || false)
+        |> Map.put(
+          "only_tracked_characters",
+          (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
+        )
       )
 
     {:noreply, socket |> assign(form: form)}
@@ -593,7 +596,13 @@ defmodule WandererAppWeb.MapsLive do
         scope -> scope
       end
 
-    form = form |> Map.put("scope", scope)
+    form =
+      form
+      |> Map.put("scope", scope)
+      |> Map.put(
+        "only_tracked_characters",
+        (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
+      )
 
     map
     |> WandererApp.Api.Map.update(form)

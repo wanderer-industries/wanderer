@@ -393,6 +393,7 @@ defmodule WandererAppWeb.CoreComponents do
               data-pc-name="checkbox"
               data-pc-section="root"
             >
+              <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
               <input
                 id={@id}
                 name={@name}
