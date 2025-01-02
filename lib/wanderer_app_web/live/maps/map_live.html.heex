@@ -32,6 +32,29 @@
 </div>
 
 <.modal
+  :if={assigns |> Map.get(:show_activity?, false)}
+  id="map-activity-modal"
+  title="Activity of Characters"
+  class="!w-[500px]"
+  show
+  on_cancel={JS.push("hide_activity")}
+>
+  <.async_result :let={character_activity} assign={@character_activity}>
+    <:loading>Loading...</:loading>
+    <:failed :let={reason}><%= reason %></:failed>
+
+    <span :if={character_activity}>
+      <.live_component
+        module={WandererAppWeb.CharacterActivity}
+        id="character-activity"
+        activity={character_activity}
+        notify_to={self()}
+      />
+    </span>
+  </.async_result>
+</.modal>
+
+<.modal
   :if={assigns |> Map.get(:show_tracking?, false)}
   id="map-tracking-modal"
   title="Track and Follow Characters"

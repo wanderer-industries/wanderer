@@ -18,15 +18,12 @@ defmodule WandererAppWeb.MapActivityEventHandler do
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event("show_activity", _, %{assigns: %{map_id: map_id}} = socket) do
-    Task.async(fn ->
-      {:ok, character_activity} = map_id |> get_character_activity()
-
-      {:character_activity, character_activity}
-    end)
-
     {:noreply,
      socket
-     |> assign(:show_activity?, true)}
+     |> assign(:show_activity?, true)
+     |> assign_async(:character_activity, fn ->
+       map_id |> get_character_activity()
+     end)}
   end
 
   def handle_ui_event("hide_activity", _, socket),
@@ -44,6 +41,6 @@ defmodule WandererAppWeb.MapActivityEventHandler do
         %{p | character: p.character |> MapEventHandler.map_ui_character_stat()}
       end)
 
-    {:ok, %{jumps: jumps}}
+    {:ok, %{character_activity: jumps}}
   end
 end
