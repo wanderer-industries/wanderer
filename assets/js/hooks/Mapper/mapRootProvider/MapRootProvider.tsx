@@ -1,5 +1,5 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
-import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext } from 'react';
+import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
@@ -98,6 +98,24 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
       defaultValue: STORED_INTERFACE_DEFAULT_VALUES,
     },
   );
+
+  useEffect(() => {
+    let foundNew = false;
+    const newVals = Object.keys(STORED_INTERFACE_DEFAULT_VALUES).reduce((acc, x) => {
+      if (Object.keys(acc).includes(x)) {
+        return acc;
+      }
+
+      foundNew = true;
+
+      // @ts-ignore
+      return { ...acc, [x]: STORED_INTERFACE_DEFAULT_VALUES[x] };
+    }, interfaceSettings);
+
+    if (foundNew) {
+      setInterfaceSettings(newVals);
+    }
+  }, []);
 
   return (
     <MapRootContext.Provider

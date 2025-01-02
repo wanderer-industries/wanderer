@@ -9,6 +9,7 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 import { useState } from 'react';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
+import { WindowManager, WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 // import { debounce } from 'lodash/debounce';
 
 const DEFAULT_WINDOWS = [
@@ -63,16 +64,49 @@ const restoreWindowsFromLS = (): WidgetGridItem[] => {
   return out;
 };
 
-export const MapInterface = () => {
-  const [items, setItems] = useState<WidgetGridItem[]>(restoreWindowsFromLS);
+const DEFAULT: WindowProps[] = [
+  {
+    id: 'info',
+    position: { x: 10, y: 10 },
+    size: { width: 250, height: 200 },
+    zIndex: 0,
+    content: () => <SystemInfo />,
+  },
+  {
+    id: 'signatures',
+    position: { x: 10, y: 220 },
+    size: { width: 250, height: 300 },
+    zIndex: 0,
+    content: () => <SystemSignatures />,
+  },
+  {
+    id: 'local',
+    position: { x: 270, y: 10 },
+    size: { width: 250, height: 510 },
+    zIndex: 0,
+    content: () => <LocalCharacters />,
+  },
+  {
+    id: 'routes',
+    position: { x: 10, y: 530 },
+    size: { width: 510, height: 200 },
+    zIndex: 0,
+    content: () => <RoutesWidget />,
+  },
+];
 
-  return (
-    <WidgetsGrid
-      items={items}
-      onChange={x => {
-        saveWindowsToLS(x);
-        setItems(x);
-      }}
-    />
-  );
+export const MapInterface = () => {
+  return <WindowManager windows={DEFAULT} dragSelector=".react-grid-dragHandleExample" />;
+
+  // const [items, setItems] = useState<WidgetGridItem[]>(restoreWindowsFromLS);
+  //
+  // return (
+  //   <WidgetsGrid
+  //     items={items}
+  //     onChange={x => {
+  //       saveWindowsToLS(x);
+  //       setItems(x);
+  //     }}
+  //   />
+  // );
 };
