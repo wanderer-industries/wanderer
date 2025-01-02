@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.32.4](https://github.com/wanderer-industries/wanderer/compare/v1.32.3...v1.32.4) (2025-01-02)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix 'Character Activity' modal
+
 ## [v1.32.3](https://github.com/wanderer-industries/wanderer/compare/v1.32.2...v1.32.3) (2025-01-02)
 
 
