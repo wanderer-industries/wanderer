@@ -24,6 +24,7 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_characters_ui_events [
     "add_character",
     "toggle_track",
+    "toggle_follow",
     "hide_tracking"
   ]
 

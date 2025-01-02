@@ -14,31 +14,24 @@ defmodule WandererApp.Api.MapCharacterSettings do
     define(:create, action: :create)
     define(:destroy, action: :destroy)
 
-    define(:read_by_map,
-      action: :read_by_map
-    )
-
-    define(:by_map_filtered,
-      action: :by_map_filtered
-    )
-
-    define(:tracked_by_map_filtered,
-      action: :tracked_by_map_filtered
-    )
-
-    define(:tracked_by_map_all,
-      action: :tracked_by_map_all
-    )
+    define(:read_by_map, action: :read_by_map)
+    define(:by_map_filtered, action: :by_map_filtered)
+    define(:tracked_by_map_filtered, action: :tracked_by_map_filtered)
+    define(:tracked_by_map_all, action: :tracked_by_map_all)
 
     define(:track, action: :track)
     define(:untrack, action: :untrack)
+
+    define(:follow, action: :follow)
+    define(:unfollow, action: :unfollow)
   end
 
   actions do
     default_accept [
       :map_id,
       :character_id,
-      :tracked
+      :tracked,
+      :followed
     ]
 
     defaults [:create, :read, :update, :destroy]
@@ -76,12 +69,25 @@ defmodule WandererApp.Api.MapCharacterSettings do
     update :untrack do
       change(set_attribute(:tracked, false))
     end
+
+    update :follow do
+      change(set_attribute(:followed, true))
+    end
+
+    update :unfollow do
+      change(set_attribute(:followed, false))
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
     attribute :tracked, :boolean do
+      default false
+      allow_nil? true
+    end
+
+    attribute :followed, :boolean do
       default false
       allow_nil? true
     end

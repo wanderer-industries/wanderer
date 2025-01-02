@@ -15,13 +15,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character
+               tracked: track_character,
+               followed: false
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
-
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
-
         :ok
       else
         _error ->
@@ -382,7 +381,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
               {:character_location, %{solar_system_id: solar_system_id},
                %{solar_system_id: old_solar_system_id}}
             ]
-
           _ ->
             [:skip]
         end

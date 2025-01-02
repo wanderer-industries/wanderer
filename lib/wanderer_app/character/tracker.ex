@@ -489,7 +489,7 @@ defmodule WandererApp.Character.Tracker do
 
   defp maybe_update_location(
          %{
-           character_id: character_id
+           character_id: character_id,
          } =
            state,
          location

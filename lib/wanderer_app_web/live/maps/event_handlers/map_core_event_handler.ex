@@ -162,6 +162,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         socket
       )
 
+    def handle_ui_event("toggle_follow_" <> character_id, _, socket),
+    do:
+      MapCharactersEventHandler.handle_ui_event(
+        "toggle_follow",
+        %{"character-id" => character_id},
+        socket
+      )
+
   def handle_ui_event(
         "get_user_settings",
         _,
