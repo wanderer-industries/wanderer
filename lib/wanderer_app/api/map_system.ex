@@ -46,6 +46,7 @@ defmodule WandererApp.Api.MapSystem do
     define(:update_locked, action: :update_locked)
     define(:update_status, action: :update_status)
     define(:update_tag, action: :update_tag)
+    define(:update_temporary_name, action: :update_temporary_name)
     define(:update_labels, action: :update_labels)
     define(:update_position, action: :update_position)
     define(:update_visible, action: :update_visible)
@@ -102,6 +103,10 @@ defmodule WandererApp.Api.MapSystem do
       accept [:tag]
     end
 
+    update :update_temporary_name do
+      accept [:temporary_name]
+    end
+
     update :update_labels do
       accept [:labels]
     end
@@ -138,6 +143,10 @@ defmodule WandererApp.Api.MapSystem do
     end
 
     attribute :tag, :string do
+      allow_nil? true
+    end
+
+    attribute :temporary_name, :string do
       allow_nil? true
     end
 
