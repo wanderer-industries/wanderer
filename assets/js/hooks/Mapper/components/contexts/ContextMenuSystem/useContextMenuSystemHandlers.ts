@@ -88,6 +88,23 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     setSystem(undefined);
   }, []);
 
+  const onSystemTemporaryName = useCallback((temporary_name?: string) => {
+    const { system, outCommand } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.updateSystemTemporaryName,
+      data: {
+        system_id: system,
+        value: temporary_name ?? '',
+      },
+    });
+    setSystem(undefined);
+  }, []);
+
+
   const onSystemStatus = useCallback((status: number) => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -161,6 +178,7 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     onLockToggle,
     onHubToggle,
     onSystemTag,
+    onSystemTemporaryName,
     onSystemStatus,
     onSystemLabels,
     onOpenSettings,

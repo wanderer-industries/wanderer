@@ -3,6 +3,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { Dialog } from 'primereact/dialog';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
@@ -22,10 +23,15 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
     outCommand,
   } = useMapRootState();
 
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+
+
   const system = getSystemById(systems, systemId);
+
 
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
+  const [temporary_name, setTemporaryName] = useState('')
   const [description, setDescription] = useState('');
   const inputRef = useRef<HTMLInputElement>();
 
@@ -38,14 +44,15 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
 
     setName(system.name || '');
     setLabel(labels.customLabel);
+    setTemporaryName(system.temporary_name || '');
     setDescription(system.description || '');
   }, [system]);
 
-  const ref = useRef({ name, description, label, outCommand, systemId, system });
-  ref.current = { name, description, label, outCommand, systemId, system };
+  const ref = useRef({ name, description, temporary_name, label, outCommand, systemId, system });
+  ref.current = { name, description, label, temporary_name, outCommand, systemId, system };
 
   const handleSave = useCallback(() => {
-    const { name, description, label, outCommand, systemId, system } = ref.current;
+    const { name, description, label, temporary_name, outCommand, systemId, system } = ref.current;
 
     const outLabel = new LabelsManager(system?.labels ?? '');
     outLabel.updateCustomLabel(label);
@@ -55,6 +62,14 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
       data: {
         system_id: systemId,
         value: outLabel.toString(),
+      },
+    });
+
+    outCommand({
+      type: OutCommand.updateSystemTemporaryName,
+      data: {
+        system_id: systemId,
+        value: temporary_name,
       },
     });
 
@@ -166,6 +181,35 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                 />
               </IconField>
             </div>
+
+            {isTempSystemNameEnabled &&
+              <div className="flex flex-col gap-1">
+                <label htmlFor="username">Temporary Name</label>
+
+                <IconField>
+                  {temporary_name !== '' && (
+                    <WdImgButton
+                      className="pi pi-trash text-red-400"
+                      textSize={WdImageSize.large}
+                      tooltip={{
+                        content: 'Remove temporary name',
+                        className: 'pi p-input-icon',
+                        position: TooltipPosition.top,
+                      }}
+                      onClick={() => setTemporaryName('')}
+                    />
+                  )}
+                  <InputText
+                    id="temporary_name"
+                    aria-describedby="temporaryName"
+                    autoComplete="off"
+                    value={temporary_name}
+                    maxLength={10}
+                    onChange={e => setTemporaryName(e.target.value)}
+                  />
+                </IconField>
+              </div>
+            }
 
             <div className="flex flex-col gap-1">
               <label htmlFor="username">Description</label>

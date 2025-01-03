@@ -129,6 +129,7 @@ export enum OutCommand {
   updateConnectionCustomInfo = 'update_connection_custom_info',
   updateSignatures = 'update_signatures',
   updateSystemName = 'update_system_name',
+  updateSystemTemporaryName = 'update_system_temporary_name',
   updateSystemDescription = 'update_system_description',
   updateSystemLabels = 'update_system_labels',
   updateSystemLocked = 'update_system_locked',
