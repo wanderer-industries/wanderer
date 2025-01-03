@@ -4,6 +4,8 @@ import { MapSolarSystemType } from '../../map.types';
 import classes from './SolarSystemNode.module.scss';
 import clsx from 'clsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+
 
 import {
   EFFECT_BACKGROUND_STYLES,
@@ -56,6 +58,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const { interfaceSettings } = useMapRootState();
   const { isShowUnsplashedSignatures } = interfaceSettings;
 
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+
   const {
     system_class,
     security,
@@ -71,9 +75,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const signatures = data.system_signatures;
 
-  const { locked, name, tag, status, labels, id } = data || {};
+  const { locked, name, tag, status, labels, id, temporary_name } = data || {};
 
-  const customName = solar_system_name !== name ? name : undefined;
 
   const {
     data: {
@@ -135,6 +138,10 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
+
+  const system_name = isTempSystemNameEnabled && temporary_name || solar_system_name;
+
+  const customName = (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
@@ -205,7 +212,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
                   '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
-                {solar_system_name}
+                {system_name}
               </div>
 
               {isWormhole && (

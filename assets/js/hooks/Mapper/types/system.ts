@@ -116,6 +116,7 @@ export type SolarSystemRawType = {
   tag: string | null;
   status: number;
   name: string | null;
+  temporary_name: string | null;
 
   system_static_info: SolarSystemStaticInfoRaw;
   system_signatures: SystemSignature[];
