@@ -127,6 +127,7 @@ defmodule WandererAppWeb.MapsLive do
     |> assign(:page_title, "Maps - Settings")
     |> assign(:map_slug, map_slug)
     |> assign(:map_id, map.id)
+    |> assign(:public_api_key, map.public_api_key)
     |> assign(:map, map)
     |> assign(
       export_settings: export_settings |> _get_export_map_data(),
@@ -178,6 +179,19 @@ defmodule WandererAppWeb.MapsLive do
 
     {:noreply, socket}
   end
+
+
+  def handle_event("generate-map-api-key", _params, socket) do
+    new_api_key = UUID.uuid4()
+
+    map = WandererApp.Api.Map.by_id!(socket.assigns.map_id)
+
+    {:ok, _updated_map} =
+      WandererApp.Api.Map.update_api_key(map, %{public_api_key: new_api_key})
+
+    {:noreply, assign(socket, public_api_key: new_api_key)}
+  end
+
 
   @impl true
   def handle_event(

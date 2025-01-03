@@ -108,6 +108,20 @@ defmodule WandererAppWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  scope "/api", WandererAppWeb do
+    pipe_through [:api]
+
+    # GET /api/systems?map_id=... or ?slug=...
+    get "/systems", APIController, :list_systems
+
+    # GET /api/system?id=... plus either map_id=... or slug=...
+    get "/system", APIController, :show_system
+
+    # GET /api/characters?map_id=... or slug=...
+    get "/characters", APIController, :tracked_characters_with_info
+
+  end
+
   scope "/", WandererAppWeb do
     pipe_through [:browser, :blog, :redirect_if_user_is_authenticated]
 

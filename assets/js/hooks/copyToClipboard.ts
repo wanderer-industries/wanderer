@@ -1,17 +1,14 @@
 export default {
   mounted() {
-    const hook = this;
-    const url = hook.el.dataset.url;
-    const button = hook.el;
+    const button = this.el;
 
     button.addEventListener('click', function () {
-      // Get the URL from the data attribute
 
       button.classList.remove('copied');
 
       // Copy the URL to the clipboard
       navigator.clipboard
-        .writeText(url)
+        .writeText(button.dataset.url)
         .then(() => {
           button.classList.add('copied');
         })

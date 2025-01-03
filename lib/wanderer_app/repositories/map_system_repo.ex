@@ -16,11 +16,13 @@ defmodule WandererApp.MapSystemRepo do
     end
   end
 
-  def get_all_by_map(map_id),
-    do: WandererApp.Api.MapSystem.read_all_by_map(%{map_id: map_id})
+  def get_all_by_map(map_id) do
+    WandererApp.Api.MapSystem.read_all_by_map(%{map_id: map_id})
+  end
 
-  def get_visible_by_map(map_id),
-    do: WandererApp.Api.MapSystem.read_visible_by_map(%{map_id: map_id})
+  def get_visible_by_map(map_id) do
+    WandererApp.Api.MapSystem.read_visible_by_map(%{map_id: map_id})
+  end
 
   def remove_from_map(map_id, solar_system_id) do
     WandererApp.Api.MapSystem.read_by_map_and_solar_system!(%{
