@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.32.5](https://github.com/wanderer-industries/wanderer/compare/v1.32.4...v1.32.5) (2025-01-04)
+
+
+
+
+### Bug Fixes:
+
+* map: prevent deselect on click to map (#96)
+
 ## [v1.32.4](https://github.com/wanderer-industries/wanderer/compare/v1.32.3...v1.32.4) (2025-01-02)
 
 
