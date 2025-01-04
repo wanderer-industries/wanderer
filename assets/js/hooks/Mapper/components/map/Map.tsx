@@ -119,7 +119,7 @@ const MapComp = ({
   isSoftBackground,
   onAddSystem,
 }: MapCompProps) => {
-  const { getNode } = useReactFlow();
+  const { getNode, getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
@@ -185,6 +185,12 @@ const MapComp = ({
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const systemsIdsToRemove: string[] = [];
+
+      // prevents single node deselection on background / same node click
+      // allows deseletion of all nodes if multiple are currently selected
+      if (changes.length === 1 && changes[0].type == 'select' && changes[0].selected === false) {
+        changes[0].selected = getNodes().filter(node => node.selected).length === 1;
+      }
 
       const nextChanges = changes.reduce((acc, change) => {
         if (change.type !== 'remove') {
