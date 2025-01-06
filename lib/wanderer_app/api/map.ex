@@ -21,6 +21,7 @@ defmodule WandererApp.Api.Map do
     define(:update_options, action: :update_options)
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
+    define(:update_api_key, action: :update_api_key)
 
     define(:by_id,
       get_by: [:id],
@@ -122,6 +123,11 @@ defmodule WandererApp.Api.Map do
 
       change(set_attribute(:deleted, true))
     end
+
+    update :update_api_key do
+      accept [:public_api_key]
+    end
+
   end
 
   attributes do
@@ -140,6 +146,10 @@ defmodule WandererApp.Api.Map do
 
     attribute :description, :string
     attribute :personal_note, :string
+
+    attribute :public_api_key, :string do
+      allow_nil? true
+    end
 
     attribute :hubs, {:array, :string} do
       allow_nil?(true)
