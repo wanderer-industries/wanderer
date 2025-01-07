@@ -250,6 +250,7 @@ end
       :solar_system_id,
       :name,
       :custom_name,
+      :temporary_name,
       :description,
       :tag,
       :labels,
