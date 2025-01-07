@@ -116,7 +116,6 @@ No api key is required for routes that being with /api/common
 ### 2. Show Single System Static Info
 
     GET /api/common/static-system-info?id=<SOLAR_SYSTEM_ID>
-    GET /api/common/static-system-info?id=<SOLAR_SYSTEM_ID>
 
 - **Description:** Retrieves the static information for a specific system.
 
