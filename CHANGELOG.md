@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.34.0](https://github.com/wanderer-industries/wanderer/compare/v1.33.1...v1.34.0) (2025-01-07)
+
+
+
+
+### Features:
+
+* Map: api to allow systematic access to visible systems and tracked characters (#89)
+
+* add limited api for system and tracked characters
+
 ## [v1.33.1](https://github.com/wanderer-industries/wanderer/compare/v1.33.0...v1.33.1) (2025-01-07)
 
 
