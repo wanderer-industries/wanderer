@@ -61,6 +61,20 @@ defmodule WandererApp.MapSystemRepo do
     })
   end
 
+  def cleanup_temporary_name(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_temporary_name(%{
+      temporary_name: nil
+    })
+  end
+
+  def cleanup_temporary_name!(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_temporary_name!(%{
+      temporary_name: nil
+    })
+  end
+
   def get_filtered_labels(labels, true) when is_binary(labels) do
     labels
     |> Jason.decode!()
@@ -100,6 +114,11 @@ defmodule WandererApp.MapSystemRepo do
     do:
       system
       |> WandererApp.Api.MapSystem.update_tag(update)
+
+  def update_temporary_name(system, update) do
+      system
+      |> WandererApp.Api.MapSystem.update_temporary_name(update)
+  end
 
   def update_labels(system, update),
     do:
