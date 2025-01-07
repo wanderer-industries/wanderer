@@ -11,11 +11,45 @@ defmodule WandererAppWeb.APIController do
 
 
 # -----------------------------------------------------------------
-# SYSTEMS
+# Common
+# -----------------------------------------------------------------
+
+  @doc """
+  GET /api/system-static-info
+
+  Requires 'id' (the solar_system_id)
+
+  Example:
+      GET /api/common/system_static?id=31002229
+      GET /api/common/system_static?id=31002229
+  """
+  def show_system_static(conn, params) do
+    with {:ok, solar_system_str} <- require_param(params, "id"),
+         {:ok, solar_system_id} <- parse_int(solar_system_str) do
+      case CachedInfo.get_system_static_info(solar_system_id) do
+        {:ok, system} ->
+          data = static_system_to_json(system)
+          json(conn, %{data: data})
+
+        {:error, :not_found} ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: "System not found"})
+      end
+    else
+      {:error, msg} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+    end
+  end
+
+# -----------------------------------------------------------------
+# Map
 # -----------------------------------------------------------------
 
 @doc """
-GET /api/systems
+GET /api/map/systems
 
 Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
 
@@ -23,9 +57,9 @@ If `?all=true` is provided, **all** systems are returned.
 Otherwise, only "visible" systems are returned.
 
 Examples:
-    GET /api/systems?map_id=466e922b-e758-485e-9b86-afae06b88363
-    GET /api/systems?slug=my-unique-wormhole-map
-    GET /api/systems?map_id=<UUID>&all=true
+    GET /api/map/systems?map_id=466e922b-e758-485e-9b86-afae06b88363
+    GET /api/map/systems?slug=my-unique-wormhole-map
+    GET /api/map/systems?map_id=<UUID>&all=true
 """
 def list_systems(conn, params) do
   with {:ok, map_id} <- fetch_map_id(params) do
@@ -57,14 +91,14 @@ end
 
 
   @doc """
-  GET /api/system
+  GET /api/map/system
 
   Requires 'id' (the solar_system_id)
   plus either ?map_id=<UUID> or ?slug=<map-slug>.
 
   Example:
-      GET /api/system?id=31002229&map_id=466e922b-e758-485e-9b86-afae06b88363
-      GET /api/system?id=31002229&slug=my-unique-wormhole-map
+      GET /api/map/system?id=31002229&map_id=466e922b-e758-485e-9b86-afae06b88363
+      GET /api/map/system?id=31002229&slug=my-unique-wormhole-map
   """
   def show_system(conn, params) do
     with {:ok, solar_system_str} <- require_param(params, "id"),
@@ -88,47 +122,14 @@ end
     end
   end
 
-    @doc """
-  GET /api/system-static-info
 
-  Requires 'id' (the solar_system_id)
-  plus either ?map_id=<UUID> or ?slug=<map-slug>.
-
-  Example:
-      GET /api/system_static?id=31002229&map_id=466e922b-e758-485e-9b86-afae06b88363
-      GET /api/system_static?id=31002229&slug=my-unique-wormhole-map
-  """
-  def show_system_static(conn, params) do
-    with {:ok, solar_system_str} <- require_param(params, "id"),
-         {:ok, solar_system_id} <- parse_int(solar_system_str) do
-      case CachedInfo.get_system_static_info(solar_system_id) do
-        {:ok, system} ->
-          data = static_system_to_json(system)
-          json(conn, %{data: data})
-
-        {:error, :not_found} ->
-          conn
-          |> put_status(:not_found)
-          |> json(%{error: "System not found"})
-      end
-    else
-      {:error, msg} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: msg})
-    end
-  end
-
-  # -----------------------------------------------------------------
-  # Characters
-  # -----------------------------------------------------------------
 
   @doc """
-  GET /api/tracked_characters_with_info
+  GET /api/map/tracked_characters_with_info
 
   Example usage:
-    GET /api/tracked_characters_with_info?map_id=<uuid>
-    GET /api/tracked_characters_with_info?slug=<map-slug>
+    GET /api/map/tracked_characters_with_info?map_id=<uuid>
+    GET /api/map/tracked_characters_with_info?slug=<map-slug>
 
   Returns a list of tracked records, plus their fully-loaded `character` data.
   """
@@ -243,62 +244,64 @@ end
   end
 
   defp map_system_to_json(system) do
-    %{
-      id: system.id,
-      map_id: system.map_id,
-      solar_system_id: system.solar_system_id,
-      name: system.name,
-      custom_name: system.custom_name,
-      description: system.description,
-      tag: system.tag,
-      labels: system.labels,
-      locked: system.locked,
-      visible: system.visible,
-      status: system.status,
-      position_x: system.position_x,
-      position_y: system.position_y,
-      inserted_at: system.inserted_at,
-      updated_at: system.updated_at
-    }
+    Map.take(system, [
+      :id,
+      :map_id,
+      :solar_system_id,
+      :name,
+      :custom_name,
+      :description,
+      :tag,
+      :labels,
+      :locked,
+      :visible,
+      :status,
+      :position_x,
+      :position_y,
+      :inserted_at,
+      :updated_at
+    ])
   end
 
   defp character_to_json(ch) do
-    %{
-      id: ch.id,
-      eve_id: ch.eve_id,
-      name: ch.name,
-      corporation_id: ch.corporation_id,
-      corporation_name: ch.corporation_name,
-      corporation_ticker: ch.corporation_ticker,
-      alliance_id: ch.alliance_id,
-      alliance_name: ch.alliance_name,
-      alliance_ticker: ch.alliance_ticker,
-      inserted_at: ch.inserted_at,
-      updated_at: ch.updated_at
-    }
+    Map.take(ch, [
+      :id,
+      :eve_id,
+      :name,
+      :corporation_id,
+      :corporation_name,
+      :corporation_ticker,
+      :alliance_id,
+      :alliance_name,
+      :alliance_ticker,
+      :inserted_at,
+      :updated_at
+    ])
   end
 
+
   defp static_system_to_json(system) do
-    %{
-      solar_system_id: system.solar_system_id,
-      region_id: system.region_id,
-      constellation_id: system.constellation_id,
-      solar_system_name: system.solar_system_name,
-      solar_system_name_lc: system.solar_system_name_lc,
-      constellation_name: system.constellation_name,
-      region_name: system.region_name,
-      system_class: system.system_class,
-      security: system.security,
-      type_description: system.type_description,
-      class_title: system.class_title,
-      is_shattered: system.is_shattered,
-      effect_name: system.effect_name,
-      effect_power: system.effect_power,
-      statics: system.statics,
-      wandering: system.wandering,
-      triglavian_invasion_status: system.triglavian_invasion_status,
-      sun_type_id: system.sun_type_id
-    }
+    system
+    |> Map.take([
+      :solar_system_id,
+      :region_id,
+      :constellation_id,
+      :solar_system_name,
+      :solar_system_name_lc,
+      :constellation_name,
+      :region_name,
+      :system_class,
+      :security,
+      :type_description,
+      :class_title,
+      :is_shattered,
+      :effect_name,
+      :effect_power,
+      :statics,
+      :wandering,
+      :triglavian_invasion_status,
+      :sun_type_id
+    ])
   end
 
 end
