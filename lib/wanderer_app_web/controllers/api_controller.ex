@@ -217,6 +217,7 @@ end
       solar_system_id: system.solar_system_id,
       name: system.name,
       custom_name: system.custom_name,
+      temporary_name: system.temporary_name,
       description: system.description,
       tag: system.tag,
       labels: system.labels,
