@@ -139,7 +139,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
-  const system_name = isTempSystemNameEnabled && temporaryName || solar_system_name;
+  const systemName = isTempSystemNameEnabled && temporaryName || solar_system_name;
 
   const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
 
@@ -212,7 +212,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
                   '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
-                {system_name}
+                {systemName}
               </div>
 
               {isWormhole && (
