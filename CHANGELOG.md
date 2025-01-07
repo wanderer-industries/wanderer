@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.36.0](https://github.com/wanderer-industries/wanderer/compare/v1.35.0...v1.36.0) (2025-01-07)
+
+
+
+
+### Features:
+
+* added static system info to api (#101)
+
+* added static system info to api
+
 
 ## [v1.35.0](https://github.com/wanderer-industries/wanderer/compare/v1.34.0...v1.35.0) (2025-01-07)
 
