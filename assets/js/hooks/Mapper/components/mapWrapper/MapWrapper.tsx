@@ -40,6 +40,7 @@ export const MapWrapper = () => {
       isThickConnections,
       isShowBackgroundPattern,
       isSoftBackground,
+      theme,
     },
   } = useMapRootState();
   const { deleteSystems } = useDeleteSystems();
@@ -166,6 +167,7 @@ export const MapWrapper = () => {
         isThickConnections={isThickConnections}
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
+        theme={theme}
         onAddSystem={onAddSystem}
       />
 

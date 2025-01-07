@@ -1,74 +1,85 @@
-$pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
-$pastel-green: #88b04b;
-$pastel-yellow: #ffdd59;
-$dark-bg: #2d2d2d;
-$text-color: #ffffff;
-$tooltip-bg: #202020;
 
-.react-flow {
-  // background-color: $dark-bg;
-  color: $text-color;
+   @import './eve-common-variables';
+   @import './eve-common';
 
-  &__node {
-    //cursor: auto;
-  }
+   .neon-theme {
+     --pastel-blue: #5a7d9a;
+     --pastel-pink: #d291bc;
+     --pastel-green: #88b04b;
+     --pastel-yellow: #ffdd59;
+     --dark-bg: #2d2d2d;
+     --text-color: #ffffff;
+     --tooltip-bg: #202020;
 
-  &__pane {
-    cursor: auto;
-  }
-  //&__edge {
-  //  stroke: $pastel-pink;
-  //  stroke-width: 2px;
-  //
-  //  &.selected {
-  //    stroke: $pastel-yellow;
-  //  }
-  //}
+     --rf-bg-variant: "dots";  /* or lines, if you prefer */
+     --rf-bg-gap: 16;          /* some default gap */
 
-  &__handle {
-    //background-color: $pastel-green;
-    //box-shadow: 0 0 5px rgba($pastel-green, 0.5);
-  }
+     .react-flow {
+       color: var(--text-color);
 
-  &__minimap {
-    background-color: rgba(66, 66, 66, 1);
-    opacity: 0.7;
-    //backdrop-filter: blur(5px);
-    border: 1px solid #2f2f2f;
-    border-radius: 4px;
-    overflow: hidden;
-  }
+       &__node {
+         /* cursor: auto; */
+       }
 
-  &__minimap-mask {
-    fill: rgba(28, 28, 28, 0.75);
-  }
+       &__pane {
+         cursor: auto;
+       }
 
-  &__controls {
-    filter: brightness(1.5);
-  }
+       /*
+       &__edge {
+         stroke: var(--pastel-pink);
+         stroke-width: 2px;
 
-  &__minimap-node {
-    fill: #ffb03a;
-  }
-}
+         &.selected {
+           stroke: var(--pastel-yellow);
+         }
+       }
+       */
 
-.context-menu-active {
-  background-color: rgba(131, 131, 131, 0.33);
-}
+       &__handle {
+         /* background-color: var(--pastel-green);
+            box-shadow: 0 0 5px rgba(88, 176, 75, 0.5); // or define an RGB var
+         */
+       }
 
-.p-dialog {
-  .p-dialog-header {
-    height: 40px;
-    padding: 1rem;
-    padding-right: 10px !important;
-  }
+       &__minimap {
+         background-color: rgba(66, 66, 66, 1);
+         opacity: 0.7;
+         border: 1px solid #2f2f2f;
+         border-radius: 4px;
+         overflow: hidden;
+       }
 
-  .p-dialog-title {
-    font-size: 1rem !important;
-  }
+       &__minimap-mask {
+         fill: rgba(28, 28, 28, 0.75);
+       }
 
-  .p-dialog-header-icons {
-    align-self: initial !important;
-  }
-}
+       &__controls {
+         filter: brightness(1.5);
+       }
+
+       &__minimap-node {
+         fill: #ffb03a;
+       }
+     }
+
+     .context-menu-active {
+       background-color: rgba(131, 131, 131, 0.33);
+     }
+
+     .p-dialog {
+       .p-dialog-header {
+         height: 40px;
+         padding: 1rem;
+         padding-right: 10px !important;
+       }
+
+       .p-dialog-title {
+         font-size: 1rem !important;
+       }
+
+       .p-dialog-header-icons {
+         align-self: initial !important;
+       }
+     }
+   }

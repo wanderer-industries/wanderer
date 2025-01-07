@@ -1,29 +1,53 @@
 @import '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
-$pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
-$pastel-green: #88b04b;
-$pastel-yellow: #ffdd59;
-$dark-bg: #2d2d2d;
-$text-color: #ffffff;
-$tooltip-bg: #202020; // Dark background for tooltips
-
 .RootCustomNode {
   display: flex;
   width: 130px;
   height: 34px;
-
   flex-direction: column;
   padding: 2px 6px;
   font-size: 10px;
-
-  background-color: $tooltip-bg;
-  box-shadow: 0 0 5px rgba($dark-bg, 0.5);
-  border: 1px solid darken($pastel-blue, 10%);
+  background-color: var(--tooltip-bg);
+  box-shadow: 0 0 5px rgba(45, 45, 45, 0.5);
+  border: 1px solid var(--pastel-blue-darken10);
   border-radius: 5px;
   position: relative;
   z-index: 1;
   overflow: hidden;
+
+  .lockIcon {
+    font-size: 0.45rem;
+    font-weight: bold;
+  }
+  .mapMarkerIcon {
+    font-size: 0.45rem;
+    font-weight: bold;
+  }
+  .localCounterIcon {
+    font-size: 0.50rem;
+  }
+
+  .textShadowThin {
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  .tagSkyFontMedium {
+    color: #38bdf8; /* same as Tailwind text-sky-400 */
+    font-weight: 500; /* same as font-medium */
+  }
+
+  .hasUserCharacters {
+    /* used to replace text-amber-300 */
+    color: #fbbf24;
+  }
+
+  .systemNameOverflow {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: sans-serif;
+  }
 
   &.Mataria,
   &.Amarria,
@@ -81,55 +105,55 @@ $tooltip-bg: #202020; // Dark background for tooltips
   }
 
   &.selected {
-    border-color: $pastel-pink;
+    border-color: var(--pastel-pink);
     box-shadow: 0 0 10px #9a1af1c2;
   }
 
   .tooltip {
-    background-color: $tooltip-bg;
-    color: $text-color;
+    background-color: var(--tooltip-bg);
+    color: var(--text-color);
     padding: 5px 10px;
     border-radius: 3px;
-    border: 1px solid $pastel-pink;
+    border: 1px solid var(--pastel-pink);
   }
 
   &.eve-system-status-home {
-    border: 1px solid darken($eve-solar-system-status-color-home, 30%);
-    background-image: linear-gradient(275deg, $eve-solar-system-status-friendly, transparent);
+    border: 1px solid var(--eve-solar-system-status-color-home-dark30);
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly), transparent);
 
     &.selected {
-      border-color: $eve-solar-system-status-color-home;
+      border-color: var(--eve-solar-system-status-color-home);
     }
   }
 
   &.eve-system-status-friendly {
-    border: 1px solid darken($eve-solar-system-status-color-friendly, 20%);
-    background-image: linear-gradient(275deg, darken($eve-solar-system-status-friendly, 30%), transparent);
+    border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
 
     &.selected {
-      border-color: darken($eve-solar-system-status-color-friendly, 5%);
+      border-color: var(--eve-solar-system-status-color-friendly-dark5);
     }
   }
 
   &.eve-system-status-lookingFor {
-    border: 1px solid darken($eve-solar-system-status-color-lookingFor, 15%);
+    border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
     background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
 
     &.selected {
-      border-color: $pastel-pink;
+      border-color: var(--pastel-pink);
     }
   }
 
   &.eve-system-status-warning {
-    background-image: linear-gradient(275deg, $eve-solar-system-status-warning, transparent);
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
   }
 
   &.eve-system-status-dangerous {
-    background-image: linear-gradient(275deg, $eve-solar-system-status-dangerous, transparent);
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
   }
 
   &.eve-system-status-target {
-    background-image: linear-gradient(275deg, $eve-solar-system-status-target, transparent);
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
   }
 }
 
@@ -154,8 +178,6 @@ $tooltip-bg: #202020; // Dark background for tooltips
     padding-left: 3px;
     padding-right: 3px;
 
-    //background-color: #833ca4;
-
     &:not(:first-child) {
       box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
     }
@@ -174,7 +196,6 @@ $tooltip-bg: #202020; // Dark background for tooltips
       height: 8px;
       font-size: 8px;
     }
-
     & > .text {
       margin-top: 1px;
       font-size: 9px;
@@ -209,9 +230,7 @@ $tooltip-bg: #202020; // Dark background for tooltips
     padding-left: 3px;
     padding-right: 3px;
     display: block;
-
     background-color: #833ca4;
-
     &:not(:first-child) {
       box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
     }
@@ -244,11 +263,9 @@ $tooltip-bg: #202020; // Dark background for tooltips
     font-size: 11px;
     font-weight: bold;
     text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
-
     color: #ffb01d;
   }
 
-  /* Firefox kostyl */
   @-moz-document url-prefix() {
     .classSystemName {
       font-family: inherit !important;
@@ -257,7 +274,6 @@ $tooltip-bg: #202020; // Dark background for tooltips
   }
 
   .classSystemName {
-    //font-weight: bold;
   }
 
   .solarSystemName {
@@ -272,20 +288,7 @@ $tooltip-bg: #202020; // Dark background for tooltips
 
   .localCounter {
     display: flex;
-    //align-items: center;
     gap: 2px;
-
-    & > i {
-      position: relative;
-      top: 1px;
-    }
-
-    & > span {
-      font-size: 9px;
-      line-height: 9px;
-      font-weight: 500;
-      //margin-top: 1px;
-    }
   }
 }
 
@@ -306,8 +309,6 @@ $tooltip-bg: #202020; // Dark background for tooltips
   & > * {
     line-height: 10px;
   }
-
-  /* Firefox kostyl */
   @-moz-document url-prefix() {
     position: relative;
     top: -1px;
@@ -326,26 +327,22 @@ $tooltip-bg: #202020; // Dark background for tooltips
 .Handle {
   min-width: initial;
   min-height: initial;
-  border: 1px solid $pastel-blue;
+  border: 1px solid var(--pastel-blue);
   width: 5px;
   height: 5px;
 
   &.selected {
-    border-color: $pastel-pink;
+    border-color: var(--pastel-pink);
   }
-
   &.HandleTop {
     top: -2px;
   }
-
   &.HandleRight {
     right: -2px;
   }
-
   &.HandleBottom {
     bottom: -2px;
   }
-
   &.HandleLeft {
     left: -2px;
   }
@@ -357,15 +354,12 @@ $tooltip-bg: #202020; // Dark background for tooltips
     &.HandleTop {
       top: -3px;
     }
-
     &.HandleRight {
       right: -3px;
     }
-
     &.HandleBottom {
       bottom: -3px;
     }
-
     &.HandleLeft {
       left: -3px;
     }

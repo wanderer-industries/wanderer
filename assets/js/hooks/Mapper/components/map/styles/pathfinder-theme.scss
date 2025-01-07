@@ -1,0 +1,197 @@
+
+@import './eve-common-variables';
+@import './eve-common';
+
+.pathfinder-theme {
+
+  --rf-bg-variant: "lines";
+  --rf-bg-gap: 32;
+  --rf-bg-color: #353535;
+  --rf-soft-bg-color: #282829;
+
+  --pf-text-color: #adadad;
+  --pf-dark-bg: #2d2d2d;
+  --pf-tooltip-bg: #202020;
+  --rf-bg-variant: "lines";
+  --rf-bg-gap: 32;
+  --rf-bg-size: 1;
+  --rf-bg-color: #313131;
+  --eve-effect-pulsar: #428bca;
+  --eve-effect-magnetar: #e06fdf;
+  --eve-effect-wolfRayet: #e28a0d;
+  --eve-effect-blackHole: #000000;
+  --eve-effect-cataclysmicVariable: #ffffbb;
+  --eve-effect-redGiant: #d9534f;
+
+  --eve-wh-type-color-high: #5cb85c;
+  --eve-wh-type-color-low: #e28a0d;
+  --eve-wh-type-color-null: #d9534f;
+  --eve-wh-type-color-c1: #428bca;
+  --eve-wh-type-color-c2: #428bca;
+  --eve-wh-type-color-c3: #e28a0d;
+  --eve-wh-type-color-c4: #e28a0d;
+  --eve-wh-type-color-c5: #d9534f;
+  --eve-wh-type-color-c6: #d9534f;
+  --eve-wh-type-color-c13: #7986cb;
+  --eve-wh-type-color-drifter: #44aa82;
+
+  .MapRoot {
+    background-color: var(--rf-bg-color);
+
+    &.isSoftBackground {
+      background-color: var(--rf-soft-bg-color);
+    }
+    &.soft-bg {
+      --rf-bg-color: var(--rf-soft-bg-color);
+    }
+  }
+
+  .RootCustomNode {
+    background-color: #313335 !important; /* or var(--pf-dark-bg)  */
+    font-weight: 600;
+    line-height: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--pf-text-color);
+
+  }
+
+  .HeadRow {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 500;
+    position: relative;
+    top: 1px;
+
+    .classTitle {
+      font-size: 11px;
+      font-weight: bold;
+      text-shadow: 0 0 1px rgba(0, 0, 0, 0.7);
+    }
+
+    @-moz-document url-prefix() {
+      .classSystemName {
+        font-family: inherit !important;
+        font-weight: bold;
+        mix-blend-mode: screen;
+      }
+    }
+
+    .classSystemName {
+      font-family: inherit !important;
+      font-weight: bold;
+      color: var(--pf-text-color); 
+      mix-blend-mode: screen;
+      text-shadow: rgba(0, 0, 0, 0.4) 1px 1px;
+    }
+
+    .textEllipsis {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .fontSans {
+      font-family: sans-serif;
+    }
+  }
+
+  .BottomRow {
+    .localCounter {
+      display: flex;
+      gap: 2px;
+
+      & > i {
+        position: relative;
+        top: 1px;
+      }
+      & > span {
+        font-size: 9px;
+        line-height: 9px;
+        font-weight: 700;
+        mix-blend-mode: screen;
+        color: #5cb85c; /* or var(--eve-wh-type-color-high) */
+      }
+    }
+
+    .customName {
+      font-family: inherit !important;
+      font-weight: bold;
+      color: var(--pf-text-color);
+      mix-blend-mode: screen;
+      text-shadow: rgba(0, 0, 0, 0.4) 1px 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+      flex-shrink: 1;
+    }
+
+    .tagTitle {
+      font-size: 9px;
+      font-family: inherit !important;
+      font-weight: bold;
+      color: #fbbf24 !important;
+      mix-blend-mode: screen;
+    }
+  }
+
+  .Handlers {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .Handle {
+    min-width: initial;
+    min-height: initial;
+    border: 1px solid var(--pastel-blue, #5a7d9a);
+    width: 5px;
+    height: 5px;
+
+    &.selected {
+      border-color: var(--pastel-pink, #d291bc);
+    }
+
+    &.HandleTop {
+      top: -2px;
+    }
+    &.HandleRight {
+      right: -2px;
+    }
+    &.HandleBottom {
+      bottom: -2px;
+    }
+    &.HandleLeft {
+      left: -2px;
+    }
+
+    &.Tick {
+      width: 7px;
+      height: 7px;
+
+      &.HandleTop {
+        top: -3px;
+      }
+      &.HandleRight {
+        right: -3px;
+      }
+      &.HandleBottom {
+        bottom: -3px;
+      }
+      &.HandleLeft {
+        left: -3px;
+      }
+    }
+  }
+
+  .react-flow {
+    color: var(--pf-text-color);
+  }
+
+}

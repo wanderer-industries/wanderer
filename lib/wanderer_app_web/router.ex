@@ -21,8 +21,9 @@ defmodule WandererAppWeb.Router do
   @frame_src if(@code_reloading, do: ~w('self'), else: ~w())
   @style_src ~w('self' 'unsafe-inline' https://fonts.googleapis.com)
   @img_src ~w('self' data: https://images.evetech.net https://web.ccpgamescdn.com https://images.ctfassets.net https://w.appzi.io)
-  @font_src ~w('self' data: https://web.ccpgamescdn.com https://w.appzi.io)
+  @font_src ~w('self' https://fonts.gstatic.com data: https://web.ccpgamescdn.com https://w.appzi.io )
   @script_src ~w('self' )
+
 
   pipeline :admin_bauth do
     plug :admin_basic_auth

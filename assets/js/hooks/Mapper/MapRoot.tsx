@@ -7,7 +7,7 @@ import { ErrorInfo, useCallback, useEffect, useRef } from 'react';
 import { useMapperHandlers } from './useMapperHandlers';
 
 import './common-styles/main.scss';
-import { MapRootProvider } from '@/hooks/Mapper/mapRootProvider';
+import { MapRootProvider, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { MapRootContent } from '@/hooks/Mapper/components/mapRootContent/MapRootContent.tsx';
 
 const ErrorFallback = () => {

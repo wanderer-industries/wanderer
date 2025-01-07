@@ -16,8 +16,6 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import classes from './Map.module.scss';
-import './styles/neon-theme.scss';
-import './styles/eve-common.scss';
 import { MapProvider, useMapState } from './MapProvider';
 import { useNodesState, useEdgesState, useMapHandlers, useUpdateNodes } from './hooks';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
@@ -35,6 +33,7 @@ import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types'
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import clsx from 'clsx';
+import { useBackgroundVars } from './hooks/useBackgroundVars';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -101,6 +100,7 @@ interface MapCompProps {
   isThickConnections?: boolean;
   isShowBackgroundPattern?: boolean;
   isSoftBackground?: boolean;
+  theme?: string;
 }
 
 const MapComp = ({
@@ -117,6 +117,7 @@ const MapComp = ({
   isThickConnections,
   isShowBackgroundPattern,
   isSoftBackground,
+  theme,
   onAddSystem,
 }: MapCompProps) => {
   const { getNode, getNodes } = useReactFlow();
@@ -128,6 +129,7 @@ const MapComp = ({
   const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
+  const { variant, gap, size, color } = useBackgroundVars(theme);
 
   const onConnect: OnConnect = useCallback(
     params => {
@@ -229,7 +231,7 @@ const MapComp = ({
 
   return (
     <>
-      <div className={clsx(classes.MapRoot, { ['bg-neutral-900']: isSoftBackground })}>
+      <div className={clsx(classes.MapRoot, { [classes.BackgroundAlternateColor]: isSoftBackground })}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -276,7 +278,7 @@ const MapComp = ({
           selectionMode={SelectionMode.Partial}
         >
           {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
-          {isShowBackgroundPattern && <Background />}
+          {isShowBackgroundPattern && <Background variant={variant} gap={gap} size={size} color={color} />}
         </ReactFlow>
         {/* <button className="z-auto btn btn-primary absolute top-20 right-20" onClick={handleGetPassages}>
           Test // DON NOT REMOVE

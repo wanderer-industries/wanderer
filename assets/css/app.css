@@ -3,6 +3,8 @@
 @import 'primereact/resources/themes/arya-blue/theme.css' layer(primereact);
 /*@import 'primereact/resources/themes/bootstrap4-dark-blue/theme.css' layer(primereact);*/
 
+@import '../js/hooks/Mapper/components/map/styles/index.scss';
+
 @layer tailwind-base {
   @tailwind base;
 }
