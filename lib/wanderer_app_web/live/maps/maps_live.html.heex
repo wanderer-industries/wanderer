@@ -314,6 +314,7 @@
                 >
                 </li>
                 <li
+                  :if={not WandererApp.Env.public_api_disabled?()}
                   class={[
                     "p-unselectable-text",
                     classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
@@ -402,7 +403,7 @@
                 </.button>
               </div>
 
-              <div :if={@active_settings_tab == "public_api"} class="p-6">
+              <div :if={@active_settings_tab == "public_api"and not WandererApp.Env.public_api_disabled?()} class="p-6">
                 <h2 class="text-lg font-semibold mb-4">Public API</h2>
                 <div class="flex flex-col gap-3 items-start w-full">
                   <div>

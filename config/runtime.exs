@@ -48,6 +48,11 @@ port =
 
 scheme = System.get_env("WEB_EXTERNAL_SCHEME", "http")
 
+public_api_disabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_PUBLIC_API_DISABLED", "false")
+  |> String.to_existing_atom()
+
 map_subscriptions_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
@@ -83,6 +88,7 @@ config :wanderer_app,
   admins: admins,
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
+  public_api_disabled: public_api_disabled,
   map_subscriptions_enabled: map_subscriptions_enabled,
   wallet_tracking_enabled: wallet_tracking_enabled,
   subscription_settings: %{

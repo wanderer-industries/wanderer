@@ -106,20 +106,23 @@ defmodule WandererAppWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+    plug WandererAppWeb.Plugs.CheckMapApiKey
   end
 
-  scope "/api", WandererAppWeb do
-    pipe_through [:api]
+  if not WandererApp.Env.public_api_disabled?() do
+    scope "/api", WandererAppWeb do
+      pipe_through [:api]
 
-    # GET /api/systems?map_id=... or ?slug=...
-    get "/systems", APIController, :list_systems
+      # GET /api/systems?map_id=... or ?slug=...
+      get "/systems", APIController, :list_systems
 
-    # GET /api/system?id=... plus either map_id=... or slug=...
-    get "/system", APIController, :show_system
+      # GET /api/system?id=... plus either map_id=... or slug=...
+      get "/system", APIController, :show_system
 
-    # GET /api/characters?map_id=... or slug=...
-    get "/characters", APIController, :tracked_characters_with_info
-
+      # GET /api/characters?map_id=... or slug=...
+      get "/characters", APIController, :tracked_characters_with_info
+    end
   end
 
   scope "/", WandererAppWeb do

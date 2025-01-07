@@ -8,11 +8,10 @@ defmodule WandererAppWeb.APIController do
   alias WandererApp.MapCharacterSettingsRepo
   alias WandererApp.Api.Character
 
-  plug :check_api_key
 
-  # -----------------------------------------------------------------
-  # SYSTEMS
-  # -----------------------------------------------------------------
+# -----------------------------------------------------------------
+# SYSTEMS
+# -----------------------------------------------------------------
 
 @doc """
 GET /api/systems
@@ -168,43 +167,6 @@ end
     end
   end
 
-  defp check_api_key(conn, _opts) do
-    header = get_req_header(conn, "authorization") |> List.first()
-
-    case header do
-      "Bearer " <> incoming_token ->
-        case fetch_map_id(conn.query_params) do
-          {:ok, map_id} ->
-            case WandererApp.Api.Map.by_id(map_id) do
-              {:ok, map} ->
-                if map.public_api_key == incoming_token do
-                  conn
-                else
-                  conn
-                  |> send_resp(401, "Unauthorized (invalid token for that map)")
-                  |> halt()
-                end
-
-              {:error, _reason} ->
-                conn
-                |> send_resp(404, "Map not found")
-                |> halt()
-            end
-
-          {:error, msg} ->
-            conn
-            |> send_resp(400, msg)
-            |> halt()
-        end
-
-      _ ->
-        conn
-        |> send_resp(401, "Missing or invalid 'Bearer' token")
-        |> halt()
-    end
-  end
-
-  # Attempts to fetch the map_id from either `map_id` or `slug`.
   defp fetch_map_id(%{"map_id" => mid}) when is_binary(mid) and mid != "" do
     {:ok, mid}
   end
