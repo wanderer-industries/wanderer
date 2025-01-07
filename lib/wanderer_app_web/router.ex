@@ -117,6 +117,9 @@ defmodule WandererAppWeb.Router do
       # GET /api/systems?map_id=... or ?slug=...
       get "/systems", APIController, :list_systems
 
+      # GET /api/system-static-info?id=... plus either map_id=... or slug=...
+      get "/system-static-info", APIController, :show_system_static
+
       # GET /api/system?id=... plus either map_id=... or slug=...
       get "/system", APIController, :show_system
 
