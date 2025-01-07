@@ -20,11 +20,13 @@ As part of the Wanderer platform, a public API has been introduced to help users
 
 ## Authentication
 
-Each request to the Wanderer API must include a valid API key in the `Authorization` header. The format is:
+Each request to the Wanderer APIs that being with /api/map must include a valid API key in the `Authorization` header. The format is:
 
     Authorization: Bearer <YOUR_MAP_API_KEY>
 
 If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` response.
+
+No api key is required for routes that being with /api/common
 
 ---
 
@@ -32,8 +34,8 @@ If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` re
 
 ### 1. List Systems
 
-    GET /api/systems?map_id=<UUID>
-    GET /api/systems?slug=<map-slug>
+    GET /api/map/systems?map_id=<UUID>
+    GET /api/map/systems?slug=<map-slug>
 
 - **Description:** Retrieves a list of systems associated with the specified map (by `map_id` or `slug`).
 - **Authentication:** Required via `Authorization` header.
@@ -44,7 +46,7 @@ If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` re
 
 #### Example Request
 ```
-    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/systems?slug=some-slug"
+    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/systems?slug=some-slug"
 ```
 #### Example Response
 ```
@@ -75,8 +77,8 @@ If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` re
 
 ### 2. Show Single System
 
-    GET /api/system?id=<SOLAR_SYSTEM_ID>&map_id=<UUID>
-    GET /api/system?id=<SOLAR_SYSTEM_ID>&slug=<map-slug>
+    GET /api/map/system?id=<SOLAR_SYSTEM_ID>&map_id=<UUID>
+    GET /api/map/system?id=<SOLAR_SYSTEM_ID>&slug=<map-slug>
 
 - **Description:** Retrieves information for a specific system on the specified map. You must provide:
   - `id` (the `solar_system_id`).
@@ -85,7 +87,7 @@ If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` re
 
 #### Example Request
 ```
-    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/system?id=<REDACTED_NUMBER>&slug=<REDACTED_SLUG>"
+    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/system?id=<REDACTED_NUMBER>&slug=<REDACTED_SLUG>"
 ```
 #### Example Response
 ```
@@ -111,17 +113,64 @@ If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` re
 ```
 ---
 
+### 2. Show Single System Static Info
+
+    GET /api/common/static-system-info?id=<SOLAR_SYSTEM_ID>
+    GET /api/common/static-system-info?id=<SOLAR_SYSTEM_ID>
+
+- **Description:** Retrieves the static information for a specific system.
+
+- **Authentication:** No API token required
+
+#### Example Request
+```
+    curl "https://wanderer.example.com/api/common/static-system-info?id=31002229
+```
+#### Example Response
+```
+{
+  "data": {
+    "solar_system_id": 31002229,
+    "triglavian_invasion_status": "Normal",
+    "solar_system_name": "J132946",
+    "system_class": 5,
+    "region_id": 11000028,
+    "constellation_id": 21000278,
+    "solar_system_name_lc": "j132946",
+    "constellation_name": "E-C00278",
+    "region_name": "E-R00028",
+    "security": "-1.0",
+    "type_description": "Class 5",
+    "class_title": "C5",
+    "is_shattered": false,
+    "effect_name": null,
+    "effect_power": 5,
+    "statics": [
+      "H296"
+    ],
+    "wandering": [
+      "D792",
+      "C140",
+      "Z142"
+    ],
+    "sun_type_id": 38
+  }
+}
+
+```
+---
+
 ### 3. List Tracked Characters
 
-    GET /api/characters?map_id=<UUID>
-    GET /api/characters?slug=<map-slug>
+    GET /api/map/characters?map_id=<UUID>
+    GET /api/map/characters?slug=<map-slug>
 
 - **Description:** Retrieves a list of tracked characters for the specified map (by `map_id` or `slug`), including metadata such as corporation/alliance details.
 - **Authentication:** Required via `Authorization` header.
 
 #### Example Request
 ```
-    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/characters?slug=some-slug"
+    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/characters?slug=some-slug"
 ```
 #### Example Response
 ```
