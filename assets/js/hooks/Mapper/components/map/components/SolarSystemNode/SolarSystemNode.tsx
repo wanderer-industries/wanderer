@@ -75,7 +75,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const signatures = data.system_signatures;
 
-  const { locked, name, tag, status, labels, id, temporary_name } = data || {};
+  const { locked, name, tag, status, labels, id, temporary_name: temporaryName } = data || {};
 
 
   const {
@@ -139,9 +139,9 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
-  const system_name = isTempSystemNameEnabled && temporary_name || solar_system_name;
+  const system_name = isTempSystemNameEnabled && temporaryName || solar_system_name;
 
-  const customName = (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
+  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {

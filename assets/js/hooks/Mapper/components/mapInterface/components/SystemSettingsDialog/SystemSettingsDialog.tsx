@@ -31,7 +31,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
 
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
-  const [temporary_name, setTemporaryName] = useState('')
+  const [temporaryName, setTemporaryName] = useState('')
   const [description, setDescription] = useState('');
   const inputRef = useRef<HTMLInputElement>();
 
@@ -48,11 +48,11 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
     setDescription(system.description || '');
   }, [system]);
 
-  const ref = useRef({ name, description, temporary_name, label, outCommand, systemId, system });
-  ref.current = { name, description, label, temporary_name, outCommand, systemId, system };
+  const ref = useRef({ name, description, temporaryName, label, outCommand, systemId, system });
+  ref.current = { name, description, label, temporaryName, outCommand, systemId, system };
 
   const handleSave = useCallback(() => {
-    const { name, description, label, temporary_name, outCommand, systemId, system } = ref.current;
+    const { name, description, label, temporaryName, outCommand, systemId, system } = ref.current;
 
     const outLabel = new LabelsManager(system?.labels ?? '');
     outLabel.updateCustomLabel(label);
@@ -69,7 +69,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
       type: OutCommand.updateSystemTemporaryName,
       data: {
         system_id: systemId,
-        value: temporary_name,
+        value: temporaryName,
       },
     });
 
@@ -187,7 +187,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                 <label htmlFor="username">Temporary Name</label>
 
                 <IconField>
-                  {temporary_name !== '' && (
+                  {temporaryName !== '' && (
                     <WdImgButton
                       className="pi pi-trash text-red-400"
                       textSize={WdImageSize.large}
@@ -200,10 +200,10 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                     />
                   )}
                   <InputText
-                    id="temporary_name"
+                    id="temporaryName"
                     aria-describedby="temporaryName"
                     autoComplete="off"
-                    value={temporary_name}
+                    value={temporaryName}
                     maxLength={10}
                     onChange={e => setTemporaryName(e.target.value)}
                   />
