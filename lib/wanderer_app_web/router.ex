@@ -113,24 +113,22 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckMapApiKey
   end
 
-  if not WandererApp.Env.public_api_disabled?() do
-    scope "/api/map", WandererAppWeb do
-      pipe_through [:api_map]
-      pipe_through [:api]
+scope "/api/map", WandererAppWeb do
+  pipe_through [:api_map]
+  pipe_through [:api]
 
-      # GET /api/map/systems?map_id=... or ?slug=...
-      get "/systems", APIController, :list_systems
+  # GET /api/map/systems?map_id=... or ?slug=...
+  get "/systems", APIController, :list_systems
 
-      # GET /api/map/system-static-info?id=... plus either map_id=... or slug=...
-      get "/system-static-info", APIController, :show_system_static
+  # GET /api/map/system-static-info?id=... plus either map_id=... or slug=...
+  get "/system-static-info", APIController, :show_system_static
 
-      # GET /api/map/system?id=... plus either map_id=... or slug=...
-      get "/system", APIController, :show_system
+  # GET /api/map/system?id=... plus either map_id=... or slug=...
+  get "/system", APIController, :show_system
 
-      # GET /api/map/characters?map_id=... or slug=...
-      get "/characters", APIController, :tracked_characters_with_info
-    end
-  end
+  # GET /api/map/characters?map_id=... or slug=...
+  get "/characters", APIController, :tracked_characters_with_info
+end
 
 scope "/api/common", WandererAppWeb do
   pipe_through [:api]
