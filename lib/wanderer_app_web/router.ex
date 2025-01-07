@@ -106,10 +106,10 @@ defmodule WandererAppWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug WandererAppWeb.Plugs.CheckApiDisabled
   end
 
   pipeline :api_map do
-    plug WandererAppWeb.Plugs.CheckApiDisabled
     plug WandererAppWeb.Plugs.CheckMapApiKey
   end
 
