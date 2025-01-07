@@ -201,7 +201,7 @@ defmodule WandererApp.Map.Server.Impl do
       | map: map |> WandererApp.Map.update_subscription_settings!(subscription_settings)
     }
 
-  def handle_event(:update_characters, %{map_id: map_id} = state) do
+  def handle_event(:update_characters, state) do
     Process.send_after(self(), :update_characters, @update_characters_timeout)
 
     CharactersImpl.update_characters(state)
@@ -259,7 +259,7 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  def handle_event(:cleanup_systems, %{map_id: map_id} = state) do
+  def handle_event(:cleanup_systems, state) do
     Process.send_after(self(), :cleanup_systems, @systems_cleanup_timeout)
 
     state |> SystemsImpl.cleanup_systems()

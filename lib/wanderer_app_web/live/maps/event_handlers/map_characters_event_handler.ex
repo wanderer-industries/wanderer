@@ -192,16 +192,15 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   end
 
   def handle_ui_event(
-      "toggle_follow",
-      %{"character-id" => clicked_char_id},
-      %{
-        assigns: %{
-          map_id: map_id,
-          current_user: current_user
-        }
-      } = socket
-    ) do
-
+        "toggle_follow",
+        %{"character-id" => clicked_char_id},
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user
+          }
+        } = socket
+      ) do
     {:ok, all_settings} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
 
     # Find and filter user's characters
@@ -217,7 +216,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     existing = Enum.find(my_settings, &(&1.character_id == clicked_char_id))
 
     {:ok, target_setting} =
-      if existing do
+      if not is_nil(existing) do
         {:ok, existing}
       else
         WandererApp.MapCharacterSettingsRepo.create(%{
@@ -275,7 +274,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
     {:noreply, socket}
   end
-
 
   def handle_ui_event("hide_tracking", _, socket),
     do: {:noreply, socket |> assign(show_tracking?: false)}

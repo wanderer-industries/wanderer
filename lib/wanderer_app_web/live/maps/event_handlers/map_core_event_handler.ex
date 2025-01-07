@@ -162,7 +162,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         socket
       )
 
-    def handle_ui_event("toggle_follow_" <> character_id, _, socket),
+  def handle_ui_event("toggle_follow_" <> character_id, _, socket),
     do:
       MapCharactersEventHandler.handle_ui_event(
         "toggle_follow",
@@ -234,7 +234,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          |> MapCharactersEventHandler.add_character()}
 
   def handle_ui_event(event, body, socket) do
-    Logger.warning(fn -> "unhandled map ui event: #{event} #{inspect(body)}" end)
+    Logger.warning(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
   end
 

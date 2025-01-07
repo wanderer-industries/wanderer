@@ -77,13 +77,14 @@ defmodule WandererAppWeb.MapLive do
   def handle_info(:not_all_characters_tracked, %{assigns: %{map_slug: map_slug}} = socket),
     do:
       WandererAppWeb.MapEventHandler.handle_ui_event(
-        %{event: "add_character"},
+        "add_character",
         nil,
         socket
         |> put_flash(
           :error,
           "You should enable tracking for all characters that have access to this map first!"
         )
+        |> push_navigate(to: ~p"/tracking/#{map_slug}")
       )
 
   @impl true
@@ -100,18 +101,5 @@ defmodule WandererAppWeb.MapLive do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:active_page, :map)
-  end
-
-  def character_item(assigns) do
-    ~H"""
-    <div class="flex items-center gap-3">
-      <div class="avatar">
-        <div class="rounded-md w-12 h-12">
-          <img src={member_icon_url(@character.eve_id)} alt={@character.name} />
-        </div>
-      </div>
-      <%= @character.name %>
-    </div>
-    """
   end
 end
