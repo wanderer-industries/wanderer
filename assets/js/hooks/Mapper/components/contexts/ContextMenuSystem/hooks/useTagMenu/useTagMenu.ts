@@ -6,8 +6,8 @@ import { getSystemById } from '@/hooks/Mapper/helpers';
 import clsx from 'clsx';
 import { GRADIENT_MENU_ACTIVE_CLASSES } from '@/hooks/Mapper/constants.ts';
 
-const AVAILABLE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'X', 'Y', 'Z'];
-const AVAILABLE_NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+// We only keep numbers for 'occupied'
+const AVAILABLE_NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'];
 
 export const useTagMenu = (
   systems: SolarSystemRawType[],
@@ -21,15 +21,16 @@ export const useTagMenu = (
     const { onSystemTag, systemId, systems } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
-    const isSelectedLetters = AVAILABLE_LETTERS.includes(system?.tag ?? '');
-    const isSelectedNumbers = AVAILABLE_NUMBERS.includes(system?.tag ?? '');
+    // Check if the current 'occupied' value is in our available list
+    const isSelectedOccupied = AVAILABLE_NUMBERS.includes(system?.tag ?? '');
 
     const menuItem: MenuItem = {
-      label: 'Tag',
+      label: 'Occupied',
       icon: PrimeIcons.HASHTAG,
-      className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedLetters || isSelectedNumbers }),
+      className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedOccupied }),
       items: [
-        ...(system?.tag !== '' && system?.tag !== null
+        // Show "Clear" only if there's an occupied value
+        ...(system?.tag
           ? [
               {
                 label: 'Clear',
@@ -38,28 +39,16 @@ export const useTagMenu = (
               },
             ]
           : []),
-        {
-          label: 'Letter',
-          icon: PrimeIcons.TAGS,
-          className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedLetters }),
-          items: AVAILABLE_LETTERS.map(x => ({
-            label: x,
-            icon: PrimeIcons.TAG,
-            command: () => onSystemTag(x),
-            className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: system?.tag === x }),
-          })),
-        },
-        {
-          label: 'Digit',
-          icon: PrimeIcons.TAGS,
-          className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedNumbers }),
-          items: AVAILABLE_NUMBERS.map(x => ({
-            label: x,
-            icon: PrimeIcons.TAG,
-            command: () => onSystemTag(x),
-            className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: system?.tag === x }),
-          })),
-        },
+
+        // Flatten the list of numbers on the same level
+        ...AVAILABLE_NUMBERS.map((num) => ({
+          label: num,
+          icon: PrimeIcons.USER,
+          command: () => onSystemTag(num),
+          className: clsx({
+            [GRADIENT_MENU_ACTIVE_CLASSES]: system?.tag === num,
+          }),
+        })),
       ],
     };
 
