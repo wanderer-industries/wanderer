@@ -25,28 +25,13 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
 
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
 
-
   const system = getSystemById(systems, systemId);
-
 
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
-  const [temporaryName, setTemporaryName] = useState('')
+  const [temporaryName, setTemporaryName] = useState('');
   const [description, setDescription] = useState('');
   const inputRef = useRef<HTMLInputElement>();
-
-  useEffect(() => {
-    if (!system) {
-      return;
-    }
-
-    const labels = new LabelsManager(system.labels || '');
-
-    setName(system.name || '');
-    setLabel(labels.customLabel);
-    setTemporaryName(system.temporary_name || '');
-    setDescription(system.description || '');
-  }, [system]);
 
   const ref = useRef({ name, description, temporaryName, label, outCommand, systemId, system });
   ref.current = { name, description, label, temporaryName, outCommand, systemId, system };
@@ -106,6 +91,21 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
 
   const handleInput = useCallback((e: any) => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9\-[\](){}]/g, '');
+  }, []);
+
+  // Attention: this effect should be call only on mount.
+  useEffect(() => {
+    const { system } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    const labels = new LabelsManager(system.labels || '');
+
+    setName(system.name || '');
+    setLabel(labels.customLabel);
+    setTemporaryName(system.temporary_name || '');
+    setDescription(system.description || '');
   }, []);
 
   return (
@@ -182,7 +182,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
               </IconField>
             </div>
 
-            {isTempSystemNameEnabled &&
+            {isTempSystemNameEnabled && (
               <div className="flex flex-col gap-1">
                 <label htmlFor="username">Temporary Name</label>
 
@@ -209,7 +209,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                   />
                 </IconField>
               </div>
-            }
+            )}
 
             <div className="flex flex-col gap-1">
               <label htmlFor="username">Description</label>
