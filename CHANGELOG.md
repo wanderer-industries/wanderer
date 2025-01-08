@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.36.1](https://github.com/wanderer-industries/wanderer/compare/v1.36.0...v1.36.1) (2025-01-08)
+
+
+
+
+### Bug Fixes:
+
+* Map: Removed unnecessary comment
+
+* Map: Add support RU signatures and fix filtering
+
 ## [v1.36.0](https://github.com/wanderer-industries/wanderer/compare/v1.35.0...v1.36.0) (2025-01-07)
 
 
