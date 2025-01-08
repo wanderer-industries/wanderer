@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.37.0](https://github.com/wanderer-industries/wanderer/compare/v1.36.2...v1.37.0) (2025-01-08)
+
+
+
+
+### Features:
+
+* add theme selection and pathfinder theme
+
 ## [v1.36.2](https://github.com/wanderer-industries/wanderer/compare/v1.36.1...v1.36.2) (2025-01-08)
 
 
