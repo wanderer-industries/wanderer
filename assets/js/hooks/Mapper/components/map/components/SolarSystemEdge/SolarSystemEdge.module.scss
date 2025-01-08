@@ -1,8 +1,33 @@
-@import "@/hooks/Mapper/components/map/styles/eve-common-variables";
+@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
-.react-flow__edge.selected {
-  .EdgePathBack {
-    stroke: var(--pastel-yellow);
+.EdgePathBack {
+  fill: none;
+  stroke: #80a5c5;
+  stroke-width: 3px;
+
+  &.TimeCrit {
+    stroke: #f11ab2;
+    stroke-width: 4px;
+  }
+
+  &.Hovered {
+    stroke: #b5c8d9;
+
+    &.TimeCrit {
+      stroke: #ef7dce;
+    }
+  }
+
+  &.Tick {
+    stroke-width: 5px;
+
+    &.TimeCrit {
+      stroke-width: 6px;
+    }
+  }
+
+  &.Gate {
+    stroke: #9aff40;
   }
 }
 
@@ -53,41 +78,26 @@
   }
 }
 
-.EdgePathBack {
-  fill: none;
-  stroke: #80a5c5;
-  stroke-width: 3px;
-
-  &.TimeCrit {
-    stroke: #f11ab2;
-    stroke-width: 4px;
-  }
-
-  &.Hovered {
-    stroke: #b5c8d9;
-
-    &.TimeCrit {
-      stroke: #ef7dce;
-    }
-  }
-
-  &.Tick {
-    stroke-width: 5px;
-
-    &.TimeCrit {
-      stroke-width: 6px;
-    }
-  }
-
-  &.Gate {
-    stroke: #9aff40;
-  }
-}
-
 .ClickPath {
   fill: none;
   stroke: none;
   stroke-width: 8px;
+}
+
+.Handle {
+  border: 1px solid var(--pastel-blue);
+  width: 5px;
+  height: 5px;
+  z-index: 1001;
+
+  &.Tick {
+    width: 7px;
+    height: 7px;
+  }
+
+  &.Right {
+    margin-left: 0px;
+  }
 }
 
 .LinkLabel {
@@ -105,22 +115,4 @@
   width: 8px;
   height: 8px;
   font-size: 8px;
-}
-
-.Handle {
-  min-width: initial;
-  min-height: initial;
-  border: 1px solid var(--pastel-blue);
-  width: 5px;
-  height: 5px;
-  z-index: 1001;
-
-  &.Tick {
-    width: 7px;
-    height: 7px;
-
-    &.Right {
-      margin-left: 0px;
-    }
-  }
 }

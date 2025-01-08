@@ -47,22 +47,13 @@
   }
 
   .RootCustomNode {
-    background-color: #313335 !important; /* or var(--pf-dark-bg)  */
+    background-color: #313335 !important;
     font-weight: 600;
     line-height: normal;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     color: var(--pf-text-color);
-
   }
 
   .HeadRow {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    line-height: 14px;
-    font-weight: 500;
     position: relative;
     top: 1px;
 
@@ -83,7 +74,7 @@
     .classSystemName {
       font-family: inherit !important;
       font-weight: bold;
-      color: var(--pf-text-color); 
+      color: var(--pf-text-color);
       mix-blend-mode: screen;
       text-shadow: rgba(0, 0, 0, 0.4) 1px 1px;
     }
@@ -101,7 +92,6 @@
   .BottomRow {
     .localCounter {
       display: flex;
-      gap: 2px;
 
       & > i {
         position: relative;
@@ -112,7 +102,7 @@
         line-height: 9px;
         font-weight: 700;
         mix-blend-mode: screen;
-        color: #5cb85c; /* or var(--eve-wh-type-color-high) */
+        color: #5cb85c;
       }
     }
 
@@ -193,5 +183,4 @@
   .react-flow {
     color: var(--pf-text-color);
   }
-
 }
