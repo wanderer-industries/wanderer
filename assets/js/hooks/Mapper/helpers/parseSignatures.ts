@@ -1,5 +1,5 @@
-import { COSMIC_SIGNATURE } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
-import { SystemSignature } from '@/hooks/Mapper/types';
+import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+import { MAPPING_TYPE_TO_ENG } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 export const parseSignatures = (value: string, availableKeys: string[]): SystemSignature[] => {
   const outArr: SystemSignature[] = [];
@@ -14,10 +14,12 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
       continue;
     }
 
+    const kind = MAPPING_TYPE_TO_ENG[sigArrInfo[1] as SignatureKind];
+
     outArr.push({
       eve_id: sigArrInfo[0],
-      kind: availableKeys.includes(sigArrInfo[1]) ? sigArrInfo[1] : COSMIC_SIGNATURE,
-      group: sigArrInfo[2],
+      kind: availableKeys.includes(kind) ? kind : SignatureKind.CosmicSignature,
+      group: sigArrInfo[2] as SignatureGroup,
       name: sigArrInfo[3],
       type: '',
     });
