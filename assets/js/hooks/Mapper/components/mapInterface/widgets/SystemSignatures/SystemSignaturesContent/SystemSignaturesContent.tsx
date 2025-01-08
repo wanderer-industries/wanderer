@@ -2,7 +2,10 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
-import { GROUPS_LIST } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import {
+  getGroupIdByRawGroup,
+  GROUPS_LIST,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 import { DataTable, DataTableRowClickEvent, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -122,13 +125,14 @@ export const SystemSignaturesContent = ({
         }
 
         const isCosmicSignature = x.kind === COSMIC_SIGNATURE;
+        const preparedGroup = getGroupIdByRawGroup(x.group);
 
         if (isCosmicSignature) {
           const showCosmicSignatures = settings.find(y => y.key === COSMIC_SIGNATURE)?.value;
           if (showCosmicSignatures) {
-            return !x.group || groupSettings.find(y => y.key === x.group)?.value;
+            return !x.group || groupSettings.find(y => y.key === preparedGroup)?.value;
           } else {
-            return !!x.group && groupSettings.find(y => y.key === x.group)?.value;
+            return !!x.group && groupSettings.find(y => y.key === preparedGroup)?.value;
           }
         }
 
