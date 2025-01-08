@@ -161,9 +161,6 @@ export const SystemSignaturesContent = ({
         skipUpdateUntouched,
       );
 
-      // eslint-disable-next-line no-console
-      console.log('JOipP', `added, updated, removed`, { added, updated, removed });
-
       const { signatures: updatedSignatures } = await outCommand({
         type: OutCommand.updateSignatures,
         data: {
