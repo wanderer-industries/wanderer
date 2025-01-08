@@ -3,8 +3,13 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useMemo, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { PrettySwitchbox } from './components';
-import { InterfaceStoredSettings, InterfaceStoredSettingsProps, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import {
+  InterfaceStoredSettingsProps,
+  useMapRootState,
+  InterfaceStoredSettings,
+} from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
+import { Dropdown } from 'primereact/dropdown';
 
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
@@ -67,24 +72,33 @@ const UI_CHECKBOXES_PROPS: CheckboxesList = [
   { prop: InterfaceStoredSettingsProps.isSoftBackground, label: 'Enable soft background' },
 ];
 
+const THEME_OPTIONS = [
+  { label: 'Default', value: 'neon' },
+  { label: 'Pathfinder', value: 'pathfinder' },
+];
+
 export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
+
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
-  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({ ...DEFAULT_REMOTE_SETTINGS });
+
+  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
+    ...DEFAULT_REMOTE_SETTINGS,
+  });
 
   const mergedSettings = useMemo(() => {
     return {
-      ...interfaceSettings,
       ...userRemoteSettings,
+      ...interfaceSettings,
     };
   }, [userRemoteSettings, interfaceSettings]);
+
 
   const handleShow = async () => {
     const { user_settings } = await outCommand({
       type: OutCommand.getUserSettings,
       data: null,
     });
-
     setUserRemoteSettings({
       ...user_settings,
     });
@@ -92,18 +106,15 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
 
   const handleChangeChecked = useCallback(
     (prop: keyof UserSettings) => async (checked: boolean) => {
-      // @ts-ignore
-      if (UserSettingsRemoteList.includes(prop)) {
+      if (UserSettingsRemoteList.includes(prop as any)) {
         const newRemoteSettings = {
           ...userRemoteSettings,
           [prop]: checked,
         };
-
         await outCommand({
           type: OutCommand.updateUserSettings,
           data: newRemoteSettings,
         });
-
         setUserRemoteSettings(newRemoteSettings);
         return;
       }
@@ -113,21 +124,30 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
         [prop]: checked,
       });
     },
-    [interfaceSettings, outCommand, setInterfaceSettings, userRemoteSettings],
+    [userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings],
   );
 
   const renderCheckboxesList = (list: CheckboxesList) => {
-    return list.map(x => {
-      return (
-        <PrettySwitchbox
-          key={x.prop}
-          label={x.label}
-          checked={mergedSettings[x.prop]}
-          setChecked={handleChangeChecked(x.prop)}
-        />
-      );
-    });
+    return list.map((x) => (
+      <PrettySwitchbox
+        key={x.prop}
+        label={x.label}
+        checked={mergedSettings[x.prop]}
+        setChecked={handleChangeChecked(x.prop)}
+      />
+    ));
   };
+
+
+  const handleChangeTheme = useCallback(
+    (newThemeValue: string) => {
+      setInterfaceSettings({
+        ...interfaceSettings,
+        theme: newThemeValue,
+      });
+    },
+    [interfaceSettings, setInterfaceSettings]
+  );
 
   return (
     <Dialog
@@ -137,10 +157,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
       style={{ width: '550px' }}
       onShow={handleShow}
       onHide={() => {
-        if (!show) {
-          return;
-        }
-
+        if (!show) return;
         setActiveIndex(0);
         onHide();
       }}
@@ -150,25 +167,44 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
           <div className={styles.verticalTabsContainer}>
             <TabView
               activeIndex={activeIndex}
-              onTabChange={e => setActiveIndex(e.index)}
+              onTabChange={(e) => setActiveIndex(e.index)}
               className={styles.verticalTabView}
             >
               <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">{renderCheckboxesList(COMMON_CHECKBOXES_PROPS)}</div>
+                <div className="w-full h-full flex flex-col gap-1">
+                  {renderCheckboxesList(COMMON_CHECKBOXES_PROPS)}
+                </div>
               </TabPanel>
+
               <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
                 <div className="w-full h-full flex flex-col gap-1">
                   {renderCheckboxesList(SYSTEMS_CHECKBOXES_PROPS)}
                 </div>
               </TabPanel>
+
               <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
                 {renderCheckboxesList(CONNECTIONS_CHECKBOXES_PROPS)}
               </TabPanel>
+
               <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
                 {renderCheckboxesList(SIGNATURES_CHECKBOXES_PROPS)}
               </TabPanel>
+
               <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
                 {renderCheckboxesList(UI_CHECKBOXES_PROPS)}
+              </TabPanel>
+
+              <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>
+                <div className="flex items-center gap-2 mt-2">
+                  <label className="text-sm">Select Theme:</label>
+                  <Dropdown
+                    className="text-sm"
+                    value={interfaceSettings.theme || 'neon'} // default to "neon"
+                    options={THEME_OPTIONS}
+                    onChange={(e) => handleChangeTheme(e.value)}
+                    placeholder="Select a theme"
+                  />
+                </div>
               </TabPanel>
             </TabView>
           </div>

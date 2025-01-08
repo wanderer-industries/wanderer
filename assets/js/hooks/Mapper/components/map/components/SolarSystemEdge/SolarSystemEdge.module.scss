@@ -1,14 +1,13 @@
-@import "@/hooks/Mapper/components/map/styles/neon-variables";
+@import "@/hooks/Mapper/components/map/styles/eve-common-variables";
 
 .react-flow__edge.selected {
   .EdgePathBack {
-    stroke: $pastel-yellow;
+    stroke: var(--pastel-yellow);
   }
 }
 
 .EdgePathFront {
   fill: none;
-
   stroke: #2c3844;
   stroke-width: 2px;
 
@@ -56,7 +55,6 @@
 
 .EdgePathBack {
   fill: none;
-
   stroke: #80a5c5;
   stroke-width: 3px;
 
@@ -84,7 +82,6 @@
   &.Gate {
     stroke: #9aff40;
   }
-
 }
 
 .ClickPath {
@@ -93,7 +90,7 @@
   stroke-width: 8px;
 }
 
-.LinkLabel{
+.LinkLabel {
   font-size: 9px;
   line-height: 10px;
   padding: 2px 4px;
@@ -113,7 +110,7 @@
 .Handle {
   min-width: initial;
   min-height: initial;
-  border: 1px solid #5a7d9a;
+  border: 1px solid var(--pastel-blue);
   width: 5px;
   height: 5px;
   z-index: 1001;
@@ -127,4 +124,3 @@
     }
   }
 }
-
