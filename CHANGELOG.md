@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.36.2](https://github.com/wanderer-industries/wanderer/compare/v1.36.1...v1.36.2) (2025-01-08)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed pasting into Name, Custom Label and Description
+
 ## [v1.36.1](https://github.com/wanderer-industries/wanderer/compare/v1.36.0...v1.36.1) (2025-01-08)
 
 
