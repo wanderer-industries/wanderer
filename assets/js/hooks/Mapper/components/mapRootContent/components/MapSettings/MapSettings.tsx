@@ -121,6 +121,7 @@ const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
 const THEME_OPTIONS = [
   { label: 'Default', value: 'default' },
   { label: 'Pathfinder', value: 'pathfinder' },
+  { label: 'Faoble', value: 'zoo'},
 ];
 
 const THEME_SETTING: SettingsListItem = {

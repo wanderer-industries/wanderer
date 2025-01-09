@@ -25,6 +25,7 @@ import {
   SolarSystemEdge,
   SolarSystemNodeDefault,
   SolarSystemNodeTheme,
+  SolarSystemNodeZoo,
   useContextMenuConnectionHandlers,
   useContextMenuRootHandlers,
 } from './components';
@@ -127,12 +128,17 @@ const MapComp = ({
 
 
   const nodeTypes = useMemo(() => {
-    return {
-      custom:
-        theme !== '' && theme !== 'default'
-          ? wrapNode(SolarSystemNodeTheme)
-          : wrapNode(SolarSystemNodeDefault),
-    };
+    let node;
+    
+    if (theme === 'zoo') {
+      node = wrapNode(SolarSystemNodeZoo);
+    } else if (theme !== '' && theme !== 'default') {
+      node = wrapNode(SolarSystemNodeTheme);
+    } else {
+      node = wrapNode(SolarSystemNodeDefault);
+    }
+
+    return { custom: node };
   }, [theme]);
   
 

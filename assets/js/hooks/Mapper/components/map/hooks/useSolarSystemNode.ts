@@ -130,6 +130,7 @@ export function useSolarSystemNode(props: any) {
 
   const nodeVars = {
     // original props
+    id,
     selected,
     // computed
     visible,
@@ -152,13 +153,18 @@ export function useSolarSystemNode(props: any) {
     effectName: effect_name,
     regionName: region_name,
     solarSystemId: solar_system_id,
+    solarSystemName: solar_system_name,
     locked,
     hubs,
+    name: name,
+    isConnecting,
+    hoverNodeId,
     charactersInSystem,
     unsplashedLeft,
     unsplashedRight,
     isThickConnections,
     classTitle: class_title,
+    temporaryName: temporary_name,
   };
 
   return nodeVars;

@@ -1,0 +1,51 @@
+
+@import './eve-common-variables';
+@import './eve-common';
+@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@300;400;700&display=swap');
+
+.zoo-theme {
+  --rf-bg-color: #000000;
+  --rf-soft-bg-color: #282828;
+
+  --rf-node-bg-color: #202020;
+  --rf-node-soft-bg-color: #313335;
+  --rf-node-font-weight: bold;
+  --rf-text-color: #adadad;
+  --rf-region-name: var(--rf-text-color);
+  --rf-custom-name: var(--rf-text-color);
+
+  --tooltip-bg: #202020;
+
+  --rf-bg-variant: "lines";
+  --rf-bg-gap: 32;
+  --rf-bg-size: 1;
+  --rf-bg-pattern-color: #313131;
+
+  --eve-effect-pulsar: #428bca;
+  --eve-effect-magnetar: #e06fdf;
+  --eve-effect-wolfRayet: #e28a0d;
+  --eve-effect-blackHole: #000000;
+  --eve-effect-cataclysmicVariable: #ffffbb;
+  --eve-effect-redGiant: #d9534f;
+
+  --eve-wh-type-color-high: #5cb85c;
+  --eve-wh-type-color-low: #e28a0d;
+  --eve-wh-type-color-null: #d9534f;
+  --eve-wh-type-color-c1: #428bca;
+  --eve-wh-type-color-c2: #428bca;
+  --eve-wh-type-color-c3: #e28a0d;
+  --eve-wh-type-color-c4: #e28a0d;
+  --eve-wh-type-color-c5: #d9534f;
+  --eve-wh-type-color-c6: #d9534f;
+  --eve-wh-type-color-c13: #7986cb;
+  --eve-wh-type-color-drifter: #44aa82;
+
+
+  --rf-node-font-weight: bold;
+  --rf-node-line-height: normal;
+  --rf-node-font-family: 'Oxygen', sans-serif;
+  --rf-node-text-color: var(--pf-text-color);
+
+  --rf-tag-color: #fbbf24;
+  --rf-has-user-characters: #5cb85c;
+}
