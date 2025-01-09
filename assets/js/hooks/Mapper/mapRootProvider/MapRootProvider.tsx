@@ -59,7 +59,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowUnsplashedSignatures: false,
   isShowBackgroundPattern: true,
   isSoftBackground: false,
-  theme: 'neon',
+  theme: 'default',
 }
 
 export interface MapRootContextProps {
