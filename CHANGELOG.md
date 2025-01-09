@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.37.4](https://github.com/wanderer-industries/wanderer/compare/v1.37.3...v1.37.4) (2025-01-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed dbclick behaviour
+
 ## [v1.37.3](https://github.com/wanderer-industries/wanderer/compare/v1.37.2...v1.37.3) (2025-01-09)
 
 
