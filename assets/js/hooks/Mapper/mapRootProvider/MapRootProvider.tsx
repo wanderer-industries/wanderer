@@ -37,6 +37,7 @@ export enum InterfaceStoredSettingsProps {
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
   isShowBackgroundPattern = 'isShowBackgroundPattern',
   isSoftBackground = 'isSoftBackground',
+  theme = 'theme',
 }
 
 export type InterfaceStoredSettings = {
@@ -47,6 +48,7 @@ export type InterfaceStoredSettings = {
   isShowUnsplashedSignatures: boolean;
   isShowBackgroundPattern: boolean;
   isSoftBackground: boolean;
+  theme: string;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
@@ -57,7 +59,8 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowUnsplashedSignatures: false,
   isShowBackgroundPattern: true,
   isSoftBackground: false,
-};
+  theme: 'neon',
+}
 
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;

@@ -3,8 +3,13 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useMemo, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { PrettySwitchbox } from './components';
-import { InterfaceStoredSettings, InterfaceStoredSettingsProps, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import {
+  InterfaceStoredSettingsProps,
+  useMapRootState,
+  InterfaceStoredSettings,
+} from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
+import { Dropdown } from 'primereact/dropdown';
 
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
@@ -37,96 +42,171 @@ export interface MapSettingsProps {
   onHide: () => void;
 }
 
-type CheckboxesList = {
+type SettingsListItem = {
   prop: keyof UserSettings;
   label: string;
-}[];
+  type: 'checkbox' | 'dropdown';
+  options?: { label: string; value: string }[];
+};
 
-const COMMON_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: InterfaceStoredSettingsProps.isShowMinimap, label: 'Show Minimap' },
+const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
+  {
+    prop: InterfaceStoredSettingsProps.isShowMinimap,
+    label: 'Show Minimap',
+    type: 'checkbox',
+  },
 ];
 
-const SYSTEMS_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: InterfaceStoredSettingsProps.isShowKSpace, label: 'Highlight Low/High-security systems' },
-  { prop: UserSettingsRemoteProps.select_on_spash, label: 'Auto-select splashed' },
+const SYSTEMS_CHECKBOXES_PROPS: SettingsListItem[] = [
+  {
+    prop: InterfaceStoredSettingsProps.isShowKSpace,
+    label: 'Highlight Low/High-security systems',
+    type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.select_on_spash,
+    label: 'Auto-select splashed',
+    type: 'checkbox',
+  },
 ];
 
-const SIGNATURES_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: UserSettingsRemoteProps.link_signature_on_splash, label: 'Link signature on splash' },
-  { prop: InterfaceStoredSettingsProps.isShowUnsplashedSignatures, label: 'Show unsplashed signatures' },
+const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
+  {
+    prop: UserSettingsRemoteProps.link_signature_on_splash,
+    label: 'Link signature on splash',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.isShowUnsplashedSignatures,
+    label: 'Show unsplashed signatures',
+    type: 'checkbox',
+  },
 ];
 
-const CONNECTIONS_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: UserSettingsRemoteProps.delete_connection_with_sigs, label: 'Delete connections to linked signatures' },
-  { prop: InterfaceStoredSettingsProps.isThickConnections, label: 'Thicker connections' },
+const CONNECTIONS_CHECKBOXES_PROPS: SettingsListItem[] = [
+  {
+    prop: UserSettingsRemoteProps.delete_connection_with_sigs,
+    label: 'Delete connections to linked signatures',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.isThickConnections,
+    label: 'Thicker connections',
+    type: 'checkbox',
+  },
 ];
 
-const UI_CHECKBOXES_PROPS: CheckboxesList = [
-  { prop: InterfaceStoredSettingsProps.isShowMenu, label: 'Enable compact map menu bar' },
-  { prop: InterfaceStoredSettingsProps.isShowBackgroundPattern, label: 'Show background pattern' },
-  { prop: InterfaceStoredSettingsProps.isSoftBackground, label: 'Enable soft background' },
+const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
+  {
+    prop: InterfaceStoredSettingsProps.isShowMenu,
+    label: 'Enable compact map menu bar',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.isShowBackgroundPattern,
+    label: 'Show background pattern',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.isSoftBackground,
+    label: 'Enable soft background',
+    type: 'checkbox',
+  },
 ];
+
+const THEME_OPTIONS = [
+  { label: 'Default', value: 'neon' },
+  { label: 'Pathfinder', value: 'pathfinder' },
+];
+
+const THEME_SETTING: SettingsListItem = {
+  prop: 'theme',
+  label: 'Theme',
+  type: 'dropdown',
+  options: THEME_OPTIONS,
+};
 
 export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
-  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({ ...DEFAULT_REMOTE_SETTINGS });
+  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
+    ...DEFAULT_REMOTE_SETTINGS,
+  });
 
   const mergedSettings = useMemo(() => {
     return {
-      ...interfaceSettings,
       ...userRemoteSettings,
+      ...interfaceSettings,
     };
   }, [userRemoteSettings, interfaceSettings]);
+
 
   const handleShow = async () => {
     const { user_settings } = await outCommand({
       type: OutCommand.getUserSettings,
       data: null,
     });
-
     setUserRemoteSettings({
       ...user_settings,
     });
   };
 
-  const handleChangeChecked = useCallback(
-    (prop: keyof UserSettings) => async (checked: boolean) => {
-      // @ts-ignore
-      if (UserSettingsRemoteList.includes(prop)) {
+  const handleSettingChange = useCallback(
+    async (prop: keyof UserSettings, value: boolean | string) => {
+      if (UserSettingsRemoteList.includes(prop as any)) {
         const newRemoteSettings = {
           ...userRemoteSettings,
-          [prop]: checked,
+          [prop]: value,
         };
-
         await outCommand({
           type: OutCommand.updateUserSettings,
           data: newRemoteSettings,
         });
-
         setUserRemoteSettings(newRemoteSettings);
-        return;
+      } else {
+        setInterfaceSettings({
+          ...interfaceSettings,
+          [prop]: value,
+        });
       }
-
-      setInterfaceSettings({
-        ...interfaceSettings,
-        [prop]: checked,
-      });
     },
-    [interfaceSettings, outCommand, setInterfaceSettings, userRemoteSettings],
+    [userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings],
   );
 
-  const renderCheckboxesList = (list: CheckboxesList) => {
-    return list.map(x => {
+  const renderSettingItem = (item: SettingsListItem) => {
+    const currentValue = mergedSettings[item.prop];
+
+    if (item.type === 'checkbox') {
       return (
         <PrettySwitchbox
-          key={x.prop}
-          label={x.label}
-          checked={mergedSettings[x.prop]}
-          setChecked={handleChangeChecked(x.prop)}
+          key={item.prop}
+          label={item.label}
+          checked={!!currentValue}
+          setChecked={(checked) => handleSettingChange(item.prop, checked)}
         />
       );
-    });
+    }
+
+    if (item.type === 'dropdown' && item.options) {
+      return (
+        <div key={item.prop} className="flex items-center gap-2 mt-2">
+          <label className="text-sm">{item.label}:</label>
+          <Dropdown
+            className="text-sm"
+            value={currentValue}
+            options={item.options}
+            onChange={(e) => handleSettingChange(item.prop, e.value)}
+            placeholder="Select a theme"
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const renderSettingsList = (list: SettingsListItem[]) => {
+    return list.map(renderSettingItem);
   };
 
   return (
@@ -137,10 +217,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
       style={{ width: '550px' }}
       onShow={handleShow}
       onHide={() => {
-        if (!show) {
-          return;
-        }
-
+        if (!show) return;
         setActiveIndex(0);
         onHide();
       }}
@@ -150,25 +227,35 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
           <div className={styles.verticalTabsContainer}>
             <TabView
               activeIndex={activeIndex}
-              onTabChange={e => setActiveIndex(e.index)}
+              onTabChange={(e) => setActiveIndex(e.index)}
               className={styles.verticalTabView}
             >
               <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">{renderCheckboxesList(COMMON_CHECKBOXES_PROPS)}</div>
-              </TabPanel>
-              <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
                 <div className="w-full h-full flex flex-col gap-1">
-                  {renderCheckboxesList(SYSTEMS_CHECKBOXES_PROPS)}
+                  {renderSettingsList(COMMON_CHECKBOXES_PROPS)}
                 </div>
               </TabPanel>
+
+              <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
+                <div className="w-full h-full flex flex-col gap-1">
+                  {renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}
+                </div>
+              </TabPanel>
+
               <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
-                {renderCheckboxesList(CONNECTIONS_CHECKBOXES_PROPS)}
+                {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
               </TabPanel>
+
               <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
-                {renderCheckboxesList(SIGNATURES_CHECKBOXES_PROPS)}
+                {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
               </TabPanel>
+
               <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
-                {renderCheckboxesList(UI_CHECKBOXES_PROPS)}
+                {renderSettingsList(UI_CHECKBOXES_PROPS)}
+              </TabPanel>
+
+              <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>
+                {renderSettingItem(THEME_SETTING)}
               </TabPanel>
             </TabView>
           </div>

@@ -10,6 +10,15 @@ export enum SignatureGroup {
   CombatSite = 'Combat Site',
 }
 
+export enum SignatureKind {
+  CosmicSignature = 'Cosmic Signature',
+  CosmicAnomaly = 'Cosmic Anomaly',
+  Structure = 'Structure',
+  Ship = 'Ship',
+  Deployable = 'Deployable',
+  Drone = 'Drone',
+}
+
 export type GroupType = {
   id: string;
   icon: string;
@@ -19,7 +28,7 @@ export type GroupType = {
 
 export type SystemSignature = {
   eve_id: string;
-  kind: string;
+  kind: SignatureKind;
   name: string;
   custom_info?: string;
   description?: string;
@@ -30,3 +39,41 @@ export type SystemSignature = {
   inserted_at?: string;
   updated_at?: string;
 };
+
+export enum SignatureKindENG {
+  CosmicSignature = 'Cosmic Signature',
+  CosmicAnomaly = 'Cosmic Anomaly',
+  Structure = 'Structure',
+  Ship = 'Ship',
+  Deployable = 'Deployable',
+  Drone = 'Drone',
+}
+
+export enum SignatureKindRU {
+  CosmicSignature = 'Скрытый сигнал',
+  CosmicAnomaly = 'Космическая аномалия',
+  Structure = 'Сооружение',
+  Ship = 'Корабль',
+  Deployable = 'Полевые блоки',
+  Drone = 'Дрон',
+}
+
+export enum SignatureGroupENG {
+  CosmicSignature = 'Cosmic Signature',
+  Wormhole = 'Wormhole',
+  GasSite = 'Gas Site',
+  RelicSite = 'Relic Site',
+  DataSite = 'Data Site',
+  OreSite = 'Ore Site',
+  CombatSite = 'Combat Site',
+}
+
+export enum SignatureGroupRU {
+  CosmicSignature = 'Скрытый сигнал',
+  Wormhole = 'Червоточина',
+  GasSite = 'Газовый район',
+  RelicSite = 'Археологический район',
+  DataSite = 'Информационный район',
+  OreSite = 'Астероидный район',
+  CombatSite = 'Боевой район',
+}

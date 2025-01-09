@@ -127,6 +127,7 @@ defmodule WandererAppWeb.MapsLive do
     |> assign(:page_title, "Maps - Settings")
     |> assign(:map_slug, map_slug)
     |> assign(:map_id, map.id)
+    |> assign(:public_api_key, map.public_api_key)
     |> assign(:map, map)
     |> assign(
       export_settings: export_settings |> _get_export_map_data(),
@@ -179,6 +180,19 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply, socket}
   end
 
+
+  def handle_event("generate-map-api-key", _params, socket) do
+    new_api_key = UUID.uuid4()
+
+    map = WandererApp.Api.Map.by_id!(socket.assigns.map_id)
+
+    {:ok, _updated_map} =
+      WandererApp.Api.Map.update_api_key(map, %{public_api_key: new_api_key})
+
+    {:noreply, assign(socket, public_api_key: new_api_key)}
+  end
+
+
   @impl true
   def handle_event(
         "live_select_change",
@@ -203,7 +217,10 @@ defmodule WandererAppWeb.MapsLive do
         socket.assigns.form,
         form
         |> Map.put("acls", form["acls"] || [])
-        |> Map.put("only_tracked_characters", form["only_tracked_characters"] || false)
+        |> Map.put(
+          "only_tracked_characters",
+          (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
+        )
       )
 
     {:noreply, socket |> assign(form: form)}
@@ -593,7 +610,13 @@ defmodule WandererAppWeb.MapsLive do
         scope -> scope
       end
 
-    form = form |> Map.put("scope", scope)
+    form =
+      form
+      |> Map.put("scope", scope)
+      |> Map.put(
+        "only_tracked_characters",
+        (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
+      )
 
     map
     |> WandererApp.Api.Map.update(form)
@@ -659,7 +682,12 @@ defmodule WandererAppWeb.MapsLive do
       ) do
     options =
       options_form
-      |> Map.take(["layout", "store_custom_labels", "restrict_offline_showing"])
+      |> Map.take([
+        "layout",
+        "store_custom_labels",
+        "show_temp_system_name",
+        "restrict_offline_showing"
+      ])
 
     {:ok, updated_map} = WandererApp.MapRepo.update_options(map, options)
 

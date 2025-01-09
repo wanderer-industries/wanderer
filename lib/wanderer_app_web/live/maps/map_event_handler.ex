@@ -50,6 +50,7 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_labels",
     "update_system_locked",
     "update_system_tag",
+    "update_system_temporary_name",
     "update_system_status"
   ]
 
@@ -244,6 +245,7 @@ defmodule WandererAppWeb.MapEventHandler do
           locked: locked,
           tag: tag,
           labels: labels,
+          temporary_name: temporary_name,
           status: status,
           visible: visible
         } = _system,
@@ -269,6 +271,7 @@ defmodule WandererAppWeb.MapEventHandler do
       locked: locked,
       status: status,
       tag: tag,
+      temporary_name: temporary_name,
       visible: visible
     }
   end

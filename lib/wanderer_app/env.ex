@@ -9,6 +9,7 @@ defmodule WandererApp.Env do
   def custom_route_base_url, do: get_key(:custom_route_base_url, "<CUSTOM_ROUTE_BASE_URL>")
   def invites, do: get_key(:invites, false)
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
+  def public_api_disabled?, do: get_key(:public_api_disabled, false)
   def wallet_tracking_enabled?, do: get_key(:wallet_tracking_enabled, false)
   def admins, do: get_key(:admins, [])
   def admin_username, do: get_key(:admin_username)

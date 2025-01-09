@@ -130,7 +130,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         />
 
         <div
-          className="absolute flex items-center gap-1"
+          className="absolute flex items-center gap-1 pointer-events-none"
           style={{
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}

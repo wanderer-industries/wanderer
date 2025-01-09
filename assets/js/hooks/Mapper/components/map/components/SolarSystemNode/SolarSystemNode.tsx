@@ -4,6 +4,8 @@ import { MapSolarSystemType } from '../../map.types';
 import classes from './SolarSystemNode.module.scss';
 import clsx from 'clsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
+
 
 import {
   EFFECT_BACKGROUND_STYLES,
@@ -56,6 +58,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const { interfaceSettings } = useMapRootState();
   const { isShowUnsplashedSignatures } = interfaceSettings;
 
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+
   const {
     system_class,
     security,
@@ -71,9 +75,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const signatures = data.system_signatures;
 
-  const { locked, name, tag, status, labels, id } = data || {};
+  const { locked, name, tag, status, labels, id, temporary_name: temporaryName } = data || {};
 
-  const customName = solar_system_name !== name ? name : undefined;
 
   const {
     data: {
@@ -95,8 +98,9 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
   const charactersInSystem = useMemo(() => {
-    return characters.filter(c => c.location?.solar_system_id === solar_system_id).filter(c => c.online);
-    // eslint-disable-next-line
+    return characters
+      .filter(c => c.location?.solar_system_id === solar_system_id)
+      .filter(c => c.online);
   }, [characters, presentCharacters, solar_system_id]);
 
   const isWormhole = isWormholeSpace(system_class);
@@ -114,7 +118,6 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
     if (!systemKills) {
       return null;
     }
-
     return systemKills;
   }, [kills, solar_system_id]);
 
@@ -136,11 +139,13 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
+  const systemName = (isTempSystemNameEnabled && temporaryName) || solar_system_name;
+  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
+
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
       return [[], []];
     }
-
     return prepareUnsplashedChunks(
       signatures
         .filter(s => s.group === 'Wormhole' && !s.linked_system)
@@ -158,20 +163,20 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         <div className={classes.Bookmarks}>
           {labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{labelCustom}</span>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{labelCustom}</span>
             </div>
           )}
 
           {is_shattered && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered)}>
-              <span className={clsx('pi pi-chart-pie', classes.icon)} />
+              <span className={clsx('pi pi-chart-pie text-[0.55rem]')} />
             </div>
           )}
 
           {killsCount && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[getActivityType(killsCount)])}>
               <div className={clsx(classes.BookmarkWithIcon)}>
-                <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
+                <span className={clsx(PrimeIcons.BOLT, 'text-[0.65rem]')} />
                 <span className={clsx(classes.text)}>{killsCount}</span>
               </div>
             </div>
@@ -184,32 +189,44 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
           ))}
         </div>
       )}
-
       <div
-        className={clsx(classes.RootCustomNode, regionClass, classes[STATUS_CLASSES[status]], {
-          [classes.selected]: selected,
-        })}
+        onMouseDownCapture={dbClick}
+        className={clsx(
+          classes.RootCustomNode,
+          regionClass,
+          classes[STATUS_CLASSES[status]],
+          { [classes.selected]: selected },
+          'flex flex-col w-[130px] h-[34px]',
+          'px-[6px] pt-[2px] pb-[3px] text-[10px]',
+          'leading-[1] space-y-[1px]',
+          'shadow-[0_0_5px_rgba(45,45,45,0.5)]',
+          'border border-[var(--pastel-blue-darken10)] rounded-[5px]'
+        )}
       >
         {visible && (
           <>
-            <div className={classes.HeadRow}>
+            <div className={clsx(classes.HeadRow, 'flex items-center gap-[3px]')}>
               <div className={clsx(classes.classTitle, classTitleColor, '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]')}>
                 {class_title ?? '-'}
               </div>
+
               {tag != null && tag !== '' && (
-                <div className={clsx(classes.TagTitle, 'text-sky-400 font-medium')}>{tag}</div>
+                <div className={clsx(classes.TagTitle, "color: #38bdf8; font-weight: 500;")}>
+                  {tag}
+                </div>
               )}
+
               <div
                 className={clsx(
                   classes.classSystemName,
-                  '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
+                  'flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
-                {solar_system_name}
+                {systemName}
               </div>
 
               {isWormhole && (
-                <div className={classes.statics}>
+                <div className={clsx(classes.statics, 'flex gap-[2px] text-[8px]')}>
                   {sortedStatics.map(x => (
                     <WormholeClassComp key={x} id={x} />
                   ))}
@@ -221,40 +238,34 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
               )}
             </div>
 
-            <div className={clsx(classes.BottomRow, 'flex items-center justify-between')}>
+            <div className={clsx(classes.BottomRow, 'flex items-center gap-[3px]')}>
               {customName && (
-                <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-blue-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
+                <div className={clsx('font-bold', classes.customName)}>
                   {customName}
                 </div>
               )}
-
-              {!isWormhole && !customName && (
-                <div
-                  className={clsx(
-                    '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-stone-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5',
-                  )}
-                >
-                  {region_name}
-                </div>
-              )}
-
+              {!isWormhole && !customName && <div className={clsx(classes.regionName)}>{region_name}</div>}
               {isWormhole && !customName && <div />}
 
-              <div className="flex items-center justify-end">
-                <div className="flex gap-1 items-center">
-                  {locked && <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }}></i>}
-
-                  {hubs.includes(solar_system_id.toString()) && (
-                    <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem', fontWeight: 'bold' }}></i>
-                  )}
-
-                  {charactersInSystem.length > 0 && (
-                    <div className={clsx(classes.localCounter, { ['text-amber-300']: hasUserCharacters })}>
-                      <i className="pi pi-users" style={{ fontSize: '0.50rem' }}></i>
-                      <span className="font-sans">{charactersInSystem.length}</span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center ml-auto gap-[2px]">
+                {locked && (
+                  <i className={clsx(PrimeIcons.LOCK, 'text-[0.45rem] font-bold')} />
+                )}
+                {hubs.includes(solar_system_id.toString()) && (
+                  <i className={clsx(PrimeIcons.MAP_MARKER, 'text-[0.45rem] font-bold')} />
+                )}
+                {charactersInSystem.length > 0 && (
+                  <div
+                    className={clsx(
+                      classes.localCounter,
+                      { [classes.hasUserCharacters]: hasUserCharacters },
+                      'flex gap-[2px]'
+                    )}
+                  >
+                    <i className="pi pi-users text-[0.50rem]" />
+                    <span className="text-[0.65rem]">{charactersInSystem.length}</span>
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -268,16 +279,15 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
           ))}
         </div>
       )}
-
       {visible && isShowUnsplashedSignatures && (
-        <div className={clsx([classes.Unsplashed, classes['Unsplashed--right']])}>
+        <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
           {unsplashedRight.map(x => (
             <UnsplashedSignature key={x.sig_id} signature={x} />
           ))}
         </div>
       )}
 
-      <div onMouseDownCapture={dbClick} className={classes.Handlers}>
+      <div className={classes.Handlers}>
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleTop, {

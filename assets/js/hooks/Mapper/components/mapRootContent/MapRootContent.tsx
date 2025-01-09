@@ -16,6 +16,8 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const { interfaceSettings } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
 
+  const themeClass = `${interfaceSettings.theme ?? 'neon'}-theme`;
+
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
   const mapInterface = <MapInterface />;
@@ -26,27 +28,29 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   useSkipContextMenu();
 
   return (
-    <Layout map={<MapWrapper />}>
-      {!isShowMenu ? (
-        <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
-          <div className="absolute top-0 left-0 w-[calc(100%-3.5rem)] h-full pointer-events-none">
-            <Topbar />
+    <div className={themeClass}>
+      <Layout map={<MapWrapper />}>
+        {!isShowMenu ? (
+          <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
+            <div className="absolute top-0 left-0 w-[calc(100%-3.5rem)] h-full pointer-events-none">
+              <Topbar />
+              {mapInterface}
+            </div>
+            <div className="absolute top-0 right-0 w-14 h-[calc(100%+3.5rem)] pointer-events-auto">
+              <RightBar onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+            </div>
+          </div>
+        ) : (
+          <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
+            <Topbar>
+              <MapContextMenu onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+            </Topbar>
             {mapInterface}
           </div>
-          <div className="absolute top-0 right-0 w-14 h-[calc(100%+3.5rem)] pointer-events-auto">
-            <RightBar onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
-          </div>
-        </div>
-      ) : (
-        <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
-          <Topbar>
-            <MapContextMenu onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
-          </Topbar>
-          {mapInterface}
-        </div>
-      )}
-      <OnTheMap show={showOnTheMap} onHide={() => setShowOnTheMap(false)} />
-      <MapSettings show={showMapSettings} onHide={() => setShowMapSettings(false)} />
-    </Layout>
+        )}
+        <OnTheMap show={showOnTheMap} onHide={() => setShowOnTheMap(false)} />
+        <MapSettings show={showMapSettings} onHide={() => setShowMapSettings(false)} />
+      </Layout>
+    </div>
   );
 };

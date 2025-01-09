@@ -21,8 +21,9 @@ defmodule WandererAppWeb.Router do
   @frame_src if(@code_reloading, do: ~w('self'), else: ~w())
   @style_src ~w('self' 'unsafe-inline' https://fonts.googleapis.com)
   @img_src ~w('self' data: https://images.evetech.net https://web.ccpgamescdn.com https://images.ctfassets.net https://w.appzi.io)
-  @font_src ~w('self' data: https://web.ccpgamescdn.com https://w.appzi.io)
+  @font_src ~w('self' https://fonts.gstatic.com data: https://web.ccpgamescdn.com https://w.appzi.io )
   @script_src ~w('self' )
+
 
   pipeline :admin_bauth do
     plug :admin_basic_auth
@@ -106,7 +107,37 @@ defmodule WandererAppWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+    plug WandererAppWeb.Plugs.CheckApiDisabled
   end
+
+  pipeline :api_map do
+    plug WandererAppWeb.Plugs.CheckMapApiKey
+  end
+
+scope "/api/map", WandererAppWeb do
+  pipe_through [:api_map]
+  pipe_through [:api]
+
+  # GET /api/map/systems?map_id=... or ?slug=...
+  get "/systems", APIController, :list_systems
+
+  # GET /api/map/system-static-info?id=... plus either map_id=... or slug=...
+  get "/system-static-info", APIController, :show_system_static
+
+  # GET /api/map/system?id=... plus either map_id=... or slug=...
+  get "/system", APIController, :show_system
+
+  # GET /api/map/characters?map_id=... or slug=...
+  get "/characters", APIController, :tracked_characters_with_info
+end
+
+scope "/api/common", WandererAppWeb do
+  pipe_through [:api]
+
+  # GET /api/common/system-static-info?id=...
+  get "/system-static-info", APIController, :show_system_static
+
+end
 
   scope "/", WandererAppWeb do
     pipe_through [:browser, :blog, :redirect_if_user_is_authenticated]

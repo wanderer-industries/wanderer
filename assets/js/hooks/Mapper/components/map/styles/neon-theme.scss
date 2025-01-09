@@ -1,74 +1,72 @@
-$pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
-$pastel-green: #88b04b;
-$pastel-yellow: #ffdd59;
-$dark-bg: #2d2d2d;
-$text-color: #ffffff;
-$tooltip-bg: #202020;
+@import './eve-common-variables';
+@import './eve-common';
 
-.react-flow {
-  // background-color: $dark-bg;
-  color: $text-color;
+.neon-theme {
+  --rf-bg-color: #000000;
+  --rf-soft-bg-color: #171717;
 
-  &__node {
-    //cursor: auto;
+  --rf-node-bg-color: #202020;
+  --rf-node-soft-bg-color: #2b2b2b;
+  --rf-text-color: #ffffff;
+
+
+  --rf-bg-variant: "dots";
+  --rf-bg-gap: 16;
+  --rf-bg-size: 1;
+  --rf-bg-pattern-color: #81818a;
+
+  --pastel-blue: #5a7d9a;
+  --pastel-pink: #d291bc;
+  --pastel-green: #88b04b;
+  --pastel-yellow: #ffdd59;
+
+  --dark-bg: #2d2d2d;
+  --text-color: #ffffff;
+  --tooltip-bg: #202020;
+
+  .react-flow {
+    color: var(--text-color);
+
+    &__pane {
+      cursor: auto;
+    }
+
+    &__minimap {
+      background-color: rgba(66, 66, 66, 1);
+      opacity: 0.7;
+      border: 1px solid #2f2f2f;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    &__minimap-mask {
+      fill: rgba(28, 28, 28, 0.75);
+    }
+
+    &__controls {
+      filter: brightness(1.5);
+    }
+
+    &__minimap-node {
+      fill: #ffb03a;
+    }
   }
 
-  &__pane {
-    cursor: auto;
-  }
-  //&__edge {
-  //  stroke: $pastel-pink;
-  //  stroke-width: 2px;
-  //
-  //  &.selected {
-  //    stroke: $pastel-yellow;
-  //  }
-  //}
-
-  &__handle {
-    //background-color: $pastel-green;
-    //box-shadow: 0 0 5px rgba($pastel-green, 0.5);
+  .context-menu-active {
+    background-color: rgba(131, 131, 131, 0.33);
   }
 
-  &__minimap {
-    background-color: rgba(66, 66, 66, 1);
-    opacity: 0.7;
-    //backdrop-filter: blur(5px);
-    border: 1px solid #2f2f2f;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  &__minimap-mask {
-    fill: rgba(28, 28, 28, 0.75);
-  }
-
-  &__controls {
-    filter: brightness(1.5);
-  }
-
-  &__minimap-node {
-    fill: #ffb03a;
-  }
-}
-
-.context-menu-active {
-  background-color: rgba(131, 131, 131, 0.33);
-}
-
-.p-dialog {
-  .p-dialog-header {
-    height: 40px;
-    padding: 1rem;
-    padding-right: 10px !important;
-  }
-
-  .p-dialog-title {
-    font-size: 1rem !important;
-  }
-
-  .p-dialog-header-icons {
-    align-self: initial !important;
+  .p-dialog {
+    .p-dialog-header {
+      height: 40px;
+      padding: 1rem;
+      padding-right: 10px !important;
+    }
+    .p-dialog-title {
+      font-size: 1rem !important;
+    }
+    .p-dialog-header-icons {
+      align-self: initial !important;
+    }
   }
 }

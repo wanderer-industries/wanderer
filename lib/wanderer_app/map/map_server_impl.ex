@@ -150,6 +150,8 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate update_system_tag(state, update), to: SystemsImpl
 
+  defdelegate update_system_temporary_name(state, update), to: SystemsImpl
+
   defdelegate update_system_locked(state, update), to: SystemsImpl
 
   defdelegate update_system_labels(state, update), to: SystemsImpl
@@ -201,7 +203,7 @@ defmodule WandererApp.Map.Server.Impl do
       | map: map |> WandererApp.Map.update_subscription_settings!(subscription_settings)
     }
 
-  def handle_event(:update_characters, %{map_id: map_id} = state) do
+  def handle_event(:update_characters, state) do
     Process.send_after(self(), :update_characters, @update_characters_timeout)
 
     CharactersImpl.update_characters(state)
@@ -259,7 +261,7 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  def handle_event(:cleanup_systems, %{map_id: map_id} = state) do
+  def handle_event(:cleanup_systems, state) do
     Process.send_after(self(), :cleanup_systems, @systems_cleanup_timeout)
 
     state |> SystemsImpl.cleanup_systems()
@@ -320,6 +322,8 @@ defmodule WandererApp.Map.Server.Impl do
       layout: options |> Map.get("layout", "left_to_right"),
       store_custom_labels:
         options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom(),
+      show_temp_system_name:
+        options |> Map.get("show_temp_system_name", "false") |> String.to_existing_atom(),
       restrict_offline_showing:
         options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom()
     ]
@@ -427,7 +431,8 @@ defmodule WandererApp.Map.Server.Impl do
                                  "name" => name,
                                  "position" => %{"x" => x, "y" => y},
                                  "status" => status,
-                                 "tag" => tag
+                                 "tag" => tag,
+                                 "temporary_name" => temporary_name,
                                } = _system,
                                acc ->
         acc
@@ -446,6 +451,7 @@ defmodule WandererApp.Map.Server.Impl do
         })
         |> update_system_status(%{solar_system_id: id |> String.to_integer(), status: status})
         |> update_system_tag(%{solar_system_id: id |> String.to_integer(), tag: tag})
+        |> update_system_temporary_name(%{solar_system_id: id |> String.to_integer(), temporary_name: temporary_name})
         |> update_system_locked(%{solar_system_id: id |> String.to_integer(), locked: locked})
         |> update_system_labels(%{solar_system_id: id |> String.to_integer(), labels: labels})
       end)

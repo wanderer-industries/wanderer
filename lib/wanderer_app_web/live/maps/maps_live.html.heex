@@ -313,6 +313,32 @@
                   style="width: 146px; left: 0px;"
                 >
                 </li>
+                <li
+                  :if={not WandererApp.Env.public_api_disabled?()}
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="pr_id_335_content"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="public_api"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-globe-alt-solid" class="w-4 h-4" />&nbsp;Public Api
+                    </span>
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -347,6 +373,11 @@
                   />
                   <.input
                     type="checkbox"
+                    field={f[:show_temp_system_name]}
+                    label="Allow Temporary System Names"
+                  />
+                  <.input
+                    type="checkbox"
                     field={f[:restrict_offline_showing]}
                     label="Show offline characters to admins & managers only"
                   />
@@ -377,6 +408,52 @@
                 </.button>
               </div>
 
+              <div :if={@active_settings_tab == "public_api"and not WandererApp.Env.public_api_disabled?()} class="p-6">
+                <h2 class="text-lg font-semibold mb-4">Public API</h2>
+                <div class="flex flex-col gap-3 items-start w-full">
+                  <div>
+                    <input
+                      :if={not is_nil(@public_api_key)}
+                      class="input input-bordered text-sm truncate bg-neutral-800 text-white w-[350px]"
+                      readonly
+                      type="text"
+                      value={@public_api_key}
+                    />
+                    <input
+                      :if={is_nil(@public_api_key)}
+                      class="input input-bordered text-sm truncate bg-neutral-800 text-gray-400 w-[350px]"
+                      readonly
+                      type="text"
+                      placeholder="No Public API Key yet"
+                    />
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <.button
+                      class="btn btn-primary rounded-md"
+                      phx-click="generate-map-api-key"
+                    >
+                      Generate
+                    </.button>
+                  <.button
+                    phx-hook="CopyToClipboard"
+                    id="copy-map-api-key"
+                    data-url={@public_api_key}
+                    disabled={is_nil(@public_api_key)}
+                    class={
+                      if is_nil(@public_api_key) do
+                        "copy-link btn rounded-md transition-colors duration-300
+                        bg-gray-500 hover:bg-gray-500 text-gray-300 cursor-not-allowed"
+                      else
+                        "copy-link btn rounded-md transition-colors duration-300
+                        bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                      end
+                    }
+                  >
+                    Copy
+                  </.button>
+                  </div>
+                </div>
+              </div>
               <div :if={@active_settings_tab == "balance"}>
                 <div class="stats w-full bg-primary text-primary-content">
                   <div class="stat">

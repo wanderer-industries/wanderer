@@ -2,6 +2,132 @@
 
 <!-- changelog -->
 
+## [v1.37.2](https://github.com/wanderer-industries/wanderer/compare/v1.37.1...v1.37.2) (2025-01-09)
+
+
+
+
+## [v1.37.1](https://github.com/wanderer-industries/wanderer/compare/v1.37.0...v1.37.1) (2025-01-08)
+
+
+
+
+### Bug Fixes:
+
+* add back pathfinder theme font
+
+## [v1.37.0](https://github.com/wanderer-industries/wanderer/compare/v1.36.2...v1.37.0) (2025-01-08)
+
+
+
+
+### Features:
+
+* add theme selection and pathfinder theme
+
+## [v1.36.2](https://github.com/wanderer-industries/wanderer/compare/v1.36.1...v1.36.2) (2025-01-08)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed pasting into Name, Custom Label and Description
+
+## [v1.36.1](https://github.com/wanderer-industries/wanderer/compare/v1.36.0...v1.36.1) (2025-01-08)
+
+
+
+
+### Bug Fixes:
+
+* Map: Removed unnecessary comment
+
+* Map: Add support RU signatures and fix filtering
+
+## [v1.36.0](https://github.com/wanderer-industries/wanderer/compare/v1.35.0...v1.36.0) (2025-01-07)
+
+
+
+
+### Features:
+
+* added static system info to api (#101)
+
+* added static system info to api
+
+
+## [v1.35.0](https://github.com/wanderer-industries/wanderer/compare/v1.34.0...v1.35.0) (2025-01-07)
+
+
+### Features:
+
+* Map: add "temporary system names" toggle  (#86)
+
+## [v1.34.0](https://github.com/wanderer-industries/wanderer/compare/v1.33.1...v1.34.0) (2025-01-07)
+
+
+
+
+### Features:
+
+* Map: api to allow systematic access to visible systems and tracked characters (#89)
+
+* add limited api for system and tracked characters
+
+## [v1.33.1](https://github.com/wanderer-industries/wanderer/compare/v1.33.0...v1.33.1) (2025-01-07)
+
+
+
+
+## [v1.33.0](https://github.com/wanderer-industries/wanderer/compare/v1.32.7...v1.33.0) (2025-01-07)
+
+
+
+
+### Features:
+
+* Map: api to allow systematic access to visible systems and tracked characters (#89)
+
+* add limited api for system and tracked characters
+
+## [v1.32.7](https://github.com/wanderer-industries/wanderer/compare/v1.32.6...v1.32.7) (2025-01-06)
+
+
+
+
+## [v1.32.6](https://github.com/wanderer-industries/wanderer/compare/v1.32.5...v1.32.6) (2025-01-06)
+
+
+
+
+## [v1.32.5](https://github.com/wanderer-industries/wanderer/compare/v1.32.4...v1.32.5) (2025-01-04)
+
+
+
+
+### Bug Fixes:
+
+* map: prevent deselect on click to map (#96)
+
+## [v1.32.4](https://github.com/wanderer-industries/wanderer/compare/v1.32.3...v1.32.4) (2025-01-02)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix 'Character Activity' modal
+
+## [v1.32.3](https://github.com/wanderer-industries/wanderer/compare/v1.32.2...v1.32.3) (2025-01-02)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix 'Allow only tracked characters' saving
+
 ## [v1.32.2](https://github.com/wanderer-industries/wanderer/compare/v1.32.1...v1.32.2) (2025-01-02)
 
 
