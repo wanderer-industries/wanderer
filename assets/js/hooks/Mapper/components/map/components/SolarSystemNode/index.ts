@@ -1,1 +1,2 @@
-export * from './SolarSystemNode';
+export * from './SolarSystemNodeDefault';
+export * from './SolarSystemNodeTheme';

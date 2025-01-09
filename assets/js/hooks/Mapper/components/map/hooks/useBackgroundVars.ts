@@ -9,7 +9,7 @@ export function useBackgroundVars(themeName?: string) {
   const [color, setColor] = useState('#81818b')
 
   useEffect(() => { 
-    let themeEl = document.querySelector('.pathfinder-theme, .neon-theme');
+    let themeEl = document.querySelector('.pathfinder-theme, .default-theme');
     if (!themeEl) {
       themeEl = document.documentElement;
     }

@@ -16,7 +16,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const { interfaceSettings } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
 
-  const themeClass = `${interfaceSettings.theme ?? 'neon'}-theme`;
+  const themeClass = `${interfaceSettings.theme ?? 'default'}-theme`;
 
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
