@@ -6,7 +6,6 @@ import clsx from 'clsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 
-
 import {
   EFFECT_BACKGROUND_STYLES,
   LABELS_INFO,
@@ -77,11 +76,9 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
 
   const { locked, name, tag, status, labels, id, temporary_name: temporaryName } = data || {};
 
-
   const {
     data: {
       characters,
-      presentCharacters,
       wormholesData,
       hubs,
       kills,
@@ -98,10 +95,8 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
   const charactersInSystem = useMemo(() => {
-    return characters
-      .filter(c => c.location?.solar_system_id === solar_system_id)
-      .filter(c => c.online);
-  }, [characters, presentCharacters, solar_system_id]);
+    return characters.filter(c => c.location?.solar_system_id === solar_system_id).filter(c => c.online);
+  }, [characters, solar_system_id]);
 
   const isWormhole = isWormholeSpace(system_class);
   const classTitleColor = useMemo(
@@ -190,7 +185,6 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         </div>
       )}
       <div
-        onMouseDownCapture={dbClick}
         className={clsx(
           classes.RootCustomNode,
           regionClass,
@@ -200,7 +194,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
           'px-[6px] pt-[2px] pb-[3px] text-[10px]',
           'leading-[1] space-y-[1px]',
           'shadow-[0_0_5px_rgba(45,45,45,0.5)]',
-          'border border-[var(--pastel-blue-darken10)] rounded-[5px]'
+          'border border-[var(--pastel-blue-darken10)] rounded-[5px]',
         )}
       >
         {visible && (
@@ -211,9 +205,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
               </div>
 
               {tag != null && tag !== '' && (
-                <div className={clsx(classes.TagTitle, "color: #38bdf8; font-weight: 500;")}>
-                  {tag}
-                </div>
+                <div className={clsx(classes.TagTitle, 'color: #38bdf8; font-weight: 500;')}>{tag}</div>
               )}
 
               <div
@@ -239,18 +231,12 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
             </div>
 
             <div className={clsx(classes.BottomRow, 'flex items-center gap-[3px]')}>
-              {customName && (
-                <div className={clsx('font-bold', classes.customName)}>
-                  {customName}
-                </div>
-              )}
+              {customName && <div className={clsx('font-bold', classes.customName)}>{customName}</div>}
               {!isWormhole && !customName && <div className={clsx(classes.regionName)}>{region_name}</div>}
               {isWormhole && !customName && <div />}
 
               <div className="flex items-center ml-auto gap-[2px]">
-                {locked && (
-                  <i className={clsx(PrimeIcons.LOCK, 'text-[0.45rem] font-bold')} />
-                )}
+                {locked && <i className={clsx(PrimeIcons.LOCK, 'text-[0.45rem] font-bold')} />}
                 {hubs.includes(solar_system_id.toString()) && (
                   <i className={clsx(PrimeIcons.MAP_MARKER, 'text-[0.45rem] font-bold')} />
                 )}
@@ -259,7 +245,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
                     className={clsx(
                       classes.localCounter,
                       { [classes.hasUserCharacters]: hasUserCharacters },
-                      'flex gap-[2px]'
+                      'flex gap-[2px]',
                     )}
                   >
                     <i className="pi pi-users text-[0.50rem]" />
@@ -287,7 +273,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         </div>
       )}
 
-      <div className={classes.Handlers}>
+      <div onMouseDownCapture={dbClick} className={classes.Handlers}>
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleTop, {
