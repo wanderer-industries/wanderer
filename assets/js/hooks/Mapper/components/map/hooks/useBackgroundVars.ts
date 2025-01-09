@@ -26,7 +26,7 @@ export function useBackgroundVars(themeName?: string) {
 
     const cssVarGap = style.getPropertyValue('--rf-bg-gap');
     const cssVarSize = style.getPropertyValue('--rf-bg-size');
-    const cssColor = style.getPropertyValue('--rf-bg-color');
+    const cssColor = style.getPropertyValue('--rf-bg-pattern-color');
 
     const gapNum = parseInt(cssVarGap, 10) || 16;
     const sizeNum = parseInt(cssVarSize, 10) || 1;
