@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import styles from './WindowManager.module.scss';
+import debounce from 'lodash.debounce';
+import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
 
 const MIN_WINDOW_SIZE = 100;
 const SNAP_THRESHOLD = 10;
@@ -15,14 +17,6 @@ export const DefaultWindowState = {
   y: 0,
   width: 0,
   height: 0,
-};
-
-export type WindowProps = {
-  id: number | string;
-  content: (w: WindowProps) => React.ReactNode;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  zIndex: number;
 };
 
 function getWindowsBySides(windows: WindowProps[], containerWidth: number, containerHeight: number) {
@@ -86,9 +80,10 @@ export const WindowWrapper = ({ onResize, onDrag, ...window }: WindowWrapperProp
 type WindowManagerProps = {
   windows: WindowProps[];
   dragSelector?: string;
+  onChange?(windows: WindowProps[]): void;
 };
 
-export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWindows, dragSelector }) => {
+export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWindows, dragSelector, onChange }) => {
   const [windows, setWindows] = useState(
     initialWindows.map((window, index) => ({
       ...window,
@@ -102,10 +97,16 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
   const startMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startWindowStateRef = useRef<{ x: number; y: number; width: number; height: number }>(DefaultWindowState);
 
-  const ref = useRef({ windows });
-  ref.current = { windows };
+  const ref = useRef({ windows, onChange });
+  ref.current = { windows, onChange };
 
   const refPrevSize = useRef({ w: 0, h: 0 });
+
+  const onDebouncedChange = useMemo(() => {
+    return debounce(() => {
+      ref.current.onChange?.(ref.current.windows);
+    }, 20);
+  }, []);
 
   const handleMouseDown = (
     e: React.MouseEvent,
@@ -313,17 +314,20 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
           return window;
         }),
       );
+
+      onDebouncedChange();
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     activeWindowIdRef.current = null;
     actionTypeRef.current = null;
     resizeDirectionRef.current = null;
 
+    onDebouncedChange();
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('mouseup', handleMouseUp);
-  };
+  }, []);
 
   // Handle resize of the container and reposition windows
   useEffect(() => {
@@ -345,40 +349,49 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
 
       setWindows(w => {
         return w.map(x => {
+          let next = { ...x };
+
           if (right.some(r => r.id === x.id)) {
-            return {
-              ...x,
+            next = {
+              ...next,
               position: {
-                ...x.position,
-                x: x.position.x + deltaX,
+                ...next.position,
+                x: next.position.x + deltaX,
               },
             };
           }
-          return x;
-        });
-      });
 
-      setWindows(w => {
-        return w.map(x => {
           if (bottom.some(r => r.id === x.id)) {
-            return {
-              ...x,
+            next = {
+              ...next,
               position: {
-                ...x.position,
-                y: x.position.y + deltaY,
+                ...next.position,
+                y: next.position.y + deltaY,
               },
             };
           }
 
-          return x;
+          if (next.position.x + next.size.width > container.clientWidth - SNAP_GAP) {
+            next.position.x = container.clientWidth - next.size.width - SNAP_GAP;
+          }
+
+          if (next.position.y + next.size.height > container.clientHeight - SNAP_GAP) {
+            next.position.y = container.clientHeight - next.size.height - SNAP_GAP;
+          }
+
+          return next;
         });
       });
+
+      onDebouncedChange();
 
       refPrevSize.current = { w: container.clientWidth, h: container.clientHeight };
     };
 
+    const tid = setTimeout(handleResize, 10);
     window.addEventListener('resize', handleResize);
     return () => {
+      clearTimeout(tid);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
