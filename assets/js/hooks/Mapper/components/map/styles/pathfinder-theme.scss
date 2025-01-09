@@ -4,19 +4,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@300;400;700&display=swap');
 
 .pathfinder-theme {
+  --rf-bg-color: #000000;
+  --rf-soft-bg-color: #282828;
 
-  --rf-bg-variant: "lines";
-  --rf-bg-gap: 32;
-  --rf-bg-color: #353535;
-  --rf-soft-bg-color: #282829;
+  --rf-node-bg-color: #202020;
+  --rf-node-soft-bg-color: #313335;
+  --rf-node-font-weight: bold;
 
-  --pf-text-color: #adadad;
-  --pf-dark-bg: #2d2d2d;
-  --pf-tooltip-bg: #202020;
+  --rf-text-color: #adadad;
+  --tooltip-bg: #202020;
+
   --rf-bg-variant: "lines";
   --rf-bg-gap: 32;
   --rf-bg-size: 1;
-  --rf-bg-color: #313131;
+  --rf-bg-pattern-color: #313131;
+
   --eve-effect-pulsar: #428bca;
   --eve-effect-magnetar: #e06fdf;
   --eve-effect-wolfRayet: #e28a0d;
@@ -36,153 +38,12 @@
   --eve-wh-type-color-c13: #7986cb;
   --eve-wh-type-color-drifter: #44aa82;
 
-  .MapRoot {
-    background-color: var(--rf-bg-color);
 
-    &.isSoftBackground {
-      background-color: var(--rf-soft-bg-color);
-    }
-    &.soft-bg {
-      --rf-bg-color: var(--rf-soft-bg-color);
-    }
-  }
+  --rf-node-font-weight: bold;
+  --rf-node-line-height: normal;
+  --rf-node-font-family: 'Oxygen', sans-serif;
+  --rf-node-text-color: var(--pf-text-color);
 
-  .RootCustomNode {
-    background-color: #313335 !important;
-    font-weight: 600;
-    line-height: normal;
-    color: var(--pf-text-color);
-    font-family: 'Oxygen', sans-serif !important;
-  }
-
-  .HeadRow {
-    position: relative;
-    top: 1px;
-
-    .classTitle {
-      font-size: 11px;
-      font-weight: bold;
-      text-shadow: 0 0 1px rgba(0, 0, 0, 0.7);
-    }
-
-    @-moz-document url-prefix() {
-      .classSystemName {
-        font-family: inherit !important;
-        font-weight: bold;
-        mix-blend-mode: screen;
-      }
-    }
-
-    .classSystemName {
-      font-family: inherit !important;
-      font-weight: bold;
-      color: var(--pf-text-color);
-      mix-blend-mode: screen;
-      text-shadow: rgba(0, 0, 0, 0.4) 1px 1px;
-    }
-
-    .textEllipsis {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .fontSans {
-      font-family: inherit !important;
-    }
-  }
-
-  .BottomRow {
-    .localCounter {
-      display: flex;
-
-      & > i {
-        position: relative;
-        top: 1px;
-      }
-      & > span {
-        font-size: 9px;
-        line-height: 9px;
-        font-weight: 700;
-        mix-blend-mode: screen;
-        color: #5cb85c;
-      }
-    }
-
-    .customName {
-      font-family: inherit !important;
-      font-weight: bold;
-      color: var(--pf-text-color);
-      mix-blend-mode: screen;
-      text-shadow: rgba(0, 0, 0, 0.4) 1px 1px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: inline-block;
-      flex-shrink: 1;
-    }
-
-    .tagTitle {
-      font-size: 9px;
-      font-family: inherit !important;
-      font-weight: bold;
-      color: #fbbf24 !important;
-      mix-blend-mode: screen;
-    }
-  }
-
-  .Handlers {
-    position: absolute;
-    z-index: 2;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .Handle {
-    min-width: initial;
-    min-height: initial;
-    border: 1px solid var(--pastel-blue, #5a7d9a);
-    width: 5px;
-    height: 5px;
-
-    &.selected {
-      border-color: var(--pastel-pink, #d291bc);
-    }
-
-    &.HandleTop {
-      top: -2px;
-    }
-    &.HandleRight {
-      right: -2px;
-    }
-    &.HandleBottom {
-      bottom: -2px;
-    }
-    &.HandleLeft {
-      left: -2px;
-    }
-
-    &.Tick {
-      width: 7px;
-      height: 7px;
-
-      &.HandleTop {
-        top: -3px;
-      }
-      &.HandleRight {
-        right: -3px;
-      }
-      &.HandleBottom {
-        bottom: -3px;
-      }
-      &.HandleLeft {
-        left: -3px;
-      }
-    }
-  }
-
-  .react-flow {
-    color: var(--pf-text-color);
-  }
+  --rf-tag-color: #fbbf24;
+  --rf-has-user-characters: #5cb85c;
 }

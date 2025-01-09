@@ -163,7 +163,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
         <div className={classes.Bookmarks}>
           {labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className={classes.textShadowThin}>{labelCustom}</span>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{labelCustom}</span>
             </div>
           )}
 
@@ -199,19 +199,19 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
           'flex flex-col w-[130px] h-[34px]',
           'px-[6px] pt-[2px] pb-[3px] text-[10px]',
           'leading-[1] space-y-[1px]',
-          'bg-[var(--tooltip-bg)] shadow-[0_0_5px_rgba(45,45,45,0.5)]',
+          'shadow-[0_0_5px_rgba(45,45,45,0.5)]',
           'border border-[var(--pastel-blue-darken10)] rounded-[5px]'
         )}
       >
         {visible && (
           <>
             <div className={clsx(classes.HeadRow, 'flex items-center gap-[3px]')}>
-              <div className={clsx(classes.classTitle, classTitleColor, classes.textShadowThin)}>
+              <div className={clsx(classes.classTitle, classTitleColor, '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]')}>
                 {class_title ?? '-'}
               </div>
 
               {tag != null && tag !== '' && (
-                <div className={clsx(classes.TagTitle, classes.tagSkyFontMedium)}>
+                <div className={clsx(classes.TagTitle, "color: #38bdf8; font-weight: 500;")}>
                   {tag}
                 </div>
               )}
@@ -219,9 +219,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
               <div
                 className={clsx(
                   classes.classSystemName,
-                  classes.textShadowThin,
-                  classes.systemNameOverflow,
-                  'overflow-hidden'
+                  'flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
                 {systemName}
@@ -265,7 +263,7 @@ export const SolarSystemNode = memo(({ data, selected }: WrapNodeProps<MapSolarS
                     )}
                   >
                     <i className="pi pi-users text-[0.50rem]" />
-                    <span className="font-sans text-[0.65rem]">{charactersInSystem.length}</span>
+                    <span className="text-[0.65rem]">{charactersInSystem.length}</span>
                   </div>
                 )}
               </div>

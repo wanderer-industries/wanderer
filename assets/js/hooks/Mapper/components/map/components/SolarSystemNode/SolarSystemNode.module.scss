@@ -1,12 +1,16 @@
 @import '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 .RootCustomNode {
+  background-color: var(--rf-node-bg-color, #202020) !important;
   position: relative;
   z-index: 1;
   overflow: hidden;
+  font-weight: var(--rf-node-font-weight, bold);
+  color: var(--rf-text-color, #ffffff);
+  font-family: var(--rf-node-font, inherit);
 }
 
-/* Region backgrounds */
+/* Region backgrounds for optional tinted headers, etc. */
 .Mataria,
 .Amarria,
 .Gallente,
@@ -47,23 +51,29 @@
   background-position-y: 0;
 }
 
-/* Node selected styling */
 .selected {
-  border-color: var(--pastel-pink);
+  border-color: var(--pastel-pink, #d291bc);
   box-shadow: 0 0 10px #9a1af1c2;
 }
 
-/* Eve system status backgrounds, etc. */
 .eve-system-status-home {
   border: 1px solid var(--eve-solar-system-status-color-home-dark30);
-  background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly), transparent);
+  background-image: linear-gradient(
+    275deg,
+    var(--eve-solar-system-status-friendly),
+    transparent
+  );
   &.selected {
     border-color: var(--eve-solar-system-status-color-home);
   }
 }
 .eve-system-status-friendly {
   border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
-  background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
+  background-image: linear-gradient(
+    275deg,
+    var(--eve-solar-system-status-friendly-dark30),
+    transparent
+  );
   &.selected {
     border-color: var(--eve-solar-system-status-color-friendly-dark5);
   }
@@ -72,20 +82,31 @@
   border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
   background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
   &.selected {
-    border-color: var(--pastel-pink);
+    border-color: var(--pastel-pink, #d291bc);
   }
 }
 .eve-system-status-warning {
-  background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
+  background-image: linear-gradient(
+    275deg,
+    var(--eve-solar-system-status-warning),
+    transparent
+  );
 }
 .eve-system-status-dangerous {
-  background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
+  background-image: linear-gradient(
+    275deg,
+    var(--eve-solar-system-status-dangerous),
+    transparent
+  );
 }
 .eve-system-status-target {
-  background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
+  background-image: linear-gradient(
+    275deg,
+    var(--eve-solar-system-status-target),
+    transparent
+  );
 }
 
-/* Bookmarks row */
 .Bookmarks {
   position: absolute;
   width: 100%;
@@ -128,33 +149,28 @@
   }
 }
 
-/* Slight shadow for text */
-.textShadowThin {
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
-}
-.tagSkyFontMedium {
-  color: #38bdf8;
-  font-weight: 500;
+
+.TagTitle {
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
+  color: var(--rf-tag-color, #ffb01d);
 }
 
-/* HeadRow near the top, possibly ~19px tall. */
+/* The top row (HeadRow). */
 .HeadRow {
   position: relative;
   top: 1px;
+
   .classTitle {
     font-weight: bold;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.73);
     font-size: 11px;
   }
-  .TagTitle {
-    font-size: 11px;
-    font-weight: bold;
-    text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
-    color: #ffb01d;
-  }
+
   @-moz-document url-prefix() {
     .classSystemName {
-      font-family: inherit !important;
+      font-family: var(--rf-node-font, inherit);
       font-weight: bold;
     }
   }
@@ -163,16 +179,17 @@
 /* Usually ~19px tall for bottom row. */
 .BottomRow {
   height: 19px;
+
   .localCounter {
     display: flex;
     gap: 2px;
   }
   .hasUserCharacters {
-    color: #fbbf24;
+    color: var(--rf-has-user-characters, #fbbf24);
   }
 }
 
-/* Overflows, effect icons, etc. */
+/* The systemName overflow + effect icon, etc. */
 .systemNameOverflow {
   flex-grow: 1;
   overflow: hidden;
@@ -194,7 +211,7 @@
   }
 }
 
-/* The node handlers / double-click area */
+/* The node's invisible handles/double-click overlay. */
 .Handlers {
   position: absolute;
   z-index: 2;
@@ -203,13 +220,17 @@
   width: 100%;
   height: 100%;
 }
+
+/* The little React Flow handles on each edge. */
 .Handle {
-  border: 1px solid var(--pastel-blue);
+  border: 1px solid var(--pastel-blue, #5a7d9a);
   width: 5px;
   height: 5px;
+
   &.selected {
-    border-color: var(--pastel-pink);
+    border-color: var(--pastel-pink, #d291bc);
   }
+
   &.HandleTop {
     top: -2px;
   }
@@ -242,7 +263,7 @@
   }
 }
 
-/* Unsplashed signature containers */
+/* Unsplashed signature containers. */
 .Unsplashed {
   position: absolute;
   width: calc(50% - 4px);
