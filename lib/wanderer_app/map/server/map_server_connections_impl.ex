@@ -67,12 +67,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   # @unknown 100_100
   #
   @connection_time_status_eol 1
-  @connection_auto_eol_hours 21
-  @connection_auto_expire_hours 24
-  @connection_eol_expire_timeout :timer.hours(3) + :timer.minutes(30)
-
   @connection_type_wormhole 0
   @connection_type_stargate 1
+
+  def get_connection_auto_expire_hours(), do: WandererApp.Env.map_connection_auto_expire_hours()
+
+  def get_connection_auto_eol_hours(), do: WandererApp.Env.map_connection_auto_eol_hours()
+
+  def get_eol_expire_timeout_mins(), do: WandererApp.Env.map_connection_eol_expire_timeout_mins()
+
+  def get_eol_expire_timeout(),
+    do:
+      :timer.hours(get_connection_auto_expire_hours() - get_connection_auto_eol_hours()) +
+        :timer.minutes(get_eol_expire_timeout_mins())
 
   def init_eol_cache(map_id, connections_eol_time) do
     connections_eol_time
@@ -80,7 +87,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       WandererApp.Cache.put(
         "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
         connection_eol_time,
-        ttl: @connection_eol_expire_timeout
+        ttl: get_eol_expire_timeout()
       )
     end)
   end
@@ -155,7 +162,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                 WandererApp.Cache.put(
                   "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
                   DateTime.utc_now(),
-                  ttl: @connection_eol_expire_timeout
+                  ttl: get_eol_expire_timeout()
                 )
 
               _ ->
@@ -194,6 +201,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       do: update_connection(state, :update_custom_info, [:custom_info], connection_update)
 
   def cleanup_connections(%{map_id: map_id} = state) do
+    connection_auto_eol_hours = get_connection_auto_eol_hours()
+    connection_auto_expire_hours = get_connection_auto_expire_hours()
+
     state =
       map_id
       |> WandererApp.Map.list_connections!()
@@ -205,7 +215,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                         } ->
         type != @connection_type_stargate &&
           DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
-            @connection_auto_eol_hours &&
+            connection_auto_eol_hours &&
           is_connection_valid(
             :wormholes,
             solar_system_source_id,
@@ -262,9 +272,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         not is_connection_exist ||
           (type != @connection_type_stargate && is_connection_valid &&
              (DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
-                @connection_auto_expire_hours ||
+                connection_auto_expire_hours ||
                 DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
-                  @connection_auto_expire_hours - @connection_auto_eol_hours))
+                  connection_auto_expire_hours - connection_auto_eol_hours))
       end)
       |> Enum.reduce(state, fn %{
                                  solar_system_source: solar_system_source_id,
@@ -333,7 +343,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         Impl.broadcast!(map_id, :maybe_select_system, %{
           character_id: character_id,
-          solar_system_id: location.solar_system_id,
+          solar_system_id: location.solar_system_id
         })
 
         Impl.broadcast!(map_id, :add_connection, connection)
@@ -346,20 +356,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         :ok
 
-        {:error, :already_exists} ->
-          # Still broadcast location change in case of followed character
-          Impl.broadcast!(map_id, :maybe_select_system, %{
-            character_id: character_id,
-            solar_system_id: location.solar_system_id
-          })
+      {:error, :already_exists} ->
+        # Still broadcast location change in case of followed character
+        Impl.broadcast!(map_id, :maybe_select_system, %{
+          character_id: character_id,
+          solar_system_id: location.solar_system_id
+        })
 
-          :ok
+        :ok
 
-        {:error, error} ->
-          Logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)
+      {:error, error} ->
+        Logger.debug(fn -> "Failed to add connection: #{inspect(error, pretty: true)}" end)
 
-          :ok
-
+        :ok
     end
   end
 

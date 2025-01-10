@@ -1,5 +1,6 @@
 defmodule WandererApp.Env do
   @moduledoc false
+  use Nebulex.Caching
 
   @app :wanderer_app
 
@@ -17,5 +18,25 @@ defmodule WandererApp.Env do
   def corp_wallet, do: get_key(:corp_wallet, "")
   def corp_eve_id, do: get_key(:corp_id, -1)
   def subscription_settings, do: get_key(:subscription_settings)
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "map-connection-auto-expire-hours"
+            )
+  def map_connection_auto_expire_hours, do: get_key(:map_connection_auto_eol_hours)
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "map-connection-auto-eol-hours"
+            )
+  def map_connection_auto_eol_hours, do: get_key(:map_connection_auto_eol_hours)
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "map-connection-eol-expire-timeout-mins"
+            )
+  def map_connection_eol_expire_timeout_mins,
+    do: get_key(:map_connection_eol_expire_timeout_mins)
+
   def get_key(key, default \\ nil), do: Application.get_env(@app, key, default)
 end
