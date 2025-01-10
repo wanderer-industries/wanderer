@@ -80,12 +80,12 @@ $tooltip-bg: #202020; // Dark background for tooltips
     }
   }
 
-  .selected {
-    border-color: var($pastel-pink, #d291bc);
+  &.selected {
+    border-color: $pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
   }
 
-  .tooltip {
+  &.tooltip {
     background-color: $tooltip-bg;
     color: $text-color;
     padding: 5px 10px;
@@ -93,18 +93,19 @@ $tooltip-bg: #202020; // Dark background for tooltips
     border: 1px solid $pastel-pink;
   }
 
- .eve-system-status-home {
+  &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);
     background-image: linear-gradient(
       275deg,
-      var(--eve-solar-system-status-friendly),
+      var(--eve-solar-system-status-home),
       transparent
     );
     &.selected {
       border-color: var(--eve-solar-system-status-color-home);
     }
   }
-  .eve-system-status-friendly {
+
+  &.eve-system-status-friendly {
     border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
     background-image: linear-gradient(
       275deg,
@@ -115,28 +116,32 @@ $tooltip-bg: #202020; // Dark background for tooltips
       border-color: var(--eve-solar-system-status-color-friendly-dark5);
     }
   }
-  .eve-system-status-lookingFor {
+
+  &.eve-system-status-lookingFor {
     border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
     background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
     &.selected {
-      border-color: var(--pastel-pink, #d291bc);
+      border-color: $pastel-pink;
     }
   }
-  .eve-system-status-warning {
+
+  &.eve-system-status-warning {
     background-image: linear-gradient(
       275deg,
       var(--eve-solar-system-status-warning),
       transparent
     );
   }
-  .eve-system-status-dangerous {
+
+  &.eve-system-status-dangerous {
     background-image: linear-gradient(
       275deg,
       var(--eve-solar-system-status-dangerous),
       transparent
     );
   }
-  .eve-system-status-target {
+
+  &.eve-system-status-target {
     background-image: linear-gradient(
       275deg,
       var(--eve-solar-system-status-target),

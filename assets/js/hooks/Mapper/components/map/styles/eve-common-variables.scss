@@ -1,114 +1,121 @@
+
+$friendlyBase: #3bbd39;              
+$friendlyAlpha: #3bbd3952;           
+$friendlyDark20: darken($friendlyBase, 20%);
+$friendlyDark30: darken($friendlyBase, 30%);
+$friendlyDark5:  darken($friendlyBase, 5%);
+
+$lookingForBase: #43c2fd;            
+$lookingForAlpha: rgba(67, 176, 253, 0.48);
+$lookingForDark15: darken($lookingForBase, 15%);
+
+$homeBase: rgb(197, 253, 67);
+$homeAlpha: rgba(197, 253, 67, 0.32);
+$homeDark30: darken($homeBase, 30%);
+
+
 :root {
-    --pastel-blue: #5a7d9a;
-    --pastel-pink: #d291bc;
-    --pastel-green: #88b04b;
-    --pastel-yellow: #ffdd59;
-    --dark-bg: #2d2d2d;
-    --text-color: #ffffff;
-    --tooltip-bg: #202020;
+  --pastel-blue: #5a7d9a;
+  --pastel-pink: #d291bc;
+  --pastel-green: #88b04b;
+  --pastel-yellow: #ffdd59;
+  --dark-bg: #2d2d2d;
+  --text-color: #ffffff;
+  --tooltip-bg: #202020;
 
-    --pastel-blue-darken10: #4f6b86;
-    --pastel-blue-lighten10: #6da3af;
-    --pastel-pink-darken10: #bb7ca9;
-    --pastel-pink-lighten10: #e0a6cb;
+  --pastel-blue-darken10: #4f6b86;
+  --pastel-blue-lighten10: #6da3af;
+  --pastel-pink-darken10: #bb7ca9;
+  --pastel-pink-lighten10: #e0a6cb;
+  --pastel-green-darken10: #79a244;
+  --pastel-green-lighten10: #99cf52;
+  --pastel-yellow-darken10: #e6c44f;
+  --pastel-yellow-lighten10: #ffe874;
 
-    --pastel-green-darken10: #79a244;
-    --pastel-green-lighten10: #99cf52;
+  --eve-link-color-default: #333;
+  --eve-link-color-top-mass-0: #333;
+  --eve-link-color-top-mass-1: #5a4520;
+  --eve-link-color-top-mass-2: #672c2c;
+  --eve-link-color-middle-mass-0: #333;
+  --eve-link-color-middle-mass-1: #333;
+  --eve-link-color-middle-mass-2: #333;
+  --eve-link-color-middle-time-0: #5c5c5c;
+  --eve-link-color-middle-time-1: #ff00cd;
+  --eve-link-color-middle-time-1-border: #99f3ff;
+  --eve-link-color-top-mass-1-time-1: #796300;
+  --eve-link-color-top-mass-2-time-1: #8c1717;
+  --eve-link-color-temp: orange;
 
-    --pastel-yellow-darken10: #e6c44f;
-    --pastel-yellow-lighten10: #ffe874;
+  --eve-effect-pulsar: #40aef5;
+  --eve-effect-magnetar: #f058f8;
+  --eve-effect-wolfRayet: #ef7843;
+  --eve-effect-blackHole: #1b1b1b;
+  --eve-effect-cataclysmicVariable: #ffea90;
+  --eve-effect-redGiant: #fd3c3c;
+  --eve-effect-dazhLiminalityLocus: #ff6464;
+  --eve-effect-imperialStellarObservatory: #6991ce;
+  --eve-effect-stateStellarObservatory: #6991ce;
+  --eve-effect-republicStellarObservatory: #6991ce;
+  --eve-effect-federalStellarObservatory: #6991ce;
 
-    /* Eve Link Colors */
-    --eve-link-color-default: #333;
-    --eve-link-color-top-mass-0: #333;
-    --eve-link-color-top-mass-1: #5a4520;
-    --eve-link-color-top-mass-2: #672c2c;
-    --eve-link-color-middle-mass-0: #333;
-    --eve-link-color-middle-mass-1: #333;
-    --eve-link-color-middle-mass-2: #333;
-    --eve-link-color-middle-time-0: #5c5c5c;
-    --eve-link-color-middle-time-1: #ff00cd;
-    --eve-link-color-middle-time-1-border: #99f3ff;
-    --eve-link-color-top-mass-1-time-1: #796300;
-    --eve-link-color-top-mass-2-time-1: #8c1717;
-    --eve-link-color-temp: orange;
+  --eve-wh-type-color-high: #5dffd2;
+  --eve-wh-type-color-low: #f79400;
+  --eve-wh-type-color-null: #fc3c3c;
+  --eve-wh-type-color-c1: #69bfce;
+  --eve-wh-type-color-c2: #6991ce;
+  --eve-wh-type-color-c3: #a8cb70;
+  --eve-wh-type-color-c4: #e39c68;
+  --eve-wh-type-color-c5: #de8686;
+  --eve-wh-type-color-c6: #e76363;
+  --eve-wh-type-color-c13: #988cb5;
+  --eve-wh-type-color-drifter: #ff44f6;
+  --eve-wh-type-color-thera: #ffffff;
+  --eve-wh-type-color-zarzakh: #212121;
 
-    /* Wormhole Effects */
-    --eve-effect-pulsar: #40aef5;
-    --eve-effect-magnetar: #f058f8;
-    --eve-effect-wolfRayet: #ef7843;
-    --eve-effect-blackHole: #1b1b1b;
-    --eve-effect-cataclysmicVariable: #ffea90;
-    --eve-effect-redGiant: #fd3c3c;
-    --eve-effect-dazhLiminalityLocus: #ff6464;
-    --eve-effect-imperialStellarObservatory: #6991ce;
-    --eve-effect-stateStellarObservatory: #6991ce;
-    --eve-effect-republicStellarObservatory: #6991ce;
-    --eve-effect-federalStellarObservatory: #6991ce;
+  --eve-security-color-10: #2c74df;
+  --eve-security-color-09: #3998e8;
+  --eve-security-color-08: #4dcbf5;
+  --eve-security-color-07: #60d8a2;
+  --eve-security-color-06: #71e454;
+  --eve-security-color-05: #f2fc81;
+  --eve-security-color-04: #d96c07;
+  --eve-security-color-03: #cb440f;
+  --eve-security-color-02: #b91117;
+  --eve-security-color-01: #732020;
+  --eve-security-color-00: #8b3263;
+  --eve-security-color-m-01: #8b3263;
+  --eve-security-color-m-02: #8b3263;
+  --eve-security-color-m-03: #8b3263;
+  --eve-security-color-m-04: #8b3263;
+  --eve-security-color-m-05: #8b3263;
+  --eve-security-color-m-06: #8b3263;
+  --eve-security-color-m-07: #8b3263;
+  --eve-security-color-m-08: #8b3263;
+  --eve-security-color-m-09: #8b3263;
+  --eve-security-color-m-10: #8b3263;
 
-    /* WH Types */
-    --eve-wh-type-color-high: #5dffd2;
-    --eve-wh-type-color-low: #f79400;
-    --eve-wh-type-color-null: #fc3c3c;
-    --eve-wh-type-color-c1: #69bfce;
-    --eve-wh-type-color-c2: #6991ce;
-    --eve-wh-type-color-c3: #a8cb70;
-    --eve-wh-type-color-c4: #e39c68;
-    --eve-wh-type-color-c5: #de8686;
-    --eve-wh-type-color-c6: #e76363;
-    --eve-wh-type-color-c13: #988cb5;
-    --eve-wh-type-color-drifter: #ff44f6;
-    --eve-wh-type-color-thera: #ffffff;
-    --eve-wh-type-color-zarzakh: #212121;
+  --eve-solar-system-status-unknown: transparent;
+  --eve-solar-system-status-color-unknown: transparent;
+  --eve-solar-system-status-home:                #{$homeAlpha};
+  --eve-solar-system-status-color-home:          #{$homeBase};
+  --eve-solar-system-status-color-home-dark30:   #{$homeDark30};
+  --eve-solar-system-status-friendly:            #{$friendlyAlpha};
+  --eve-solar-system-status-color-friendly:      #{$friendlyBase};
+  --eve-solar-system-status-friendly-dark30:     #{$friendlyDark30};
+  --eve-solar-system-status-color-friendly-dark20: #{$friendlyDark20};
+  --eve-solar-system-status-color-friendly-dark5:  #{$friendlyDark5};
+  --eve-solar-system-status-lookingFor:              #{$lookingForAlpha};
+  --eve-solar-system-status-color-lookingFor:        #{$lookingForBase};
+  --eve-solar-system-status-color-lookingFor-dark15: #{$lookingForDark15};
+  --eve-solar-system-status-warning: #906518a6;
+  --eve-solar-system-status-color-warning: #ffb93b;
+  --eve-solar-system-status-target: #b439ff6b;
+  --eve-solar-system-status-color-target: #b439ff;
+  --eve-solar-system-status-dangerous: #d54040;
+  --eve-solar-system-status-color-dangerous: #d54040;
 
-    /* Security Colors */
-    --eve-security-color-10: #2c74df;
-    --eve-security-color-09: #3998e8;
-    --eve-security-color-08: #4dcbf5;
-    --eve-security-color-07: #60d8a2;
-    --eve-security-color-06: #71e454;
-    --eve-security-color-05: #f2fc81;
-    --eve-security-color-04: #d96c07;
-    --eve-security-color-03: #cb440f;
-    --eve-security-color-02: #b91117;
-    --eve-security-color-01: #732020;
-    --eve-security-color-00: #8b3263;
-    --eve-security-color-m-01: #8b3263;
-    --eve-security-color-m-02: #8b3263;
-    --eve-security-color-m-03: #8b3263;
-    --eve-security-color-m-04: #8b3263;
-    --eve-security-color-m-05: #8b3263;
-    --eve-security-color-m-06: #8b3263;
-    --eve-security-color-m-07: #8b3263;
-    --eve-security-color-m-08: #8b3263;
-    --eve-security-color-m-09: #8b3263;
-    --eve-security-color-m-10: #8b3263;
-
-    /* Solar System Status */
-    --eve-solar-system-status-unknown: transparent;
-    --eve-solar-system-status-friendly: #3bbd3952;
-    --eve-solar-system-status-warning: #906518a6;
-    --eve-solar-system-status-target: #b439ff6b;
-    --eve-solar-system-status-dangerous: #d54040;
-    --eve-solar-system-status-lookingFor: rgba(67, 176, 253, 0.48);
-    --eve-solar-system-status-home: rgb(197, 253, 67);
-
-    --eve-solar-system-status-color-unknown: transparent;
-    --eve-solar-system-status-color-friendly: #3bbd39;
-    --eve-solar-system-status-color-warning: #ffb93b;
-    --eve-solar-system-status-color-target: #b439ff;
-    --eve-solar-system-status-color-dangerous: #d54040;
-    --eve-solar-system-status-color-lookingFor: #43c2fd;
-    --eve-solar-system-status-color-home: rgb(197, 253, 67);
-
-    --eve-solar-system-status-color-friendly-dark20: #2d9b2e;
-    --eve-solar-system-status-friendly-dark30: #28892a;
-    --eve-solar-system-status-color-friendly-dark5: #38b538;
-    --eve-solar-system-status-color-lookingFor-dark15: #32aadf;
-
-    /* Context Menu */
-    --conn-time-eol: #7452c3e3;
-    --conn-frigate: #325d88;
-    --conn-save: rgba(155, 102, 45, 0.85);
-    --selected-item-bg: rgba(98, 98, 98, 0.33);
-  }
+  --conn-time-eol: #7452c3e3;
+  --conn-frigate: #325d88;
+  --conn-save: rgba(155, 102, 45, 0.85);
+  --selected-item-bg: rgba(98, 98, 98, 0.33);
+}
