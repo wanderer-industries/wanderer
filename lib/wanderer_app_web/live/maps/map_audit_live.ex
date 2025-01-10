@@ -5,6 +5,8 @@ defmodule WandererAppWeb.MapAuditLive do
 
   alias WandererAppWeb.UserActivity
 
+  @active_subscription_periods ["2M", "3M"]
+
   def mount(
         %{"slug" => map_slug, "period" => period, "activity" => activity} = _params,
         _session,
@@ -38,6 +40,7 @@ defmodule WandererAppWeb.MapAuditLive do
                map_id: map_id,
                map_name: map_name,
                map_slug: map_slug,
+               map_subscription_active: WandererApp.Map.is_subscription_active?(map_id),
                activity: activity,
                can_undo_types: [:systems_removed],
                period: period || "1H",
@@ -117,23 +120,26 @@ defmodule WandererAppWeb.MapAuditLive do
     end
   end
 
-  def handle_event("undo", %{"event-data" => event_data, "event-type" => "systems_removed"}, %{assigns: %{map_id: map_id, current_user: current_user}} = socket) do
+  def handle_event(
+        "undo",
+        %{"event-data" => event_data, "event-type" => "systems_removed"},
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
     {:ok, %{"solar_system_ids" => solar_system_ids}} = Jason.decode(event_data)
 
     solar_system_ids
-      |> Enum.each(fn solar_system_id ->
-        WandererApp.Map.Server.add_system(
-          map_id,
-          %{
-            solar_system_id: solar_system_id,
-            coordinates: nil,
-            use_old_coordinates: true
-          },
-          current_user.id,
-          nil
-        )
-      end)
-
+    |> Enum.each(fn solar_system_id ->
+      WandererApp.Map.Server.add_system(
+        map_id,
+        %{
+          solar_system_id: solar_system_id,
+          coordinates: nil,
+          use_old_coordinates: true
+        },
+        current_user.id,
+        nil
+      )
+    end)
 
     {:noreply, socket |> put_flash(:info, "Systems restored!")}
   end
@@ -171,8 +177,17 @@ defmodule WandererAppWeb.MapAuditLive do
   end
 
   defp load_activity(socket, new_page) when new_page >= 1 do
-    %{activity: activity, per_page: per_page, page: cur_page, map_id: map_id, period: period} =
+    %{
+      activity: activity,
+      per_page: per_page,
+      page: cur_page,
+      map_id: map_id,
+      map_subscription_active: map_subscription_active,
+      period: period
+    } =
       socket.assigns
+
+    period = get_valid_period(period, map_subscription_active)
 
     with {:ok, page} <-
            WandererApp.Map.Audit.get_activity_page(map_id, new_page, per_page, period, activity) do
@@ -197,6 +212,16 @@ defmodule WandererAppWeb.MapAuditLive do
       end
     else
       _ -> socket
+    end
+  end
+
+  defp get_valid_period(period, true), do: period
+
+  defp get_valid_period(period, _map_subscription_active) do
+    if period in @active_subscription_periods do
+      "1H"
+    else
+      period
     end
   end
 end

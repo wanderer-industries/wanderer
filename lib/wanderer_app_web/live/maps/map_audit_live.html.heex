@@ -65,7 +65,8 @@
         >
           WEEK
         </button>
-        <%!-- <button
+        <button
+          :if={@map_subscription_active}
           phx-click="set_period"
           phx-value-period="1M"
           class={[
@@ -73,8 +74,31 @@
             classes(" !bg-neutral-800  !text-white": @period == "1M")
           ]}
         >
-          M
+          1M
         </button>
+        <button
+          :if={@map_subscription_active}
+          phx-click="set_period"
+          phx-value-period="2M"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "2M")
+          ]}
+        >
+          2M
+        </button>
+        <button
+          :if={@map_subscription_active}
+          phx-click="set_period"
+          phx-value-period="3M"
+          class={[
+            "btn btn-sm join-item font-medium text-neutral bg-neutral-700",
+            classes(" !bg-neutral-800  !text-white": @period == "3M")
+          ]}
+        >
+          3M
+        </button>
+        <%!--
         <button
           phx-click="set_period"
           phx-value-period="ALL"
