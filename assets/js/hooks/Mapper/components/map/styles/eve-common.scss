@@ -429,7 +429,63 @@
   color: var(--eve-solar-system-status-color-dangerous);
 }
 
-/* Shapes */
+.eve-system-status-clear {
+  background-color: var(--eve-solar-system-status-unknown);
+}
+.eve-system-status-home {
+  background-color: var(--eve-solar-system-status-home);
+}
+.eve-system-status-friendly {
+  background-color: var(--eve-solar-system-status-friendly);
+}
+.eve-system-status-lookingFor {
+  background-color: var(--eve-solar-system-status-lookingFor);
+}
+.eve-system-status-warning {
+  background-color: var(--eve-solar-system-status-warning);
+}
+.eve-system-status-target {
+  background-color: var(--eve-solar-system-status-target);
+}
+.eve-system-status-dangerous {
+  background-color: var(--eve-solar-system-status-dangerous);
+}
+
+.eve-system-status-clear {
+  background-color: var(--eve-solar-system-status-unknown);
+  color: var(--eve-solar-system-status-color-unknown);
+}
+
+.eve-system-status-home {
+  background-color: var(--eve-solar-system-status-home);
+  color: var(--eve-solar-system-status-color-home);
+}
+
+.eve-system-status-friendly {
+  background-color: var(--eve-solar-system-status-friendly);
+  color: var(--eve-solar-system-status-color-friendly);
+}
+
+.eve-system-status-lookingFor {
+  background-color: var(--eve-solar-system-status-lookingFor);
+  color: var(--eve-solar-system-status-color-lookingFor);
+}
+
+.eve-system-status-warning {
+  background-color: var(--eve-solar-system-status-warning);
+  color: var(--eve-solar-system-status-color-warning);
+}
+
+.eve-system-status-target {
+  background-color: var(--eve-solar-system-status-target);
+  color: var(--eve-solar-system-status-color-target);
+}
+
+.eve-system-status-dangerous {
+  background-color: var(--eve-solar-system-status-dangerous);
+  color: var(--eve-solar-system-status-color-dangerous);
+}
+
 .wd-route-system-shape-triangle {
   clip-path: polygon(50% 0, 0 100%, 100% 100%);
 }

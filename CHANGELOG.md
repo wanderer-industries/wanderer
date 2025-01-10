@@ -2,6 +2,37 @@
 
 <!-- changelog -->
 
+## [v1.37.9](https://github.com/wanderer-industries/wanderer/compare/v1.37.8...v1.37.9) (2025-01-10)
+
+
+
+
+### Bug Fixes:
+
+* restore system status colors (#112)
+
+* restore system status colors
+
+## [v1.37.8](https://github.com/wanderer-industries/wanderer/compare/v1.37.7...v1.37.8) (2025-01-10)
+
+
+
+
+### Bug Fixes:
+
+* fix issue with newly added systems not adding a connection (#114)
+
+* resolve issue with newly added systems not connecting
+
+## [v1.37.7](https://github.com/wanderer-industries/wanderer/compare/v1.37.6...v1.37.7) (2025-01-10)
+
+
+
+
+### Bug Fixes:
+
+* support additional theme names
+
 ## [v1.37.6](https://github.com/wanderer-industries/wanderer/compare/v1.37.5...v1.37.6) (2025-01-09)
 
 
