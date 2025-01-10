@@ -284,7 +284,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                location.solar_system_id
              ) do
           {:ok, existing_system} when not is_nil(existing_system) ->
-            {:ok, updated_system} =
+            updated_system =
               existing_system
               |> WandererApp.MapSystemRepo.update_position!(%{
                 position_x: position.x,
@@ -292,8 +292,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               })
               |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
               |> WandererApp.MapSystemRepo.update_visible!(%{visible: true})
-              |> WandererApp.MapSystemRepo.cleanup_tags()
-              |> WandererApp.MapSystemRepo.cleanup_temporary_name()
+              |> WandererApp.MapSystemRepo.cleanup_tags!()
+              |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
 
             @ddrt.insert(
               {existing_system.solar_system_id,
