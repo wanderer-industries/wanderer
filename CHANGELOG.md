@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.37.7](https://github.com/wanderer-industries/wanderer/compare/v1.37.6...v1.37.7) (2025-01-10)
+
+
+
+
+### Bug Fixes:
+
+* support additional theme names
+
 ## [v1.37.6](https://github.com/wanderer-industries/wanderer/compare/v1.37.5...v1.37.6) (2025-01-09)
 
 
