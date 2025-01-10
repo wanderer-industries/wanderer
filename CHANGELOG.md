@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.38.1](https://github.com/wanderer-industries/wanderer/compare/v1.38.0...v1.38.1) (2025-01-10)
+
+
+
+
+### Bug Fixes:
+
+* restored default theme colors (#115)
+
 ## [v1.38.0](https://github.com/wanderer-industries/wanderer/compare/v1.37.9...v1.38.0) (2025-01-10)
 
 
