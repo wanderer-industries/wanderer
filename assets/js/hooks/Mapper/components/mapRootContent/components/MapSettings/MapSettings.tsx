@@ -115,7 +115,7 @@ const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
 ];
 
 const THEME_OPTIONS = [
-  { label: 'Default', value: 'neon' },
+  { label: 'Default', value: 'default' },
   { label: 'Pathfinder', value: 'pathfinder' },
 ];
 

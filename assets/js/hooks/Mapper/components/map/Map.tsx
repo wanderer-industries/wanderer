@@ -1,4 +1,4 @@
-import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect } from 'react';
+import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   Background,
   ConnectionMode,
@@ -23,10 +23,12 @@ import {
   ContextMenuConnection,
   ContextMenuRoot,
   SolarSystemEdge,
-  SolarSystemNode,
+  SolarSystemNodeDefault,
+  SolarSystemNodeTheme,
   useContextMenuConnectionHandlers,
   useContextMenuRootHandlers,
 } from './components';
+import { wrapNode } from './utils/wrapNode';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
@@ -75,11 +77,8 @@ const initialEdges = [
   },
 ];
 
-const nodeTypes = {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  custom: SolarSystemNode,
-} as never;
+
+
 
 const edgeTypes = {
   floating: SolarSystemEdge,
@@ -123,6 +122,17 @@ const MapComp = ({
   const { getNode, getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
+
+
+  const nodeTypes = useMemo(() => {
+    return {
+      custom:
+        theme !== '' && theme !== 'default'
+          ? wrapNode(SolarSystemNodeTheme)
+          : wrapNode(SolarSystemNodeDefault),
+    };
+  }, [theme]);
+  
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);

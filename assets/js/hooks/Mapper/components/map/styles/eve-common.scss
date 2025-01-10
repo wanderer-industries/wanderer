@@ -485,3 +485,49 @@
 .wd-marker-bookmark-color-danger {
   background-color: #d10600;
 }
+
+.react-flow {
+  color: var(--text-color);
+
+  &__pane {
+    cursor: auto;
+  }
+
+  &__minimap {
+    background-color: rgba(66, 66, 66, 1);
+    opacity: 0.7;
+    border: 1px solid #2f2f2f;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__minimap-mask {
+    fill: rgba(28, 28, 28, 0.75);
+  }
+
+  &__controls {
+    filter: brightness(1.5);
+  }
+
+  &__minimap-node {
+    fill: #ffb03a;
+  }
+}
+
+.context-menu-active {
+  background-color: rgba(131, 131, 131, 0.33);
+}
+
+.p-dialog {
+  .p-dialog-header {
+    height: 40px;
+    padding: 1rem;
+    padding-right: 10px !important;
+  }
+  .p-dialog-title {
+    font-size: 1rem !important;
+  }
+  .p-dialog-header-icons {
+    align-self: initial !important;
+  }
+}

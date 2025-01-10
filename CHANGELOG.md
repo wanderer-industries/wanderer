@@ -2,6 +2,42 @@
 
 <!-- changelog -->
 
+## [v1.37.6](https://github.com/wanderer-industries/wanderer/compare/v1.37.5...v1.37.6) (2025-01-09)
+
+
+
+
+### Bug Fixes:
+
+* support additional theme names
+
+## [v1.37.5](https://github.com/wanderer-industries/wanderer/compare/v1.37.4...v1.37.5) (2025-01-09)
+
+
+
+
+### Bug Fixes:
+
+* restore node styling, simplify framework for new themes
+
+## [v1.37.4](https://github.com/wanderer-industries/wanderer/compare/v1.37.3...v1.37.4) (2025-01-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed dbclick behaviour
+
+## [v1.37.3](https://github.com/wanderer-industries/wanderer/compare/v1.37.2...v1.37.3) (2025-01-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed dbclick behaviour
+
 ## [v1.37.2](https://github.com/wanderer-industries/wanderer/compare/v1.37.1...v1.37.2) (2025-01-09)
 
 
