@@ -31,7 +31,7 @@ defmodule WandererApp.Esi.ApiClient do
   }
 
   @cache_opts [cache: true]
-  @retry_opts [retry: false, retry_log_level: :warning]
+  @retry_opts [max_retries: 1, retry_log_level: :warning]
   @timeout_opts [receive_timeout: :timer.seconds(30)]
   @api_retry_count 1
 

@@ -9,20 +9,38 @@ defmodule WandererApp.Map.Audit do
   @logger Application.compile_env(:wanderer_app, :logger)
 
   @week_seconds :timer.hours(24 * 7)
+  @month_seconds @week_seconds * 4
+  @audit_expired_seconds @month_seconds * 3
+
+  def track_map_subscription_event(event_type, metadata) do
+    case event_type do
+      "subscription.created" ->
+        track_map_event(event_type, metadata)
+
+      "subscription.updated" ->
+        track_map_event(event_type, metadata)
+
+      "subscription.deleted" ->
+        track_map_event(event_type, metadata)
+
+      _ ->
+        {:ok, nil}
+    end
+  end
 
   def archive() do
-    @logger.info("Start map audit arhiving...")
+    Logger.info("Start map audit arhiving...")
 
     WandererApp.Api.UserActivity
-    |> Ash.Query.filter(inserted_at: [less_than: _get_expired_at()])
+    |> Ash.Query.filter(inserted_at: [less_than: get_expired_at()])
     |> Ash.bulk_destroy!(:archive, %{}, batch_size: 100)
 
-    @logger.info(fn -> "Audit arhived" end)
+    Logger.info(fn -> "Audit arhived" end)
     :ok
   end
 
   def get_activity_page(map_id, page, per_page, period, activity) do
-    {from, to} = period |> _get_period()
+    {from, to} = period |> get_period()
 
     query =
       WandererApp.Api.UserActivity
@@ -84,52 +102,43 @@ defmodule WandererApp.Map.Audit do
 
   def track_map_event(_event_type, _metadata), do: {:ok, nil}
 
-  defp _get_period("1H") do
+  defp get_period("1H") do
     now = DateTime.utc_now()
     start_date = now |> DateTime.add(-1 * 3600, :second)
     {start_date, now}
   end
 
-  defp _get_period("1D") do
+  defp get_period("1D") do
     now = DateTime.utc_now()
     start_date = now |> DateTime.add(-24 * 3600, :second)
     {start_date, now}
   end
 
-  defp _get_period("1W") do
+  defp get_period("1W") do
     now = DateTime.utc_now()
     start_date = now |> DateTime.add(-24 * 3600 * 7, :second)
     {start_date, now}
   end
 
-  # defp _get_period("1M") do
-  #   now = DateTime.utc_now()
-  #   start_date = now |> DateTime.add(-24 * 3600 * 31, :second)
-  #   {start_date, now}
-  # end
-
-  # defp _get_period("ALL") do
-  #   now = DateTime.utc_now()
-
-  #   start_date = %{
-  #     now
-  #     | year: 2000,
-  #       month: 1,
-  #       day: 1,
-  #       hour: 00,
-  #       minute: 00,
-  #       second: 00,
-  #       microsecond: {0, 0}
-  #   }
-
-  #   {start_date, now}
-  # end
-
-  defp _get_period(_) do
+  defp get_period("1M") do
     now = DateTime.utc_now()
-    start_date = now |> DateTime.add(-1 * 3600, :second)
+    start_date = now |> DateTime.add(-24 * 3600 * 31, :second)
     {start_date, now}
   end
 
-  defp _get_expired_at(), do: DateTime.utc_now() |> DateTime.add(-@week_seconds, :second)
+  defp get_period("2M") do
+    now = DateTime.utc_now()
+    start_date = now |> DateTime.add(-24 * 3600 * 31 * 2, :second)
+    {start_date, now}
+  end
+
+  defp get_period("3M") do
+    now = DateTime.utc_now()
+    start_date = now |> DateTime.add(-24 * 3600 * 31 * 3, :second)
+    {start_date, now}
+  end
+
+  defp get_period(_), do: get_period("1H")
+
+  defp get_expired_at(), do: DateTime.utc_now() |> DateTime.add(-@audit_expired_seconds, :second)
 end
