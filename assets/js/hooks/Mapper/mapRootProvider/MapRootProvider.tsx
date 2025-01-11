@@ -4,6 +4,7 @@ import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
+import { WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -60,7 +61,14 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowBackgroundPattern: true,
   isSoftBackground: false,
   theme: 'default',
-}
+};
+
+export const STORED_VISIBLE_WIDGETS_DEFAULT = [
+  WidgetsIds.info,
+  WidgetsIds.local,
+  WidgetsIds.routes,
+  WidgetsIds.signatures,
+];
 
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;
@@ -68,6 +76,8 @@ export interface MapRootContextProps {
   outCommand: OutCommandHandler;
   interfaceSettings: InterfaceStoredSettings;
   setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
+  windowsVisible: WidgetsIds[];
+  setWindowsVisible: Dispatch<SetStateAction<WidgetsIds[]>>;
 }
 
 const MapRootContext = createContext<MapRootContextProps>({
@@ -102,6 +112,10 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     },
   );
 
+  const [windowsVisible, setWindowsVisible] = useLocalStorageState<WidgetsIds[]>('windows:visible', {
+    defaultValue: STORED_VISIBLE_WIDGETS_DEFAULT,
+  });
+
   useEffect(() => {
     let foundNew = false;
     const newVals = Object.keys(STORED_INTERFACE_DEFAULT_VALUES).reduce((acc, x) => {
@@ -128,6 +142,8 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         outCommand: outCommand,
         setInterfaceSettings,
         interfaceSettings,
+        windowsVisible,
+        setWindowsVisible,
       }}
     >
       <MapRootHandlers ref={fwdRef}>{children}</MapRootHandlers>

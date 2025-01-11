@@ -3,13 +3,10 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useMemo, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { PrettySwitchbox } from './components';
-import {
-  InterfaceStoredSettingsProps,
-  useMapRootState,
-  InterfaceStoredSettings,
-} from '@/hooks/Mapper/mapRootProvider';
+import { InterfaceStoredSettingsProps, useMapRootState, InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { Dropdown } from 'primereact/dropdown';
+import { WidgetsSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/WidgetsSettings/WidgetsSettings.tsx';
 
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
@@ -140,7 +137,6 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
     };
   }, [userRemoteSettings, interfaceSettings]);
 
-
   const handleShow = async () => {
     const { user_settings } = await outCommand({
       type: OutCommand.getUserSettings,
@@ -182,7 +178,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
           key={item.prop}
           label={item.label}
           checked={!!currentValue}
-          setChecked={(checked) => handleSettingChange(item.prop, checked)}
+          setChecked={checked => handleSettingChange(item.prop, checked)}
         />
       );
     }
@@ -195,7 +191,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
             className="text-sm"
             value={currentValue}
             options={item.options}
-            onChange={(e) => handleSettingChange(item.prop, e.value)}
+            onChange={e => handleSettingChange(item.prop, e.value)}
             placeholder="Select a theme"
           />
         </div>
@@ -227,19 +223,15 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
           <div className={styles.verticalTabsContainer}>
             <TabView
               activeIndex={activeIndex}
-              onTabChange={(e) => setActiveIndex(e.index)}
+              onTabChange={e => setActiveIndex(e.index)}
               className={styles.verticalTabView}
             >
               <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">
-                  {renderSettingsList(COMMON_CHECKBOXES_PROPS)}
-                </div>
+                <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(COMMON_CHECKBOXES_PROPS)}</div>
               </TabPanel>
 
               <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">
-                  {renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}
-                </div>
+                <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
               </TabPanel>
 
               <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
@@ -252,6 +244,10 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
 
               <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
                 {renderSettingsList(UI_CHECKBOXES_PROPS)}
+              </TabPanel>
+
+              <TabPanel header="Widgets" headerClassName={styles.verticalTabHeader}>
+                <WidgetsSettings />
               </TabPanel>
 
               <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>

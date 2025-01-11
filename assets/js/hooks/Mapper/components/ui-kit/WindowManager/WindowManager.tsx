@@ -90,6 +90,16 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
       zIndex: index + 1,
     })),
   );
+
+  useEffect(() => {
+    setWindows(
+      initialWindows.map((window, index) => ({
+        ...window,
+        zIndex: index + 1,
+      })),
+    );
+  }, [initialWindows]);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const activeWindowIdRef = useRef<string | number | null>(null);
   const actionTypeRef = useRef<ActionType | null>(null);

@@ -1,48 +1,11 @@
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import {
-  LocalCharacters,
-  RoutesWidget,
-  SystemInfo,
-  SystemSignatures,
-} from '@/hooks/Mapper/components/mapInterface/widgets';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { WindowManager } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
-
-const CURRENT_WINDOWS_VERSION = 2;
-
-const DEFAULT: WindowProps[] = [
-  {
-    id: 'info',
-    position: { x: 10, y: 10 },
-    size: { width: 250, height: 200 },
-    zIndex: 0,
-    content: () => <SystemInfo />,
-  },
-  {
-    id: 'signatures',
-    position: { x: 10, y: 220 },
-    size: { width: 250, height: 300 },
-    zIndex: 0,
-    content: () => <SystemSignatures />,
-  },
-  {
-    id: 'local',
-    position: { x: 270, y: 10 },
-    size: { width: 250, height: 510 },
-    zIndex: 0,
-    content: () => <LocalCharacters />,
-  },
-  {
-    id: 'routes',
-    position: { x: 10, y: 530 },
-    size: { width: 510, height: 200 },
-    zIndex: 0,
-    content: () => <RoutesWidget />,
-  },
-];
+import { CURRENT_WINDOWS_VERSION, DEFAULT_WIDGETS } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 type WindowsLS = {
   windows: WindowProps[];
@@ -60,19 +23,19 @@ const restoreWindowsFromLS = (): WindowProps[] => {
   const raw = localStorage.getItem(SESSION_KEY.windows);
   if (!raw) {
     console.warn('No windows found in local storage!!');
-    return DEFAULT;
+    return DEFAULT_WIDGETS;
   }
 
   const { version, windows } = JSON.parse(raw) as WindowsLS;
   if (!version || CURRENT_WINDOWS_VERSION > version) {
-    return DEFAULT;
+    return DEFAULT_WIDGETS;
   }
 
   // eslint-disable-next-line no-debugger
   const out = (windows as Omit<WindowProps, 'content'>[])
-    .filter(x => DEFAULT.find(def => def.id === x.id))
+    .filter(x => DEFAULT_WIDGETS.find(def => def.id === x.id))
     .map(x => {
-      const content = DEFAULT.find(def => def.id === x.id)?.content;
+      const content = DEFAULT_WIDGETS.find(def => def.id === x.id)?.content;
       return { ...x, content: content! };
     });
 
@@ -81,10 +44,15 @@ const restoreWindowsFromLS = (): WindowProps[] => {
 
 export const MapInterface = () => {
   const [items, setItems] = useState<WindowProps[]>(restoreWindowsFromLS);
+  const { windowsVisible } = useMapRootState();
+
+  const itemsFiltered = useMemo(() => {
+    return items.filter(x => windowsVisible.some(j => x.id === j));
+  }, [items, windowsVisible]);
 
   return (
     <WindowManager
-      windows={items}
+      windows={itemsFiltered}
       dragSelector=".react-grid-dragHandleExample"
       onChange={x => {
         saveWindowsToLS(x);
