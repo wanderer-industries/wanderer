@@ -41,6 +41,7 @@ export const MapWrapper = () => {
       isShowBackgroundPattern,
       isSoftBackground,
       theme,
+      isRightPanDrag,
     },
   } = useMapRootState();
   const { deleteSystems } = useDeleteSystems();
@@ -168,6 +169,7 @@ export const MapWrapper = () => {
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
         theme={theme}
+        isRightPanDrag={isRightPanDrag}
         onAddSystem={onAddSystem}
       />
 

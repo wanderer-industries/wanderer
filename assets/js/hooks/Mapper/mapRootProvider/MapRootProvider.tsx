@@ -38,6 +38,7 @@ export enum InterfaceStoredSettingsProps {
   isShowBackgroundPattern = 'isShowBackgroundPattern',
   isSoftBackground = 'isSoftBackground',
   theme = 'theme',
+  isRightPanDrag = 'isRightPanDrag',
 }
 
 export type InterfaceStoredSettings = {
@@ -49,6 +50,7 @@ export type InterfaceStoredSettings = {
   isShowBackgroundPattern: boolean;
   isSoftBackground: boolean;
   theme: string;
+  isRightPanDrag: boolean;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
@@ -60,7 +62,8 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowBackgroundPattern: true,
   isSoftBackground: false,
   theme: 'default',
-}
+  isRightPanDrag: false,
+};
 
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;

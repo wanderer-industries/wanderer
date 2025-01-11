@@ -112,6 +112,10 @@ const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
     label: 'Enable soft background',
     type: 'checkbox',
   },
+  { prop: InterfaceStoredSettingsProps.isRightPanDrag,
+    label: 'Enable left click select / right click pan',
+    type: 'checkbox',
+  },
 ];
 
 const THEME_OPTIONS = [
