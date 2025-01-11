@@ -322,6 +322,8 @@ defmodule WandererApp.Map.Server.Impl do
       layout: options |> Map.get("layout", "left_to_right"),
       store_custom_labels:
         options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom(),
+      show_linked_signature_id:
+        options |> Map.get("show_linked_signature_id", "false") |> String.to_existing_atom(),
       show_temp_system_name:
         options |> Map.get("show_temp_system_name", "false") |> String.to_existing_atom(),
       restrict_offline_showing:
@@ -432,7 +434,7 @@ defmodule WandererApp.Map.Server.Impl do
                                  "position" => %{"x" => x, "y" => y},
                                  "status" => status,
                                  "tag" => tag,
-                                 "temporary_name" => temporary_name,
+                                 "temporary_name" => temporary_name
                                } = _system,
                                acc ->
         acc
@@ -451,7 +453,10 @@ defmodule WandererApp.Map.Server.Impl do
         })
         |> update_system_status(%{solar_system_id: id |> String.to_integer(), status: status})
         |> update_system_tag(%{solar_system_id: id |> String.to_integer(), tag: tag})
-        |> update_system_temporary_name(%{solar_system_id: id |> String.to_integer(), temporary_name: temporary_name})
+        |> update_system_temporary_name(%{
+          solar_system_id: id |> String.to_integer(),
+          temporary_name: temporary_name
+        })
         |> update_system_locked(%{solar_system_id: id |> String.to_integer(), locked: locked})
         |> update_system_labels(%{solar_system_id: id |> String.to_integer(), labels: labels})
       end)
