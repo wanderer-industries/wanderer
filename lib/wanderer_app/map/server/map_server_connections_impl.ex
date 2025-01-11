@@ -82,12 +82,14 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         :timer.minutes(get_eol_expire_timeout_mins())
 
   def init_eol_cache(map_id, connections_eol_time) do
+    eol_expire_timeout = get_eol_expire_timeout()
+
     connections_eol_time
     |> Enum.each(fn {connection_id, connection_eol_time} ->
       WandererApp.Cache.put(
         "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
         connection_eol_time,
-        ttl: get_eol_expire_timeout()
+        ttl: eol_expire_timeout
       )
     end)
   end
@@ -201,8 +203,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       do: update_connection(state, :update_custom_info, [:custom_info], connection_update)
 
   def cleanup_connections(%{map_id: map_id} = state) do
-    connection_auto_eol_hours = get_connection_auto_eol_hours()
     connection_auto_expire_hours = get_connection_auto_expire_hours()
+    connection_auto_eol_hours = get_connection_auto_eol_hours()
 
     state =
       map_id

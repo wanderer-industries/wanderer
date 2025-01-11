@@ -23,7 +23,7 @@ defmodule WandererApp.Env do
               cache: WandererApp.Cache,
               key: "map-connection-auto-expire-hours"
             )
-  def map_connection_auto_expire_hours, do: get_key(:map_connection_auto_eol_hours)
+  def map_connection_auto_expire_hours, do: get_key(:map_connection_auto_expire_hours)
 
   @decorate cacheable(
               cache: WandererApp.Cache,
