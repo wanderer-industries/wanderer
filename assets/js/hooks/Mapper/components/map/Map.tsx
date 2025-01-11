@@ -36,6 +36,7 @@ import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import clsx from 'clsx';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
+import { validateChanges, logChanges } from './utils/nodeChanges';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -197,6 +198,7 @@ const MapComp = ({
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const systemsIdsToRemove: string[] = [];
+      // logChanges(changes);
 
       // prevents single node deselection on background / same node click
       // allows deseletion of all nodes if multiple are currently selected
@@ -204,7 +206,10 @@ const MapComp = ({
         changes[0].selected = getNodes().filter(node => node.selected).length === 1;
       }
 
-      const nextChanges = changes.reduce((acc, change) => {
+      // filter out "invalid position"
+      const validChanges = validateChanges(changes);
+
+      const nextChanges = validChanges.reduce((acc, change) => {
         if (change.type !== 'remove') {
           return [...acc, change];
         }
