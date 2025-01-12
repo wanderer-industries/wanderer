@@ -122,6 +122,8 @@ jobs:
     name: 🛠 Build Docker Images
     needs: build
     runs-on: ubuntu-22.04
+    outputs:
+      release-notes: ${{ steps.get-content.outputs.string }}
     permissions:
       checks: write
       contents: write
@@ -212,12 +214,6 @@ jobs:
           maxLength: 500
           truncationSymbol: "…"
 
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          content: ${{ steps.get-content.outputs.string }}
-
   create-release:
     name: 🏷 Create Release
     runs-on: ubuntu-22.04
@@ -249,3 +245,9 @@ jobs:
             ## How to Promote?
             In order to promote this to prod, edit the draft and press **"Publish release"**.
           draft: true
+
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: ${{ needs.docker.outputs.release-notes }}
