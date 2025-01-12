@@ -2,6 +2,20 @@
 
 <!-- changelog -->
 
+## [v1.38.3](https://github.com/wanderer-industries/wanderer/compare/v1.38.2...v1.38.3) (2025-01-12)
+
+
+
+
+## [v1.38.2](https://github.com/wanderer-industries/wanderer/compare/v1.38.1...v1.38.2) (2025-01-11)
+
+
+
+
+### Bug Fixes:
+
+* Fix connections remove timeouts
+
 ## [v1.38.1](https://github.com/wanderer-industries/wanderer/compare/v1.38.0...v1.38.1) (2025-01-10)
 
 
