@@ -156,6 +156,8 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate update_system_labels(state, update), to: SystemsImpl
 
+  defdelegate update_system_linked_sig_eve_id(state, update), to: SystemsImpl
+
   defdelegate update_system_position(state, update), to: SystemsImpl
 
   defdelegate add_hub(state, hub_info), to: SystemsImpl

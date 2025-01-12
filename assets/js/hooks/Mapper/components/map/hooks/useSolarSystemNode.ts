@@ -32,7 +32,17 @@ function sortedLabels(labels: string[]) {
 
 export function useSolarSystemNode(props: any) {
   const { data, selected, id } = props;
-  const { system_static_info, system_signatures, locked, name, tag, status, labels, temporary_name } = data;
+  const {
+    system_static_info,
+    system_signatures,
+    locked,
+    name,
+    tag,
+    status,
+    labels,
+    temporary_name,
+    linked_sig_eve_id: linkedSigEveId = '',
+  } = data;
 
   const {
     system_class,
@@ -51,6 +61,7 @@ export function useSolarSystemNode(props: any) {
   const { interfaceSettings } = useMapRootState();
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+  const isShowLinkedSigId = useMapGetOption('show_linked_signature_id') === 'true';
 
   const {
     data: {
@@ -85,10 +96,18 @@ export function useSolarSystemNode(props: any) {
   );
 
   const sortedStatics = useMemo(() => sortWHClasses(wormholesData, statics), [wormholesData, statics]);
-  
+
+  const linkedSigPrefix = useMemo(() => (linkedSigEveId ? linkedSigEveId.split('-')[0] : null), [linkedSigEveId]);
+
   const labelsManager = useMemo(() => new LabelsManager(labels ?? ''), [labels]);
   const labelsInfo = useMemo(() => sortedLabels(labelsManager.list), [labelsManager]);
-  const labelCustom = useMemo(() => labelsManager.customLabel, [labelsManager]);
+  const labelCustom = useMemo(
+    () =>
+      isShowLinkedSigId && linkedSigPrefix
+        ? `${linkedSigPrefix}・${labelsManager.customLabel}`
+        : labelsManager.customLabel,
+    [linkedSigPrefix, isShowLinkedSigId, labelsManager],
+  );
 
   const killsCount = useMemo(() => kills[solar_system_id] ?? null, [kills, solar_system_id]);
   const killsActivityType = killsCount ? getActivityType(killsCount) : null;
@@ -110,8 +129,7 @@ export function useSolarSystemNode(props: any) {
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
   const systemName = (isTempSystemNameEnabled && temporary_name) || solar_system_name;
-  const customName =
-    (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
+  const customName = (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {

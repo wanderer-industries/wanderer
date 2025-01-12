@@ -6,11 +6,7 @@ import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick.ts';
 import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
 import { MapSolarSystemType } from '../../map.types';
-import {
-  LABELS_INFO,
-  LABELS_ORDER,
-  getActivityType,
-} from '@/hooks/Mapper/components/map/constants.ts';
+import { LABELS_INFO, LABELS_ORDER, getActivityType } from '@/hooks/Mapper/components/map/constants.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { getSystemClassStyles, prepareUnsplashedChunks } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
@@ -39,7 +35,8 @@ export function useSolarSystemNode({ data, selected }: UseSolarSystemNodeParams)
   const { interfaceSettings } = useMapRootState();
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
-  
+  const isShowLinkedSigId = useMapGetOption('show_linked_signature_id') === 'true';
+
   const {
     data: {
       characters,
@@ -71,33 +68,45 @@ export function useSolarSystemNode({ data, selected }: UseSolarSystemNodeParams)
     solar_system_name,
   } = data.system_static_info;
 
-  const { locked, name, tag, status, labels, id, temporary_name: temporaryName } = data || {};
+  const {
+    locked,
+    name,
+    tag,
+    status,
+    labels,
+    id,
+    temporary_name: temporaryName,
+    linked_sig_eve_id: linkedSigEveId = '',
+  } = data || {};
   const signatures = data.system_signatures;
 
   // 3) Compute derived values
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
-  
+
   const charactersInSystem = useMemo(() => {
-    return characters
-      .filter(c => c.location?.solar_system_id === solar_system_id)
-      .filter(c => c.online);
+    return characters.filter(c => c.location?.solar_system_id === solar_system_id).filter(c => c.online);
   }, [characters, presentCharacters, solar_system_id]);
 
   const isWormhole = isWormholeSpace(system_class);
-  
+
   const classTitleColor = useMemo(
     () => getSystemClassStyles({ systemClass: system_class, security }),
     [security, system_class],
   );
 
-  const sortedStatics = useMemo(
-    () => sortWHClasses(wormholesData, statics),
-    [wormholesData, statics],
-  );
+  const sortedStatics = useMemo(() => sortWHClasses(wormholesData, statics), [wormholesData, statics]);
+
+  const linkedSigPrefix = useMemo(() => (linkedSigEveId ? linkedSigEveId.split('-')[0] : null), [linkedSigEveId]);
 
   const labelsManager = useMemo(() => new LabelsManager(labels ?? ''), [labels]);
   const labelsInfo = useMemo(() => sortedLabels(labelsManager.list), [labelsManager]);
-  const labelCustom = useMemo(() => labelsManager.customLabel, [labelsManager]);
+  const labelCustom = useMemo(
+    () =>
+      isShowLinkedSigId && linkedSigPrefix
+        ? `${linkedSigPrefix}・${labelsManager.customLabel}`
+        : labelsManager.customLabel,
+    [linkedSigPrefix, isShowLinkedSigId, labelsManager],
+  );
 
   const killsCount = useMemo(() => {
     const systemKills = kills[solar_system_id];
@@ -124,8 +133,7 @@ export function useSolarSystemNode({ data, selected }: UseSolarSystemNodeParams)
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
   const systemName = (isTempSystemNameEnabled && temporaryName) || solar_system_name;
-  const customName = (isTempSystemNameEnabled && temporaryName && name) 
-    || (solar_system_name !== name && name);
+  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {

@@ -39,9 +39,6 @@ defmodule WandererApp.MapSystemRepo do
     store_custom_labels? =
       Keyword.get(opts, :store_custom_labels)
 
-    show_linked_signature_id? =
-      Keyword.get(opts, :show_linked_signature_id)
-
     labels = get_filtered_labels(labels, store_custom_labels?)
 
     system
@@ -75,6 +72,13 @@ defmodule WandererApp.MapSystemRepo do
     system
     |> WandererApp.Api.MapSystem.update_temporary_name!(%{
       temporary_name: nil
+    })
+  end
+
+  def cleanup_linked_sig_eve_id!(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_linked_sig_eve_id!(%{
+      linked_sig_eve_id: nil
     })
   end
 
@@ -132,6 +136,16 @@ defmodule WandererApp.MapSystemRepo do
     do:
       system
       |> WandererApp.Api.MapSystem.update_labels!(update)
+
+  def update_linked_sig_eve_id(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_linked_sig_eve_id(update)
+
+  def update_linked_sig_eve_id!(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_linked_sig_eve_id!(update)
 
   def update_position(system, update),
     do:

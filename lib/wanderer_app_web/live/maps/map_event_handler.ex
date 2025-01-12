@@ -245,6 +245,7 @@ defmodule WandererAppWeb.MapEventHandler do
           locked: locked,
           tag: tag,
           labels: labels,
+          linked_sig_eve_id: linked_sig_eve_id,
           temporary_name: temporary_name,
           status: status,
           visible: visible
@@ -269,6 +270,7 @@ defmodule WandererAppWeb.MapEventHandler do
       system_signatures: system_signatures,
       labels: labels,
       locked: locked,
+      linked_sig_eve_id: linked_sig_eve_id,
       status: status,
       tag: tag,
       temporary_name: temporary_name,

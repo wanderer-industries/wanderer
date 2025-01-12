@@ -48,6 +48,7 @@ defmodule WandererApp.Api.MapSystem do
     define(:update_tag, action: :update_tag)
     define(:update_temporary_name, action: :update_temporary_name)
     define(:update_labels, action: :update_labels)
+    define(:update_linked_sig_eve_id, action: :update_linked_sig_eve_id)
     define(:update_position, action: :update_position)
     define(:update_visible, action: :update_visible)
   end
@@ -115,6 +116,10 @@ defmodule WandererApp.Api.MapSystem do
       accept [:position_x, :position_y]
 
       change(set_attribute(:visible, true))
+    end
+
+    update :update_linked_sig_eve_id do
+      accept [:linked_sig_eve_id]
     end
 
     update :update_visible do
@@ -190,6 +195,10 @@ defmodule WandererApp.Api.MapSystem do
     end
 
     attribute :added_at, :utc_datetime do
+      allow_nil? true
+    end
+
+    attribute :linked_sig_eve_id, :string do
       allow_nil? true
     end
 

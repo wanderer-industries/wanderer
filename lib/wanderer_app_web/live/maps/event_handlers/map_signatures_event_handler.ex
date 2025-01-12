@@ -234,6 +234,12 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
               })
             end)
 
+            map_id
+            |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+              solar_system_id: solar_system_target,
+              linked_sig_eve_id: signature_eve_id
+            })
+
             Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
               event: :signatures_updated,
               payload: solar_system_source
