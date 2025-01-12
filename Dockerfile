@@ -9,6 +9,9 @@ WORKDIR /app
 # set build ENV
 ENV MIX_ENV="prod"
 
+# Set ERL_FLAGS for ARM compatibility
+ENV ERL_FLAGS="+JPperf true"
+
 # install mix dependencies
 COPY mix.exs mix.lock ./
 RUN rm -Rf _build deps && mix deps.get --only $MIX_ENV
