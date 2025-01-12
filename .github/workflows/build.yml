@@ -186,7 +186,6 @@ jobs:
           push: true
           context: .
           file: ./Dockerfile
-          tags: ${{ env.REGISTRY_IMAGE }}:latest,${{ env.REGISTRY_IMAGE }}:${{ steps.get-latest-tag.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ matrix.platform }}
           outputs: type=image,"name=${{ env.REGISTRY_IMAGE }}",push-by-digest=true,name-canonical=true,push=true
