@@ -75,6 +75,13 @@ defmodule WandererApp.MapSystemRepo do
     })
   end
 
+  def cleanup_linked_sig_eve_id!(system) do
+    system
+    |> WandererApp.Api.MapSystem.update_linked_sig_eve_id!(%{
+      linked_sig_eve_id: nil
+    })
+  end
+
   def get_filtered_labels(labels, true) when is_binary(labels) do
     labels
     |> Jason.decode!()
@@ -116,8 +123,8 @@ defmodule WandererApp.MapSystemRepo do
       |> WandererApp.Api.MapSystem.update_tag(update)
 
   def update_temporary_name(system, update) do
-      system
-      |> WandererApp.Api.MapSystem.update_temporary_name(update)
+    system
+    |> WandererApp.Api.MapSystem.update_temporary_name(update)
   end
 
   def update_labels(system, update),
@@ -129,6 +136,16 @@ defmodule WandererApp.MapSystemRepo do
     do:
       system
       |> WandererApp.Api.MapSystem.update_labels!(update)
+
+  def update_linked_sig_eve_id(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_linked_sig_eve_id(update)
+
+  def update_linked_sig_eve_id!(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_linked_sig_eve_id!(update)
 
   def update_position(system, update),
     do:

@@ -126,7 +126,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         state,
         update
       ) do
-      state |> update_system(:update_temporary_name, [:temporary_name], update)
+    state |> update_system(:update_temporary_name, [:temporary_name], update)
   end
 
   def update_system_locked(
@@ -140,6 +140,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         update
       ),
       do: state |> update_system(:update_labels, [:labels], update)
+
+  def update_system_linked_sig_eve_id(
+        state,
+        update
+      ),
+      do: state |> update_system(:update_linked_sig_eve_id, [:linked_sig_eve_id], update)
 
   def update_system_position(
         %{rtree_name: rtree_name} = state,
@@ -294,6 +300,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               |> WandererApp.MapSystemRepo.update_visible!(%{visible: true})
               |> WandererApp.MapSystemRepo.cleanup_tags!()
               |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
+              |> WandererApp.MapSystemRepo.cleanup_linked_sig_eve_id!()
 
             @ddrt.insert(
               {existing_system.solar_system_id,
@@ -413,6 +420,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
             |> WandererApp.MapSystemRepo.cleanup_tags!()
             |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
+            |> WandererApp.MapSystemRepo.cleanup_linked_sig_eve_id!()
             |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
           end
 
