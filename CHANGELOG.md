@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.39.1](https://github.com/wanderer-industries/wanderer/compare/v1.39.0...v1.39.1) (2025-01-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: New windows systems
+
+* Map: Add new windows system and removed old
+
+* Map: First prototype of windows
+
 ## [v1.39.0](https://github.com/wanderer-industries/wanderer/compare/v1.38.7...v1.39.0) (2025-01-13)
 
 
