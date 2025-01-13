@@ -9,6 +9,7 @@ export type MapData = MapUnionTypes & {
   visibleNodes: Set<string>;
   showKSpaceBG: boolean;
   isThickConnections: boolean;
+  linkedSigEveId: string;
 };
 
 interface MapProviderProps {

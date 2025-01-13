@@ -130,4 +130,3 @@ export type SearchSystemItem = {
   system_static_info: SolarSystemStaticInfoRaw;
   value: number;
 };
-

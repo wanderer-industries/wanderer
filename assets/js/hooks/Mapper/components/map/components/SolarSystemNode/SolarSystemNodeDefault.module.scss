@@ -6,7 +6,14 @@ $pastel-green: #88b04b;
 $pastel-yellow: #ffdd59;
 $dark-bg: #2d2d2d;
 $text-color: #ffffff;
-$tooltip-bg: #202020; // Dark background for tooltips
+$tooltip-bg: #202020;
+
+$node-bg-color: #202020;
+$node-soft-bg-color: #202020;
+$text-color: #ffffff;
+$tag-color:  #38BDF8;
+$region-name: #D6D3D1;
+$custom-name: #93C5FD;
 
 .RootCustomNode {
   display: flex;
