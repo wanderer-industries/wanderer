@@ -17,7 +17,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import classes from './Map.module.scss';
 import { MapProvider, useMapState } from './MapProvider';
-import { useNodesState, useEdgesState, useMapHandlers, useUpdateNodes } from './hooks';
+import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
   ContextMenuConnection,
@@ -261,6 +261,10 @@ const MapComp = ({
           onConnectStart={() => update({ isConnecting: true })}
           onConnectEnd={() => update({ isConnecting: false })}
           onNodeMouseEnter={(_, node) => update({ hoverNodeId: node.id })}
+          onPaneClick={event => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
           // onKeyUp=
           onNodeMouseLeave={() => update({ hoverNodeId: null })}
           onEdgeClick={(_, t) => {

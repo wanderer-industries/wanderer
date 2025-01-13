@@ -1,9 +1,10 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
-import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext } from 'react';
+import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
+import { WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -63,12 +64,21 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   theme: 'default',
 };
 
+export const STORED_VISIBLE_WIDGETS_DEFAULT = [
+  WidgetsIds.info,
+  WidgetsIds.local,
+  WidgetsIds.routes,
+  WidgetsIds.signatures,
+];
+
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;
   data: MapRootData;
   outCommand: OutCommandHandler;
   interfaceSettings: InterfaceStoredSettings;
   setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
+  windowsVisible: WidgetsIds[];
+  setWindowsVisible: Dispatch<SetStateAction<WidgetsIds[]>>;
 }
 
 const MapRootContext = createContext<MapRootContextProps>({
@@ -103,6 +113,28 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     },
   );
 
+  const [windowsVisible, setWindowsVisible] = useLocalStorageState<WidgetsIds[]>('windows:visible', {
+    defaultValue: STORED_VISIBLE_WIDGETS_DEFAULT,
+  });
+
+  useEffect(() => {
+    let foundNew = false;
+    const newVals = Object.keys(STORED_INTERFACE_DEFAULT_VALUES).reduce((acc, x) => {
+      if (Object.keys(acc).includes(x)) {
+        return acc;
+      }
+
+      foundNew = true;
+
+      // @ts-ignore
+      return { ...acc, [x]: STORED_INTERFACE_DEFAULT_VALUES[x] };
+    }, interfaceSettings);
+
+    if (foundNew) {
+      setInterfaceSettings(newVals);
+    }
+  }, []);
+
   return (
     <MapRootContext.Provider
       value={{
@@ -111,6 +143,8 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         outCommand: outCommand,
         setInterfaceSettings,
         interfaceSettings,
+        windowsVisible,
+        setWindowsVisible,
       }}
     >
       <MapRootHandlers ref={fwdRef}>{children}</MapRootHandlers>

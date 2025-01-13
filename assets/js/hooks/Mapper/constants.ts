@@ -1,6 +1,7 @@
 export enum SESSION_KEY {
   viewPort = 'viewPort',
   windows = 'windows',
+  windowsVisible = 'windowsVisible',
   routes = 'routes',
 }
 
