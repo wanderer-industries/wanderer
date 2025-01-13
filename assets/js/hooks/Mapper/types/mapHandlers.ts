@@ -118,6 +118,7 @@ export enum OutCommand {
   deleteHub = 'delete_hub',
   getRoutes = 'get_routes',
   getCharacterJumps = 'get_character_jumps',
+  getStructures = 'get_structures',
   getSignatures = 'get_signatures',
   getSystemStaticInfos = 'get_system_static_infos',
   getConnectionInfo = 'get_connection_info',
@@ -127,6 +128,7 @@ export enum OutCommand {
   updateConnectionShipSizeType = 'update_connection_ship_size_type',
   updateConnectionLocked = 'update_connection_locked',
   updateConnectionCustomInfo = 'update_connection_custom_info',
+  updateStructures = 'update_structures',
   updateSignatures = 'update_signatures',
   updateSystemName = 'update_system_name',
   updateSystemTemporaryName = 'update_system_temporary_name',
@@ -147,6 +149,8 @@ export enum OutCommand {
   openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
   linkSignatureToSystem = 'link_signature_to_system',
+  getCorporationNames = 'get_corporation_names',
+  getCorporationTicker = 'get_corporation_ticker',
 
   // Only UI commands
   openSettings = 'open_settings',

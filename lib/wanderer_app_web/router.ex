@@ -129,6 +129,9 @@ scope "/api/map", WandererAppWeb do
 
   # GET /api/map/characters?map_id=... or slug=...
   get "/characters", APIController, :tracked_characters_with_info
+
+  # GET /api/map/structure-timers?map_id=... or slug=... and optionally ?system_id=...
+  get "/structure-timers", APIController, :show_structure_timers
 end
 
 scope "/api/common", WandererAppWeb do
