@@ -326,6 +326,10 @@ defmodule WandererApp.Map.Server.Impl do
         options |> Map.get("store_custom_labels", "false") |> String.to_existing_atom(),
       show_linked_signature_id:
         options |> Map.get("show_linked_signature_id", "false") |> String.to_existing_atom(),
+      show_linked_signature_id_temp_name:
+        options
+        |> Map.get("show_linked_signature_id_temp_name", "false")
+        |> String.to_existing_atom(),
       show_temp_system_name:
         options |> Map.get("show_temp_system_name", "false") |> String.to_existing_atom(),
       restrict_offline_showing:

@@ -123,6 +123,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     outputs:
+      release-tag: ${{ steps.get-latest-tag.outputs.tag }}
       release-notes: ${{ steps.get-content.outputs.string }}
     permissions:
       checks: write
@@ -261,12 +262,13 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+          docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.docker.outputs.release-tag }} \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.docker.outputs.release-tag }}
 
   create-release:
     name: 🏷 Create Release
@@ -279,17 +281,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get Release Tag
-        id: get-latest-tag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-        with:
-          fallback: 1.0.0
-
       - name: 🏷 Create Draft Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.get-latest-tag.outputs.tag }}
-          name: Release ${{ steps.get-latest-tag.outputs.tag }}
+          tag_name: ${{ needs.docker.outputs.release-tag }}
+          name: Release ${{ needs.docker.outputs.release-tag }}
           body: |
             ## Info
             Commit ${{ github.sha }} was deployed to `staging`. [See code diff](${{ github.event.compare }}).

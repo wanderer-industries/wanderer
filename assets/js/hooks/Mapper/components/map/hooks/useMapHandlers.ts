@@ -61,7 +61,7 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               setTimeout(() => mapAddSystems(data as CommandAddSystems), 100);
               break;
             case Commands.updateSystems:
-              mapUpdateSystems(data as CommandUpdateSystems);
+              setTimeout(() => mapUpdateSystems(data as CommandUpdateSystems), 100);
               break;
             case Commands.removeSystems:
               setTimeout(() => removeSystems(data as CommandRemoveSystems), 100);

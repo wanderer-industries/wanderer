@@ -375,13 +375,18 @@
                   />
                   <.input
                     type="checkbox"
+                    field={f[:show_temp_system_name]}
+                    label="Allow temporary system names"
+                  />
+                  <.input
+                    type="checkbox"
                     field={f[:show_linked_signature_id]}
                     label="Show linked signature ID as custom label part"
                   />
                   <.input
                     type="checkbox"
-                    field={f[:show_temp_system_name]}
-                    label="Allow temporary system names"
+                    field={f[:show_linked_signature_id_temp_name]}
+                    label="Show linked signature ID as temporary name part"
                   />
                   <.input
                     type="checkbox"

@@ -42,7 +42,7 @@ export const useMapUpdateSystems = () => {
         return newSystem;
       });
 
-      update({ systems: out });
+      update({ systems: out }, true);
     },
     [rf, update],
   );

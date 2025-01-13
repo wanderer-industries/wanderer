@@ -18,6 +18,7 @@ const INITIAL_DATA: MapRootData = {
   userCharacters: [],
   presentCharacters: [],
   systems: [],
+  systemSignatures: {},
   hubs: [],
   routes: undefined,
   kills: [],
@@ -60,7 +61,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowBackgroundPattern: true,
   isSoftBackground: false,
   theme: 'default',
-}
+};
 
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;

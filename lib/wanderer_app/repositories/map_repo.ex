@@ -5,6 +5,7 @@ defmodule WandererApp.MapRepo do
     "layout" => "left_to_right",
     "store_custom_labels" => "false",
     "show_linked_signature_id" => "false",
+    "show_linked_signature_id_temp_name" => "false",
     "show_temp_system_name" => "false",
     "restrict_offline_showing" => "false"
   }
