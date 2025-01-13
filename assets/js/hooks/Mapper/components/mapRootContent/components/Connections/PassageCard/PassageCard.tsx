@@ -2,7 +2,9 @@ import clsx from 'clsx';
 import classes from './PassageCard.module.scss';
 import { Passage } from '@/hooks/Mapper/types';
 import { TimeAgo } from '@/hooks/Mapper/components/ui-kit';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
+import { useMemo } from 'react';
 
 type PassageCardType = {
   // compact?: boolean;
@@ -25,6 +27,11 @@ export const getShipName = (name: string) => {
 
 export const PassageCard = ({ inserted_at, character: char, ship }: PassageCardType) => {
   const isOwn = false;
+
+  const insertedAt = useMemo(() => {
+    const date = new Date(inserted_at);
+    return date.toLocaleString();
+  }, [inserted_at]);
 
   return (
     <div className={clsx(classes.CharacterCard, 'w-full text-xs', 'flex flex-col box-border')}>
@@ -76,7 +83,9 @@ export const PassageCard = ({ inserted_at, character: char, ship }: PassageCardT
             {/*time and class*/}
             <div className="flex justify-between">
               <span className="text-stone-400">
-                <TimeAgo timestamp={inserted_at} />
+                <WdTooltipWrapper content={insertedAt}>
+                  <TimeAgo timestamp={inserted_at} />
+                </WdTooltipWrapper>
               </span>
 
               <div className="text-stone-400">{kgToTons(parseInt(ship.ship_type_info.mass))}</div>
