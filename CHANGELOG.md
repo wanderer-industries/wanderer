@@ -2,6 +2,40 @@
 
 <!-- changelog -->
 
+## [v1.39.0](https://github.com/wanderer-industries/wanderer/compare/v1.38.7...v1.39.0) (2025-01-13)
+
+
+
+
+### Features:
+
+* Map: Added option to show signature ID as system temporary name part
+
+## [v1.38.7](https://github.com/wanderer-industries/wanderer/compare/v1.38.6...v1.38.7) (2025-01-12)
+
+
+
+
+## [v1.38.6](https://github.com/wanderer-industries/wanderer/compare/v1.38.5...v1.38.6) (2025-01-12)
+
+
+
+
+## [v1.38.5](https://github.com/wanderer-industries/wanderer/compare/v1.38.4...v1.38.5) (2025-01-12)
+
+
+
+
+## [v1.38.4](https://github.com/wanderer-industries/wanderer/compare/v1.38.3...v1.38.4) (2025-01-12)
+
+
+
+
+## [v1.38.3](https://github.com/wanderer-industries/wanderer/compare/v1.38.2...v1.38.3) (2025-01-12)
+
+
+
+
 ## [v1.38.2](https://github.com/wanderer-industries/wanderer/compare/v1.38.1...v1.38.2) (2025-01-11)
 
 

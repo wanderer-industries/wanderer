@@ -317,7 +317,9 @@
                   :if={not WandererApp.Env.public_api_disabled?()}
                   class={[
                     "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
+                    classes(
+                      "p-tabview-selected p-highlight": @active_settings_tab == "public_api"
+                    )
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -374,7 +376,17 @@
                   <.input
                     type="checkbox"
                     field={f[:show_temp_system_name]}
-                    label="Allow Temporary System Names"
+                    label="Allow temporary system names"
+                  />
+                  <.input
+                    type="checkbox"
+                    field={f[:show_linked_signature_id]}
+                    label="Show linked signature ID as custom label part"
+                  />
+                  <.input
+                    type="checkbox"
+                    field={f[:show_linked_signature_id_temp_name]}
+                    label="Show linked signature ID as temporary name part"
                   />
                   <.input
                     type="checkbox"
@@ -408,7 +420,13 @@
                 </.button>
               </div>
 
-              <div :if={@active_settings_tab == "public_api"and not WandererApp.Env.public_api_disabled?()} class="p-6">
+              <div
+                :if={
+                  @active_settings_tab == "public_api" and
+                    not WandererApp.Env.public_api_disabled?()
+                }
+                class="p-6"
+              >
                 <h2 class="text-lg font-semibold mb-4">Public API</h2>
                 <div class="flex flex-col gap-3 items-start w-full">
                   <div>
@@ -428,29 +446,26 @@
                     />
                   </div>
                   <div class="flex items-center gap-2">
-                    <.button
-                      class="btn btn-primary rounded-md"
-                      phx-click="generate-map-api-key"
-                    >
+                    <.button class="btn btn-primary rounded-md" phx-click="generate-map-api-key">
                       Generate
                     </.button>
-                  <.button
-                    phx-hook="CopyToClipboard"
-                    id="copy-map-api-key"
-                    data-url={@public_api_key}
-                    disabled={is_nil(@public_api_key)}
-                    class={
-                      if is_nil(@public_api_key) do
-                        "copy-link btn rounded-md transition-colors duration-300
+                    <.button
+                      phx-hook="CopyToClipboard"
+                      id="copy-map-api-key"
+                      data-url={@public_api_key}
+                      disabled={is_nil(@public_api_key)}
+                      class={
+                        if is_nil(@public_api_key) do
+                          "copy-link btn rounded-md transition-colors duration-300
                         bg-gray-500 hover:bg-gray-500 text-gray-300 cursor-not-allowed"
-                      else
-                        "copy-link btn rounded-md transition-colors duration-300
+                        else
+                          "copy-link btn rounded-md transition-colors duration-300
                         bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                      end
-                    }
-                  >
-                    Copy
-                  </.button>
+                        end
+                      }
+                    >
+                      Copy
+                    </.button>
                   </div>
                 </div>
               </div>

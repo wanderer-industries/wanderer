@@ -19,6 +19,7 @@ const INITIAL_DATA: MapRootData = {
   userCharacters: [],
   presentCharacters: [],
   systems: [],
+  systemSignatures: {},
   hubs: [],
   routes: undefined,
   kills: [],

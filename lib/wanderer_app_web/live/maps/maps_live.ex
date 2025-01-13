@@ -180,7 +180,6 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply, socket}
   end
 
-
   def handle_event("generate-map-api-key", _params, socket) do
     new_api_key = UUID.uuid4()
 
@@ -191,7 +190,6 @@ defmodule WandererAppWeb.MapsLive do
 
     {:noreply, assign(socket, public_api_key: new_api_key)}
   end
-
 
   @impl true
   def handle_event(
@@ -685,6 +683,8 @@ defmodule WandererAppWeb.MapsLive do
       |> Map.take([
         "layout",
         "store_custom_labels",
+        "show_linked_signature_id",
+        "show_linked_signature_id_temp_name",
         "show_temp_system_name",
         "restrict_offline_showing"
       ])

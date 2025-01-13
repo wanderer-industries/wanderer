@@ -5,6 +5,7 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types/system.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { UserPermissions } from '@/hooks/Mapper/types';
+import { SystemSignature } from '@/hooks/Mapper/types/signatures';
 
 export type MapUnionTypes = {
   wormholesData: Record<string, WormholeDataRaw>;
@@ -15,6 +16,7 @@ export type MapUnionTypes = {
   presentCharacters: string[];
   hubs: string[];
   systems: SolarSystemRawType[];
+  systemSignatures: Record<string, SystemSignature[]>;
   routes?: RoutesList;
   kills: Record<number, number>;
   connections: SolarSystemConnection[];

@@ -32,7 +32,17 @@ function sortedLabels(labels: string[]) {
 
 export function useSolarSystemNode(props: any) {
   const { data, selected, id } = props;
-  const { system_static_info, system_signatures, locked, name, tag, status, labels, temporary_name } = data;
+  const {
+    system_static_info,
+    system_signatures,
+    locked,
+    name,
+    tag,
+    status,
+    labels,
+    temporary_name,
+    linked_sig_eve_id: linkedSigEveId = '',
+  } = data;
 
   const {
     system_class,
@@ -48,9 +58,15 @@ export function useSolarSystemNode(props: any) {
   } = system_static_info;
 
   // Global map state
-  const { interfaceSettings } = useMapRootState();
+  const {
+    interfaceSettings,
+    data: { systemSignatures: mapSystemSignatures },
+  } = useMapRootState();
+
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+  const isShowLinkedSigId = useMapGetOption('show_linked_signature_id') === 'true';
+  const isShowLinkedSigIdTempName = useMapGetOption('show_linked_signature_id_temp_name') === 'true';
 
   const {
     data: {
@@ -72,6 +88,11 @@ export function useSolarSystemNode(props: any) {
   // logic
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
+  const systemSignatures = useMemo(
+    () => mapSystemSignatures[solar_system_id] || system_signatures,
+    [system_signatures, solar_system_id, mapSystemSignatures],
+  );
+
   const charactersInSystem = useMemo(() => {
     return characters.filter(c => c.location?.solar_system_id === solar_system_id).filter(c => c.online);
     // eslint-disable-next-line
@@ -85,10 +106,17 @@ export function useSolarSystemNode(props: any) {
   );
 
   const sortedStatics = useMemo(() => sortWHClasses(wormholesData, statics), [wormholesData, statics]);
-  
+
+  const linkedSigPrefix = useMemo(() => (linkedSigEveId ? linkedSigEveId.split('-')[0] : null), [linkedSigEveId]);
+
   const labelsManager = useMemo(() => new LabelsManager(labels ?? ''), [labels]);
   const labelsInfo = useMemo(() => sortedLabels(labelsManager.list), [labelsManager]);
-  const labelCustom = useMemo(() => labelsManager.customLabel, [labelsManager]);
+  const labelCustom = useMemo(() => {
+    if (isShowLinkedSigId && linkedSigPrefix) {
+      return labelsManager.customLabel ? `${linkedSigPrefix}・${labelsManager.customLabel}` : linkedSigPrefix;
+    }
+    return labelsManager.customLabel;
+  }, [linkedSigPrefix, isShowLinkedSigId, labelsManager]);
 
   const killsCount = useMemo(() => kills[solar_system_id] ?? null, [kills, solar_system_id]);
   const killsActivityType = killsCount ? getActivityType(killsCount) : null;
@@ -109,16 +137,33 @@ export function useSolarSystemNode(props: any) {
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
-  const systemName = (isTempSystemNameEnabled && temporary_name) || solar_system_name;
-  const customName =
-    (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
+  const temporaryName = useMemo(() => {
+    if (!isTempSystemNameEnabled) {
+      return '';
+    }
+
+    if (isShowLinkedSigIdTempName) {
+      return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : linkedSigPrefix;
+    }
+
+    return temporary_name;
+  }, [isShowLinkedSigIdTempName, isTempSystemNameEnabled, linkedSigPrefix, temporary_name]);
+
+  const systemName = useMemo(() => {
+    if (isTempSystemNameEnabled && temporaryName) {
+      return temporaryName;
+    }
+    return solar_system_name;
+  }, [isTempSystemNameEnabled, solar_system_name, temporaryName]);
+
+  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
       return [[], []];
     }
     return prepareUnsplashedChunks(
-      system_signatures
+      systemSignatures
         .filter(s => s.group === 'Wormhole' && !s.linked_system)
         .map(s => ({
           eve_id: s.eve_id,
@@ -126,7 +171,7 @@ export function useSolarSystemNode(props: any) {
           custom_info: s.custom_info,
         })),
     );
-  }, [isShowUnsplashedSignatures, system_signatures]);
+  }, [isShowUnsplashedSignatures, systemSignatures]);
 
   const nodeVars = {
     // original props

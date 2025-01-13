@@ -134,6 +134,14 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 })
               end
 
+              if not is_nil(s.linked_system_id) do
+                map_id
+                |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+                  solar_system_id: s.linked_system_id,
+                  linked_sig_eve_id: nil
+                })
+              end
+
               s
               |> Ash.destroy!()
             end)
@@ -233,6 +241,20 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 linked_system_id: solar_system_target
               })
             end)
+
+            map_system =
+              WandererApp.Map.find_system_by_location(
+                map_id,
+                %{solar_system_id: solar_system_target}
+              )
+
+            if not is_nil(map_system) && is_nil(map_system.linked_sig_eve_id) do
+              map_id
+              |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+                solar_system_id: solar_system_target,
+                linked_sig_eve_id: signature_eve_id
+              })
+            end
 
             Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
               event: :signatures_updated,
