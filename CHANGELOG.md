@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.40.4](https://github.com/wanderer-industries/wanderer/compare/v1.40.3...v1.40.4) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* center system is not selected text for structures (#122)
+
 ## [v1.40.3](https://github.com/wanderer-industries/wanderer/compare/v1.40.2...v1.40.3) (2025-01-14)
 
 
