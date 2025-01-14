@@ -221,11 +221,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <div className={styles.verticalTabsContainer}>
-            <TabView
-              activeIndex={activeIndex}
-              onTabChange={e => setActiveIndex(e.index)}
-              className={styles.verticalTabView}
-            >
+            <TabView activeIndex={activeIndex} onTabChange={e => setActiveIndex(e.index)}>
               <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
                 <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(COMMON_CHECKBOXES_PROPS)}</div>
               </TabPanel>
@@ -246,7 +242,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
                 {renderSettingsList(UI_CHECKBOXES_PROPS)}
               </TabPanel>
 
-              <TabPanel header="Widgets" headerClassName={styles.verticalTabHeader}>
+              <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>
                 <WidgetsSettings />
               </TabPanel>
 

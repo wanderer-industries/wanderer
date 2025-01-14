@@ -4,7 +4,12 @@ import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
-import { WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
+import {
+  ToggleWidgetVisibility,
+  UpdateWidgetSettingsFunc,
+  useStoreWidgets,
+  WindowStoreInfo,
+} from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -64,21 +69,16 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   theme: 'default',
 };
 
-export const STORED_VISIBLE_WIDGETS_DEFAULT = [
-  WidgetsIds.info,
-  WidgetsIds.local,
-  WidgetsIds.routes,
-  WidgetsIds.signatures,
-];
-
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;
   data: MapRootData;
   outCommand: OutCommandHandler;
   interfaceSettings: InterfaceStoredSettings;
   setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
-  windowsVisible: WidgetsIds[];
-  setWindowsVisible: Dispatch<SetStateAction<WidgetsIds[]>>;
+  windowsSettings: WindowStoreInfo;
+  toggleWidgetVisibility: ToggleWidgetVisibility;
+  updateWidgetSettings: UpdateWidgetSettingsFunc;
+  resetWidgets: () => void;
 }
 
 const MapRootContext = createContext<MapRootContextProps>({
@@ -112,10 +112,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
       defaultValue: STORED_INTERFACE_DEFAULT_VALUES,
     },
   );
-
-  const [windowsVisible, setWindowsVisible] = useLocalStorageState<WidgetsIds[]>('windows:visible', {
-    defaultValue: STORED_VISIBLE_WIDGETS_DEFAULT,
-  });
+  const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } = useStoreWidgets();
 
   useEffect(() => {
     let foundNew = false;
@@ -143,8 +140,10 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         outCommand: outCommand,
         setInterfaceSettings,
         interfaceSettings,
-        windowsVisible,
-        setWindowsVisible,
+        windowsSettings,
+        updateWidgetSettings,
+        toggleWidgetVisibility,
+        resetWidgets,
       }}
     >
       <MapRootHandlers ref={fwdRef}>{children}</MapRootHandlers>

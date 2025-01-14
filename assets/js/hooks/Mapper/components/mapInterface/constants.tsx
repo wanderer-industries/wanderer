@@ -6,7 +6,8 @@ import {
   SystemSignatures,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 
-export const CURRENT_WINDOWS_VERSION = 2;
+export const CURRENT_WINDOWS_VERSION = 7;
+export const WINDOWS_LOCAL_STORE_KEY = 'windows:settings:v2';
 
 export enum WidgetsIds {
   info = 'info',
@@ -14,6 +15,13 @@ export enum WidgetsIds {
   local = 'local',
   routes = 'routes',
 }
+
+export const STORED_VISIBLE_WIDGETS_DEFAULT = [
+  WidgetsIds.info,
+  WidgetsIds.local,
+  WidgetsIds.routes,
+  WidgetsIds.signatures,
+];
 
 export const DEFAULT_WIDGETS: WindowProps[] = [
   {
