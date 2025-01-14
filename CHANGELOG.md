@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.39.3](https://github.com/wanderer-industries/wanderer/compare/v1.39.2...v1.39.3) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add style of corners for windows. Add ability to reset widgets. A lot of refactoring
+
 ## [v1.39.2](https://github.com/wanderer-industries/wanderer/compare/v1.39.1...v1.39.2) (2025-01-13)
 
 
