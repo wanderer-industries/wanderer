@@ -119,6 +119,11 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       ),
       do: socket
 
+    def handle_server_event(%{event: :structures_updated, payload: _solar_system_id}, socket) do
+      socket
+    end
+
+
   def handle_server_event(event, socket) do
     Logger.warning(fn -> "unhandled map core event: #{inspect(event)} #{inspect(socket)} " end)
     socket

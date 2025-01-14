@@ -1,0 +1,31 @@
+
+   .systemStructureDialog {
+  
+    .p-dialog-content {
+      background-color: var(--surface-800) !important;
+    }
+  
+    .p-dialog-header {
+      background-color: var(--surface-700);
+      color: var(--text-color);
+    }
+  
+    .p-dialog-header-icon,
+    .p-dialog-header-title {
+      color: var(--gray-200);
+    }
+  
+    .p-inputtext {
+      background-color: #2a2a2a !important;
+      color: #ddd !important;
+      font-size: 12px !important;
+      padding: 0.25rem 0.5rem !important;
+    }
+  
+    .p-dialog-footer {
+      .p-button {
+        font-size: 12px !important;
+        padding: 0.3rem 0.75rem !important;
+      }
+    }
+  }

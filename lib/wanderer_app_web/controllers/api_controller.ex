@@ -44,51 +44,46 @@ defmodule WandererAppWeb.APIController do
     end
   end
 
-# -----------------------------------------------------------------
-# Map
-# -----------------------------------------------------------------
 
-@doc """
-GET /api/map/systems
+  @doc """
+  GET /api/map/systems
 
-Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
+  Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
 
-If `?all=true` is provided, **all** systems are returned.
-Otherwise, only "visible" systems are returned.
+  If `?all=true` is provided, **all** systems are returned.
+  Otherwise, only "visible" systems are returned.
 
-Examples:
-    GET /api/map/systems?map_id=466e922b-e758-485e-9b86-afae06b88363
-    GET /api/map/systems?slug=my-unique-wormhole-map
-    GET /api/map/systems?map_id=<UUID>&all=true
-"""
-def list_systems(conn, params) do
-  with {:ok, map_id} <- fetch_map_id(params) do
-    # Decide which function to call based on the "all" param
-    repo_fun =
-      if params["all"] == "true" do
-        &MapSystemRepo.get_all_by_map/1
-      else
-        &MapSystemRepo.get_visible_by_map/1
+  Examples:
+      GET /api/map/systems?map_id=466e922b-e758-485e-9b86-afae06b88363
+      GET /api/map/systems?slug=my-unique-wormhole-map
+      GET /api/map/systems?map_id=<UUID>&all=true
+  """
+  def list_systems(conn, params) do
+    with {:ok, map_id} <- fetch_map_id(params) do
+      repo_fun =
+        if params["all"] == "true" do
+          &MapSystemRepo.get_all_by_map/1
+        else
+          &MapSystemRepo.get_visible_by_map/1
+        end
+
+      case repo_fun.(map_id) do
+        {:ok, systems} ->
+          data = Enum.map(systems, &map_system_to_json/1)
+          json(conn, %{data: data})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: "Could not fetch systems for map_id=#{map_id}: #{inspect(reason)}"})
       end
-
-    case repo_fun.(map_id) do
-      {:ok, systems} ->
-        data = Enum.map(systems, &map_system_to_json/1)
-        json(conn, %{data: data})
-
-      {:error, reason} ->
+    else
+      {:error, msg} ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Could not fetch systems for map_id=#{map_id}: #{inspect(reason)}"})
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
     end
-  else
-    {:error, msg} ->
-      conn
-      |> put_status(:bad_request)
-      |> json(%{error: msg})
   end
-end
-
 
   @doc """
   GET /api/map/system
@@ -180,6 +175,97 @@ end
     end
   end
 
+  def show_structure_timers(conn, params) do
+    with {:ok, map_id} <- fetch_map_id(params) do
+      system_id_str = params["system_id"]
+
+      case system_id_str do
+        nil ->
+          handle_all_structure_timers(conn, map_id)
+
+        _ ->
+          case parse_int(system_id_str) do
+            {:ok, system_id} ->
+              handle_single_structure_timers(conn, map_id, system_id)
+
+            {:error, reason} ->
+              conn
+              |> put_status(:bad_request)
+              |> json(%{error: "system_id must be int: #{reason}"})
+          end
+      end
+    else
+      {:error, msg} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+    end
+  end
+
+  defp handle_all_structure_timers(conn, map_id) do
+    case MapSystemRepo.get_visible_by_map(map_id) do
+      {:ok, systems} ->
+        all_timers =
+          systems
+          |> Enum.flat_map(&get_timers_for_system/1)
+
+        json(conn, %{data: all_timers})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Could not fetch visible systems for map_id=#{map_id}: #{inspect(reason)}"})
+    end
+  end
+
+  defp handle_single_structure_timers(conn, map_id, system_id) do
+    case MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id) do
+      {:ok, map_system} ->
+        timers = get_timers_for_system(map_system)
+        json(conn, %{data: timers})
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "No system with solar_system_id=#{system_id} in map=#{map_id}"})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to retrieve system: #{inspect(reason)}"})
+    end
+  end
+
+  defp get_timers_for_system(map_system) do
+    structures = WandererApp.Api.MapSystemStructure.by_system_id!(map_system.id)
+
+    structures
+    |> Enum.filter(&timer_needed?/1)
+    |> Enum.map(&structure_to_timer_json/1)
+  end
+
+  defp timer_needed?(structure) do
+    structure.status in ["Anchoring", "Reinforced"] and not is_nil(structure.end_time)
+  end
+
+  defp structure_to_timer_json(s) do
+    Map.take(s, [
+      :system_id,
+      :solar_system_name,
+      :solar_system_id,
+      :structure_type_id,
+      :structure_type,
+      :character_eve_id,
+      :name,
+      :notes,
+      :owner_name,
+      :owner_ticker,
+      :owner_id,
+      :status,
+      :end_time
+    ])
+  end
+
   defp get_tracked_by_map_ids(map_id) do
     case MapCharacterSettingsRepo.get_tracked_by_map_all(map_id) do
       {:ok, settings_list} ->
@@ -214,7 +300,8 @@ end
     end
   end
 
-  defp fetch_map_id(_), do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
+  defp fetch_map_id(_),
+    do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
 
   defp require_param(params, key) do
     case params[key] do

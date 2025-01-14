@@ -229,7 +229,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
     # If the target_setting is already followed => unfollow it
     if target_setting.followed do
-      {:ok, updated} = WandererApp.MapCharacterSettingsRepo.unfollow(target_setting)
+      {:ok, _updated} = WandererApp.MapCharacterSettingsRepo.unfollow(target_setting)
     else
       # Only unfollow other rows from the current user
       for s <- my_settings, s.id != target_setting.id, s.followed == true do
@@ -245,7 +245,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         :ok = add_characters([char], map_id, true)
       end
 
-      {:ok, updated} = WandererApp.MapCharacterSettingsRepo.follow(target_setting)
+      {:ok, _updated} = WandererApp.MapCharacterSettingsRepo.follow(target_setting)
     end
 
     # re-fetch or re-map to confirm final results in UI
