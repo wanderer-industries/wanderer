@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
@@ -58,7 +58,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     <Dialog
       header="Select signature to link"
       visible
-      draggable={false}
+      draggable={true}
       style={{ width: '500px' }}
       onHide={handleHide}
       contentClassName="!p-0"
