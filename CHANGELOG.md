@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.40.0](https://github.com/wanderer-industries/wanderer/compare/v1.39.3...v1.40.0) (2025-01-14)
+
+
+
+
+### Features:
+
+* add structure widget with timer and associated api
+
 ## [v1.39.3](https://github.com/wanderer-industries/wanderer/compare/v1.39.2...v1.39.3) (2025-01-14)
 
 
