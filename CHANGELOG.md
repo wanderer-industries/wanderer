@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.40.5](https://github.com/wanderer-industries/wanderer/compare/v1.40.4...v1.40.5) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix follow mode
+
 ## [v1.40.4](https://github.com/wanderer-industries/wanderer/compare/v1.40.3...v1.40.4) (2025-01-14)
 
 
