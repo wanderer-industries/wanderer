@@ -33,7 +33,17 @@ function sortedLabels(labels: string[]) {
 
 export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
   const { id, data, selected } = props;
-  const { system_static_info, system_signatures, locked, name, tag, status, labels, temporary_name } = data;
+  const {
+    system_static_info,
+    system_signatures,
+    locked,
+    name,
+    tag,
+    status,
+    labels,
+    temporary_name,
+    linked_sig_eve_id: linkedSigEveId = '',
+  } = data;
 
   const {
     system_class,
@@ -71,7 +81,6 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
       visibleNodes,
       showKSpaceBG,
       isThickConnections,
-      linkedSigEveId,
     },
     outCommand,
   } = useMapState();
@@ -132,12 +141,12 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
       return '';
     }
 
-    if (isShowLinkedSigIdTempName) {
-      return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : linkedSigPrefix;
+    if (isShowLinkedSigIdTempName && linkedSigPrefix) {
+      return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : `${linkedSigPrefix}・${solar_system_name}`;
     }
 
     return temporary_name;
-  }, [isShowLinkedSigIdTempName, isTempSystemNameEnabled, linkedSigPrefix, temporary_name]);
+  }, [isShowLinkedSigIdTempName, isTempSystemNameEnabled, linkedSigPrefix, solar_system_name, temporary_name]);
 
   const systemName = useMemo(() => {
     if (isTempSystemNameEnabled && temporaryName) {
@@ -146,7 +155,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     return solar_system_name;
   }, [isTempSystemNameEnabled, solar_system_name, temporaryName]);
 
-  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name);
+  const customName = (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
