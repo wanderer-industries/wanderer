@@ -93,9 +93,6 @@ export const MapWrapper = () => {
         case OutCommand.openSettings:
           setOpenSettings(event.data.system_id);
           break;
-        case OutCommand.linkSignatureToSystem:
-          setOpenLinkSignatures(event.data);
-          break;
         default:
           return outCommand(event);
       }

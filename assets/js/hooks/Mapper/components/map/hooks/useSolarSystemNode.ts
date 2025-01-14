@@ -132,7 +132,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
       return '';
     }
 
-    if (isShowLinkedSigIdTempName) {
+    if (isShowLinkedSigIdTempName && linkedSigPrefix) {
       return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : linkedSigPrefix;
     }
 
