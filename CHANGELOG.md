@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.40.3](https://github.com/wanderer-industries/wanderer/compare/v1.40.2...v1.40.3) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix system revert issues
+
 ## [v1.40.2](https://github.com/wanderer-industries/wanderer/compare/v1.40.1...v1.40.2) (2025-01-14)
 
 
