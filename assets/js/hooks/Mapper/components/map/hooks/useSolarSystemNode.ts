@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-
+import { MapSolarSystemType } from '../map.types';
+import { NodeProps } from 'reactflow';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider';
@@ -30,19 +31,9 @@ function sortedLabels(labels: string[]) {
   return LABELS_ORDER.filter(x => labels.includes(x)).map(x => LABELS_INFO[x]);
 }
 
-export function useSolarSystemNode(props: any) {
-  const { data, selected, id } = props;
-  const {
-    system_static_info,
-    system_signatures,
-    locked,
-    name,
-    tag,
-    status,
-    labels,
-    temporary_name,
-    linked_sig_eve_id: linkedSigEveId = '',
-  } = data;
+export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
+  const { id, data, selected } = props;
+  const { system_static_info, system_signatures, locked, name, tag, status, labels, temporary_name } = data;
 
   const {
     system_class,
@@ -57,7 +48,6 @@ export function useSolarSystemNode(props: any) {
     solar_system_name,
   } = system_static_info;
 
-  // Global map state
   const {
     interfaceSettings,
     data: { systemSignatures: mapSystemSignatures },
@@ -81,11 +71,11 @@ export function useSolarSystemNode(props: any) {
       visibleNodes,
       showKSpaceBG,
       isThickConnections,
+      linkedSigEveId,
     },
     outCommand,
   } = useMapState();
 
-  // logic
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
   const systemSignatures = useMemo(
@@ -174,10 +164,9 @@ export function useSolarSystemNode(props: any) {
   }, [isShowUnsplashedSignatures, systemSignatures]);
 
   const nodeVars = {
-    // original props
     id,
     selected,
-    // computed
+
     visible,
     isWormhole,
     classTitleColor,
