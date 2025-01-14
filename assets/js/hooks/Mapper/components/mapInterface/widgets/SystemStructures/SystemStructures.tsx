@@ -101,7 +101,7 @@ export const SystemStructures: React.FC = () => {
     <div tabIndex={0} onPaste={handlePaste} className="h-full flex flex-col" style={{ outline: 'none' }}>
       <Widget label={renderWidgetLabel()}>
         {isNotSelectedSystem ? (
-          <div className="flex-1 flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+          <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
             System is not selected
           </div>
         ) : (
