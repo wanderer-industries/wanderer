@@ -10,7 +10,7 @@ import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormhol
 import { getSystemClassStyles, prepareUnsplashedChunks } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, OutCommand } from '@/hooks/Mapper/types';
 import { LABELS_INFO, LABELS_ORDER } from '@/hooks/Mapper/components/map/constants';
 
 function getActivityType(count: number) {
@@ -155,7 +155,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     return solar_system_name;
   }, [isTempSystemNameEnabled, solar_system_name, temporaryName]);
 
-  const customName = (isTempSystemNameEnabled && temporary_name && name) || (solar_system_name !== name && name);
+  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name) || null;
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
@@ -211,4 +211,44 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
   };
 
   return nodeVars;
+}
+
+export interface SolarSystemNodeVars {
+  id: string;
+  selected: boolean;
+  visible: boolean;
+  isWormhole: boolean;
+  classTitleColor: string | null;
+  killsCount: number | null;
+  killsActivityType: string | null;
+  hasUserCharacters: boolean;
+  showHandlers: boolean;
+  regionClass: string | null;
+  systemName: string;
+  customName?: string | null;
+  labelCustom: string | null;
+  isShattered: boolean;
+  tag?: string | null;
+  status?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  labelsInfo: Array<any>;
+  dbClick: (event?: void) => void;
+  sortedStatics: Array<string | number>;
+  effectName: string | null;
+  regionName: string | null;
+  solarSystemId: number;
+  solarSystemName: string | null;
+  locked: boolean;
+  hubs: string[] | number[];
+  name: string | null;
+  isConnecting: boolean;
+  hoverNodeId: string | null;
+  charactersInSystem: Array<CharacterTypeRaw>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  unsplashedLeft: Array<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  unsplashedRight: Array<any>;
+  isThickConnections: boolean;
+  classTitle: string | null;
+  temporaryName?: string | null;
 }

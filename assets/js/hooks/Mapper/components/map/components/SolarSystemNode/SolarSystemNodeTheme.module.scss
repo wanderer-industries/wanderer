@@ -1,274 +1,39 @@
-@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
+@import './SolarSystemNodeDefault.module.scss';
 
-$pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
-$pastel-green: #88b04b;
-$pastel-yellow: #ffdd59;
-$dark-bg: #2d2d2d;
-$text-color: #ffffff;
-$tooltip-bg: #202020;
+/* ---------------------------
+   Only override what's different
+--------------------------- */
 
+/* 1) .RootCustomNode:
+   - new background-color using CSS var
+   - plus color, font-family, and font-weight */
 .RootCustomNode {
-  display: flex;
-  width: 130px;
-  height: 34px;
-
-  flex-direction: column;
-  padding: 2px 6px;
-  font-size: 10px;
-
   background-color: var(--rf-node-bg-color, #202020) !important;
   color: var(--rf-text-color, #ffffff);
   font-family: var(--rf-node-font-family, inherit) !important;
   font-weight: var(--rf-node-font-weight, inherit) !important;
-
-  box-shadow: 0 0 5px rgba($dark-bg, 0.5);
-  border: 1px solid darken($pastel-blue, 10%);
-  border-radius: 5px;
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-
-  &.Mataria,
-  &.Amarria,
-  &.Gallente,
-  &.Caldaria {
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-size: cover;
-      background-position: 50% 50%;
-      z-index: -1;
-      background-repeat: no-repeat;
-      border-radius: 3px;
-    }
-  }
-
-  &.Mataria {
-    &::before {
-      background-image: url('/images/mataria-180.png');
-      opacity: 0.6;
-      background-position-x: 1px;
-      background-position-y: -14px;
-    }
-  }
-
-  &.Caldaria {
-    &::before {
-      background-image: url('/images/caldaria-180.png');
-      opacity: 0.6;
-      background-position-x: 1px;
-      background-position-y: -10px;
-    }
-  }
-
-  &.Amarria {
-    &::before {
-      opacity: 0.45;
-      background-image: url('/images/amarr-180.png');
-      background-position-x: 0;
-      background-position-y: -13px;
-    }
-  }
-
-  &.Gallente {
-    &::before {
-      opacity: 0.5;
-      background-image: url('/images/gallente-180.png');
-      background-position-x: 1px;
-      background-position-y: 0;
-    }
-  }
-
-  &.selected {
-    border-color: $pastel-pink;
-    box-shadow: 0 0 10px #9a1af1c2;
-  }
-
-  &.tooltip {
-    background-color: $tooltip-bg;
-    color: $text-color;
-    padding: 5px 10px;
-    border-radius: 3px;
-    border: 1px solid $pastel-pink;
-  }
-
-  &.eve-system-status-home {
-    border: 1px solid var(--eve-solar-system-status-color-home-dark30);
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-home),
-      transparent
-    );
-    &.selected {
-      border-color: var(--eve-solar-system-status-color-home);
-    }
-  }
-
-  &.eve-system-status-friendly {
-    border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-friendly-dark30),
-      transparent
-    );
-    &.selected {
-      border-color: var(--eve-solar-system-status-color-friendly-dark5);
-    }
-  }
-
-  &.eve-system-status-lookingFor {
-    border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
-    background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
-    &.selected {
-      border-color: $pastel-pink;
-    }
-  }
-
-  &.eve-system-status-warning {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-warning),
-      transparent
-    );
-  }
-
-  &.eve-system-status-dangerous {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-dangerous),
-      transparent
-    );
-  }
-
-  &.eve-system-status-target {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-target),
-      transparent
-    );
-  }
 }
 
+/* 2) .Bookmarks:
+   - add var-based font family/weight
+*/
 .Bookmarks {
-  position: absolute;
-  width: 100%;
-  z-index: 1;
-  display: flex;
-  left: 4px;
   font-family: var(--rf-node-font-family, inherit) !important;
   font-weight: var(--rf-node-font-weight, inherit) !important;
-
-
-  & > .Bookmark {
-    min-width: 13px;
-    height: 22px;
-    position: relative;
-    top: -13px;
-    border-radius: 5px;
-    color: #ffffff;
-    font-size: 8px;
-    text-align: center;
-    padding-top: 2px;
-    font-weight: bolder;
-    padding-left: 3px;
-    padding-right: 3px;
-
-    //background-color: #833ca4;
-
-    &:not(:first-child) {
-      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
-    }
-  }
-
-  .BookmarkWithIcon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: -2px;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 1);
-    padding-right: 2px;
-
-    & > .icon {
-      width: 8px;
-      height: 8px;
-      font-size: 8px;
-    }
-
-    & > .text {
-      margin-top: 1px;
-      font-size: 9px;
-    }
-  }
 }
 
-.Unsplashed {
-  position: absolute;
-  width: calc(50% - 4px);
-  z-index: -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  left: 2px;
-
-  &--right {
-    left: calc(50% + 6px);
-  }
-
-  & > .Signature {
-    width: 13px;
-    height: 4px;
-    position: relative;
-    top: 3px;
-    border-radius: 5px;
-    color: #ffffff;
-    font-size: 8px;
-    text-align: center;
-    padding-top: 2px;
-    font-weight: bolder;
-    padding-left: 3px;
-    padding-right: 3px;
-    display: block;
-
-    background-color: #833ca4;
-
-    &:not(:first-child) {
-      box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
-    }
-  }
-}
-
-.icon {
-  width: 8px;
-  height: 8px;
-  font-size: 8px;
-}
-
+/* 3) .HeadRow, .classTitle, .classSystemName:
+   - add new references to var-based font family/weight
+*/
 .HeadRow {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  line-height: 14px;
-  font-weight: 500;
-  position: relative;
-  top: 1px;
   font-family: var(--rf-node-font-family, inherit) !important;
   font-weight: var(--rf-node-font-weight, inherit) !important;
 
   .classTitle {
-    font-size: 11px;
     font-family: var(--rf-node-font-family, inherit) !important;
     font-weight: var(--rf-node-font-weight, inherit) !important;
-    text-shadow: 0 0 2px rgb(0 0 0 / 73%);
   }
 
-
-  /* Firefox kostyl */
   @-moz-document url-prefix() {
     .classSystemName {
       font-family: var(--rf-node-font-family, inherit) !important;
@@ -280,19 +45,14 @@ $tooltip-bg: #202020;
     font-family: var(--rf-node-font-family, inherit) !important;
     font-weight: var(--rf-node-font-weight, inherit) !important;
   }
-
-  .solarSystemName {
-  }
 }
 
+/* 4) .BottomRow:
+   - introduces .tagTitle, .regionName, .customName, .localCounter
+     referencing new CSS variables */
 .BottomRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 19px;
   font-family: var(--rf-node-font-family, inherit) !important;
   font-weight: var(--rf-node-font-weight, inherit) !important;
-
 
   .tagTitle {
     font-size: 11px;
@@ -326,101 +86,6 @@ $tooltip-bg: #202020;
       color: var(--rf-has-user-characters, #fbbf24);
       font-family: var(--rf-node-font-family, inherit) !important;
       font-weight: var(--rf-node-font-weight, inherit) !important;
-    }
-
-    & > i {
-      position: relative;
-      top: 1px;
-    }
-
-    & > span {
-      font-size: 9px;
-      line-height: 9px;
-      font-weight: 500;
-      //margin-top: 1px;
-    }
-  }
-}
-
-.effect {
-  width: 8px;
-  height: 8px;
-  margin-top: -2px;
-  box-sizing: border-box;
-  border-radius: 2px;
-  margin-left: 1px;
-}
-
-.statics {
-  display: flex;
-  gap: 2px;
-  font-size: 8px;
-
-  & > * {
-    line-height: 10px;
-  }
-
-  /* Firefox kostyl */
-  @-moz-document url-prefix() {
-    position: relative;
-    top: -1px;
-  }
-}
-
-.Handlers {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.Handle {
-  min-width: initial;
-  min-height: initial;
-  border: 1px solid $pastel-blue;
-  width: 5px;
-  height: 5px;
-
-  &.selected {
-    border-color: $pastel-pink;
-  }
-
-  &.HandleTop {
-    top: -2px;
-  }
-
-  &.HandleRight {
-    right: -2px;
-  }
-
-  &.HandleBottom {
-    bottom: -2px;
-  }
-
-  &.HandleLeft {
-    left: -2px;
-  }
-
-  &.Tick {
-    width: 7px;
-    height: 7px;
-
-    &.HandleTop {
-      top: -3px;
-    }
-
-    &.HandleRight {
-      right: -3px;
-    }
-
-    &.HandleBottom {
-      bottom: -3px;
-    }
-
-    &.HandleLeft {
-      left: -3px;
     }
   }
 }
