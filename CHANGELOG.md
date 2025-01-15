@@ -2,6 +2,11 @@
 
 <!-- changelog -->
 
+## [v1.40.7](https://github.com/wanderer-industries/wanderer/compare/v1.40.6...v1.40.7) (2025-01-15)
+
+
+
+
 ## [v1.40.6](https://github.com/wanderer-industries/wanderer/compare/v1.40.5...v1.40.6) (2025-01-15)
 
 
