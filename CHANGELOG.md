@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.41.0](https://github.com/wanderer-industries/wanderer/compare/v1.40.7...v1.41.0) (2025-01-16)
+
+
+
+
+### Features:
+
+* Audit: Add 'ACL added/removed' map audit events
+
 ## [v1.40.7](https://github.com/wanderer-industries/wanderer/compare/v1.40.6...v1.40.7) (2025-01-15)
 
 
