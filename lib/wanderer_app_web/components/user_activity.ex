@@ -139,6 +139,8 @@ defmodule WandererAppWeb.UserActivity do
   defp get_event_name(:system_added), do: "System Added"
   defp get_event_name(:system_updated), do: "System Updated"
   defp get_event_name(:systems_removed), do: "System(s) Removed"
+  defp get_event_name(:signatures_added), do: "Signatures Added"
+  defp get_event_name(:signatures_removed), do: "Signatures Removed"
   defp get_event_name(name), do: name
 
   defp get_event_data(:map_acl_added, %{"acl_id" => acl_id}) do
@@ -202,6 +204,20 @@ defmodule WandererAppWeb.UserActivity do
        do:
          solar_system_ids
          |> Enum.map(&_get_system_name/1)
+         |> Enum.join(", ")
+
+  defp get_event_data(:signatures_added, %{
+         "signatures" => signatures
+       }),
+       do:
+         signatures
+         |> Enum.join(", ")
+
+  defp get_event_data(:signatures_removed, %{
+         "signatures" => signatures
+       }),
+       do:
+         signatures
          |> Enum.join(", ")
 
   defp get_event_data(:map_connection_added, %{

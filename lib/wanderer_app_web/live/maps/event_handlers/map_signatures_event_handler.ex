@@ -81,6 +81,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         },
         %{
           assigns: %{
+            current_user: current_user,
             map_id: map_id,
             map_user_settings: map_user_settings,
             user_characters: user_characters,
@@ -161,9 +162,37 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             end)
 
             added_signatures
-            |> Enum.map(fn s ->
+            |> Enum.each(fn s ->
               s |> WandererApp.Api.MapSystemSignature.create!()
             end)
+
+            added_signatures_eve_ids =
+              added_signatures
+              |> Enum.map(fn s -> s.eve_id end)
+
+            first_tracked_character =
+              current_user.characters
+              |> Enum.find(fn c -> c.eve_id === first_character_eve_id end)
+
+            if not is_nil(first_tracked_character) &&
+                 not (added_signatures_eve_ids |> Enum.empty?()) do
+              WandererApp.User.ActivityTracker.track_map_event(:signatures_added, %{
+                character_id: first_tracked_character.id,
+                user_id: current_user.id,
+                map_id: map_id,
+                signatures: added_signatures_eve_ids
+              })
+            end
+
+            if not is_nil(first_tracked_character) &&
+                 not (removed_signatures_eve_ids |> Enum.empty?()) do
+              WandererApp.User.ActivityTracker.track_map_event(:signatures_removed, %{
+                character_id: first_tracked_character.id,
+                user_id: current_user.id,
+                map_id: map_id,
+                signatures: removed_signatures_eve_ids
+              })
+            end
 
             Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
               event: :signatures_updated,

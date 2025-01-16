@@ -171,7 +171,9 @@ defmodule WandererAppWeb.MapAuditLive do
       {"ACL Removed", :map_acl_removed},
       {"Connection Added", :map_connection_added},
       {"Connection Updated", :map_connection_updated},
-      {"Connection Removed", :map_connection_removed}
+      {"Connection Removed", :map_connection_removed},
+      {"Signatures Added", :signatures_added},
+      {"Signatures Removed", :signatures_removed}
     ])
     |> load_activity(1)
   end
