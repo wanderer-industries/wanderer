@@ -580,11 +580,9 @@
               >
                 <div :if={is_nil(@selected_subscription)}>
                   Add subscription
-                  <div class="badge badge-secondary">Limited time offer: 50%</div>
                 </div>
                 <div :if={not is_nil(@selected_subscription)}>
                   Edit subscription
-                  <div class="badge badge-secondary">Limited time offer: 50%</div>
                 </div>
                 <.form
                   :let={f}
@@ -609,7 +607,7 @@
                     label="Characters limit"
                     show_value={true}
                     type="range"
-                    min="300"
+                    min="100"
                     max="5000"
                     step="100"
                     class="range range-xs"

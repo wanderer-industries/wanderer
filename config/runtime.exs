@@ -64,7 +64,19 @@ map_subscription_characters_limit =
 
 map_subscription_hubs_limit =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_HUBS_LIMIT", 100)
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_HUBS_LIMIT", 10)
+
+map_subscription_base_price =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_BASE_PRICE", 100_000_000)
+
+map_subscription_extra_characters_100_price =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_CHARACTERS_100_PRICE", 50_000_000)
+
+map_subscription_extra_hubs_10_price =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_HUBS_10_PRICE", 10_000_000)
 
 map_connection_auto_expire_hours =
   config_dir
@@ -76,7 +88,7 @@ map_connection_auto_eol_hours =
 
 map_connection_eol_expire_timeout_mins =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_CONNECTION_EOL_EXPIRE_TIMEOUT_MINS", 30)
+  |> get_int_from_path_or_env("WANDERER_MAP_CONNECTION_EOL_EXPIRE_TIMEOUT_MINS", 60)
 
 wallet_tracking_enabled =
   config_dir
@@ -117,16 +129,16 @@ config :wanderer_app,
       },
       %{
         id: "omega",
-        characters_limit: 300,
-        hubs_limit: 20,
-        base_price: 250_000_000,
+        characters_limit: map_subscription_characters_limit * 2,
+        hubs_limit: map_subscription_hubs_limit * 2,
+        base_price: map_subscription_base_price,
         month_3_discount: 0.2,
         month_6_discount: 0.4,
         month_12_discount: 0.5
       }
     ],
-    extra_characters_100: 75_000_000,
-    extra_hubs_10: 25_000_000
+    extra_characters_100: map_subscription_extra_characters_100_price,
+    extra_hubs_10: map_subscription_extra_hubs_10_price
   }
 
 config :ueberauth, Ueberauth,
