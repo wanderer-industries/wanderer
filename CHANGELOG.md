@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.42.0](https://github.com/wanderer-industries/wanderer/compare/v1.41.0...v1.42.0) (2025-01-16)
+
+
+
+
+### Features:
+
+* Audit: Add 'Signatures added/removed' map audit events
+
 ## [v1.41.0](https://github.com/wanderer-industries/wanderer/compare/v1.40.7...v1.41.0) (2025-01-16)
 
 
