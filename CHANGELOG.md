@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.42.1](https://github.com/wanderer-industries/wanderer/compare/v1.42.0...v1.42.1) (2025-01-16)
+
+
+
+
+### Bug Fixes:
+
+* Map: Remove linked sig ID if system containing signature removed from map
+
 ## [v1.42.0](https://github.com/wanderer-industries/wanderer/compare/v1.41.0...v1.42.0) (2025-01-16)
 
 
