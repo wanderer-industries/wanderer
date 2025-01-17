@@ -4,7 +4,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeDefault.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useSolarSystemNode } from '../../hooks/useSolarSystemNode';
+import { useSolarSystemNode, useLocalCounter } from '../../hooks/useSolarSystemLogic';
 import {
   MARKER_BOOKMARK_BG_STYLES,
   STATUS_CLASSES,
@@ -12,9 +12,11 @@ import {
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
+import { LocalCounter } from './SolarSystemLocalCounter';
 
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
+  const { localCounterCharacters } = useLocalCounter(nodeVars);
 
   return (
     <>
@@ -116,22 +118,19 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               <div className="flex items-center justify-end">
                 <div className="flex gap-1 items-center">
                   {nodeVars.locked && (
-                    <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
+                    <i
+                      className={clsx(PrimeIcons.LOCK, classes.lockIcon, {
+                        [classes.hasLocalCounter]: nodeVars.charactersInSystem.length > 0,
+                      })}
+                    />
                   )}
 
                   {nodeVars.hubs.includes(nodeVars.solarSystemId.toString()) && (
-                    <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
-                  )}
-
-                  {nodeVars.charactersInSystem.length > 0 && (
-                    <div
-                      className={clsx(classes.localCounter, {
-                        ['text-amber-300']: nodeVars.hasUserCharacters,
+                    <i
+                      className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker, {
+                        [classes.hasLocalCounter]: nodeVars.charactersInSystem.length > 0,
                       })}
-                    >
-                      <i className="pi pi-users" style={{ fontSize: '0.50rem' }} />
-                      <span className="font-sans">{nodeVars.charactersInSystem.length}</span>
-                    </div>
+                    />
                   )}
                 </div>
               </div>
@@ -202,6 +201,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           id="d"
         />
       </div>
+      <LocalCounter
+        hasUserCharacters={nodeVars.hasUserCharacters}
+        localCounterCharacters={localCounterCharacters}
+        classes={classes}
+      />
     </>
   );
 });

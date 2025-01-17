@@ -31,6 +31,20 @@ function sortedLabels(labels: string[]) {
   return LABELS_ORDER.filter(x => labels.includes(x)).map(x => LABELS_INFO[x]);
 }
 
+export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
+  const localCounterCharacters = useMemo(() => {
+    return [...nodeVars.charactersInSystem]
+      .map(char => ({
+        ...char,
+        compact: false,
+        isOwn: nodeVars.userCharacters.includes(char.eve_id),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [nodeVars.charactersInSystem, nodeVars.userCharacters]);
+
+  return { localCounterCharacters };
+}
+
 export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
   const { id, data, selected } = props;
   const {
@@ -182,6 +196,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     killsCount,
     killsActivityType,
     hasUserCharacters,
+    userCharacters,
     showHandlers,
     regionClass,
     systemName,
@@ -244,6 +259,7 @@ export interface SolarSystemNodeVars {
   isConnecting: boolean;
   hoverNodeId: string | null;
   charactersInSystem: Array<CharacterTypeRaw>;
+  userCharacters: Array<string>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   unsplashedLeft: Array<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
