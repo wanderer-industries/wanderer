@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.42.3](https://github.com/wanderer-industries/wanderer/compare/v1.42.2...v1.42.3) (2025-01-17)
+
+
+
+
+### Bug Fixes:
+
+* change structure tooltip to avoid paste confusion (#125)
+
+* change structure tooltip to avoid paste confusion
+
+* clarify use of evetime and use primereact calendar
+
 ## [v1.42.2](https://github.com/wanderer-industries/wanderer/compare/v1.42.1...v1.42.2) (2025-01-16)
 
 
