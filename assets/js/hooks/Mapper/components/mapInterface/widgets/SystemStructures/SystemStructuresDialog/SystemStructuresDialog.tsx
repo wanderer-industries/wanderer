@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { AutoComplete } from 'primereact/autocomplete';
+import { Calendar } from 'primereact/calendar';
 import clsx from 'clsx';
 
 import { StructureItem, StructureStatus, statusesRequiringTimer, formatToISO } from '../helpers';
@@ -53,7 +54,9 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
 
       // If user typed more text but we have partial match in prevResults
       if (newQuery.startsWith(prevQuery) && prevResults.length > 0) {
-        const filtered = prevResults.filter(item => item.label.toLowerCase().includes(newQuery.toLowerCase()));
+        const filtered = prevResults.filter(item =>
+          item.label.toLowerCase().includes(newQuery.toLowerCase()),
+        );
         setOwnerSuggestions(filtered);
         return;
       }
@@ -74,12 +77,18 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
     [prevQuery, prevResults, outCommand],
   );
 
-  const handleChange = (field: keyof StructureItem, val: string) => {
+  const handleChange = (field: keyof StructureItem, val: string | Date) => {
     // If we want to forbid changing structureTypeId or structureType from the dialog, do so here:
     if (field === 'structureTypeId' || field === 'structureType') return;
 
     setEditData(prev => {
       if (!prev) return null;
+
+      // If this is the endTime (Date from Calendar), we store as ISO or string:
+      if (field === 'endTime' && val instanceof Date) {
+        return { ...prev, endTime: val.toISOString() };
+      }
+
       return { ...prev, [field]: val };
     });
   };
@@ -87,7 +96,9 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
   // when user picks a corp from auto-complete
   const handleSelectOwner = (selected: { label: string; value: string }) => {
     setOwnerInput(selected.label);
-    setEditData(prev => (prev ? { ...prev, ownerName: selected.label, ownerId: selected.value } : null));
+    setEditData(prev =>
+      prev ? { ...prev, ownerName: selected.label, ownerId: selected.value } : null,
+    );
   };
 
   const handleStatusChange = (val: string) => {
@@ -107,7 +118,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
     if (!statusesRequiringTimer.includes(editData.status)) {
       editData.endTime = '';
     } else if (editData.endTime) {
-      // convert to full ISO
+      // convert to full ISO if not already
       editData.endTime = formatToISO(editData.endTime);
     }
 
@@ -146,7 +157,11 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
       <div className="flex flex-col gap-2 text-[14px]">
         <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
           <span>Type:</span>
-          <input readOnly className="p-inputtext p-component cursor-not-allowed" value={editData.structureType ?? ''} />
+          <input
+            readOnly
+            className="p-inputtext p-component cursor-not-allowed"
+            value={editData.structureType ?? ''}
+          />
         </label>
         <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
           <span>Name:</span>
@@ -186,17 +201,21 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
             <option value="Reinforced">Reinforced</option>
           </select>
         </label>
+
         {statusesRequiringTimer.includes(editData.status) && (
           <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
-            <span>End Time:</span>
-            <input
-              type="datetime-local"
-              className="p-inputtext p-component"
-              value={editData.endTime ? editData.endTime.replace('Z', '').slice(0, 16) : ''}
-              onChange={e => handleChange('endTime', e.target.value)}
+            <span>Timer <br /> (Eve Time):</span>
+            <Calendar
+              value={editData.endTime ? new Date(editData.endTime) : undefined}
+              onChange={(e) => handleChange('endTime', e.value ?? '')}
+              showTime
+              hourFormat="24"
+              dateFormat="yy-mm-dd"
+              showIcon
             />
           </label>
         )}
+
         <label className="grid grid-cols-[100px_1fr] gap-2 items-start mt-2">
           <span className="mt-1">Notes:</span>
           <textarea
