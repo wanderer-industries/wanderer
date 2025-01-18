@@ -8,8 +8,8 @@ import { WORMHOLE_CLASS_STYLES, WORMHOLES_ADDITIONAL_INFO } from '@/hooks/Mapper
 import { useMemo } from 'react';
 import clsx from 'clsx';
 import { renderInfoColumn } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
-
-import { k162Types } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
+import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
 
 interface UnsplashedSignatureProps {
   signature: SystemSignature;
@@ -23,14 +23,12 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
   const whClass = useMemo(() => (whData ? WORMHOLES_ADDITIONAL_INFO[whData.dest] : null), [whData]);
 
   const k162TypeOption = useMemo(() => {
-    if (!signature.custom_info) {
+    const customInfo = parseSignatureCustomInfo(signature.custom_info);
+    if (!customInfo?.k162Type) {
       return null;
     }
-    const customInfo = JSON.parse(signature.custom_info);
-    if (!customInfo.k162Type) {
-      return null;
-    }
-    return k162Types.find(x => x.value === customInfo.k162Type);
+
+    return K162_TYPES_MAP[customInfo.k162Type];
   }, [signature]);
 
   const whClassStyle = useMemo(() => {
@@ -45,14 +43,13 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
   return (
     <WdTooltipWrapper
       className={clsx(classes.Signature)}
+      // @ts-ignore
       content={
-        (
-          <div className="flex flex-col gap-1">
-            <InfoDrawer title={<b className="text-slate-50">{signature.eve_id}</b>}>
-              {renderInfoColumn(signature)}
-            </InfoDrawer>
-          </div>
-        ) as React.ReactNode
+        <div className="flex flex-col gap-1">
+          <InfoDrawer title={<b className="text-slate-50">{signature.eve_id}</b>}>
+            {renderInfoColumn(signature)}
+          </InfoDrawer>
+        </div>
       }
     >
       <div className={clsx(classes.Box, whClassStyle)}>

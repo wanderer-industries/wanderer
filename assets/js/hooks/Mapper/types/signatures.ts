@@ -26,16 +26,20 @@ export type GroupType = {
   h: number;
 };
 
+export type SignatureCustomInfo = {
+  k162Type?: string;
+  isEOL?: boolean;
+};
+
 export type SystemSignature = {
   eve_id: string;
   kind: SignatureKind;
   name: string;
+  // SignatureCustomInfo
   custom_info?: string;
   description?: string;
   group: SignatureGroup;
   type: string;
-  k162Type?: string;
-  isEOL?: boolean;
   linked_system?: SolarSystemStaticInfoRaw;
   inserted_at?: string;
   updated_at?: string;

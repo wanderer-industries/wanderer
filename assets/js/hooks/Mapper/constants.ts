@@ -65,3 +65,77 @@ export const REGIONS_MAP: Record<number, Spaces> = {
   [Regions.TashMurkon]: Spaces.Amarr,
   [Regions.VergeVendor]: Spaces.Gallente,
 };
+
+export type K162Type = {
+  label: string;
+  value: string;
+  whClassName: string;
+};
+
+export const K162_TYPES: K162Type[] = [
+  {
+    label: 'Hi-Sec',
+    value: 'hs',
+    whClassName: 'A641',
+  },
+  {
+    label: 'Low-Sec',
+    value: 'ls',
+    whClassName: 'J377',
+  },
+  {
+    label: 'Null-Sec',
+    value: 'ns',
+    whClassName: 'C248',
+  },
+  {
+    label: 'C1',
+    value: 'c1',
+    whClassName: 'E004',
+  },
+  {
+    label: 'C2',
+    value: 'c2',
+    whClassName: 'D382',
+  },
+  {
+    label: 'C3',
+    value: 'c3',
+    whClassName: 'L477',
+  },
+  {
+    label: 'C4',
+    value: 'c4',
+    whClassName: 'M001',
+  },
+  {
+    label: 'C5',
+    value: 'c5',
+    whClassName: 'L614',
+  },
+  {
+    label: 'C6',
+    value: 'c6',
+    whClassName: 'G008',
+  },
+  {
+    label: 'C13',
+    value: 'c13',
+    whClassName: 'A009',
+  },
+  {
+    label: 'Thera',
+    value: 'thera',
+    whClassName: 'F353',
+  },
+  {
+    label: 'Pochven',
+    value: 'pochven',
+    whClassName: 'F216',
+  },
+];
+
+export const K162_TYPES_MAP: { [key: string]: K162Type } = K162_TYPES.reduce(
+  (acc, x) => ({ ...acc, [x.value]: x }),
+  {},
+);
