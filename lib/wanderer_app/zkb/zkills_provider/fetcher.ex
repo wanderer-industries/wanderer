@@ -13,7 +13,7 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
   # ~2 calls/sec
   @exrated_bucket :zkb_preloader_provider
   @exrated_interval_ms 5_000
-  @exrated_max_requests 50
+  @exrated_max_requests 200
 
   # If we fetched this system within the last 15 min => skip
   @full_fetch_cache_expiry_ms 900_000

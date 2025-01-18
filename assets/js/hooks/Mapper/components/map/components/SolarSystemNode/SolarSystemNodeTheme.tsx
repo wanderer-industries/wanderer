@@ -1,14 +1,14 @@
 import { memo } from 'react';
 import { MapSolarSystemType } from '../../map.types';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeTheme.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useSolarSystemNode, useLocalCounter } from '../../hooks/useSolarSystemLogic';
+import { useLocalCounter, useSolarSystemNode } from '../../hooks/useSolarSystemLogic';
 import {
+  EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,
   STATUS_CLASSES,
-  EFFECT_BACKGROUND_STYLES,
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
@@ -33,6 +33,20 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered)}>
               <span className={clsx('pi pi-chart-pie', classes.icon)} />
             </div>
+          )}
+
+          {nodeVars.killsCount && nodeVars.killsCount > 0 && nodeVars.solarSystemId && (
+            <KillsCounter
+              killsCount={nodeVars.killsCount}
+              systemId={nodeVars.solarSystemId}
+              killsActivityType={nodeVars.killsActivityType}
+              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
+            >
+              <div className={clsx(classes.BookmarkWithIcon)}>
+                <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
+                <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
+              </div>
+            </KillsCounter>
           )}
 
           {nodeVars.labelsInfo.map(x => (

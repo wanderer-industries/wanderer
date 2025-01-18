@@ -9,7 +9,7 @@ defmodule WandererApp.Zkb.KillsPreloader do
 
   alias WandererApp.Zkb.KillsProvider.Fetcher
 
-  @default_max_concurrency 5
+  @default_max_concurrency 10
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
