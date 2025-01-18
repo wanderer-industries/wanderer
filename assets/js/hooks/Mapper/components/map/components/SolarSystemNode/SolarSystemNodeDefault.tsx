@@ -53,7 +53,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         className={clsx(
           classes.RootCustomNode,
           nodeVars.regionClass && classes[nodeVars.regionClass],
-          classes[STATUS_CLASSES[nodeVars.status]],
+          nodeVars.status != null ? classes[STATUS_CLASSES[nodeVars.status]] : null,
           {
             [classes.selected]: nodeVars.selected,
           },
@@ -145,7 +145,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           {nodeVars.unsplashedLeft.length > 0 && (
             <div className={classes.Unsplashed}>
               {nodeVars.unsplashedLeft.map(sig => (
-                <UnsplashedSignature key={sig.sig_id} signature={sig} />
+                <UnsplashedSignature key={sig.eve_id} signature={sig} />
               ))}
             </div>
           )}
@@ -153,7 +153,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           {nodeVars.unsplashedRight.length > 0 && (
             <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
               {nodeVars.unsplashedRight.map(sig => (
-                <UnsplashedSignature key={sig.sig_id} signature={sig} />
+                <UnsplashedSignature key={sig.eve_id} signature={sig} />
               ))}
             </div>
           )}
