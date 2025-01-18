@@ -17,7 +17,7 @@ export const SignatureEOLCheckbox = ({ name, defaultValue = false }: SignatureEO
       control={control}
       defaultValue={defaultValue}
       render={({ field }) => {
-        return <InputSwitch checked={!!field.value} onChange={e => field.onChange(e.value)} />;
+        return <InputSwitch className="my-1" checked={!!field.value} onChange={e => field.onChange(e.value)} />;
       }}
     />
   );
