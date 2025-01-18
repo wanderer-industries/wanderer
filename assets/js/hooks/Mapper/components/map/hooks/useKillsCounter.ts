@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useSystemKills } from '../../mapInterface/widgets/SystemKills/hooks/useSystemKills';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
@@ -10,10 +10,6 @@ export function useKillsCounter({ realSystemId }: UseKillsCounterProps) {
   const { data: mapData, outCommand } = useMapRootState();
   const { systems } = mapData;
 
-  const [isHovered, setIsHovered] = useState(false);
-  const handleMouseEnter = () => setIsHovered(true);
-  const handleMouseLeave = () => setIsHovered(false);
-
   const systemNameMap = useMemo(() => {
     const m: Record<string, string> = {};
     systems.forEach(sys => {
@@ -22,31 +18,27 @@ export function useKillsCounter({ realSystemId }: UseKillsCounterProps) {
     return m;
   }, [systems]);
 
-  const systemIdForHook = useMemo(() => {
-    return isHovered ? realSystemId : undefined;
-  }, [isHovered, realSystemId]);
-
   const { kills: allKills, isLoading } = useSystemKills({
-    systemId: systemIdForHook,
+    systemId: realSystemId,
     outCommand,
     showAllVisible: false,
   });
 
   const filteredKills = useMemo(() => {
-    return allKills.filter(kill => {
-      if (!kill.kill_time) return false;
-      const killTimeMs = new Date(kill.kill_time).getTime();
-      const timePeriod = Date.now() - 60 * 60 * 1000 * 2;
-      return killTimeMs >= timePeriod;
-    });
+    if (!allKills || allKills.length === 0) return [];
+
+    return [...allKills]
+      .sort((a, b) => {
+        const aTime = a.kill_time ? new Date(a.kill_time).getTime() : 0;
+        const bTime = b.kill_time ? new Date(b.kill_time).getTime() : 0;
+        return bTime - aTime;
+      })
+      .slice(0, 10);
   }, [allKills]);
 
   return {
-    isHovered,
     isLoading,
     kills: filteredKills,
     systemNameMap,
-    handleMouseEnter,
-    handleMouseLeave,
   };
 }

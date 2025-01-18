@@ -13,17 +13,17 @@ interface UseSystemKillsProps {
   timeoutMs?: number;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms?: number): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   if (!ms) return promise;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`Request timed out after ${ms} ms.`));
+      reject(new Error(`Request timed out after ${ms} ms`));
     }, ms);
 
     promise
-      .then(value => {
+      .then(val => {
         clearTimeout(timer);
-        resolve(value);
+        resolve(val);
       })
       .catch(err => {
         clearTimeout(timer);
@@ -32,10 +32,18 @@ function withTimeout<T>(promise: Promise<T>, ms?: number): Promise<T> {
   });
 }
 
+function scheduleIdleCallback(cb: () => void) {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(cb);
+  } else {
+    setTimeout(cb, 0);
+  }
+}
+
 export function useSystemKills({
   systemId,
   outCommand,
-  showAllVisible,
+  showAllVisible = false,
   sinceHours = 24,
   timeoutMs = 500,
 }: UseSystemKillsProps) {
@@ -59,100 +67,86 @@ export function useSystemKills({
           const existing = updated[sid] ?? [];
           updated[sid] = [...existing, ...newKills];
         }
-        return { ...prev, detailedKills: updated };
+
+        return {
+          ...prev,
+          detailedKills: updated,
+        };
       });
     },
     [update],
   );
 
-  const fetchKills = useCallback(async () => {
-    if (visibleSystemIds.length === 0) return;
+  const fetchKills = useCallback(
+    async (forceFallback = false) => {
+      setIsLoading(true);
+      setError(null);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      let eventType: OutCommand;
-      let requestData: Record<string, unknown>;
-
-      if (showAllVisible) {
-        eventType = OutCommand.getSystemsKills;
-        requestData = {
-          system_ids: visibleSystemIds,
-          since_hours: sinceHours,
-        };
-      } else if (systemId) {
-        eventType = OutCommand.getSystemKills;
-        requestData = {
-          system_id: systemId,
-          since_hours: sinceHours,
-        };
-      } else {
-        setIsLoading(false);
-        return;
-      }
-
-      const resp = await withTimeout(outCommand({ type: eventType, data: requestData }), timeoutMs);
-
-      if (resp.kills) {
-        const arr = resp.kills as DetailedKill[];
-        const sid = systemId ?? 'unknown';
-        mergeKillsIntoGlobal({ [sid]: arr });
-      } else if (resp.systems_kills) {
-        mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
-      } else {
-        console.warn('Unexpected kills response =>', resp);
-      }
-    } catch (err) {
-      console.error('[useSystemKills] Failed to fetch kills:', err);
-      setError(err instanceof Error ? err.message : 'Error fetching kills');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [systemId, showAllVisible, sinceHours, visibleSystemIds, timeoutMs, outCommand, mergeKillsIntoGlobal]);
-
-  const fallbackFetch = useCallback(async () => {
-    if (didFallbackFetch.current) return;
-    if (systemId || showAllVisible) return;
-
-    didFallbackFetch.current = true;
-
-    try {
-      const resp = await withTimeout(
-        outCommand({
-          type: OutCommand.getSystemsKills,
-          data: {
+      try {
+        let eventType: OutCommand;
+        let requestData: Record<string, unknown>;
+        if (showAllVisible || forceFallback) {
+          eventType = OutCommand.getSystemsKills;
+          requestData = {
             system_ids: visibleSystemIds,
             since_hours: sinceHours,
-          },
-        }),
-        timeoutMs,
-      );
+          };
+        } else if (systemId) {
+          eventType = OutCommand.getSystemKills;
+          requestData = {
+            system_id: systemId,
+            since_hours: sinceHours,
+          };
+        } else {
+          return;
+        }
 
-      if (resp.systems_kills) {
-        mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
-      } else if (resp.kills) {
-        const arr = resp.kills as DetailedKill[];
-        mergeKillsIntoGlobal({ __fallbackAll__: arr });
+        const callPromise = outCommand({
+          type: eventType,
+          data: requestData,
+        });
+        const resp = await withTimeout(callPromise, timeoutMs ?? 0);
+
+        if (resp.kills) {
+          const arr = resp.kills as DetailedKill[];
+          const sid = systemId ?? 'unknown';
+          mergeKillsIntoGlobal({ [sid]: arr });
+        } else if (resp.systems_kills) {
+          mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
+        } else {
+          console.warn('Unexpected kills response =>', resp);
+        }
+      } catch (err) {
+        console.error('[useSystemKills] Failed to fetch kills:', err);
+        setError(err instanceof Error ? err.message : 'Error fetching kills');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('[useSystemKills][fallbackFetch] error:', err);
-    }
-  }, [systemId, showAllVisible, sinceHours, visibleSystemIds, timeoutMs, outCommand, mergeKillsIntoGlobal]);
+    },
+    [showAllVisible, systemId, outCommand, visibleSystemIds, sinceHours, timeoutMs, mergeKillsIntoGlobal],
+  );
 
   const debouncedFetchKills = useMemo(() => debounce(fetchKills, 500), [fetchKills]);
 
   useEffect(() => {
-    debouncedFetchKills();
-    return () => debouncedFetchKills.cancel();
-  }, [debouncedFetchKills]);
-
+    if (!systemId && !showAllVisible && !didFallbackFetch.current) {
+      didFallbackFetch.current = true;
+      scheduleIdleCallback(() => {
+        debouncedFetchKills.cancel();
+        fetchKills(true);
+      });
+    }
+  }, [systemId, showAllVisible, debouncedFetchKills, fetchKills]);
   useEffect(() => {
-    fallbackFetch();
-  }, [fallbackFetch]);
+    if (visibleSystemIds.length === 0) return;
+    if (showAllVisible || systemId) {
+      debouncedFetchKills();
+      return () => debouncedFetchKills.cancel();
+    }
+  }, [showAllVisible, systemId, visibleSystemIds, debouncedFetchKills]);
 
   const finalKills = useMemo(() => {
-    if (showAllVisible || didFallbackFetch.current) {
+    if (showAllVisible || (didFallbackFetch.current && !systemId)) {
       return visibleSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     }
     if (systemId) {

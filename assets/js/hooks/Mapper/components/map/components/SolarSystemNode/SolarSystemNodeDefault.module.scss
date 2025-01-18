@@ -412,11 +412,17 @@ $custom-name: #93C5FD;
     pointer-events: auto;
     top: 10px;
     right: 8px;
-    font-family: var(--rf-node-font-family, inherit) !important;
-    font-weight: var(--rf-node-font-weight, inherit) !important;
+    font-family: var(--rf-node-font-family, inherit);
+    font-weight: var(--rf-node-font-weight, inherit);
     mix-blend-mode: screen;
     gap: 2px;
     color: var(--rf-node-local-counter, #5cb85c);
+
+    &.hasUserCharacters {
+      color: var(--rf-has-user-characters, #fbbf24);
+      font-family: var(--rf-node-font-family, inherit);
+      font-weight: var(--rf-node-font-weight, inherit);
+    }
 
     & > i {
       position: relative;
@@ -431,9 +437,4 @@ $custom-name: #93C5FD;
   }
 }
 
-.hasUserCharacters {
-  color: var(--rf-has-user-characters, #fbbf24);
-  font-family: var(--rf-node-font-family, inherit) !important;
-  font-weight: var(--rf-node-font-weight, inherit) !important;  
-}
 

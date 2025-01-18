@@ -48,7 +48,6 @@ export function LocalCounter({
         content={pilotTooltipContent}
         position={TooltipPosition.right}
         offset={8}
-        interactive={true}
       >
         <div
           className={clsx(classes.localCounter, {
