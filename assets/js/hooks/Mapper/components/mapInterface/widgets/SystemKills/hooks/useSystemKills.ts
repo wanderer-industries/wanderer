@@ -9,9 +9,10 @@ interface UseSystemKillsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   outCommand: (payload: any) => Promise<any>;
   showAllVisible: boolean;
+  sinceHours?: number;
 }
 
-export function useSystemKills({ systemId, outCommand, showAllVisible }: UseSystemKillsProps) {
+export function useSystemKills({ systemId, outCommand, showAllVisible, sinceHours = 24 }: UseSystemKillsProps) {
   const { data, update } = useMapRootState();
   const { detailedKills = {}, systems = [] } = data;
 
@@ -54,7 +55,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible }: UseSyst
         eventType = OutCommand.getSystemsKills;
         requestData = {
           system_ids: visibleSystemIds,
-          since_hours: 24,
+          since_hours: sinceHours,
         };
         if (!systemId && !showAllVisible) {
           didFallbackFetch.current = true;
@@ -63,7 +64,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible }: UseSyst
         eventType = OutCommand.getSystemKills;
         requestData = {
           system_id: systemId,
-          since_hours: 24,
+          since_hours: sinceHours,
         };
       } else {
         return;
@@ -86,7 +87,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible }: UseSyst
     } finally {
       setIsLoading(false);
     }
-  }, [showAllVisible, systemId, visibleSystemIds, outCommand, mergeKillsIntoGlobal]);
+  }, [showAllVisible, systemId, outCommand, visibleSystemIds, sinceHours, mergeKillsIntoGlobal]);
 
   const debouncedFetchKills = useMemo(() => debounce(fetchKills, 500), [fetchKills]);
 
@@ -110,10 +111,15 @@ export function useSystemKills({ systemId, outCommand, showAllVisible }: UseSyst
 
   const effectiveIsLoading = isLoading && finalKills.length === 0;
 
+  const refetch = useCallback(() => {
+    debouncedFetchKills.cancel();
+    fetchKills();
+  }, [debouncedFetchKills, fetchKills]);
+
   return {
     kills: finalKills,
     isLoading: effectiveIsLoading,
     error,
-    refetch: fetchKills,
+    refetch,
   };
 }

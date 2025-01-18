@@ -1,0 +1,49 @@
+.KillsBookmark {
+    border-radius: 4px 4px 0 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #ffffff;
+    font-weight: bolder;
+    min-width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;  
+    padding: 4px 4px 2px 2px !important; 
+  }
+  
+.KillsBookmarkWithIcon {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+margin-top: -2px;
+text-shadow: 0 0 3px rgb(0, 0, 0);
+padding-right: 1px;
+
+    .pi {
+        font-size: 9px !important;
+        width: 8px !important;
+        height: 8px !important;
+    }
+
+    .text {
+        font-size: 9px;
+        margin-top: 1px;
+        line-height: 1;
+    }
+}
+
+.TooltipContainer {
+    background-color: #1a1a1a;
+    color: #fff;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    pointer-events: auto; /* so you can scroll or click inside */
+
+    /* Limit the size: */
+    max-width: 500px;  /* for horizontal constraint */
+    max-height: 300px; /* for vertical constraint */
+    overflow-y: auto;   /* scroll if content is longer than 200px */
+    overflow-x: hidden; /* no horizontal scroll unless needed */
+  }

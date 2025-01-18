@@ -210,7 +210,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     sortedStatics,
     effectName: effect_name,
     regionName: region_name,
-    solarSystemId: solar_system_id,
+    solarSystemId: solar_system_id.toString(),
     solarSystemName: solar_system_name,
     locked,
     hubs,
@@ -251,7 +251,7 @@ export interface SolarSystemNodeVars {
   sortedStatics: Array<string | number>;
   effectName: string | null;
   regionName: string | null;
-  solarSystemId: number;
+  solarSystemId: string;
   solarSystemName: string | null;
   locked: boolean;
   hubs: string[] | number[];

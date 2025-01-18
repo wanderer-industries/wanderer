@@ -75,7 +75,9 @@ export const KillRow: React.FC<KillRowProps> = ({ kill, systemName }) => {
           <div className="flex justify-end space-x-2">
             <div className="relative w-14 h-14 flex items-center justify-center">
               {attackerShipUrl && (
-                <img src={attackerShipUrl} alt="AttackerShip" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+                <a href={zkillLink('kill', killmailId)} target="_blank" rel="noopener noreferrer">
+                  <img src={attackerShipUrl} alt="AttackerShip" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+                </a>
               )}
               {attackerCountLabel && (
                 <span className={`${classes.attackerCountLabel} ${labelTextColor}`}>{attackerCountLabel}</span>
