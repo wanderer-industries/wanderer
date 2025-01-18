@@ -289,6 +289,16 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
+
+  @decorate cacheable(
+            cache: Cache,
+            key: "killmail-#{killmail_id}-#{killmail_hash}",
+            opts: [ttl: @ttl]
+          )
+  def get_killmail(killmail_id, killmail_hash, opts \\ []) do
+    get("/killmails/#{killmail_id}/#{killmail_hash}/", _with_cache_opts(opts))
+  end
+
   @decorate cacheable(
               cache: Cache,
               key: "info-#{eve_id}",

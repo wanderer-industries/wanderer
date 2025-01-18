@@ -5,6 +5,7 @@ import {
   SystemInfo,
   SystemSignatures,
   SystemStructures,
+  SystemKills,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 
 export const CURRENT_WINDOWS_VERSION = 8;
@@ -16,6 +17,7 @@ export enum WidgetsIds {
   local = 'local',
   routes = 'routes',
   structures = 'structures',
+  kills = 'kills',
 }
 
 export const STORED_VISIBLE_WIDGETS_DEFAULT = [
@@ -61,6 +63,13 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     zIndex: 0,
     content: () => <SystemStructures />,
   },
+  {
+    id: WidgetsIds.kills,
+    position: { x: 270, y: 730 },
+    size: { width: 510, height: 200 },
+    zIndex: 0,
+    content: () => <SystemKills />,
+  },
 ];
 
 type WidgetsCheckboxesType = {
@@ -89,4 +98,18 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
     id: WidgetsIds.structures,
     label: 'Structures',
   },
+  {
+    id: WidgetsIds.kills,
+    label: 'Kills',
+  },
 ];
+
+export function getWidgetsCheckboxesProps(detailedKillsDisabled: boolean): WidgetsCheckboxesType {
+  return filterOutKills(WIDGETS_CHECKBOXES_PROPS, detailedKillsDisabled);
+}
+
+
+function filterOutKills<T extends { id: WidgetsIds }>(items: T[], shouldFilter: boolean) {
+  if (!shouldFilter) return items;
+  return items.filter((w) => w.id !== WidgetsIds.kills);
+}

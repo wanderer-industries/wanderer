@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { MapUnionTypes } from '@/hooks/Mapper/types';
+import { MapUnionTypes, SystemSignature } from '@/hooks/Mapper/types';
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 
 export type MapData = MapUnionTypes & {
@@ -30,10 +30,13 @@ const INITIAL_DATA: MapData = {
   isConnecting: false,
   connections: [],
   hoverNodeId: null,
+  linkedSigEveId: '',
   visibleNodes: new Set(),
   showKSpaceBG: false,
   isThickConnections: false,
   userPermissions: {},
+  systemSignatures: {} as Record<string, SystemSignature[]>,
+  options: {} as Record<string, string | boolean>,
 };
 
 export interface MapContextProps {

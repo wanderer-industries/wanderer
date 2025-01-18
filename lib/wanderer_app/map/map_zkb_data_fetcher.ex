@@ -6,6 +6,8 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
   require Logger
 
+  alias WandererApp.Zkb.KillsProvider.KillsCache
+
   @interval :timer.seconds(15)
   @store_map_kills_timeout :timer.hours(1)
   @logger Application.compile_env(:wanderer_app, :logger)
@@ -33,6 +35,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           |> case do
             pid when is_pid(pid) ->
               _update_map_kills(map_id)
+              _update_detailed_map_kills(map_id)
 
             nil ->
               :ok
@@ -52,7 +55,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   end
 
   @impl true
-  def handle_info({ref, result}, state) do
+  def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
 
     {:noreply, state}
@@ -71,6 +74,60 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         |> _maybe_broadcast_map_kills(map_id)
 
       _ ->
+        :ok
+    end
+  end
+
+  defp _update_detailed_map_kills(map_id) do
+    case WandererApp.Cache.lookup!("map_#{map_id}:started", false) do
+      true ->
+        systems =
+          map_id
+          |> WandererApp.Map.get_map!()
+          |> Map.get(:systems, %{})
+
+        detailed_map =
+          Enum.reduce(systems, %{}, fn {solar_system_id, _system}, acc ->
+            kill_ids = KillsCache.get_system_killmail_ids(solar_system_id)
+
+            kill_details =
+              kill_ids
+              |> Enum.map(&KillsCache.get_killmail/1)
+              |> Enum.reject(&is_nil/1)
+
+            Map.put(acc, solar_system_id, kill_details)
+          end)
+
+        old_detailed_map =
+          WandererApp.Cache.get("map_#{map_id}:zkb_detailed_kills") || %{}
+
+        changed_systems =
+          detailed_map
+          |> Enum.filter(fn {system_id, new_list} ->
+            old_list = Map.get(old_detailed_map, system_id, [])
+            new_list != old_list
+          end)
+          |> Enum.map(fn {system_id, _} -> system_id end)
+
+        if changed_systems == [] do
+          Logger.debug("[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}")
+          :ok
+        else
+          WandererApp.Cache.put("map_#{map_id}:zkb_detailed_kills", detailed_map,
+            ttl: :timer.hours(24)
+          )
+          changed_data = Map.take(detailed_map, changed_systems)
+
+          @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
+            event: :detailed_kills_updated,
+            payload: changed_data
+          })
+
+          :ok
+        end
+
+      _ ->
+        Logger.info("[ZkbDataFetcher] Map #{map_id} not started => skipping detailed kills update")
         :ok
     end
   end

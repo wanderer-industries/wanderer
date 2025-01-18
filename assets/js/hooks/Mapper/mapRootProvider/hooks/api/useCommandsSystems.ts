@@ -5,17 +5,18 @@ import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoa
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { DetailedKill } from '@/hooks/Mapper/types/kills';
 export const useCommandsSystems = () => {
   const {
     update,
-    data: { systems, systemSignatures },
+    data: { systems, systemSignatures, detailedKills },
     outCommand,
   } = useMapRootState();
 
   const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
 
-  const ref = useRef({ systems, systemSignatures, update, addSystemStatic });
-  ref.current = { systems, systemSignatures, update, addSystemStatic };
+  const ref = useRef({ systems, systemSignatures, update, addSystemStatic, detailedKills });
+  ref.current = { systems, systemSignatures, update, addSystemStatic, detailedKills };
 
   const addSystems = useCallback((systemsToAdd: CommandAddSystems) => {
     const { update, addSystemStatic, systems } = ref.current;
@@ -74,5 +75,24 @@ export const useCommandsSystems = () => {
     [outCommand],
   );
 
-  return { addSystems, removeSystems, updateSystems, updateSystemSignatures };
+  const updateDetailedKills = useCallback((
+    newKillsMap: Record<string, DetailedKill[]>
+  ) => {
+    const { update, detailedKills } = ref.current;
+
+    const updated = { ...detailedKills };
+    for (const [systemId, killsArr] of Object.entries(newKillsMap)) {
+      updated[systemId] = killsArr;
+    }
+
+    update({ detailedKills: updated }, true);
+
+    emitMapEvent({
+      name: Commands.detailedKillsUpdated,
+      data: newKillsMap,
+    });
+  }, []);
+
+
+  return { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateDetailedKills };
 };

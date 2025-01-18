@@ -1,127 +1,77 @@
 defmodule WandererApp.Zkb.KillsProvider do
-  @moduledoc false
+  @moduledoc """
+  Facade for handling zKillboard kills, both via:
+  - Multi-page API fetch and caching (`fetch_kills_for_system/3`)
+  - Local cache retrieval only (`fetch_kills_for_system_from_cache/1`)
+
+  Also delegates to the websocket flow for real-time streaming:
+  - `handle_connect/3`
+  - `handle_in/2`
+  - `handle_control/2`
+  - `handle_info/2`
+  - `handle_disconnect/3`
+  - `handle_error/2`
+  - `handle_terminate/2`
+  """
+
   use Fresh
+  require Logger
+
+  # Pull in the submodules for convenience
+  alias WandererApp.Zkb.KillsProvider.{Websocket, Fetcher}
 
   defstruct [:connected]
 
-  require Logger
+  @doc """
+  Fetch kills for the given `system_id` in the last `since_hours` hours,
+  potentially doing multi-page calls to zKillboard's API,
+  then returning the kills from the cache along with updated state.
 
-  @heartbeat_interval 1_000
-
-  def handle_connect(_status, _headers, state) do
-    Logger.debug(fn ->
-      "#{__MODULE__}: connected to kills stream"
-    end)
-
-    handle_subscribe("killstream", %__MODULE__{state | connected: true})
+  - `system_id`: integer ID of EVE solar system
+  - `since_hours`: integer hours to go back
+  - `preloader_state`: a struct containing relevant preload info (like `calls_count`).
+  """
+  def fetch_kills_for_system(system_id, since_hours, preloader_state) do
+    Fetcher.fetch_kills_for_system(system_id, since_hours, preloader_state)
   end
 
-  def handle_in({:text, frame}, state) do
-    frame
-    |> Jason.decode!()
-    |> handle_websocket(state)
+  @doc """
+  Fetch kills for multiple systems in one call.
+  """
+  def fetch_kills_for_systems(system_ids, since_hours, preloader_state) do
+    Fetcher.fetch_kills_for_systems(system_ids, since_hours, preloader_state)
   end
 
-  def handle_control({:ping, _message}, state) do
-    Process.send_after(self(), :heartbeat, @heartbeat_interval)
-    {:ok, state}
+
+  @doc """
+  Retrieve kills for the given `system_id` **strictly from the cache**
+  (i.e., without triggering any fetch from zKillboard).
+  """
+  def fetch_kills_for_system_from_cache(system_id) do
+    Fetcher.fetch_cached_kills(system_id)
   end
 
-  def handle_control(_event, state) do
-    {:ok, state}
-  end
+  # ------------------------------------------------------------------
+  # Websocket Flow – delegated to WandererApp.Zkb.KillsProvider.Websocket
+  # ------------------------------------------------------------------
+  def handle_connect(status, headers, state),
+    do: Websocket.handle_connect(status, headers, state)
 
-  def handle_info(:heartbeat, state) do
-    payload =
-      Jason.encode!(%{
-        "action" => "pong"
-      })
+  def handle_in(frame, state),
+    do: Websocket.handle_in(frame, state)
 
-    {:reply, {:text, payload}, state}
-  end
+  def handle_control(msg, state),
+    do: Websocket.handle_control(msg, state)
 
-  def handle_info(_message, state) do
-    {:ok, state}
-  end
+  def handle_info(msg, state),
+    do: Websocket.handle_info(msg, state)
 
-  def handle_info(_message, _ws, state) do
-    {:ok, state}
-  end
+  def handle_disconnect(code, reason, state),
+    do: Websocket.handle_disconnect(code, reason, state)
 
-  defp handle_subscribe(channel, state) do
-    Logger.debug(fn ->
-      "#{__MODULE__} subscribe: #{inspect(channel, pretty: true)}"
-    end)
+  def handle_error(err, state),
+    do: Websocket.handle_error(err, state)
 
-    payload =
-      Jason.encode!(%{
-        "action" => "sub",
-        "channel" => channel
-      })
-
-    {:reply, {:text, payload}, state}
-  end
-
-  defp handle_websocket(message, state) do
-    case message |> parse_message() do
-      nil ->
-        {:ok, state}
-
-      %{solar_system_id: solar_system_id, kill_time: kill_time} = _message ->
-        case DateTime.diff(DateTime.utc_now(), kill_time, :hour) do
-          0 ->
-            WandererApp.Cache.incr("zkb_kills_#{solar_system_id}", 1,
-              default: 0,
-              ttl: :timer.hours(1)
-            )
-
-          _ ->
-            :ok
-        end
-    end
-
-    {:ok, state}
-  end
-
-  def handle_disconnect(1002, reason, _state) do
-    Logger.warning(fn ->
-      "Connection to socket lost by #{inspect(reason, pretty: true)}; reconnecting..."
-    end)
-
-    :reconnect
-  end
-
-  def handle_disconnect(_code, reason, _state) do
-    Logger.warning(fn ->
-      "Connection to socket lost by #{inspect(reason, pretty: true)}; closing..."
-    end)
-
-    :reconnect
-  end
-
-  def handle_error({error, _reason}, state)
-      when error in [:encoding_failed, :casting_failed],
-      do: {:ignore, state}
-
-  def handle_error(_error, _state), do: :reconnect
-
-  def handle_terminate(reason, _state) do
-    Logger.warning(fn -> "Terminating client process with reason : #{inspect(reason)}" end)
-  end
-
-  defp parse_message(
-         %{
-           "solar_system_id" => solar_system_id,
-           "killmail_time" => killmail_time
-         } = _message
-       ) do
-    {:ok, kill_time, _} = DateTime.from_iso8601(killmail_time)
-
-    %{
-      solar_system_id: solar_system_id,
-      kill_time: kill_time
-    }
-  end
-
-  defp parse_message(_message), do: nil
+  def handle_terminate(reason, state),
+    do: Websocket.handle_terminate(reason, state)
 end

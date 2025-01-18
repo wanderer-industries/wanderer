@@ -11,6 +11,7 @@ defmodule WandererApp.Env do
   def invites, do: get_key(:invites, false)
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
   def public_api_disabled?, do: get_key(:public_api_disabled, false)
+  def zkill_preload_disabled?, do: get_key(:zkill_preload_disabled, false)
   def wallet_tracking_enabled?, do: get_key(:wallet_tracking_enabled, false)
   def admins, do: get_key(:admins, [])
   def admin_username, do: get_key(:admin_username)
@@ -39,4 +40,12 @@ defmodule WandererApp.Env do
     do: get_key(:map_connection_eol_expire_timeout_mins)
 
   def get_key(key, default \\ nil), do: Application.get_env(@app, key, default)
+
+  @doc """
+  A single map containing environment variables
+  made available to react
+  """
+  def to_client_env do
+    %{detailedKillsDisabled: zkill_preload_disabled?()}
+  end
 end
