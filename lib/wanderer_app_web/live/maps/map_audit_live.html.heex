@@ -1,20 +1,3 @@
-<main
-  id="map-events-list"
-  class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
->
-  <div class="flex flex-col gap-4 w-full">
-    <.live_component
-      module={UserActivity}
-      id="user-activity"
-      notify_to={self()}
-      can_undo_types={@can_undo_types}
-      stream={@streams.activity}
-      page={@page}
-      end_of_stream?={@end_of_stream?}
-      event_name="activity_event"
-    />
-  </div>
-</main>
 <nav class="fixed top-0 z-100 px-6 pl-20 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-stone-800  bg-opacity-70 bg-neutral-900">
   <span className="w-full font-medium text-sm">
     <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
@@ -113,3 +96,20 @@
     </div>
   </div>
 </nav>
+<main
+  id="map-events-list"
+  class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
+>
+  <div class="flex flex-col gap-4 w-full">
+    <.live_component
+      module={UserActivity}
+      id="user-activity"
+      notify_to={self()}
+      can_undo_types={@can_undo_types}
+      stream={@streams.activity}
+      page={@page}
+      end_of_stream?={@end_of_stream?}
+      event_name="activity_event"
+    />
+  </div>
+</main>

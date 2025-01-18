@@ -5,7 +5,7 @@ import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/type
 
 const MIN_WINDOW_SIZE = 100;
 const SNAP_THRESHOLD = 10;
-const SNAP_GAP = 10;
+export const SNAP_GAP = 10;
 
 export enum ActionType {
   Drag = 'drag',
@@ -92,12 +92,7 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
   );
 
   useEffect(() => {
-    setWindows(
-      initialWindows.map((window, index) => ({
-        ...window,
-        zIndex: index + 1,
-      })),
-    );
+    setWindows(initialWindows.slice(0));
   }, [initialWindows]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);

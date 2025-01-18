@@ -2,6 +2,135 @@
 
 <!-- changelog -->
 
+## [v1.42.3](https://github.com/wanderer-industries/wanderer/compare/v1.42.2...v1.42.3) (2025-01-17)
+
+
+
+
+### Bug Fixes:
+
+* change structure tooltip to avoid paste confusion (#125)
+
+* change structure tooltip to avoid paste confusion
+
+* clarify use of evetime and use primereact calendar
+
+## [v1.42.2](https://github.com/wanderer-industries/wanderer/compare/v1.42.1...v1.42.2) (2025-01-16)
+
+
+
+
+## [v1.42.1](https://github.com/wanderer-industries/wanderer/compare/v1.42.0...v1.42.1) (2025-01-16)
+
+
+
+
+### Bug Fixes:
+
+* Map: Remove linked sig ID if system containing signature removed from map
+
+## [v1.42.0](https://github.com/wanderer-industries/wanderer/compare/v1.41.0...v1.42.0) (2025-01-16)
+
+
+
+
+### Features:
+
+* Audit: Add 'Signatures added/removed' map audit events
+
+## [v1.41.0](https://github.com/wanderer-industries/wanderer/compare/v1.40.7...v1.41.0) (2025-01-16)
+
+
+
+
+### Features:
+
+* Audit: Add 'ACL added/removed' map audit events
+
+## [v1.40.7](https://github.com/wanderer-industries/wanderer/compare/v1.40.6...v1.40.7) (2025-01-15)
+
+
+
+
+## [v1.40.6](https://github.com/wanderer-industries/wanderer/compare/v1.40.5...v1.40.6) (2025-01-15)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix follow mode
+
+* center system is not selected text for structures (#122)
+
+* Map: Fix system revert issues
+
+* Map: Fix issues with splashing signatures select & sig ID in temp names
+
+## [v1.40.5](https://github.com/wanderer-industries/wanderer/compare/v1.40.4...v1.40.5) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix follow mode
+
+## [v1.40.4](https://github.com/wanderer-industries/wanderer/compare/v1.40.3...v1.40.4) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* center system is not selected text for structures (#122)
+
+## [v1.40.3](https://github.com/wanderer-industries/wanderer/compare/v1.40.2...v1.40.3) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix system revert issues
+
+## [v1.40.2](https://github.com/wanderer-industries/wanderer/compare/v1.40.1...v1.40.2) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix issues with splashing signatures select & sig ID in temp names
+
+## [v1.40.1](https://github.com/wanderer-industries/wanderer/compare/v1.40.0...v1.40.1) (2025-01-14)
+
+
+
+
+## [v1.40.0](https://github.com/wanderer-industries/wanderer/compare/v1.39.3...v1.40.0) (2025-01-14)
+
+
+
+
+### Features:
+
+* add structure widget with timer and associated api
+
+## [v1.39.3](https://github.com/wanderer-industries/wanderer/compare/v1.39.2...v1.39.3) (2025-01-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add style of corners for windows. Add ability to reset widgets. A lot of refactoring
+
+## [v1.39.2](https://github.com/wanderer-industries/wanderer/compare/v1.39.1...v1.39.2) (2025-01-13)
+
+
+
+
 ## [v1.39.1](https://github.com/wanderer-industries/wanderer/compare/v1.39.0...v1.39.1) (2025-01-13)
 
 

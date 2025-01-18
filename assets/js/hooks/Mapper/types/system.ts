@@ -117,6 +117,7 @@ export type SolarSystemRawType = {
   status: number;
   name: string | null;
   temporary_name: string | null;
+  linked_sig_eve_id: string | null;
 
   system_static_info: SolarSystemStaticInfoRaw;
   system_signatures: SystemSignature[];
@@ -130,4 +131,3 @@ export type SearchSystemItem = {
   system_static_info: SolarSystemStaticInfoRaw;
   value: number;
 };
-

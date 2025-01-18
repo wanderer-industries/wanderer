@@ -78,22 +78,23 @@ jobs:
           fetch-depth: 0
       - name: 😅 Cache deps
         id: cache-deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-elixir-deps
         with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          path: |
+            deps
+          key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
+            ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
       - name: 😅 Cache compiled build
         id: cache-build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-compiled-build
         with:
           path: |
-            **/_build
+            _build
           key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
@@ -187,6 +188,8 @@ jobs:
           push: true
           context: .
           file: ./Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ matrix.platform }}
           outputs: type=image,"name=${{ env.REGISTRY_IMAGE }}",push-by-digest=true,name-canonical=true,push=true

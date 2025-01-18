@@ -1,12 +1,10 @@
 import { memo } from 'react';
-import { Handle, Position } from 'reactflow';
+import { MapSolarSystemType } from '../../map.types';
+import { Handle, Position, NodeProps } from 'reactflow';
 import clsx from 'clsx';
-
 import classes from './SolarSystemNodeDefault.module.scss';
 import { PrimeIcons } from 'primereact/api';
-
 import { useSolarSystemNode } from '../../hooks/useSolarSystemNode';
-
 import {
   MARKER_BOOKMARK_BG_STYLES,
   STATUS_CLASSES,
@@ -15,64 +13,35 @@ import {
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 
-export const SolarSystemNodeDefault = memo(props => {
-  const {
-    charactersInSystem,
-    classTitle,
-    classTitleColor,
-    customName,
-    effectName,
-    hasUserCharacters,
-    hubs,
-    visible,
-    labelCustom,
-    labelsInfo,
-    locked,
-    isShattered,
-    isThickConnections,
-    isWormhole,
-    killsCount,
-    killsActivityType,
-    regionClass,
-    regionName,
-    status,
-    selected,
-    tag,
-    showHandlers,
-    systemName,
-    sortedStatics,
-    solarSystemId,
-    unsplashedLeft,
-    unsplashedRight,
-    dbClick: handleDbClick,
-  } = useSolarSystemNode(props);
+export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
+  const nodeVars = useSolarSystemNode(props);
 
   return (
     <>
-      {visible && (
+      {nodeVars.visible && (
         <div className={classes.Bookmarks}>
-          {labelCustom !== '' && (
+          {nodeVars.labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{labelCustom}</span>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{nodeVars.labelCustom}</span>
             </div>
           )}
 
-          {isShattered && (
+          {nodeVars.isShattered && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered)}>
               <span className={clsx('pi pi-chart-pie', classes.icon)} />
             </div>
           )}
 
-          {killsCount && (
-            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[killsActivityType!])}>
+          {nodeVars.killsCount && (
+            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}>
               <div className={clsx(classes.BookmarkWithIcon)}>
                 <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
-                <span className={clsx(classes.text)}>{killsCount}</span>
+                <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
               </div>
             </div>
           )}
 
-          {labelsInfo.map(x => (
+          {nodeVars.labelsInfo.map(x => (
             <div key={x.id} className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[x.id])}>
               {x.shortName}
             </div>
@@ -81,19 +50,30 @@ export const SolarSystemNodeDefault = memo(props => {
       )}
 
       <div
-        className={clsx(classes.RootCustomNode, regionClass && classes[regionClass], classes[STATUS_CLASSES[status]], {
-          [classes.selected]: selected,
-        })}
+        className={clsx(
+          classes.RootCustomNode,
+          nodeVars.regionClass && classes[nodeVars.regionClass],
+          classes[STATUS_CLASSES[nodeVars.status]],
+          {
+            [classes.selected]: nodeVars.selected,
+          },
+        )}
       >
-        {visible && (
+        {nodeVars.visible && (
           <>
             <div className={classes.HeadRow}>
-              <div className={clsx(classes.classTitle, classTitleColor, '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]')}>
-                {classTitle ?? '-'}
+              <div
+                className={clsx(
+                  classes.classTitle,
+                  nodeVars.classTitleColor,
+                  '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]',
+                )}
+              >
+                {nodeVars.classTitle ?? '-'}
               </div>
 
-              {tag != null && tag !== '' && (
-                <div className={clsx(classes.TagTitle, 'text-sky-400 font-medium')}>{tag}</div>
+              {nodeVars.tag != null && nodeVars.tag !== '' && (
+                <div className={clsx(classes.TagTitle, 'text-sky-400 font-medium')}>{nodeVars.tag}</div>
               )}
 
               <div
@@ -102,53 +82,55 @@ export const SolarSystemNodeDefault = memo(props => {
                   '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
                 )}
               >
-                {systemName}
+                {nodeVars.systemName}
               </div>
 
-              {isWormhole && (
+              {nodeVars.isWormhole && (
                 <div className={classes.statics}>
-                  {sortedStatics.map(whClass => (
+                  {nodeVars.sortedStatics.map(whClass => (
                     <WormholeClassComp key={whClass} id={whClass} />
                   ))}
                 </div>
               )}
 
-              {effectName !== null && isWormhole && (
-                <div className={clsx(classes.effect, EFFECT_BACKGROUND_STYLES[effectName])} />
+              {nodeVars.effectName !== null && nodeVars.isWormhole && (
+                <div className={clsx(classes.effect, EFFECT_BACKGROUND_STYLES[nodeVars.effectName])} />
               )}
             </div>
 
             <div className={clsx(classes.BottomRow, 'flex items-center justify-between')}>
-              {customName && (
+              {nodeVars.customName && (
                 <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-blue-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
-                  {customName}
+                  {nodeVars.customName}
                 </div>
               )}
 
-              {!isWormhole && !customName && (
+              {!nodeVars.isWormhole && !nodeVars.customName && (
                 <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] text-stone-300 whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
-                  {regionName}
+                  {nodeVars.regionName}
                 </div>
               )}
 
-              {isWormhole && !customName && <div />}
+              {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
               <div className="flex items-center justify-end">
                 <div className="flex gap-1 items-center">
-                  {locked && <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />}
+                  {nodeVars.locked && (
+                    <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
+                  )}
 
-                  {hubs.includes(solarSystemId.toString()) && (
+                  {nodeVars.hubs.includes(nodeVars.solarSystemId.toString()) && (
                     <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
                   )}
 
-                  {charactersInSystem.length > 0 && (
+                  {nodeVars.charactersInSystem.length > 0 && (
                     <div
                       className={clsx(classes.localCounter, {
-                        ['text-amber-300']: hasUserCharacters,
+                        ['text-amber-300']: nodeVars.hasUserCharacters,
                       })}
                     >
                       <i className="pi pi-users" style={{ fontSize: '0.50rem' }} />
-                      <span className="font-sans">{charactersInSystem.length}</span>
+                      <span className="font-sans">{nodeVars.charactersInSystem.length}</span>
                     </div>
                   )}
                 </div>
@@ -158,19 +140,19 @@ export const SolarSystemNodeDefault = memo(props => {
         )}
       </div>
 
-      {visible && (
+      {nodeVars.visible && (
         <>
-          {unsplashedLeft.length > 0 && (
+          {nodeVars.unsplashedLeft.length > 0 && (
             <div className={classes.Unsplashed}>
-              {unsplashedLeft.map(sig => (
+              {nodeVars.unsplashedLeft.map(sig => (
                 <UnsplashedSignature key={sig.sig_id} signature={sig} />
               ))}
             </div>
           )}
 
-          {unsplashedRight.length > 0 && (
+          {nodeVars.unsplashedRight.length > 0 && (
             <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
-              {unsplashedRight.map(sig => (
+              {nodeVars.unsplashedRight.map(sig => (
                 <UnsplashedSignature key={sig.sig_id} signature={sig} />
               ))}
             </div>
@@ -178,44 +160,44 @@ export const SolarSystemNodeDefault = memo(props => {
         </>
       )}
 
-      <div onMouseDownCapture={handleDbClick} className={classes.Handlers}>
+      <div onMouseDownCapture={nodeVars.dbClick} className={classes.Handlers}>
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleTop, {
-            [classes.selected]: selected,
-            [classes.Tick]: isThickConnections,
+            [classes.selected]: nodeVars.selected,
+            [classes.Tick]: nodeVars.isThickConnections,
           })}
-          style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
+          style={{ visibility: nodeVars.showHandlers ? 'visible' : 'hidden' }}
           position={Position.Top}
           id="a"
         />
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleRight, {
-            [classes.selected]: selected,
-            [classes.Tick]: isThickConnections,
+            [classes.selected]: nodeVars.selected,
+            [classes.Tick]: nodeVars.isThickConnections,
           })}
-          style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
+          style={{ visibility: nodeVars.showHandlers ? 'visible' : 'hidden' }}
           position={Position.Right}
           id="b"
         />
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleBottom, {
-            [classes.selected]: selected,
-            [classes.Tick]: isThickConnections,
+            [classes.selected]: nodeVars.selected,
+            [classes.Tick]: nodeVars.isThickConnections,
           })}
-          style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
+          style={{ visibility: nodeVars.showHandlers ? 'visible' : 'hidden' }}
           position={Position.Bottom}
           id="c"
         />
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleLeft, {
-            [classes.selected]: selected,
-            [classes.Tick]: isThickConnections,
+            [classes.selected]: nodeVars.selected,
+            [classes.Tick]: nodeVars.isThickConnections,
           })}
-          style={{ visibility: showHandlers ? 'visible' : 'hidden' }}
+          style={{ visibility: nodeVars.showHandlers ? 'visible' : 'hidden' }}
           position={Position.Left}
           id="d"
         />

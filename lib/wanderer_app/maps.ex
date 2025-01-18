@@ -55,8 +55,23 @@ defmodule WandererApp.Maps do
 
   def get_available_maps(current_user) do
     case WandererApp.Api.Map.available(%{}, actor: current_user) do
-      {:ok, maps} -> {:ok, maps |> _filter_blocked_maps(current_user)}
+      {:ok, maps} -> {:ok, maps |> filter_blocked_maps(current_user)}
       _ -> {:ok, []}
+    end
+  end
+
+  def get_tracked_map_characters(map_id, current_user) do
+    case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
+           map_id,
+           current_user.characters |> Enum.map(& &1.id)
+         ) do
+      {:ok, settings} ->
+        {:ok,
+         settings
+         |> Enum.map(fn s -> s |> Ash.load!(:character) |> Map.get(:character) end)}
+
+      _ ->
+        {:ok, []}
     end
   end
 
@@ -66,7 +81,7 @@ defmodule WandererApp.Maps do
 
     characters =
       map
-      |> _get_map_available_characters(user_characters)
+      |> get_map_available_characters(user_characters)
       |> Enum.map(fn c ->
         map_character(c, character_settings |> Enum.find(&(&1.character_id == c.id)))
       end)
@@ -146,7 +161,7 @@ defmodule WandererApp.Maps do
      }}
   end
 
-  defp _get_map_available_characters(map, user_characters) do
+  defp get_map_available_characters(map, user_characters) do
     {:ok,
      %{
        map_acl_owner_ids: map_acl_owner_ids,
@@ -164,7 +179,7 @@ defmodule WandererApp.Maps do
     end)
   end
 
-  defp _filter_blocked_maps(maps, current_user) do
+  defp filter_blocked_maps(maps, current_user) do
     user_character_ids = current_user.characters |> Enum.map(& &1.id)
     user_character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
 

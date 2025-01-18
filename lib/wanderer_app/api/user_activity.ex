@@ -95,7 +95,9 @@ defmodule WandererApp.Api.UserActivity do
           :map_acl_member_updated,
           :map_connection_added,
           :map_connection_updated,
-          :map_connection_removed
+          :map_connection_removed,
+          :signatures_added,
+          :signatures_removed
         ]
       )
 
@@ -107,8 +109,6 @@ defmodule WandererApp.Api.UserActivity do
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
-
-
 
   relationships do
     belongs_to :character, WandererApp.Api.Character do

@@ -4,16 +4,26 @@ import {
   RoutesWidget,
   SystemInfo,
   SystemSignatures,
+  SystemStructures,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 
-export const CURRENT_WINDOWS_VERSION = 2;
+export const CURRENT_WINDOWS_VERSION = 8;
+export const WINDOWS_LOCAL_STORE_KEY = 'windows:settings:v2';
 
 export enum WidgetsIds {
   info = 'info',
   signatures = 'signatures',
   local = 'local',
   routes = 'routes',
+  structures = 'structures',
 }
+
+export const STORED_VISIBLE_WIDGETS_DEFAULT = [
+  WidgetsIds.info,
+  WidgetsIds.local,
+  WidgetsIds.routes,
+  WidgetsIds.signatures,
+];
 
 export const DEFAULT_WIDGETS: WindowProps[] = [
   {
@@ -44,6 +54,13 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     zIndex: 0,
     content: () => <RoutesWidget />,
   },
+  {
+    id: WidgetsIds.structures,
+    position: { x: 10, y: 730 },
+    size: { width: 510, height: 200 },
+    zIndex: 0,
+    content: () => <SystemStructures />,
+  },
 ];
 
 type WidgetsCheckboxesType = {
@@ -67,5 +84,9 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
   {
     id: WidgetsIds.routes,
     label: 'Routes',
+  },
+  {
+    id: WidgetsIds.structures,
+    label: 'Structures',
   },
 ];

@@ -35,21 +35,73 @@
 .topLeft {
   top: -7.5px;
   left: -7.5px;
+
+  &::after {
+    position: relative;
+    top: 7.5px;
+    left: 7.5px;
+    display: block;
+    content: " ";
+    width: 5px;
+    height: 5px;
+    border-left: 1px solid var(--window-corner);
+    border-top: 1px solid var(--window-corner);
+    pointer-events: none;
+  }
 }
 
 .topRight {
   top: -7.5px;
   right: -7.5px;
+
+  &::after {
+    position: relative;
+    top: 7.5px;
+    right: -2.5px;
+    display: block;
+    content: " ";
+    width: 5px;
+    height: 5px;
+    border-right: 1px solid var(--window-corner);
+    border-top: 1px solid var(--window-corner);
+    pointer-events: none;
+  }
 }
 
 .bottomLeft {
   bottom: -7.5px;
   left: -7.5px;
+
+  &::after {
+    position: relative;
+    top: 2.5px;
+    left: 7.5px;
+    display: block;
+    content: " ";
+    width: 5px;
+    height: 5px;
+    border-left: 1px solid var(--window-corner);
+    border-bottom: 1px solid var(--window-corner);
+    pointer-events: none;
+  }
 }
 
 .bottomRight {
   bottom: -7.5px;
   right: -7.5px;
+
+  &::after {
+    position: relative;
+    top: 2.5px;
+    right: -2.5px;
+    display: block;
+    content: " ";
+    width: 5px;
+    height: 5px;
+    border-right: 1px solid var(--window-corner);
+    border-bottom: 1px solid var(--window-corner);
+    pointer-events: none;
+  }
 }
 
 .top {

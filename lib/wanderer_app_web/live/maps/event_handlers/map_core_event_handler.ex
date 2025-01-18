@@ -119,6 +119,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       ),
       do: socket
 
+  def handle_server_event(%{event: :structures_updated, payload: _solar_system_id}, socket) do
+    socket
+  end
+
   def handle_server_event(event, socket) do
     Logger.warning(fn -> "unhandled map core event: #{inspect(event)} #{inspect(socket)} " end)
     socket
@@ -332,7 +336,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
          {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user.id),
          {:ok, tracked_map_characters} <-
-           MapCharactersEventHandler.get_tracked_map_characters(map_id, current_user),
+           WandererApp.Maps.get_tracked_map_characters(map_id, current_user),
          {:ok, characters_limit} <- map_id |> WandererApp.Map.get_characters_limit(),
          {:ok, present_character_ids} <-
            WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", []),
@@ -536,21 +540,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1),
       options: options
     }
-  end
-
-  defp get_tracked_map_characters(map_id, current_user) do
-    case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
-           map_id,
-           current_user.characters |> Enum.map(& &1.id)
-         ) do
-      {:ok, settings} ->
-        {:ok,
-         settings
-         |> Enum.map(fn s -> s |> Ash.load!(:character) |> Map.get(:character) end)}
-
-      _ ->
-        {:ok, []}
-    end
   end
 
   defp filter_map_characters(

@@ -74,7 +74,7 @@ defmodule WandererAppWeb.UserActivity do
       </p>
 
       <p class="text-sm text-[var(--color-gray-4)] w-[15%]">
-        <%= _get_event_name(@activity.event_type) %>
+        <%= get_event_name(@activity.event_type) %>
       </p>
       <.activity_event event_type={@activity.event_type} event_data={@activity.event_data} />
 
@@ -115,7 +115,7 @@ defmodule WandererAppWeb.UserActivity do
     <div class="w-[40%]">
       <div class="flex items-center gap-1">
         <h6 class="text-base leading-[150%] font-semibold dark:text-white">
-          <%= _get_event_data(@event_type, Jason.decode!(@event_data) |> Map.drop(["character_id"])) %>
+          <%= get_event_data(@event_type, Jason.decode!(@event_data) |> Map.drop(["character_id"])) %>
         </h6>
       </div>
     </div>
@@ -129,27 +129,35 @@ defmodule WandererAppWeb.UserActivity do
     {:noreply, socket}
   end
 
-  defp _get_event_name(:hub_added), do: "Hub Added"
-  defp _get_event_name(:hub_removed), do: "Hub Removed"
-  defp _get_event_name(:map_connection_added), do: "Connection Added"
-  defp _get_event_name(:map_connection_updated), do: "Connection Updated"
-  defp _get_event_name(:map_connection_removed), do: "Connection Removed"
-  defp _get_event_name(:map_acl_added), do: "Acl Added"
-  defp _get_event_name(:map_acl_removed), do: "Acl Removed"
-  defp _get_event_name(:system_added), do: "System Added"
-  defp _get_event_name(:system_updated), do: "System Updated"
-  defp _get_event_name(:systems_removed), do: "System(s) Removed"
-  defp _get_event_name(name), do: name
+  defp get_event_name(:hub_added), do: "Hub Added"
+  defp get_event_name(:hub_removed), do: "Hub Removed"
+  defp get_event_name(:map_connection_added), do: "Connection Added"
+  defp get_event_name(:map_connection_updated), do: "Connection Updated"
+  defp get_event_name(:map_connection_removed), do: "Connection Removed"
+  defp get_event_name(:map_acl_added), do: "Acl Added"
+  defp get_event_name(:map_acl_removed), do: "Acl Removed"
+  defp get_event_name(:system_added), do: "System Added"
+  defp get_event_name(:system_updated), do: "System Updated"
+  defp get_event_name(:systems_removed), do: "System(s) Removed"
+  defp get_event_name(:signatures_added), do: "Signatures Added"
+  defp get_event_name(:signatures_removed), do: "Signatures Removed"
+  defp get_event_name(name), do: name
 
-  # defp _get_event_data(:hub_added, data), do: Jason.encode!(data)
-  # defp _get_event_data(:hub_removed, data), do: data
+  defp get_event_data(:map_acl_added, %{"acl_id" => acl_id}) do
+    {:ok, acl} = WandererApp.AccessListRepo.get(acl_id)
+    "#{acl.name}"
+  end
 
-  # defp _get_event_data(:map_acl_added, data), do: data
-  # defp _get_event_data(:map_acl_removed, data), do: data
-  # defp _get_event_data(:system_added, data), do: data
+  defp get_event_data(:map_acl_removed, %{"acl_id" => acl_id}) do
+    {:ok, acl} = WandererApp.AccessListRepo.get(acl_id)
+    "#{acl.name}"
+  end
+
+  # defp get_event_data(:map_acl_removed, data), do: data
+  # defp get_event_data(:system_added, data), do: data
   #
 
-  defp _get_event_data(:system_updated, %{
+  defp get_event_data(:system_updated, %{
          "key" => "labels",
          "solar_system_id" => solar_system_id,
          "value" => value
@@ -166,22 +174,22 @@ defmodule WandererAppWeb.UserActivity do
     end
   end
 
-  defp _get_event_data(:system_added, %{
+  defp get_event_data(:system_added, %{
          "solar_system_id" => solar_system_id
        }),
        do: _get_system_name(solar_system_id)
 
-  defp _get_event_data(:hub_added, %{
+  defp get_event_data(:hub_added, %{
          "solar_system_id" => solar_system_id
        }),
        do: _get_system_name(solar_system_id)
 
-  defp _get_event_data(:hub_removed, %{
+  defp get_event_data(:hub_removed, %{
          "solar_system_id" => solar_system_id
        }),
        do: _get_system_name(solar_system_id)
 
-  defp _get_event_data(:system_updated, %{
+  defp get_event_data(:system_updated, %{
          "key" => key,
          "solar_system_id" => solar_system_id,
          "value" => value
@@ -190,7 +198,7 @@ defmodule WandererAppWeb.UserActivity do
     "#{system_name} #{key} - #{inspect(value)}"
   end
 
-  defp _get_event_data(:systems_removed, %{
+  defp get_event_data(:systems_removed, %{
          "solar_system_ids" => solar_system_ids
        }),
        do:
@@ -198,7 +206,21 @@ defmodule WandererAppWeb.UserActivity do
          |> Enum.map(&_get_system_name/1)
          |> Enum.join(", ")
 
-  defp _get_event_data(:map_connection_added, %{
+  defp get_event_data(:signatures_added, %{
+         "signatures" => signatures
+       }),
+       do:
+         signatures
+         |> Enum.join(", ")
+
+  defp get_event_data(:signatures_removed, %{
+         "signatures" => signatures
+       }),
+       do:
+         signatures
+         |> Enum.join(", ")
+
+  defp get_event_data(:map_connection_added, %{
          "solar_system_source_id" => solar_system_source_id,
          "solar_system_target_id" => solar_system_target_id
        }) do
@@ -207,7 +229,7 @@ defmodule WandererAppWeb.UserActivity do
     "[#{source_system_name}:#{target_system_name}]"
   end
 
-  defp _get_event_data(:map_connection_removed, %{
+  defp get_event_data(:map_connection_removed, %{
          "solar_system_source_id" => solar_system_source_id,
          "solar_system_target_id" => solar_system_target_id
        }) do
@@ -216,7 +238,7 @@ defmodule WandererAppWeb.UserActivity do
     "[#{source_system_name}:#{target_system_name}]"
   end
 
-  defp _get_event_data(:map_connection_updated, %{
+  defp get_event_data(:map_connection_updated, %{
          "key" => key,
          "solar_system_source_id" => solar_system_source_id,
          "solar_system_target_id" => solar_system_target_id,
@@ -227,7 +249,7 @@ defmodule WandererAppWeb.UserActivity do
     "[#{source_system_name}:#{target_system_name}] #{key} - #{inspect(value)}"
   end
 
-  defp _get_event_data(_name, data), do: Jason.encode!(data)
+  defp get_event_data(_name, data), do: Jason.encode!(data)
 
   defp _get_system_name(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
