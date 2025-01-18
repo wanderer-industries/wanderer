@@ -15,7 +15,7 @@ import { WindowLocalSettingsType, STORED_DEFAULT_VALUES } from './components';
 
 export const LocalCharacters = () => {
   const {
-    data: { characters, userCharacters, selectedSystems, presentCharacters },
+    data: { characters, userCharacters, selectedSystems },
   } = useMapRootState();
 
   const [settings, setSettings] = useLocalStorageState<WindowLocalSettingsType>('window:local:settings', {
@@ -38,6 +38,7 @@ export const LocalCharacters = () => {
         ...x,
         isOwn: userCharacters.includes(x.eve_id),
         compact: settings.compact,
+        showShipName: settings.showShipName,
       }))
       .sort(sortCharacters);
 
@@ -46,7 +47,15 @@ export const LocalCharacters = () => {
     }
 
     return filtered;
-  }, [showOffline, characters, settings.showOffline, settings.compact, systemId, userCharacters]);
+  }, [
+    characters,
+    systemId,
+    userCharacters,
+    settings.compact,
+    settings.showOffline,
+    settings.showShipName,
+    showOffline,
+  ]);
 
   const isNobodyHere = sorted.length === 0;
   const isNotSelectedSystem = selectedSystems.length !== 1;
@@ -55,7 +64,7 @@ export const LocalCharacters = () => {
   const ref = useRef<HTMLDivElement>(null);
   const compact = useMaxWidth(ref, 145);
 
-  const itemTemplate = useLocalCharactersItemTemplate();
+  const itemTemplate = useLocalCharactersItemTemplate(settings.showShipName);
 
   return (
     <Widget
@@ -76,13 +85,26 @@ export const LocalCharacters = () => {
               </WdTooltipWrapper>
             )}
 
+            {settings.compact && (
+              <WdTooltipWrapper content="Show ship name in compact rows">
+                <WdCheckbox
+                  size="xs"
+                  labelSide="left"
+                  label={compact ? '' : 'Show ship name'}
+                  value={settings.showShipName}
+                  classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+                  onChange={() => setSettings(prev => ({ ...prev, showShipName: !prev.showShipName }))}
+                />
+              </WdTooltipWrapper>
+            )}
+
             <span
               className={clsx('w-4 h-4 cursor-pointer', {
                 ['hero-bars-2']: settings.compact,
                 ['hero-bars-3']: !settings.compact,
               })}
               onClick={() => setSettings(prev => ({ ...prev, compact: !prev.compact }))}
-            ></span>
+            />
           </LayoutEventBlocker>
         </div>
       }
@@ -102,7 +124,7 @@ export const LocalCharacters = () => {
       {showList && (
         <LocalCharactersList
           items={sorted}
-          itemSize={40}
+          itemSize={settings.compact ? 26 : 41}
           itemTemplate={itemTemplate}
           containerClassName="w-full h-full overflow-x-hidden overflow-y-auto"
         />

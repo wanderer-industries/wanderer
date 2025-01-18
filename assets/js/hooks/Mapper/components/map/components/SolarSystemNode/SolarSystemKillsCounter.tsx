@@ -22,7 +22,7 @@ export function KillsCounter({ killsCount, killsActivityType, systemId }: KillsB
       Loading kills
     </div>
   ) : (
-    <SystemKillsContent kills={detailedKills} systemNameMap={systemNameMap} />
+    <SystemKillsContent kills={detailedKills} systemNameMap={systemNameMap} compact={true} />
   );
 
   return (

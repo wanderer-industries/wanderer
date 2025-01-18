@@ -2,7 +2,6 @@ import React from 'react';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import clsx from 'clsx';
 import { CharItemProps } from './types';
-import classes from './LocalCharacterList.module.scss';
 
 type LocalCharactersListProps = {
   items: Array<CharItemProps>;
@@ -19,9 +18,10 @@ export function LocalCharactersList({ items, itemSize, itemTemplate, containerCl
     <VirtualScroller
       items={items}
       itemSize={itemSize}
-      itemTemplate={itemTemplate}
-      className={clsx(classes.VirtualScroller, containerClassName)}
+      orientation="vertical"
+      className={clsx('w-full h-full', containerClassName)}
       autoSize={false}
+      itemTemplate={itemTemplate}
     />
   );
 }

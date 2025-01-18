@@ -1,22 +1,25 @@
 import React from 'react';
-import {
-  LayoutEventBlocker,
-  WdImgButton,
-  TooltipPosition,
-  InfoDrawer,
-  SystemView,
-} from '@/hooks/Mapper/components/ui-kit';
+import { LayoutEventBlocker, WdImgButton, TooltipPosition, SystemView } from '@/hooks/Mapper/components/ui-kit';
 import { PrimeIcons } from 'primereact/api';
+import clsx from 'clsx';
 
 interface KillsWidgetHeaderProps {
   systemId?: string;
   showAllVisible: boolean;
   onToggleShowAllVisible: () => void;
+  compact: boolean;
+  onToggleCompact: () => void;
 }
 
-export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({ systemId, showAllVisible, onToggleShowAllVisible }) => {
+export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({
+  systemId,
+  showAllVisible,
+  onToggleShowAllVisible,
+  compact,
+  onToggleCompact,
+}) => {
   return (
-    <div className="flex justify-between items-center text-xs w-full h-full">
+    <div className="flex justify-between items-center text-xs w-full">
       <div className="flex items-center gap-1">
         <div className="text-stone-400">
           Kills
@@ -27,14 +30,13 @@ export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({ systemId, showAl
         )}
       </div>
 
-      <LayoutEventBlocker className="flex gap-2">
+      <LayoutEventBlocker className="flex gap-2 items-center">
         <WdImgButton
-          className={`
-                ${showAllVisible ? `${PrimeIcons.EYE} text-sky-400` : `${PrimeIcons.EYE_SLASH} text-gray-400`}
-                hover:text-sky-200
-                transition
-                duration-300
-              `}
+          className={clsx(
+            showAllVisible ? `${PrimeIcons.EYE} text-sky-400` : `${PrimeIcons.EYE_SLASH} text-gray-400`,
+            'hover:text-sky-200 transition duration-300',
+            'inline-flex items-center justify-center w-5 h-5 text-sm leading-none align-middle',
+          )}
           onClick={onToggleShowAllVisible}
           tooltip={{
             content: showAllVisible ? 'All visible systems' : 'Selected system',
@@ -43,17 +45,15 @@ export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({ systemId, showAl
         />
 
         <WdImgButton
-          className={PrimeIcons.QUESTION_CIRCLE}
+          className={clsx(
+            compact ? 'hero-bars-2' : 'hero-bars-3',
+            'hover:text-sky-200 transition duration-300',
+            'inline-flex items-center justify-center w-5 h-5 text-sm leading-none align-middle',
+          )}
+          onClick={onToggleCompact}
           tooltip={{
+            content: 'Toggle compact mode',
             position: TooltipPosition.left,
-            // @ts-ignore
-            content: (
-              <InfoDrawer title={<b className="text-slate-50">What am I looking at?</b>}>
-                These are killmails from the last 24 hours for the selected system,
-                <br />
-                or for all visible systems if that mode is toggled on.
-              </InfoDrawer>
-            ),
           }}
         />
       </LayoutEventBlocker>

@@ -19,6 +19,7 @@ export const WdTooltipWrapper = ({
   offset,
   position,
   targetSelector,
+  interactive = false,
   ...props
 }: WdTooltipWrapperProps) => {
   const tooltipRef = useRef<WdTooltipHandlers>(null);
@@ -32,7 +33,7 @@ export const WdTooltipWrapper = ({
         {...props}
         {...(content && {
           onMouseEnter: handleShowDeleteTooltip,
-          onMouseLeave: handleHideDeleteTooltip,
+          ...(interactive ? {} : { onMouseLeave: handleHideDeleteTooltip }),
         })}
       >
         {children}
@@ -42,6 +43,7 @@ export const WdTooltipWrapper = ({
         offset={offset}
         position={position}
         content={content}
+        interactive={interactive}
         targetSelector={targetSelector}
       />
     </>

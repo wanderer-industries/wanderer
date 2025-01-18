@@ -195,7 +195,7 @@ export const WdTooltip = forwardRef((props: TooltipProps & WithClassName, ref: F
         className={clsx(
           classes.tooltip,
           interactive ? 'pointer-events-auto' : 'pointer-events-none',
-          'absolute px-2 py-2 border rounded border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
+          'absolute p-1 border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
           { ['invisible']: position === null },
           className,
         )}
@@ -203,6 +203,9 @@ export const WdTooltip = forwardRef((props: TooltipProps & WithClassName, ref: F
           top: position?.top ?? 0,
           left: position?.left ?? 0,
           zIndex: 10000,
+        }}
+        onMouseLeave={() => {
+          if (interactive) setVisible(false);
         }}
       >
         {typeof content === 'function' ? content() : content}

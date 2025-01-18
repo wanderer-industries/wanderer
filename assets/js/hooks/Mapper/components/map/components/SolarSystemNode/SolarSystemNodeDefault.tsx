@@ -17,7 +17,7 @@ import { KillsCounter } from './SolarSystemKillsCounter';
 
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
-  const { localCounterCharacters } = useLocalCounter(nodeVars);
+  const { localCounterCharacters, showShipName } = useLocalCounter(nodeVars);
 
   return (
     <>
@@ -197,6 +197,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         hasUserCharacters={nodeVars.hasUserCharacters}
         localCounterCharacters={localCounterCharacters}
         classes={classes}
+        showShipName={showShipName}
       />
       {nodeVars.killsCount && nodeVars.killsCount > 0 && nodeVars.solarSystemId && (
         <KillsCounter

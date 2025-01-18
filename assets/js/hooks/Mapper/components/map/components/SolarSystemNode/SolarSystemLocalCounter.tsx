@@ -10,6 +10,7 @@ interface LocalCounterProps {
   classes: { [key: string]: string };
   hasUserCharacters: boolean;
   showIcon?: boolean;
+  showShipName?: boolean;
 }
 
 export function LocalCounter({
@@ -17,21 +18,24 @@ export function LocalCounter({
   hasUserCharacters,
   classes,
   showIcon = true,
+  showShipName = false,
 }: LocalCounterProps) {
-  const itemTemplate = useLocalCharactersItemTemplate();
+  const itemTemplate = useLocalCharactersItemTemplate(showShipName);
 
   const pilotTooltipContent = useMemo(() => {
     return (
-      <div style={{ width: '240px', height: '200px' }}>
-        <LocalCharactersList
-          items={localCounterCharacters}
-          itemTemplate={itemTemplate}
-          itemSize={40}
-          containerClassName={clsx(classes.NodeTooltipInner, 'overflow-auto')}
-        />
+      <div
+        style={{
+          width: '300px',
+          height: '200px',
+          overflowX: 'hidden',
+          overflowY: 'auto',
+        }}
+      >
+        <LocalCharactersList items={localCounterCharacters} itemTemplate={itemTemplate} itemSize={26} />
       </div>
     );
-  }, [localCounterCharacters, itemTemplate, classes.NodeTooltipInner]);
+  }, [localCounterCharacters, itemTemplate]);
 
   if (localCounterCharacters.length === 0) {
     return null;
@@ -44,6 +48,7 @@ export function LocalCounter({
         content={pilotTooltipContent}
         position={TooltipPosition.right}
         offset={8}
+        interactive={true}
       >
         <div
           className={clsx(classes.localCounter, {

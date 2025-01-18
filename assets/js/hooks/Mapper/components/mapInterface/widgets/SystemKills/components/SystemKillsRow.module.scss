@@ -6,3 +6,15 @@
     border-radius: 3px;
     padding: 0 2px;
   }
+
+.attackerCountLabelCompact {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 0.6rem;
+  line-height: 1;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 1px 2px;
+  border-radius: 3px;
+  pointer-events: none;
+}

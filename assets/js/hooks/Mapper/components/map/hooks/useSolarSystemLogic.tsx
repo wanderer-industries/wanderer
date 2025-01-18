@@ -12,6 +12,8 @@ import { sortWHClasses } from '@/hooks/Mapper/helpers';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager';
 import { CharacterTypeRaw, OutCommand } from '@/hooks/Mapper/types';
 import { LABELS_INFO, LABELS_ORDER } from '@/hooks/Mapper/components/map/constants';
+import useLocalStorageState from 'use-local-storage-state';
+import { STORED_DEFAULT_VALUES, WindowLocalSettingsType } from '../../mapInterface/widgets/LocalCharacters/components';
 
 function getActivityType(count: number) {
   if (count <= 5) return 'activityNormal';
@@ -32,17 +34,24 @@ function sortedLabels(labels: string[]) {
 }
 
 export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
+  const [settings] = useLocalStorageState<WindowLocalSettingsType>('window:local:settings', {
+    defaultValue: STORED_DEFAULT_VALUES,
+  });
+
   const localCounterCharacters = useMemo(() => {
-    return [...nodeVars.charactersInSystem]
+    return nodeVars.charactersInSystem
       .map(char => ({
         ...char,
-        compact: false,
+        compact: true,
         isOwn: nodeVars.userCharacters.includes(char.eve_id),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [nodeVars.charactersInSystem, nodeVars.userCharacters]);
 
-  return { localCounterCharacters };
+  return {
+    localCounterCharacters,
+    showShipName: settings.showShipName,
+  };
 }
 
 export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {

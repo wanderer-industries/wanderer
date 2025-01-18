@@ -398,11 +398,6 @@ $custom-name: #93C5FD;
   }
 }
 
-.NodeTooltipInner {
-  border-radius: 6px;
-  overflow: hidden;
-}
-
 .LocalCounterLayer {
   position: absolute;
   top: 0;
@@ -442,39 +437,3 @@ $custom-name: #93C5FD;
   font-weight: var(--rf-node-font-weight, inherit) !important;  
 }
 
-
-.KillsBookmark {
-  padding: 2px 3px 0px;
-  background-color: #ffa200;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 8px;
-  font-family: var(--rf-node-font-family, inherit) !important;
-  font-weight: var(--rf-node-font-weight, inherit) !important;
-}
-
-.KillsBookmarkWithIcon {
-  display: inline-flex;
-  align-items: center;
-  margin: -2px, 0px, 0px;
-  padding: 0x, 2px, 0px, 0px;
-
-  .pi {
-    font-size: 8px;
-    width: auto;
-    height: auto;
-  }
-
-  .span {
-    margin: 1px 0x 0px;
-  }
-
-  .text {
-    font-size: 8px;
-    margin-left: 2px;
-    line-height: 1.2;
-    font-family: var(--rf-node-font-family, inherit) !important;
-    font-weight: var(--rf-node-font-weight, inherit) !important;
-  }
-}
