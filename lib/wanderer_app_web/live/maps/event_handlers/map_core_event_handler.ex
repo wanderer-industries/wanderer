@@ -299,6 +299,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           maybe_start_map(map_id)
         end
 
+        Process.send_after(self(), %{event: :fetch_new_map_kills, payload: %{map_id: map_id}}, 0)
+
         socket
         |> assign(
           map_id: map_id,

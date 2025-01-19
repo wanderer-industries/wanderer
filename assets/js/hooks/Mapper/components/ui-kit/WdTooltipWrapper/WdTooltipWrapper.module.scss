@@ -1,3 +1,25 @@
+/* WdTooltipWrapper.module.scss */
+
 .WdTooltipWrapperRoot {
   display: inline-block;
+}
+
+.wdTooltipSizeXs {
+  font-size: 0.7rem;
+  max-width: 150px;
+}
+
+.wdTooltipSizeSm {
+  font-size: 0.8rem;
+  max-width: 200px;
+}
+
+.wdTooltipSizeMd {
+  font-size: 0.9rem;
+  max-width: 250px;
+}
+
+.wdTooltipSizeLg {
+  font-size: 1rem !important;
+  min-width: 350px;
 }

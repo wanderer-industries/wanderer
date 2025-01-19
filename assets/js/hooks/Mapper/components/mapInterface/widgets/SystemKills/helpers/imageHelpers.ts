@@ -7,7 +7,6 @@ export function eveImageUrl(
   size?: number,
 ): string | undefined {
   if (!id || id <= 0) {
-    console.warn(`No valid ID for ${category}, returning undefined`);
     return undefined;
   }
 

@@ -5,10 +5,17 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
-  def handle_server_event(%{event: :add_system, payload: system}, socket),
-    do:
-      socket
-      |> MapEventHandler.push_map_event("add_systems", [MapEventHandler.map_ui_system(system)])
+  def handle_server_event(%{event: :add_system, payload: system}, socket) do
+    socket
+    |> MapEventHandler.push_map_event("add_systems", [MapEventHandler.map_ui_system(system)])
+
+    Process.send_after(
+      self(),
+      %{event: :fetch_new_system_kills, payload: system},
+      0
+    )
+    socket
+  end
 
   def handle_server_event(%{event: :update_system, payload: system}, socket),
     do:

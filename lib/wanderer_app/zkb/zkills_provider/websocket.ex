@@ -20,7 +20,6 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
   # Called by `KillsProvider.handle_in`
   def handle_in({:text, frame}, state) do
     partial = Jason.decode!(frame)
-    Logger.debug("[KillsProvider:WS] => #{inspect(partial, pretty: true)}")
 
     parse_and_store_zkb_partial(partial)
     {:ok, state}
@@ -61,15 +60,12 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
     do: Logger.warning("[KillsProvider.Websocket] Terminating => #{inspect(reason)}")
 
   defp handle_subscribe(channel, state) do
-    Logger.info("[KillsProvider.Websocket] Subscribing to channel=#{channel}")
     payload = Jason.encode!(%{"action" => "sub", "channel" => channel})
     {:reply, {:text, payload}, state}
   end
 
   # The partial from zKillboard has killmail_id + zkb.hash, but no time/victim/attackers
   defp parse_and_store_zkb_partial(%{"killmail_id" => kill_id, "zkb" => %{"hash" => kill_hash}} = partial) do
-    Logger.debug("[KillsProvider:WS] parse_and_store => kill_id=#{kill_id}, hash=#{kill_hash}")
-
     case Esi.get_killmail(kill_id, kill_hash) do
       {:ok, full_esi_data} ->
         # Merge partial zKB fields (like totalValue) onto ESI data

@@ -1,25 +1,19 @@
 defmodule WandererApp.Zkb.KillsProvider.Parser do
   @moduledoc """
   Helper for parsing & storing a killmail from the ESI data (plus zKB partial).
-  Removes name fields not present in ESI. Only keeps numeric fields:
-    - victim_char_id, victim_corp_id, victim_alliance_id, victim_ship_type_id
-    - final_blow_char_id, final_blow_corp_id, final_blow_alliance_id, final_blow_ship_type_id
-    - total_value, kill_time, solar_system_id, npc, etc.
   """
 
   require Logger
-  alias WandererApp.Zkb.KillsProvider.KillsCache
 
-  # ----------------------------------------------------------------
-  # parse_and_store_killmail/1
-  # ----------------------------------------------------------------
+  alias WandererApp.Zkb.KillsProvider.KillsCache
+  alias WandererApp.Esi
+  alias WandererApp.CachedInfo
+
   @doc """
   Parse a raw killmail (`full_km`) and store it if valid. Returns:
 
     - `{:ok, kill_time}` if the killmail was successfully parsed and stored
     - `:skip` if missing/invalid data or kill_time
-
-  The killmail data is stored in the KillsCache with numeric-only fields.
   """
   def parse_and_store_killmail(%{"killmail_id" => _kill_id} = full_km) do
     parsed_map = do_parse(full_km)
@@ -69,12 +63,14 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
     final = build_kill_data(parsed)
 
     if final do
-      KillsCache.put_killmail(kill_id, final)
+      enriched = maybe_enrich_killmail(final)
 
-      system_id = final["solar_system_id"]
+      KillsCache.put_killmail(kill_id, enriched)
+
+      system_id = enriched["solar_system_id"]
       KillsCache.add_killmail_id_to_system_list(system_id, kill_id)
 
-      if within_last_hour?(final["kill_time"]) do
+      if within_last_hour?(enriched["kill_time"]) do
         KillsCache.incr_system_kill_count(system_id)
       end
     else
@@ -118,7 +114,6 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
 
       "attacker_count" => attacker_count,
       "total_value" => total_value,
-
       "npc" => npc
     }
   end
@@ -184,6 +179,105 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
 
   defp extract_attacker_fields(_),
     do: %{char_id: nil, corp_id: nil, alliance_id: nil, ship_type_id: nil}
+
+  defp maybe_enrich_killmail(km) do
+    km
+    |> enrich_victim()
+    |> enrich_final_blow()
+  end
+
+  defp enrich_victim(km) do
+    km
+    |> maybe_put_character_name("victim_char_id", "victim_char_name")
+    |> maybe_put_corp_ticker("victim_corp_id", "victim_corp_ticker")
+    |> maybe_put_alliance_ticker("victim_alliance_id", "victim_alliance_ticker")
+    |> maybe_put_ship_name("victim_ship_type_id", "victim_ship_name")
+  end
+
+  defp enrich_final_blow(km) do
+    km
+    |> maybe_put_character_name("final_blow_char_id", "final_blow_char_name")
+    |> maybe_put_corp_ticker("final_blow_corp_id", "final_blow_corp_ticker")
+    |> maybe_put_alliance_ticker("final_blow_alliance_id", "final_blow_alliance_ticker")
+    |> maybe_put_ship_name("final_blow_ship_type_id", "final_blow_ship_name")
+  end
+
+  defp maybe_put_character_name(km, id_key, name_key) do
+    case Map.get(km, id_key) do
+      nil -> km
+      0   -> km
+      eve_id ->
+        case Esi.get_character_info(eve_id) do
+          {:ok, %{"name" => char_name} = _info} ->
+            Map.put(km, name_key, char_name)
+
+          {:ok, _other} ->
+            km
+
+          {:error, _reason} ->
+            km
+        end
+    end
+  end
+
+  defp maybe_put_corp_ticker(km, id_key, ticker_key) do
+    case Map.get(km, id_key) do
+      nil -> km
+      0   -> km
+      corp_id ->
+        case Esi.get_corporation_info(corp_id) do
+          {:ok, %{"ticker" => ticker} = _corp_info} ->
+            Map.put(km, ticker_key, ticker)
+
+          {:ok, _other} ->
+            km
+
+          {:error, reason} ->
+            Logger.warning("[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}")
+            km
+        end
+    end
+  end
+
+  defp maybe_put_alliance_ticker(km, id_key, ticker_key) do
+    case Map.get(km, id_key) do
+      nil -> km
+      0   -> km
+      alliance_id ->
+        case Esi.get_alliance_info(alliance_id) do
+          {:ok, %{"ticker" => alliance_ticker} = _alliance_info} ->
+            Map.put(km, ticker_key, alliance_ticker)
+
+          {:ok, _other} ->
+            km
+
+          {:error, _reason} ->
+            km
+        end
+    end
+  end
+
+  defp maybe_put_ship_name(km, id_key, name_key) do
+    case Map.get(km, id_key) do
+      nil -> km
+      0   -> km
+      type_id ->
+        case CachedInfo.get_ship_type(type_id) do
+          {:ok, nil} ->
+            km
+
+          {:ok, %{name: ship_name} = _ship_type} ->
+            Map.put(km, name_key, ship_name)
+
+          {:ok, _other} ->
+            km
+
+          {:error, reason} ->
+            Logger.warning("[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(reason)}")
+            km
+        end
+    end
+  end
 
   defp within_last_hour?(nil), do: false
 

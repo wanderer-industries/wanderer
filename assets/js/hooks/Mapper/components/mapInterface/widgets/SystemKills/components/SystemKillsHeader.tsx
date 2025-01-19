@@ -1,23 +1,30 @@
 import React from 'react';
-import { LayoutEventBlocker, WdImgButton, TooltipPosition, SystemView } from '@/hooks/Mapper/components/ui-kit';
-import { PrimeIcons } from 'primereact/api';
 import clsx from 'clsx';
+import {
+  LayoutEventBlocker,
+  WdImgButton,
+  WdCheckbox,
+  TooltipPosition,
+  SystemView,
+} from '@/hooks/Mapper/components/ui-kit';
+import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
 
 interface KillsWidgetHeaderProps {
   systemId?: string;
-  showAllVisible: boolean;
-  onToggleShowAllVisible: () => void;
-  compact: boolean;
-  onToggleCompact: () => void;
 }
 
-export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({
-  systemId,
-  showAllVisible,
-  onToggleShowAllVisible,
-  compact,
-  onToggleCompact,
-}) => {
+export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({ systemId }) => {
+  const [settings, setSettings] = useKillsWidgetSettings();
+  const { showAllVisible, compact } = settings;
+
+  // toggles
+  const onToggleShowAllVisible = () => {
+    setSettings(prev => ({ ...prev, showAllVisible: !prev.showAllVisible }));
+  };
+  const onToggleCompact = () => {
+    setSettings(prev => ({ ...prev, compact: !prev.compact }));
+  };
+
   return (
     <div className="flex justify-between items-center text-xs w-full">
       <div className="flex items-center gap-1">
@@ -31,17 +38,13 @@ export const KillsHeader: React.FC<KillsWidgetHeaderProps> = ({
       </div>
 
       <LayoutEventBlocker className="flex gap-2 items-center">
-        <WdImgButton
-          className={clsx(
-            showAllVisible ? `${PrimeIcons.EYE} text-sky-400` : `${PrimeIcons.EYE_SLASH} text-gray-400`,
-            'hover:text-sky-200 transition duration-300',
-            'inline-flex items-center justify-center w-5 h-5 text-sm leading-none align-middle',
-          )}
-          onClick={onToggleShowAllVisible}
-          tooltip={{
-            content: showAllVisible ? 'All visible systems' : 'Selected system',
-            position: TooltipPosition.left,
-          }}
+        <WdCheckbox
+          size="xs"
+          labelSide="left"
+          label="Show all systems"
+          value={showAllVisible}
+          classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
+          onChange={onToggleShowAllVisible}
         />
 
         <WdImgButton

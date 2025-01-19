@@ -13,6 +13,7 @@ import { renderOwnerCell, renderTypeCell, renderTimerCell } from '../renders/cel
 interface SystemStructuresContentProps {
   structures: StructureItem[];
   onUpdateStructures: (newList: StructureItem[]) => void;
+  onlyOneSystem?: boolean;
 }
 
 export const SystemStructuresContent: React.FC<SystemStructuresContentProps> = ({ structures, onUpdateStructures }) => {

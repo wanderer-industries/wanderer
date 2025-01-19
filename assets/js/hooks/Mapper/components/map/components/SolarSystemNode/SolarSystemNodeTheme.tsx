@@ -39,6 +39,7 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             <KillsCounter
               killsCount={nodeVars.killsCount}
               systemId={nodeVars.solarSystemId}
+              size="lg"
               killsActivityType={nodeVars.killsActivityType}
               className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
             >
@@ -223,13 +224,6 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
         classes={classes}
         showShipName={showShipName}
       />
-      {nodeVars.killsCount && nodeVars.killsCount > 0 && nodeVars.solarSystemId && (
-        <KillsCounter
-          killsCount={nodeVars.killsCount ?? 0}
-          killsActivityType={nodeVars.killsActivityType ?? null}
-          systemId={nodeVars.solarSystemId}
-        />
-      )}
     </>
   );
 });

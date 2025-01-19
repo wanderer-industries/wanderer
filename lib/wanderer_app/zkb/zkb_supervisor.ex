@@ -15,21 +15,22 @@ defmodule WandererApp.Zkb.Supervisor do
         {WandererApp.Zkb.KillsPreloader, []}
       end
 
-    children = [
-      {
-        WandererApp.Zkb.KillsProvider,
-        uri: "wss://zkillboard.com/websocket/",
-        state: %WandererApp.Zkb.KillsProvider{
-          connected: false
+    children =
+      [
+        {
+          WandererApp.Zkb.KillsProvider,
+          uri: "wss://zkillboard.com/websocket/",
+          state: %WandererApp.Zkb.KillsProvider{
+            connected: false
+          },
+          opts: [
+            name: {:local, :zkb_kills_provider},
+            mint_upgrade_opts: [Mint.WebSocket.PerMessageDeflate]
+          ]
         },
-        opts: [
-          name: {:local, :zkb_kills_provider},
-          mint_upgrade_opts: [Mint.WebSocket.PerMessageDeflate]
-        ]
-      },
-      preloader_child
-    ]
-    |> Enum.reject(&is_nil/1)
+        preloader_child
+      ]
+      |> Enum.reject(&is_nil/1)
 
     Supervisor.init(children, strategy: :one_for_one)
   end

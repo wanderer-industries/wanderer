@@ -3,15 +3,18 @@ import { useKillsCounter } from '../../hooks/useKillsCounter';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common.ts';
 
+type TooltipSize = 'xs' | 'sm' | 'md' | 'lg';
+
 type KillsBookmarkTooltipProps = {
   killsCount: number;
   killsActivityType: string | null;
   systemId: string;
   className?: string;
+  size?: TooltipSize;
 } & WithChildren &
   WithClassName;
 
-export const KillsCounter = ({ killsCount, systemId, className, children }: KillsBookmarkTooltipProps) => {
+export const KillsCounter = ({ killsCount, systemId, className, children, size = 'xs' }: KillsBookmarkTooltipProps) => {
   const { isLoading, kills: detailedKills, systemNameMap } = useKillsCounter({ realSystemId: systemId });
 
   if (!killsCount || !systemId) return null;
@@ -21,11 +24,12 @@ export const KillsCounter = ({ killsCount, systemId, className, children }: Kill
       Loading kills
     </div>
   ) : (
-    <SystemKillsContent kills={detailedKills} systemNameMap={systemNameMap} compact={true} />
+    <SystemKillsContent kills={detailedKills} systemNameMap={systemNameMap} compact={true} onlyOneSystem={true} />
   );
 
   return (
-    <WdTooltipWrapper content={tooltipContent} className={className}>
+    // @ts-ignore
+    <WdTooltipWrapper content={tooltipContent} className={className} size={size}>
       {children}
     </WdTooltipWrapper>
   );

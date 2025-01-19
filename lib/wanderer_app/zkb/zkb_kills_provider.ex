@@ -18,6 +18,7 @@ defmodule WandererApp.Zkb.KillsProvider do
   require Logger
 
   # Pull in the submodules for convenience
+  alias WandererApp.Zkb.KillsProvider.KillsCache
   alias WandererApp.Zkb.KillsProvider.{Websocket, Fetcher}
 
   defstruct [:connected]
@@ -48,7 +49,7 @@ defmodule WandererApp.Zkb.KillsProvider do
   (i.e., without triggering any fetch from zKillboard).
   """
   def fetch_kills_for_system_from_cache(system_id) do
-    Fetcher.fetch_cached_kills(system_id)
+    KillsCache.fetch_cached_kills(system_id)
   end
 
   # ------------------------------------------------------------------

@@ -75,9 +75,7 @@ export const useCommandsSystems = () => {
     [outCommand],
   );
 
-  const updateDetailedKills = useCallback((
-    newKillsMap: Record<string, DetailedKill[]>
-  ) => {
+  const updateDetailedKills = useCallback((newKillsMap: Record<string, DetailedKill[]>) => {
     const { update, detailedKills } = ref.current;
 
     const updated = { ...detailedKills };
@@ -86,13 +84,7 @@ export const useCommandsSystems = () => {
     }
 
     update({ detailedKills: updated }, true);
-
-    emitMapEvent({
-      name: Commands.detailedKillsUpdated,
-      data: newKillsMap,
-    });
   }, []);
-
 
   return { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateDetailedKills };
 };

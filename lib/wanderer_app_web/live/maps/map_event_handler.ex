@@ -117,7 +117,9 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_kills_events [
-    :detailed_kills_updated
+    :fetch_new_system_kills,
+    :detailed_kills_updated,
+    :fetch_new_map_kills,
   ]
 
   @map_kills_ui_events [

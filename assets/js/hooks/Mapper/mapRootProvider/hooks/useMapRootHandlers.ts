@@ -33,7 +33,8 @@ import { DetailedKill } from '../../types/kills';
 
 export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapInit = useMapInit();
-  const { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateDetailedKills } = useCommandsSystems();
+  const { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateDetailedKills } =
+    useCommandsSystems();
   const { addConnections, removeConnections, updateConnection } = useCommandsConnections();
   const { charactersUpdated, characterAdded, characterRemoved, characterUpdated, presentCharacters } =
     useCommandsCharacters();
@@ -109,8 +110,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               // do nothing here
               break;
 
-            case Commands.detailedKillsUpdated: // used
-              console.warn(`detailed kills updated${JSON.stringify(data)}`)
+            case Commands.detailedKillsUpdated:
               updateDetailedKills(data as Record<string, DetailedKill[]>);
               break;
 
