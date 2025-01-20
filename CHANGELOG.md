@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.42.5](https://github.com/wanderer-industries/wanderer/compare/v1.42.4...v1.42.5) (2025-01-20)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix link signatures on splash. Fix deleting connection on locked system remove.
+
 ## [v1.42.4](https://github.com/wanderer-industries/wanderer/compare/v1.42.3...v1.42.4) (2025-01-20)
 
 
