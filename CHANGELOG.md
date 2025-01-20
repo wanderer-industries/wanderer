@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.42.4](https://github.com/wanderer-industries/wanderer/compare/v1.42.3...v1.42.4) (2025-01-20)
+
+
+
+
+### Bug Fixes:
+
+* Fix system statics list (required EVE DB data update). Add system name to signature added/removed audit log
+
 ## [v1.42.3](https://github.com/wanderer-industries/wanderer/compare/v1.42.2...v1.42.3) (2025-01-17)
 
 

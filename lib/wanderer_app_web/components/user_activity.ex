@@ -162,40 +162,40 @@ defmodule WandererAppWeb.UserActivity do
          "solar_system_id" => solar_system_id,
          "value" => value
        }) do
-    system_name = _get_system_name(solar_system_id)
+    system_name = get_system_name(solar_system_id)
 
     try do
       %{"customLabel" => customLabel, "labels" => labels} = Jason.decode!(value)
 
-      "#{system_name} labels - #{inspect(labels)}, customLabel - #{customLabel}"
+      "#{system_name}: labels - #{inspect(labels)}, customLabel - #{customLabel}"
     rescue
       _ ->
-        "#{system_name} labels - #{inspect(value)}"
+        "#{system_name}: labels - #{inspect(value)}"
     end
   end
 
   defp get_event_data(:system_added, %{
          "solar_system_id" => solar_system_id
        }),
-       do: _get_system_name(solar_system_id)
+       do: get_system_name(solar_system_id)
 
   defp get_event_data(:hub_added, %{
          "solar_system_id" => solar_system_id
        }),
-       do: _get_system_name(solar_system_id)
+       do: get_system_name(solar_system_id)
 
   defp get_event_data(:hub_removed, %{
          "solar_system_id" => solar_system_id
        }),
-       do: _get_system_name(solar_system_id)
+       do: get_system_name(solar_system_id)
 
   defp get_event_data(:system_updated, %{
          "key" => key,
          "solar_system_id" => solar_system_id,
          "value" => value
        }) do
-    system_name = _get_system_name(solar_system_id)
-    "#{system_name} #{key} - #{inspect(value)}"
+    system_name = get_system_name(solar_system_id)
+    "#{system_name}: #{key} - #{inspect(value)}"
   end
 
   defp get_event_data(:systems_removed, %{
@@ -203,29 +203,28 @@ defmodule WandererAppWeb.UserActivity do
        }),
        do:
          solar_system_ids
-         |> Enum.map(&_get_system_name/1)
+         |> Enum.map(&get_system_name/1)
          |> Enum.join(", ")
 
-  defp get_event_data(:signatures_added, %{
+  defp get_event_data(signatures_event, %{
+         "solar_system_id" => solar_system_id,
          "signatures" => signatures
-       }),
-       do:
-         signatures
-         |> Enum.join(", ")
+       })
+       when signatures_event in [:signatures_added, :signatures_removed],
+       do: "#{get_system_name(solar_system_id)}: #{signatures |> Enum.join(", ")}"
 
-  defp get_event_data(:signatures_removed, %{
+  defp get_event_data(signatures_event, %{
          "signatures" => signatures
-       }),
-       do:
-         signatures
-         |> Enum.join(", ")
+       })
+       when signatures_event in [:signatures_added, :signatures_removed],
+       do: signatures |> Enum.join(", ")
 
   defp get_event_data(:map_connection_added, %{
          "solar_system_source_id" => solar_system_source_id,
          "solar_system_target_id" => solar_system_target_id
        }) do
-    source_system_name = _get_system_name(solar_system_source_id)
-    target_system_name = _get_system_name(solar_system_target_id)
+    source_system_name = get_system_name(solar_system_source_id)
+    target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}]"
   end
 
@@ -233,8 +232,8 @@ defmodule WandererAppWeb.UserActivity do
          "solar_system_source_id" => solar_system_source_id,
          "solar_system_target_id" => solar_system_target_id
        }) do
-    source_system_name = _get_system_name(solar_system_source_id)
-    target_system_name = _get_system_name(solar_system_target_id)
+    source_system_name = get_system_name(solar_system_source_id)
+    target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}]"
   end
 
@@ -244,14 +243,14 @@ defmodule WandererAppWeb.UserActivity do
          "solar_system_target_id" => solar_system_target_id,
          "value" => value
        }) do
-    source_system_name = _get_system_name(solar_system_source_id)
-    target_system_name = _get_system_name(solar_system_target_id)
+    source_system_name = get_system_name(solar_system_source_id)
+    target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}] #{key} - #{inspect(value)}"
   end
 
   defp get_event_data(_name, data), do: Jason.encode!(data)
 
-  defp _get_system_name(solar_system_id) do
+  defp get_system_name(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
       {:ok, nil} ->
         solar_system_id

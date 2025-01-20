@@ -180,6 +180,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 character_id: first_tracked_character.id,
                 user_id: current_user.id,
                 map_id: map_id,
+                solar_system_id: solar_system_id,
                 signatures: added_signatures_eve_ids
               })
             end
@@ -190,6 +191,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 character_id: first_tracked_character.id,
                 user_id: current_user.id,
                 map_id: map_id,
+                solar_system_id: solar_system_id,
                 signatures: removed_signatures_eve_ids
               })
             end
