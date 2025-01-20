@@ -1,6 +1,11 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef } from 'react';
-import { CommandAddSystems, CommandRemoveSystems, CommandUpdateSystems } from '@/hooks/Mapper/types';
+import {
+  CommandAddSystems,
+  CommandRemoveSystems,
+  CommandUpdateSystems,
+  CommandLinkSignatureToSystem,
+} from '@/hooks/Mapper/types';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { emitMapEvent } from '@/hooks/Mapper/events';
@@ -74,5 +79,10 @@ export const useCommandsSystems = () => {
     [outCommand],
   );
 
-  return { addSystems, removeSystems, updateSystems, updateSystemSignatures };
+  const updateLinkSignatureToSystem = useCallback(async (command: CommandLinkSignatureToSystem) => {
+    const { update } = ref.current;
+    update({ linkSignatureToSystem: command }, true);
+  }, []);
+
+  return { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateLinkSignatureToSystem };
 };

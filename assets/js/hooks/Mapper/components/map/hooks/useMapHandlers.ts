@@ -70,7 +70,7 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               setTimeout(() => addConnections(data as CommandAddConnections), 100);
               break;
             case Commands.removeConnections:
-              removeConnections(data as CommandRemoveConnections);
+              setTimeout(() => removeConnections(data as CommandRemoveConnections), 100);
               break;
             case Commands.charactersUpdated:
               charactersUpdated(data as CommandCharactersUpdated);

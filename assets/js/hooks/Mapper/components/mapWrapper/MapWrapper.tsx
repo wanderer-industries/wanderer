@@ -14,9 +14,10 @@ import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
+import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { Node, XYPosition } from 'reactflow';
 
-import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { useCommandsSystems } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
 
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
@@ -32,7 +33,7 @@ export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, systems },
+    data: { selectedConnections, selectedSystems, hubs, systems, connections, linkSignatureToSystem },
     interfaceSettings: {
       isShowMenu,
       isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
@@ -46,25 +47,19 @@ export const MapWrapper = () => {
   const { deleteSystems } = useDeleteSystems();
   const { mapRef, runCommand } = useCommonMapEventProcessor();
 
+  const { updateLinkSignatureToSystem } = useCommandsSystems();
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
-  const [openLinkSignatures, setOpenLinkSignatures] = useState<any | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
   const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
 
-  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems });
-  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems };
+  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, connections, deleteSystems });
+  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, connections, deleteSystems };
 
   useMapEventListener(event => {
-    switch (event.name) {
-      case Commands.linkSignatureToSystem:
-        setOpenLinkSignatures(event.data);
-        return true;
-    }
-
     runCommand(event);
   });
 
@@ -130,6 +125,11 @@ export const MapWrapper = () => {
     setOpenAddSystem(coordinates);
   }, []);
 
+  const canRemoveConnection = useCallback((connectionId: string) => {
+    const { connections } = ref.current;
+    return !connections.some(x => x.id === connectionId);
+  }, []);
+
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
     async item => {
       if (ref.current.systems.some(x => x.system_static_info.solar_system_id === item.value)) {
@@ -166,6 +166,7 @@ export const MapWrapper = () => {
         isSoftBackground={isSoftBackground}
         theme={theme}
         onAddSystem={onAddSystem}
+        canRemoveConnection={canRemoveConnection}
       />
 
       {openSettings != null && (
@@ -176,8 +177,8 @@ export const MapWrapper = () => {
         <SystemCustomLabelDialog systemId={openCustomLabel} visible setVisible={() => setOpenCustomLabel(null)} />
       )}
 
-      {openLinkSignatures != null && (
-        <SystemLinkSignatureDialog data={openLinkSignatures} setVisible={() => setOpenLinkSignatures(null)} />
+      {linkSignatureToSystem != null && (
+        <SystemLinkSignatureDialog data={linkSignatureToSystem} setVisible={() => updateLinkSignatureToSystem(null)} />
       )}
 
       <AddSystemDialog
