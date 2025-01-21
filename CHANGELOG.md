@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.43.2](https://github.com/wanderer-industries/wanderer/compare/v1.43.1...v1.43.2) (2025-01-21)
+
+
+
+
+### Bug Fixes:
+
+* prevent constraint error for follow/toggle (#132)
+
 ## [v1.43.1](https://github.com/wanderer-industries/wanderer/compare/v1.43.0...v1.43.1) (2025-01-20)
 
 
