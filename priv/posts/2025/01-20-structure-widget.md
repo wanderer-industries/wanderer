@@ -1,7 +1,7 @@
 %{
 title: "Managing Upwell Structures & Timers with the Structures Widget",
 author: "Wanderer Team",
-cover_image_uri: "/images/news/structure-widget/cover.png",
+cover_image_uri: "/images/news/01-20-structure-widget/cover.png",
 tags: ~w(interface guide map structures),
 description: "Learn how to track structure information using the Structures Widget."
 }
@@ -22,7 +22,7 @@ In this guide, we’ll explore how to enable the Structures Widget, manage struc
 
 ### 1. Enabling the Structure Widget
 
-![Enabling the Structures Widget](/images/news/structure-widget/enable-widget.png "Enable Structures Widget")
+![Enabling the Structures Widget](/images/news/01-20-structure-widget/enable-widget.png "Enable Structures Widget")
 
 1. **Open the Map:**
 2. **Locate the Widget Settings:** By default, the structure widget panel is not visible.  Enable it by going to menu -> map settings -> widgets.
@@ -34,7 +34,7 @@ In this guide, we’ll explore how to enable the Structures Widget, manage struc
 
 ### 2. Overview of the Structures Widget
 
-![Structures Widget Overview](/images/news/01-20-structure-widget/widget.png "Structures Widget")
+![Structures Widget Overview](/images/news/01-20-structure-widget/cover.png "Structures Widget")
 
 Once enabled, the **Structures Widget** appears in the map. It shows:
 
