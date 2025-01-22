@@ -2,6 +2,20 @@
 
 <!-- changelog -->
 
+## [v1.43.4](https://github.com/wanderer-industries/wanderer/compare/v1.43.3...v1.43.4) (2025-01-21)
+
+
+
+
+### Bug Fixes:
+
+* improve structure widget styling (#127)
+
+## [v1.43.3](https://github.com/wanderer-industries/wanderer/compare/v1.43.2...v1.43.3) (2025-01-21)
+
+
+
+
 ## [v1.43.2](https://github.com/wanderer-industries/wanderer/compare/v1.43.1...v1.43.2) (2025-01-21)
 
 

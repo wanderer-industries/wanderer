@@ -63,6 +63,7 @@ export const SystemStructuresContent: React.FC<SystemStructuresContentProps> = (
             size="small"
             sortMode="single"
             rowHover
+            style={{ tableLayout: 'fixed', width: '100%' }}
             onRowClick={handleRowClick}
             onRowDoubleClick={handleRowDoubleClick}
             rowClassName={rowData => {
@@ -74,11 +75,56 @@ export const SystemStructuresContent: React.FC<SystemStructuresContentProps> = (
               );
             }}
           >
-            <Column header="Type" body={renderTypeCell} style={{ width: '160px' }} />
-            <Column field="name" header="Name" style={{ width: '120px' }} />
-            <Column header="Owner" body={renderOwnerCell} style={{ width: '120px' }} />
-            <Column field="status" header="Status" style={{ width: '100px' }} />
-            <Column header="Timer" body={renderTimerCell} style={{ width: '110px' }} />
+            <Column
+              header="Type"
+              body={renderTypeCell}
+              style={{
+                width: '160px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            />
+            <Column
+              field="name"
+              header="Name"
+              style={{
+                width: '120px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            />
+            <Column
+              header="Owner"
+              body={renderOwnerCell}
+              style={{
+                width: '120px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            />
+            <Column
+              field="status"
+              header="Status"
+              style={{
+                width: '100px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            />
+            <Column
+              header="Timer"
+              body={renderTimerCell}
+              style={{
+                width: '110px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            />
             <Column
               body={(rowData: StructureItem) => (
                 <i
@@ -90,7 +136,13 @@ export const SystemStructuresContent: React.FC<SystemStructuresContentProps> = (
                   }}
                 />
               )}
-              style={{ width: '40px', textAlign: 'center' }}
+              style={{
+                width: '40px',
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
             />
           </DataTable>
         </div>

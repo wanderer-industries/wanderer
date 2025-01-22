@@ -1,18 +1,24 @@
-  .TableRowCompact {
-    height: 8px;
-    max-height: 8px;
-    font-size: 12px !important;
-    line-height: 8px;
-  }
-  
-  .Table {
-    font-size: 12px;
-    border-collapse: collapse;
-  }
-  
+.TableRowCompact {
+  height: 8px;
+  max-height: 8px;
+  font-size: 12px !important;
+  line-height: 8px;
+}
 
-  .Tooltip {
-    white-space: pre-line;  // or pre-wrap
-    line-height: 1.2rem;
-  }
-  
+.Table {
+  font-size: 12px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.Table .p-datatable-tbody > tr > td {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.Tooltip {
+  white-space: pre-line;
+  line-height: 1.2rem;
+}
