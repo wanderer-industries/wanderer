@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.43.5](https://github.com/wanderer-industries/wanderer/compare/v1.43.4...v1.43.5) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* Audit: Fix signature added/removed system name
+
 ## [v1.43.4](https://github.com/wanderer-industries/wanderer/compare/v1.43.3...v1.43.4) (2025-01-21)
 
 
