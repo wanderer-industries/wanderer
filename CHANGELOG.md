@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.43.6](https://github.com/wanderer-industries/wanderer/compare/v1.43.5...v1.43.6) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* Widgets: Fix widgets not visible on map
+
 ## [v1.43.5](https://github.com/wanderer-industries/wanderer/compare/v1.43.4...v1.43.5) (2025-01-22)
 
 
