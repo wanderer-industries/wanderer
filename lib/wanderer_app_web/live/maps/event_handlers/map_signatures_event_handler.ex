@@ -130,7 +130,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
               if delete_connection_with_sigs && not is_nil(s.linked_system_id) do
                 map_id
                 |> WandererApp.Map.Server.delete_connection(%{
-                  solar_system_source_id: solar_system_id |> String.to_integer(),
+                  solar_system_source_id: system.solar_system_id,
                   solar_system_target_id: s.linked_system_id
                 })
               end
@@ -180,7 +180,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 character_id: first_tracked_character.id,
                 user_id: current_user.id,
                 map_id: map_id,
-                solar_system_id: solar_system_id,
+                solar_system_id: system.solar_system_id,
                 signatures: added_signatures_eve_ids
               })
             end
@@ -191,7 +191,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
                 character_id: first_tracked_character.id,
                 user_id: current_user.id,
                 map_id: map_id,
-                solar_system_id: solar_system_id,
+                solar_system_id: system.solar_system_id,
                 signatures: removed_signatures_eve_ids
               })
             end
