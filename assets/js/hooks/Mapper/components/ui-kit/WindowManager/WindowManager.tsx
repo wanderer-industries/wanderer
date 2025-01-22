@@ -384,6 +384,10 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
             next.position.y = container.clientHeight - next.size.height - SNAP_GAP;
           }
 
+          if (next.position.y < 0) {
+            next.position.y = 0;
+          }
+
           return next;
         });
       });
