@@ -11,11 +11,13 @@ import {
   WindowStoreInfo,
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { CommandLinkSignatureToSystem } from '@/hooks/Mapper/types';
+import { DetailedKill } from '../types/kills';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
   selectedConnections: Pick<SolarSystemConnection, 'source' | 'target'>[];
   linkSignatureToSystem: CommandLinkSignatureToSystem | null;
+  detailedKills: Record<string, DetailedKill[]>;
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -31,7 +33,7 @@ const INITIAL_DATA: MapRootData = {
   routes: undefined,
   kills: [],
   connections: [],
-
+  detailedKills: {},
   selectedSystems: [],
   selectedConnections: [],
   userPermissions: {},

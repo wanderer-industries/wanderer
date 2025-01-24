@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import classes from './CharacterCard.module.scss';
 import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
-import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { Commands } from '@/hooks/Mapper/types/mapHandlers';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 
 type CharacterCardProps = {
@@ -18,12 +18,8 @@ const SHIP_NAME_RX = /u'|'/g;
 export const getShipName = (name: string) => {
   return name
     .replace(SHIP_NAME_RX, '')
-    .replace(/\\u([\dA-Fa-f]{4})/g, (_, grp) => {
-      return String.fromCharCode(parseInt(grp, 16));
-    })
-    .replace(/\\x([\dA-Fa-f]{2})/g, (_, grp) => {
-      return String.fromCharCode(parseInt(grp, 16));
-    });
+    .replace(/\\u([\dA-Fa-f]{4})/g, (_, grp) => String.fromCharCode(parseInt(grp, 16)))
+    .replace(/\\x([\dA-Fa-f]{2})/g, (_, grp) => String.fromCharCode(parseInt(grp, 16)));
 };
 
 export const CharacterCard = ({
@@ -47,7 +43,9 @@ export const CharacterCard = ({
         {!compact && (
           <span
             className={clsx(classes.EveIcon, classes.CharIcon, 'wd-bg-default')}
-            style={{ backgroundImage: `url(https://images.evetech.net/characters/${char.eve_id}/portrait)` }}
+            style={{
+              backgroundImage: `url(https://images.evetech.net/characters/${char.eve_id}/portrait)`,
+            }}
           />
         )}
         <div className="flex flex-col flex-grow">

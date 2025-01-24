@@ -12,6 +12,7 @@ defmodule WandererAppWeb.MapEventHandler do
     MapSignaturesEventHandler,
     MapSystemsEventHandler,
     MapStructuresEventHandler,
+    MapKillsEventHandler
   }
 
   @map_characters_events [
@@ -105,14 +106,25 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_structures_events [
-    :structures_updated,
+    :structures_updated
   ]
 
   @map_structures_ui_events [
     "update_structures",
     "get_structures",
     "get_corporation_names",
-    "get_corporation_ticker",
+    "get_corporation_ticker"
+  ]
+
+  @map_kills_events [
+    :fetch_new_system_kills,
+    :detailed_kills_updated,
+    :fetch_new_map_kills
+  ]
+
+  @map_kills_ui_events [
+    "get_system_kills",
+    "get_systems_kills"
   ]
 
   def handle_event(socket, %{event: event_name} = event)
@@ -136,12 +148,16 @@ defmodule WandererAppWeb.MapEventHandler do
       do: MapRoutesEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
-    when event_name in @map_structures_events,
-    do: MapSignaturesEventHandler.handle_server_event(event, socket)
+      when event_name in @map_structures_events,
+      do: MapSignaturesEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_signatures_events,
       do: MapSignaturesEventHandler.handle_server_event(event, socket)
+
+  def handle_event(socket, %{event: event_name} = event)
+      when event_name in @map_kills_events,
+      do: MapKillsEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, {ref, result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
@@ -154,10 +170,7 @@ defmodule WandererAppWeb.MapEventHandler do
       {event, payload} ->
         Process.send_after(
           self(),
-          %{
-            event: event,
-            payload: payload
-          },
+          %{event: event, payload: payload},
           10
         )
 
@@ -198,6 +211,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_ui_event(event, body, socket)
       when event in @map_activity_ui_events,
       do: MapActivityEventHandler.handle_ui_event(event, body, socket)
+
+  def handle_ui_event(event, body, socket)
+      when event in @map_kills_ui_events,
+      do: MapKillsEventHandler.handle_ui_event(event, body, socket)
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)

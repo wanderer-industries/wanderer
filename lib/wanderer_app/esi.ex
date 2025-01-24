@@ -24,6 +24,9 @@ defmodule WandererApp.Esi do
   defdelegate find_routes(map_id, origin, hubs, routes_settings), to: WandererApp.Esi.ApiClient
   defdelegate search(character_eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
 
+  defdelegate get_killmail(killmail_id, killmail_hash, opts \\ []), to: WandererApp.Esi.ApiClient
+
+
   defdelegate set_autopilot_waypoint(
                 add_to_beginning,
                 clear_other_waypoints,

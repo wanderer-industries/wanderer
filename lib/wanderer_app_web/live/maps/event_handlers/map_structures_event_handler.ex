@@ -3,7 +3,6 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.MapEventHandler
   alias WandererApp.Api.MapSystem
   alias WandererApp.Structure
 

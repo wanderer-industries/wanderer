@@ -3,8 +3,8 @@ import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
-import { Kill } from '@/hooks/Mapper/types/kills.ts';
-import { UserPermissions } from '@/hooks/Mapper/types';
+import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
+import { SignatureGroup, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
@@ -21,6 +21,7 @@ export enum Commands {
   updateConnection = 'update_connection',
   mapUpdated = 'map_updated',
   killsUpdated = 'kills_updated',
+  detailedKillsUpdated = 'detailed_kills_updated',
   routes = 'routes',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
@@ -43,6 +44,7 @@ export type Command =
   | Commands.updateConnection
   | Commands.mapUpdated
   | Commands.killsUpdated
+  | Commands.detailedKillsUpdated
   | Commands.routes
   | Commands.selectSystem
   | Commands.centerSystem
@@ -76,9 +78,11 @@ export type CommandCharacterRemoved = CharacterTypeRaw;
 export type CommandCharacterUpdated = CharacterTypeRaw;
 export type CommandPresentCharacters = string[];
 export type CommandUpdateConnection = SolarSystemConnection;
+export type CommandSignaturesUpdated = string;
 export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
+export type CommandDetailedKillsUpdated = Record<string, DetailedKill[]>;
 export type CommandSelectSystem = string | undefined;
 export type CommandCenterSystem = string | undefined;
 export type CommandLinkSignatureToSystem = {
@@ -103,6 +107,7 @@ export interface CommandData {
   [Commands.mapUpdated]: CommandMapUpdated;
   [Commands.routes]: CommandRoutes;
   [Commands.killsUpdated]: CommandKillsUpdated;
+  [Commands.detailedKillsUpdated]: CommandDetailedKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
@@ -151,6 +156,8 @@ export enum OutCommand {
   linkSignatureToSystem = 'link_signature_to_system',
   getCorporationNames = 'get_corporation_names',
   getCorporationTicker = 'get_corporation_ticker',
+  getSystemKills = 'get_system_kills',
+  getSystemsKills = 'get_systems_kills',
 
   // Only UI commands
   openSettings = 'open_settings',
@@ -161,4 +168,5 @@ export enum OutCommand {
   searchSystems = 'search_systems',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;

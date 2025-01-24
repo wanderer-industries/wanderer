@@ -1,0 +1,26 @@
+.killRowContainer {
+  @apply flex items-center border-b border-stone-700 whitespace-nowrap overflow-hidden;
+}
+
+.killRowImage {
+  @apply border border-stone-800 rounded-[4px] object-contain;
+}
+
+.attackerCountLabel {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 10px;
+  padding: 0 2px;
+}
+
+.attackerCountLabelCompact {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 0.6rem;
+  line-height: 1;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 1px 2px;
+  pointer-events: none;
+}

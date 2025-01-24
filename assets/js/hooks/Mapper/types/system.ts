@@ -1,6 +1,7 @@
 import { XYPosition } from 'reactflow';
 
 import { SystemSignature } from '@/hooks/Mapper/types/signatures';
+import { DetailedKill } from './kills';
 
 export enum SolarSystemStaticInfoRawNames {
   regionId = 'region_id',

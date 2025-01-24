@@ -127,7 +127,6 @@ defmodule WandererApp.Api.Map do
     update :update_api_key do
       accept [:public_api_key]
     end
-
   end
 
   attributes do

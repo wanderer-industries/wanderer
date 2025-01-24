@@ -1,20 +1,8 @@
-import React, {
-  ForwardedRef,
-  forwardRef,
-  MouseEvent,
-  MouseEventHandler,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import React, { ForwardedRef, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
-import classes from './WdTooltip.module.scss';
 import clsx from 'clsx';
 import debounce from 'lodash.debounce';
-import { WithClassName } from '@/hooks/Mapper/types/common.ts';
+import classes from './WdTooltip.module.scss';
 
 export enum TooltipPosition {
   default = 'default',
@@ -29,11 +17,7 @@ export interface TooltipProps {
   offset?: number;
   content: (() => React.ReactNode) | React.ReactNode;
   targetSelector?: string;
-}
-
-export interface WdTooltipHandlers {
-  show: MouseEventHandler;
-  hide: MouseEventHandler;
+  interactive?: boolean;
 }
 
 export interface OffsetPosition {
@@ -41,169 +25,185 @@ export interface OffsetPosition {
   left: number;
 }
 
-// eslint-disable-next-line react/display-name
-export const WdTooltip = forwardRef((props: TooltipProps & WithClassName, ref: ForwardedRef<WdTooltipHandlers>) => {
-  const { content, targetSelector, position: tPosition = TooltipPosition.default, className, offset = 5 } = props;
+export interface WdTooltipHandlers {
+  show: (e?: React.MouseEvent) => void;
+  hide: (e?: React.MouseEvent) => void;
+  getIsMouseInside: () => boolean;
+}
 
-  const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState<OffsetPosition | null>(null);
-  const [ev, setEv] = useState<MouseEvent>();
-  const tooltipRef = useRef<HTMLDivElement>(null);
+export const WdTooltip = forwardRef(
+  (props: TooltipProps & { className?: string }, ref: ForwardedRef<WdTooltipHandlers>) => {
+    const {
+      content,
+      targetSelector,
+      position: tPosition = TooltipPosition.default,
+      className,
+      offset = 5,
+      interactive = false,
+    } = props;
 
-  const calcTooltipPosition = useCallback(({ x, y }: { x: number; y: number }) => {
-    let newLeft = x;
-    let newTop = y;
+    const [visible, setVisible] = useState(false);
+    const [pos, setPos] = useState<OffsetPosition | null>(null);
+    const [ev, setEv] = useState<React.MouseEvent>();
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const [isMouseInsideTooltip, setIsMouseInsideTooltip] = useState(false);
 
-    if (!tooltipRef.current) {
+    const calcTooltipPosition = useCallback(({ x, y }: { x: number; y: number }) => {
+      if (!tooltipRef.current) return { left: x, top: y };
+      const tooltipWidth = tooltipRef.current.offsetWidth;
+      const tooltipHeight = tooltipRef.current.offsetHeight;
+      let newLeft = x;
+      let newTop = y;
+
+      if (newLeft < 0) newLeft = 10;
+      if (newTop < 0) newTop = 10;
+      if (newLeft + tooltipWidth + 10 > window.innerWidth) {
+        newLeft = window.innerWidth - tooltipWidth - 10;
+      }
+      if (newTop + tooltipHeight + 10 > window.innerHeight) {
+        newTop = window.innerHeight - tooltipHeight - 10;
+      }
       return { left: newLeft, top: newTop };
-    }
+    }, []);
 
-    const tooltipWidth = tooltipRef.current.offsetWidth;
-    const tooltipHeight = tooltipRef.current.offsetHeight;
+    useImperativeHandle(ref, () => ({
+      show: (mouseEvt?: React.MouseEvent) => {
+        if (mouseEvt) setEv(mouseEvt);
+        setPos(null);
+        setVisible(true);
+      },
+      hide: () => {
+        setVisible(false);
+      },
+      getIsMouseInside: () => isMouseInsideTooltip,
+    }));
 
-    if (newLeft < 0) {
-      newLeft = 10;
-    }
+    useEffect(() => {
+      if (!tooltipRef.current || !ev) return;
+      const tooltipEl = tooltipRef.current;
+      const { clientX, clientY, target } = ev;
+      const targetBounds = (target as HTMLElement).getBoundingClientRect();
 
-    if (newTop < 0) {
-      newTop = 10;
-    }
+      let offsetX = clientX;
+      let offsetY = clientY;
 
-    if (newLeft + tooltipWidth + 10 > window.innerWidth) {
-      newLeft = window.innerWidth - tooltipWidth - 10;
-    }
-    if (newTop + tooltipHeight + 10 > window.innerHeight) {
-      newTop = window.innerHeight - tooltipHeight - 10;
-    }
-    return { left: newLeft, top: newTop };
-  }, []);
+      if (tPosition === TooltipPosition.left) {
+        const tooltipBounds = tooltipEl.getBoundingClientRect();
+        offsetX = targetBounds.left - tooltipBounds.width - offset;
+        offsetY = targetBounds.y + targetBounds.height / 2 - tooltipBounds.height / 2;
+        if (offsetX <= 0) {
+          offsetX = targetBounds.left + targetBounds.width + offset;
+        }
+        setPos(calcTooltipPosition({ x: offsetX, y: offsetY }));
+        return;
+      }
 
-  useEffect(() => {
-    if (!tooltipRef.current || !ev) {
-      return;
-    }
-
-    const { clientX, clientY, target } = ev;
-
-    const targetBounds = (target as HTMLElement).getBoundingClientRect();
-    const tooltipBounds = tooltipRef.current.getBoundingClientRect();
-
-    let offsetX = clientX;
-    let offsetY = clientY;
-
-    if (tPosition === TooltipPosition.left) {
-      offsetX = targetBounds.left - tooltipBounds.width - offset;
-      offsetY = targetBounds.y + targetBounds.height / 2 - tooltipBounds.height / 2;
-
-      if (offsetX <= 0) {
+      if (tPosition === TooltipPosition.right) {
         offsetX = targetBounds.left + targetBounds.width + offset;
-      }
-
-      setPosition(calcTooltipPosition({ x: offsetX, y: offsetY }));
-      return;
-    }
-
-    if (tPosition === TooltipPosition.right) {
-      offsetX = targetBounds.left + targetBounds.width + offset;
-      offsetY = targetBounds.y + targetBounds.height / 2 - tooltipBounds.height / 2;
-
-      setPosition(calcTooltipPosition({ x: offsetX, y: offsetY }));
-      return;
-    }
-
-    if (tPosition === TooltipPosition.top) {
-      offsetY = targetBounds.top - tooltipBounds.height - offset;
-      offsetX = targetBounds.x + targetBounds.width / 2 - tooltipBounds.width / 2;
-
-      setPosition(calcTooltipPosition({ x: offsetX, y: offsetY }));
-      return;
-    }
-
-    // default case
-    setPosition(calcTooltipPosition({ x: clientX, y: clientY }));
-  }, [calcTooltipPosition, ev, tPosition, offset]);
-
-  useImperativeHandle(ref, () => ({
-    show: e => {
-      setEv(e);
-      setVisible(true);
-      setPosition(null);
-    },
-    hide: () => {
-      setVisible(false);
-    },
-  }));
-
-  useEffect(() => {
-    if (targetSelector == null) {
-      return;
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const targetElement = e.target as HTMLElement;
-
-      if (!targetElement) {
-        setVisible(false);
+        offsetY = targetBounds.y + targetBounds.height / 2 - tooltipEl.offsetHeight / 2;
+        setPos(calcTooltipPosition({ x: offsetX, y: offsetY }));
         return;
       }
 
-      const nodesFound = [...(targetElement?.parentElement?.querySelectorAll(targetSelector) ?? [])];
-
-      if (!nodesFound.includes(targetElement)) {
-        setVisible(false);
+      if (tPosition === TooltipPosition.top) {
+        offsetY = targetBounds.top - tooltipEl.offsetHeight - offset;
+        offsetX = targetBounds.x + targetBounds.width / 2 - tooltipEl.offsetWidth / 2;
+        setPos(calcTooltipPosition({ x: offsetX, y: offsetY }));
         return;
       }
 
-      setVisible(true);
-      if (tooltipRef.current) {
-        const { clientX, clientY } = e;
-        const tooltipWidth = tooltipRef.current.offsetWidth;
-        const tooltipHeight = tooltipRef.current.offsetHeight;
-        let newLeft = clientX + 10;
-        let newTop = clientY + 10;
-        if (newLeft + tooltipWidth + 10 > window.innerWidth) {
-          newLeft = window.innerWidth - tooltipWidth - 10;
-        }
-        if (newTop + tooltipHeight + 10 > window.innerHeight) {
-          newTop = window.innerHeight - tooltipHeight - 10;
-        }
-        setPosition({ top: newTop, left: newLeft });
+      if (tPosition === TooltipPosition.bottom) {
+        offsetY = targetBounds.bottom + offset;
+        offsetX = targetBounds.x + targetBounds.width / 2 - tooltipEl.offsetWidth / 2;
+        setPos(calcTooltipPosition({ x: offsetX, y: offsetY }));
+        return;
       }
-    };
 
-    const deb = debounce(handleMouseMove, 10);
+      setPos(calcTooltipPosition({ x: offsetX, y: offsetY }));
+    }, [calcTooltipPosition, ev, tPosition, offset]);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    document.addEventListener('mousemove', deb);
-    return () => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      document.removeEventListener('mousemove', deb);
-    };
-  }, [targetSelector]);
+    useEffect(() => {
+      if (!targetSelector) return;
 
-  return createPortal(
-    visible && (
-      <div
-        ref={tooltipRef}
-        className={clsx(
-          classes.tooltip,
-          'pointer-events-none',
-          'absolute px-2 py-2',
-          'border rounded border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
-          { ['invisible']: position === null },
-          className,
-        )}
-        style={{
-          top: position?.top ?? 0,
-          left: position?.left ?? 0,
-          zIndex: 10000,
-        }}
-      >
-        {typeof content === 'function' ? content() : content}
-      </div>
-    ),
-    document.body,
-  );
-});
+      function handleMouseMove(nativeEvt: globalThis.MouseEvent) {
+        const targetEl = nativeEvt.target as HTMLElement | null;
+        if (!targetEl) {
+          setVisible(false);
+          return;
+        }
+        const triggerEl = targetEl.closest(targetSelector!);
+        const isInsideTooltip = interactive && tooltipRef.current?.contains(targetEl);
+
+        if (!triggerEl && !isInsideTooltip) {
+          setVisible(false);
+          return;
+        }
+        setVisible(true);
+
+        if (triggerEl && tooltipRef.current) {
+          const rect = triggerEl.getBoundingClientRect();
+          const tooltipEl = tooltipRef.current;
+          let x = nativeEvt.clientX;
+          let y = nativeEvt.clientY;
+
+          if (tPosition === TooltipPosition.left) {
+            x = rect.left - tooltipEl.offsetWidth - offset;
+            y = rect.y + rect.height / 2 - tooltipEl.offsetHeight / 2;
+            if (x <= 0) {
+              x = rect.left + rect.width + offset;
+            }
+          } else if (tPosition === TooltipPosition.right) {
+            x = rect.left + rect.width + offset;
+            y = rect.y + rect.height / 2 - tooltipEl.offsetHeight / 2;
+          } else if (tPosition === TooltipPosition.top) {
+            x = rect.x + rect.width / 2 - tooltipEl.offsetWidth / 2;
+            y = rect.top - tooltipEl.offsetHeight - offset;
+          } else if (tPosition === TooltipPosition.bottom) {
+            x = rect.x + rect.width / 2 - tooltipEl.offsetWidth / 2;
+            y = rect.bottom + offset;
+          }
+
+          setPos(calcTooltipPosition({ x, y }));
+        }
+      }
+
+      const debounced = debounce(handleMouseMove, 10);
+
+      const listener: EventListener = evt => {
+        debounced(evt as globalThis.MouseEvent);
+      };
+
+      document.addEventListener('mousemove', listener);
+      return () => {
+        document.removeEventListener('mousemove', listener);
+      };
+    }, [targetSelector, interactive, tPosition, offset, calcTooltipPosition]);
+
+    return createPortal(
+      visible && (
+        <div
+          ref={tooltipRef}
+          className={clsx(
+            classes.tooltip,
+            interactive ? 'pointer-events-auto' : 'pointer-events-none',
+            'absolute p-1 border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
+            pos === null ? 'invisible' : '',
+            className,
+          )}
+          style={{
+            top: pos?.top ?? 0,
+            left: pos?.left ?? 0,
+            zIndex: 10000,
+          }}
+          onMouseEnter={() => interactive && setIsMouseInsideTooltip(true)}
+          onMouseLeave={() => interactive && setIsMouseInsideTooltip(false)}
+        >
+          {typeof content === 'function' ? content() : content}
+        </div>
+      ),
+      document.body,
+    );
+  },
+);
+
+WdTooltip.displayName = 'WdTooltip';

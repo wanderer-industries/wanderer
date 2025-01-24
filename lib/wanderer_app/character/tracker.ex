@@ -71,7 +71,7 @@ defmodule WandererApp.Character.Tracker do
         {:ok, %{eve_id: eve_id}} = WandererApp.Character.get_character(character_id)
 
         case WandererApp.Esi.get_character_info(eve_id) do
-          {:ok, info} ->
+          {:ok, _info} ->
             {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
 
             update = maybe_update_corporation(character_state, eve_id |> String.to_integer())
