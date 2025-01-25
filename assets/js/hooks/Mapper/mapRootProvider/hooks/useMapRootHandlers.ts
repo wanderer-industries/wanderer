@@ -32,7 +32,8 @@ import { emitMapEvent } from '@/hooks/Mapper/events';
 
 export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapInit = useMapInit();
-  const { addSystems, removeSystems, updateSystems, updateSystemSignatures } = useCommandsSystems();
+  const { addSystems, removeSystems, updateSystems, updateSystemSignatures, updateLinkSignatureToSystem } =
+    useCommandsSystems();
   const { addConnections, removeConnections, updateConnection } = useCommandsConnections();
   const { charactersUpdated, characterAdded, characterRemoved, characterUpdated, presentCharacters } =
     useCommandsCharacters();
@@ -93,7 +94,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
 
             case Commands.linkSignatureToSystem: // USED
-              // do nothing here
+              setTimeout(() => {
+                updateLinkSignatureToSystem(data as CommandLinkSignatureToSystem);
+              }, 200);
               break;
 
             case Commands.centerSystem: // USED

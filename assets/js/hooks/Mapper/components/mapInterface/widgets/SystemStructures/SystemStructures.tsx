@@ -70,6 +70,11 @@ export const SystemStructures: React.FC = () => {
           <WdImgButton
             className={`${PrimeIcons.CLOCK} text-sky-400 hover:text-sky-200 transition duration-300`}
             onClick={handlePasteTimer}
+            tooltip={{
+              position: TooltipPosition.left,
+              // @ts-ignore
+              content: 'Add Structures/Timer',
+            }}
           />
           <WdImgButton
             className={PrimeIcons.QUESTION_CIRCLE}

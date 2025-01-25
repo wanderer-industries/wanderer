@@ -2,6 +2,79 @@
 
 <!-- changelog -->
 
+## [v1.43.6](https://github.com/wanderer-industries/wanderer/compare/v1.43.5...v1.43.6) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* Widgets: Fix widgets not visible on map
+
+## [v1.43.5](https://github.com/wanderer-industries/wanderer/compare/v1.43.4...v1.43.5) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* Audit: Fix signature added/removed system name
+
+## [v1.43.4](https://github.com/wanderer-industries/wanderer/compare/v1.43.3...v1.43.4) (2025-01-21)
+
+
+
+
+### Bug Fixes:
+
+* improve structure widget styling (#127)
+
+## [v1.43.3](https://github.com/wanderer-industries/wanderer/compare/v1.43.2...v1.43.3) (2025-01-21)
+
+
+
+
+## [v1.43.2](https://github.com/wanderer-industries/wanderer/compare/v1.43.1...v1.43.2) (2025-01-21)
+
+
+
+
+### Bug Fixes:
+
+* prevent constraint error for follow/toggle (#132)
+
+## [v1.43.1](https://github.com/wanderer-industries/wanderer/compare/v1.43.0...v1.43.1) (2025-01-20)
+
+
+
+
+## [v1.43.0](https://github.com/wanderer-industries/wanderer/compare/v1.42.5...v1.43.0) (2025-01-20)
+
+
+
+
+### Features:
+
+* add news post for structures widget (#131)
+
+## [v1.42.5](https://github.com/wanderer-industries/wanderer/compare/v1.42.4...v1.42.5) (2025-01-20)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix link signatures on splash. Fix deleting connection on locked system remove.
+
+## [v1.42.4](https://github.com/wanderer-industries/wanderer/compare/v1.42.3...v1.42.4) (2025-01-20)
+
+
+
+
+### Bug Fixes:
+
+* Fix system statics list (required EVE DB data update). Add system name to signature added/removed audit log
+
 ## [v1.42.3](https://github.com/wanderer-industries/wanderer/compare/v1.42.2...v1.42.3) (2025-01-17)
 
 

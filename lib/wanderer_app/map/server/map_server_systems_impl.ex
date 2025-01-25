@@ -206,16 +206,24 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         user_id,
         character_id
       ) do
-    removed_system_ids =
+    filtered_ids =
       removed_ids
       |> Enum.map(fn solar_system_id ->
         WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: solar_system_id})
       end)
-      |> Enum.filter(fn system -> not is_nil(system) end)
-      |> Enum.map(& &1.id)
+      |> Enum.filter(fn system -> not is_nil(system) && not system.locked end)
+      |> Enum.map(&{&1.solar_system_id, &1.id})
+
+    solar_system_ids_to_remove =
+      filtered_ids
+      |> Enum.map(fn {solar_system_id, _} -> solar_system_id end)
+
+    system_ids_to_remove =
+      filtered_ids
+      |> Enum.map(fn {_, system_id} -> system_id end)
 
     connections_to_remove =
-      removed_ids
+      solar_system_ids_to_remove
       |> Enum.map(fn solar_system_id ->
         WandererApp.Map.find_connections(map_id, solar_system_id)
       end)
@@ -223,9 +231,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       |> Enum.uniq_by(& &1.id)
 
     :ok = WandererApp.Map.remove_connections(map_id, connections_to_remove)
-    :ok = WandererApp.Map.remove_systems(map_id, removed_ids)
+    :ok = WandererApp.Map.remove_systems(map_id, solar_system_ids_to_remove)
 
-    removed_ids
+    solar_system_ids_to_remove
     |> Enum.each(fn solar_system_id ->
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
@@ -245,7 +253,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       WandererApp.MapConnectionRepo.destroy(map_id, connection)
     end)
 
-    removed_ids
+    solar_system_ids_to_remove
     |> Enum.map(fn solar_system_id ->
       WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
     end)
@@ -259,7 +267,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
 
     linked_system_ids =
-      removed_system_ids
+      system_ids_to_remove
       |> Enum.map(fn system_id ->
         WandererApp.Api.MapSystemSignature.by_system_id!(system_id)
         |> Enum.filter(fn s -> not is_nil(s.linked_system_id) end)
@@ -276,10 +284,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       })
     end)
 
-    @ddrt.delete(removed_ids, rtree_name)
+    @ddrt.delete(solar_system_ids_to_remove, rtree_name)
 
     Impl.broadcast!(map_id, :remove_connections, connections_to_remove)
-    Impl.broadcast!(map_id, :systems_removed, removed_ids)
+    Impl.broadcast!(map_id, :systems_removed, solar_system_ids_to_remove)
 
     case not is_nil(user_id) do
       true ->
@@ -288,12 +296,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             character_id: character_id,
             user_id: user_id,
             map_id: map_id,
-            solar_system_ids: removed_ids
+            solar_system_ids: solar_system_ids_to_remove
           })
 
         :telemetry.execute(
           [:wanderer_app, :map, :systems, :remove],
-          %{count: removed_ids |> Enum.count()}
+          %{count: solar_system_ids_to_remove |> Enum.count()}
         )
 
         :ok

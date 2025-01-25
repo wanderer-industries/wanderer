@@ -10,10 +10,12 @@ import {
   useStoreWidgets,
   WindowStoreInfo,
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
+import { CommandLinkSignatureToSystem } from '@/hooks/Mapper/types';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
   selectedConnections: Pick<SolarSystemConnection, 'source' | 'target'>[];
+  linkSignatureToSystem: CommandLinkSignatureToSystem | null;
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -34,6 +36,7 @@ const INITIAL_DATA: MapRootData = {
   selectedConnections: [],
   userPermissions: {},
   options: {},
+  linkSignatureToSystem: null,
 };
 
 export enum InterfaceStoredSettingsProps {

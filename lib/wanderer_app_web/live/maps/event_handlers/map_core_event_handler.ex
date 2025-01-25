@@ -270,6 +270,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         current_user.characters |> Enum.map(& &1.id)
       )
 
+    {:ok, map_user_settings} = WandererApp.MapUserSettingsRepo.get(map_id, current_user.id)
+
     {:ok, character_settings} =
       case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
         {:ok, settings} -> {:ok, settings}
@@ -302,6 +304,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         socket
         |> assign(
           map_id: map_id,
+          map_user_settings: map_user_settings,
           page_title: map_name,
           user_permissions: user_permissions,
           tracked_character_ids: tracked_character_ids,
@@ -334,7 +337,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          } = socket
        ) do
     with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
-         {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user.id),
          {:ok, tracked_map_characters} <-
            WandererApp.Maps.get_tracked_map_characters(map_id, current_user),
          {:ok, characters_limit} <- map_id |> WandererApp.Map.get_characters_limit(),
@@ -414,7 +416,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       socket
       |> map_start(%{
         map_id: map_id,
-        map_user_settings: map_user_settings,
         user_characters: user_character_eve_ids,
         initial_data: initial_data,
         events: events
@@ -437,7 +438,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          socket,
          %{
            map_id: map_id,
-           map_user_settings: map_user_settings,
            user_characters: user_character_eve_ids,
            initial_data: initial_data,
            events: events
@@ -468,7 +468,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       socket
       |> assign(
         map_loaded?: true,
-        map_user_settings: map_user_settings,
         user_characters: user_character_eve_ids,
         has_tracked_characters?: has_tracked_characters?
       )

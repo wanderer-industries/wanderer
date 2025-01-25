@@ -21,57 +21,63 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       |> MapEventHandler.push_map_event("remove_systems", solar_system_ids)
 
   def handle_server_event(
-      %{
-        event: :maybe_select_system,
-        payload: %{
-          character_id: character_id,
-          solar_system_id: solar_system_id
-        }
-      },
-      %{assigns: %{current_user: current_user, map_id: map_id, map_user_settings: map_user_settings}} = socket
-    ) do
+        %{
+          event: :maybe_select_system,
+          payload: %{
+            character_id: character_id,
+            solar_system_id: solar_system_id
+          }
+        },
+        %{
+          assigns: %{
+            current_user: current_user,
+            map_id: map_id,
+            map_user_settings: map_user_settings
+          }
+        } = socket
+      ) do
+    is_user_character =
+      current_user.characters
+      |> Enum.map(& &1.id)
+      |> Enum.member?(character_id)
 
-      is_user_character =
-        current_user.characters
-        |> Enum.map(& &1.id)
-        |> Enum.member?(character_id)
+    is_select_on_spash =
+      map_user_settings
+      |> WandererApp.MapUserSettingsRepo.to_form_data!()
+      |> WandererApp.MapUserSettingsRepo.get_boolean_setting("select_on_spash")
 
-      is_select_on_spash =
-        map_user_settings
-        |> WandererApp.MapUserSettingsRepo.to_form_data!()
-        |> WandererApp.MapUserSettingsRepo.get_boolean_setting("select_on_spash")
+    is_followed =
+      case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character_id) do
+        {:ok, setting} -> setting.followed == true
+        _ -> false
+      end
 
-      is_followed =
-        case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character_id) do
-          {:ok, setting} -> setting.followed == true
-          _ -> false
-        end
+    must_select? = is_user_character && (is_select_on_spash || is_followed)
 
-      must_select? = is_user_character && (is_select_on_spash || is_followed)
-      if not must_select? do
+    if not must_select? do
+      socket
+    else
+      # Check if we already selected this exact system for this char:
+      last_selected =
+        WandererApp.Cache.lookup!(
+          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
+          nil
+        )
+
+      if last_selected == solar_system_id do
+        # same system => skip
         socket
       else
-        # Check if we already selected this exact system for this char:
-        last_selected =
-          WandererApp.Cache.lookup!(
-            "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-            nil
-          )
+        # new system => update cache + push event
+        WandererApp.Cache.put(
+          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
+          solar_system_id
+        )
 
-        if last_selected == solar_system_id do
-          # same system => skip
-          socket
-        else
-          # new system => update cache + push event
-          WandererApp.Cache.put(
-            "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-            solar_system_id
-          )
-
-          socket
-          |> MapEventHandler.push_map_event("select_system", solar_system_id)
-        end
+        socket
+        |> MapEventHandler.push_map_event("select_system", solar_system_id)
       end
+    end
   end
 
   def handle_server_event(%{event: :kills_updated, payload: kills}, socket) do

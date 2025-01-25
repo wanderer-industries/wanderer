@@ -213,7 +213,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         s.character_id in user_char_ids
       end)
 
-    existing = Enum.find(my_settings, &(&1.character_id == clicked_char_id))
+    existing = Enum.find(all_settings, &(&1.character_id == clicked_char_id))
 
     {:ok, target_setting} =
       if not is_nil(existing) do

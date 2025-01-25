@@ -222,7 +222,7 @@
   {
     "mass_regen": 500000000,
     "dest": "hs",
-    "src": ["c3"],
+    "src": ["c3", "c4-shattered"],
     "static": true,
     "max_mass_per_jump": 300000000,
     "lifetime": "24",
