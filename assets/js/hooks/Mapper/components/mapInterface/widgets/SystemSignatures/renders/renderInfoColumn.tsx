@@ -1,28 +1,29 @@
 import { PrimeIcons } from 'primereact/api';
 import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
-import { SystemViewStandalone, WHClassView } from '@/hooks/Mapper/components/ui-kit';
+import { SystemViewStandalone, TooltipPosition, WHClassView } from '@/hooks/Mapper/components/ui-kit';
 
-import {
-  k162Types,
-  renderK162Type,
-} from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
+import { renderK162Type } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
 import clsx from 'clsx';
 import { renderName } from './renderName.tsx';
+import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
 
 export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
-    let k162TypeOption = null;
-    if (row.custom_info) {
-      const customInfo = JSON.parse(row.custom_info);
-      if (customInfo.k162Type) {
-        k162TypeOption = k162Types.find(x => x.value === customInfo.k162Type);
-      }
-    }
+    const customInfo = parseSignatureCustomInfo(row.custom_info);
+
+    const k162TypeOption = customInfo.k162Type ? K162_TYPES_MAP[customInfo.k162Type] : null;
 
     return (
       <div className="flex justify-start items-center gap-[4px]">
+        {customInfo.isEOL && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as EOL">
+            <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
         {row.type && (
           <WHClassView
             className="text-[11px]"
@@ -34,7 +35,7 @@ export const renderInfoColumn = (row: SystemSignature) => {
           />
         )}
 
-        {!row.linked_system && row.type === 'K162' && !!k162TypeOption && <>{renderK162Type(k162TypeOption)}</>}
+        {!row.linked_system && row.type === 'K162' && k162TypeOption && renderK162Type(k162TypeOption)}
 
         {row.linked_system && (
           <>

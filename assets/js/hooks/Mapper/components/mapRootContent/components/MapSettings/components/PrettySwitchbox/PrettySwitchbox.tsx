@@ -1,4 +1,5 @@
 import styles from './MapSettings.module.scss';
+
 import { WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
 
 interface PrettySwitchboxProps {
