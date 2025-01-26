@@ -22,14 +22,21 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
   const whData = useMemo(() => wormholesData[signature.type], [signature.type, wormholesData]);
   const whClass = useMemo(() => (whData ? WORMHOLES_ADDITIONAL_INFO[whData.dest] : null), [whData]);
 
+  const customInfo = useMemo(() => {
+    return parseSignatureCustomInfo(signature.custom_info);
+  }, [signature]);
+
   const k162TypeOption = useMemo(() => {
-    const customInfo = parseSignatureCustomInfo(signature.custom_info);
     if (!customInfo?.k162Type) {
       return null;
     }
 
     return K162_TYPES_MAP[customInfo.k162Type];
-  }, [signature]);
+  }, [customInfo]);
+
+  const isEOL = useMemo(() => {
+    return customInfo?.isEOL;
+  }, [customInfo]);
 
   const whClassStyle = useMemo(() => {
     if (signature.type === 'K162' && k162TypeOption) {
@@ -53,8 +60,9 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
       }
     >
       <div className={clsx(classes.Box, whClassStyle)}>
-        <svg width="13" height="4" viewBox="0 0 13 4" xmlns="http://www.w3.org/2000/svg">
-          <rect width="13" height="4" rx="2" className={whClassStyle} fill="currentColor" />
+        <svg width="13" height="8" viewBox="0 0 13 8" xmlns="http://www.w3.org/2000/svg">
+          <rect y="1" width="13" height="4" rx="2" className={whClassStyle} fill="currentColor" />
+          {isEOL && <rect x="4" width="5" height="6" rx="1" className={clsx(classes.Eol)} fill="#a153ac" />}
         </svg>
       </div>
     </WdTooltipWrapper>
