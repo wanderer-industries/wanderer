@@ -35,23 +35,6 @@ defmodule WandererAppWeb.MapKillsEventHandler do
     socket
   end
 
-  def handle_server_event(event, socket) do
-    updated_socket =
-      case MapCoreEventHandler.handle_server_event(event, socket) do
-        {:noreply, new_socket} ->
-          new_socket
-
-        {:reply, _payload, new_socket} ->
-          new_socket
-
-        new_socket when is_map(new_socket) ->
-          new_socket
-      end
-
-    updated_socket
-  end
-
-
   def handle_server_event(%{event: :fetch_new_system_kills, payload: system}, socket) do
     solar_system_id = system.solar_system_id
 
