@@ -2,6 +2,20 @@
 
 <!-- changelog -->
 
+## [v1.43.8](https://github.com/wanderer-industries/wanderer/compare/v1.43.7...v1.43.8) (2025-01-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Update shuttered constellations (required EVE DB data update on server).
+
+## [v1.43.7](https://github.com/wanderer-industries/wanderer/compare/v1.43.6...v1.43.7) (2025-01-26)
+
+
+
+
 ## [v1.43.6](https://github.com/wanderer-industries/wanderer/compare/v1.43.5...v1.43.6) (2025-01-22)
 
 

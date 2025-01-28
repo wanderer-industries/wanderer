@@ -112,3 +112,28 @@
 .p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-token {
   margin-right: 0 !important;
 }
+
+/* Fixed sizes of Input switch */
+.p-inputswitch {
+  width: 2.0rem;
+  height: 1.15rem;
+
+  .p-inputswitch-slider:before {
+    width: 0.8rem;
+    height: 0.8rem;
+    left: 0.14rem;
+    margin-top: -0.385rem;
+  }
+
+  &.p-highlight .p-inputswitch-slider:before {
+    transform: translateX(0.8rem);
+  }
+
+  &:not(.p-disabled):has(.p-inputswitch-input:hover) .p-inputswitch-slider {
+    background: rgb(255 255 255 / 21%);
+  }
+
+  &.p-highlight .p-inputswitch-slider {
+    background: #966d3d;
+  }
+}
