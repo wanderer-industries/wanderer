@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.43.9](https://github.com/wanderer-industries/wanderer/compare/v1.43.8...v1.43.9) (2025-01-30)
+
+
+
+
+### Bug Fixes:
+
+* Core: Add discord link to 'Like' icon on main interface
+
 ## [v1.43.8](https://github.com/wanderer-industries/wanderer/compare/v1.43.7...v1.43.8) (2025-01-26)
 
 
