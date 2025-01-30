@@ -61,14 +61,8 @@ export const FullKillRow: React.FC<FullKillRowProps> = ({ killDetails, systemNam
   const attackerSubscript = getAttackerSubscript(killDetails);
 
   return (
-    <div
-      className={clsx(
-        classes.killRowContainer,
-        'h-16 w-full justify-between items-start bg-stone-900 hover:bg-stone-800 text-sm',
-        'border border-stone-800 rounded-[4px]',
-      )}
-    >
-      <div className="flex items-start gap-2 pl-1 min-w-0 pt-1 h-full">
+    <div className={clsx(classes.killRowContainer, 'h-18 w-full justify-between items-start text-sm py-[4px]')}>
+      <div className="flex items-start gap-1 min-w-0 h-full">
         {victimShipUrl && (
           <div className="relative shrink-0 w-14 h-14 overflow-hidden">
             <a
@@ -111,7 +105,7 @@ export const FullKillRow: React.FC<FullKillRowProps> = ({ killDetails, systemNam
         </div>
       </div>
 
-      <div className="flex items-start gap-2 pr-1 pt-1 min-w-0 h-full">
+      <div className="flex items-start gap-2 min-w-0 h-full">
         <div className="flex flex-col items-end leading-4 min-w-0 overflow-hidden text-right">
           {!attackerIsNpc && (
             <div className="truncate font-semibold">

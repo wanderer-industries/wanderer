@@ -27,7 +27,7 @@ export const KillRowSubInfo: React.FC<KillRowSubInfoProps> = ({
   }
 
   return (
-    <div className="flex items-start gap-2 h-full">
+    <div className="flex items-start gap-1 h-full">
       {victimPortraitUrl && victimCharacterId && (
         <a
           href={zkillLink('character', victimCharacterId)}
@@ -42,13 +42,13 @@ export const KillRowSubInfo: React.FC<KillRowSubInfoProps> = ({
           />
         </a>
       )}
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full justify-between">
         {victimCorpLogoUrl && victimCorpId && (
           <a
             href={zkillLink('corporation', victimCorpId)}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 h-1/2"
+            className="shrink-0 h-[26px]"
           >
             <img
               src={victimCorpLogoUrl}
@@ -62,7 +62,7 @@ export const KillRowSubInfo: React.FC<KillRowSubInfoProps> = ({
             href={zkillLink('alliance', victimAllianceId)}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 h-1/2"
+            className="shrink-0 h-[26px]"
           >
             <img
               src={victimAllianceLogoUrl}

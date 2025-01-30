@@ -61,7 +61,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
   return (
     <div
       className={clsx(
-        'h-10 flex items-center border-b border-stone-700 px-1',
+        'h-10 flex items-center border-b border-stone-800',
         'text-xs whitespace-nowrap overflow-hidden leading-none',
       )}
     >
