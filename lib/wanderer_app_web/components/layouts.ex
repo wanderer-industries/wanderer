@@ -66,16 +66,12 @@ defmodule WandererAppWeb.Layouts do
 
   def feedback_container(assigns) do
     ~H"""
-    <div
-      id="feeback-container"
-      data-az-l="6e9c41f4-8f3f-4e3b-bbc6-e808f9e46808"
-      class={[
-        "flex flex-col p-4 items-center absolute bottom-40 left-1 gap-2 tooltip tooltip-right text-gray-400 hover:text-white"
-      ]}
-      data-tip="Leave Feedback"
+    <.link
+      href="https://discord.gg/cafERvDD2k"
+      class="flex flex-col p-4 items-center absolute bottom-40 left-1 gap-2 tooltip tooltip-right text-gray-400 hover:text-white"
     >
       <.icon name="hero-hand-thumb-up-solid" class="h-4 w-4" />
-    </div>
+    </.link>
     """
   end
 
