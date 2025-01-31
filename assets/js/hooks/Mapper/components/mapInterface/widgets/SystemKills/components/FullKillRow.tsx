@@ -1,16 +1,21 @@
+// FullKillRow.tsx
 import React from 'react';
 import clsx from 'clsx';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
-import { KillRowSubInfo } from './KillRowSubInfo';
 import {
   formatISK,
   formatTimeMixed,
   zkillLink,
   getAttackerSubscript,
   buildVictimImageUrls,
-  buildAttackerShipUrl,
+  buildAttackerImageUrls,
+  getPrimaryLogoAndTooltip,
+  getAttackerPrimaryImageAndTooltip,
 } from '../helpers';
+import { VictimRowSubInfo } from './VictimRowSubInfo';
+import { WdTooltipWrapper } from '../../../../ui-kit/WdTooltipWrapper';
 import classes from './SystemKillRow.module.scss';
+import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 export interface FullKillRowProps {
   killDetails: DetailedKill;
@@ -20,73 +25,100 @@ export interface FullKillRowProps {
 
 export const FullKillRow: React.FC<FullKillRowProps> = ({ killDetails, systemName, onlyOneSystem }) => {
   const {
-    killmail_id,
+    killmail_id = 0,
+
     victim_char_name = '',
-    victim_alliance_ticker,
-    victim_corp_ticker,
+    victim_alliance_ticker = '',
+    victim_corp_ticker = '',
     victim_ship_name = '',
-    victim_char_id,
-    victim_corp_id,
-    victim_alliance_id,
-    victim_ship_type_id,
+    victim_char_id = 0,
+    victim_corp_id = 0,
+    victim_alliance_id = 0,
+    victim_ship_type_id = 0,
+    victim_corp_name = '',
+    victim_alliance_name = '',
 
-    total_value,
-    kill_time,
-
-    final_blow_char_id,
+    final_blow_char_id = 0,
     final_blow_char_name = '',
-    final_blow_alliance_ticker,
-    final_blow_corp_ticker,
+    final_blow_alliance_ticker = '',
+    final_blow_corp_ticker = '',
+    final_blow_corp_name = '',
+    final_blow_alliance_name = '',
+    final_blow_corp_id = 0,
+    final_blow_alliance_id = 0,
     final_blow_ship_name = '',
-    final_blow_ship_type_id,
-  } = killDetails;
+    final_blow_ship_type_id = 0,
 
-  const attackerIsNpc = final_blow_char_id == null;
+    total_value = 0,
+    kill_time = '',
+  } = killDetails || {};
 
-  const victimAffiliation = victim_alliance_ticker || victim_corp_ticker || '';
+  const attackerIsNpc = final_blow_char_id === 0;
+  const victimAffiliation = victim_alliance_ticker || victim_corp_ticker;
   const attackerAffiliation = attackerIsNpc ? '' : final_blow_alliance_ticker || final_blow_corp_ticker || '';
 
-  const killValueFormatted = total_value && total_value > 0 ? `${formatISK(total_value)} ISK` : null;
+  const killValueFormatted = total_value !== null && total_value > 0 ? `${formatISK(total_value)} ISK` : null;
   const killTimeAgo = kill_time ? formatTimeMixed(kill_time) : '0h ago';
 
-  const { victimPortraitUrl, victimCorpLogoUrl, victimAllianceLogoUrl, victimShipUrl } = buildVictimImageUrls({
+  const { victimPortraitUrl, victimCorpLogoUrl, victimAllianceLogoUrl } = buildVictimImageUrls({
     victim_char_id,
     victim_ship_type_id,
     victim_corp_id,
     victim_alliance_id,
   });
+  const { attackerPortraitUrl, attackerCorpLogoUrl, attackerAllianceLogoUrl } = buildAttackerImageUrls({
+    final_blow_char_id,
+    final_blow_corp_id,
+    final_blow_alliance_id,
+  });
 
-  const finalBlowShipUrl = buildAttackerShipUrl(final_blow_ship_type_id);
+  const { url: victimPrimaryImageUrl, tooltip: victimPrimaryTooltip } = getPrimaryLogoAndTooltip(
+    victimAllianceLogoUrl,
+    victimCorpLogoUrl,
+    victim_alliance_name,
+    victim_corp_name,
+    'Victim',
+  );
+
+  const { url: attackerPrimaryImageUrl, tooltip: attackerPrimaryTooltip } = getAttackerPrimaryImageAndTooltip(
+    attackerIsNpc,
+    attackerAllianceLogoUrl,
+    attackerCorpLogoUrl,
+    final_blow_alliance_name,
+    final_blow_corp_name,
+    final_blow_ship_type_id || 0,
+  );
 
   const attackerSubscript = getAttackerSubscript(killDetails);
 
   return (
     <div className={clsx(classes.killRowContainer, 'h-18 w-full justify-between items-start text-sm py-[4px]')}>
+      {/* ---------------- Victim Side ---------------- */}
       <div className="flex items-start gap-1 min-w-0 h-full">
-        {victimShipUrl && (
-          <div className="relative shrink-0 w-14 h-14 overflow-hidden">
-            <a
-              href={zkillLink('kill', killmail_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full h-full"
-            >
-              <img src={victimShipUrl} alt="VictimShip" className={clsx(classes.killRowImage, 'w-full h-full')} />
-            </a>
-          </div>
+        {/* Victim top-level logo (corp or alliance), with tooltip */}
+        {victimPrimaryImageUrl && (
+          <WdTooltipWrapper content={victimPrimaryTooltip} position={TooltipPosition.top}>
+            <div className="relative shrink-0 w-14 h-14 overflow-hidden">
+              <a
+                href={zkillLink('kill', killmail_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full h-full"
+              >
+                <img
+                  src={victimPrimaryImageUrl}
+                  alt="VictimPrimaryLogo"
+                  className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
+                />
+              </a>
+            </div>
+          </WdTooltipWrapper>
         )}
-
-        <div className="flex items-start h-14 gap-1 shrink-0">
-          <KillRowSubInfo
-            victimCorpId={victim_corp_id}
-            victimCorpLogoUrl={victimCorpLogoUrl}
-            victimAllianceId={victim_alliance_id}
-            victimAllianceLogoUrl={victimAllianceLogoUrl}
-            victimCharacterId={victim_char_id}
-            victimPortraitUrl={victimPortraitUrl}
-          />
-        </div>
-
+        <VictimRowSubInfo
+          victimCharName={victim_char_name}
+          victimCharacterId={victim_char_id}
+          victimPortraitUrl={victimPortraitUrl}
+        />
         <div className="flex flex-col text-stone-200 leading-4 min-w-0 overflow-hidden">
           <div className="truncate">
             <span className="font-semibold">{victim_char_name}</span>
@@ -105,7 +137,7 @@ export const FullKillRow: React.FC<FullKillRowProps> = ({ killDetails, systemNam
         </div>
       </div>
 
-      <div className="flex items-start gap-2 min-w-0 h-full">
+      <div className="flex items-start gap-1 min-w-0 h-full">
         <div className="flex flex-col items-end leading-4 min-w-0 overflow-hidden text-right">
           {!attackerIsNpc && (
             <div className="truncate font-semibold">
@@ -118,22 +150,46 @@ export const FullKillRow: React.FC<FullKillRowProps> = ({ killDetails, systemNam
           )}
           <div className="truncate text-red-400">{killTimeAgo}</div>
         </div>
-        {finalBlowShipUrl && (
+
+        {!attackerIsNpc && attackerPortraitUrl && final_blow_char_id !== null && final_blow_char_id > 0 && (
           <div className="relative shrink-0 w-14 h-14 overflow-hidden">
             <a
-              href={zkillLink('kill', killmail_id)}
+              href={zkillLink('character', final_blow_char_id)}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full h-full"
             >
-              <img src={finalBlowShipUrl} alt="AttackerShip" className={clsx(classes.killRowImage, 'w-full h-full')} />
-              {attackerSubscript && (
-                <span className={clsx(attackerSubscript.cssClass, classes.attackerCountLabel)}>
-                  {attackerSubscript.label}
-                </span>
-              )}
+              <img
+                src={attackerPortraitUrl}
+                alt="AttackerPortrait"
+                className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
+              />
             </a>
           </div>
+        )}
+
+        {attackerPrimaryImageUrl && (
+          <WdTooltipWrapper content={attackerPrimaryTooltip} position={TooltipPosition.top}>
+            <div className="relative shrink-0 w-14 h-14 overflow-hidden">
+              <a
+                href={zkillLink('kill', killmail_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full h-full"
+              >
+                <img
+                  src={attackerPrimaryImageUrl}
+                  alt={attackerIsNpc ? 'NpcShip' : 'AttackerPrimaryLogo'}
+                  className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
+                />
+                {attackerSubscript && (
+                  <span className={clsx(attackerSubscript.cssClass, classes.attackerCountLabel)}>
+                    {attackerSubscript.label}
+                  </span>
+                )}
+              </a>
+            </div>
+          </WdTooltipWrapper>
         )}
       </div>
     </div>

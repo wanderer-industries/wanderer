@@ -54,7 +54,6 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   }, []);
 
   const handleAddSystemSubmit: SearchOnSubmitCallback = useCallback(item => {
-
     if (localRef.current.excludedSystems.includes(item.value)) {
       return;
     }

@@ -231,19 +231,21 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
     |> enrich_final_blow()
   end
 
+
   defp enrich_victim(km) do
     km
     |> maybe_put_character_name("victim_char_id", "victim_char_name")
-    |> maybe_put_corp_ticker("victim_corp_id", "victim_corp_ticker")
-    |> maybe_put_alliance_ticker("victim_alliance_id", "victim_alliance_ticker")
+    |> maybe_put_corp_info("victim_corp_id", "victim_corp_ticker", "victim_corp_name")
+    |> maybe_put_alliance_info("victim_alliance_id", "victim_alliance_ticker", "victim_alliance_name")
     |> maybe_put_ship_name("victim_ship_type_id", "victim_ship_name")
   end
+
 
   defp enrich_final_blow(km) do
     km
     |> maybe_put_character_name("final_blow_char_id", "final_blow_char_name")
-    |> maybe_put_corp_ticker("final_blow_corp_id", "final_blow_corp_ticker")
-    |> maybe_put_alliance_ticker("final_blow_alliance_id", "final_blow_alliance_ticker")
+    |> maybe_put_corp_info("final_blow_corp_id", "final_blow_corp_ticker", "final_blow_corp_name")
+    |> maybe_put_alliance_info("final_blow_alliance_id", "final_blow_alliance_ticker", "final_blow_alliance_name")
     |> maybe_put_ship_name("final_blow_ship_type_id", "final_blow_ship_name")
   end
 
@@ -262,14 +264,16 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
     end
   end
 
-  defp maybe_put_corp_ticker(km, id_key, ticker_key) do
+  defp maybe_put_corp_info(km, id_key, ticker_key, name_key) do
     case Map.get(km, id_key) do
       nil -> km
       0 -> km
       corp_id ->
         case WandererApp.Esi.get_corporation_info(corp_id) do
-          {:ok, %{"ticker" => ticker}} ->
-            Map.put(km, ticker_key, ticker)
+          {:ok, %{"ticker" => ticker, "name" => corp_name}} ->
+            km
+            |> Map.put(ticker_key, ticker)
+            |> Map.put(name_key, corp_name)
 
           {:error, reason} ->
             Logger.warning("[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}")
@@ -281,14 +285,16 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
     end
   end
 
-  defp maybe_put_alliance_ticker(km, id_key, ticker_key) do
+  defp maybe_put_alliance_info(km, id_key, ticker_key, name_key) do
     case Map.get(km, id_key) do
       nil -> km
       0 -> km
       alliance_id ->
         case WandererApp.Esi.get_alliance_info(alliance_id) do
-          {:ok, %{"ticker" => alliance_ticker}} ->
-            Map.put(km, ticker_key, alliance_ticker)
+          {:ok, %{"ticker" => alliance_ticker, "name" => alliance_name}} ->
+            km
+            |> Map.put(ticker_key, alliance_ticker)
+            |> Map.put(name_key, alliance_name)
 
           _ ->
             km

@@ -7,9 +7,13 @@ import {
   zkillLink,
   getAttackerSubscript,
   buildVictimImageUrls,
-  buildAttackerShipUrl,
+  buildAttackerImageUrls,
+  getPrimaryLogoAndTooltip,
+  getAttackerPrimaryImageAndTooltip,
 } from '../helpers';
+import { WdTooltipWrapper } from '../../../../ui-kit/WdTooltipWrapper';
 import classes from './SystemKillRow.module.scss';
+import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 export interface CompactKillRowProps {
   killDetails: DetailedKill;
@@ -19,44 +23,69 @@ export interface CompactKillRowProps {
 
 export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, systemName, onlyOneSystem }) => {
   const {
-    killmail_id,
+    killmail_id = 0,
+
     victim_char_name = 'Unknown Pilot',
+    victim_alliance_ticker = '',
+    victim_corp_ticker = '',
     victim_ship_name = 'Unknown Ship',
-    victim_alliance_ticker,
-    victim_corp_ticker,
-    victim_char_id,
-    victim_corp_id,
-    victim_alliance_id,
-    victim_ship_type_id,
+    victim_corp_name = '',
+    victim_alliance_name = '',
+    victim_char_id = 0,
+    victim_corp_id = 0,
+    victim_alliance_id = 0,
+    victim_ship_type_id = 0,
 
-    final_blow_char_id,
+    final_blow_char_id = 0,
     final_blow_char_name = '',
-    final_blow_alliance_ticker,
-    final_blow_corp_ticker,
-    final_blow_ship_type_id,
+    final_blow_alliance_ticker = '',
+    final_blow_alliance_name = '',
+    final_blow_alliance_id = 0,
+    final_blow_corp_ticker = '',
+    final_blow_corp_id = 0,
+    final_blow_corp_name = '',
+    final_blow_ship_type_id = 0,
 
-    kill_time,
-    total_value,
-  } = killDetails;
+    kill_time = '',
+    total_value = 0,
+  } = killDetails || {};
 
-  const attackerIsNpc = final_blow_char_id == null;
-
+  const attackerIsNpc = final_blow_char_id === 0;
   const victimAffiliationTicker = victim_alliance_ticker || victim_corp_ticker || 'No Ticker';
-  const killValueFormatted = total_value && total_value > 0 ? `${formatISK(total_value)} ISK` : null;
-
+  const killValueFormatted = total_value != null && total_value > 0 ? `${formatISK(total_value)} ISK` : null;
   const attackerName = attackerIsNpc ? '' : final_blow_char_name;
   const attackerTicker = attackerIsNpc ? '' : final_blow_alliance_ticker || final_blow_corp_ticker || '';
-
   const killTimeAgo = kill_time ? formatTimeMixed(kill_time) : '0h ago';
   const attackerSubscript = getAttackerSubscript(killDetails);
 
-  const { victimShipUrl } = buildVictimImageUrls({
+  const { victimCorpLogoUrl, victimAllianceLogoUrl } = buildVictimImageUrls({
     victim_char_id,
     victim_ship_type_id,
     victim_corp_id,
     victim_alliance_id,
   });
-  const finalBlowShipUrl = buildAttackerShipUrl(final_blow_ship_type_id);
+  const { attackerCorpLogoUrl, attackerAllianceLogoUrl } = buildAttackerImageUrls({
+    final_blow_char_id,
+    final_blow_corp_id,
+    final_blow_alliance_id,
+  });
+
+  const { url: victimPrimaryLogoUrl, tooltip: victimPrimaryTooltip } = getPrimaryLogoAndTooltip(
+    victimAllianceLogoUrl,
+    victimCorpLogoUrl,
+    victim_alliance_name,
+    victim_corp_name,
+    'Victim',
+  );
+
+  const { url: attackerPrimaryImageUrl, tooltip: attackerPrimaryTooltip } = getAttackerPrimaryImageAndTooltip(
+    attackerIsNpc,
+    attackerAllianceLogoUrl,
+    attackerCorpLogoUrl,
+    final_blow_alliance_name,
+    final_blow_corp_name,
+    final_blow_ship_type_id || 0,
+  );
 
   return (
     <div
@@ -65,15 +94,21 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
         'text-xs whitespace-nowrap overflow-hidden leading-none',
       )}
     >
-      {victimShipUrl && (
-        <a
-          href={zkillLink('kill', killmail_id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative shrink-0 w-8 h-8 overflow-hidden"
-        >
-          <img src={victimShipUrl} alt="VictimShip" className={clsx(classes.killRowImage, 'w-full h-full')} />
-        </a>
+      {victimPrimaryLogoUrl && (
+        <WdTooltipWrapper content={victimPrimaryTooltip} position={TooltipPosition.top}>
+          <a
+            href={zkillLink('kill', killmail_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative shrink-0 w-8 h-8 overflow-hidden"
+          >
+            <img
+              src={victimPrimaryLogoUrl}
+              alt="VictimPrimaryLogo"
+              className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
+            />
+          </a>
+        </WdTooltipWrapper>
       )}
 
       <div className="flex flex-col ml-2 min-w-0 overflow-hidden leading-[1rem]">
@@ -103,7 +138,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
           <div className="truncate text-stone-400">
             {!onlyOneSystem && systemName ? (
               <>
-                {systemName} /<span className="ml-1 text-red-400">{killTimeAgo}</span>
+                {systemName} / <span className="ml-1 text-red-400">{killTimeAgo}</span>
               </>
             ) : (
               <span className="text-red-400">{killTimeAgo}</span>
@@ -111,27 +146,33 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
           </div>
         </div>
 
-        {finalBlowShipUrl && (
-          <a
-            href={zkillLink('kill', killmail_id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative shrink-0 w-8 h-8 overflow-hidden"
-          >
-            <img src={finalBlowShipUrl} alt="AttackerShip" className={clsx(classes.killRowImage, 'w-full h-full')} />
-            {attackerSubscript && (
-              <span
-                className={clsx(
-                  classes.attackerCountLabel,
-                  attackerSubscript.cssClass,
-                  'text-[0.6rem] leading-none px-[2px]',
-                )}
-                style={{ bottom: 0, right: 0 }}
-              >
-                {attackerSubscript.label}
-              </span>
-            )}
-          </a>
+        {attackerPrimaryImageUrl && (
+          <WdTooltipWrapper content={attackerPrimaryTooltip} position={TooltipPosition.top}>
+            <a
+              href={zkillLink('kill', killmail_id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative shrink-0 w-8 h-8 overflow-hidden"
+            >
+              <img
+                src={attackerPrimaryImageUrl}
+                alt={attackerIsNpc ? 'NpcShip' : 'AttackerPrimaryLogo'}
+                className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
+              />
+              {attackerSubscript && (
+                <span
+                  className={clsx(
+                    classes.attackerCountLabel,
+                    attackerSubscript.cssClass,
+                    'text-[0.6rem] leading-none px-[2px]',
+                  )}
+                  style={{ bottom: 0, right: 0 }}
+                >
+                  {attackerSubscript.label}
+                </span>
+              )}
+            </a>
+          </WdTooltipWrapper>
         )}
       </div>
     </div>

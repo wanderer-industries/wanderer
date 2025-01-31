@@ -33,10 +33,6 @@ export function formatISK(value: number): string {
   return Math.round(value).toString();
 }
 
-/**
- * Determines whether this was an NPC kill, solo kill, etc.
- * Returns { label: string, cssClass: string } for display, or null if none.
- */
 export function getAttackerSubscript(kill: DetailedKill) {
   if (kill.npc) {
     return { label: 'npc', cssClass: 'text-purple-400' };
