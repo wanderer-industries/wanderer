@@ -34,7 +34,7 @@ defmodule WandererApp.MixProject do
   def application do
     [
       mod: {WandererApp.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :ex_rated]
     ]
   end
 
@@ -54,6 +54,8 @@ defmodule WandererApp.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_check, "~> 0.14.0", only: [:dev], runtime: false},
+      {:ex_rated, "~> 2.0"},
+      {:retry, "~> 0.18.0"},
       {:phoenix, "~> 1.7.12"},
       {:phoenix_ecto, "~> 4.6"},
       {:ecto_sql, "~> 3.10"},
