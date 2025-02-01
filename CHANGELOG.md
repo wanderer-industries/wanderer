@@ -2,6 +2,23 @@
 
 <!-- changelog -->
 
+## [v1.44.0](https://github.com/wanderer-industries/wanderer/compare/v1.43.9...v1.44.0) (2025-02-01)
+
+
+
+
+### Features:
+
+* add news post for zkill widget
+
+* add zkill widget
+
+### Bug Fixes:
+
+* design feedback patch
+
+* removed unneeded event handler
+
 ## [v1.43.9](https://github.com/wanderer-industries/wanderer/compare/v1.43.8...v1.43.9) (2025-01-30)
 
 
