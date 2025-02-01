@@ -10,10 +10,17 @@ import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormhol
 import { getSystemClassStyles, prepareUnsplashedChunks } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager';
-import { CharacterTypeRaw, OutCommand } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, OutCommand, SystemSignature } from '@/hooks/Mapper/types';
 import { LABELS_INFO, LABELS_ORDER } from '@/hooks/Mapper/components/map/constants';
 
-function getActivityType(count: number) {
+export type LabelInfo = {
+  id: string;
+  shortName: string;
+};
+
+export type UnsplashedSignatureType = SystemSignature & { sig_id: string };
+
+function getActivityType(count: number): string {
   if (count <= 5) return 'activityNormal';
   if (count <= 30) return 'activityWarn';
   return 'activityDanger';
@@ -26,12 +33,25 @@ const SpaceToClass: Record<string, string> = {
   [Spaces.Gallente]: 'Gallente',
 };
 
-function sortedLabels(labels: string[]) {
+function sortedLabels(labels: string[]): LabelInfo[] {
   if (!labels) return [];
-  return LABELS_ORDER.filter(x => labels.includes(x)).map(x => LABELS_INFO[x]);
+  return LABELS_ORDER.filter(x => labels.includes(x)).map(x => LABELS_INFO[x] as LabelInfo);
 }
 
-export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
+export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
+  const localCounterCharacters = useMemo(() => {
+    return nodeVars.charactersInSystem
+      .map(char => ({
+        ...char,
+        compact: true,
+        isOwn: nodeVars.userCharacters.includes(char.eve_id),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [nodeVars.charactersInSystem, nodeVars.userCharacters]);
+  return { localCounterCharacters };
+}
+
+export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars {
   const { id, data, selected } = props;
   const {
     system_static_info,
@@ -71,7 +91,6 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
   const {
     data: {
       characters,
-      presentCharacters,
       wormholesData,
       hubs,
       kills,
@@ -87,15 +106,14 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
 
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
-  const systemSignatures = useMemo(
+  const systemSigs = useMemo(
     () => mapSystemSignatures[solar_system_id] || system_signatures,
     [system_signatures, solar_system_id, mapSystemSignatures],
   );
 
   const charactersInSystem = useMemo(() => {
-    return characters.filter(c => c.location?.solar_system_id === solar_system_id).filter(c => c.online);
-    // eslint-disable-next-line
-  }, [characters, presentCharacters, solar_system_id]);
+    return characters.filter(c => c.location?.solar_system_id === solar_system_id && c.online);
+  }, [characters, solar_system_id]);
 
   const isWormhole = isWormholeSpace(system_class);
 
@@ -136,52 +154,65 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
   const regionClass = showKSpaceBG ? SpaceToClass[space] : null;
 
-  const temporaryName = useMemo(() => {
+  const computedTemporaryName = useMemo(() => {
     if (!isTempSystemNameEnabled) {
       return '';
     }
-
     if (isShowLinkedSigIdTempName && linkedSigPrefix) {
       return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : `${linkedSigPrefix}・${solar_system_name}`;
     }
-
     return temporary_name;
   }, [isShowLinkedSigIdTempName, isTempSystemNameEnabled, linkedSigPrefix, solar_system_name, temporary_name]);
 
   const systemName = useMemo(() => {
-    if (isTempSystemNameEnabled && temporaryName) {
-      return temporaryName;
+    if (isTempSystemNameEnabled && computedTemporaryName) {
+      return computedTemporaryName;
     }
     return solar_system_name;
-  }, [isTempSystemNameEnabled, solar_system_name, temporaryName]);
+  }, [isTempSystemNameEnabled, solar_system_name, computedTemporaryName]);
 
-  const customName = (isTempSystemNameEnabled && temporaryName && name) || (solar_system_name !== name && name) || null;
+  const customName = useMemo(() => {
+    if (isTempSystemNameEnabled && computedTemporaryName && name) {
+      return name;
+    }
+    if (solar_system_name !== name && name) {
+      return name;
+    }
+    return null;
+  }, [isTempSystemNameEnabled, computedTemporaryName, name, solar_system_name]);
 
   const [unsplashedLeft, unsplashedRight] = useMemo(() => {
     if (!isShowUnsplashedSignatures) {
       return [[], []];
     }
     return prepareUnsplashedChunks(
-      systemSignatures
+      systemSigs
         .filter(s => s.group === 'Wormhole' && !s.linked_system)
         .map(s => ({
           eve_id: s.eve_id,
           type: s.type,
           custom_info: s.custom_info,
-        })),
+          kind: s.kind,
+          name: s.name,
+          group: s.group,
+          sig_id: s.eve_id, // Add a unique key property
+        })) as UnsplashedSignatureType[],
     );
-  }, [isShowUnsplashedSignatures, systemSignatures]);
+  }, [isShowUnsplashedSignatures, systemSigs]);
 
-  const nodeVars = {
+  // Ensure hubs are always strings.
+  const hubsAsStrings = useMemo(() => hubs.map(item => item.toString()), [hubs]);
+
+  const nodeVars: SolarSystemNodeVars = {
     id,
     selected,
-
     visible,
     isWormhole,
     classTitleColor,
     killsCount,
     killsActivityType,
     hasUserCharacters,
+    userCharacters,
     showHandlers,
     regionClass,
     systemName,
@@ -195,10 +226,10 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     sortedStatics,
     effectName: effect_name,
     regionName: region_name,
-    solarSystemId: solar_system_id,
+    solarSystemId: solar_system_id.toString(),
     solarSystemName: solar_system_name,
     locked,
-    hubs,
+    hubs: hubsAsStrings,
     name: name,
     isConnecting,
     hoverNodeId,
@@ -207,7 +238,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>) {
     unsplashedRight,
     isThickConnections,
     classTitle: class_title,
-    temporaryName: temporary_name,
+    temporaryName: computedTemporaryName,
   };
 
   return nodeVars;
@@ -230,24 +261,22 @@ export interface SolarSystemNodeVars {
   isShattered: boolean;
   tag?: string | null;
   status?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  labelsInfo: Array<any>;
-  dbClick: (event?: void) => void;
+  labelsInfo: LabelInfo[];
+  dbClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   sortedStatics: Array<string | number>;
   effectName: string | null;
   regionName: string | null;
-  solarSystemId: number;
+  solarSystemId: string;
   solarSystemName: string | null;
   locked: boolean;
-  hubs: string[] | number[];
+  hubs: string[];
   name: string | null;
   isConnecting: boolean;
   hoverNodeId: string | null;
   charactersInSystem: Array<CharacterTypeRaw>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  unsplashedLeft: Array<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  unsplashedRight: Array<any>;
+  userCharacters: string[];
+  unsplashedLeft: Array<SystemSignature>;
+  unsplashedRight: Array<SystemSignature>;
   isThickConnections: boolean;
   classTitle: string | null;
   temporaryName?: string | null;

@@ -125,10 +125,9 @@ const MapComp = ({
   const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
-  const { variant, gap, size, color } = useBackgroundVars(theme);
+  const { variant, gap, size, color, snapSize } = useBackgroundVars(theme);
   const { isPanAndDrag, nodeComponent, connectionMode } = getBehaviorForTheme(theme || 'default');
 
-  // You can create nodeTypes dynamically based on the node component
   const nodeTypes = useMemo(() => {
     return {
       custom: nodeComponent,
@@ -256,7 +255,7 @@ const MapComp = ({
 
       onEdgesChange(nextChanges);
     },
-    [getEdge, getNode, onEdgesChange],
+    [canRemoveConnection, getEdge, getNode, onEdgesChange],
   );
 
   useEffect(() => {
@@ -283,6 +282,7 @@ const MapComp = ({
           nodeTypes={nodeTypes}
           connectionMode={connectionMode}
           snapToGrid
+          snapGrid={[snapSize, snapSize]}
           nodeDragThreshold={10}
           onNodeDragStop={handleDragStop}
           onSelectionDragStop={handleSelectionDragStop}

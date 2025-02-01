@@ -1,0 +1,48 @@
+.KillsBookmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    border: 0;
+    border-radius: 5px 5px 0 0;
+    padding: 4px 3px;
+
+  }
+  
+.KillsBookmarkWithIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -2px;
+    text-shadow: 0 0 3px #000;
+    padding-right: 2px;
+    height: 8px;
+    font-size: 8px;
+    line-height: 12px;
+    font-weight: 700;
+    text-size-adjust: 100%;
+
+    .pi {
+        font-size: 9px;
+    }
+
+    .text {
+        font-size: 9px;
+        font-family: var(--rf-node-font-family, inherit) !important;
+        font-weight: var(--rf-node-font-weight, inherit) !important;
+    }
+}
+
+.TooltipContainer {
+    background-color: #1a1a1a;
+    color: #fff;
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    pointer-events: auto;
+    max-width: 500px;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
