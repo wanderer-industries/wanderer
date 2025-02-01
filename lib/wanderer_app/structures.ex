@@ -61,17 +61,15 @@ defmodule WandererApp.Structure do
   end
 
   defp parse_end_time(str) when is_binary(str) do
-    # Log everything we can about the incoming string
-    Logger.debug("[parse_end_time] raw input => #{inspect(str)} (length=#{String.length(str)})")
+    Logger.debug(fn -> "[parse_end_time] raw input => #{inspect(str)} (length=#{String.length(str)})" end)
+
 
     if String.trim(str) == "" do
-      Logger.debug("[parse_end_time] It's empty (or whitespace only). Returning nil.")
       nil
     else
       # Attempt to parse
       case DateTime.from_iso8601(str) do
         {:ok, dt, _offset} ->
-          Logger.debug("[parse_end_time] Successfully parsed => #{inspect(dt)}")
           dt
 
         {:error, reason} ->

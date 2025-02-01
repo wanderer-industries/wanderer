@@ -393,7 +393,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         end
 
       error ->
-        Logger.debug("Skip adding system: #{inspect(error, pretty: true)}")
+        Logger.debug(fn -> "Skip adding system: #{inspect(error, pretty: true)}" end)
         :ok
     end
   end

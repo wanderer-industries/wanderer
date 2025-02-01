@@ -20,7 +20,7 @@ defmodule WandererApp.Zkb.KillsProvider.KillsCache do
   Store the killmail data, keyed by killmail_id, with a 24h TTL.
   """
   def put_killmail(killmail_id, kill_data) do
-    Logger.debug("[KillsCache] Storing killmail => killmail_id=#{killmail_id}")
+    Logger.debug(fn -> "[KillsCache] Storing killmail => killmail_id=#{killmail_id}" end)
     Cache.put(killmail_key(killmail_id), kill_data, ttl: @killmail_ttl)
   end
 
@@ -30,8 +30,7 @@ defmodule WandererApp.Zkb.KillsProvider.KillsCache do
   """
   def fetch_cached_kills(system_id) do
     killmail_ids = get_system_killmail_ids(system_id)
-    # Debug-level log for performance checks
-    Logger.debug("[KillsCache] fetch_cached_kills => system_id=#{system_id}, count=#{length(killmail_ids)}")
+    Logger.debug(fn -> "[KillsCache] fetch_cached_kills => system_id=#{system_id}, count=#{length(killmail_ids)}" end)
 
     killmail_ids
     |> Enum.map(&get_killmail/1)
@@ -130,7 +129,7 @@ defmodule WandererApp.Zkb.KillsProvider.KillsCache do
     final_expiry_ms = max(@base_full_fetch_expiry_ms + offset, 60_000)
     expires_at_ms = now_ms + final_expiry_ms
 
-    Logger.debug("[KillsCache] Marking system=#{system_id} recently_fetched? until #{expires_at_ms} (ms)")
+    Logger.debug(fn -> "[KillsCache] Marking system=#{system_id} recently_fetched? until #{expires_at_ms} (ms)" end)
     Cache.put(fetched_timestamp_key(system_id), expires_at_ms)
   end
 
