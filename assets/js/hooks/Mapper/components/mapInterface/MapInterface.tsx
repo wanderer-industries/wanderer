@@ -21,5 +21,12 @@ export const MapInterface = () => {
       .filter(x => windowsSettings.visible.some(j => x.id === j));
   }, [windowsSettings]);
 
-  return <WindowManager windows={items} dragSelector=".react-grid-dragHandleExample" onChange={updateWidgetSettings} />;
+  return (
+    <WindowManager
+      windows={items}
+      viewPort={windowsSettings.viewPort}
+      dragSelector=".react-grid-dragHandleExample"
+      onChange={updateWidgetSettings}
+    />
+  );
 };
