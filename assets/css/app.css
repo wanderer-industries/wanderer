@@ -25,6 +25,10 @@ body {
   width: 400px; /* As IE6 ignores !important it will set width as 400px; */
 }
 
+body > div:first-of-type {
+  min-height: 500px !important;
+}
+
 .lending-normal {
   font-family: 'Shentox', 'Rogan', sans-serif !important;
   font-weight: 500;
