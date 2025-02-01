@@ -9,7 +9,7 @@ export interface KillsWidgetSettings {
 }
 
 export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
-  compact: false,
+  compact: true,
   showAll: false,
   excludedSystems: [],
   version: 0,

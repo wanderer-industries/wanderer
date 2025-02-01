@@ -12,7 +12,7 @@ export enum TooltipPosition {
   bottom = 'bottom',
 }
 
-export interface TooltipProps {
+export interface TooltipProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'content'> {
   position?: TooltipPosition;
   offset?: number;
   content: (() => React.ReactNode) | React.ReactNode;
@@ -25,14 +25,13 @@ export interface OffsetPosition {
   left: number;
 }
 
-/** Methods exposed via ref, e.g. for manual show/hide. */
 export interface WdTooltipHandlers {
   show: (e?: React.MouseEvent) => void;
   hide: () => void;
   getIsMouseInside: () => boolean;
 }
 
-const LEAVE_DELAY = 100; // ms grace period for "interactive" tooltips
+const LEAVE_DELAY = 100;
 
 export const WdTooltip = forwardRef(function WdTooltip(
   {
@@ -42,6 +41,7 @@ export const WdTooltip = forwardRef(function WdTooltip(
     offset = 5,
     interactive = false,
     className,
+    ...restProps
   }: TooltipProps,
   ref: ForwardedRef<WdTooltipHandlers>,
 ) {
@@ -49,13 +49,10 @@ export const WdTooltip = forwardRef(function WdTooltip(
   const [pos, setPos] = useState<OffsetPosition | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // For detecting pointer inside the tooltip (when interactive).
   const [isMouseInsideTooltip, setIsMouseInsideTooltip] = useState(false);
 
-  // If user calls show(e), store that event to recalc position.
   const [reactEvt, setReactEvt] = useState<React.MouseEvent>();
 
-  // Instead of NodeJS.Timeout, use ReturnType<typeof setTimeout>
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const calcTooltipPosition = useCallback(({ x, y }: { x: number; y: number }) => {
@@ -271,6 +268,7 @@ export const WdTooltip = forwardRef(function WdTooltip(
           scheduleHide();
         }
       }}
+      {...restProps}
     >
       {typeof content === 'function' ? content() : content}
     </div>,

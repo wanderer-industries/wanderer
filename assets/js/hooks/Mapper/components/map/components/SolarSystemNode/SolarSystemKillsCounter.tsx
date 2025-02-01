@@ -25,7 +25,7 @@ export const KillsCounter = ({ killsCount, systemId, className, children, size =
 
   return (
     // @ts-ignore
-    <WdTooltipWrapper content={tooltipContent} className={className} size={size}>
+    <WdTooltipWrapper content={tooltipContent} className={className} size={size} interactive={true}>
       {children}
     </WdTooltipWrapper>
   );
