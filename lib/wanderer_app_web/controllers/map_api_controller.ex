@@ -1,87 +1,48 @@
-defmodule WandererAppWeb.APIController do
+defmodule WandererAppWeb.MapAPIController do
   use WandererAppWeb, :controller
 
   import Ash.Query, only: [filter: 2]
+  require Logger
 
   alias WandererApp.Api
+  alias WandererApp.Api.Character
   alias WandererApp.MapSystemRepo
   alias WandererApp.MapCharacterSettingsRepo
-  alias WandererApp.Api.Character
-  alias WandererApp.CachedInfo
 
+  alias WandererApp.Zkb.KillsProvider.KillsCache
 
-# -----------------------------------------------------------------
-# Common
-# -----------------------------------------------------------------
+  alias WandererAppWeb.UtilAPIController, as: Util
 
-  @doc """
-  GET /api/system-static-info
-
-  Requires 'id' (the solar_system_id)
-
-  Example:
-      GET /api/common/system_static?id=31002229
-      GET /api/common/system_static?id=31002229
-  """
-  def show_system_static(conn, params) do
-    with {:ok, solar_system_str} <- require_param(params, "id"),
-         {:ok, solar_system_id} <- parse_int(solar_system_str) do
-      case CachedInfo.get_system_static_info(solar_system_id) do
-        {:ok, system} ->
-          data = static_system_to_json(system)
-          json(conn, %{data: data})
-
-        {:error, :not_found} ->
-          conn
-          |> put_status(:not_found)
-          |> json(%{error: "System not found"})
-      end
-    else
-      {:error, msg} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: msg})
-    end
-  end
-
+  # -----------------------------------------------------------------
+  # MAP endpoints
+  # -----------------------------------------------------------------
 
   @doc """
   GET /api/map/systems
 
   Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
 
-  If `?all=true` is provided, **all** systems are returned.
-  Otherwise, only "visible" systems are returned.
+  Only "visible" systems are returned.
 
   Examples:
       GET /api/map/systems?map_id=466e922b-e758-485e-9b86-afae06b88363
       GET /api/map/systems?slug=my-unique-wormhole-map
-      GET /api/map/systems?map_id=<UUID>&all=true
   """
   def list_systems(conn, params) do
-    with {:ok, map_id} <- fetch_map_id(params) do
-      repo_fun =
-        if params["all"] == "true" do
-          &MapSystemRepo.get_all_by_map/1
-        else
-          &MapSystemRepo.get_visible_by_map/1
-        end
-
-      case repo_fun.(map_id) do
-        {:ok, systems} ->
-          data = Enum.map(systems, &map_system_to_json/1)
-          json(conn, %{data: data})
-
-        {:error, reason} ->
-          conn
-          |> put_status(:not_found)
-          |> json(%{error: "Could not fetch systems for map_id=#{map_id}: #{inspect(reason)}"})
-      end
+    with {:ok, map_id} <- Util.fetch_map_id(params),
+         {:ok, systems} <- MapSystemRepo.get_visible_by_map(map_id) do
+      data = Enum.map(systems, &map_system_to_json/1)
+      json(conn, %{data: data})
     else
-      {:error, msg} ->
+      {:error, msg} when is_binary(msg) ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Could not fetch systems: #{inspect(reason)}"})
     end
   end
 
@@ -96,28 +57,29 @@ defmodule WandererAppWeb.APIController do
       GET /api/map/system?id=31002229&slug=my-unique-wormhole-map
   """
   def show_system(conn, params) do
-    with {:ok, solar_system_str} <- require_param(params, "id"),
-         {:ok, solar_system_id} <- parse_int(solar_system_str),
-         {:ok, map_id} <- fetch_map_id(params) do
-      case MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
-        {:ok, system} ->
-          data = map_system_to_json(system)
-          json(conn, %{data: data})
-
-        {:error, :not_found} ->
-          conn
-          |> put_status(:not_found)
-          |> json(%{error: "System not found in map=#{map_id}"})
-      end
+    with {:ok, solar_system_str} <- Util.require_param(params, "id"),
+         {:ok, solar_system_id} <- Util.parse_int(solar_system_str),
+         {:ok, map_id} <- Util.fetch_map_id(params),
+         {:ok, system} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
+      data = map_system_to_json(system)
+      json(conn, %{data: data})
     else
-      {:error, msg} ->
+      {:error, msg} when is_binary(msg) ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "System not found"})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Could not load system: #{inspect(reason)}"})
     end
   end
-
-
 
   @doc """
   GET /api/map/tracked_characters_with_info
@@ -129,11 +91,9 @@ defmodule WandererAppWeb.APIController do
   Returns a list of tracked records, plus their fully-loaded `character` data.
   """
   def tracked_characters_with_info(conn, params) do
-    with {:ok, map_id} <- fetch_map_id(params),
+    with {:ok, map_id} <- Util.fetch_map_id(params),
          {:ok, settings_list} <- get_tracked_by_map_ids(map_id),
-         {:ok, char_list} <-
-           read_characters_by_ids_wrapper(Enum.map(settings_list, & &1.character_id)) do
-
+         {:ok, char_list} <- read_characters_by_ids_wrapper(Enum.map(settings_list, & &1.character_id)) do
       chars_by_id = Map.new(char_list, &{&1.id, &1})
 
       data =
@@ -175,8 +135,24 @@ defmodule WandererAppWeb.APIController do
     end
   end
 
+  @doc """
+  GET /api/map/structure_timers
+
+  Returns structure timers for visible systems on the map
+  or for a specific system if `system_id` is specified.
+
+  **Example usage**:
+  - All visible systems:
+    ```
+    GET /api/map/structure_timers?map_id=<uuid>
+    ```
+  - For a single system:
+    ```
+    GET /api/map/structure_timers?map_id=<uuid>&system_id=31002229
+    ```
+  """
   def show_structure_timers(conn, params) do
-    with {:ok, map_id} <- fetch_map_id(params) do
+    with {:ok, map_id} <- Util.fetch_map_id(params) do
       system_id_str = params["system_id"]
 
       case system_id_str do
@@ -184,7 +160,7 @@ defmodule WandererAppWeb.APIController do
           handle_all_structure_timers(conn, map_id)
 
         _ ->
-          case parse_int(system_id_str) do
+          case Util.parse_int(system_id_str) do
             {:ok, system_id} ->
               handle_single_structure_timers(conn, map_id, system_id)
 
@@ -201,6 +177,106 @@ defmodule WandererAppWeb.APIController do
         |> json(%{error: msg})
     end
   end
+
+  @doc """
+  GET /api/map/systems_kills
+
+  Returns kills data for all *visible* systems on the map.
+
+  Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
+  Optional hours_ago
+
+  Example:
+      GET /api/map/systems_kills?map_id=<uuid>
+      GET /api/map/systems_kills?slug=<map-slug>
+      GET /api/map/systems_kills?map_id=<uuid>&hour_ago=<somehours>
+
+  """
+  def list_systems_kills(conn, params) do
+    Logger.info("[list_systems_kills] called with params=#{inspect(params)}")
+
+    with {:ok, map_id} <- Util.fetch_map_id(params),
+         # fetch visible systems from the repo
+         {:ok, systems} <- MapSystemRepo.get_visible_by_map(map_id) do
+
+      Logger.debug("[list_systems_kills] Found #{length(systems)} visible systems for map_id=#{map_id}")
+
+      # Parse the hours_ago param
+      hours_ago = parse_hours_ago(params["hours_ago"])
+
+      # Gather system IDs
+      solar_ids = Enum.map(systems, & &1.solar_system_id)
+      Logger.debug("[list_systems_kills] solar_ids=#{inspect(solar_ids)}")
+
+      # Fetch kills for each system from the cache
+      kills_map = KillsCache.fetch_cached_kills_for_systems(solar_ids)
+      Logger.debug("[list_systems_kills] kills_map=#{inspect(kills_map, limit: :infinity)}")
+
+      # Build final JSON data
+      data =
+        Enum.map(systems, fn sys ->
+          kills = Map.get(kills_map, sys.solar_system_id, [])
+
+          # Filter out kills older than hours_ago
+          filtered_kills = maybe_filter_kills_by_time(kills, hours_ago)
+
+          Logger.debug("""
+            [list_systems_kills] For system_id=#{sys.solar_system_id},
+            found #{length(kills)} kills total,
+            returning #{length(filtered_kills)} kills after hours_ago filter
+          """)
+
+          %{
+            solar_system_id: sys.solar_system_id,
+            kills: filtered_kills
+          }
+        end)
+
+      json(conn, %{data: data})
+    else
+      {:error, msg} when is_binary(msg) ->
+        Logger.warn("[list_systems_kills] Bad request: #{msg}")
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+
+      {:error, reason} ->
+        Logger.error("[list_systems_kills] Could not fetch systems: #{inspect(reason)}")
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Could not fetch systems: #{inspect(reason)}"})
+    end
+  end
+
+  # If hours_str is present and valid, parse it. Otherwise return nil (no filter).
+  defp parse_hours_ago(nil), do: nil
+  defp parse_hours_ago(hours_str) do
+    case Integer.parse(hours_str) do
+      {num, ""} when num > 0 -> num
+      _ -> nil
+    end
+  end
+
+  defp maybe_filter_kills_by_time(kills, hours_ago) when is_integer(hours_ago) do
+    cutoff = DateTime.utc_now() |> DateTime.add(-hours_ago * 3600, :second)
+
+    Enum.filter(kills, fn kill ->
+      kill_time = kill["kill_time"]
+
+      case kill_time do
+        %DateTime{} = dt ->
+          # Keep kills that occurred after the cutoff
+          DateTime.compare(dt, cutoff) != :lt
+
+        # If it's something else (nil, or a weird format), skip
+        _ ->
+          false
+      end
+    end)
+  end
+
+  # If hours_ago is nil, maybe no time filtering:
+  defp maybe_filter_kills_by_time(kills, nil), do: kills
 
   defp handle_all_structure_timers(conn, map_id) do
     case MapSystemRepo.get_visible_by_map(map_id) do
@@ -268,11 +344,8 @@ defmodule WandererAppWeb.APIController do
 
   defp get_tracked_by_map_ids(map_id) do
     case MapCharacterSettingsRepo.get_tracked_by_map_all(map_id) do
-      {:ok, settings_list} ->
-        {:ok, settings_list}
-
-      {:error, reason} ->
-        {:error, :get_tracked_error, reason}
+      {:ok, settings_list} -> {:ok, settings_list}
+      {:error, reason}     -> {:error, :get_tracked_error, reason}
     end
   end
 
@@ -283,38 +356,6 @@ defmodule WandererAppWeb.APIController do
 
       {:error, reason} ->
         {:error, :read_characters_by_ids_error, reason}
-    end
-  end
-
-  defp fetch_map_id(%{"map_id" => mid}) when is_binary(mid) and mid != "" do
-    {:ok, mid}
-  end
-
-  defp fetch_map_id(%{"slug" => slug}) when is_binary(slug) and slug != "" do
-    case WandererApp.Api.Map.get_map_by_slug(slug) do
-      {:ok, map} ->
-        {:ok, map.id}
-
-      {:error, _reason} ->
-        {:error, "No map found for slug=#{slug}"}
-    end
-  end
-
-  defp fetch_map_id(_),
-    do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
-
-  defp require_param(params, key) do
-    case params[key] do
-      nil -> {:error, "Missing required param: #{key}"}
-      "" -> {:error, "Param #{key} cannot be empty"}
-      val -> {:ok, val}
-    end
-  end
-
-  defp parse_int(str) do
-    case Integer.parse(str) do
-      {num, ""} -> {:ok, num}
-      _ -> {:error, "Invalid integer for param id=#{str}"}
     end
   end
 
@@ -366,30 +407,4 @@ defmodule WandererAppWeb.APIController do
       :updated_at
     ])
   end
-
-
-  defp static_system_to_json(system) do
-    system
-    |> Map.take([
-      :solar_system_id,
-      :region_id,
-      :constellation_id,
-      :solar_system_name,
-      :solar_system_name_lc,
-      :constellation_name,
-      :region_name,
-      :system_class,
-      :security,
-      :type_description,
-      :class_title,
-      :is_shattered,
-      :effect_name,
-      :effect_power,
-      :statics,
-      :wandering,
-      :triglavian_invasion_status,
-      :sun_type_id
-    ])
-  end
-
 end
