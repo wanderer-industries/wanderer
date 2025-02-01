@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.44.1](https://github.com/wanderer-industries/wanderer/compare/v1.44.0...v1.44.1) (2025-02-01)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with windows. (#140)
+
+* Map: Fixed problem with windows.
+
+* Core: Added min heigth for body
+
 ## [v1.44.0](https://github.com/wanderer-industries/wanderer/compare/v1.43.9...v1.44.0) (2025-02-01)
 
 
