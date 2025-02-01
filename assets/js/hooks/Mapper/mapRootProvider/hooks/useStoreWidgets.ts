@@ -8,13 +8,14 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
 import { useCallback, useEffect, useRef } from 'react';
-import { SNAP_GAP } from '@/hooks/Mapper/components/ui-kit/WindowManager';
+import { SNAP_GAP, WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 
 export type StoredWindowProps = Omit<WindowProps, 'content'>;
 export type WindowStoreInfo = {
   version: number;
   windows: StoredWindowProps[];
   visible: WidgetsIds[];
+  viewPort?: { w: number; h: number } | undefined;
 };
 export type UpdateWidgetSettingsFunc = (widgets: WindowProps[]) => void;
 export type ToggleWidgetVisibility = (widgetId: WidgetsIds) => void;
@@ -33,7 +34,7 @@ export const useStoreWidgets = () => {
   const ref = useRef({ windowsSettings, setWindowsSettings });
   ref.current = { windowsSettings, setWindowsSettings };
 
-  const updateWidgetSettings: UpdateWidgetSettingsFunc = useCallback(newWindows => {
+  const updateWidgetSettings: WindowsManagerOnChange = useCallback(({ windows, viewPort }) => {
     const { setWindowsSettings } = ref.current;
 
     setWindowsSettings(({ version, visible /*, windows*/ }: WindowStoreInfo) => {
@@ -41,13 +42,14 @@ export const useStoreWidgets = () => {
         version,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         windows: DEFAULT_WIDGETS.map(({ content, ...x }) => {
-          const windowProp = newWindows.find(j => j.id === x.id);
+          const windowProp = windows.find(j => j.id === x.id);
           if (windowProp) {
             return windowProp;
           }
 
           return x;
         }),
+        viewPort,
         visible,
       };
     });
@@ -92,7 +94,7 @@ export const useStoreWidgets = () => {
       return;
     }
 
-    const { version, windows, visible } = JSON.parse(raw) as WindowStoreInfo;
+    const { version, windows, visible, viewPort } = JSON.parse(raw) as WindowStoreInfo;
     if (!version || CURRENT_WINDOWS_VERSION > version) {
       setWindowsSettings(getDefaultWidgetProps());
     }
@@ -104,6 +106,7 @@ export const useStoreWidgets = () => {
       version: CURRENT_WINDOWS_VERSION,
       windows: out as WindowProps[],
       visible,
+      viewPort,
     });
   }, []);
 

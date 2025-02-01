@@ -1,16 +1,20 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
-import { MapUnionTypes, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
+import {
+  CommandLinkSignatureToSystem,
+  MapUnionTypes,
+  OutCommandHandler,
+  SolarSystemConnection,
+} from '@/hooks/Mapper/types';
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
 import {
   ToggleWidgetVisibility,
-  UpdateWidgetSettingsFunc,
   useStoreWidgets,
   WindowStoreInfo,
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
-import { CommandLinkSignatureToSystem } from '@/hooks/Mapper/types';
+import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
 
 export type MapRootData = MapUnionTypes & {
@@ -82,7 +86,7 @@ export interface MapRootContextProps {
   setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
   windowsSettings: WindowStoreInfo;
   toggleWidgetVisibility: ToggleWidgetVisibility;
-  updateWidgetSettings: UpdateWidgetSettingsFunc;
+  updateWidgetSettings: WindowsManagerOnChange;
   resetWidgets: () => void;
 }
 
