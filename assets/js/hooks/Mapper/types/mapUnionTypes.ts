@@ -22,5 +22,5 @@ export type MapUnionTypes = {
   connections: SolarSystemConnection[];
   userPermissions: Partial<UserPermissions>;
   options: Record<string, string | boolean>;
-  is_subscription_active: boolean;
+  isSubscriptionActive: boolean;
 };

@@ -238,7 +238,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          |> MapCharactersEventHandler.add_character()}
 
   def handle_ui_event(event, body, socket) do
-    Logger.warning(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
+    Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
   end
 

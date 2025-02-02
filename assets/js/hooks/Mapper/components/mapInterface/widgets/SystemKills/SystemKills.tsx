@@ -9,7 +9,7 @@ import { KillsSettingsDialog } from './components/SystemKillsSettingsDialog';
 
 export const SystemKills: React.FC = () => {
   const {
-    data: { selectedSystems, systems, is_subscription_active: isSubscriptionActive },
+    data: { selectedSystems, systems, isSubscriptionActive },
     outCommand,
   } = useMapRootState();
 

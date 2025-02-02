@@ -101,13 +101,13 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
         });
 
         // Single system => `resp.kills`
-        if (resp.kills) {
+        if (resp?.kills) {
           const arr = resp.kills as DetailedKill[];
           const sid = systemId ?? 'unknown';
           mergeKillsIntoGlobal({ [sid]: arr });
         }
         // multiple => `resp.systems_kills`
-        else if (resp.systems_kills) {
+        else if (resp?.systems_kills) {
           mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
         } else {
           console.warn('[useSystemKills] Unexpected kills response =>', resp);

@@ -42,6 +42,7 @@ const INITIAL_DATA: MapRootData = {
   selectedConnections: [],
   userPermissions: {},
   options: {},
+  isSubscriptionActive: false,
   linkSignatureToSystem: null,
 };
 

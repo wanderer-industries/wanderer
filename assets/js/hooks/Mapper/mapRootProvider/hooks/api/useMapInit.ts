@@ -21,6 +21,7 @@ export const useMapInit = () => {
       hubs,
       user_permissions,
       options,
+      is_subscription_active,
     }: CommandInit) => {
       const updateData: Partial<MapRootData> = {};
 
@@ -64,6 +65,8 @@ export const useMapInit = () => {
       if (options) {
         updateData.options = options;
       }
+
+      updateData.isSubscriptionActive = is_subscription_active;
 
       if (system_static_infos) {
         system_static_infos.forEach(static_info => {
