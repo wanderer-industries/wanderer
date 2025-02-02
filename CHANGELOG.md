@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.44.3](https://github.com/wanderer-industries/wanderer/compare/v1.44.2...v1.44.3) (2025-02-02)
+
+
+
+
+### Bug Fixes:
+
+* restored kills lightning bolt functionality (#143)
+
 ## [v1.44.2](https://github.com/wanderer-industries/wanderer/compare/v1.44.1...v1.44.2) (2025-02-02)
 
 

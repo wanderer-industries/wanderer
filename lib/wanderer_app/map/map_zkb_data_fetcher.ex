@@ -166,25 +166,16 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   defp maybe_broadcast_map_kills(new_kills_map, map_id) do
     {:ok, old_kills_map} = WandererApp.Cache.lookup("map_#{map_id}:zkb_kills", %{})
 
-    updated_kills_system_ids =
-      old_kills_map
-      |> Map.keys()
-      |> Enum.filter(fn system_id ->
+    # Use the union of keys from both the new and old maps
+    all_system_ids = Map.keys(Map.merge(new_kills_map, old_kills_map))
+
+    changed_system_ids =
+      Enum.filter(all_system_ids, fn system_id ->
         new_kills_count = Map.get(new_kills_map, system_id, 0)
         old_kills_count = Map.get(old_kills_map, system_id, 0)
-        new_kills_count != old_kills_count and new_kills_count > 0
+        new_kills_count != old_kills_count and
+          (new_kills_count > 0 or (old_kills_count > 0 and new_kills_count == 0))
       end)
-
-    removed_kills_system_ids =
-      old_kills_map
-      |> Map.keys()
-      |> Enum.filter(fn system_id ->
-        old_kills_count = Map.get(old_kills_map, system_id, 0)
-        new_kills_count = Map.get(new_kills_map, system_id, 0)
-        old_kills_count > 0 and new_kills_count == 0
-      end)
-
-    changed_system_ids = updated_kills_system_ids ++ removed_kills_system_ids
 
     if changed_system_ids == [] do
       :ok
