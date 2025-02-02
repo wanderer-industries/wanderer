@@ -193,24 +193,20 @@ defmodule WandererAppWeb.MapAPIController do
 
   """
   def list_systems_kills(conn, params) do
-    Logger.info("[list_systems_kills] called with params=#{inspect(params)}")
-
     with {:ok, map_id} <- Util.fetch_map_id(params),
          # fetch visible systems from the repo
          {:ok, systems} <- MapSystemRepo.get_visible_by_map(map_id) do
 
-      Logger.debug("[list_systems_kills] Found #{length(systems)} visible systems for map_id=#{map_id}")
+      Logger.debug(fn -> "[list_systems_kills] Found #{length(systems)} visible systems for map_id=#{map_id}" end)
 
       # Parse the hours_ago param
       hours_ago = parse_hours_ago(params["hours_ago"])
 
       # Gather system IDs
       solar_ids = Enum.map(systems, & &1.solar_system_id)
-      Logger.debug("[list_systems_kills] solar_ids=#{inspect(solar_ids)}")
 
       # Fetch kills for each system from the cache
       kills_map = KillsCache.fetch_cached_kills_for_systems(solar_ids)
-      Logger.debug("[list_systems_kills] kills_map=#{inspect(kills_map, limit: :infinity)}")
 
       # Build final JSON data
       data =
@@ -220,11 +216,11 @@ defmodule WandererAppWeb.MapAPIController do
           # Filter out kills older than hours_ago
           filtered_kills = maybe_filter_kills_by_time(kills, hours_ago)
 
-          Logger.debug("""
+          Logger.debug(fn -> "
             [list_systems_kills] For system_id=#{sys.solar_system_id},
             found #{length(kills)} kills total,
             returning #{length(filtered_kills)} kills after hours_ago filter
-          """)
+          " end)
 
           %{
             solar_system_id: sys.solar_system_id,
