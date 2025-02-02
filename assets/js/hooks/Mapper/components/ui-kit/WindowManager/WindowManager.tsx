@@ -76,20 +76,38 @@ export const WindowWrapper = ({ onResize, onDrag, ...window }: WindowWrapperProp
     </div>
   );
 };
+export type ViewPortProps = { w: number; h: number };
+export type WindowsManagerOnChange = (props: { windows: WindowProps[]; viewPort: ViewPortProps }) => void;
 
 type WindowManagerProps = {
   windows: WindowProps[];
+  viewPort?: ViewPortProps;
   dragSelector?: string;
-  onChange?(windows: WindowProps[]): void;
+  onChange?: WindowsManagerOnChange;
 };
 
-export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWindows, dragSelector, onChange }) => {
+export const WindowManager: React.FC<WindowManagerProps> = ({
+  windows: initialWindows,
+  viewPort,
+  dragSelector,
+  onChange,
+}) => {
   const [windows, setWindows] = useState(
     initialWindows.map((window, index) => ({
       ...window,
       zIndex: index + 1,
     })),
   );
+
+  const refPrevSize = useRef({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (!viewPort) {
+      return;
+    }
+
+    refPrevSize.current = viewPort;
+  }, [viewPort]);
 
   useEffect(() => {
     setWindows(initialWindows.slice(0));
@@ -102,14 +120,15 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
   const startMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startWindowStateRef = useRef<{ x: number; y: number; width: number; height: number }>(DefaultWindowState);
 
-  const ref = useRef({ windows, onChange });
-  ref.current = { windows, onChange };
-
-  const refPrevSize = useRef({ w: 0, h: 0 });
+  const ref = useRef({ windows, viewPort, onChange });
+  ref.current = { windows, viewPort, onChange };
 
   const onDebouncedChange = useMemo(() => {
     return debounce(() => {
-      ref.current.onChange?.(ref.current.windows);
+      ref.current.onChange?.({
+        windows: ref.current.windows,
+        viewPort: refPrevSize.current,
+      });
     }, 20);
   }, []);
 
@@ -336,7 +355,7 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
 
   // Handle resize of the container and reposition windows
   useEffect(() => {
-    if (containerRef.current) {
+    if (ref.current.viewPort == null && containerRef.current) {
       refPrevSize.current = { w: containerRef.current.clientWidth, h: containerRef.current.clientHeight };
     }
 
@@ -384,8 +403,12 @@ export const WindowManager: React.FC<WindowManagerProps> = ({ windows: initialWi
             next.position.y = container.clientHeight - next.size.height - SNAP_GAP;
           }
 
-          if (next.position.y < 0) {
+          if (next.position.y < SNAP_GAP) {
             next.position.y = 0;
+          }
+
+          if (next.position.x < SNAP_GAP) {
+            next.position.x = SNAP_GAP;
           }
 
           return next;
