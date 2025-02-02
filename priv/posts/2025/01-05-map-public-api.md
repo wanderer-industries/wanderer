@@ -199,6 +199,101 @@ No api key is required for routes that being with /api/common
 ```
 ---
 
+### 4. Kills Activity
+
+    GET /api/map/systems-kills?map_id=<UUID>
+    GET /api/map/systems-kills?slug=<map-slug>"
+
+- **Description:** Retrieves the kill activity for the specified map (by `map_id` or `slug`), including details on the attacker and victim
+
+#### Example Request
+```
+    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/systems-kills?slug==some-slug"
+```
+#### Example Response
+```
+    {
+      "data": [
+        {
+          "kills": [
+            {
+              "attacker_count": 1,
+              "final_blow_alliance_id": 99013806,
+              "final_blow_alliance_ticker": "TCE",
+              "final_blow_char_id": 2116802670,
+              "final_blow_char_name": "Bambi Bunny",
+              "final_blow_corp_id": 98140648,
+              "final_blow_corp_ticker": "GNK3D",
+              "final_blow_ship_name": "Thrasher",
+              "final_blow_ship_type_id": 16242,
+              "kill_time": "2025-01-21T21:00:59Z",
+              "killmail_id": 124181782,
+              "npc": false,
+              "solar_system_id": 30002768,
+              "total_value": 10000,
+              "victim_alliance_id": null,
+              "victim_char_id": 2121725410,
+              "victim_char_name": "Bill Drummond",
+              "victim_corp_id": 98753095,
+              "victim_corp_ticker": "KSTJK",
+              "victim_ship_name": "Capsule",
+              "victim_ship_type_id": 670,
+              "zkb": {
+                "awox": false,
+                "destroyedValue": 10000,
+                "droppedValue": 0,
+                "fittedValue": 10000,
+                "hash": "777148f8bf344bade68a6a0821bfe0a37491a7a6",
+                "labels": ["cat:6","#:1","pvp","loc:highsec"],
+                "locationID": 50014064,
+                "npc": false,
+                "points": 1,
+                "solo": false,
+                "totalValue": 10000
+              }
+            },
+            {
+              "attacker_count": 3,
+              "final_blow_alliance_id": null,
+              "final_blow_char_id": null,
+              "final_blow_corp_id": null,
+              "final_blow_ship_type_id": 3740,
+              "kill_time": "2025-01-21T21:00:38Z",
+              "killmail_id": 124181769,
+              "npc": true,
+              "solar_system_id": 30002768,
+              "total_value": 2656048.48,
+              "victim_alliance_id": 99013806,
+              "victim_alliance_ticker": "TCE",
+              "victim_char_id": 2116802745,
+              "victim_char_name": "Brittni Bunny",
+              "victim_corp_id": 98140648,
+              "victim_corp_ticker": "GNK3D",
+              "victim_ship_name": "Coercer",
+              "victim_ship_type_id": 16236,
+              "zkb": {
+                "awox": false,
+                "destroyedValue": 2509214.44,
+                "droppedValue": 146834.04,
+                "fittedValue": 2607449.82,
+                "hash": "d3dd6b8833b2a9d36dd5a3eecf9838c4c8b01acd",
+                "labels": ["cat:6","#:2+","npc","loc:highsec"],
+                "locationID": 50014064,
+                "npc": true,
+                "points": 1,
+                "solo": false,
+                "totalValue": 2656048.48
+              }
+            }
+          ],
+          "solar_system_id": 30002768
+        },
+        ...
+      ]
+    }
+```
+---
+
 ## Conclusion
 
 Using these APIs, you can programmatically retrieve system and character information from your map. Whether you’re building a custom analytics dashboard, a corp management tool, or just want to explore data outside the standard UI, these endpoints provide a straightforward way to fetch up-to-date map details.

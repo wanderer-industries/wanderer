@@ -114,33 +114,39 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckMapApiKey
   end
 
-scope "/api/map", WandererAppWeb do
-  pipe_through [:api_map]
-  pipe_through [:api]
+  pipeline :api_kills do
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+  end
 
-  # GET /api/map/systems?map_id=... or ?slug=...
-  get "/systems", APIController, :list_systems
+  scope "/api/map/systems-kills", WandererAppWeb do
+    pipe_through [:api, :api_map, :api_kills]
 
-  # GET /api/map/system-static-info?id=... plus either map_id=... or slug=...
-  get "/system-static-info", APIController, :show_system_static
+    get "/", MapAPIController, :list_systems_kills
+  end
 
-  # GET /api/map/system?id=... plus either map_id=... or slug=...
-  get "/system", APIController, :show_system
+  scope "/api/map", WandererAppWeb do
+    pipe_through [:api, :api_map]
 
-  # GET /api/map/characters?map_id=... or slug=...
-  get "/characters", APIController, :tracked_characters_with_info
+    # GET /api/map/systems?map_id=... or ?slug=...
+    get "/systems", MapAPIController, :list_systems
 
-  # GET /api/map/structure-timers?map_id=... or slug=... and optionally ?system_id=...
-  get "/structure-timers", APIController, :show_structure_timers
-end
+    # GET /api/map/system?id=... plus either map_id=... or slug=...
+    get "/system", MapAPIController, :show_system
 
-scope "/api/common", WandererAppWeb do
-  pipe_through [:api]
+    # GET /api/map/characters?map_id=... or slug=...
+    get "/characters", MapAPIController, :tracked_characters_with_info
 
-  # GET /api/common/system-static-info?id=...
-  get "/system-static-info", APIController, :show_system_static
+    # GET /api/map/structure-timers?map_id=... or slug=... and optionally ?system_id=...
+    get "/structure-timers", MapAPIController, :show_structure_timers
+  end
 
-end
+  scope "/api/common", WandererAppWeb do
+    pipe_through [:api]
+
+    # GET /api/common/system-static-info?id=...
+    get "/system-static-info", CommonAPIController, :show_system_static
+
+  end
 
   scope "/", WandererAppWeb do
     pipe_through [:browser, :blog, :redirect_if_user_is_authenticated]
