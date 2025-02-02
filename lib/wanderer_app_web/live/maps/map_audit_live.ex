@@ -34,13 +34,15 @@ defmodule WandererAppWeb.MapAuditLive do
 
         case user_permissions.delete_map do
           true ->
+            {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+
             {:ok,
              socket
              |> assign(
                map_id: map_id,
                map_name: map_name,
                map_slug: map_slug,
-               map_subscription_active: WandererApp.Map.is_subscription_active?(map_id),
+               map_subscription_active: is_subscription_active,
                activity: activity,
                can_undo_types: [:systems_removed],
                period: period || "1H",

@@ -37,6 +37,7 @@ const INITIAL_DATA: MapData = {
   userPermissions: {},
   systemSignatures: {} as Record<string, SystemSignature[]>,
   options: {} as Record<string, string | boolean>,
+  is_subscription_active: false,
 };
 
 export interface MapContextProps {

@@ -9,7 +9,7 @@ import { KillsSettingsDialog } from './components/SystemKillsSettingsDialog';
 
 export const SystemKills: React.FC = () => {
   const {
-    data: { selectedSystems, systems },
+    data: { selectedSystems, systems, is_subscription_active: isSubscriptionActive },
     outCommand,
   } = useMapRootState();
 
@@ -41,40 +41,49 @@ export const SystemKills: React.FC = () => {
     <div className="h-full flex flex-col min-h-0">
       <div className="flex flex-col flex-1 min-h-0">
         <Widget label={<KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />}>
-          {isNothingSelected && (
+          {!isSubscriptionActive && (
             <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
-              No system selected (or toggle “Show all systems”)
+              Kills available with &#39;Active&#39; map subscription only (contact map administrators)
             </div>
           )}
+          {isSubscriptionActive && (
+            <>
+              {isNothingSelected && (
+                <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+                  No system selected (or toggle “Show all systems”)
+                </div>
+              )}
 
-          {!isNothingSelected && showLoading && (
-            <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
-              Loading Kills...
-            </div>
-          )}
+              {!isNothingSelected && showLoading && (
+                <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+                  Loading Kills...
+                </div>
+              )}
 
-          {!isNothingSelected && !showLoading && error && (
-            <div className="w-full h-full flex justify-center items-center select-none text-center text-red-400 text-sm">
-              {error}
-            </div>
-          )}
+              {!isNothingSelected && !showLoading && error && (
+                <div className="w-full h-full flex justify-center items-center select-none text-center text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
 
-          {!isNothingSelected && !showLoading && !error && (!kills || kills.length === 0) && (
-            <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
-              No kills found
-            </div>
-          )}
+              {!isNothingSelected && !showLoading && !error && (!kills || kills.length === 0) && (
+                <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+                  No kills found
+                </div>
+              )}
 
-          {!isNothingSelected && !showLoading && !error && (
-            <div className="flex-1 flex flex-col overflow-y-auto">
-              <SystemKillsContent
-                key={settings.compact ? 'compact' : 'normal'}
-                kills={kills}
-                systemNameMap={systemNameMap}
-                compact={settings.compact}
-                onlyOneSystem={!visible}
-              />
-            </div>
+              {!isNothingSelected && !showLoading && !error && (
+                <div className="flex-1 flex flex-col overflow-y-auto">
+                  <SystemKillsContent
+                    key={settings.compact ? 'compact' : 'normal'}
+                    kills={kills}
+                    systemNameMap={systemNameMap}
+                    compact={settings.compact}
+                    onlyOneSystem={!visible}
+                  />
+                </div>
+              )}
+            </>
           )}
         </Widget>
       </div>

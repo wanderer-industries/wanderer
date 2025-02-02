@@ -103,13 +103,3 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
     label: 'Kills',
   },
 ];
-
-export function getWidgetsCheckboxesProps(detailedKillsDisabled: boolean): WidgetsCheckboxesType {
-  return filterOutKills(WIDGETS_CHECKBOXES_PROPS, detailedKillsDisabled);
-}
-
-
-function filterOutKills<T extends { id: WidgetsIds }>(items: T[], shouldFilter: boolean) {
-  if (!shouldFilter) return items;
-  return items.filter((w) => w.id !== WidgetsIds.kills);
-}

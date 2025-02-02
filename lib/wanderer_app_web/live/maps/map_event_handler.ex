@@ -155,7 +155,14 @@ defmodule WandererAppWeb.MapEventHandler do
       when event_name in @map_signatures_events,
       do: MapSignaturesEventHandler.handle_server_event(event, socket)
 
-  def handle_event(socket, %{event: event_name} = event)
+  def handle_event(
+        %{
+          assigns: %{
+            is_subscription_active?: true
+          }
+        } = socket,
+        %{event: event_name} = event
+      )
       when event_name in @map_kills_events,
       do: MapKillsEventHandler.handle_server_event(event, socket)
 
@@ -212,7 +219,15 @@ defmodule WandererAppWeb.MapEventHandler do
       when event in @map_activity_ui_events,
       do: MapActivityEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
+  def handle_ui_event(
+        event,
+        body,
+        %{
+          assigns: %{
+            is_subscription_active?: true
+          }
+        } = socket
+      )
       when event in @map_kills_ui_events,
       do: MapKillsEventHandler.handle_ui_event(event, body, socket)
 

@@ -1,5 +1,5 @@
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
-import { getWidgetsCheckboxesProps, WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
+import { WIDGETS_CHECKBOXES_PROPS, WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback } from 'react';
 
@@ -9,20 +9,17 @@ export interface WidgetsSettingsProps {}
 
 // eslint-disable-next-line no-empty-pattern
 export const WidgetsSettings = ({}: WidgetsSettingsProps) => {
-  const { windowsSettings, toggleWidgetVisibility, resetWidgets, data } = useMapRootState();
+  const { windowsSettings, toggleWidgetVisibility, resetWidgets } = useMapRootState();
 
   const handleWidgetSettingsChange = useCallback(
     (widget: WidgetsIds) => toggleWidgetVisibility(widget),
     [toggleWidgetVisibility],
   );
 
-  const detailedKillsDisabled = data.options?.detailedKillsDisabled === true;
-  const widgetProps = getWidgetsCheckboxesProps(detailedKillsDisabled);
-
   return (
     <div className="flex flex-col h-full gap-2">
       <div>
-        {widgetProps.map(widget => (
+        {WIDGETS_CHECKBOXES_PROPS.map(widget => (
           <PrettySwitchbox
             key={widget.id}
             label={widget.label}

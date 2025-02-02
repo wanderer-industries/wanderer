@@ -65,15 +65,18 @@ defmodule WandererApp.Zkb.KillsPreloader do
 
     last_active_maps_result = WandererApp.Api.MapState.get_last_active(cutoff_time)
     last_active_maps = resolve_last_active_maps(last_active_maps_result)
+    active_maps_with_subscription = get_active_maps_with_subscription(last_active_maps)
 
     # Gather systems from those maps
-    system_tuples = gather_visible_systems(last_active_maps)
+    system_tuples = gather_visible_systems(active_maps_with_subscription)
     unique_systems = Enum.uniq(system_tuples)
 
-    Logger.debug("""
-    [KillsPreloader] Found #{length(unique_systems)} unique systems \
-    across #{length(last_active_maps)} map(s)
-    """)
+    Logger.debug(fn ->
+      """
+      [KillsPreloader] Found #{length(unique_systems)} unique systems \
+      across #{length(active_maps_with_subscription)} map(s)
+      """
+    end)
 
     # ---- QUICK PASS ----
     state_quick = %{state | phase: :quick_pass}
@@ -83,7 +86,9 @@ defmodule WandererApp.Zkb.KillsPreloader do
         do_pass(unique_systems, :quick, @quick_hours, @quick_limit, state_quick)
       end)
 
-    Logger.info("[KillsPreloader] Phase 1 (quick) done => calls_count=#{state_after_quick.calls_count}, elapsed=#{time_quick_ms}ms")
+    Logger.info(
+      "[KillsPreloader] Phase 1 (quick) done => calls_count=#{state_after_quick.calls_count}, elapsed=#{time_quick_ms}ms"
+    )
 
     # ---- EXPANDED PASS ----
     state_expanded = %{state_after_quick | phase: :expanded_pass}
@@ -93,7 +98,9 @@ defmodule WandererApp.Zkb.KillsPreloader do
         do_pass(unique_systems, :expanded, @quick_hours, @expanded_limit, state_expanded)
       end)
 
-    Logger.info("[KillsPreloader] Phase 2 (expanded) done => calls_count=#{final_state.calls_count}, elapsed=#{time_expanded_ms}ms")
+    Logger.info(
+      "[KillsPreloader] Phase 2 (expanded) done => calls_count=#{final_state.calls_count}, elapsed=#{time_expanded_ms}ms"
+    )
 
     # Reset phase to :idle
     {:noreply, %{final_state | phase: :idle}}
@@ -125,6 +132,13 @@ defmodule WandererApp.Zkb.KillsPreloader do
     []
   end
 
+  defp get_active_maps_with_subscription(maps) do
+    maps
+    |> Enum.filter(fn map ->
+      {:ok, is_subscription_active} = map.id |> WandererApp.Map.is_subscription_active?()
+      is_subscription_active
+    end)
+  end
 
   defp gather_visible_systems(maps) do
     maps
@@ -136,15 +150,19 @@ defmodule WandererApp.Zkb.KillsPreloader do
           Enum.map(systems, fn sys -> {the_map_id, sys.solar_system_id} end)
 
         {:error, reason} ->
-          Logger.warning("[KillsPreloader] get_visible_by_map failed => map_id=#{inspect(the_map_id)}, reason=#{inspect(reason)}")
+          Logger.warning(
+            "[KillsPreloader] get_visible_by_map failed => map_id=#{inspect(the_map_id)}, reason=#{inspect(reason)}"
+          )
+
           []
       end
     end)
   end
 
-
   defp do_pass(unique_systems, pass_type, hours, limit, state) do
-    Logger.info("[KillsPreloader] Starting #{pass_type} pass => #{length(unique_systems)} systems")
+    Logger.info(
+      "[KillsPreloader] Starting #{pass_type} pass => #{length(unique_systems)} systems"
+    )
 
     {final_state, kills_map} =
       unique_systems
@@ -167,29 +185,45 @@ defmodule WandererApp.Zkb.KillsPreloader do
   end
 
   defp fetch_kills_for_system(system_id, :quick, hours, limit, state) do
-    Logger.debug("[KillsPreloader] Quick fetch => system=#{system_id}, hours=#{hours}, limit=#{limit}")
+    Logger.debug(fn ->
+      "[KillsPreloader] Quick fetch => system=#{system_id}, hours=#{hours}, limit=#{limit}"
+    end)
 
-    case KillsProvider.Fetcher.fetch_kills_for_system(system_id, hours, state, limit: limit, force: false) do
+    case KillsProvider.Fetcher.fetch_kills_for_system(system_id, hours, state,
+           limit: limit,
+           force: false
+         ) do
       {:ok, kills, updated_state} ->
         {:ok, system_id, kills, updated_state}
 
       {:error, reason, updated_state} ->
-        Logger.warning("[KillsPreloader] Quick fetch failed => system=#{system_id}, reason=#{inspect(reason)}")
+        Logger.warning(
+          "[KillsPreloader] Quick fetch failed => system=#{system_id}, reason=#{inspect(reason)}"
+        )
+
         {:error, reason, updated_state}
     end
   end
 
   defp fetch_kills_for_system(system_id, :expanded, hours, limit, state) do
-    Logger.debug("[KillsPreloader] Expanded fetch => system=#{system_id}, hours=#{hours}, limit=#{limit} (forcing refresh)")
+    Logger.debug(fn ->
+      "[KillsPreloader] Expanded fetch => system=#{system_id}, hours=#{hours}, limit=#{limit} (forcing refresh)"
+    end)
 
     with {:ok, kills_1h, updated_state} <-
-           KillsProvider.Fetcher.fetch_kills_for_system(system_id, hours, state, limit: limit, force: true),
+           KillsProvider.Fetcher.fetch_kills_for_system(system_id, hours, state,
+             limit: limit,
+             force: true
+           ),
          {:ok, final_kills, final_state} <-
            maybe_fetch_more_if_needed(system_id, kills_1h, limit, updated_state) do
       {:ok, system_id, final_kills, final_state}
     else
       {:error, reason, updated_state} ->
-        Logger.warning("[KillsPreloader] Expanded fetch (#{hours}h) failed => system=#{system_id}, reason=#{inspect(reason)}")
+        Logger.warning(
+          "[KillsPreloader] Expanded fetch (#{hours}h) failed => system=#{system_id}, reason=#{inspect(reason)}"
+        )
+
         {:error, reason, updated_state}
     end
   end
@@ -198,9 +232,15 @@ defmodule WandererApp.Zkb.KillsPreloader do
   defp maybe_fetch_more_if_needed(system_id, kills_1h, limit, state) do
     if length(kills_1h) < limit do
       needed = limit - length(kills_1h)
-      Logger.debug("[KillsPreloader] Expanding to #{@expanded_hours}h => system=#{system_id}, need=#{needed} more kills")
 
-      case KillsProvider.Fetcher.fetch_kills_for_system(system_id, @expanded_hours, state, limit: needed, force: true) do
+      Logger.debug(fn ->
+        "[KillsPreloader] Expanding to #{@expanded_hours}h => system=#{system_id}, need=#{needed} more kills"
+      end)
+
+      case KillsProvider.Fetcher.fetch_kills_for_system(system_id, @expanded_hours, state,
+             limit: needed,
+             force: true
+           ) do
         {:ok, _kills_24h, updated_state2} ->
           final_kills =
             KillsCache.fetch_cached_kills(system_id)
@@ -209,7 +249,10 @@ defmodule WandererApp.Zkb.KillsPreloader do
           {:ok, final_kills, updated_state2}
 
         {:error, reason2, updated_state2} ->
-          Logger.warning("[KillsPreloader] #{@expanded_hours}h fetch failed => system=#{system_id}, reason=#{inspect(reason2)}")
+          Logger.warning(
+            "[KillsPreloader] #{@expanded_hours}h fetch failed => system=#{system_id}, reason=#{inspect(reason2)}"
+          )
+
           {:error, reason2, updated_state2}
       end
     else
@@ -243,7 +286,9 @@ defmodule WandererApp.Zkb.KillsPreloader do
     do: Logger.error("[KillsPreloader] Expanded fetch task failed => #{inspect(reason)}")
 
   defp broadcast_all_kills(kills_map, pass_type) do
-    Logger.info("[KillsPreloader] Broadcasting kills => #{map_size(kills_map)} systems (#{pass_type})")
+    Logger.info(
+      "[KillsPreloader] Broadcasting kills => #{map_size(kills_map)} systems (#{pass_type})"
+    )
 
     Phoenix.PubSub.broadcast!(
       WandererApp.PubSub,

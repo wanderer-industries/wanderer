@@ -468,6 +468,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       socket
       |> assign(
         map_loaded?: true,
+        is_subscription_active?: Map.get(initial_data, :is_subscription_active, false),
         user_characters: user_character_eve_ids,
         has_tracked_characters?: has_tracked_characters?
       )
@@ -530,6 +531,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
     {:ok, options} = map_id |> WandererApp.Map.get_options()
+    {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
 
     %{
       systems:
@@ -537,7 +539,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, include_static_data?) end),
       hubs: hubs,
       connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1),
-      options: options
+      options: options,
+      is_subscription_active: is_subscription_active
     }
   end
 

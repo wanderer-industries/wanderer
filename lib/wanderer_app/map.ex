@@ -70,9 +70,14 @@ defmodule WandererApp.Map do
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 50)}
 
-  def is_subscription_active?(map_id) do
+  def is_subscription_active?(map_id),
+    do: is_subscription_active?(map_id, WandererApp.Env.map_subscriptions_enabled?())
+
+  def is_subscription_active?(_map_id, false), do: {:ok, true}
+
+  def is_subscription_active?(map_id, _map_subscriptions_enabled) do
     {:ok, %{plan: plan}} = WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id)
-    not WandererApp.Env.map_subscriptions_enabled?() || plan != :alpha
+    {:ok, plan != :alpha}
   end
 
   def get_options(map_id),

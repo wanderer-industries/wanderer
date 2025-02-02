@@ -28,6 +28,8 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
   @impl true
   def handle_info(:fetch_data, %{iteration: iteration} = state) do
+    zkill_preload_disabled = WandererApp.Env.zkill_preload_disabled?()
+
     WandererApp.Map.RegistryHelper.list_all_maps()
     |> Task.async_stream(
       fn %{id: map_id, pid: _server_pid} ->
@@ -35,7 +37,11 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           if WandererApp.Map.Server.map_pid(map_id) do
             update_map_kills(map_id)
 
-            unless WandererApp.Env.zkill_preload_disabled?() do
+            {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+
+            can_preload_zkill = not zkill_preload_disabled && is_subscription_active
+
+            if can_preload_zkill do
               update_detailed_map_kills(map_id)
             end
           end
@@ -52,7 +58,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
     new_iteration = iteration + 1
 
     cond do
-      WandererApp.Env.zkill_preload_disabled?() ->
+      zkill_preload_disabled ->
         # If preload is disabled, just update iteration
         {:noreply, %{state | iteration: new_iteration}}
 
@@ -138,11 +144,11 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           end)
 
         WandererApp.Cache.put("map_#{map_id}:zkb_ids", updated_ids_map,
-          ttl: :timer.hours(KillsCache.killmail_ttl)
+          ttl: :timer.hours(KillsCache.killmail_ttl())
         )
 
         WandererApp.Cache.put("map_#{map_id}:zkb_detailed_kills", updated_details_map,
-          ttl: :timer.hours(KillsCache.killmail_ttl)
+          ttl: :timer.hours(KillsCache.killmail_ttl())
         )
 
         changed_data = Map.take(updated_details_map, changed_systems)
