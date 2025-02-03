@@ -20,9 +20,21 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
     <>
       {nodeVars.visible && (
         <div className={classes.Bookmarks}>
-          {nodeVars.labelCustom !== '' && (
+          {(nodeVars.labelCustom !== '' || (nodeVars.ownerTicker !== '' && nodeVars.ownerURL !== '')) && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{nodeVars.labelCustom}</span>
+              {nodeVars.ownerURL && nodeVars.ownerTicker && (
+                <a
+                  href={nodeVars.ownerURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                >
+                  {nodeVars.ownerTicker}{' '}
+                </a>
+              )}
+              {nodeVars.labelCustom && (
+                <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{nodeVars.labelCustom}</span>
+              )}
             </div>
           )}
 

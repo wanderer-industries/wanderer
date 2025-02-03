@@ -353,20 +353,29 @@ defmodule WandererApp.Esi.ApiClient do
   def get_character_ship(character_eve_id, opts \\ []),
     do: _get_character_auth_data(character_eve_id, "ship", opts)
 
-  def search(character_eve_id, opts \\ []),
-    do: _search(character_eve_id, opts[:params][:search], opts)
+  def search(character_eve_id, opts \\ []) do
+    search_val = to_string(opts[:params][:search] || "")
+    categories_val = to_string(opts[:params][:categories] || "character,alliance,corporation")
+
+    query_params = [
+      {"search", search_val},
+      {"categories", categories_val},
+      {"language", "en-us"},
+      {"strict", "false"},
+      {"datasource", "tranquility"}
+    ]
+
+    merged_opts = Keyword.put(opts, :params, query_params)
+    _search(character_eve_id, search_val, categories_val, merged_opts)
+  end
 
   @decorate cacheable(
-              cache: Cache,
-              key: "search-#{character_eve_id}-#{search |> Slug.slugify()}",
-              opts: [ttl: @ttl]
-            )
-  defp _search(character_eve_id, search, opts \\ []) when is_binary(search) do
-    _get_character_auth_data(
-      character_eve_id,
-      "search",
-      opts
-    )
+    cache: Cache,
+    key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
+    opts: [ttl: @ttl]
+  )
+  defp _search(character_eve_id, search_val, categories_val, merged_opts) do
+    _get_character_auth_data(character_eve_id, "search", merged_opts)
   end
 
   defp _remove_intersection(pairs_arr) do

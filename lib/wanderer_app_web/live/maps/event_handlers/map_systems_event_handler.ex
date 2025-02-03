@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererApp.Character
 
   def handle_server_event(%{event: :add_system, payload: system}, socket),
     do:
@@ -94,6 +95,75 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
+
+
+  def search_corporation_names([], _search), do: {:ok, []}
+
+  def search_corporation_names([first_char | _], search) when is_binary(search) do
+    Character.search(first_char.id, params: [search: search, categories: "corporation"])
+  end
+
+  def search_corporation_names(_user_chars, _search), do: {:ok, []}
+
+  def search_alliance_names([], _search), do: {:ok, []}
+
+  def search_alliance_names([first_char | _], search) when is_binary(search) do
+    Character.search(first_char.id, params: [search: search, categories: "alliance"])
+  end
+
+  def search_alliance_names(_user_chars, _search), do: {:ok, []}
+
+  def handle_ui_event("get_corporation_names", %{"search" => search}, %{assigns: %{current_user: current_user}} = socket) do
+    user_chars = current_user.characters
+    case search_corporation_names(user_chars, search) do
+      {:ok, results} ->
+        {:reply, %{results: results}, socket}
+
+      {:error, reason} ->
+        Logger.warning("[MapStructuresEventHandler] corp search failed: #{inspect(reason)}")
+        {:reply, %{results: []}, socket}
+
+      _ ->
+        {:reply, %{results: []}, socket}
+    end
+  end
+
+  def handle_ui_event("get_corporation_ticker", %{"corp_id" => corp_id}, socket) do
+    case WandererApp.Esi.get_corporation_info(corp_id) do
+      {:ok, %{"ticker" => ticker}} ->
+        {:reply, %{ticker: ticker}, socket}
+
+      _ ->
+        {:reply, %{ticker: nil}, socket}
+    end
+  end
+
+  def handle_ui_event("get_alliance_names", %{"search" => search}, %{assigns: %{current_user: current_user}} = socket) do
+    user_chars = current_user.characters
+
+    case search_alliance_names(user_chars, search) do
+      {:ok, results} ->
+        {:reply, %{results: results}, socket}
+
+      {:error, reason} ->
+        Logger.warning("[MapStructuresEventHandler] alliance search failed: #{inspect(reason)}")
+        {:reply, %{results: []}, socket}
+
+      _ ->
+        {:reply, %{results: []}, socket}
+    end
+  end
+
+  def handle_ui_event("get_alliance_ticker", %{"alliance_id" => alliance_id}, socket) do
+    case WandererApp.Esi.get_alliance_info(alliance_id) do
+      {:ok, %{"ticker" => ticker}} ->
+        {:reply, %{ticker: ticker}, socket}
+
+      _ ->
+        {:reply, %{ticker: nil}, socket}
+    end
+  end
+
 
   def handle_ui_event(
         "manual_add_system",
@@ -215,6 +285,33 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
     {:noreply, socket}
   end
+
+  def handle_ui_event(
+      "update_system_owner",
+      %{"system_id" => sid, "owner_id" => oid, "owner_type" => otype} = _params,
+      %{
+        assigns: %{
+          map_id: map_id,
+          current_user: current_user,
+          tracked_character_ids: tracked_character_ids,
+          user_permissions: user_permissions
+        }
+      } = socket
+    ) do
+
+    if can_update_system?(:owner, user_permissions) do
+      system_id_int = String.to_integer(sid)
+
+      WandererApp.Map.Server.update_system_owner(map_id, %{
+        solar_system_id: system_id_int,
+        owner_id: oid,
+        owner_type: otype
+      })
+    end
+
+    {:noreply, socket}
+  end
+
 
   def handle_ui_event(
         "update_system_" <> param,

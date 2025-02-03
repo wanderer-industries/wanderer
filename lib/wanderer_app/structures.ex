@@ -24,14 +24,6 @@ defmodule WandererApp.Structure do
     :ok
   end
 
-  def search_corporation_names([], _search), do: {:ok, []}
-
-  def search_corporation_names([first_char | _], search) when is_binary(search) do
-    Character.search(first_char.id, params: [search: search, categories: "corporation"])
-  end
-
-  def search_corporation_names(_user_chars, _search), do: {:ok, []}
-
   defp parse_structures(list_of_maps, character_eve_id, system) do
     Logger.debug(fn ->
       "[Structure] parse_structures =>\n" <> inspect(list_of_maps, pretty: true)

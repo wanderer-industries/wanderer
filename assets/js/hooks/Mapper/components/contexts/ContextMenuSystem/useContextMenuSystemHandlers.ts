@@ -105,6 +105,23 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
   }, []);
 
 
+  const onSystemOwner = useCallback((ownerId?: string, ownerType?: string) => {
+    const { system, outCommand } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.updateSystemOwner,
+      data: {
+        system_id: system,
+        ownerId: ownerId,
+        ownerType: ownerType,
+      },
+    });
+    setSystem(undefined);
+  }, []);
+
   const onSystemStatus = useCallback((status: number) => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -179,6 +196,7 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     onHubToggle,
     onSystemTag,
     onSystemTemporaryName,
+    onSystemOwner,
     onSystemStatus,
     onSystemLabels,
     onOpenSettings,

@@ -64,32 +64,6 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
     end
   end
 
-  def handle_ui_event("get_corporation_names", %{"search" => search}, %{assigns: %{current_user: current_user}} = socket) do
-    user_chars = current_user.characters
-
-    case Structure.search_corporation_names(user_chars, search) do
-      {:ok, results} ->
-        {:reply, %{results: results}, socket}
-
-      {:error, reason} ->
-        Logger.warning("[MapStructuresEventHandler] corp search failed: #{inspect(reason)}")
-        {:reply, %{results: []}, socket}
-
-      _ ->
-        {:reply, %{results: []}, socket}
-    end
-  end
-
-  def handle_ui_event("get_corporation_ticker", %{"corp_id" => corp_id}, socket) do
-    case WandererApp.Esi.get_corporation_info(corp_id) do
-      {:ok, %{"ticker" => ticker}} ->
-        {:reply, %{ticker: ticker}, socket}
-
-      _ ->
-        {:reply, %{ticker: nil}, socket}
-    end
-  end
-
   defp get_map_system(map_id, solar_system_id) do
     case MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
