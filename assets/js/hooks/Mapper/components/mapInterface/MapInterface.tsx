@@ -1,5 +1,3 @@
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 import { useMemo } from 'react';
 import { WindowManager } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DEFAULT_WIDGETS } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
