@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.44.7](https://github.com/wanderer-industries/wanderer/compare/v1.44.6...v1.44.7) (2025-02-04)
+
+
+
+
+### Bug Fixes:
+
+* Core: include external libraries in build
+
 ## [v1.44.6](https://github.com/wanderer-industries/wanderer/compare/v1.44.5...v1.44.6) (2025-02-04)
 
 
