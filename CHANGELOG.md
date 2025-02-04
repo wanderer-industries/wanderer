@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.44.9](https://github.com/wanderer-industries/wanderer/compare/v1.44.8...v1.44.9) (2025-02-04)
+
+
+
+
+### Bug Fixes:
+
+* improve local character header shrink behavior (#146)
+
 ## [v1.44.8](https://github.com/wanderer-industries/wanderer/compare/v1.44.7...v1.44.8) (2025-02-04)
 
 
