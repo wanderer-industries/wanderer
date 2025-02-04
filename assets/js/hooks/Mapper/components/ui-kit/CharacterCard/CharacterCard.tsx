@@ -8,8 +8,8 @@ import { emitMapEvent } from '@/hooks/Mapper/events';
 
 type CharacterCardProps = {
   compact?: boolean;
-  showShipName?: boolean;
   showSystem?: boolean;
+  showShipName?: boolean;
   useSystemsCache?: boolean;
 } & CharacterTypeRaw &
   WithIsOwnCharacter;
@@ -22,8 +22,15 @@ export const getShipName = (name: string) => {
     .replace(/\\x([\dA-Fa-f]{2})/g, (_, grp) => String.fromCharCode(parseInt(grp, 16)));
 };
 
+// A small divider between fields:
+const Divider = () => (
+  <span className="mx-1 text-gray-400" aria-hidden="true">
+    |
+  </span>
+);
+
 export const CharacterCard = ({
-  compact,
+  compact = false,
   isOwn,
   showSystem,
   showShipName,
@@ -37,59 +44,135 @@ export const CharacterCard = ({
     });
   }, [char]);
 
+  // Precompute the ship name (decoded):
+  const shipNameText = char.ship?.ship_name ? getShipName(char.ship.ship_name) : '';
+
+  // -----------------------------------------------------------------------------
+  // COMPACT MODE: Main line =
+  //   if (showShipName & haveShipName) => name | shipName (skip ticker)
+  //   else => name | [ticker]
+  // -----------------------------------------------------------------------------
+  const compactLine = (
+    <>
+      {/* Character Name (lighter shade) */}
+      <span className="text-gray-200">{char.name}</span>
+      <Divider />
+      {showShipName && shipNameText ? (
+        // Show the ship name in place of the ticker (use indigo color to match corp/alliance)
+        <span className="text-indigo-300">{shipNameText}</span>
+      ) : (
+        // Show the [ticker] (indigo)
+        <span className="text-indigo-300">[{char.alliance_id ? char.alliance_ticker : char.corporation_ticker}]</span>
+      )}
+    </>
+  );
+
+  // -----------------------------------------------------------------------------
+  // NON-COMPACT MODE:
+  //   Line 1 => name | [ticker]
+  //   Line 2 => (shipName) always, if it exists
+  // -----------------------------------------------------------------------------
+  const nonCompactLine1 = (
+    <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+      {/* Character Name (lighter shade) */}
+      <span className="text-gray-200">{char.name}</span>
+      <Divider />
+      <span className="text-indigo-300">[{char.alliance_id ? char.alliance_ticker : char.corporation_ticker}]</span>
+    </div>
+  );
+
+  const nonCompactLine2 = (
+    <>
+      {shipNameText && (
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-gray-300">{shipNameText}</div>
+      )}
+    </>
+  );
+
   return (
-    <div className={clsx(classes.CharacterCard, 'w-full text-xs', 'flex flex-col box-border')} onClick={handleSelect}>
-      <div className="flex px-2 py-1 gap-1">
-        {!compact && (
+    <div className={clsx(classes.CharacterCard, 'w-full text-xs box-border')} onClick={handleSelect}>
+      <div
+        className={clsx(
+          'w-full px-2 py-1 overflow-hidden gap-1',
+          compact ? 'grid items-center' : 'flex flex-col md:flex-row items-start',
+        )}
+        style={compact ? { gridTemplateColumns: 'auto 1fr auto', minWidth: 0 } : undefined}
+      >
+        {compact ? (
+          <img
+            src={`https://images.evetech.net/characters/${char.eve_id}/portrait`}
+            alt={`${char.name} portrait`}
+            style={{
+              width: '18px',
+              height: '18px',
+              // Remove circle shape for a square image:
+              borderRadius: 0,
+              marginRight: '4px',
+              flexShrink: 0,
+              // Slightly lighter than typical dark background:
+              border: '1px solid #2b2b2b',
+            }}
+          />
+        ) : (
           <span
             className={clsx(classes.EveIcon, classes.CharIcon, 'wd-bg-default')}
             style={{
+              // The SCSS below ensures the image is square with a border.
               backgroundImage: `url(https://images.evetech.net/characters/${char.eve_id}/portrait)`,
             }}
           />
         )}
-        <div className="flex flex-col flex-grow">
+
+        {/*
+          Middle section:
+          - In compact mode, everything is on one line (Name + possibly ShipName or ticker).
+          - In non-compact mode, line 1 has (Name | Ticker), line 2 has shipName if it exists.
+        */}
+        <div
+          className={clsx('overflow-hidden text-ellipsis', {
+            'text-left px-1': compact,
+            'flex-grow': !compact,
+          })}
+          style={{ minWidth: 0 }}
+        >
+          {/* This left border highlights "isOwn" in the same way as older code. */}
           <div
-            className={clsx(classes.CharRow, 'w-full', {
-              [classes.TwoColumns]: !char.ship,
-              [classes.ThreeColumns]: char.ship,
+            className={clsx('overflow-hidden whitespace-nowrap', {
+              [classes.CardBorderLeftIsOwn]: isOwn,
             })}
           >
-            <span
-              className={clsx(classes.CharName, 'text-ellipsis overflow-hidden whitespace-nowrap', {
-                [classes.CardBorderLeftIsOwn]: isOwn,
-              })}
-              title={char.name}
-            >
-              {char.name}
-            </span>
-
-            {char.alliance_id && <span className="text-gray-400">[{char.alliance_ticker}]</span>}
-            {!char.alliance_id && <span className="text-gray-400">[{char.corporation_ticker}]</span>}
-
-            {char.ship?.ship_type_info && (
-              <div
-                className="flex-grow text-ellipsis overflow-hidden whitespace-nowrap"
-                title={char.ship.ship_type_info.name}
-              >
-                {char.ship.ship_type_info.name}
-              </div>
-            )}
+            {compact ? compactLine : nonCompactLine1}
           </div>
-
-          {showShipName && !compact && char.ship?.ship_name && (
-            <div className="grid w-full">
-              <span className="text-ellipsis overflow-hidden whitespace-nowrap">
-                {getShipName(char.ship.ship_name)}
-              </span>
-            </div>
-          )}
-
-          {showSystem && !compact && char.location?.solar_system_id && (
-            <SystemView systemId={char.location.solar_system_id.toString()} useSystemsCache={useSystemsCache} />
-          )}
+          {/* Non-compact second line always shows shipName if available */}
+          {!compact && nonCompactLine2}
         </div>
+
+        {/*
+          Right column for Ship Type (compact) or "pushed" to the right (non-compact).
+          Ship Type remains text-yellow-400.
+        */}
+        {char.ship?.ship_type_info?.name && (
+          <div
+            className={clsx('text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap', {
+              'text-right px-1 flex-shrink-0': compact,
+              'mt-1 md:mt-0 ml-auto': !compact,
+            })}
+            style={{ maxWidth: compact ? '120px' : '200px' }}
+            title={char.ship.ship_type_info.name}
+          >
+            {char.ship.ship_type_info.name}
+          </div>
+        )}
       </div>
+
+      {/*
+        System row at the bottom if `showSystem && system exists`.
+      */}
+      {showSystem && char.location?.solar_system_id && (
+        <div className="px-2 pb-1">
+          <SystemView systemId={char.location.solar_system_id.toString()} useSystemsCache={useSystemsCache} />
+        </div>
+      )}
     </div>
   );
 };

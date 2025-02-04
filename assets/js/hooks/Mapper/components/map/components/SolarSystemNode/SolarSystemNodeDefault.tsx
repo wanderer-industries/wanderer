@@ -1,20 +1,23 @@
 import { memo } from 'react';
 import { MapSolarSystemType } from '../../map.types';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeDefault.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useSolarSystemNode } from '../../hooks/useSolarSystemNode';
+import { useLocalCounter, useSolarSystemNode } from '../../hooks/useSolarSystemLogic';
 import {
+  EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,
   STATUS_CLASSES,
-  EFFECT_BACKGROUND_STYLES,
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
+import { LocalCounter } from './SolarSystemLocalCounter';
+import { KillsCounter } from './SolarSystemKillsCounter';
 
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
+  const { localCounterCharacters } = useLocalCounter(nodeVars);
 
   return (
     <>
@@ -22,7 +25,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         <div className={classes.Bookmarks}>
           {nodeVars.labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ">{nodeVars.labelCustom}</span>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{nodeVars.labelCustom}</span>
             </div>
           )}
 
@@ -32,13 +35,19 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
             </div>
           )}
 
-          {nodeVars.killsCount && (
-            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}>
+          {nodeVars.killsCount && nodeVars.killsCount > 0 && nodeVars.solarSystemId && (
+            <KillsCounter
+              killsCount={nodeVars.killsCount}
+              systemId={nodeVars.solarSystemId}
+              size="lg"
+              killsActivityType={nodeVars.killsActivityType}
+              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
+            >
               <div className={clsx(classes.BookmarkWithIcon)}>
                 <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
                 <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
               </div>
-            </div>
+            </KillsCounter>
           )}
 
           {nodeVars.labelsInfo.map(x => (
@@ -53,10 +62,8 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         className={clsx(
           classes.RootCustomNode,
           nodeVars.regionClass && classes[nodeVars.regionClass],
-          classes[STATUS_CLASSES[nodeVars.status]],
-          {
-            [classes.selected]: nodeVars.selected,
-          },
+          nodeVars.status !== undefined ? classes[STATUS_CLASSES[nodeVars.status]] : '',
+          { [classes.selected]: nodeVars.selected },
         )}
       >
         {nodeVars.visible && (
@@ -88,7 +95,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               {nodeVars.isWormhole && (
                 <div className={classes.statics}>
                   {nodeVars.sortedStatics.map(whClass => (
-                    <WormholeClassComp key={whClass} id={whClass} />
+                    <WormholeClassComp key={String(whClass)} id={String(whClass)} />
                   ))}
                 </div>
               )}
@@ -114,24 +121,15 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
               <div className="flex items-center justify-end">
-                <div className="flex gap-1 items-center">
-                  {nodeVars.locked && (
-                    <i className={PrimeIcons.LOCK} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
-                  )}
-
-                  {nodeVars.hubs.includes(nodeVars.solarSystemId.toString()) && (
-                    <i className={PrimeIcons.MAP_MARKER} style={{ fontSize: '0.45rem', fontWeight: 'bold' }} />
-                  )}
-
-                  {nodeVars.charactersInSystem.length > 0 && (
-                    <div
-                      className={clsx(classes.localCounter, {
-                        ['text-amber-300']: nodeVars.hasUserCharacters,
-                      })}
-                    >
-                      <i className="pi pi-users" style={{ fontSize: '0.50rem' }} />
-                      <span className="font-sans">{nodeVars.charactersInSystem.length}</span>
-                    </div>
+                <div
+                  className={clsx('flex items-center gap-1', {
+                    [classes.hasLocalCounter]: nodeVars.charactersInSystem.length > 0,
+                    [classes.countAbove9]: nodeVars.charactersInSystem.length > 9,
+                  })}
+                >
+                  {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
+                  {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
+                    <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
                   )}
                 </div>
               </div>
@@ -145,7 +143,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           {nodeVars.unsplashedLeft.length > 0 && (
             <div className={classes.Unsplashed}>
               {nodeVars.unsplashedLeft.map(sig => (
-                <UnsplashedSignature key={sig.sig_id} signature={sig} />
+                <UnsplashedSignature key={sig.eve_id} signature={sig} />
               ))}
             </div>
           )}
@@ -153,14 +151,14 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           {nodeVars.unsplashedRight.length > 0 && (
             <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
               {nodeVars.unsplashedRight.map(sig => (
-                <UnsplashedSignature key={sig.sig_id} signature={sig} />
+                <UnsplashedSignature key={sig.eve_id} signature={sig} />
               ))}
             </div>
           )}
         </>
       )}
 
-      <div onMouseDownCapture={nodeVars.dbClick} className={classes.Handlers}>
+      <div onMouseDownCapture={e => nodeVars.dbClick(e)} className={classes.Handlers}>
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleTop, {
@@ -202,6 +200,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           id="d"
         />
       </div>
+      <LocalCounter
+        hasUserCharacters={nodeVars.hasUserCharacters}
+        localCounterCharacters={localCounterCharacters}
+        classes={classes}
+      />
     </>
   );
 });

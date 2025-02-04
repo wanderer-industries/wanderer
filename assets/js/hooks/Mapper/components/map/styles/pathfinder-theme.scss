@@ -3,23 +3,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@300;400;700&display=swap');
 
 .pathfinder-theme {
+  /* -- Override values from the default theme -- */
   --rf-bg-color: #000000;
   --rf-soft-bg-color: #282828;
-
-  --rf-node-bg-color: #202020;
   --rf-node-soft-bg-color: #313335;
   --rf-node-font-weight: bold;
   --rf-text-color: #adadad;
   --rf-region-name: var(--rf-text-color);
   --rf-custom-name: var(--rf-text-color);
-
-  --tooltip-bg: #202020;
-
   --rf-bg-variant: "lines";
-  --rf-bg-gap: 32;
-  --rf-bg-size: 1;
+  --rf-bg-gap: 34;
+  --rf-snap-size: 17;
   --rf-bg-pattern-color: #313131;
+  --rf-local-counter-font-weight: 700;
 
+  /* Additional node-specific overrides */
+  --rf-node-line-height: normal;
+  --rf-node-font-family: 'Oxygen', sans-serif;
+  --rf-tag-color: #fbbf24;
+
+  /* -- theme-specific variables -- */
   --eve-effect-pulsar: #428bca;
   --eve-effect-magnetar: #e06fdf;
   --eve-effect-wolfRayet: #e28a0d;
@@ -38,14 +41,4 @@
   --eve-wh-type-color-c6: #d9534f;
   --eve-wh-type-color-c13: #7986cb;
   --eve-wh-type-color-drifter: #44aa82;
-
-  --rf-node-font-weight: bold;
-  --rf-node-line-height: normal;
-  --rf-node-font-family: 'Oxygen', sans-serif;
-  --rf-node-text-color: var(--pf-text-color);
-
-  --rf-tag-color: #fbbf24;
-  --rf-has-user-characters: #5cb85c;
-
-  --window-corner: #72716f;
 }

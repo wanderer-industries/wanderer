@@ -2,29 +2,25 @@
 
 $pastel-blue: #5a7d9a;
 $pastel-pink: #d291bc;
-$pastel-green: #88b04b;
-$pastel-yellow: #ffdd59;
 $dark-bg: #2d2d2d;
 $text-color: #ffffff;
 $tooltip-bg: #202020;
-
-$node-bg-color: #202020;
-$node-soft-bg-color: #202020;
-$text-color: #ffffff;
-$tag-color:  #38BDF8;
-$region-name: #D6D3D1;
-$custom-name: #93C5FD;
 
 .RootCustomNode {
   display: flex;
   width: 130px;
   height: 34px;
 
+  font-family: var(--rf-node-font-family, inherit) !important;
+  font-weight: var(--rf-node-font-weight, inherit) !important;
+
   flex-direction: column;
   padding: 2px 6px;
   font-size: 10px;
 
-  background-color: $tooltip-bg;
+  background-color: var(--rf-node-bg-color, #202020) !important;
+  color: var(--rf-text-color, #ffffff);
+
   box-shadow: 0 0 5px rgba($dark-bg, 0.5);
   border: 1px solid darken($pastel-blue, 10%);
   border-radius: 5px;
@@ -90,14 +86,6 @@ $custom-name: #93C5FD;
   &.selected {
     border-color: $pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
-  }
-
-  &.tooltip {
-    background-color: $tooltip-bg;
-    color: $text-color;
-    padding: 5px 10px;
-    border-radius: 3px;
-    border: 1px solid $pastel-pink;
   }
 
   &.eve-system-status-home {
@@ -177,8 +165,6 @@ $custom-name: #93C5FD;
     font-weight: bolder;
     padding-left: 3px;
     padding-right: 3px;
-
-    //background-color: #833ca4;
 
     &:not(:first-child) {
       box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
@@ -266,26 +252,18 @@ $custom-name: #93C5FD;
 
   .TagTitle {
     font-size: 11px;
-    font-weight: medium;
+    font-weight: 500;
     text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
-
     color: var(--rf-tag-color, #38BDF8);
   }
 
   /* Firefox kostyl */
   @-moz-document url-prefix() {
     .classSystemName {
-      font-family: inherit !important;
       font-weight: bold;
     }
   }
 
-  .classSystemName {
-    //font-weight: bold;
-  }
-
-  .solarSystemName {
-  }
 }
 
 .BottomRow {
@@ -294,22 +272,23 @@ $custom-name: #93C5FD;
   align-items: center;
   height: 19px;
 
-  .localCounter {
-    display: flex;
-    //align-items: center;
-    gap: 2px;
-
-    & > i {
-      position: relative;
-      top: 1px;
+  .hasLocalCounter {
+    margin-right: 1.25rem;
+    &.countAbove9 {
+      margin-right: 1.5rem;
     }
+  }
 
-    & > span {
-      font-size: 9px;
-      line-height: 9px;
-      font-weight: 500;
-      //margin-top: 1px;
-    }
+  .lockIcon {
+    font-size: 0.45rem;
+    font-weight: bold;
+    position: relative;
+  }
+
+  .mapMarker {
+    font-size: 0.45rem;
+    font-weight: bold;
+    position: relative;
   }
 }
 
@@ -392,6 +371,42 @@ $custom-name: #93C5FD;
 
     &.HandleLeft {
       left: -3px;
+    }
+  }
+}
+
+.LocalCounterLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  padding: 8;
+
+  .localCounter {
+    position: absolute;
+    pointer-events: auto;
+    top: 10.5px;
+    right: 8px;
+    mix-blend-mode: screen;
+    gap: 2px;
+    color: var(--rf-node-local-counter, #5cb85c);
+
+    &.hasUserCharacters {
+      color: var(--rf-has-user-characters, #fbbf24);
+    }
+
+    & > i {
+      position: relative;
+      top: 1px;
+    }
+
+    & > span {
+      font-size: 9px;
+      line-height: 9px;
+      font-weight: var(--rf-local-counter-font-weight, 500);
     }
   }
 }

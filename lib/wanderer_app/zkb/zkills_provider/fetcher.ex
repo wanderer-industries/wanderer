@@ -23,12 +23,12 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
               {Map.put(acc_map, sid, kills), new_st}
 
             {:error, reason, new_st} ->
-              Logger.debug("[Fetcher] system=#{sid} => error=#{inspect(reason)}")
+              Logger.debug(fn -> "[Fetcher] system=#{sid} => error=#{inspect(reason)}" end)
               {Map.put(acc_map, sid, {:error, reason}), new_st}
           end
         end)
 
-      Logger.debug("[Fetcher] fetch_kills_for_systems => done, final_map_size=#{map_size(final_map)} calls=#{final_state.calls_count}")
+      Logger.debug(fn -> "[Fetcher] fetch_kills_for_systems => done, final_map_size=#{map_size(final_map)} calls=#{final_state.calls_count}" end)
       {:ok, final_map}
     rescue
       e ->
@@ -57,10 +57,10 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
     if not force? and KillsCache.recently_fetched?(system_id) do
       cached_kills = KillsCache.fetch_cached_kills(system_id)
       final = maybe_take(cached_kills, limit)
-      Logger.debug("#{log_prefix}, recently_fetched?=true => returning #{length(final)} cached kills")
+      Logger.debug(fn -> "#{log_prefix}, recently_fetched?=true => returning #{length(final)} cached kills" end)
       {:ok, final, state}
     else
-      Logger.debug("#{log_prefix}, hours=#{since_hours}, limit=#{inspect(limit)}, force=#{force?}")
+      Logger.debug(fn -> "#{log_prefix}, hours=#{since_hours}, limit=#{inspect(limit)}, force=#{force?}" end)
 
       cutoff_dt = hours_ago(since_hours)
 
@@ -75,9 +75,9 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
               KillsCache.put_full_fetched_timestamp(system_id)
               final_kills = KillsCache.fetch_cached_kills(system_id) |> maybe_take(limit)
 
-              Logger.debug(
+              Logger.debug(fn ->
                 "#{log_prefix}, total_fetched=#{total_fetched}, final_cached=#{length(final_kills)}, calls_count=#{new_st.calls_count}"
-              )
+              end)
 
               {:ok, final_kills, new_st}
 
@@ -117,7 +117,7 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
 
     with {:ok, st1} <- increment_calls_count(state),
          {:ok, st2, partials} <- ZkbApi.fetch_and_parse_page(system_id, page, st1) do
-      Logger.debug("[Fetcher] system=#{system_id}, page=#{page}, partials_count=#{length(partials)}")
+      Logger.debug(fn -> "[Fetcher] system=#{system_id}, page=#{page}, partials_count=#{length(partials)}" end)
 
       {_count_stored, older_found?, total_now} =
         Enum.reduce_while(partials, {0, false, total_so_far}, fn partial, {acc_count, had_older, acc_total} ->

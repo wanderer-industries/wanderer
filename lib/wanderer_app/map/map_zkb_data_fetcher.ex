@@ -118,7 +118,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         |> Enum.map(&elem(&1, 0))
 
       if changed_systems == [] do
-        Logger.debug("[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}")
+        Logger.debug(fn -> "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}" end)
         :ok
       else
         # Build new details for each changed system
@@ -200,7 +200,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
     if WandererApp.Cache.lookup!("map_#{map_id}:started", false) do
       fun.()
     else
-      Logger.debug("[ZkbDataFetcher] Map #{map_id} not started => skipping #{label}")
+      Logger.debug(fn -> "[ZkbDataFetcher] Map #{map_id} not started => skipping #{label}" end)
       :ok
     end
   end
