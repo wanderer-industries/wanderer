@@ -96,7 +96,7 @@ export function getAttackerPrimaryImageAndTooltip(
   corpUrl: string | null,
   allianceName: string,
   corpName: string,
-  finalBlowShipTypeId: number,
+  finalBlowShipTypeId: number | null,
   npcFallback: string = 'NPC Attacker',
 ) {
   if (isNpc) {
