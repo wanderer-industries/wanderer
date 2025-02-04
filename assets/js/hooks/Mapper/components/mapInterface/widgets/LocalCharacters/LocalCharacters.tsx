@@ -66,43 +66,55 @@ export const LocalCharacters = () => {
   return (
     <Widget
       label={
-        <div className="flex justify-between items-center text-xs w-full" ref={ref}>
-          <span className="select-none">Local{showList ? ` [${sorted.length}]` : ''}</span>
-          <LayoutEventBlocker className="flex items-center gap-2">
-            {showOffline && (
-              <WdTooltipWrapper content="Show offline characters in system">
-                <WdCheckbox
-                  size="xs"
-                  labelSide="left"
-                  label={compact ? '' : 'Show offline'}
-                  value={settings.showOffline}
-                  classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-                  onChange={() => setSettings(prev => ({ ...prev, showOffline: !prev.showOffline }))}
-                />
-              </WdTooltipWrapper>
-            )}
+        <div className="flex w-full items-center" ref={ref}>
+          <div className="flex-shrink-0 select-none mr-2">
+            Local{showList ? ` [${sorted.length}]` : ''}
+          </div>
+          <div className="flex-grow overflow-hidden">
+            <LayoutEventBlocker className="flex items-center gap-2 justify-end">
+              {showOffline && (
+                <WdTooltipWrapper content="Show offline characters in system">
+                  <div className={clsx("min-w-0", { "max-w-[100px]": compact })}>
+                    <WdCheckbox
+                      size="xs"
+                      labelSide="left"
+                      label="Show offline"
+                      value={settings.showOffline}
+                      classNameLabel={clsx("whitespace-nowrap", { "truncate": compact })}
+                      onChange={() =>
+                        setSettings(prev => ({ ...prev, showOffline: !prev.showOffline }))
+                      }
+                    />
+                  </div>
+                </WdTooltipWrapper>
+              )}
 
-            {settings.compact && (
-              <WdTooltipWrapper content="Show ship name in compact rows">
-                <WdCheckbox
-                  size="xs"
-                  labelSide="left"
-                  label={compact ? '' : 'Show ship name'}
-                  value={settings.showShipName}
-                  classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-                  onChange={() => setSettings(prev => ({ ...prev, showShipName: !prev.showShipName }))}
-                />
-              </WdTooltipWrapper>
-            )}
+              {settings.compact && (
+                <WdTooltipWrapper content="Show ship name in compact rows">
+                  <div className={clsx("min-w-0", { "max-w-[100px]": compact })}>
+                    <WdCheckbox
+                      size="xs"
+                      labelSide="left"
+                      label="Show ship name"
+                      value={settings.showShipName}
+                      classNameLabel={clsx("whitespace-nowrap", { "truncate": compact })}
+                      onChange={() =>
+                        setSettings(prev => ({ ...prev, showShipName: !prev.showShipName }))
+                      }
+                    />
+                  </div>
+                </WdTooltipWrapper>
+              )}
 
-            <span
-              className={clsx('w-4 h-4 cursor-pointer', {
-                ['hero-bars-2']: settings.compact,
-                ['hero-bars-3']: !settings.compact,
-              })}
-              onClick={() => setSettings(prev => ({ ...prev, compact: !prev.compact }))}
-            />
-          </LayoutEventBlocker>
+              <span
+                className={clsx("w-4 h-4 cursor-pointer", {
+                  "hero-bars-2": settings.compact,
+                  "hero-bars-3": !settings.compact,
+                })}
+                onClick={() => setSettings(prev => ({ ...prev, compact: !prev.compact }))}
+              />
+            </LayoutEventBlocker>
+          </div>
         </div>
       }
     >
