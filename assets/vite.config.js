@@ -1,24 +1,10 @@
-import cdn from 'vite-plugin-cdn-import';
 import path from 'path';
+
+import react from '@vitejs/plugin-react';
 
 export default {
   publicDir: './static',
-  plugins: [
-    cdn({
-      modules: [
-        {
-          name: 'react',
-          var: 'React',
-          path: `umd/react.production.min.js`,
-        },
-        {
-          name: 'react-dom',
-          var: 'ReactDOM',
-          path: `umd/react-dom.production.min.js`,
-        },
-      ],
-    }),
-  ],
+  plugins: [react()],
   build: {
     target: 'es2018',
     format: 'esm',
@@ -27,13 +13,8 @@ export default {
     emptyOutDir: true,
     assetsInlineLimit: 0,
     rollupOptions: {
-      external: ['react', 'react-dom'],
       input: ['app.tsx'],
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name][extname]',
