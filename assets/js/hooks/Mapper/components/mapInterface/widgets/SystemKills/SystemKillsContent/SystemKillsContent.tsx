@@ -28,7 +28,7 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     <div
       className={clsx(
         'flex flex-col w-full text-stone-200 text-xs transition-all duration-300',
-        compact ? 'p-1' : 'p-1',
+        compact ? 'p-1' : 'p-1'
       )}
     >
       {sortedKills.map(kill => {

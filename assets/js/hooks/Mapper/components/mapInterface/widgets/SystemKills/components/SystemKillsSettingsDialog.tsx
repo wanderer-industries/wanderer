@@ -19,6 +19,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   const localRef = useRef({
     compact: globalSettings.compact,
     showAll: globalSettings.showAll,
+    whOnly: globalSettings.whOnly,
     excludedSystems: globalSettings.excludedSystems || [],
   });
 
@@ -31,6 +32,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
       localRef.current = {
         compact: globalSettings.compact,
         showAll: globalSettings.showAll,
+        whOnly: globalSettings.whOnly,
         excludedSystems: globalSettings.excludedSystems || [],
       };
       forceRender(n => n + 1);
@@ -41,6 +43,14 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
     localRef.current = {
       ...localRef.current,
       compact: checked,
+    };
+    forceRender(n => n + 1);
+  }, []);
+
+  const handleWHChange = useCallback((checked: boolean) => {
+    localRef.current = {
+      ...localRef.current,
+      whOnly: checked,
     };
     forceRender(n => n + 1);
   }, []);
@@ -94,6 +104,18 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           </label>
         </div>
 
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="kills-wormhole-only-mode"
+            checked={localData.whOnly}
+            onChange={e => handleWHChange(e.target.checked)}
+          />
+          <label htmlFor="kills-wh-only-mode" className="cursor-pointer">
+            Only show wormhole kills
+          </label>
+        </div>
+
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <label className="text-sm text-stone-400">Excluded Systems</label>
@@ -106,7 +128,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           {excluded.length === 0 && <div className="text-stone-500 text-xs italic">No systems excluded.</div>}
           {excluded.map(sysId => (
             <div key={sysId} className="flex items-center justify-between border-b border-stone-600 py-1 px-1 text-xs">
-              <SystemView systemId={sysId.toString()} hideRegion compact />
+              <SystemView systemId={sysId.toString()} hideRegion compact/>
 
               <WdImgButton
                 className={PrimeIcons.TRASH}
@@ -117,13 +139,11 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           ))}
         </div>
 
-        {/* Apply + Close button row */}
         <div className="flex gap-2 justify-end mt-4">
           <Button onClick={handleApply} label="Apply" outlined size="small" />
         </div>
       </div>
 
-      {/* AddSystemDialog for picking new systems to exclude */}
       <AddSystemDialog
         title="Add system to kills exclude list"
         visible={addSystemDialogVisible}
