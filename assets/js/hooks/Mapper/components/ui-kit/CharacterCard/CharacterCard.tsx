@@ -26,12 +26,6 @@ export const getShipName = (name: string) => {
     );
 };
 
-const Divider = () => (
-  <span className="mx-1 text-gray-400" aria-hidden="true">
-    |
-  </span>
-);
-
 export const CharacterCard = ({
   compact = false,
   isOwn,
@@ -50,6 +44,7 @@ export const CharacterCard = ({
   const shipNameText = char.ship?.ship_name ? getShipName(char.ship.ship_name) : '';
   const tickerText = char.alliance_id ? char.alliance_ticker : char.corporation_ticker;
   const shipType = char.ship?.ship_type_info?.name;
+  const locationShown = showSystem && char.location?.solar_system_id;
 
   if (compact) {
     return (
@@ -71,18 +66,19 @@ export const CharacterCard = ({
           />
           <div className="flex flex-grow overflow-hidden text-left" style={{ minWidth: 0 }}>
             <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-              <span className="text-gray-200">{char.name}</span>
-              <Divider />
-              {showShipName && shipNameText ? (
-                <span className="text-indigo-300">{shipNameText}</span>
-              ) : (
-                <span className="text-indigo-300">[{tickerText}]</span>
-              )}
+              <span className={clsx(isOwn ? 'text-orange-400' : 'text-gray-200')}>
+                {char.name}
+              </span>{" "}
+              <span className="text-gray-400">
+                {(!locationShown && showShipName && shipNameText)
+                  ? `- ${shipNameText}`
+                  : `[${tickerText}]`}
+              </span>
             </div>
           </div>
           {shipType && (
             <div
-              className="text-yellow-400 overflow-hidden text-ellipsis whitespace-nowrap flex-shrink-0"
+              className="text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap flex-shrink-0"
               style={{ maxWidth: '120px' }}
               title={shipType}
             >
@@ -93,8 +89,6 @@ export const CharacterCard = ({
       </div>
     );
   } else {
-    const locationShown = showSystem && char.location?.solar_system_id;
-
     return (
       <div
         className={clsx(classes.CharacterCard, 'w-full text-xs box-border')}
@@ -113,14 +107,15 @@ export const CharacterCard = ({
           />
           <div className="flex flex-col flex-grow overflow-hidden" style={{ minWidth: 0 }}>
             <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-              <span className="text-gray-200">{char.name}</span>
-              <Divider />
-              <span className="text-indigo-300">[{tickerText}]</span>
+              <span className={clsx(isOwn ? 'text-orange-400' : 'text-gray-200')}>
+                {char.name}
+              </span>{" "}
+              <span className="text-gray-400">[{tickerText}]</span>
             </div>
             {locationShown ? (
               <div className="text-gray-300 text-xs overflow-hidden text-ellipsis whitespace-nowrap">
                 <SystemView
-                  systemId={char?.location?.solar_system_id?.toString() || '' }
+                  systemId={char?.location?.solar_system_id?.toString() || ''}
                   useSystemsCache={useSystemsCache}
                 />
               </div>
@@ -132,25 +127,15 @@ export const CharacterCard = ({
               )
             )}
           </div>
-          {((shipType) || (locationShown && shipNameText)) && (
+          {shipType && (
             <div className="flex-shrink-0 self-start">
-              {shipType && (
-                <div
-                  className="text-yellow-400 overflow-hidden text-ellipsis whitespace-nowrap"
-                  style={{ maxWidth: '200px' }}
-                  title={shipType}
-                >
-                  {shipType}
-                </div>
-              )}
-              {locationShown && shipNameText && (
-                <div
-                  className="text-gray-300 text-xs overflow-hidden text-ellipsis whitespace-nowrap text-right"
-                  style={{ maxWidth: '200px' }}
-                >
-                  {shipNameText}
-                </div>
-              )}
+              <div
+                className="text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap"
+                style={{ maxWidth: '200px' }}
+                title={shipType}
+              >
+                {shipType}
+              </div>
             </div>
           )}
         </div>
