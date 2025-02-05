@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.45.2](https://github.com/wanderer-industries/wanderer/compare/v1.45.1...v1.45.2) (2025-02-05)
+
+
+
+
+### Bug Fixes:
+
+* fix route list hover and on the map character list (#149)
+
+* correct formatting for on the map character list
+
+* fix hover for route list
+
 ## [v1.45.1](https://github.com/wanderer-industries/wanderer/compare/v1.45.0...v1.45.1) (2025-02-05)
 
 
