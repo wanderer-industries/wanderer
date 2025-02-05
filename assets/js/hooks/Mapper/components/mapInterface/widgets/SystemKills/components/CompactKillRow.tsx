@@ -117,7 +117,6 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({
         'text-xs whitespace-nowrap overflow-hidden leading-none'
       )}
     >
-
       <div className="flex items-center gap-1">
         {victimShipUrl && (
           <div className="relative shrink-0 w-8 h-8 overflow-hidden">
@@ -147,7 +146,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({
               href={zkillLink('kill', killmail_id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative shrink-0 w-8 h-8 overflow-hidden"
+              className="relative block shrink-0 w-8 h-8 overflow-hidden"
             >
               <img
                 src={victimPrimaryLogoUrl}
@@ -206,7 +205,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({
               href={zkillLink('kill', killmail_id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative shrink-0 w-8 h-8 overflow-hidden"
+              className="relative block shrink-0 w-8 h-8 overflow-hidden"
             >
               <img
                 src={attackerPrimaryImageUrl}
@@ -223,7 +222,6 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({
                     attackerSubscript.cssClass,
                     'text-[0.6rem] leading-none px-[2px]'
                   )}
-                  style={{ bottom: 0, right: 0 }}
                 >
                   {attackerSubscript.label}
                 </span>

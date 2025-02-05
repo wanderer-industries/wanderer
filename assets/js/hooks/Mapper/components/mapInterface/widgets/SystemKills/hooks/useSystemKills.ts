@@ -38,9 +38,14 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
   const [settings] = useKillsWidgetSettings();
   const excludedSystems = settings.excludedSystems;
 
-  const visibleSystemIds = useMemo(() => {
-    return systems.map(s => s.id).filter(id => !excludedSystems.includes(Number(id)));
-  }, [systems, excludedSystems]);
+  // When showing all visible kills, filter out excluded systems;
+  // when showAllVisible is false, ignore the exclusion filter.
+  const effectiveSystemIds = useMemo(() => {
+    if (showAllVisible) {
+      return systems.map(s => s.id).filter(id => !excludedSystems.includes(Number(id)));
+    }
+    return systems.map(s => s.id);
+  }, [systems, excludedSystems, showAllVisible]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +85,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
         if (showAllVisible || forceFallback) {
           eventType = OutCommand.getSystemsKills;
           requestData = {
-            system_ids: visibleSystemIds,
+            system_ids: effectiveSystemIds,
             since_hours: sinceHours,
           };
         } else if (systemId) {
@@ -106,7 +111,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
           const sid = systemId ?? 'unknown';
           mergeKillsIntoGlobal({ [sid]: arr });
         }
-        // multiple => `resp.systems_kills`
+        // multiple systems => `resp.systems_kills`
         else if (resp?.systems_kills) {
           mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
         } else {
@@ -119,7 +124,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
         setIsLoading(false);
       }
     },
-    [showAllVisible, systemId, outCommand, visibleSystemIds, sinceHours, mergeKillsIntoGlobal],
+    [showAllVisible, systemId, outCommand, effectiveSystemIds, sinceHours, mergeKillsIntoGlobal],
   );
 
   const debouncedFetchKills = useMemo(
@@ -133,15 +138,15 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
 
   const finalKills = useMemo(() => {
     if (showAllVisible) {
-      return visibleSystemIds.flatMap(sid => detailedKills[sid] ?? []);
+      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     } else if (systemId) {
       return detailedKills[systemId] ?? [];
     } else if (didFallbackFetch.current) {
       // if we already did a fallback, we may have data for multiple systems
-      return visibleSystemIds.flatMap(sid => detailedKills[sid] ?? []);
+      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     }
     return [];
-  }, [showAllVisible, systemId, didFallbackFetch, visibleSystemIds, detailedKills]);
+  }, [showAllVisible, systemId, effectiveSystemIds, detailedKills]);
 
   const effectiveIsLoading = isLoading && finalKills.length === 0;
 
@@ -150,19 +155,19 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
       didFallbackFetch.current = true;
       // Cancel any queued debounced calls, then do the fallback.
       debouncedFetchKills.cancel();
-      fetchKills(true); // forceFallback => fetch as though showAll
+      fetchKills(true); // forceFallback => fetch as though showAllVisible is true
     }
-  }, [systemId, showAllVisible, debouncedFetchKills, fetchKills, didFallbackFetch]);
+  }, [systemId, showAllVisible, debouncedFetchKills, fetchKills]);
 
   useEffect(() => {
-    if (visibleSystemIds.length === 0) return;
+    if (effectiveSystemIds.length === 0) return;
 
     if (showAllVisible || systemId) {
       debouncedFetchKills();
       // Clean up the debounce on unmount or changes
       return () => debouncedFetchKills.cancel();
     }
-  }, [showAllVisible, systemId, visibleSystemIds, debouncedFetchKills]);
+  }, [showAllVisible, systemId, effectiveSystemIds, debouncedFetchKills]);
 
   const refetch = useCallback(() => {
     debouncedFetchKills.cancel();
