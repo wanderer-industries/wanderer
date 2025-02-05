@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.45.0](https://github.com/wanderer-industries/wanderer/compare/v1.44.9...v1.45.0) (2025-02-05)
+
+
+
+
+### Features:
+
+* allow filtering of k-space kills (#147)
+
 ## [v1.44.9](https://github.com/wanderer-industries/wanderer/compare/v1.44.8...v1.44.9) (2025-02-04)
 
 
