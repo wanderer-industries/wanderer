@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.45.1](https://github.com/wanderer-industries/wanderer/compare/v1.45.0...v1.45.1) (2025-02-05)
+
+
+
+
+### Bug Fixes:
+
+* kill count subscript position on firefox, and remove kill filter for single system (#148)
+
 ## [v1.45.0](https://github.com/wanderer-industries/wanderer/compare/v1.44.9...v1.45.0) (2025-02-05)
 
 
