@@ -39,7 +39,7 @@ export const SystemKills: React.FC = () => {
   const showLoading = isLoading && kills.length === 0;
 
   const filteredKills = useMemo(() => {
-    if (!settings.whOnly) return kills;
+    if (!settings.whOnly || !visible) return kills;
     return kills.filter(kill => {
       const system = systems.find(sys => sys.system_static_info.solar_system_id === kill.solar_system_id);
       if (!system) {
