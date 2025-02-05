@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.45.3](https://github.com/wanderer-industries/wanderer/compare/v1.45.2...v1.45.3) (2025-02-05)
+
+
+
+
+### Bug Fixes:
+
+* color and formatting fixes for local character (#150)
+
 ## [v1.45.2](https://github.com/wanderer-industries/wanderer/compare/v1.45.1...v1.45.2) (2025-02-05)
 
 
