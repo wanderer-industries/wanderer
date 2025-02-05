@@ -26,7 +26,6 @@ export const getShipName = (name: string) => {
     );
 };
 
-// A small divider between fields
 const Divider = () => (
   <span className="mx-1 text-gray-400" aria-hidden="true">
     |
@@ -53,7 +52,6 @@ export const CharacterCard = ({
   const shipType = char.ship?.ship_type_info?.name;
 
   if (compact) {
-    // COMPACT MODE: one line - name, divider, then either ship name (if enabled) or ticker.
     return (
       <div
         className={clsx(classes.CharacterCard, 'w-full text-xs box-border')}
@@ -95,8 +93,6 @@ export const CharacterCard = ({
       </div>
     );
   } else {
-    // FULL MODE:
-    // Determine if a location is being shown
     const locationShown = showSystem && char.location?.solar_system_id;
 
     return (
@@ -115,24 +111,20 @@ export const CharacterCard = ({
               height: '33px',
             }}
           />
-          {/* Left column */}
           <div className="flex flex-col flex-grow overflow-hidden" style={{ minWidth: 0 }}>
-            {/* First line: Character name and ticker */}
             <div className="overflow-hidden text-ellipsis whitespace-nowrap">
               <span className="text-gray-200">{char.name}</span>
               <Divider />
               <span className="text-indigo-300">[{tickerText}]</span>
             </div>
             {locationShown ? (
-              // If location is shown, render the system view in the left column.
               <div className="text-gray-300 text-xs overflow-hidden text-ellipsis whitespace-nowrap">
                 <SystemView
-                  systemId={char.location.solar_system_id.toString()}
+                  systemId={char?.location?.solar_system_id?.toString() || '' }
                   useSystemsCache={useSystemsCache}
                 />
               </div>
             ) : (
-              // Otherwise, render the ship name (if available) in the left column.
               shipNameText && (
                 <div className="text-gray-300 text-xs overflow-hidden text-ellipsis whitespace-nowrap">
                   {shipNameText}
@@ -140,7 +132,6 @@ export const CharacterCard = ({
               )
             )}
           </div>
-          {/* Right column */}
           {((shipType) || (locationShown && shipNameText)) && (
             <div className="flex-shrink-0 self-start">
               {shipType && (

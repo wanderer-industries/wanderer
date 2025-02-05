@@ -1,4 +1,13 @@
-import React, { ForwardedRef, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import debounce from 'lodash.debounce';
@@ -31,6 +40,12 @@ export interface WdTooltipHandlers {
   getIsMouseInside: () => boolean;
 }
 
+interface TriggerInfo {
+  clientX: number;
+  clientY: number;
+  rect: DOMRect;
+}
+
 const LEAVE_DELAY = 100;
 
 export const WdTooltip = forwardRef(function WdTooltip(
@@ -43,15 +58,16 @@ export const WdTooltip = forwardRef(function WdTooltip(
     className,
     ...restProps
   }: TooltipProps,
-  ref: ForwardedRef<WdTooltipHandlers>,
+  ref: ForwardedRef<WdTooltipHandlers>
 ) {
+  // Always initialize position so we never have a null value.
   const [visible, setVisible] = useState(false);
-  const [pos, setPos] = useState<OffsetPosition | null>(null);
+  const [pos, setPos] = useState<OffsetPosition>({ left: 0, top: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   const [isMouseInsideTooltip, setIsMouseInsideTooltip] = useState(false);
 
-  const [reactEvt, setReactEvt] = useState<React.MouseEvent>();
+  const [triggerInfo, setTriggerInfo] = useState<TriggerInfo | null>(null);
 
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -98,10 +114,14 @@ export const WdTooltip = forwardRef(function WdTooltip(
         clearTimeout(hideTimeoutRef.current);
         hideTimeoutRef.current = null;
       }
-      if (e && tooltipRef.current) {
-        const { clientX, clientY } = e;
-        setPos(calcTooltipPosition({ x: clientX, y: clientY }));
-        setReactEvt(e);
+      if (e) {
+        // Use e.currentTarget (or fallback to e.target) to determine the trigger element.
+        const triggerEl = (e.currentTarget as HTMLElement) || (e.target as HTMLElement);
+        if (triggerEl) {
+          const rect = triggerEl.getBoundingClientRect();
+          setTriggerInfo({ clientX: e.clientX, clientY: e.clientY, rect });
+          setPos(calcTooltipPosition({ x: e.clientX, y: e.clientY }));
+        }
       }
       setVisible(true);
     },
@@ -114,48 +134,46 @@ export const WdTooltip = forwardRef(function WdTooltip(
     getIsMouseInside: () => isMouseInsideTooltip,
   }));
 
-  useEffect(() => {
-    if (!tooltipRef.current || !reactEvt) return;
+  // Recalculate position once the tooltip element has been rendered.
+  useLayoutEffect(() => {
+    if (!tooltipRef.current || !triggerInfo) return;
 
-    const { clientX, clientY, target } = reactEvt;
     const tooltipEl = tooltipRef.current;
-    const triggerEl = target as HTMLElement;
-    const triggerBounds = triggerEl.getBoundingClientRect();
-
-    let x = clientX;
-    let y = clientY;
+    const { rect } = triggerInfo;
+    let x = triggerInfo.clientX;
+    let y = triggerInfo.clientY;
 
     if (tPosition === TooltipPosition.left) {
       const tooltipBounds = tooltipEl.getBoundingClientRect();
-      x = triggerBounds.left - tooltipBounds.width - offset;
-      y = triggerBounds.y + triggerBounds.height / 2 - tooltipBounds.height / 2;
+      x = rect.left - tooltipBounds.width - offset;
+      y = rect.top + rect.height / 2 - tooltipBounds.height / 2;
       if (x <= 0) {
-        x = triggerBounds.left + triggerBounds.width + offset;
+        x = rect.left + rect.width + offset;
       }
       setPos(calcTooltipPosition({ x, y }));
       return;
     }
     if (tPosition === TooltipPosition.right) {
-      x = triggerBounds.left + triggerBounds.width + offset;
-      y = triggerBounds.y + triggerBounds.height / 2 - tooltipEl.offsetHeight / 2;
+      x = rect.left + rect.width + offset;
+      y = rect.top + rect.height / 2 - tooltipEl.offsetHeight / 2;
       setPos(calcTooltipPosition({ x, y }));
       return;
     }
     if (tPosition === TooltipPosition.top) {
-      x = triggerBounds.x + triggerBounds.width / 2 - tooltipEl.offsetWidth / 2;
-      y = triggerBounds.top - tooltipEl.offsetHeight - offset;
+      x = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2;
+      y = rect.top - tooltipEl.offsetHeight - offset;
       setPos(calcTooltipPosition({ x, y }));
       return;
     }
     if (tPosition === TooltipPosition.bottom) {
-      x = triggerBounds.x + triggerBounds.width / 2 - tooltipEl.offsetWidth / 2;
-      y = triggerBounds.bottom + offset;
+      x = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2;
+      y = rect.bottom + offset;
       setPos(calcTooltipPosition({ x, y }));
       return;
     }
-
+    // Default case: use stored coordinates.
     setPos(calcTooltipPosition({ x, y }));
-  }, [calcTooltipPosition, reactEvt, tPosition, offset]);
+  }, [calcTooltipPosition, triggerInfo, tPosition, offset]);
 
   useEffect(() => {
     if (!targetSelector) return;
@@ -190,7 +208,7 @@ export const WdTooltip = forwardRef(function WdTooltip(
         switch (tPosition) {
           case TooltipPosition.left: {
             x = rect.left - tooltipEl.offsetWidth - offset;
-            y = rect.y + rect.height / 2 - tooltipEl.offsetHeight / 2;
+            y = rect.top + rect.height / 2 - tooltipEl.offsetHeight / 2;
             if (x <= 0) {
               x = rect.left + rect.width + offset;
             }
@@ -198,16 +216,16 @@ export const WdTooltip = forwardRef(function WdTooltip(
           }
           case TooltipPosition.right: {
             x = rect.left + rect.width + offset;
-            y = rect.y + rect.height / 2 - tooltipEl.offsetHeight / 2;
+            y = rect.top + rect.height / 2 - tooltipEl.offsetHeight / 2;
             break;
           }
           case TooltipPosition.top: {
-            x = rect.x + rect.width / 2 - tooltipEl.offsetWidth / 2;
+            x = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2;
             y = rect.top - tooltipEl.offsetHeight - offset;
             break;
           }
           case TooltipPosition.bottom: {
-            x = rect.x + rect.width / 2 - tooltipEl.offsetWidth / 2;
+            x = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2;
             y = rect.bottom + offset;
             break;
           }
@@ -247,12 +265,11 @@ export const WdTooltip = forwardRef(function WdTooltip(
         classes.tooltip,
         interactive ? 'pointer-events-auto' : 'pointer-events-none',
         'absolute p-1 border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
-        pos === null ? 'invisible' : '',
-        className,
+        className
       )}
       style={{
-        top: pos?.top ?? 0,
-        left: pos?.left ?? 0,
+        top: pos.top,
+        left: pos.left,
         zIndex: 10000,
       }}
       onMouseEnter={() => {
@@ -272,7 +289,7 @@ export const WdTooltip = forwardRef(function WdTooltip(
     >
       {typeof content === 'function' ? content() : content}
     </div>,
-    document.body,
+    document.body
   );
 });
 
