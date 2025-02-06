@@ -10,6 +10,8 @@ import {
 
 export const TIME_ONE_MINUTE = 1000 * 60;
 export const TIME_TEN_MINUTES = 1000 * 60 * 10;
+export const TIME_ONE_DAY = 24 * 60 * 60 * 1000;
+export const TIME_ONE_WEEK = 7 * TIME_ONE_DAY;
 
 export const GROUPS_LIST = [
   SignatureGroup.GasSite,

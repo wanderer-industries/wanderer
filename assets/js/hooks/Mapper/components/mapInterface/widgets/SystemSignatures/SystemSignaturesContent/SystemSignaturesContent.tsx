@@ -5,6 +5,8 @@ import { WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
 import {
   getGroupIdByRawGroup,
   GROUPS_LIST,
+  TIME_ONE_DAY,
+  TIME_ONE_WEEK
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 import { DataTable, DataTableRowClickEvent, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
@@ -18,7 +20,7 @@ import { useClipboard } from '@/hooks/Mapper/hooks/useClipboard';
 
 import classes from './SystemSignaturesContent.module.scss';
 import clsx from 'clsx';
-import { SystemSignature } from '@/hooks/Mapper/types';
+import { SystemSignature, SignatureGroup } from '@/hooks/Mapper/types';
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
   getActualSigs,
@@ -254,6 +256,22 @@ export const SystemSignaturesContent = ({
     handlePaste(clipboardContent.text);
     setClipboardContent(null);
   }, [clipboardContent, selectable, lazyDeleteValue, keepLazyDeleteValue]);
+
+  useEffect(() => {
+    const currentTime = Date.now();
+    const signaturesToDelete = signatures.filter(sig => {
+      if (!sig.inserted_at) return false;
+      const insertedTime = new Date(sig.inserted_at).getTime();
+      const threshold = sig.group === SignatureGroup.Wormhole ? TIME_ONE_DAY : TIME_ONE_WEEK;
+      return currentTime - insertedTime > threshold;
+    });
+
+    if (signaturesToDelete.length > 0) {
+      const remainingSignatures = signatures.filter(sig => !signaturesToDelete.includes(sig));
+      handleUpdateSignatures(remainingSignatures, false, true);
+    }
+  }, [handleUpdateSignatures, signatures]);
+
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
