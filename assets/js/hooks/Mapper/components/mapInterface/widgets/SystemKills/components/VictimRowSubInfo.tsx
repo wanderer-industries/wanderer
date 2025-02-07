@@ -1,4 +1,3 @@
-// VictimSubRowInfo.tsx
 import React from 'react';
 import clsx from 'clsx';
 import { zkillLink } from '../helpers';
@@ -15,13 +14,13 @@ export const VictimRowSubInfo: React.FC<VictimRowSubInfoProps> = ({
   victimPortraitUrl,
   victimCharName,
 }) => {
-  if (!victimPortraitUrl || victimCharacterId === null || victimCharacterId <= 0) {
+  if (!victimPortraitUrl || !victimCharacterId || victimCharacterId <= 0) {
     return null;
   }
 
   return (
-    <div className="flex items-start gap-1 h-14">
-      <div className="relative shrink-0 w-14 h-14 overflow-hidden">
+    <div className="flex items-start gap-1">
+      <div className="relative shrink-0 w-12 h-12 sm:w-14 sm:h-14 overflow-hidden">
         <a
           href={zkillLink('character', victimCharacterId)}
           target="_blank"
