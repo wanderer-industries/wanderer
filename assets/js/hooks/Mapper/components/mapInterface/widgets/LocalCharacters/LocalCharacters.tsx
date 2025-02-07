@@ -66,7 +66,7 @@ export const LocalCharacters = () => {
   return (
     <Widget
       label={
-        <div className="flex w-full items-center" ref={ref}>
+        <div className="flex w-full items-center text-xs" ref={ref}>
           <div className="flex-shrink-0 select-none mr-2">
             Local{showList ? ` [${sorted.length}]` : ''}
           </div>
@@ -135,7 +135,7 @@ export const LocalCharacters = () => {
           items={sorted}
           itemSize={settings.compact ? 26 : 41}
           itemTemplate={itemTemplate}
-          containerClassName="w-full h-full overflow-x-hidden overflow-y-auto"
+          containerClassName="w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none"
         />
       )}
     </Widget>
