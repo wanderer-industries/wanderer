@@ -58,7 +58,7 @@ export const LocalCharactersHeader: React.FC<LocalCharactersHeaderProps> = ({
                 onChange={() =>
                   setSettings((prev: any) => ({ ...prev, showOffline: !prev.showOffline }))
                 }
-                classNameLabel={clsx("whitespace-nowrap", { truncate: compact })}
+                classNameLabel={clsx("whitespace-nowrap text-stone-400 hover:text-stone-200 transition duration-300", { truncate: compact })}
                 displayMode={displayMode}
               />
             )}
@@ -72,7 +72,7 @@ export const LocalCharactersHeader: React.FC<LocalCharactersHeaderProps> = ({
                 onChange={() =>
                   setSettings((prev: any) => ({ ...prev, showShipName: !prev.showShipName }))
                 }
-                classNameLabel={clsx("whitespace-nowrap", { truncate: compact })}
+                classNameLabel={clsx("whitespace-nowrap text-stone-400 hover:text-stone-200 transition duration-300", { truncate: compact })}
                 displayMode={displayMode}
               />
             )}

@@ -52,7 +52,7 @@ export const KillsHeader: React.FC<KillsHeaderProps> = ({ systemId, onOpenSettin
               labelAbbreviated="All"
               value={showAll}
               onChange={onToggleShowAllVisible}
-              classNameLabel={clsx("whitespace-nowrap", "truncate")}
+              classNameLabel={clsx("whitespace-nowrap text-stone-400 hover:text-stone-200 transition duration-300")}
               displayMode={displayMode}
             />
             <WdImgButton
