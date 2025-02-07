@@ -11,3 +11,5 @@ export * from './WdImgButton';
 export * from './WdTooltip';
 export * from './WdCheckbox';
 export * from './TimeAgo';
+export * from './WdTooltipWrapper';
+export * from './WdResponsiveCheckBox';

@@ -15,7 +15,6 @@ export const SystemKills: React.FC = () => {
   } = useMapRootState();
 
   const [systemId] = selectedSystems || [];
-
   const [settingsDialogVisible, setSettingsDialogVisible] = useState(false);
 
   const systemNameMap = useMemo(() => {
@@ -41,7 +40,9 @@ export const SystemKills: React.FC = () => {
   const filteredKills = useMemo(() => {
     if (!settings.whOnly || !visible) return kills;
     return kills.filter(kill => {
-      const system = systems.find(sys => sys.system_static_info.solar_system_id === kill.solar_system_id);
+      const system = systems.find(
+        sys => sys.system_static_info.solar_system_id === kill.solar_system_id
+      );
       if (!system) {
         console.warn(`System with id ${kill.solar_system_id} not found.`);
         return false;
@@ -55,60 +56,62 @@ export const SystemKills: React.FC = () => {
       <div className="flex flex-col flex-1 min-h-0">
         <Widget
           label={
-            <KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />
+            <KillsHeader
+              systemId={systemId}
+              onOpenSettings={() => setSettingsDialogVisible(true)}
+            />
           }
         >
-          {!isSubscriptionActive && (
-            <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
-              Kills available with &#39;Active&#39; map subscription only (contact map administrators)
-            </div>
-          )}
-          {isSubscriptionActive && (
-            <>
-              {isNothingSelected && (
-                <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+          <div className="relative h-full">
+            {!isSubscriptionActive ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="select-none text-center text-stone-400/80 text-sm">
+                  Kills available with &#39;Active&#39; map subscription only (contact map administrators)
+                </span>
+              </div>
+            ) : isNothingSelected ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="select-none text-center text-stone-400/80 text-sm">
                   No system selected (or toggle “Show all systems”)
-                </div>
-              )}
-
-              {!isNothingSelected && showLoading && (
-                <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
+                </span>
+              </div>
+            ) : showLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="select-none text-center text-stone-400/80 text-sm">
                   Loading Kills...
-                </div>
-              )}
-
-              {!isNothingSelected && !showLoading && error && (
-                <div className="w-full h-full flex justify-center items-center select-none text-center text-red-400 text-sm">
+                </span>
+              </div>
+            ) : error ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="select-none text-center text-red-400 text-sm">
                   {error}
-                </div>
-              )}
-
-              {!isNothingSelected &&
-                !showLoading &&
-                !error &&
-                (!filteredKills || filteredKills.length === 0) && (
-                  <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
-                    No kills found
-                  </div>
-                )}
-
-              {!isNothingSelected && !showLoading && !error && (
-                <div className="flex-1 flex flex-col overflow-y-auto">
-                  <SystemKillsContent
-                    key={settings.compact ? 'compact' : 'normal'}
-                    kills={filteredKills}
-                    systemNameMap={systemNameMap}
-                    compact={settings.compact}
-                    onlyOneSystem={!visible}
-                  />
-                </div>
-              )}
-            </>
-          )}
+                </span>
+              </div>
+            ) : !filteredKills || filteredKills.length === 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="select-none text-center text-stone-400/80 text-sm">
+                  No kills found
+                </span>
+              </div>
+            ) : (
+              <div className="h-full overflow-y-auto">
+                <SystemKillsContent
+                  key={settings.compact ? 'compact' : 'normal'}
+                  kills={filteredKills}
+                  systemNameMap={systemNameMap}
+                  compact={settings.compact}
+                  onlyOneSystem={!visible}
+                />
+              </div>
+            )}
+          </div>
         </Widget>
       </div>
 
-      <KillsSettingsDialog visible={settingsDialogVisible} setVisible={setSettingsDialogVisible} />
+      <KillsSettingsDialog
+        visible={settingsDialogVisible}
+        setVisible={setSettingsDialogVisible}
+      />
     </div>
   );
 };
