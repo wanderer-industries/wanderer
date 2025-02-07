@@ -122,7 +122,6 @@ export const FullKillRow: React.FC<FullKillRowProps> = ({
         'h-18 w-full justify-between items-start text-sm py-[4px]'
       )}
     >
-      {/* ---------------- Victim Side ---------------- */}
       <div className="flex items-start gap-1 min-w-0 h-full">
         {victimShipUrl && (
           <div className="relative shrink-0 w-14 h-14 overflow-hidden">
