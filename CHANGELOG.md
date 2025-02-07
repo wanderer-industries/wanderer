@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.45.4](https://github.com/wanderer-industries/wanderer/compare/v1.45.3...v1.45.4) (2025-02-07)
+
+
+
+
+### Bug Fixes:
+
+* remove snap to grid customization (#153)
+
 ## [v1.45.3](https://github.com/wanderer-industries/wanderer/compare/v1.45.2...v1.45.3) (2025-02-05)
 
 
