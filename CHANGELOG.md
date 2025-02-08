@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.46.0](https://github.com/wanderer-industries/wanderer/compare/v1.45.5...v1.46.0) (2025-02-08)
+
+
+
+
+### Features:
+
+* Added WANDERER_RESTRICT_MAPS_CREATION env support
+
 ## [v1.45.5](https://github.com/wanderer-industries/wanderer/compare/v1.45.4...v1.45.5) (2025-02-07)
 
 
