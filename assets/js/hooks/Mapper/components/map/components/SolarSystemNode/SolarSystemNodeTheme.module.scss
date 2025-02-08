@@ -4,3 +4,17 @@
    Only override what's different from the base
    Currently none required
 ---------------------------------------------- */
+
+.RootCustomNode {
+  &.eve-system-status-home {
+    border: 1px solid var(--eve-solar-system-status-color-home-dark30);
+    background-image: linear-gradient(
+        275deg,
+        var(--eve-solar-system-status-home),
+        transparent
+    );
+    &.selected {
+      border-color: var(--eve-solar-system-status-color-home);
+    }
+  }
+}

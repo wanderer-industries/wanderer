@@ -65,6 +65,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           nodeVars.status !== undefined ? classes[STATUS_CLASSES[nodeVars.status]] : '',
           { [classes.selected]: nodeVars.selected },
         )}
+        onMouseDownCapture={e => nodeVars.dbClick(e)}
       >
         {nodeVars.visible && (
           <>
@@ -120,18 +121,18 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
 
               {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
-              <div className="flex items-center justify-end">
-                <div
-                  className={clsx('flex items-center gap-1', {
-                    [classes.hasLocalCounter]: nodeVars.charactersInSystem.length > 0,
-                    [classes.countAbove9]: nodeVars.charactersInSystem.length > 9,
-                  })}
-                >
+              <div className="flex items-center gap-1 justify-end">
+                <div className={clsx('flex items-center gap-1')}>
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
                   )}
                 </div>
+
+                <LocalCounter
+                  hasUserCharacters={nodeVars.hasUserCharacters}
+                  localCounterCharacters={localCounterCharacters}
+                />
               </div>
             </div>
           </>
@@ -158,7 +159,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         </>
       )}
 
-      <div onMouseDownCapture={e => nodeVars.dbClick(e)} className={classes.Handlers}>
+      <div className={classes.Handlers}>
         <Handle
           type="source"
           className={clsx(classes.Handle, classes.HandleTop, {
@@ -200,11 +201,6 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
           id="d"
         />
       </div>
-      <LocalCounter
-        hasUserCharacters={nodeVars.hasUserCharacters}
-        localCounterCharacters={localCounterCharacters}
-        classes={classes}
-      />
     </>
   );
 });

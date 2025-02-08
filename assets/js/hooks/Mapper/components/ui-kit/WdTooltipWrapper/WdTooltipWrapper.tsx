@@ -1,4 +1,4 @@
-import { forwardRef, HTMLProps, ReactNode } from 'react';
+import { forwardRef, HTMLProps, ReactNode, useMemo } from 'react';
 import clsx from 'clsx';
 import { WdTooltip, WdTooltipHandlers, TooltipProps } from '@/hooks/Mapper/components/ui-kit';
 import classes from './WdTooltipWrapper.module.scss';
@@ -13,11 +13,8 @@ export type WdTooltipWrapperProps = {
   Omit<TooltipProps, 'content'>;
 
 export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperProps>(
-  (
-    { className, children, content, offset, position, targetSelector, interactive = false, size, ...props },
-    forwardedRef,
-  ) => {
-    const suffix = Math.random().toString(36).slice(2, 7);
+  ({ className, children, content, offset, position, targetSelector, interactive, size, ...props }, forwardedRef) => {
+    const suffix = useMemo(() => Math.random().toString(36).slice(2, 7), []);
     const autoClass = `wdTooltipAutoTrigger-${suffix}`;
     const finalTargetSelector = targetSelector || `.${autoClass}`;
 

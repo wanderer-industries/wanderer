@@ -1,18 +1,18 @@
 
-$friendlyBase: #3bbd39;              
-$friendlyAlpha: #3bbd3952;           
+$friendlyBase: #3bbd39;
+$friendlyAlpha: #3bbd3952;
 $friendlyDark20: darken($friendlyBase, 20%);
 $friendlyDark30: darken($friendlyBase, 30%);
 $friendlyDark5:  darken($friendlyBase, 5%);
 
-$lookingForBase: #43c2fd;            
+$lookingForBase: #43c2fd;
 $lookingForAlpha: rgba(67, 176, 253, 0.48);
 $lookingForDark15: darken($lookingForBase, 15%);
 
-$homeBase: rgb(197, 253, 67);
-$homeAlpha: rgba(197, 253, 67, 0.32);
+$homeBase: rgb(179, 253, 67);
+$homeAlpha: rgba(186, 248, 48, 0.32);
+$homeBackground: #a0fa5636;
 $homeDark30: darken($homeBase, 30%);
-
 
 :root {
   --pastel-blue: #5a7d9a;
@@ -98,6 +98,7 @@ $homeDark30: darken($homeBase, 30%);
   --eve-solar-system-status-color-unknown: transparent;
   --eve-solar-system-status-home:                #{$homeAlpha};
   --eve-solar-system-status-color-home:          #{$homeBase};
+  --eve-solar-system-status-color-background:    #{$homeBackground};
   --eve-solar-system-status-color-home-dark30:   #{$homeDark30};
   --eve-solar-system-status-friendly:            #{$friendlyAlpha};
   --eve-solar-system-status-color-friendly:      #{$friendlyBase};

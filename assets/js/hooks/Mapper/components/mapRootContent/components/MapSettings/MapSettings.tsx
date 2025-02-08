@@ -3,7 +3,12 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useMemo, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { PrettySwitchbox } from './components';
-import { InterfaceStoredSettingsProps, useMapRootState, InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider';
+import {
+  InterfaceStoredSettingsProps,
+  useMapRootState,
+  InterfaceStoredSettings,
+  AvailableThemes
+} from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { Dropdown } from 'primereact/dropdown';
 import { WidgetsSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/WidgetsSettings/WidgetsSettings.tsx';
@@ -112,8 +117,8 @@ const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
 ];
 
 const THEME_OPTIONS = [
-  { label: 'Default', value: 'default' },
-  { label: 'Pathfinder', value: 'pathfinder' },
+  { label: 'Default', value: AvailableThemes.default },
+  { label: 'Pathfinder', value: AvailableThemes.pathfinder },
 ];
 
 const THEME_SETTING: SettingsListItem = {

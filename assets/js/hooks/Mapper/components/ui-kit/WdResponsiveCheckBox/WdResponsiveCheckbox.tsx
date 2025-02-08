@@ -10,8 +10,7 @@ import { WdCheckbox, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
  * - "checkbox": show only the checkbox (no text)
  * - "hide": do not render the checkbox at all
  */
-export type WdDisplayMode = "full" | "abbr" | "checkbox" | "hide";
-
+export type WdDisplayMode = 'full' | 'abbr' | 'checkbox' | 'hide';
 
 export interface WdResponsiveCheckboxProps {
   tooltipContent: string;
@@ -38,21 +37,21 @@ export const WdResponsiveCheckbox: React.FC<WdResponsiveCheckboxProps> = ({
   labelSide = 'left',
   displayMode,
 }) => {
-  if (displayMode === "hide") {
+  if (displayMode === 'hide') {
     return null;
   }
 
   const label =
-    displayMode === "full"
+    displayMode === 'full'
       ? labelFull
-      : displayMode === "abbr"
-      ? labelAbbreviated
-      : displayMode === "checkbox"
-      ? ""
-      : labelFull;
+      : displayMode === 'abbr'
+        ? labelAbbreviated
+        : displayMode === 'checkbox'
+          ? ''
+          : labelFull;
 
   const checkbox = (
-    <div className={clsx("min-w-0", containerClassName)}>
+    <div className={clsx('min-w-0', containerClassName)}>
       <WdCheckbox
         size={size}
         labelSide={labelSide}
@@ -64,9 +63,5 @@ export const WdResponsiveCheckbox: React.FC<WdResponsiveCheckboxProps> = ({
     </div>
   );
 
-  return tooltipContent ? (
-    <WdTooltipWrapper content={tooltipContent}>{checkbox}</WdTooltipWrapper>
-  ) : (
-    checkbox
-  );
+  return tooltipContent ? <WdTooltipWrapper content={tooltipContent}>{checkbox}</WdTooltipWrapper> : checkbox;
 };
