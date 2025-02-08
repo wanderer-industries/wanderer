@@ -238,7 +238,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
       Phoenix.PubSub.broadcast(
         WandererApp.PubSub,
         "corporation",
-        {:transactions, character.corporation_id, transactions}
+        {:transactions, character.corporation_id, transactions |> Enum.sort_by(& &1.date, :desc)}
       )
     end
 

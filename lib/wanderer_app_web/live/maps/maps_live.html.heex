@@ -3,6 +3,7 @@
     <%= if @maps != [] do %>
       <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 ">
         <.link
+          :if={not @restrict_maps_creation?}
           class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
           patch={~p"/maps/new"}
         >
@@ -125,7 +126,7 @@
   </main>
 </div>
 <.modal
-  :if={@live_action in [:create, :edit]}
+  :if={@is_connected? && @live_action in [:create, :edit]}
   title={"#{(@live_action == :create && "Create") || "Edit"} Map"}
   class="!w-[500px]"
   id="add_map_modal"

@@ -62,7 +62,8 @@ defmodule WandererAppWeb.AdminLive do
        user_character_ids: user_character_ids,
        user_id: user_id,
        invite_link: nil,
-       map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?()
+       map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
+       restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
   end
 
@@ -205,6 +206,22 @@ defmodule WandererAppWeb.AdminLive do
     {:noreply,
      socket
      |> put_flash(:info, "Character unlinked.")}
+  end
+
+  @impl true
+  def handle_event(
+        "create-map",
+        _params,
+        socket
+      ) do
+    WandererApp.Cache.put(
+      "create_map_once",
+      true
+    )
+
+    {:noreply,
+     socket
+     |> push_navigate(to: ~p"/maps/new")}
   end
 
   @impl true
