@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.47.0](https://github.com/wanderer-industries/wanderer/compare/v1.46.1...v1.47.0) (2025-02-09)
+
+
+
+
+### Features:
+
+* Map: Added check for active map subscription to using Map APIs
+
 ## [v1.46.1](https://github.com/wanderer-industries/wanderer/compare/v1.46.0...v1.46.1) (2025-02-09)
 
 
