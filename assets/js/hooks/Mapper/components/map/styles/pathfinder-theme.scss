@@ -2,6 +2,10 @@
 @import './eve-common';
 @import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@300;400;700&display=swap');
 
+$homeBase: rgb(197, 253, 67);
+$homeAlpha: rgba(197, 253, 67, 0.32);
+$homeDark30: darken($homeBase, 30%);
+
 .pathfinder-theme {
   /* -- Override values from the default theme -- */
   --rf-bg-color: #000000;
@@ -41,4 +45,10 @@
   --eve-wh-type-color-c6: #d9534f;
   --eve-wh-type-color-c13: #7986cb;
   --eve-wh-type-color-drifter: #44aa82;
+
+  --rf-node-local-counter: #5cb85c;
+  --rf-has-user-characters: #ffc75d;
+
+  --eve-solar-system-status-home:                #{$homeAlpha};
+  --eve-solar-system-status-color-home:          #{$homeBase};
 }

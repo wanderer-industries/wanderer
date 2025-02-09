@@ -1,15 +1,15 @@
 import React, { useRef } from 'react';
-import clsx from 'clsx';
 import {
   LayoutEventBlocker,
-  WdResponsiveCheckbox,
-  WdImgButton,
+  SystemView,
   TooltipPosition,
-  WdDisplayMode,
+  WdCheckbox,
+  WdImgButton,
+  WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
 import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
 import { PrimeIcons } from 'primereact/api';
-import { useElementWidth } from '@/hooks/Mapper/components/hooks';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
 
 interface KillsHeaderProps {
   systemId?: string;
@@ -25,47 +25,41 @@ export const KillsHeader: React.FC<KillsHeaderProps> = ({ systemId, onOpenSettin
   };
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const headerWidth = useElementWidth(headerRef) || 300;
-
-  const reservedWidth = 100;
-  const availableWidth = Math.max(headerWidth - reservedWidth, 0);
-
-  let displayMode: WdDisplayMode = "full";
-  if (availableWidth >= 60) {
-    displayMode = "full";
-  } else {
-    displayMode = "abbr";
-  }
+  const compact = useMaxWidth(headerRef, 150);
 
   return (
-    <div className="flex w-full items-center text-xs" ref={headerRef}>
-      <div className="flex-shrink-0 select-none mr-2">
-        Kills{systemId && !showAll && ' in '}
+    <div className="flex w-full items-center justify-between text-xs" ref={headerRef}>
+      <div className="flex items-center gap-1">
+        <div className="text-stone-400">
+          Kills
+          {systemId && !showAll && ' in '}
+        </div>
+        {systemId && !showAll && <SystemView systemId={systemId} className="select-none text-center" hideRegion />}
       </div>
-      <div className="flex-grow overflow-hidden">
-        <LayoutEventBlocker className="flex items-center gap-2 justify-end">
-          <div className="flex items-center gap-2">
-            <WdResponsiveCheckbox
-              tooltipContent="Show all systems"
+
+      <LayoutEventBlocker className="flex items-center gap-2 justify-end">
+        <div className="flex items-center gap-2">
+          <WdTooltipWrapper content="Show all systems" position={TooltipPosition.top}>
+            <WdCheckbox
               size="xs"
-              labelFull="Show all systems"
-              labelAbbreviated="All"
+              labelSide="left"
+              label={compact ? 'All' : 'Show all systems'}
               value={showAll}
               onChange={onToggleShowAllVisible}
-              classNameLabel={clsx("whitespace-nowrap text-stone-400 hover:text-stone-200 transition duration-300")}
-              displayMode={displayMode}
+              classNameLabel="whitespace-nowrap text-stone-400 hover:text-stone-200 transition duration-300"
             />
-            <WdImgButton
-              className={PrimeIcons.SLIDERS_H}
-              onClick={onOpenSettings}
-              tooltip={{
-                content: 'Open Kills Settings',
-                position: TooltipPosition.left,
-              }}
-            />
-          </div>
-        </LayoutEventBlocker>
-      </div>
+          </WdTooltipWrapper>
+
+          <WdImgButton
+            className={PrimeIcons.SLIDERS_H}
+            onClick={onOpenSettings}
+            tooltip={{
+              content: 'Open Kills Settings',
+              position: TooltipPosition.top,
+            }}
+          />
+        </div>
+      </LayoutEventBlocker>
     </div>
   );
 };

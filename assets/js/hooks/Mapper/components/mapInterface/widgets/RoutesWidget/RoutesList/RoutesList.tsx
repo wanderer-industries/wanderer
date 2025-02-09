@@ -1,7 +1,7 @@
 import classes from './RoutesList.module.scss';
 import { Route, SystemStaticInfoShort } from '@/hooks/Mapper/types/routes.ts';
 import clsx from 'clsx';
-import { SystemViewStandalone, WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
+import { SystemViewStandalone, TooltipPosition, WdTooltip, WdTooltipHandlers } from '@/hooks/Mapper/components/ui-kit';
 import { getBackgroundClass, getShapeClass } from '@/hooks/Mapper/components/map/helpers';
 import { MouseEvent, useCallback, useRef, useState } from 'react';
 import { Commands } from '@/hooks/Mapper/types';
@@ -46,9 +46,11 @@ export const RouteSystem = ({
     <>
       <WdTooltip
         ref={tooltipRef}
+        position={TooltipPosition.top}
         // targetSelector={`.tooltip-route-sys_${destination}_${solar_system_id}`}
         content={() => (
           <SystemViewStandalone
+            className="mx-[4px]"
             security={security}
             system_class={system_class}
             class_title={class_title}
@@ -63,8 +65,8 @@ export const RouteSystem = ({
           tooltipRef.current?.show(e);
           onMouseEnter?.(solar_system_id);
         }}
-        onMouseLeave={e => {
-          tooltipRef.current?.hide(e);
+        onMouseLeave={() => {
+          tooltipRef.current?.hide();
           onMouseLeave?.();
         }}
         onContextMenu={handleContext}

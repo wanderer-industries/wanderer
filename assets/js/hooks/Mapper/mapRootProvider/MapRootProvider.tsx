@@ -46,6 +46,11 @@ const INITIAL_DATA: MapRootData = {
   linkSignatureToSystem: null,
 };
 
+export enum AvailableThemes {
+  default = 'default',
+  pathfinder = 'pathfinder',
+}
+
 export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
   isShowMinimap = 'isShowMinimap',
@@ -65,7 +70,7 @@ export type InterfaceStoredSettings = {
   isShowUnsplashedSignatures: boolean;
   isShowBackgroundPattern: boolean;
   isSoftBackground: boolean;
-  theme: string;
+  theme: AvailableThemes;
 };
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
@@ -76,7 +81,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowUnsplashedSignatures: false,
   isShowBackgroundPattern: true,
   isSoftBackground: false,
-  theme: 'default',
+  theme: AvailableThemes.default,
 };
 
 export interface MapRootContextProps {

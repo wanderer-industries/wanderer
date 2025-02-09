@@ -8,6 +8,8 @@ import { LocalCharactersList } from './components/LocalCharactersList';
 import { useLocalCharactersItemTemplate } from './hooks/useLocalCharacters';
 import { useLocalCharacterWidgetSettings } from './hooks/useLocalWidgetSettings';
 import { LocalCharactersHeader } from './components/LocalCharactersHeader';
+import classes from './LocalCharacters.module.scss';
+import clsx from 'clsx';
 
 export const LocalCharacters = () => {
   const {
@@ -16,11 +18,11 @@ export const LocalCharacters = () => {
 
   const [settings, setSettings] = useLocalCharacterWidgetSettings();
   const [systemId] = selectedSystems;
-  const restrictOfflineShowing = useMapGetOption("restrict_offline_showing");
+  const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
   const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
   const showOffline = useMemo(
     () => !restrictOfflineShowing || isAdminOrManager,
-    [isAdminOrManager, restrictOfflineShowing]
+    [isAdminOrManager, restrictOfflineShowing],
   );
 
   const sorted = useMemo(() => {
@@ -81,7 +83,10 @@ export const LocalCharacters = () => {
           items={sorted}
           itemSize={settings.compact ? 26 : 41}
           itemTemplate={itemTemplate}
-          containerClassName="w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none"
+          containerClassName={clsx(
+            'w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none',
+            classes.VirtualScroller,
+          )}
         />
       )}
     </Widget>

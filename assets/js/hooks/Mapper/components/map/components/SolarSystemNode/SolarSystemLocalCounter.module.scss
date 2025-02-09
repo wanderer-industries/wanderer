@@ -1,0 +1,48 @@
+.TooltipActive {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 3;
+}
+
+.localCounter {
+  mix-blend-mode: screen;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  position: relative;
+  top: 1px;
+  color: var(--rf-node-local-counter);
+
+  &.hasUserCharacters {
+    color: var(--rf-has-user-characters);
+  }
+
+  & > i {
+    font-size: 9px;
+    position: relative;
+  }
+
+  & > span {
+    font-size: 9px;
+    line-height: 9px;
+    font-weight: var(--rf-local-counter-font-weight, 500);
+
+    @-moz-document url-prefix() {
+      position: relative;
+      top: -1px;
+    }
+  }
+}
+
+.Pathfinder {
+  .localCounter {
+    @-moz-document url-prefix() {
+      top: 0;
+    }
+
+    & > span {
+      position: relative;
+      top: -1px;
+    }
+  }
+}
