@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.46.1](https://github.com/wanderer-industries/wanderer/compare/v1.46.0...v1.46.1) (2025-02-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed a lot of design and architect issues after last milliâ¦ (#154)
+
+* Map: Fixed a lot of design and architect issues after last million PRs
+
+* Map: removed unnecessary hooks styles
+
 ## [v1.46.0](https://github.com/wanderer-industries/wanderer/compare/v1.45.5...v1.46.0) (2025-02-08)
 
 
