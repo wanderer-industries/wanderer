@@ -24,7 +24,6 @@ defmodule WandererAppWeb.Router do
   @font_src ~w('self' https://fonts.gstatic.com data: https://web.ccpgamescdn.com https://w.appzi.io )
   @script_src ~w('self' )
 
-
   pipeline :admin_bauth do
     plug :admin_basic_auth
   end
@@ -112,6 +111,7 @@ defmodule WandererAppWeb.Router do
 
   pipeline :api_map do
     plug WandererAppWeb.Plugs.CheckMapApiKey
+    plug WandererAppWeb.Plugs.CheckMapSubscription
   end
 
   pipeline :api_kills do
@@ -145,7 +145,6 @@ defmodule WandererAppWeb.Router do
 
     # GET /api/common/system-static-info?id=...
     get "/system-static-info", CommonAPIController, :show_system_static
-
   end
 
   scope "/", WandererAppWeb do
