@@ -33,7 +33,7 @@ export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, systems, connections, linkSignatureToSystem },
+    data: { selectedConnections, selectedSystems, hubs, systems, linkSignatureToSystem },
     interfaceSettings: {
       isShowMenu,
       isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
@@ -56,8 +56,8 @@ export const MapWrapper = () => {
   const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
 
-  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, connections, deleteSystems });
-  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, connections, deleteSystems };
+  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems });
+  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems };
 
   useMapEventListener(event => {
     runCommand(event);
@@ -125,11 +125,6 @@ export const MapWrapper = () => {
     setOpenAddSystem(coordinates);
   }, []);
 
-  const canRemoveConnection = useCallback((connectionId: string) => {
-    const { connections } = ref.current;
-    return !connections.some(x => x.id === connectionId);
-  }, []);
-
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
     async item => {
       if (ref.current.systems.some(x => x.system_static_info.solar_system_id === item.value)) {
@@ -166,7 +161,6 @@ export const MapWrapper = () => {
         isSoftBackground={isSoftBackground}
         theme={theme}
         onAddSystem={onAddSystem}
-        canRemoveConnection={canRemoveConnection}
       />
 
       {openSettings != null && (

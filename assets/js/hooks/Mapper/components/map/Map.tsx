@@ -84,7 +84,6 @@ interface MapCompProps {
   onCommand: OutCommandHandler;
   onSelectionChange: OnMapSelectionChange;
   onManualDelete(systems: string[]): void;
-  canRemoveConnection?(connectionId: string): boolean;
   onConnectionInfoClick?(e: SolarSystemConnection): void;
   onAddSystem?: OnMapAddSystemCallback;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
@@ -114,9 +113,8 @@ const MapComp = ({
   isSoftBackground,
   theme,
   onAddSystem,
-  canRemoveConnection,
 }: MapCompProps) => {
-  const { getEdge, getNode, getNodes } = useReactFlow();
+  const { getNode, getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
@@ -224,40 +222,6 @@ const MapComp = ({
     [getNode, getNodes, onManualDelete, onNodesChange],
   );
 
-  const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      const nextChanges = changes.reduce((acc, change) => {
-        if (change.type !== 'remove') {
-          return [...acc, change];
-        }
-
-        if (canRemoveConnection?.(change.id)) {
-          return [...acc, change];
-        }
-
-        const edge = getEdge(change.id);
-        if (!edge) {
-          return [...acc, change];
-        }
-
-        const sourceNode = getNode(edge.source);
-        const targetNode = getNode(edge.target);
-        if (!sourceNode || !targetNode) {
-          return [...acc, change];
-        }
-
-        if (sourceNode.data.locked || targetNode.data.locked) {
-          return acc;
-        }
-
-        return [...acc, change];
-      }, [] as EdgeChange[]);
-
-      onEdgesChange(nextChanges);
-    },
-    [canRemoveConnection, getEdge, getNode, onEdgesChange],
-  );
-
   useEffect(() => {
     update(x => ({
       ...x,
@@ -273,7 +237,7 @@ const MapComp = ({
           nodes={nodes}
           edges={edges}
           onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           // TODO we need save into session all of this
           //      and on any action do either
