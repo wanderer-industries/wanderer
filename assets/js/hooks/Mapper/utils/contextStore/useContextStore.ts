@@ -1,80 +1,70 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { ContextStoreDataOpts, ProvideConstateDataReturnType, ContextStoreDataUpdate } from './types';
 
-export const useContextStore = <T>(
+export const useContextStore = <T extends object>(
   initialValue: T,
   { notNeedRerender = false, handleBeforeUpdate, onAfterAUpdate }: ContextStoreDataOpts<T> = {},
 ): ProvideConstateDataReturnType<T> => {
-  const ref = useRef<T>(initialValue);
-  const [, setRerenderKey] = useState(0);
+  const [store, setStore] = useState<T>(initialValue);
 
-  const refWrapper = useRef({ notNeedRerender, handleBeforeUpdate, onAfterAUpdate });
-  refWrapper.current = { notNeedRerender, handleBeforeUpdate, onAfterAUpdate };
+  const update: ContextStoreDataUpdate<T> = useCallback(
+    (valOrFunc, force = false) => {
+      setStore(prevStore => {
+        const values = typeof valOrFunc === 'function' ? valOrFunc(prevStore) : valOrFunc;
 
-  const update: ContextStoreDataUpdate<T> = useCallback((valOrFunc, force = false) => {
-    // It need to force prevent unnecessary rerendering
-    // update will create once
-    const { notNeedRerender, handleBeforeUpdate, onAfterAUpdate } = refWrapper.current;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const availableKeys = Object.keys(ref.current);
+        const next = { ...prevStore };
+        let didChange = false;
 
-    const values = typeof valOrFunc === 'function' ? valOrFunc(ref.current) : valOrFunc;
+        Object.keys(values).forEach(k => {
+          const key = k as keyof T;
 
-    let callRerender = false;
-    Object.keys(values).forEach(key => {
-      if (!availableKeys.includes(key)) {
-        // TODO maybe need show error
-        return;
-      }
+          if (!(key in prevStore)) {
+            return;
+          }
 
-      if (!handleBeforeUpdate || force) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        ref.current[key] = values[key];
-        // !notNeedRerender && setRerenderKey(x => x + 1);
-        if (!notNeedRerender) {
-          callRerender = true;
+          if (handleBeforeUpdate && !force) {
+            const newVal = values[key];
+            const oldVal = next[key];
+            const updateResult = handleBeforeUpdate(newVal, oldVal);
+
+            if (!updateResult) {
+              (next[key] as T[keyof T]) = newVal as T[keyof T];
+              didChange = didChange || newVal !== oldVal;
+              return;
+            }
+
+            if (updateResult.prevent) {
+              return;
+            }
+
+            if ('value' in updateResult) {
+              const finalVal = updateResult.value as T[keyof T];
+              (next[key] as T[keyof T]) = finalVal;
+              didChange = didChange || finalVal !== oldVal;
+            } else {
+              (next[key] as T[keyof T]) = newVal as T[keyof T];
+              didChange = didChange || newVal !== oldVal;
+            }
+          } else {
+            const newVal = values[key] as T[keyof T];
+            const oldVal = next[key];
+            (next[key] as T[keyof T]) = newVal;
+            didChange = didChange || newVal !== oldVal;
+          }
+        });
+
+        if (!didChange && notNeedRerender) {
+          return prevStore;
         }
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      const updateResult = handleBeforeUpdate(values[key], ref.current[key]);
-      if (!updateResult) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        ref.current[key] = values[key];
-        // !notNeedRerender && setRerenderKey(x => x + 1);
-        if (!notNeedRerender) {
-          callRerender = true;
-        }
-        return;
-      }
 
-      if (updateResult?.prevent) {
-        return;
-      }
+        onAfterAUpdate?.(next);
 
-      if (Object.keys(updateResult).includes('value')) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        ref.current[key] = updateResult.value;
-        // !notNeedRerender && setRerenderKey(x => x + 1);
-        if (!notNeedRerender) {
-          callRerender = true;
-        }
-        return;
-      }
-    });
+        return next;
+      });
+    },
+    [handleBeforeUpdate, onAfterAUpdate, notNeedRerender],
+  );
 
-    if (callRerender) {
-      setRerenderKey(x => x + 1);
-    }
-
-    onAfterAUpdate?.(ref.current);
-  }, []);
-
-  return { update, ref: ref.current };
+  return { update, ref: store };
 };

@@ -1,4 +1,4 @@
-export type AnyProperty<T> = T[keyof T];
+export type AnyProperty<T> = T[keyof T] | undefined;
 
 export type PCDHandleBeforeUpdate<T> = (
   newVal: AnyProperty<T>,
