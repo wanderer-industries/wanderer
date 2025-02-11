@@ -1,8 +1,6 @@
 name: Build
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
@@ -41,8 +39,28 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
+  manual-approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: deploy-test
+    if: success()
+
+    permissions:
+      issues: write
+
+    steps:
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: DmitryPopov
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Release"
+          issue-body: "Please approve or deny the deployment."
+
   build:
     name: 🛠 Build
+    needs: manual-approval
     runs-on: ubuntu-22.04
     if: ${{ (github.ref == 'refs/heads/main') && github.event_name == 'push' }}
     permissions:
