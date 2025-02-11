@@ -13,27 +13,19 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
 
     case header do
       "Bearer " <> incoming_token ->
-        case fetch_map_id(conn.query_params) do
-          {:ok, map_id} ->
-            case WandererApp.Api.Map.by_id(map_id) do
-              {:ok, map} ->
-                if map.public_api_key == incoming_token do
-                  conn
-                else
-                  conn
-                  |> send_resp(401, "Unauthorized (invalid token for map)")
-                  |> halt()
-                end
-
-              {:error, _reason} ->
-                conn
-                |> send_resp(404, "Map not found")
-                |> halt()
+        case fetch_map(conn.query_params) do
+          {:ok, map} ->
+            if map.public_api_key == incoming_token do
+              conn
+            else
+              conn
+              |> send_resp(401, "Unauthorized (invalid token for map)")
+              |> halt()
             end
 
-          {:error, msg} ->
+          {:error, _reason} ->
             conn
-            |> send_resp(400, msg)
+            |> send_resp(404, "Map not found")
             |> halt()
         end
 
@@ -44,6 +36,19 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
     end
   end
 
+  defp fetch_map(query_params) do
+    case fetch_map_id(query_params) do
+      {:ok, {:map, map}} ->
+        {:ok, map}
+
+      {:ok, map_id} ->
+        WandererApp.Api.Map.by_id(map_id)
+
+      error ->
+        error
+    end
+  end
+
   defp fetch_map_id(%{"map_id" => mid}) when is_binary(mid) and mid != "" do
     {:ok, mid}
   end
@@ -51,7 +56,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   defp fetch_map_id(%{"slug" => slug}) when is_binary(slug) and slug != "" do
     case WandererApp.Api.Map.get_map_by_slug(slug) do
       {:ok, map} ->
-        {:ok, map.id}
+        {:ok, {:map, map}}
 
       {:error, _reason} ->
         {:error, "No map found for slug=#{slug}"}

@@ -10,5 +10,6 @@ export const convertSystem2Node = (sys: SolarSystemRawType): Node => {
     position: sys.position,
     data: sys,
     draggable: !sys.locked,
+    deletable: !sys.locked,
   };
 };

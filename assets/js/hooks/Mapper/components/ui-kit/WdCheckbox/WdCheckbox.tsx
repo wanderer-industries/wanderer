@@ -2,12 +2,12 @@ import classes from './WdCheckbox.module.scss';
 import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
 import { WithClassName } from '@/hooks/Mapper/types/common';
 import clsx from 'clsx';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 let counter = 0;
 
 export interface WdCheckboxProps {
-  label: string;
+  label: React.ReactNode | string;
   classNameLabel?: string;
   value: boolean;
   labelSide?: 'left' | 'right';

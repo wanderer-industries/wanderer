@@ -184,7 +184,7 @@ export const RoutesWidgetComp = () => {
   }, [data, update]);
 
   const ref = useRef<HTMLDivElement>(null);
-  const compact = useMaxWidth(ref, 155);
+  const compact = useMaxWidth(ref, 170);
   const [openAddSystem, setOpenAddSystem] = useState<boolean>(false);
 
   const onAddSystem = useCallback(() => setOpenAddSystem(true), []);
@@ -217,14 +217,14 @@ export const RoutesWidgetComp = () => {
               }}
             />
 
-            <WdTooltipWrapper content="Show shortest route">
+            <WdTooltipWrapper content="Show shortest route" position={TooltipPosition.top}>
               <WdCheckbox
                 size="xs"
                 labelSide="left"
                 label={compact ? '' : 'Show shortest'}
                 value={!isSecure}
                 onChange={handleSecureChange}
-                classNameLabel={clsx('text-red-400')}
+                classNameLabel="text-red-400 whitespace-nowrap"
               />
             </WdTooltipWrapper>
             <WdImgButton

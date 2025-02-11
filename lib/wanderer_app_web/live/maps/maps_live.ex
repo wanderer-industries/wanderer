@@ -13,7 +13,7 @@ defmodule WandererAppWeb.MapsLive do
         %{"user_id" => user_id} = _session,
         %{assigns: %{current_user: current_user}} = socket
       )
-      when not is_nil(user_id) do
+      when not is_nil(user_id) and is_connected?(socket) do
     {:ok, active_characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
     user_characters =
@@ -26,6 +26,7 @@ defmodule WandererAppWeb.MapsLive do
        characters: user_characters,
        importing: false,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
+       restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
        acls: [],
        location: nil
      )
@@ -40,8 +41,16 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   @impl true
-  def handle_params(params, url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params, url)}
+  def handle_params(params, url, socket) when is_connected?(socket) do
+    {:noreply,
+     socket
+     |> assign(:is_connected?, true)
+     |> apply_action(socket.assigns.live_action, params, url)}
+  end
+
+  @impl true
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket |> assign(:is_connected?, false)}
   end
 
   defp apply_action(socket, :index, _params, _url) do
@@ -51,24 +60,32 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   defp apply_action(socket, :create, _params, url) do
-    socket
-    |> assign(:active_page, :maps)
-    |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
-    |> assign(:page_title, "Maps - Create")
-    |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
-    |> assign(
-      :form,
-      AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
-        forms: [
-          auto?: true
-        ],
-        prepare_source: fn form ->
-          form
-          |> Map.put("scope", "wormholes")
-        end
-      )
-    )
-    |> load_access_lists()
+    allow_map_creation()
+    |> case do
+      true ->
+        socket
+        |> assign(:active_page, :maps)
+        |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
+        |> assign(:page_title, "Maps - Create")
+        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(
+          :form,
+          AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
+            forms: [
+              auto?: true
+            ],
+            prepare_source: fn form ->
+              form
+              |> Map.put("scope", "wormholes")
+            end
+          )
+        )
+        |> load_access_lists()
+
+      _ ->
+        socket
+        |> push_patch(to: ~p"/maps")
+    end
   end
 
   defp apply_action(socket, :edit, %{"slug" => map_slug} = _params, url) do
@@ -165,6 +182,9 @@ defmodule WandererAppWeb.MapsLive do
       progress: &handle_progress/3
     )
   end
+
+  defp allow_map_creation(),
+    do: not WandererApp.Env.restrict_maps_creation?() || WandererApp.Cache.take("create_map_once")
 
   @impl true
   def handle_event("set-default", %{"id" => id}, socket) do

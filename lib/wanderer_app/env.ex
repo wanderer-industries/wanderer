@@ -22,6 +22,12 @@ defmodule WandererApp.Env do
 
   @decorate cacheable(
               cache: WandererApp.Cache,
+              key: "restrict_maps_creation"
+            )
+  def restrict_maps_creation?, do: get_key(:restrict_maps_creation, false)
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
               key: "map-connection-auto-expire-hours"
             )
   def map_connection_auto_expire_hours, do: get_key(:map_connection_auto_expire_hours)
