@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.47.2](https://github.com/wanderer-industries/wanderer/compare/v1.47.1...v1.47.2) (2025-02-11)
+
+
+
+
+### Bug Fixes:
+
+* lazy load kills widget (#157)
+
+* lazy load kills widget
+
+* updates for eslint and pr feedback
+
 ## [v1.47.1](https://github.com/wanderer-industries/wanderer/compare/v1.47.0...v1.47.1) (2025-02-09)
 
 
