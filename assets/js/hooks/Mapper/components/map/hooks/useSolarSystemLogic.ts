@@ -196,7 +196,6 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
           kind: s.kind,
           name: s.name,
           group: s.group,
-          sig_id: s.eve_id, // Add a unique key property
         })) as UnsplashedSignatureType[],
     );
   }, [isShowUnsplashedSignatures, systemSigs]);
