@@ -11,7 +11,6 @@ export interface SystemKillsContentProps {
   onlyOneSystem?: boolean;
   autoSize?: boolean;
   timeRange: number;
-  limit?: number;
 }
 
 export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
@@ -21,7 +20,6 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   onlyOneSystem = false,
   autoSize = false,
   timeRange = 1,
-  limit,
 }) => {
   const processedKills = useMemo(() => {
     const validKills = kills.filter(kill => kill.kill_time);
@@ -32,18 +30,14 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
       return timeB - timeA;
     });
 
-    if (limit != null) {
-      return sortedKills.slice(0, limit);
-    } else {
-      const now = Date.now();
-      const cutoff = now - timeRange * 60 * 60 * 1000;
-      return sortedKills.filter(kill => {
-        if (!kill.kill_time) return false;
-        const killTime = new Date(kill.kill_time).getTime();
-        return killTime >= cutoff;
-      });
-    }
-  }, [kills, timeRange, limit]);
+    const now = Date.now();
+    const cutoff = now - timeRange * 60 * 60 * 1000;
+    return sortedKills.filter(kill => {
+      if (!kill.kill_time) return false;
+      const killTime = new Date(kill.kill_time).getTime();
+      return killTime >= cutoff;
+    });
+  }, [kills, timeRange]);
 
   const itemSize = compact ? 35 : 50;
   const computedHeight = autoSize ? Math.max(processedKills.length, 1) * itemSize + 5 : undefined;

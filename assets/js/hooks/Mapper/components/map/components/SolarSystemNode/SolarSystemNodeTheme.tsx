@@ -4,7 +4,7 @@ import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeTheme.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useLocalCounter, useSolarSystemNode } from '../../hooks/useSolarSystemLogic';
+import { useLocalCounter, useNodeKillsCount, useSolarSystemNode } from '../../hooks/useSolarSystemLogic';
 import {
   EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,
@@ -18,6 +18,7 @@ import { KillsCounter } from './SolarSystemKillsCounter';
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
+  const localKillsCount = useNodeKillsCount(nodeVars.solarSystemId, nodeVars.killsCount);
 
   return (
     <>
@@ -35,9 +36,9 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             </div>
           )}
 
-          {nodeVars.killsCount && nodeVars.killsCount > 0 && nodeVars.solarSystemId && (
+          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && (
             <KillsCounter
-              killsCount={nodeVars.killsCount}
+              killsCount={localKillsCount}
               systemId={nodeVars.solarSystemId}
               size="lg"
               killsActivityType={nodeVars.killsActivityType}

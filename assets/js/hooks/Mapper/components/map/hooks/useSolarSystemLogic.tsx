@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapSolarSystemType } from '../map.types';
 import { NodeProps } from 'reactflow';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
@@ -10,8 +10,9 @@ import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormhol
 import { getSystemClassStyles, prepareUnsplashedChunks } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager';
-import { CharacterTypeRaw, OutCommand, SystemSignature } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, Commands, OutCommand, SystemSignature } from '@/hooks/Mapper/types';
 import { LABELS_INFO, LABELS_ORDER } from '@/hooks/Mapper/components/map/constants';
+import { useMapEventListener } from '@/hooks/Mapper/events';
 
 export type LabelInfo = {
   id: string;
@@ -280,4 +281,26 @@ export interface SolarSystemNodeVars {
   isThickConnections: boolean;
   classTitle: string | null;
   temporaryName?: string | null;
+}
+
+export function useNodeKillsCount(systemId: number | string, initialKillsCount: number | null): number | null {
+  const [killsCount, setKillsCount] = useState<number | null>(initialKillsCount);
+
+  useEffect(() => {
+    setKillsCount(initialKillsCount);
+  }, [initialKillsCount]);
+
+  useMapEventListener(event => {
+    if (event.name === Commands.killsUpdated && event.data?.toString() === systemId.toString()) {
+      //@ts-ignore
+      if (event.payload && typeof event.payload.kills === 'number') {
+        // @ts-ignore
+        setKillsCount(event.payload.kills);
+      }
+      return true;
+    }
+    return false;
+  });
+
+  return killsCount;
 }

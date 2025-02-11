@@ -35,7 +35,6 @@ export const KillsCounter = ({
       onlyOneSystem={true}
       autoSize={true}
       timeRange={timeRange}
-      limit={killsCount}
     />
   );
 

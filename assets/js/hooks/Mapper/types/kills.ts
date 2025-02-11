@@ -21,7 +21,6 @@ export interface DetailedKill {
   victim_ship_type_id?: number | null;
   victim_ship_name?: string;
 
-
   final_blow_char_id?: number | null;
   final_blow_char_name?: string;
   final_blow_corp_id?: number | null;
