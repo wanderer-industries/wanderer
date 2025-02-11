@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
-import { InputSwitch } from 'primereact/inputswitch';
 import { WdImgButton, SystemView, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 import { PrimeIcons } from 'primereact/api';
 import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
@@ -22,10 +21,10 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
     showAll: globalSettings.showAll,
     whOnly: globalSettings.whOnly,
     excludedSystems: globalSettings.excludedSystems || [],
-    timeRange: globalSettings.timeRange,
   });
 
   const [, forceRender] = useState(0);
+
   const [addSystemDialogVisible, setAddSystemDialogVisible] = useState(false);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
         showAll: globalSettings.showAll,
         whOnly: globalSettings.whOnly,
         excludedSystems: globalSettings.excludedSystems || [],
-        timeRange: globalSettings.timeRange,
       };
       forceRender(n => n + 1);
     }
@@ -53,15 +51,6 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
     localRef.current = {
       ...localRef.current,
       whOnly: checked,
-    };
-    forceRender(n => n + 1);
-  }, []);
-
-  // Updated handler to set time range as a number: 1 or 24
-  const handleTimeRangeChange = useCallback((newTimeRange: 1 | 24) => {
-    localRef.current = {
-      ...localRef.current,
-      timeRange: newTimeRange,
     };
     forceRender(n => n + 1);
   }, []);
@@ -122,16 +111,9 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
             checked={localData.whOnly}
             onChange={e => handleWHChange(e.target.checked)}
           />
-          <label htmlFor="kills-wormhole-only-mode" className="cursor-pointer">
+          <label htmlFor="kills-wh-only-mode" className="cursor-pointer">
             Only show wormhole kills
           </label>
-        </div>
-
-        {/* Time Range Toggle using InputSwitch */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm">Time Range:</span>
-          <InputSwitch checked={localData.timeRange === 24} onChange={e => handleTimeRangeChange(e.value ? 24 : 1)} />
-          <span className="text-sm">{localData.timeRange === 24 ? '24 Hours' : '1 Hour'}</span>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -146,7 +128,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           {excluded.length === 0 && <div className="text-stone-500 text-xs italic">No systems excluded.</div>}
           {excluded.map(sysId => (
             <div key={sysId} className="flex items-center justify-between border-b border-stone-600 py-1 px-1 text-xs">
-              <SystemView systemId={sysId.toString()} hideRegion compact />
+              <SystemView systemId={sysId.toString()} hideRegion compact/>
 
               <WdImgButton
                 className={PrimeIcons.TRASH}

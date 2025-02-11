@@ -1,7 +1,7 @@
 import { SystemKillsContent } from '../../../mapInterface/widgets/SystemKills/SystemKillsContent/SystemKillsContent';
 import { useKillsCounter } from '../../hooks/useKillsCounter';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
-import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common';
+import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common.ts';
 
 type TooltipSize = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -11,32 +11,16 @@ type KillsBookmarkTooltipProps = {
   systemId: string;
   className?: string;
   size?: TooltipSize;
-  timeRange?: number;
 } & WithChildren &
   WithClassName;
 
-export const KillsCounter = ({
-  killsCount,
-  systemId,
-  className,
-  children,
-  size = 'xs',
-  timeRange = 1,
-}: KillsBookmarkTooltipProps) => {
+export const KillsCounter = ({ killsCount, systemId, className, children, size = 'xs' }: KillsBookmarkTooltipProps) => {
   const { isLoading, kills: detailedKills, systemNameMap } = useKillsCounter({ realSystemId: systemId });
 
   if (!killsCount || detailedKills.length === 0 || !systemId || isLoading) return null;
 
   const tooltipContent = (
-    <SystemKillsContent
-      kills={detailedKills}
-      systemNameMap={systemNameMap}
-      compact={true}
-      onlyOneSystem={true}
-      autoSize={true}
-      timeRange={timeRange}
-      limit={killsCount}
-    />
+    <SystemKillsContent kills={detailedKills} systemNameMap={systemNameMap} compact={true} onlyOneSystem={true} />
   );
 
   return (
