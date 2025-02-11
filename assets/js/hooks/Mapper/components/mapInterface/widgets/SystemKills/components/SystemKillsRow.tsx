@@ -10,7 +10,7 @@ export interface KillRowProps {
   onlyOneSystem?: boolean;
 }
 
-const KillRowComponent: React.FC<KillRowProps> = ({
+export const KillRow: React.FC<KillRowProps> = ({
   killDetails,
   systemName,
   isCompact = false,
@@ -19,7 +19,6 @@ const KillRowComponent: React.FC<KillRowProps> = ({
   if (isCompact) {
     return <CompactKillRow killDetails={killDetails} systemName={systemName} onlyOneSystem={onlyOneSystem} />;
   }
+
   return <FullKillRow killDetails={killDetails} systemName={systemName} onlyOneSystem={onlyOneSystem} />;
 };
-
-export const KillRow = React.memo(KillRowComponent);

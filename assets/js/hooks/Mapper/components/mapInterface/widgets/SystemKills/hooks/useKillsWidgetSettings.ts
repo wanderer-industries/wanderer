@@ -7,7 +7,6 @@ export interface KillsWidgetSettings {
   whOnly: boolean;
   excludedSystems: number[];
   version: number;
-  timeRange: number;
 }
 
 export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
@@ -15,8 +14,7 @@ export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
   showAll: false,
   whOnly: true,
   excludedSystems: [],
-  version: 1,
-  timeRange: 1,
+  version: 0,
 };
 
 function mergeWithDefaults(settings?: Partial<KillsWidgetSettings>): KillsWidgetSettings {
