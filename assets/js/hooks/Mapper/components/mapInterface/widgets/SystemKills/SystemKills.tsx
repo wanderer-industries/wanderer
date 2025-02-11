@@ -7,6 +7,7 @@ import { useKillsWidgetSettings } from './hooks/useKillsWidgetSettings';
 import { useSystemKills } from './hooks/useSystemKills';
 import { KillsSettingsDialog } from './components/SystemKillsSettingsDialog';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
+import { SolarSystemRawType } from '@/hooks/Mapper/types';
 
 export const SystemKills: React.FC = React.memo(() => {
   const {
@@ -26,7 +27,7 @@ export const SystemKills: React.FC = React.memo(() => {
   }, [systems]);
 
   const systemBySolarSystemId = useMemo(() => {
-    const map: Record<number, any> = {};
+    const map: Record<number, SolarSystemRawType> = {};
     systems.forEach(sys => {
       if (sys.system_static_info?.solar_system_id != null) {
         map[sys.system_static_info.solar_system_id] = sys;
@@ -102,7 +103,7 @@ export const SystemKills: React.FC = React.memo(() => {
         </Widget>
       </div>
 
-      <KillsSettingsDialog visible={settingsDialogVisible} setVisible={setSettingsDialogVisible} />
+      {settingsDialogVisible && <KillsSettingsDialog visible setVisible={setSettingsDialogVisible} />}
     </div>
   );
 });

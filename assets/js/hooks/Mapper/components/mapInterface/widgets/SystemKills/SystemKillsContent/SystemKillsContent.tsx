@@ -75,32 +75,17 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
 
   const itemTemplate = useSystemKillsItemTemplate(systemNameMap, compact, onlyOneSystem);
 
-  if (!autoSize) {
-    return (
-      <div ref={containerRef} className="w-full h-full">
-        <VirtualScroller
-          ref={scrollerRef}
-          items={processedKills}
-          itemSize={itemSize}
-          itemTemplate={itemTemplate}
-          autoSize={false}
-          style={{
-            height: containerHeight ? `${containerHeight}px` : '100%',
-          }}
-          className={clsx('w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none')}
-        />
-      </div>
-    );
-  }
-
   return (
-    <VirtualScroller
-      items={processedKills}
-      itemSize={itemSize}
-      itemTemplate={itemTemplate}
-      autoSize
-      style={{ height: `${computedHeight}px` }}
-      className={clsx('w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none')}
-    />
+    <div ref={autoSize ? undefined : containerRef} className="w-full h-full">
+      <VirtualScroller
+        ref={autoSize ? undefined : scrollerRef}
+        items={processedKills}
+        itemSize={itemSize}
+        itemTemplate={itemTemplate}
+        autoSize={autoSize}
+        style={{ height: autoSize ? `${computedHeight}px` : containerHeight ? `${containerHeight}px` : '100%' }}
+        className={clsx('w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none')}
+      />
+    </div>
   );
 };
