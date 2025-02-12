@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
-import { InputSwitch } from 'primereact/inputswitch';
-import { WdImgButton, SystemView, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { PrimeIcons } from 'primereact/api';
 import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
 import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
+import { SystemView, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 interface KillsSettingsDialogProps {
   visible: boolean;
@@ -18,7 +18,6 @@ interface KillsSettingsDialogProps {
 export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visible, setVisible }) => {
   const [globalSettings, setGlobalSettings] = useKillsWidgetSettings();
   const localRef = useRef({
-    compact: globalSettings.compact,
     showAll: globalSettings.showAll,
     whOnly: globalSettings.whOnly,
     excludedSystems: globalSettings.excludedSystems || [],
@@ -31,7 +30,6 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   useEffect(() => {
     if (visible) {
       localRef.current = {
-        compact: globalSettings.compact,
         showAll: globalSettings.showAll,
         whOnly: globalSettings.whOnly,
         excludedSystems: globalSettings.excludedSystems || [],
@@ -41,14 +39,6 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
     }
   }, [visible, globalSettings]);
 
-  const handleCompactChange = useCallback((checked: boolean) => {
-    localRef.current = {
-      ...localRef.current,
-      compact: checked,
-    };
-    forceRender(n => n + 1);
-  }, []);
-
   const handleWHChange = useCallback((checked: boolean) => {
     localRef.current = {
       ...localRef.current,
@@ -57,8 +47,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
     forceRender(n => n + 1);
   }, []);
 
-  // Updated handler to set time range as a number: 1 or 24
-  const handleTimeRangeChange = useCallback((newTimeRange: 1 | 24) => {
+  const handleTimeRangeChange = useCallback((newTimeRange: number) => {
     localRef.current = {
       ...localRef.current,
       timeRange: newTimeRange,
@@ -99,22 +88,11 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
 
   const localData = localRef.current;
   const excluded = localData.excludedSystems || [];
+  const timeRangeOptions = [4, 12, 24];
 
   return (
     <Dialog header="Kills Settings" visible={visible} style={{ width: '440px' }} draggable={false} onHide={handleHide}>
       <div className="flex flex-col gap-3 p-2.5">
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="kills-compact-mode"
-            checked={localData.compact}
-            onChange={e => handleCompactChange(e.target.checked)}
-          />
-          <label htmlFor="kills-compact-mode" className="cursor-pointer">
-            Use compact mode
-          </label>
-        </div>
-
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -127,13 +105,25 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           </label>
         </div>
 
-        {/* Time Range Toggle using InputSwitch */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1">
           <span className="text-sm">Time Range:</span>
-          <InputSwitch checked={localData.timeRange === 24} onChange={e => handleTimeRangeChange(e.value ? 24 : 1)} />
-          <span className="text-sm">{localData.timeRange === 24 ? '24 Hours' : '1 Hour'}</span>
+          <div className="flex flex-wrap gap-2">
+            {timeRangeOptions.map(option => (
+              <label key={option} className="cursor-pointer flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="timeRange"
+                  value={option}
+                  checked={localData.timeRange === option}
+                  onChange={() => handleTimeRangeChange(option)}
+                />
+                <span className="text-sm">{option} Hours</span>
+              </label>
+            ))}
+          </div>
         </div>
 
+        {/* Excluded Systems */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <label className="text-sm text-stone-400">Excluded Systems</label>
@@ -146,8 +136,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
           {excluded.length === 0 && <div className="text-stone-500 text-xs italic">No systems excluded.</div>}
           {excluded.map(sysId => (
             <div key={sysId} className="flex items-center justify-between border-b border-stone-600 py-1 px-1 text-xs">
-              <SystemView systemId={sysId.toString()} hideRegion compact />
-
+              <SystemView systemId={sysId.toString()} hideRegion />
               <WdImgButton
                 className={PrimeIcons.TRASH}
                 onClick={() => handleRemoveSystem(sysId)}

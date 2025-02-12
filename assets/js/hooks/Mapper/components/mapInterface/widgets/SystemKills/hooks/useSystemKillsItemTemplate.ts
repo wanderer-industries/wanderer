@@ -4,14 +4,10 @@ import { VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { KillItemTemplate } from '../components/KillItemTemplate';
 
-export function useSystemKillsItemTemplate(
-  systemNameMap: Record<string, string>,
-  compact: boolean,
-  onlyOneSystem: boolean,
-) {
+export function useSystemKillsItemTemplate(systemNameMap: Record<string, string>, onlyOneSystem: boolean) {
   return useCallback(
     (kill: DetailedKill, options: VirtualScrollerTemplateOptions) =>
-      KillItemTemplate(systemNameMap, compact, onlyOneSystem, kill, options),
-    [systemNameMap, compact, onlyOneSystem],
+      KillItemTemplate(systemNameMap, onlyOneSystem, kill, options),
+    [systemNameMap, onlyOneSystem],
   );
 }

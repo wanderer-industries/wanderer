@@ -8,44 +8,39 @@ import classes from './SystemKillsContent.module.scss';
 export interface SystemKillsContentProps {
   kills: DetailedKill[];
   systemNameMap: Record<string, string>;
-  compact?: boolean;
   onlyOneSystem?: boolean;
   autoSize?: boolean;
-  timeRange: number;
+  timeRange?: number;
   limit?: number;
 }
 
 export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   kills,
   systemNameMap,
-  compact = false,
   onlyOneSystem = false,
   autoSize = false,
-  timeRange = 1,
+  timeRange = 4,
   limit,
 }) => {
   const processedKills = useMemo(() => {
-    // Filter kills with a valid kill_time and sort descending by kill_time.
     const sortedKills = kills
       .filter(k => k.kill_time)
       .sort((a, b) => new Date(b.kill_time!).getTime() - new Date(a.kill_time!).getTime());
 
     if (limit !== undefined) {
-      // If limit is provided, show only the newest kills up to the limit.
       return sortedKills.slice(0, limit);
     } else {
-      // Otherwise, filter by timeRange.
       const now = Date.now();
       const cutoff = now - timeRange * 60 * 60 * 1000;
       return sortedKills.filter(k => new Date(k.kill_time!).getTime() >= cutoff);
     }
   }, [kills, timeRange, limit]);
 
-  const itemSize = compact ? 35 : 50;
+  const itemSize = 35;
   const computedHeight = autoSize ? Math.max(processedKills.length, 1) * itemSize : undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollerRef = useRef<any>(null);
+  const scrollerRef = useRef<VirtualScroller | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
 
   useEffect(() => {
@@ -53,7 +48,6 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
       const measure = () => {
         const newHeight = containerRef.current?.clientHeight || 0;
         setContainerHeight(newHeight);
-        scrollerRef.current?.refresh?.();
       };
 
       measure();
@@ -68,7 +62,7 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     }
   }, [autoSize]);
 
-  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, compact, onlyOneSystem);
+  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
   const scrollerHeight = autoSize ? `${computedHeight}px` : containerHeight ? `${containerHeight}px` : '100%';
 
   return (
