@@ -64,6 +64,18 @@ defmodule WandererAppWeb.Layouts do
     """
   end
 
+  def donate_container(assigns) do
+    ~H"""
+    <.link
+      href="https://www.patreon.com/WandererLtd"
+      target="_blank"
+      class="flex flex-col p-4 items-center absolute bottom-52 left-1 gap-2 tooltip tooltip-right text-gray-400 hover:text-white"
+    >
+      <.icon name="hero-banknotes-solid" class="h-4 w-4" />
+    </.link>
+    """
+  end
+
   def feedback_container(assigns) do
     ~H"""
     <.link
