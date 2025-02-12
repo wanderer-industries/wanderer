@@ -90,11 +90,7 @@ $tooltip-bg: #202020;
 
   &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);
-    background-image: linear-gradient(
-      45deg,
-      var(--eve-solar-system-status-color-background),
-      transparent
-    );
+    background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
     &.selected {
       border-color: var(--eve-solar-system-status-color-home);
     }
@@ -102,11 +98,7 @@ $tooltip-bg: #202020;
 
   &.eve-system-status-friendly {
     border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-friendly-dark30),
-      transparent
-    );
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
     &.selected {
       border-color: var(--eve-solar-system-status-color-friendly-dark5);
     }
@@ -121,27 +113,15 @@ $tooltip-bg: #202020;
   }
 
   &.eve-system-status-warning {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-warning),
-      transparent
-    );
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
   }
 
   &.eve-system-status-dangerous {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-dangerous),
-      transparent
-    );
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
   }
 
   &.eve-system-status-target {
-    background-image: linear-gradient(
-      275deg,
-      var(--eve-solar-system-status-target),
-      transparent
-    );
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
   }
 }
 
@@ -254,7 +234,7 @@ $tooltip-bg: #202020;
     font-size: 11px;
     font-weight: 500;
     text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
-    color: var(--rf-tag-color, #38BDF8);
+    color: var(--rf-tag-color, #38bdf8);
   }
 
   /* Firefox kostyl */
@@ -263,7 +243,6 @@ $tooltip-bg: #202020;
       font-weight: bold;
     }
   }
-
 }
 
 .BottomRow {
@@ -376,4 +355,3 @@ $tooltip-bg: #202020;
     }
   }
 }
-

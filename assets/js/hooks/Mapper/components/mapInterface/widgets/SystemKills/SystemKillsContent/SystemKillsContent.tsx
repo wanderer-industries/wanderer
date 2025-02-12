@@ -5,6 +5,9 @@ import { VirtualScroller } from 'primereact/virtualscroller';
 import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsItemTemplate';
 import classes from './SystemKillsContent.module.scss';
 
+export const ITEM_HEIGHT = 35;
+export const CONTENT_MARGINS = 5;
+
 export interface SystemKillsContentProps {
   kills: DetailedKill[];
   systemNameMap: Record<string, string>;
@@ -36,8 +39,7 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     }
   }, [kills, timeRange, limit]);
 
-  const itemSize = 35;
-  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * itemSize : undefined;
+  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * ITEM_HEIGHT + CONTENT_MARGINS : undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<VirtualScroller | null>(null);
@@ -70,7 +72,7 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
       <VirtualScroller
         ref={autoSize ? undefined : scrollerRef}
         items={processedKills}
-        itemSize={itemSize}
+        itemSize={ITEM_HEIGHT}
         itemTemplate={itemTemplate}
         autoSize={autoSize}
         scrollWidth="100%"

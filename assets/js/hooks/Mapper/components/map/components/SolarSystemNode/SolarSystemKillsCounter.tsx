@@ -24,7 +24,6 @@ export const KillsCounter = ({ killsCount, systemId, className, children, size =
       <SystemKillsContent
         kills={detailedKills}
         systemNameMap={systemNameMap}
-        compact={true}
         onlyOneSystem={true}
         autoSize={true}
         limit={killsCount}
