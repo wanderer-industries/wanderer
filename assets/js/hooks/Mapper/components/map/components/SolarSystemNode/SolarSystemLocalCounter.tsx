@@ -24,13 +24,12 @@ export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIc
     return (
       <div
         style={{
-          width: '300px',
-          overflowX: 'hidden',
-          overflowY: 'auto',
-          height: '300px',
+          width: '100%',
+          minWidth: '300px',
+          overflow: 'hidden',
         }}
       >
-        <LocalCharactersList items={localCounterCharacters} itemTemplate={itemTemplate} itemSize={26} />
+        <LocalCharactersList items={localCounterCharacters} itemTemplate={itemTemplate} itemSize={26} autoSize={true} />
       </div>
     );
   }, [localCounterCharacters, itemTemplate]);
@@ -45,19 +44,16 @@ export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIc
         [classes.Pathfinder]: theme === AvailableThemes.pathfinder,
       })}
     >
-      <WdTooltipWrapper
-        // @ts-ignore
-        content={pilotTooltipContent}
-        position={TooltipPosition.right}
-        offset={0}
-      >
-        <div
-          className={clsx(classes.localCounter, {
-            [classes.hasUserCharacters]: hasUserCharacters,
-          })}
-        >
-          {showIcon && <i className="pi pi-users" />}
-          <span>{localCounterCharacters.length}</span>
+      <WdTooltipWrapper content={pilotTooltipContent} position={TooltipPosition.right} offset={0} interactive={true}>
+        <div className={clsx(classes.hoverTarget)}>
+          <div
+            className={clsx(classes.localCounter, {
+              [classes.hasUserCharacters]: hasUserCharacters,
+            })}
+          >
+            {showIcon && <i className="pi pi-users" />}
+            <span>{localCounterCharacters.length}</span>
+          </div>
         </div>
       </WdTooltipWrapper>
     </div>
