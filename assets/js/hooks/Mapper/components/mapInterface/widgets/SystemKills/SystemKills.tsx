@@ -91,10 +91,8 @@ export const SystemKills: React.FC = React.memo(() => {
           ) : (
             <div className="w-full h-full" style={{ height: '100%' }}>
               <SystemKillsContent
-                key={settings.compact ? 'compact' : 'normal'}
                 kills={filteredKills}
                 systemNameMap={systemNameMap}
-                compact={settings.compact}
                 onlyOneSystem={!visible}
                 timeRange={settings.timeRange}
               />

@@ -2,7 +2,6 @@ import { useMemo, useCallback } from 'react';
 import useLocalStorageState from 'use-local-storage-state';
 
 export interface KillsWidgetSettings {
-  compact: boolean;
   showAll: boolean;
   whOnly: boolean;
   excludedSystems: number[];
@@ -11,11 +10,10 @@ export interface KillsWidgetSettings {
 }
 
 export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
-  compact: true,
   showAll: false,
   whOnly: true,
   excludedSystems: [],
-  version: 1,
+  version: 2,
   timeRange: 1,
 };
 

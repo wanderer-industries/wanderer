@@ -5,7 +5,6 @@ import clsx from 'clsx';
 
 export function KillItemTemplate(
   systemNameMap: Record<string, string>,
-  compact: boolean,
   onlyOneSystem: boolean,
   kill: DetailedKill,
   options: VirtualScrollerTemplateOptions,
@@ -15,7 +14,7 @@ export function KillItemTemplate(
 
   return (
     <div style={{ height: `${options.props.itemSize}px` }} className={clsx({ 'bg-gray-900': options.odd })}>
-      <KillRow killDetails={kill} systemName={systemName} isCompact={compact} onlyOneSystem={onlyOneSystem} />
+      <KillRow killDetails={kill} systemName={systemName} onlyOneSystem={onlyOneSystem} />
     </div>
   );
 }

@@ -11,8 +11,8 @@ import {
   getPrimaryLogoAndTooltip,
   getAttackerPrimaryImageAndTooltip,
 } from '../helpers';
-import { WdTooltipWrapper } from '../../../../ui-kit/WdTooltipWrapper';
-import classes from './SystemKillRow.module.scss';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import classes from './KillRowDetail.module.scss';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 export interface CompactKillRowProps {
@@ -21,10 +21,10 @@ export interface CompactKillRowProps {
   onlyOneSystem: boolean;
 }
 
-export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, systemName, onlyOneSystem }) => {
+export const KillRowDetail: React.FC<CompactKillRowProps> = ({ killDetails, systemName, onlyOneSystem }) => {
   const {
     killmail_id = 0,
-    // Victim
+    // Victim data
     victim_char_name = 'Unknown Pilot',
     victim_alliance_ticker = '',
     victim_corp_ticker = '',
@@ -35,7 +35,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
     victim_corp_id = 0,
     victim_alliance_id = 0,
     victim_ship_type_id = 0,
-    // Attacker
+    // Attacker data
     final_blow_char_id = 0,
     final_blow_char_name = '',
     final_blow_alliance_ticker = '',
@@ -51,11 +51,12 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
 
   const attackerIsNpc = final_blow_char_id === 0;
 
+  // Define victim affiliation ticker.
   const victimAffiliationTicker = victim_alliance_ticker || victim_corp_ticker || 'No Ticker';
+
   const killValueFormatted = total_value != null && total_value > 0 ? `${formatISK(total_value)} ISK` : null;
-  const attackerName = attackerIsNpc ? '' : final_blow_char_name;
-  const attackerTicker = attackerIsNpc ? '' : final_blow_alliance_ticker || final_blow_corp_ticker || '';
   const killTimeAgo = kill_time ? formatTimeMixed(kill_time) : '0h ago';
+
   const attackerSubscript = getAttackerSubscript(killDetails);
 
   const { victimCorpLogoUrl, victimAllianceLogoUrl, victimShipUrl } = buildVictimImageUrls({
@@ -88,6 +89,12 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
     final_blow_ship_type_id,
   );
 
+  // Define attackerTicker to use the alliance ticker if available, otherwise the corp ticker.
+  const attackerTicker = attackerIsNpc ? '' : final_blow_alliance_ticker || final_blow_corp_ticker || '';
+
+  // For the attacker image link: if the attacker is not an NPC, link to the character page; otherwise, link to the kill page.
+  const attackerLink = attackerIsNpc ? zkillLink('kill', killmail_id) : zkillLink('character', final_blow_char_id);
+
   return (
     <div
       className={clsx(
@@ -95,6 +102,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
         'text-xs whitespace-nowrap overflow-hidden leading-none',
       )}
     >
+      {/* Victim Section */}
       <div className="flex items-center gap-1">
         {victimShipUrl && (
           <div className="relative shrink-0 w-8 h-8 overflow-hidden">
@@ -106,7 +114,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
             >
               <img
                 src={victimShipUrl}
-                alt="VictimShip"
+                alt="Victim Ship"
                 className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
               />
             </a>
@@ -122,7 +130,7 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
             >
               <img
                 src={victimPrimaryLogoUrl}
-                alt="VictimPrimaryLogo"
+                alt="Victim Primary Logo"
                 className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
               />
             </a>
@@ -146,10 +154,10 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
       </div>
       <div className="flex items-center ml-auto gap-2">
         <div className="flex flex-col items-end flex-1 min-w-0 overflow-hidden text-right leading-[1rem]">
-          {!attackerIsNpc && (attackerName || attackerTicker) && (
+          {!attackerIsNpc && (final_blow_char_name || attackerTicker) && (
             <div className="truncate text-stone-200">
-              {attackerName}
-              {attackerTicker && <span className="ml-1 text-stone-400">/ {attackerTicker}</span>}
+              {final_blow_char_name}
+              {!attackerIsNpc && attackerTicker && <span className="ml-1 text-stone-400">/ {attackerTicker}</span>}
             </div>
           )}
           <div className="truncate text-stone-400">
@@ -165,14 +173,14 @@ export const CompactKillRow: React.FC<CompactKillRowProps> = ({ killDetails, sys
         {attackerPrimaryImageUrl && (
           <WdTooltipWrapper content={attackerPrimaryTooltip} position={TooltipPosition.top}>
             <a
-              href={zkillLink('kill', killmail_id)}
+              href={attackerLink}
               target="_blank"
               rel="noopener noreferrer"
               className="relative block shrink-0 w-8 h-8 overflow-hidden"
             >
               <img
                 src={attackerPrimaryImageUrl}
-                alt={attackerIsNpc ? 'NpcShip' : 'AttackerPrimaryLogo'}
+                alt={attackerIsNpc ? 'NPC Ship' : 'Attacker Primary Logo'}
                 className={clsx(classes.killRowImage, 'w-full h-full object-contain')}
               />
               {attackerSubscript && (

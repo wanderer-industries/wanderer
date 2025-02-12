@@ -11,35 +11,28 @@ type KillsBookmarkTooltipProps = {
   systemId: string;
   className?: string;
   size?: TooltipSize;
-  timeRange?: number;
 } & WithChildren &
   WithClassName;
 
-export const KillsCounter = ({
-  killsCount,
-  systemId,
-  className,
-  children,
-  size = 'xs',
-  timeRange = 1,
-}: KillsBookmarkTooltipProps) => {
+export const KillsCounter = ({ killsCount, systemId, className, children, size = 'xs' }: KillsBookmarkTooltipProps) => {
   const { isLoading, kills: detailedKills, systemNameMap } = useKillsCounter({ realSystemId: systemId });
 
   if (!killsCount || detailedKills.length === 0 || !systemId || isLoading) return null;
 
   const tooltipContent = (
-    <SystemKillsContent
-      kills={detailedKills}
-      systemNameMap={systemNameMap}
-      compact={true}
-      onlyOneSystem={true}
-      autoSize={true}
-      timeRange={timeRange}
-    />
+    <div style={{ width: '100%', minWidth: '300px', overflow: 'hidden' }}>
+      <SystemKillsContent
+        kills={detailedKills}
+        systemNameMap={systemNameMap}
+        compact={true}
+        onlyOneSystem={true}
+        autoSize={true}
+        limit={killsCount}
+      />
+    </div>
   );
 
   return (
-    // @ts-ignore
     <WdTooltipWrapper content={tooltipContent} className={className} size={size} interactive={true}>
       {children}
     </WdTooltipWrapper>

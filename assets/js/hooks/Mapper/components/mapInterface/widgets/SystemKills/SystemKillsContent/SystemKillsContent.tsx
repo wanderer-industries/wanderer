@@ -2,57 +2,52 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { VirtualScroller } from 'primereact/virtualscroller';
-import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsTemplate';
+import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsItemTemplate';
+import classes from './SystemKillsContent.module.scss';
 
 export interface SystemKillsContentProps {
   kills: DetailedKill[];
   systemNameMap: Record<string, string>;
-  compact?: boolean;
   onlyOneSystem?: boolean;
   autoSize?: boolean;
-  timeRange: number;
+  timeRange?: number;
+  limit?: number;
 }
 
 export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   kills,
   systemNameMap,
-  compact = false,
   onlyOneSystem = false,
   autoSize = false,
-  timeRange = 1,
+  timeRange = 4,
+  limit,
 }) => {
   const processedKills = useMemo(() => {
-    const validKills = kills.filter(kill => kill.kill_time);
+    const sortedKills = kills
+      .filter(k => k.kill_time)
+      .sort((a, b) => new Date(b.kill_time!).getTime() - new Date(a.kill_time!).getTime());
 
-    const sortedKills = validKills.sort((a, b) => {
-      const timeA = a.kill_time ? new Date(a.kill_time).getTime() : 0;
-      const timeB = b.kill_time ? new Date(b.kill_time).getTime() : 0;
-      return timeB - timeA;
-    });
+    if (limit !== undefined) {
+      return sortedKills.slice(0, limit);
+    } else {
+      const now = Date.now();
+      const cutoff = now - timeRange * 60 * 60 * 1000;
+      return sortedKills.filter(k => new Date(k.kill_time!).getTime() >= cutoff);
+    }
+  }, [kills, timeRange, limit]);
 
-    const now = Date.now();
-    const cutoff = now - timeRange * 60 * 60 * 1000;
-    return sortedKills.filter(kill => {
-      if (!kill.kill_time) return false;
-      const killTime = new Date(kill.kill_time).getTime();
-      return killTime >= cutoff;
-    });
-  }, [kills, timeRange]);
-
-  const itemSize = compact ? 35 : 50;
-  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * itemSize + 5 : undefined;
+  const itemSize = 35;
+  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * itemSize : undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const scrollerRef = useRef<any>(null);
+  const scrollerRef = useRef<VirtualScroller | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
 
   useEffect(() => {
     if (!autoSize && containerRef.current) {
       const measure = () => {
-        const newHeight = containerRef.current?.clientHeight ?? 0;
+        const newHeight = containerRef.current?.clientHeight || 0;
         setContainerHeight(newHeight);
-        scrollerRef.current?.refresh?.();
       };
 
       measure();
@@ -67,18 +62,27 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     }
   }, [autoSize]);
 
-  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, compact, onlyOneSystem);
+  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
+  const scrollerHeight = autoSize ? `${computedHeight}px` : containerHeight ? `${containerHeight}px` : '100%';
 
   return (
-    <div ref={autoSize ? undefined : containerRef} className="w-full h-full">
+    <div ref={autoSize ? undefined : containerRef} className={clsx('w-full h-full', classes.wrapper)}>
       <VirtualScroller
         ref={autoSize ? undefined : scrollerRef}
         items={processedKills}
         itemSize={itemSize}
         itemTemplate={itemTemplate}
         autoSize={autoSize}
-        style={{ height: autoSize ? `${computedHeight}px` : containerHeight ? `${containerHeight}px` : '100%' }}
-        className={clsx('w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none')}
+        scrollWidth="100%"
+        style={{ height: scrollerHeight }}
+        className={clsx('w-full h-full custom-scrollbar select-none overflow-x-hidden overflow-y-auto', {
+          [classes.VirtualScroller]: !autoSize,
+        })}
+        pt={{
+          content: {
+            className: classes.scrollerContent,
+          },
+        }}
       />
     </div>
   );
