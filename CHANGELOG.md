@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.48.0](https://github.com/wanderer-industries/wanderer/compare/v1.47.6...v1.48.0) (2025-02-12)
+
+
+
+
+### Features:
+
+* autosize local character tooltip and increase hover target (#165)
+
 ## [v1.47.6](https://github.com/wanderer-industries/wanderer/compare/v1.47.5...v1.47.6) (2025-02-12)
 
 
