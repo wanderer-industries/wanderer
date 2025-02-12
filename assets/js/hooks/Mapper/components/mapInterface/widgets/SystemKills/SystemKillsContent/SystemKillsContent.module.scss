@@ -1,18 +1,12 @@
-.TableRowCompact {
-  height: 8px;
-  max-height: 8px;
-  font-size: 12px !important;
-  line-height: 8px;
+.wrapper {
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
-.Table {
-  font-size: 12px;
-  border-collapse: collapse;
-}
-
-.Tooltip {
-  white-space: pre-line;
-  line-height: 1.2rem;
+.scrollerContent {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .VirtualScroller {
