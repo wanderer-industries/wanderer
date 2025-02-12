@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.47.5](https://github.com/wanderer-industries/wanderer/compare/v1.47.4...v1.47.5) (2025-02-12)
+
+
+
+
+### Bug Fixes:
+
+* sync kills count bookmark and the kills widget (#160)
+
+* lazy load kills widget
+
 ## [v1.47.4](https://github.com/wanderer-industries/wanderer/compare/v1.47.3...v1.47.4) (2025-02-11)
 
 
