@@ -142,6 +142,43 @@
       placeholder="Select an owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
+
+    <!-- Divider between above inputs and the API key section -->
+    <hr class="my-4 border-gray-600" />
+
+    <!-- API Key Section -->
+    <div class="mt-2">
+      <label class="block text-sm font-medium text-gray-200 mb-1">ACL API key</label>
+      <div class="flex gap-2 items-center">
+        <.input
+          type="text"
+          field={f[:api_key]}
+          placeholder="No API Key yet"
+          readonly
+          class="flex-1"
+        />
+        <.button type="button" phx-click="generate-api-key" class="btn btn-primary">
+          Generate
+        </.button>
+        <.button
+          type="button"
+          phx-hook="CopyToClipboard"
+          id="copy-acl-api-key"
+          data-url={f[:api_key].value}
+          disabled={is_nil(f[:api_key].value) or f[:api_key].value == ""}
+          class={
+            if is_nil(f[:api_key].value) or f[:api_key].value == "" do
+              "copy-link btn rounded-md transition-colors duration-300 bg-gray-500 hover:bg-gray-500 text-gray-300 cursor-not-allowed"
+            else
+              "copy-link btn rounded-md transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+            end
+          }
+        >
+          Copy
+        </.button>
+      </div>
+    </div>
+
     <div class="modal-action">
       <.button class="mt-2" type="submit" phx-disable-with="Saving...">
         <%= (@live_action == :create && "Create") || "Save" %>
@@ -149,6 +186,8 @@
     </div>
   </.form>
 </.modal>
+
+
 
 <.modal
   :if={@live_action in [:add_members]}

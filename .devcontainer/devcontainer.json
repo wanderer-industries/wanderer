@@ -1,7 +1,12 @@
 {
   "name": "wanderer-dev",
   "dockerComposeFile": ["./docker-compose.yml"],
-  "extensions": ["jakebecker.elixir-ls"],
+  "extensions": [
+    "jakebecker.elixir-ls",
+    "JakeBecker.elixir-ls",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ],
   "service": "wanderer",
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",

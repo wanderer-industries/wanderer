@@ -118,6 +118,14 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckApiDisabled
   end
 
+  pipeline :api_character do
+    plug WandererAppWeb.Plugs.CheckCharacterApiDisabled
+  end
+
+  pipeline :api_acl do
+    plug WandererAppWeb.Plugs.CheckAclApiKey
+  end
+
   scope "/api/map/systems-kills", WandererAppWeb do
     pipe_through [:api, :api_map, :api_kills]
 
@@ -127,65 +135,82 @@ defmodule WandererAppWeb.Router do
   scope "/api/map", WandererAppWeb do
     pipe_through [:api, :api_map]
 
-    # GET /api/map/systems?map_id=... or ?slug=...
     get "/systems", MapAPIController, :list_systems
-
-    # GET /api/map/system?id=... plus either map_id=... or slug=...
     get "/system", MapAPIController, :show_system
-
-    # GET /api/map/characters?map_id=... or slug=...
     get "/characters", MapAPIController, :tracked_characters_with_info
-
-    # GET /api/map/structure-timers?map_id=... or slug=... and optionally ?system_id=...
     get "/structure-timers", MapAPIController, :show_structure_timers
+
+  end
+
+  scope "/api/characters", WandererAppWeb do
+    pipe_through [:api, :api_character]
+    get "/", CharactersAPIController, :index
+  end
+
+  scope "/api/acls", WandererAppWeb do
+    pipe_through [:api]
+
+    get "/", MapAccessListAPIController, :index
+    post "/", MapAccessListAPIController, :create
+  end
+
+  scope "/api/acls", WandererAppWeb do
+    pipe_through [:api, :api_acl]
+
+    get "/:id", MapAccessListAPIController, :show
+    put "/:id", MapAccessListAPIController, :update
+    post "/:acl_id/members", AccessListMemberAPIController, :create
+    put "/:acl_id/members/:member_id", AccessListMemberAPIController, :update_role
+    delete "/:acl_id/members/:member_id", AccessListMemberAPIController, :delete
   end
 
   scope "/api/common", WandererAppWeb do
     pipe_through [:api]
-
-    # GET /api/common/system-static-info?id=...
     get "/system-static-info", CommonAPIController, :show_system_static
   end
 
+  #
+  # Browser / blog stuff
+  #
   scope "/", WandererAppWeb do
     pipe_through [:browser, :blog, :redirect_if_user_is_authenticated]
-
     get "/welcome", BlogController, :index
   end
 
   scope "/contacts", WandererAppWeb do
     pipe_through [:browser, :blog]
-
     get "/", BlogController, :contacts
   end
 
   scope "/changelog", WandererAppWeb do
     pipe_through [:browser, :blog]
-
     get "/", BlogController, :changelog
   end
 
   scope "/news", WandererAppWeb do
     pipe_through [:browser, :blog]
-
     get "/:slug", BlogController, :show
     get "/", BlogController, :list
   end
 
   scope "/license", WandererAppWeb do
     pipe_through [:browser, :blog]
-
     get "/", BlogController, :license
   end
 
+  #
+  # Auth
+  #
   scope "/auth", WandererAppWeb do
     pipe_through :browser
-
     get "/signout", AuthController, :signout
     get "/:provider", AuthController, :request
     get "/:provider/callback", AuthController, :callback
   end
 
+  #
+  # Admin
+  #
   scope "/admin", WandererAppWeb do
     pipe_through(:browser)
     pipe_through(:admin_bauth)
@@ -207,53 +232,49 @@ defmodule WandererAppWeb.Router do
     )
   end
 
+  #
+  # Additional routes / Live sessions
+  #
   scope "/", WandererAppWeb do
     pipe_through(:browser)
 
     get "/", RedirectController, :redirect_authenticated
-    get("/last", MapsController, :last)
+    get "/last", MapsController, :last
 
     live_session :authenticated,
       on_mount: [
         {WandererAppWeb.UserAuth, :ensure_authenticated},
         WandererAppWeb.Nav
       ] do
-      live("/access-lists/new", AccessListsLive, :create)
-      live("/access-lists/:id/edit", AccessListsLive, :edit)
-      live("/access-lists/:id/add-members", AccessListsLive, :add_members)
-      live("/access-lists/:id", AccessListsLive, :members)
-      live("/access-lists", AccessListsLive, :index)
-      live("/coming-soon", ComingLive, :index)
-      live("/tracking/:slug", CharactersTrackingLive, :characters)
-      live("/tracking", CharactersTrackingLive, :index)
-      live("/characters", CharactersLive, :index)
-      live("/characters/authorize", CharactersLive, :authorize)
-      live("/maps/new", MapsLive, :create)
-      live("/maps/:slug/edit", MapsLive, :edit)
-      live("/maps/:slug/settings", MapsLive, :settings)
-      live("/maps", MapsLive, :index)
-      live("/profile", ProfileLive, :index)
-      live("/profile/deposit", ProfileLive, :deposit)
-      live("/profile/subscribe", ProfileLive, :subscribe)
-      live("/:slug/audit", MapAuditLive, :index)
-      live("/:slug", MapLive, :index)
+      live "/access-lists/new", AccessListsLive, :create
+      live "/access-lists/:id/edit", AccessListsLive, :edit
+      live "/access-lists/:id/add-members", AccessListsLive, :add_members
+      live "/access-lists/:id", AccessListsLive, :members
+      live "/access-lists", AccessListsLive, :index
+
+      live "/coming-soon", ComingLive, :index
+      live "/tracking/:slug", CharactersTrackingLive, :characters
+      live "/tracking", CharactersTrackingLive, :index
+      live "/characters", CharactersLive, :index
+      live "/characters/authorize", CharactersLive, :authorize
+      live "/maps/new", MapsLive, :create
+      live "/maps/:slug/edit", MapsLive, :edit
+      live "/maps/:slug/settings", MapsLive, :settings
+      live "/maps", MapsLive, :index
+      live "/profile", ProfileLive, :index
+      live "/profile/deposit", ProfileLive, :deposit
+      live "/profile/subscribe", ProfileLive, :subscribe
+      live "/:slug/audit", MapAuditLive, :index
+      live "/:slug", MapLive, :index
     end
   end
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:wanderer_app, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
       pipe_through(:browser)
-
       error_tracker_dashboard("/errors", as: :error_tracker_dev_dashboard)
-
       live_dashboard("/dashboard", metrics: WandererAppWeb.Telemetry)
     end
   end

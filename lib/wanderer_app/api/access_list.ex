@@ -48,7 +48,7 @@ defmodule WandererApp.Api.AccessList do
     end
 
     update :update do
-      accept [:name, :description, :owner_id]
+      accept [:name, :description, :owner_id, :api_key]
       primary?(true)
     end
 
@@ -65,6 +65,10 @@ defmodule WandererApp.Api.AccessList do
     end
 
     attribute :description, :string do
+      allow_nil? true
+    end
+
+    attribute :api_key, :string do
       allow_nil? true
     end
 
