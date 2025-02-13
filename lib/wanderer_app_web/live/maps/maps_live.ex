@@ -37,7 +37,14 @@ defmodule WandererAppWeb.MapsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(maps: [], characters: [], location: nil)}
+    {:ok,
+     socket
+     |> assign(
+       maps: [],
+       characters: [],
+       location: nil,
+       map_subscriptions: []
+     )}
   end
 
   @impl true
@@ -88,99 +95,119 @@ defmodule WandererAppWeb.MapsLive do
     end
   end
 
-  defp apply_action(socket, :edit, %{"slug" => map_slug} = _params, url) do
-    map =
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug!()
-      |> Ash.load!([:owner, :acls])
-      |> map_map()
+  defp apply_action(
+         %{assigns: %{current_user: current_user}} = socket,
+         :edit,
+         %{"slug" => map_slug} = _params,
+         url
+       ) do
+    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
+    |> case do
+      {:ok, map} ->
+        map = map |> map_map()
 
-    socket
-    |> assign(:active_page, :maps)
-    |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
-    |> assign(:page_title, "Maps - Edit")
-    |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
-    |> assign(:map_slug, map_slug)
-    |> assign(
-      :characters,
-      [map.owner |> map_character() | socket.assigns.characters] |> Enum.uniq()
-    )
-    |> assign(
-      :form,
-      map |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
-    )
-    |> load_access_lists()
+        socket
+        |> assign(:active_page, :maps)
+        |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
+        |> assign(:page_title, "Maps - Edit")
+        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(:map_slug, map_slug)
+        |> assign(
+          :characters,
+          [map.owner |> map_character() | socket.assigns.characters] |> Enum.uniq()
+        )
+        |> assign(
+          :form,
+          map |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
+        )
+        |> load_access_lists()
+
+      _ ->
+        socket
+        |> put_flash(:error, "You don't have an access.")
+        |> push_navigate(to: ~p"/maps")
+    end
   end
 
-  defp apply_action(socket, :settings, %{"slug" => map_slug} = _params, _url) do
-    map =
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug!()
-      |> Ash.load!([:owner, :acls])
+  defp apply_action(
+         %{assigns: %{current_user: current_user}} = socket,
+         :settings,
+         %{"slug" => map_slug} = _params,
+         _url
+       ) do
+    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
+    |> case do
+      {:ok, map} ->
+        {:ok, export_settings} =
+          map
+          |> WandererApp.Map.Server.get_export_settings()
 
-    {:ok, export_settings} =
-      map
-      |> WandererApp.Map.Server.get_export_settings()
+        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
 
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
+        {:ok, map_subscriptions} =
+          WandererApp.Map.SubscriptionManager.get_map_subscriptions(map.id)
 
-    {:ok, map_subscriptions} = WandererApp.Map.SubscriptionManager.get_map_subscriptions(map.id)
+        subscription_form = %{
+          "plan" => "omega",
+          "period" => "1",
+          "characters_limit" => "100",
+          "hubs_limit" => "10",
+          "auto_renew?" => true
+        }
 
-    subscription_form = %{
-      "plan" => "omega",
-      "period" => "1",
-      "characters_limit" => "100",
-      "hubs_limit" => "10",
-      "auto_renew?" => true
-    }
+        {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
 
-    {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
+        {:ok, estimated_price, discount} =
+          WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
 
-    {:ok, estimated_price, discount} =
-      WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
+        socket
+        |> assign(:active_page, :maps)
+        |> assign(:page_title, "Maps - Settings")
+        |> assign(:map_slug, map_slug)
+        |> assign(:map_id, map.id)
+        |> assign(:public_api_key, map.public_api_key)
+        |> assign(:map, map)
+        |> assign(
+          export_settings: export_settings |> _get_export_map_data(),
+          import_form: to_form(%{}),
+          importing: false,
+          show_settings?: true,
+          is_topping_up?: false,
+          active_settings_tab: "general",
+          is_adding_subscription?: false,
+          selected_subscription: nil,
+          options_form: options_form_data |> to_form(),
+          map_subscriptions: map_subscriptions,
+          subscription_form: subscription_form |> to_form(),
+          estimated_price: estimated_price,
+          discount: discount,
+          map_balance: map_balance,
+          topup_form: %{} |> to_form(),
+          subscription_plans: ["omega", "advanced"],
+          subscription_periods: [
+            {"1 Month", "1"},
+            {"3 Months", "3"},
+            {"6 Months", "6"},
+            {"1 Year", "12"}
+          ],
+          layout_options: [
+            {"Left To Right", "left_to_right"},
+            {"Top To Bottom", "top_to_bottom"}
+          ]
+        )
+        |> allow_upload(:settings,
+          accept: ~w(.json),
+          max_entries: 1,
+          max_file_size: 10_000_000,
+          auto_upload: true,
+          progress: &handle_progress/3
+        )
 
-    socket
-    |> assign(:active_page, :maps)
-    |> assign(:page_title, "Maps - Settings")
-    |> assign(:map_slug, map_slug)
-    |> assign(:map_id, map.id)
-    |> assign(:public_api_key, map.public_api_key)
-    |> assign(:map, map)
-    |> assign(
-      export_settings: export_settings |> _get_export_map_data(),
-      import_form: to_form(%{}),
-      importing: false,
-      show_settings?: true,
-      is_topping_up?: false,
-      active_settings_tab: "general",
-      is_adding_subscription?: false,
-      selected_subscription: nil,
-      options_form: options_form_data |> to_form(),
-      map_subscriptions: map_subscriptions,
-      subscription_form: subscription_form |> to_form(),
-      estimated_price: estimated_price,
-      discount: discount,
-      map_balance: map_balance,
-      topup_form: %{} |> to_form(),
-      subscription_plans: ["omega", "advanced"],
-      subscription_periods: [
-        {"1 Month", "1"},
-        {"3 Months", "3"},
-        {"6 Months", "6"},
-        {"1 Year", "12"}
-      ],
-      layout_options: [
-        {"Left To Right", "left_to_right"},
-        {"Top To Bottom", "top_to_bottom"}
-      ]
-    )
-    |> allow_upload(:settings,
-      accept: ~w(.json),
-      max_entries: 1,
-      max_file_size: 10_000_000,
-      auto_upload: true,
-      progress: &handle_progress/3
-    )
+      _ ->
+        socket
+        |> put_flash(:error, "You don't have an access.")
+        |> push_navigate(to: ~p"/maps")
+    end
   end
 
   defp allow_map_creation(),

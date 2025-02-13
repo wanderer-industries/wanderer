@@ -10,57 +10,38 @@ defmodule WandererAppWeb.MapAuditLive do
   def mount(
         %{"slug" => map_slug, "period" => period, "activity" => activity} = _params,
         _session,
-        socket
+        %{assigns: %{current_user: current_user}} = socket
       ) do
-    current_user = socket.assigns.current_user
-
-    map_slug
-    |> WandererApp.Api.Map.get_map_by_slug()
-    |> Ash.load([:acls, :user_permissions], actor: current_user)
+    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
     |> case do
       {:ok,
        %{
          id: map_id,
-         user_permissions: user_permissions,
-         name: map_name,
-         owner_id: owner_id
+         name: map_name
        } = _map} ->
-        user_permissions =
-          WandererApp.Permissions.get_map_permissions(
-            user_permissions,
-            owner_id,
-            current_user.characters |> Enum.map(& &1.id)
-          )
+        {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
 
-        case user_permissions.delete_map do
-          true ->
-            {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
-
-            {:ok,
-             socket
-             |> assign(
-               map_id: map_id,
-               map_name: map_name,
-               map_slug: map_slug,
-               map_subscription_active: is_subscription_active,
-               activity: activity,
-               can_undo_types: [:systems_removed],
-               period: period || "1H",
-               page: 1,
-               per_page: 25,
-               end_of_stream?: false
-             )
-             |> stream(:activity, [])}
-
-          _ ->
-            {:ok,
-             socket
-             |> put_flash(:error, "You don't have an access.")
-             |> push_navigate(to: ~p"/maps")}
-        end
+        {:ok,
+         socket
+         |> assign(
+           map_id: map_id,
+           map_name: map_name,
+           map_slug: map_slug,
+           map_subscription_active: is_subscription_active,
+           activity: activity,
+           can_undo_types: [:systems_removed],
+           period: period || "1H",
+           page: 1,
+           per_page: 25,
+           end_of_stream?: false
+         )
+         |> stream(:activity, [])}
 
       _ ->
-        {:ok, socket}
+        {:ok,
+         socket
+         |> put_flash(:error, "You don't have an access.")
+         |> push_navigate(to: ~p"/maps")}
     end
   end
 

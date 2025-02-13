@@ -185,7 +185,7 @@
 </.modal>
 
 <.modal
-  :if={@live_action in [:settings]}
+  :if={@live_action in [:settings] && not is_nil(assigns[:map])}
   title="Map Settings"
   class="!min-w-[700px]"
   id="map-settings-modal"
@@ -194,7 +194,7 @@
 >
   <div class="flex flex-col gap-3">
     <div class="flex flex-col gap-2">
-      <div class="_verticalTabsContainer_1o01l_2">
+      <div class="verticalTabsContainer">
         <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
           <div class="p-tabview-nav-container" data-pc-section="navcontainer">
             <div class="p-tabview-nav-content" data-pc-section="navcontent">
@@ -305,14 +305,6 @@
                       <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
                     </span>
                   </a>
-                </li>
-                <li
-                  aria-hidden="true"
-                  role="presentation"
-                  class="p-tabview-ink-bar"
-                  data-pc-section="inkbar"
-                  style="width: 146px; left: 0px;"
-                >
                 </li>
                 <li
                   :if={not WandererApp.Env.public_api_disabled?()}

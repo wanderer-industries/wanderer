@@ -295,4 +295,34 @@ defmodule WandererApp.Maps do
 
     character_eve_ids |> Enum.any?(fn eve_id -> eve_id in acl_roles_eve_ids end)
   end
+
+  def check_user_can_delete_map(map_slug, current_user) do
+    map_slug
+    |> WandererApp.Api.Map.get_map_by_slug()
+    |> Ash.load([:owner, :acls, :user_permissions], actor: current_user)
+    |> case do
+      {:ok,
+       %{
+         user_permissions: user_permissions,
+         owner_id: owner_id
+       } = map} ->
+        user_permissions =
+          WandererApp.Permissions.get_map_permissions(
+            user_permissions,
+            owner_id,
+            current_user.characters |> Enum.map(& &1.id)
+          )
+
+        case user_permissions.delete_map do
+          true ->
+            {:ok, map}
+
+          _ ->
+            {:error, :not_authorized}
+        end
+
+      error ->
+        {:error, error}
+    end
+  end
 end
