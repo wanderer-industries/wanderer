@@ -4,6 +4,7 @@ defmodule WandererAppWeb.Router do
   use Plug.ErrorHandler
 
   import PlugDynamic.Builder
+  import Logger
 
   import WandererAppWeb.UserAuth,
     warn: false,
@@ -134,13 +135,14 @@ defmodule WandererAppWeb.Router do
 
   scope "/api/map", WandererAppWeb do
     pipe_through [:api, :api_map]
-
     get "/systems", MapAPIController, :list_systems
     get "/system", MapAPIController, :show_system
     get "/characters", MapAPIController, :tracked_characters_with_info
     get "/structure-timers", MapAPIController, :show_structure_timers
     get "/acls", MapAccessListAPIController, :index
+    post "/acls", MapAccessListAPIController, :create
   end
+
 
   scope "/api/characters", WandererAppWeb do
     pipe_through [:api, :api_character]
@@ -151,6 +153,7 @@ defmodule WandererAppWeb.Router do
     pipe_through [:api, :api_acl]
 
     get "/:id", MapAccessListAPIController, :show
+    put "/:id", MapAccessListAPIController, :update
     post "/:acl_id/members", AccessListMemberAPIController, :create
     put "/:acl_id/members/:member_id", AccessListMemberAPIController, :update_role
     delete "/:acl_id/members/:member_id", AccessListMemberAPIController, :delete
