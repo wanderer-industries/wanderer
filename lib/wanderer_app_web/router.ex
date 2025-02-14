@@ -139,7 +139,7 @@ defmodule WandererAppWeb.Router do
     get "/system", MapAPIController, :show_system
     get "/characters", MapAPIController, :tracked_characters_with_info
     get "/structure-timers", MapAPIController, :show_structure_timers
-
+    get "/acls", MapAccessListAPIController, :index
   end
 
   scope "/api/characters", WandererAppWeb do
@@ -148,17 +148,9 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/api/acls", WandererAppWeb do
-    pipe_through [:api]
-
-    get "/", MapAccessListAPIController, :index
-    post "/", MapAccessListAPIController, :create
-  end
-
-  scope "/api/acls", WandererAppWeb do
     pipe_through [:api, :api_acl]
 
     get "/:id", MapAccessListAPIController, :show
-    put "/:id", MapAccessListAPIController, :update
     post "/:acl_id/members", AccessListMemberAPIController, :create
     put "/:acl_id/members/:member_id", AccessListMemberAPIController, :update_role
     delete "/:acl_id/members/:member_id", AccessListMemberAPIController, :delete

@@ -22,7 +22,8 @@ defmodule WandererAppWeb.MapAccessListAPIController do
   @doc """
   GET /api/acls?map_id=... or ?slug=...
 
-  Fetches ACLs for a given map if provided, otherwise all ACLs if none given.
+  Fetches ACLs for a given map if provided.
+  Returns a 400 error if neither a map_id nor slug is provided.
   """
   def index(conn, params) do
     case Util.fetch_map_id(params) do
@@ -42,51 +43,10 @@ defmodule WandererAppWeb.MapAccessListAPIController do
             |> json(%{error: inspect(error)})
         end
 
-      {:error, msg} when is_binary(msg) ->
-        list_all_acls(conn)
-
-      :error ->
-        list_all_acls(conn)
-    end
-  end
-
-  defp list_all_acls(conn) do
-    query = AccessList |> Ash.Query.new()
-    case WandererApp.Api.read(query) do
-      {:ok, all_acls} ->
-        json(conn, %{data: Enum.map(all_acls, &acl_to_json/1)})
-
-      {:error, reason} ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{error: "Failed to fetch ACLs: #{inspect(reason)}"})
-    end
-  end
-
-  @doc """
-  POST /api/acls
-
-  Creates a new Access List record.
-  Expects JSON like:
-      {
-        "acl": {
-          "name": "Some ACL",
-          "description": "Optional info",
-          "owner_id": "owner-character-uuid"
-        }
-      }
-  Returns the created ACL with its members (likely empty).
-  """
-  def create(conn, %{"acl" => acl_params}) do
-    case AccessList.create(acl_params) do
-      {:ok, new_acl} ->
-        {:ok, new_acl} = Ash.load(new_acl, :members)
-        json(conn, %{data: acl_to_json(new_acl)})
-
-      {:error, error} ->
+      {:error, msg} ->
         conn
         |> put_status(:bad_request)
-        |> json(%{error: "Failed to create ACL: #{inspect(error)}"})
+        |> json(%{error: msg})
     end
   end
 
@@ -126,43 +86,18 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  @doc """
-  PUT /api/acls/:id
-
-  Updates an existing ACL (e.g. name, description, owner_id).
-  Expects JSON under "acl". Does not handle nested member updates.
-  """
-  def update(conn, %{"id" => id, "acl" => acl_params}) do
-    with {:ok, acl} <- AccessList.by_id(%{id: id}),
-         {:ok, updated_acl} <- AccessList.update(acl, acl_params),
-         {:ok, updated_acl} <- Ash.load(updated_acl, :members) do
-      json(conn, %{data: acl_to_json(updated_acl)})
-    else
-      {:error, error} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Failed to update ACL: #{inspect(error)}"})
-    end
-  end
-
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
 
-  # Fetch the map by slug or UUID, then preload its ACLs.
+  # Fetch the map by UUID (the slug has been converted to a UUID by Util.fetch_map_id)
+  # then preload its ACLs.
   defp get_map(map_identifier) do
     query =
-      if Regex.match?(~r/^[0-9a-fA-F\-]{36}$/, map_identifier) do
-        Map
-        |> Ash.Query.new()
-        |> filter(id == ^map_identifier)
-        |> load([:acls])
-      else
-        Map
-        |> Ash.Query.new()
-        |> filter(slug == ^map_identifier)
-        |> load([:acls])
-      end
+      Map
+      |> Ash.Query.new()
+      |> filter(id == ^map_identifier)
+      |> load([:acls])
 
     case WandererApp.Api.read(query) do
       {:ok, [map]} ->

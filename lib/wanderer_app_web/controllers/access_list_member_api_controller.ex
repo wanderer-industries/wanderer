@@ -5,6 +5,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
 
   use WandererAppWeb, :controller
   alias WandererApp.Api.{AccessListMember, Character}
+  import Ash.Query
 
   @doc """
   POST /api/acls/:acl_id/members
@@ -20,13 +21,13 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       }
 
   Behavior:
-  The controller looks up the character by filtering on its external EVE ID (field `eve_id`),
+  The controller looks up the character by filtering on its external EVE ID (eve_id),
   injects the character's name into the membership, and creates the membership record.
   """
   def create(conn, %{"acl_id" => acl_id, "member" => member_params}) do
     with eve_id when not is_nil(eve_id) <- Map.get(member_params, "eve_character_id"),
          # Build a query to find the character by its external EVE id (eve_id)
-         query = Character |> Ash.Query.new() |> Ash.Query.filter(eve_id: eve_id),
+         query = Character |> Ash.Query.new() |> filter(eve_id == ^eve_id),
          {:ok, characters} <- WandererApp.Api.read(query),
          [character] <- characters do
       # Inject the looked-up name into the parameters.
@@ -72,14 +73,13 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
           "role": "admin"
         }
       }
-
   """
   def update_role(conn, %{"acl_id" => acl_id, "member_id" => eve_id, "member" => member_params}) do
     membership_query =
       AccessListMember
       |> Ash.Query.new()
-      |> Ash.Query.filter(eve_character_id: eve_id)
-      |> Ash.Query.filter(access_list_id: acl_id)
+      |> filter(eve_character_id == ^eve_id)
+      |> filter(access_list_id == ^acl_id)
 
     case WandererApp.Api.read(membership_query) do
       {:ok, [membership]} ->
@@ -109,14 +109,13 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   DELETE /api/acls/:acl_id/members/:member_id
 
   Deletes a member from an ACL based on the external EVE ID provided in the URL.
-
   """
   def delete(conn, %{"acl_id" => acl_id, "member_id" => eve_id}) do
     membership_query =
       AccessListMember
       |> Ash.Query.new()
-      |> Ash.Query.filter(eve_character_id: eve_id)
-      |> Ash.Query.filter(access_list_id: acl_id)
+      |> filter(eve_character_id == ^eve_id)
+      |> filter(access_list_id == ^acl_id)
 
     case WandererApp.Api.read(membership_query) do
       {:ok, [membership]} ->

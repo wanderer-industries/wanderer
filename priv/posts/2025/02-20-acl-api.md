@@ -1,7 +1,7 @@
 %{
   title: "User Guide: Characters & ACL API Endpoints",
   author: "Wanderer Team",
-  cover_image_uri: "/images/news/01-05-map-public-api/generate-key.png",
+  cover_image_uri: "/images/news/02-20-acl-api/generate-key.png",
   tags: ~w(acl characters guide interface),
   description: "Learn how to retrieve and manage Access Lists and Characters through the Wanderer public APIs. This guide covers available endpoints, request examples, and sample responses."
 }
@@ -14,7 +14,6 @@ Wanderer’s expanded public API now lets you retrieve **all characters** in the
 
 - Fetch a list of **all** EVE characters known to the system.
 - List ACLs for a given map.
-- Create and update individual ACLs.
 - Add, remove, and change the roles of ACL members.
 
 This guide provides step-by-step instructions, request/response examples, and details on how to authenticate each call.
@@ -32,6 +31,18 @@ Authorization: Bearer <REDACTED_TOKEN>
 If the token is missing or invalid, you’ll receive a `401 Unauthorized` error.
 _(No API key is required for some “common” endpoints, but ACL- and character-related endpoints require a valid token.)_
 
+
+There are two types of tokens in use currently -- one is for map specific items, and available in the map settings
+
+1. **Map API Token:** Available in the map settings. This token is used for map-specific endpoints (e.g. listing ACLs for a map).
+
+
+![Generate Map API Key](/images/news/01-05-map-public-api/generate-key.png "Generate Map API Key")
+
+2. **ACL API Token:** Available in the create/edit ACL screen. This token is used for ACL member management endpoints.
+
+![Generate ACL API Key](/images/news/02-20-acl-api/generate-key.png "Generate ACL API Key")
+
 ---
 
 ## Endpoints Overview
@@ -43,7 +54,7 @@ GET /api/characters
 ```
 
 - **Description:** Returns a list of **all** characters known to Wanderer.
-- **Authentication:** Required via `Authorization` header.
+- **Toggle:** The availability of this api is controlled by the env variable `WANDERER_CHARACTER_API_DISABLED`.  It is `false` by default
 - **Example Request:**
   ```
   curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
@@ -72,23 +83,23 @@ GET /api/characters
   }
   ```
 
-Use the `"id"` (or `"eve_id"`) when you want to reference a character in an ACL.
+Use the `"eve_id"` when you want to reference a character in an ACL.
 
 ---
 
 ### 2. List ACLs for a Given Map
 
 ```
-GET /api/acls?map_id=<UUID>
-GET /api/acls?slug=<map-slug>
+GET /api/map/acls?map_id=<UUID>
+GET /api/map/acls?slug=<map-slug>
 ```
 
 - **Description:** Lists all Access Lists (ACLs) associated with a map, specified by either `map_id` (UUID) or `slug`.
-- **Authentication:** Required via `Authorization` header.
+- **Authentication:** Required via `Authorization` header.  The token required here is the `PUBLIC_API_TOKEN` available in map settings of the map you are trying to access
 - **Example Request:**
   ```
   curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
-       "https://wanderer.example.com/api/acls?slug=mapname"
+       "https://wanderer.example.com/api/map/acls?slug=mapname"
   ```
 - **Example Response (redacted)**:
   ```
@@ -116,7 +127,7 @@ GET /api/acls/:id
 ```
 
 - **Description:** Fetches a single ACL by ID, with all its members preloaded.
-- **Authentication:** Required.
+- **Authentication:** Required, the token uses is the token available from the create/edit acl settings.
 - **Example Request:**
   ```
   curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
@@ -146,120 +157,25 @@ GET /api/acls/:id
 
 ---
 
-### 4. Create a New ACL
-
-```
-POST /api/acls
-```
-
-- **Description:** Creates a new Access List record.
-- **Authentication:** Required.
-- **Body:** JSON in the shape:
-  ```
-  {
-    "acl": {
-      "name": "...",
-      "description": "...",
-      "owner_id": "..."
-    }
-  }
-  ```
-  - `owner_id` is typically a **character** UUID from the `/api/characters` list.
-
-- **Example Request:**
-  ```
-  curl -X POST \
-       -H "Authorization: Bearer <REDACTED_TOKEN>" \
-       -H "Content-Type: application/json" \
-       -d '{
-         "acl": {
-           "name": "My Second ACL",
-           "description": "Created from cURL",
-           "owner_id": "d43a9083-2705-40c9-a314-f7f412346661"
-         }
-       }' \
-       "https://wanderer.example.com/api/acls"
-  ```
-- **Example Response (redacted)**:
-  ```
-  {
-    "data": {
-      "id": "008db28a-7106-43a3-ae18-680fec2463fa",
-      "name": "My Second ACL",
-      "description": "Created from cURL",
-      "owner_id": "d43a9083-2705-40c9-a314-f7f412346661",
-      "members": []
-    }
-  }
-  ```
-
----
-
-### 5. Update an ACL (Rename, etc.)
-
-```
-PUT /api/acls/:id
-```
-
-- **Description:** Updates an existing ACL’s top-level fields (name, description, owner_id, etc.).
-- **Authentication:** Required.
-- **Body:**
-  ```
-  {
-    "acl": {
-      "name": "...",
-      "description": "...",
-      "owner_id": "..."
-    }
-  }
-  ```
-- **Example Request:**
-  ```
-  curl -X PUT \
-       -H "Authorization: Bearer <REDACTED_TOKEN>" \
-       -H "Content-Type: application/json" \
-       -d '{
-         "acl": {
-           "name": "Renamed ACL from cURL",
-           "description": "I just updated it"
-         }
-       }' \
-       "https://wanderer.example.com/api/acls/008db28a-7106-43a3-ae18-680fec2463fa"
-  ```
-- **Example Response (redacted)**:
-  ```
-  {
-    "data": {
-      "id": "008db28a-7106-43a3-ae18-680fec2463fa",
-      "name": "Renamed ACL from cURL",
-      "description": "I just updated it",
-      "owner_id": "d43a9083-2705-40c9-a314-f7f412346661",
-      "members": [...]
-    }
-  }
-  ```
-
----
-
-### 6. Add a Member to an ACL
+### 4. Add a Member to an ACL
 
 ```
 POST /api/acls/:acl_id/members
 ```
 
 - **Description:** Adds a new member (character, corporation, or alliance) to the specified ACL.
-- **Authentication:** Required.
+- **Authentication:** Required, the token used is the token available from the create/edit acl settings.
 - **Body:**
   ```
   {
     "member": {
       "name": "Some Character",
-      "eve_character_id": "<CHARACTER_UUID>",
+      "eve_character_id": "<EVE_CHARACTER_ID>",
       "role": "viewer"
     }
   }
   ```
-  - `eve_character_id` is typically the **internal** `id` from `/api/characters`.
+  - `eve_character_id` is the characters external Eve ID.
 
 - **Example Request:**
   ```
@@ -269,7 +185,7 @@ POST /api/acls/:acl_id/members
        -d '{
          "member": {
            "name": "New Member",
-           "eve_character_id": "b374d9e6-47a7-4e20-85ad-d608809827b5",
+           "eve_character_id": "111111111",
            "role": "viewer"
          }
        }' \
@@ -291,17 +207,17 @@ POST /api/acls/:acl_id/members
 
 ---
 
-### 7. Change a Member’s Role
+### 5. Change a Member’s Role
 
 ```
 PUT /api/acls/:acl_id/members/:member_id
 ```
 
 - **Description:** Updates an ACL member’s `role` (e.g. `viewer` → `admin`).
-- **Authentication:** Required.
+- **Authentication:** Required, the token uses is the token available from the create/edit acl settings.
 - **Path Params:**
   - `:acl_id` is the ACL’s ID.
-  - `:member_id` is the **membership** row’s ID (returned by the creation above).
+  - `:member_id` is the Eve ID of the character whose role you want to update
 - **Body:**
   ```
   {
@@ -320,7 +236,7 @@ PUT /api/acls/:acl_id/members/:member_id
            "role": "admin"
          }
        }' \
-       "https://wanderer.example.com/api/acls/19712899-ec3a-47b1-b73b-2bae221c5513/members/3885e87b-341d-425a-a9d9-81ddde9dfa10"
+       "https://wanderer.example.com/api/acls/19712899-ec3a-47b1-b73b-2bae221c5513/members/"111111111"
   ```
 - **Example Response (redacted)**:
   ```
@@ -336,19 +252,19 @@ PUT /api/acls/:acl_id/members/:member_id
 
 ---
 
-### 8. Remove a Member from an ACL
+### 6. Remove a Member from an ACL
 
 ```
 DELETE /api/acls/:acl_id/members/:member_id
 ```
 
-- **Description:** Removes the member with ID `:member_id` from the specified ACL.
-- **Authentication:** Required.
+- **Description:** Removes the member with eve id `:member_id` from the specified ACL.
+- **Authentication:** Required, the token uses is the token available from the create/edit acl settings.
 - **Example Request:**
   ```
   curl -X DELETE \
        -H "Authorization: Bearer <REDACTED_TOKEN>" \
-       "https://wanderer.example.com/api/acls/19712899-ec3a-47b1-b73b-2bae221c5513/members/3885e87b-341d-425a-a9d9-81ddde9dfa10"
+       "https://wanderer.example.com/api/acls/19712899-ec3a-47b1-b73b-2bae221c5513/members/111111111"
   ```
 - **Example Response:**
   ```
@@ -362,8 +278,8 @@ DELETE /api/acls/:acl_id/members/:member_id
 This guide outlines how to:
 
 1. **List** all characters (`GET /api/characters`) so you can pick a valid character to add to your ACL.
-2. **List** or **show** ACLs (`GET /api/acls`...).
-3. **Create** a new ACL (`POST /api/acls`) or **update** it (`PUT /api/acls/:id`).
+2. **Show** ACLs for a specified map (`GET /api/map/acls`...).
+2. **Show**  ACL details (`GET /api/acls/:id`).
 4. **Add** members (characters, corps, alliances) to an ACL.
 5. **Change** their roles.
 6. **Remove** them from the ACL if needed.
