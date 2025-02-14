@@ -146,38 +146,45 @@
     <!-- Divider between above inputs and the API key section -->
     <hr class="my-4 border-gray-600" />
 
-    <!-- API Key Section -->
+    <!-- API Key Section with grid layout -->
     <div class="mt-2">
       <label class="block text-sm font-medium text-gray-200 mb-1">ACL API key</label>
-      <div class="flex gap-2 items-center">
-        <.input
-          type="text"
-          field={f[:api_key]}
-          placeholder="No API Key yet"
-          readonly
-          class="flex-1"
-        />
-        <.button type="button" phx-click="generate-api-key" class="btn btn-primary">
-          Generate
-        </.button>
-        <.button
-          type="button"
-          phx-hook="CopyToClipboard"
-          id="copy-acl-api-key"
-          data-url={f[:api_key].value}
-          disabled={is_nil(f[:api_key].value) or f[:api_key].value == ""}
-          class={
-            if is_nil(f[:api_key].value) or f[:api_key].value == "" do
-              "copy-link btn rounded-md transition-colors duration-300 bg-gray-500 hover:bg-gray-500 text-gray-300 cursor-not-allowed"
-            else
-              "copy-link btn rounded-md transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-            end
-          }
-        >
-          Copy
-        </.button>
+      <div class="grid grid-cols-12 gap-2">
+        <div class="col-span-7">
+          <.input
+            type="text"
+            field={f[:api_key]}
+            placeholder="No API Key yet"
+            readonly
+            class="w-full"
+          />
+        </div>
+        <div class="col-span-3">
+          <.button
+            type="button"
+            phx-click="generate-api-key"
+            class="p-button p-component p-button-primary w-full"
+            style="min-width: 0;"
+          >
+            <span class="p-button-label">Generate</span>
+          </.button>
+        </div>
+        <div class="col-span-2">
+          <.button
+            type="button"
+            phx-hook="CopyToClipboard"
+            id="copy-acl-api-key"
+            data-url={f[:api_key].value}
+            disabled={is_nil(f[:api_key].value) or f[:api_key].value == ""}
+            class={"p-button p-component w-full " <> if(is_nil(f[:api_key].value) or f[:api_key].value == "", do: "p-disabled", else: "")}
+          >
+            <span class="p-button-label">Copy</span>
+          </.button>
+        </div>
       </div>
     </div>
+
+    <hr class="my-4 border-gray-600" />
 
     <div class="modal-action">
       <.button class="mt-2" type="submit" phx-disable-with="Saving...">
@@ -186,8 +193,6 @@
     </div>
   </.form>
 </.modal>
-
-
 
 <.modal
   :if={@live_action in [:add_members]}
