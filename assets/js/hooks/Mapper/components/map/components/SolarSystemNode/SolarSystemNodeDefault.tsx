@@ -4,7 +4,7 @@ import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeDefault.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useLocalCounter, useSolarSystemNode, useNodeKillsCount } from '../../hooks/useSolarSystemLogic';
+import { useLocalCounter, useSolarSystemNode, useNodeKillsCount } from '../../hooks';
 import {
   EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,

@@ -6,9 +6,9 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types';
 const useThrottle = () => {
   const throttleSeed = useRef<number | null>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const throttleFunction = useRef((func: any, delay = 200) => {
     if (!throttleSeed.current) {
-      // Call the callback immediately for the first time
       func();
       throttleSeed.current = setTimeout(() => {
         throttleSeed.current = null;
@@ -75,7 +75,7 @@ export const useUpdateNodes = (nodes: Node<SolarSystemRawType>[]) => {
 
     const visibleNodes = new Set(nodes.filter(x => isNodeVisible(x, viewport)).map(x => x.id));
     update({ visibleNodes });
-  }, [nodes]);
+  }, [getViewport, nodes, update]);
 
   useOnViewportChange({
     onChange: () => throttle(updateNodesVisibility.bind(this)),
@@ -84,5 +84,5 @@ export const useUpdateNodes = (nodes: Node<SolarSystemRawType>[]) => {
 
   useEffect(() => {
     updateNodesVisibility();
-  }, [nodes]);
+  }, [nodes, updateNodesVisibility]);
 };
