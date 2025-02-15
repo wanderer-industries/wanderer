@@ -23,11 +23,6 @@
     color: var(--rf-has-user-characters);
   }
 
-  & > i {
-    font-size: 9px;
-    position: relative;
-  }
-
   & > span {
     font-size: 9px;
     line-height: 9px;
@@ -50,5 +45,12 @@
       position: relative;
       top: -1px;
     }
+  }
+}
+
+@layer overrides {
+  .localCounter :global(i.pi.pi-users) {
+    font-size: 9px !important;
+    position: relative;
   }
 }
