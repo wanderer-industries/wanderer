@@ -1,0 +1,24 @@
+.TableRowCompact {
+  height: 8px;
+  max-height: 8px;
+  font-size: 12px !important;
+  line-height: 8px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.pendingDeletion {
+  background-color: #f87171;
+  transition: background-color 0.2s ease;
+}
+
+
+.pendingDeletion td {
+  background-color: #f87171;
+  transition: background-color 0.2s ease;
+}
+
+.pendingDeletion {
+  background-color: #f87171;
+  transition: background-color 0.2s ease;
+}
