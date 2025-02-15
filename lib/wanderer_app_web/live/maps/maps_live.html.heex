@@ -7,7 +7,7 @@
           class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
           patch={~p"/maps/new"}
         >
-          <div class="card-body  justify-center items-center ">
+          <div class="card-body justify-center items-center">
             <.icon name="hero-plus-solid" class="w-20 h-20" />
             <h3 class="card-title text-center text-md">Create Map</h3>
           </div>
@@ -125,6 +125,7 @@
     <% end %>
   </main>
 </div>
+
 <.modal
   :if={@is_connected? && @live_action in [:create, :edit]}
   title={"#{(@live_action == :create && "Create") || "Edit"} Map"}
@@ -256,9 +257,7 @@
                   :if={@map_subscriptions_enabled?}
                   class={[
                     "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_settings_tab == "subscription"
-                    )
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "subscription")
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -310,9 +309,7 @@
                   :if={not WandererApp.Env.public_api_disabled?()}
                   class={[
                     "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_settings_tab == "public_api"
-                    )
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -414,10 +411,7 @@
               </div>
 
               <div
-                :if={
-                  @active_settings_tab == "public_api" and
-                    not WandererApp.Env.public_api_disabled?()
-                }
+                :if={@active_settings_tab == "public_api" and not WandererApp.Env.public_api_disabled?()}
                 class="p-6"
               >
                 <h2 class="text-lg font-semibold mb-4">Public API</h2>
@@ -439,29 +433,28 @@
                     />
                   </div>
                   <div class="flex items-center gap-2">
-                    <.button class="btn btn-primary rounded-md" phx-click="generate-map-api-key">
-                      Generate
+                    <.button
+                      type="button"
+                      phx-click="generate-map-api-key"
+                      class="p-button p-component p-button-primary"
+                      style="min-width: 120px;"
+                    >
+                      <span class="p-button-label">Generate</span>
                     </.button>
                     <.button
+                      type="button"
                       phx-hook="CopyToClipboard"
                       id="copy-map-api-key"
                       data-url={@public_api_key}
                       disabled={is_nil(@public_api_key)}
-                      class={
-                        if is_nil(@public_api_key) do
-                          "copy-link btn rounded-md transition-colors duration-300
-                        bg-gray-500 hover:bg-gray-500 text-gray-300 cursor-not-allowed"
-                        else
-                          "copy-link btn rounded-md transition-colors duration-300
-                        bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                        end
-                      }
+                      class={"p-button p-component " <> if(is_nil(@public_api_key), do: "p-disabled", else: "")}
                     >
-                      Copy
+                      <span class="p-button-label">Copy</span>
                     </.button>
                   </div>
                 </div>
               </div>
+
               <div :if={@active_settings_tab == "balance"}>
                 <div class="stats w-full bg-primary text-primary-content">
                   <div class="stat">
@@ -687,10 +680,8 @@
       <.button
         :if={@active_settings_tab == "subscription" && not @is_adding_subscription?}
         type="button"
-        disabled={
-          @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
-            @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha
-        }
+        disabled={@map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
+            @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha}
         phx-click="add_subscription"
       >
         Add subscription

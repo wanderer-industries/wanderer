@@ -314,6 +314,24 @@ defmodule WandererAppWeb.AccessListsLive do
     end
   end
 
+  def handle_event("generate-api-key", _params, socket) do
+    new_api_key = UUID.uuid4()
+    new_params = Map.put(socket.assigns.form.params || %{}, "api_key", new_api_key)
+    form = AshPhoenix.Form.validate(socket.assigns.form, new_params)
+    {:noreply, assign(socket, form: form)}
+  end
+
+  @impl true
+  def handle_event("noop", _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(event, body, socket) do
+    Logger.warning(fn -> "unhandled event: #{event} #{inspect(body)}" end)
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info(
         {"update_role", %{member_id: member_id, role: role}},
@@ -326,17 +344,6 @@ defmodule WandererAppWeb.AccessListsLive do
       |> Enum.find(&(&1.id == member_id))
 
     {:noreply, socket |> maybe_update_role(member, role_atom, access_list)}
-  end
-
-  @impl true
-  def handle_event("noop", _, socket) do
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event(event, body, socket) do
-    Logger.warning(fn -> "unhandled event: #{event} #{inspect(body)}" end)
-    {:noreply, socket}
   end
 
   @impl true

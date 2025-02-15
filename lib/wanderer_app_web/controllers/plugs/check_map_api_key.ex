@@ -5,6 +5,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   """
 
   import Plug.Conn
+  alias WandererAppWeb.UtilAPIController, as: Util
 
   def init(opts), do: opts
 
@@ -37,10 +38,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   end
 
   defp fetch_map(query_params) do
-    case fetch_map_id(query_params) do
-      {:ok, {:map, map}} ->
-        {:ok, map}
-
+    case Util.fetch_map_id(query_params) do
       {:ok, map_id} ->
         WandererApp.Api.Map.by_id(map_id)
 
@@ -48,20 +46,4 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
         error
     end
   end
-
-  defp fetch_map_id(%{"map_id" => mid}) when is_binary(mid) and mid != "" do
-    {:ok, mid}
-  end
-
-  defp fetch_map_id(%{"slug" => slug}) when is_binary(slug) and slug != "" do
-    case WandererApp.Api.Map.get_map_by_slug(slug) do
-      {:ok, map} ->
-        {:ok, {:map, map}}
-
-      {:error, _reason} ->
-        {:error, "No map found for slug=#{slug}"}
-    end
-  end
-
-  defp fetch_map_id(_), do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
 end
