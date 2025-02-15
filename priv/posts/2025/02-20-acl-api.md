@@ -115,10 +115,9 @@ curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
       "id": "19712899-ec3a-47b1-b73b-2bae221c5513",
       "name": "aclName",
       "description": null,
-      "owner_id": "d43a9083-2705-40c9-a314-f7f412346661",
+      "owner_eve_id": "11111111111",
       "inserted_at": "2025-02-13T03:32:25.144403Z",
       "updated_at": "2025-02-13T03:32:25.144403Z",
-      "members": []
     }
   ]
 }
