@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.49.0](https://github.com/wanderer-industries/wanderer/compare/v1.48.1...v1.49.0) (2025-02-15)
+
+
+
+
+### Features:
+
+* add api for acl management (#171)
+
 ## [v1.48.1](https://github.com/wanderer-industries/wanderer/compare/v1.48.0...v1.48.1) (2025-02-13)
 
 
