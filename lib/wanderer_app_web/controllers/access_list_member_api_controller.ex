@@ -4,7 +4,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   """
 
   use WandererAppWeb, :controller
-  alias WandererApp.Api.{AccessListMember, Character}
+  alias WandererApp.Api.AccessListMember
   import Ash.Query
 
   @doc """
@@ -21,18 +21,14 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       }
 
   Behavior:
-  The controller looks up the character by filtering on its external EVE ID (eve_id),
+  The controller looks up the character via the external API using its external EVE id (eve_id),
   injects the character's name into the membership, and creates the membership record.
   """
   def create(conn, %{"acl_id" => acl_id, "member" => member_params}) do
     with eve_id when not is_nil(eve_id) <- Map.get(member_params, "eve_character_id"),
-         # Build a query to find the character by its external EVE id (eve_id)
-         query = Character |> Ash.Query.new() |> filter(eve_id == ^eve_id),
-         {:ok, characters} <- WandererApp.Api.read(query),
-         [character] <- characters do
-      # Inject the looked-up name into the parameters.
-      member_params = Map.put(member_params, "name", character.name)
-      # Merge in the ACL id so that Ash knows which ACL the member belongs to.
+         {:ok, character_info} <- WandererApp.Esi.get_character_info(eve_id),
+         name when is_binary(name) <- Map.get(character_info, "name") do
+      member_params = Map.put(member_params, "name", name)
       merged_params = Map.put(member_params, "access_list_id", acl_id)
 
       case AccessListMember.create(merged_params) do
@@ -50,15 +46,15 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         |> put_status(:bad_request)
         |> json(%{error: "Missing eve_character_id in member payload"})
 
-      {:ok, []} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Character not found"})
-
       {:error, error} ->
         conn
         |> put_status(:bad_request)
-        |> json(%{error: "Character lookup failed: #{inspect(error)}"})
+        |> json(%{error: "Failed to lookup character: #{inspect(error)}"})
+
+      _ ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Unexpected error during character lookup"})
     end
   end
 
