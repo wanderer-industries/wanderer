@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.50.0](https://github.com/wanderer-industries/wanderer/compare/v1.49.0...v1.50.0) (2025-02-17)
+
+
+
+
+### Features:
+
+* allow addition of characters to acl without preregistration (#176)
+
 ## [v1.49.0](https://github.com/wanderer-industries/wanderer/compare/v1.48.1...v1.49.0) (2025-02-15)
 
 
