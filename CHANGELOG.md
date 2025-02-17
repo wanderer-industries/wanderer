@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.51.0](https://github.com/wanderer-industries/wanderer/compare/v1.50.0...v1.51.0) (2025-02-17)
+
+
+
+
+### Features:
+
+* add undo deletion for signatures (#155)
+
+* add undo for signature deletion and addition
+
 ## [v1.50.0](https://github.com/wanderer-industries/wanderer/compare/v1.49.0...v1.50.0) (2025-02-17)
 
 
