@@ -17,7 +17,7 @@ export interface MapSettingsProps {
   systemId: string;
   show: boolean;
   onHide: () => void;
-  signatureData: SystemSignature | null;
+  signatureData: SystemSignature | undefined;
 }
 
 export const SignatureSettings = ({ systemId, show, onHide, signatureData }: MapSettingsProps) => {
