@@ -45,6 +45,8 @@ interface SystemSignaturesContentProps {
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
 }
 
+const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
+
 export function SystemSignaturesContent({
   systemId,
   settings,
@@ -211,6 +213,7 @@ export function SystemSignaturesContent({
           <Column
             field="icon"
             header=""
+            headerStyle={headerInlineStyle}
             body={sig => renderIcon(sig)}
             bodyClassName="p-0 px-1"
             style={{ maxWidth: 26, minWidth: 26, width: 26 }}
@@ -218,6 +221,7 @@ export function SystemSignaturesContent({
           <Column
             field="eve_id"
             header="Id"
+            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: 72, minWidth: 72, width: 72 }}
             sortable
@@ -225,6 +229,7 @@ export function SystemSignaturesContent({
           <Column
             field="group"
             header="Group"
+            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: 110, minWidth: 110, width: 110 }}
             body={sig => sig.group ?? ''}
@@ -234,6 +239,7 @@ export function SystemSignaturesContent({
           <Column
             field="info"
             header="Info"
+            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: nameColumnWidth }}
             hidden={isCompact || isMedium}
@@ -243,6 +249,7 @@ export function SystemSignaturesContent({
             <Column
               field="description"
               header="Description"
+              headerStyle={headerInlineStyle}
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               hidden={isCompact}
               body={renderDescription}
@@ -252,6 +259,7 @@ export function SystemSignaturesContent({
           <Column
             field="inserted_at"
             header="Added"
+            headerStyle={headerInlineStyle}
             dataType="date"
             body={renderAddedTimeLeft}
             style={{ minWidth: 70, maxWidth: 80 }}
@@ -262,6 +270,7 @@ export function SystemSignaturesContent({
             <Column
               field="updated_at"
               header="Updated"
+              headerStyle={headerInlineStyle}
               dataType="date"
               body={renderUpdatedTimeLeft}
               style={{ minWidth: 70, maxWidth: 80 }}
@@ -272,6 +281,7 @@ export function SystemSignaturesContent({
           {!selectable && (
             <Column
               header=""
+              headerStyle={headerInlineStyle}
               body={() => (
                 <div className="flex justify-end items-center gap-2 mr-[4px]">
                   <WdTooltipWrapper content="Double-click a row to edit signature">
