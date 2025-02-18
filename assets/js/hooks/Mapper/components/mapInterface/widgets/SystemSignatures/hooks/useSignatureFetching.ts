@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import { SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { ExtendedSystemSignature, prepareUpdatePayload, getActualSigs } from '../helpers';
+import { ExtendedSystemSignature, prepareUpdatePayload, getActualSigs, mergeLocalPendingAdditions } from '../helpers';
 import { UseFetchingParams } from './types';
+import { FINAL_DURATION_MS } from '../constants';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export function useSignatureFetching({
@@ -33,7 +34,7 @@ export function useSignatureFetching({
       ...s,
       character_name: characters.find(c => c.eve_id === s.character_eve_id)?.name,
     })) as ExtendedSystemSignature[];
-    setSignatures(extended);
+    setSignatures(prev => mergeLocalPendingAdditions(extended, prev));
   }, [characters, systemId, localPendingDeletions, outCommand, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
@@ -45,12 +46,24 @@ export function useSignatureFetching({
         skipUpdateUntouched,
       );
 
+      if (added.length > 0) {
+        const now = Date.now();
+        setSignatures(prev => [
+          ...prev,
+          ...added.map(a => ({
+            ...a,
+            pendingAddition: true,
+            pendingUntil: now + FINAL_DURATION_MS,
+          })),
+        ]);
+      }
+
       await outCommand({
         type: OutCommand.updateSignatures,
         data: prepareUpdatePayload(systemId, added, updated, removed),
       });
     },
-    [systemId, signaturesRef, outCommand],
+    [systemId, outCommand, signaturesRef, setSignatures],
   );
 
   return {

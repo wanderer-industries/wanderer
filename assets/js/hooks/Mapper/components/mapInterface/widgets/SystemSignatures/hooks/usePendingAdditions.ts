@@ -5,12 +5,20 @@ import { FINAL_DURATION_MS } from '../constants';
 
 export function usePendingAdditions({ setSignatures }: UsePendingAdditionParams) {
   const [pendingUndoAdditions, setPendingUndoAdditions] = useState<ExtendedSystemSignature[]>([]);
-
   const pendingAdditionMapRef = useRef<Record<string, { finalUntil: number; finalTimeoutId: number }>>({});
 
   const processAddedSignatures = useCallback(
     (added: ExtendedSystemSignature[]) => {
       if (!added.length) return;
+      const now = Date.now();
+      setSignatures(prev => [
+        ...prev,
+        ...added.map(sig => ({
+          ...sig,
+          pendingAddition: true,
+          pendingUntil: now + FINAL_DURATION_MS,
+        })),
+      ]);
       added.forEach(sig => {
         schedulePendingAdditionForSig(
           sig,
@@ -29,7 +37,6 @@ export function usePendingAdditions({ setSignatures }: UsePendingAdditionParams)
       clearTimeout(finalTimeoutId);
     });
     pendingAdditionMapRef.current = {};
-
     setSignatures(prev =>
       prev.map(x => (x.pendingAddition ? { ...x, pendingAddition: false, pendingUntil: undefined } : x)),
     );

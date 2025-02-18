@@ -55,6 +55,22 @@ export function schedulePendingAdditionForSig(
   );
 }
 
+export function mergeLocalPendingAdditions(
+  serverSigs: ExtendedSystemSignature[],
+  localSigs: ExtendedSystemSignature[],
+): ExtendedSystemSignature[] {
+  const now = Date.now();
+  const pendingAdditions = localSigs.filter(sig => sig.pendingAddition && sig.pendingUntil && sig.pendingUntil > now);
+  const mergedMap = new Map<string, ExtendedSystemSignature>();
+  serverSigs.forEach(sig => mergedMap.set(sig.eve_id, sig));
+  pendingAdditions.forEach(sig => {
+    if (!mergedMap.has(sig.eve_id)) {
+      mergedMap.set(sig.eve_id, sig);
+    }
+  });
+  return Array.from(mergedMap.values());
+}
+
 export function scheduleLazyDeletionTimers(
   toRemove: ExtendedSystemSignature[],
   setPendingMap: React.Dispatch<React.SetStateAction<Record<string, { finalUntil: number; finalTimeoutId: number }>>>,
