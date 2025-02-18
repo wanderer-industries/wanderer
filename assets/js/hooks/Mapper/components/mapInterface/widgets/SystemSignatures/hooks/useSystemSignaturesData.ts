@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
@@ -9,13 +8,14 @@ import {
   KEEP_LAZY_DELETE_SETTING,
   LAZY_DELETE_SIGNATURES_SETTING,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
-import { ExtendedSystemSignature, getActualSigs } from '../helpers';
+import { ExtendedSystemSignature, getActualSigs, mergeLocalPendingAdditions } from '../helpers';
 import { useSignatureFetching } from './useSignatureFetching';
 import { usePendingAdditions } from './usePendingAdditions';
 import { usePendingDeletions } from './usePendingDeletions';
 import { UseSystemSignaturesDataProps } from './types';
 import { TIME_ONE_DAY, TIME_ONE_WEEK } from '../constants';
 import { SignatureGroup } from '@/hooks/Mapper/types';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export function useSystemSignaturesData({
   systemId,
@@ -25,9 +25,7 @@ export function useSystemSignaturesData({
   onLazyDeleteChange,
 }: UseSystemSignaturesDataProps) {
   const { outCommand } = useMapRootState();
-
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
-
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
 
   const { localPendingDeletions, setLocalPendingDeletions, processRemovedSignatures, clearPendingDeletions } =
@@ -51,7 +49,6 @@ export function useSystemSignaturesData({
   const handlePaste = useCallback(
     async (clipboardString: string) => {
       const lazyDeleteValue = settings.find(s => s.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
-
       const incomingSignatures = parseSignatures(
         clipboardString,
         settings.map(s => s.key),
@@ -79,8 +76,15 @@ export function useSystemSignaturesData({
             removed: [],
           },
         });
-        const finalSigs = (resp.signatures ?? []) as SystemSignature[];
-        setSignatures(finalSigs.map(x => ({ ...x })));
+        if (resp) {
+          const finalSigs = (resp.signatures ?? []) as SystemSignature[];
+          setSignatures(prev =>
+            mergeLocalPendingAdditions(
+              finalSigs.map(x => ({ ...x })),
+              prev,
+            ),
+          );
+        }
       }
 
       const keepLazy = settings.find(s => s.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
@@ -115,16 +119,9 @@ export function useSystemSignaturesData({
   const undoPending = useCallback(() => {
     clearPendingDeletions();
     clearPendingAdditions();
-
     setSignatures(prev =>
-      prev.map(x => {
-        if (x.pendingDeletion) {
-          return { ...x, pendingDeletion: false, pendingUntil: undefined };
-        }
-        return x;
-      }),
+      prev.map(x => (x.pendingDeletion ? { ...x, pendingDeletion: false, pendingUntil: undefined } : x)),
     );
-
     if (pendingUndoAdditions.length) {
       pendingUndoAdditions.forEach(async sig => {
         await outCommand({
@@ -140,7 +137,6 @@ export function useSystemSignaturesData({
       setSignatures(prev => prev.filter(x => !pendingUndoAdditions.some(u => u.eve_id === x.eve_id)));
       setPendingUndoAdditions([]);
     }
-
     setLocalPendingDeletions([]);
   }, [
     clearPendingDeletions,

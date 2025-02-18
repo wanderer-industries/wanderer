@@ -19,14 +19,28 @@ export function usePendingDeletions({ systemId, setSignatures }: UsePendingDelet
       updated: ExtendedSystemSignature[],
     ) => {
       if (!removed.length) return;
-      const processedRemoved = removed.map(r => ({ ...r, pendingDeletion: true, pendingAddition: false }));
+      const now = Date.now();
+      const processedRemoved = removed.map(r => ({
+        ...r,
+        pendingDeletion: true,
+        pendingAddition: false,
+        pendingUntil: now + FINAL_DURATION_MS,
+      }));
       setLocalPendingDeletions(prev => [...prev, ...processedRemoved]);
 
-      const resp = await outCommand({
+      outCommand({
         type: OutCommand.updateSignatures,
         data: prepareUpdatePayload(systemId, added, updated, []),
       });
-      const updatedFromServer = resp.signatures as ExtendedSystemSignature[];
+
+      setSignatures(prev =>
+        prev.map(sig => {
+          if (processedRemoved.find(r => r.eve_id === sig.eve_id)) {
+            return { ...sig, pendingDeletion: true, pendingUntil: now + FINAL_DURATION_MS };
+          }
+          return sig;
+        }),
+      );
 
       scheduleLazyDeletionTimers(
         processedRemoved,
@@ -41,18 +55,6 @@ export function usePendingDeletions({ systemId, setSignatures }: UsePendingDelet
         },
         FINAL_DURATION_MS,
       );
-
-      const now = Date.now();
-      const updatedWithRemoval = updatedFromServer.map(sig => {
-        const wasRemoved = processedRemoved.find(r => r.eve_id === sig.eve_id);
-        return wasRemoved ? { ...sig, pendingDeletion: true, pendingUntil: now + FINAL_DURATION_MS } : sig;
-      });
-
-      const extras = processedRemoved
-        .map(r => ({ ...r, pendingDeletion: true, pendingUntil: now + FINAL_DURATION_MS }))
-        .filter(r => !updatedWithRemoval.some(m => m.eve_id === r.eve_id));
-
-      setSignatures([...updatedWithRemoval, ...extras]);
     },
     [systemId, outCommand, setSignatures],
   );
@@ -60,7 +62,6 @@ export function usePendingDeletions({ systemId, setSignatures }: UsePendingDelet
   const clearPendingDeletions = useCallback(() => {
     Object.values(pendingDeletionMap).forEach(({ finalTimeoutId }) => clearTimeout(finalTimeoutId));
     setPendingDeletionMap({});
-
     setSignatures(prev =>
       prev.map(x => (x.pendingDeletion ? { ...x, pendingDeletion: false, pendingUntil: undefined } : x)),
     );
@@ -72,7 +73,6 @@ export function usePendingDeletions({ systemId, setSignatures }: UsePendingDelet
     setLocalPendingDeletions,
     pendingDeletionMap,
     setPendingDeletionMap,
-
     processRemovedSignatures,
     clearPendingDeletions,
   };
