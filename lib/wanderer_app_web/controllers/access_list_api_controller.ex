@@ -170,12 +170,30 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Associate the new ACL with the map by updating the map's acls list.
   defp associate_acl_with_map(map, new_acl) do
-    current_acls = map.acls || []
-    updated_acls = current_acls ++ [new_acl]
-    case WandererApp.Map.update_map(map.map_id, %{acls: updated_acls}) do
-      _ -> :ok
+    with {:ok, api_map} <- WandererApp.Api.Map.by_id(map.map_id || map.id),
+         {:ok, loaded_map} <- Ash.load(api_map, :acls) do
+      # Ensure new_acl is an ID
+      new_acl_id = if is_binary(new_acl), do: new_acl, else: new_acl.id
+
+      current_acls = loaded_map.acls || []
+      updated_acls = current_acls ++ [new_acl_id]
+
+      case WandererApp.Api.Map.update_acls(loaded_map, %{acls: updated_acls}) do
+        {:ok, updated_map} ->
+          {:ok, updated_map}
+
+        {:error, error} ->
+          Logger.error("Failed to update map #{loaded_map.id} with new ACL: #{inspect(error)}")
+          {:error, error}
+      end
+    else
+      error ->
+        Logger.error("Error loading map ACLs: #{inspect(error)}")
+        {:error, error}
     end
   end
+
+
+
 end
