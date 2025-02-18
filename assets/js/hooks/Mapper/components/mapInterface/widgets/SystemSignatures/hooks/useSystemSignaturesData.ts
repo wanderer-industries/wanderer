@@ -33,7 +33,6 @@ export function useSystemSignaturesData({
   const { localPendingDeletions, setLocalPendingDeletions, processRemovedSignatures, clearPendingDeletions } =
     usePendingDeletions({
       systemId,
-      outCommand,
       setSignatures,
     });
 
@@ -46,7 +45,6 @@ export function useSystemSignaturesData({
     systemId,
     signaturesRef,
     setSignatures,
-    outCommand,
     localPendingDeletions,
   });
 
@@ -191,7 +189,7 @@ export function useSystemSignaturesData({
   }, [systemId, handleGetSignatures, setSignatures]);
 
   useEffect(() => {
-    onCountChange(signatures.length);
+    onCountChange?.(signatures.length);
   }, [signatures, onCountChange]);
 
   return {

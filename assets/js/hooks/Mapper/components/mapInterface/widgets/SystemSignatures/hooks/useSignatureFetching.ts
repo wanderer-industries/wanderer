@@ -3,14 +3,19 @@ import { SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { ExtendedSystemSignature, prepareUpdatePayload, getActualSigs } from '../helpers';
 import { UseFetchingParams } from './types';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export function useSignatureFetching({
   systemId,
   signaturesRef,
   setSignatures,
-  outCommand,
   localPendingDeletions,
 }: UseFetchingParams) {
+  const {
+    data: { characters },
+    outCommand,
+  } = useMapRootState();
+
   const handleGetSignatures = useCallback(async () => {
     if (!systemId) {
       setSignatures([]);
@@ -24,9 +29,12 @@ export function useSignatureFetching({
       data: { system_id: systemId },
     });
     const serverSigs = (resp.signatures ?? []) as SystemSignature[];
-    const extended = serverSigs.map(x => ({ ...x })) as ExtendedSystemSignature[];
+    const extended = serverSigs.map(s => ({
+      ...s,
+      character_name: characters.find(c => c.eve_id === s.character_eve_id)?.name,
+    })) as ExtendedSystemSignature[];
     setSignatures(extended);
-  }, [systemId, localPendingDeletions, outCommand, setSignatures]);
+  }, [characters, systemId, localPendingDeletions, outCommand, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
@@ -37,14 +45,12 @@ export function useSignatureFetching({
         skipUpdateUntouched,
       );
 
-      const resp = await outCommand({
+      await outCommand({
         type: OutCommand.updateSignatures,
         data: prepareUpdatePayload(systemId, added, updated, removed),
       });
-      const final = (resp.signatures ?? []) as SystemSignature[];
-      setSignatures(final.map(x => ({ ...x })) as ExtendedSystemSignature[]);
     },
-    [systemId, signaturesRef, outCommand, setSignatures],
+    [systemId, signaturesRef, outCommand],
   );
 
   return {

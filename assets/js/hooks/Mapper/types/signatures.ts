@@ -1,4 +1,4 @@
-import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 
 export enum SignatureGroup {
   CosmicSignature = 'Cosmic Signature',
@@ -33,6 +33,8 @@ export type SignatureCustomInfo = {
 
 export type SystemSignature = {
   eve_id: string;
+  character_eve_id: string;
+  character_name?: string;
   kind: SignatureKind;
   name: string;
   // SignatureCustomInfo

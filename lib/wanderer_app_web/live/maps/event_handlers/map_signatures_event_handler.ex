@@ -89,132 +89,30 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           }
         } = socket
       ) do
-    WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-      map_id: map_id,
-      solar_system_id: solar_system_id |> String.to_integer()
+    first_character_eve_id =
+      user_characters |> List.first()
+
+    character =
+      current_user.characters
+      |> Enum.find(fn c -> c.eve_id === first_character_eve_id end)
+
+    delete_connection_with_sigs =
+      map_user_settings
+      |> WandererApp.MapUserSettingsRepo.to_form_data!()
+      |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
+
+    map_id
+    |> WandererApp.Map.Server.update_signatures(%{
+      solar_system_id: solar_system_id |> String.to_integer(),
+      character: character,
+      user_id: current_user.id,
+      delete_connection_with_sigs: delete_connection_with_sigs,
+      added_signatures: added_signatures,
+      updated_signatures: updated_signatures,
+      removed_signatures: removed_signatures
     })
-    |> case do
-      {:ok, system} ->
-        first_character_eve_id =
-          user_characters |> List.first()
 
-        case not is_nil(first_character_eve_id) do
-          true ->
-            added_signatures =
-              added_signatures
-              |> parse_signatures(first_character_eve_id, system.id)
-
-            updated_signatures =
-              updated_signatures
-              |> parse_signatures(first_character_eve_id, system.id)
-
-            updated_signatures_eve_ids =
-              updated_signatures
-              |> Enum.map(fn s -> s.eve_id end)
-
-            removed_signatures_eve_ids =
-              removed_signatures
-              |> parse_signatures(first_character_eve_id, system.id)
-              |> Enum.map(fn s -> s.eve_id end)
-
-            delete_connection_with_sigs =
-              map_user_settings
-              |> WandererApp.MapUserSettingsRepo.to_form_data!()
-              |> WandererApp.MapUserSettingsRepo.get_boolean_setting(
-                "delete_connection_with_sigs"
-              )
-
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id in removed_signatures_eve_ids end)
-            |> Enum.each(fn s ->
-              if delete_connection_with_sigs && not is_nil(s.linked_system_id) do
-                map_id
-                |> WandererApp.Map.Server.delete_connection(%{
-                  solar_system_source_id: system.solar_system_id,
-                  solar_system_target_id: s.linked_system_id
-                })
-              end
-
-              if not is_nil(s.linked_system_id) do
-                map_id
-                |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
-                  solar_system_id: s.linked_system_id,
-                  linked_sig_eve_id: nil
-                })
-              end
-
-              s
-              |> Ash.destroy!()
-            end)
-
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id in updated_signatures_eve_ids end)
-            |> Enum.each(fn s ->
-              updated = updated_signatures |> Enum.find(fn u -> u.eve_id == s.eve_id end)
-
-              if not is_nil(updated) do
-                s
-                |> WandererApp.Api.MapSystemSignature.update(
-                  updated
-                  |> Map.put(:updated, System.os_time())
-                )
-              end
-            end)
-
-            added_signatures
-            |> Enum.each(fn s ->
-              s |> WandererApp.Api.MapSystemSignature.create!()
-            end)
-
-            added_signatures_eve_ids =
-              added_signatures
-              |> Enum.map(fn s -> s.eve_id end)
-
-            first_tracked_character =
-              current_user.characters
-              |> Enum.find(fn c -> c.eve_id === first_character_eve_id end)
-
-            if not is_nil(first_tracked_character) &&
-                 not (added_signatures_eve_ids |> Enum.empty?()) do
-              WandererApp.User.ActivityTracker.track_map_event(:signatures_added, %{
-                character_id: first_tracked_character.id,
-                user_id: current_user.id,
-                map_id: map_id,
-                solar_system_id: system.solar_system_id,
-                signatures: added_signatures_eve_ids
-              })
-            end
-
-            if not is_nil(first_tracked_character) &&
-                 not (removed_signatures_eve_ids |> Enum.empty?()) do
-              WandererApp.User.ActivityTracker.track_map_event(:signatures_removed, %{
-                character_id: first_tracked_character.id,
-                user_id: current_user.id,
-                map_id: map_id,
-                solar_system_id: system.solar_system_id,
-                signatures: removed_signatures_eve_ids
-              })
-            end
-
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
-              event: :signatures_updated,
-              payload: system.solar_system_id
-            })
-
-            {:reply, %{signatures: get_system_signatures(system.id)}, socket}
-
-          _ ->
-            {:reply, %{signatures: []},
-             socket
-             |> put_flash(
-               :error,
-               "You should enable tracking for at least one character to work with signatures."
-             )}
-        end
-
-      _ ->
-        {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 
   def handle_ui_event(
@@ -377,6 +275,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         s
         |> Map.take([
           :eve_id,
+          :character_eve_id,
           :name,
           :description,
           :kind,
@@ -387,27 +286,5 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
         |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
         |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
-      end)
-
-  defp parse_signatures(signatures, character_eve_id, system_id),
-    do:
-      signatures
-      |> Enum.map(fn %{
-                       "eve_id" => eve_id,
-                       "name" => name,
-                       "kind" => kind,
-                       "group" => group
-                     } = signature ->
-        %{
-          system_id: system_id,
-          eve_id: eve_id,
-          name: name,
-          description: Map.get(signature, "description"),
-          kind: kind,
-          group: group,
-          type: Map.get(signature, "type"),
-          custom_info: Map.get(signature, "custom_info"),
-          character_eve_id: character_eve_id
-        }
       end)
 end

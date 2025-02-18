@@ -278,7 +278,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     linked_system_ids
     |> Enum.each(fn linked_system_id ->
-      WandererApp.Map.Server.update_system_linked_sig_eve_id(map_id, %{
+      update_system_linked_sig_eve_id(state, %{
         solar_system_id: linked_system_id,
         linked_sig_eve_id: nil
       })

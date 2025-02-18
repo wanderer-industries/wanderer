@@ -19,6 +19,7 @@ import {
   LAZY_DELETE_SIGNATURES_SETTING,
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
+  SHOW_CHARACTER_COLUMN_SETTING,
 } from '../SystemSignatures';
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
 import {
@@ -34,6 +35,16 @@ import { getSignatureRowClass } from '../helpers/rowStyles';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 
+type SystemSignaturesSortSettings = {
+  sortField: string;
+  sortOrder: SortOrder;
+};
+
+const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
+  sortField: 'inserted_at',
+  sortOrder: -1,
+};
+
 interface SystemSignaturesContentProps {
   systemId: string;
   settings: { key: string; value: boolean }[];
@@ -41,7 +52,7 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
-  onCountChange: (count: number) => void;
+  onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
 }
 
@@ -68,7 +79,7 @@ export function SystemSignaturesContent({
 
   const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
     'window:signatures:sort',
-    { defaultValue: { sortField: 'inserted_at', sortOrder: -1 } },
+    { defaultValue: SORT_DEFAULT_VALUES },
   );
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -148,6 +159,7 @@ export function SystemSignaturesContent({
   const groupSettings = settings.filter(s => GROUPS_LIST.includes(s.key as SignatureGroup));
   const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
   const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
+  const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
@@ -278,6 +290,16 @@ export function SystemSignaturesContent({
               sortable
             />
           )}
+
+          {showCharacterColumn && (
+            <Column
+              field="character_name"
+              header="Character"
+              bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
+              sortable
+            ></Column>
+          )}
+
           {!selectable && (
             <Column
               header=""

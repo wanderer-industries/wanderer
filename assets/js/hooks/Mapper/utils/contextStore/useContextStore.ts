@@ -1,18 +1,31 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 
-import { ContextStoreDataOpts, ProvideConstateDataReturnType, ContextStoreDataUpdate } from './types';
+import { ContextStoreDataOpts, ProvideConstateDataReturnType, ContextStoreDataUpdate, UpdateFunc } from './types';
 
 export const useContextStore = <T>(
   initialValue: T,
   { notNeedRerender = false, handleBeforeUpdate, onAfterAUpdate }: ContextStoreDataOpts<T> = {},
 ): ProvideConstateDataReturnType<T> => {
   const ref = useRef<T>(initialValue);
+  const queueRef = useRef<{ valOrFunc: Partial<T> | UpdateFunc<T>; force: boolean }[]>([]);
   const [, setRerenderKey] = useState(0);
 
   const refWrapper = useRef({ notNeedRerender, handleBeforeUpdate, onAfterAUpdate });
   refWrapper.current = { notNeedRerender, handleBeforeUpdate, onAfterAUpdate };
 
   const update: ContextStoreDataUpdate<T> = useCallback((valOrFunc, force = false) => {
+    queueRef.current.push({ valOrFunc, force });
+  }, []);
+
+  const processNextQueue = useCallback(() => {
+    const next = queueRef.current.shift();
+
+    if (!next) {
+      return;
+    }
+
+    const { valOrFunc, force } = next;
+
     // It need to force prevent unnecessary rerendering
     // update will create once
     const { notNeedRerender, handleBeforeUpdate, onAfterAUpdate } = refWrapper.current;
@@ -75,6 +88,20 @@ export const useContextStore = <T>(
 
     onAfterAUpdate?.(ref.current);
   }, []);
+
+  useEffect(() => {
+    let requestId: number;
+    const process = () => {
+      processNextQueue();
+      requestId = requestAnimationFrame(process);
+    };
+
+    process();
+
+    return () => {
+      cancelAnimationFrame(requestId);
+    };
+  });
 
   return { update, ref: ref.current };
 };

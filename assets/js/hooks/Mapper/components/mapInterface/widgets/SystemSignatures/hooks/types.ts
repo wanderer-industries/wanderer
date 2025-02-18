@@ -9,7 +9,7 @@ export interface UseSystemSignaturesDataProps {
   systemId: string;
   settings: { key: string; value: boolean }[];
   hideLinkedSignatures?: boolean;
-  onCountChange: (count: number) => void;
+  onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
   onLazyDeleteChange?: (value: boolean) => void;
 }
@@ -21,7 +21,6 @@ export interface UseFetchingParams {
   systemId: string;
   signaturesRef: React.MutableRefObject<ExtendedSystemSignature[]>;
   setSignatures: React.Dispatch<React.SetStateAction<ExtendedSystemSignature[]>>;
-  outCommand: OutCommandHandler;
   localPendingDeletions: ExtendedSystemSignature[];
 }
 
@@ -30,7 +29,6 @@ export interface UseFetchingParams {
  */
 export interface UsePendingDeletionParams {
   systemId: string;
-  outCommand: OutCommandHandler;
   setSignatures: React.Dispatch<React.SetStateAction<ExtendedSystemSignature[]>>;
 }
 

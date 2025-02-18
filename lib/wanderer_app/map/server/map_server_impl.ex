@@ -4,7 +4,13 @@ defmodule WandererApp.Map.Server.Impl do
   """
   require Logger
 
-  alias WandererApp.Map.Server.{AclsImpl, CharactersImpl, ConnectionsImpl, SystemsImpl}
+  alias WandererApp.Map.Server.{
+    AclsImpl,
+    CharactersImpl,
+    ConnectionsImpl,
+    SystemsImpl,
+    SignaturesImpl
+  }
 
   @enforce_keys [
     :map_id
@@ -180,7 +186,9 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate update_connection_locked(state, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_custom_info(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_custom_info(state, signatures_update), to: ConnectionsImpl
+
+  defdelegate update_signatures(state, signatures_update), to: SignaturesImpl
 
   def import_settings(%{map_id: map_id} = state, settings, user_id) do
     WandererApp.Cache.put(

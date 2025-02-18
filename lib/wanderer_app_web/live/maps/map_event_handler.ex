@@ -166,6 +166,17 @@ defmodule WandererAppWeb.MapEventHandler do
       when event_name in @map_kills_events,
       do: MapKillsEventHandler.handle_server_event(event, socket)
 
+  def handle_event(
+        %{
+          assigns: %{
+            is_subscription_active?: false
+          }
+        } = socket,
+        %{event: event_name} = _event
+      )
+      when event_name in @map_kills_events,
+      do: socket
+
   def handle_event(socket, {ref, result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
