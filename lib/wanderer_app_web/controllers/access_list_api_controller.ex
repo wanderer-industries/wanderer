@@ -13,16 +13,21 @@ defmodule WandererAppWeb.MapAccessListAPIController do
 
   use WandererAppWeb, :controller
   alias WandererApp.Api.{AccessList, Character}
-  # Do not alias Map—to avoid conflicts—use the full module name: WandererApp.Map.
   alias WandererAppWeb.UtilAPIController, as: Util
   import Ash.Query
+  require Logger
 
-  # List ACLs for a given map (returns reduced info: no api_key, no members, and includes owner_eve_id)
+  @doc """
+  GET /api/map/acls?map_id=... or ?slug=...
+
+  Lists the ACLs for a given map.
+  """
   def index(conn, params) do
     case Util.fetch_map_id(params) do
       {:ok, map_identifier} ->
-        with {:ok, map} <- get_map(map_identifier) do
-          acls = map.acls || []
+        with {:ok, map} <- get_map(map_identifier),
+             {:ok, loaded_map} <- Ash.load(map, :acls) do
+          acls = loaded_map.acls || []
           json(conn, %{data: Enum.map(acls, &acl_to_list_json/1)})
         else
           {:error, :map_not_found} ->
@@ -30,18 +35,24 @@ defmodule WandererAppWeb.MapAccessListAPIController do
           {:error, error} ->
             conn |> put_status(:internal_server_error) |> json(%{error: inspect(error)})
         end
+
       {:error, msg} ->
         conn |> put_status(:bad_request) |> json(%{error: msg})
     end
   end
 
-  # Create a new ACL for a map
+  @doc """
+  POST /api/map/acls
+
+  Creates a new ACL for a map.
+  """
   def create(conn, params) do
     with {:ok, map_identifier} <- Util.fetch_map_id(params),
          {:ok, map} <- get_map(map_identifier),
          %{"acl" => acl_params} <- params,
-         owner_eve_id when is_binary(owner_eve_id) <- Map.get(acl_params, "owner_eve_id"),
-         {:ok, character} <- find_character_by_eve_id(owner_eve_id),
+         owner_eve_id when not is_nil(owner_eve_id) <- Map.get(acl_params, "owner_eve_id"),
+         owner_eve_id_str = to_string(owner_eve_id),
+         {:ok, character} <- find_character_by_eve_id(owner_eve_id_str),
          {:ok, new_api_key} <- {:ok, UUID.uuid4()},
          {:ok, new_params} <- {:ok,
            acl_params
@@ -50,7 +61,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
            |> Map.put("api_key", new_api_key)
          },
          {:ok, new_acl} <- AccessList.new(new_params),
-         {:ok, _} <- {:ok, associate_acl_with_map(map, new_acl)}
+         {:ok, _} <- associate_acl_with_map(map, new_acl)
     do
       json(conn, %{data: acl_to_json(new_acl)})
     else
@@ -59,15 +70,21 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Show a specific ACL (with members)
+  @doc """
+  GET /api/acls/:id
+
+  Shows a specific ACL (with its members).
+  """
   def show(conn, %{"id" => id}) do
     query = AccessList |> Ash.Query.new() |> filter(id == ^id)
     case WandererApp.Api.read(query) do
       {:ok, [acl]} ->
         case Ash.load(acl, :members) do
           {:ok, loaded_acl} -> json(conn, %{data: acl_to_json(loaded_acl)})
-          {:error, error} -> conn |> put_status(:internal_server_error) |> json(%{error: "Failed to load ACL members: #{inspect(error)}"})
+          {:error, error} ->
+            conn |> put_status(:internal_server_error) |> json(%{error: "Failed to load ACL members: #{inspect(error)}"})
         end
+
       {:ok, []} ->
         conn |> put_status(:not_found) |> json(%{error: "ACL not found"})
       {:error, error} ->
@@ -75,7 +92,11 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Update an ACL (if needed)
+  @doc """
+  PUT /api/acls/:id
+
+  Updates an ACL.
+  """
   def update(conn, %{"id" => id, "acl" => acl_params}) do
     with {:ok, acl} <- AccessList.by_id(id),
          {:ok, updated_acl} <- AccessList.update(acl, acl_params),
@@ -87,16 +108,10 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Helper to get the map (using your module WandererApp.Map)
   defp get_map(map_identifier) do
-    # Assuming Util.fetch_map_id returns a map id.
-    case WandererApp.Map.get_map(map_identifier) do
-      {:ok, map} -> {:ok, map}
-      other -> other
-    end
+    WandererApp.Api.Map.by_id(map_identifier)
   end
 
-  # Helper to convert an ACL to full JSON (for detail views)
   defp acl_to_json(acl) do
     members =
       case acl.members do
@@ -104,6 +119,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
         list when is_list(list) -> Enum.map(list, &member_to_json/1)
         _ -> []
       end
+
     %{
       id: acl.id,
       name: acl.name,
@@ -150,7 +166,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     }
   end
 
-  # Helper to find a character by external EVE id (used in create action)
+  # Helper to find a character by external EVE id.
   defp find_character_by_eve_id(eve_id) do
     query = Character |> Ash.Query.new() |> filter(eve_id == ^eve_id)
     case WandererApp.Api.read(query) do
@@ -160,7 +176,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Helper to find a character by internal id (used in acl_to_list_json)
+  # Helper to find a character by internal id.
   defp find_character_by_id(id) do
     query = Character |> Ash.Query.new() |> filter(id == ^id)
     case WandererApp.Api.read(query) do
@@ -170,12 +186,11 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
+  # Helper to associate a new ACL with a map.
   defp associate_acl_with_map(map, new_acl) do
-    with {:ok, api_map} <- WandererApp.Api.Map.by_id(map.map_id || map.id),
+    with {:ok, api_map} <- WandererApp.Api.Map.by_id(map.id),
          {:ok, loaded_map} <- Ash.load(api_map, :acls) do
-      # Ensure new_acl is an ID
       new_acl_id = if is_binary(new_acl), do: new_acl, else: new_acl.id
-
       current_acls = loaded_map.acls || []
       updated_acls = current_acls ++ [new_acl_id]
 
@@ -193,7 +208,4 @@ defmodule WandererAppWeb.MapAccessListAPIController do
         {:error, error}
     end
   end
-
-
-
 end
