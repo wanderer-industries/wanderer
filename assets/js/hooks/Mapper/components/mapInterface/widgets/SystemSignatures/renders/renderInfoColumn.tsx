@@ -24,6 +24,12 @@ export const renderInfoColumn = (row: SystemSignature) => {
           </WdTooltipWrapper>
         )}
 
+        {customInfo.isCrit && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as Crit">
+            <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
         {row.type && (
           <WHClassView
             className="text-[11px]"

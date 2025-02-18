@@ -2,6 +2,45 @@
 
 <!-- changelog -->
 
+## [v1.51.1](https://github.com/wanderer-industries/wanderer/compare/v1.51.0...v1.51.1) (2025-02-18)
+
+
+
+
+## [v1.51.0](https://github.com/wanderer-industries/wanderer/compare/v1.50.0...v1.51.0) (2025-02-17)
+
+
+
+
+### Features:
+
+* add undo deletion for signatures (#155)
+
+* add undo for signature deletion and addition
+
+## [v1.50.0](https://github.com/wanderer-industries/wanderer/compare/v1.49.0...v1.50.0) (2025-02-17)
+
+
+
+
+### Features:
+
+* allow addition of characters to acl without preregistration (#176)
+
+## [v1.49.0](https://github.com/wanderer-industries/wanderer/compare/v1.48.1...v1.49.0) (2025-02-15)
+
+
+
+
+### Features:
+
+* add api for acl management (#171)
+
+## [v1.48.1](https://github.com/wanderer-industries/wanderer/compare/v1.48.0...v1.48.1) (2025-02-13)
+
+
+
+
 ## [v1.48.0](https://github.com/wanderer-industries/wanderer/compare/v1.47.6...v1.48.0) (2025-02-12)
 
 
