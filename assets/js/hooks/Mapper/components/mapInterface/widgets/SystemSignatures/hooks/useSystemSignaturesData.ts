@@ -191,7 +191,7 @@ export function useSystemSignaturesData({
   }, [systemId, handleGetSignatures, setSignatures]);
 
   useEffect(() => {
-    onCountChange(signatures.length);
+    onCountChange?.(signatures.length);
   }, [signatures, onCountChange]);
 
   return {
