@@ -97,7 +97,7 @@ GET /api/map/acls?map_id=<UUID>
 GET /api/map/acls?slug=<map-slug>
 ```
 
-- **Description:** Lists all ACLs associated with a map, specified by either `map_id` (UUID) or `slug`.
+- **Description:** Lists all ACLs associated with a map, specified by either `map_id` (UUID) or `slug` (map slug).
 - **Authentication:** Requires the Map API Token (available in map settings).
 - **Example Request (using slug):**
 
@@ -117,7 +117,7 @@ curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
       "description": null,
       "owner_eve_id": "11111111111",
       "inserted_at": "2025-02-13T03:32:25.144403Z",
-      "updated_at": "2025-02-13T03:32:25.144403Z",
+      "updated_at": "2025-02-13T03:32:25.144403Z"
     }
   ]
 }
@@ -289,19 +289,19 @@ POST /api/acls/:acl_id/members
 
 - **Description:** Adds a new member (character, corporation, or alliance) to the specified ACL.
 - **Authentication:** Requires the ACL API Token.
-- **Request Body Example:**
+- **Request Body Example:**  
+  For **character** membership, use `eve_character_id`. For **corporation**, use `eve_corporation_id`. For **alliance**, use `eve_alliance_id`.
 
 ```json
 {
   "member": {
     "name": "New Member",
-    "eve_character_id": "EXTERNAL_EVE_ID",
+    "eve_character_id": "EXTERNAL_EVE_ID", 
     "role": "viewer"
   }
 }
 ```
 
-  - `eve_character_id` is the character’s external EVE id.
 - **Example Request:**
 
 ```bash
@@ -341,7 +341,7 @@ PUT /api/acls/:acl_id/members/:member_id
 ```
 
 - **Description:** Updates an ACL member’s role (e.g. from `viewer` to `admin`).  
-  The `:member_id` is the external EVE id of the character.
+  The `:member_id` is the external EVE id (or corp/alliance id) used when creating the membership.
 - **Authentication:** Requires the ACL API Token.
 - **Request Body Example:**
 
@@ -388,7 +388,7 @@ curl -X PUT \
 DELETE /api/acls/:acl_id/members/:member_id
 ```
 
-- **Description:** Removes the member with the specified external EVE id from the ACL.
+- **Description:** Removes the member with the specified external EVE id (or corp/alliance id) from the ACL.
 - **Authentication:** Requires the ACL API Token.
 - **Example Request:**
 
