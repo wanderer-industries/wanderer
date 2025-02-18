@@ -3,8 +3,10 @@ import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { ExtendedSystemSignature, prepareUpdatePayload, scheduleLazyDeletionTimers } from '../helpers';
 import { UsePendingDeletionParams } from './types';
 import { FINAL_DURATION_MS } from '../constants';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
-export function usePendingDeletions({ systemId, outCommand, setSignatures }: UsePendingDeletionParams) {
+export function usePendingDeletions({ systemId, setSignatures }: UsePendingDeletionParams) {
+  const { outCommand } = useMapRootState();
   const [localPendingDeletions, setLocalPendingDeletions] = useState<ExtendedSystemSignature[]>([]);
   const [pendingDeletionMap, setPendingDeletionMap] = useState<
     Record<string, { finalUntil: number; finalTimeoutId: number }>

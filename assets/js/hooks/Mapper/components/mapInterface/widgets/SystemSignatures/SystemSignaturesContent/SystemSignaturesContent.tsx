@@ -19,6 +19,7 @@ import {
   LAZY_DELETE_SIGNATURES_SETTING,
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
+  SHOW_CHARACTER_COLUMN_SETTING,
 } from '../SystemSignatures';
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
 import {
@@ -51,7 +52,7 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
-  onCountChange: (count: number) => void;
+  onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
 }
 
@@ -158,6 +159,7 @@ export function SystemSignaturesContent({
   const groupSettings = settings.filter(s => GROUPS_LIST.includes(s.key as SignatureGroup));
   const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
   const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
+  const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {

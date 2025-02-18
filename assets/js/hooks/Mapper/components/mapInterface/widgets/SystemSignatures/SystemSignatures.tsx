@@ -29,13 +29,12 @@ import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrap
 import { useHotkey } from '@/hooks/Mapper/hooks';
 import { COMPACT_MAX_WIDTH } from './constants';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_3';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_5';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
 export const SHOW_CHARACTER_COLUMN_SETTING = 'SHOW_CHARACTER_COLUMN_SETTING';
 export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
 export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
-export const HIDE_LINKED_SIGNATURES_SETTING = 'HIDE_LINKED_SIGNATURES_SETTING';
 
 const SETTINGS: Setting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
@@ -43,7 +42,6 @@ const SETTINGS: Setting[] = [
   { key: SHOW_CHARACTER_COLUMN_SETTING, name: 'Show Character Column', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
-  { key: HIDE_LINKED_SIGNATURES_SETTING, name: 'Hide Linked Signatures', value: false, isFilter: false },
 
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },
