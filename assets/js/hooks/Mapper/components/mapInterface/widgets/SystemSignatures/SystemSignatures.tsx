@@ -30,15 +30,17 @@ import { CheckboxChangeEvent } from 'primereact/checkbox';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
-const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_2';
+const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_3';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
+export const SHOW_CHARACTER_COLUMN_SETTING = 'SHOW_CHARACTER_COLUMN_SETTING';
 export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
 export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
 
 const settings: Setting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
+  { key: SHOW_CHARACTER_COLUMN_SETTING, name: 'Show Character Column', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },

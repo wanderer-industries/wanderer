@@ -237,6 +237,12 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.update_connection_custom_info/2, [connection_info]})
 
+  def update_signatures(map_id, signatures_update) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.update_signatures/2, [signatures_update]})
+
   @impl true
   def handle_continue(:load_state, state),
     do: {:noreply, state |> Impl.load_state(), {:continue, :start_map}}

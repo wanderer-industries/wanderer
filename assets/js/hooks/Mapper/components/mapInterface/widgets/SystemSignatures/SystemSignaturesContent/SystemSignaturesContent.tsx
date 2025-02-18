@@ -42,6 +42,7 @@ import {
   SHOW_UPDATED_COLUMN_SETTING,
   LAZY_DELETE_SIGNATURES_SETTING,
   KEEP_LAZY_DELETE_SETTING,
+  SHOW_CHARACTER_COLUMN_SETTING,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures';
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -69,7 +70,10 @@ export const SystemSignaturesContent = ({
   onSelect,
   onLazyDeleteChange,
 }: SystemSignaturesContentProps) => {
-  const { outCommand } = useMapRootState();
+  const {
+    data: { characters },
+    outCommand,
+  } = useMapRootState();
 
   const [signatures, setSignatures, signaturesRef] = useRefState<SystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<SystemSignature[]>([]);
@@ -115,6 +119,10 @@ export const SystemSignaturesContent = ({
     [settings],
   );
 
+  const showCharacterColumn = useMemo(
+    () => settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value,
+    [settings],
+  );
   const showUpdatedColumn = useMemo(() => settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value, [settings]);
 
   const filteredSignatures = useMemo(() => {
@@ -149,8 +157,13 @@ export const SystemSignaturesContent = ({
       data: { system_id: systemId },
     });
 
-    setSignatures(signatures);
-  }, [outCommand, systemId]);
+    setSignatures(
+      signatures.map((s: SystemSignature) => ({
+        ...s,
+        character_name: characters.find(c => c.eve_id === s.character_eve_id)?.name,
+      })),
+    );
+  }, [characters, outCommand, systemId]);
 
   const handleUpdateSignatures = useCallback(
     async (newSignatures: SystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
@@ -161,7 +174,7 @@ export const SystemSignaturesContent = ({
         skipUpdateUntouched,
       );
 
-      const { signatures: updatedSignatures } = await outCommand({
+      await outCommand({
         type: OutCommand.updateSignatures,
         data: {
           system_id: systemId,
@@ -171,7 +184,6 @@ export const SystemSignaturesContent = ({
         },
       });
 
-      setSignatures(() => updatedSignatures);
       setSelectedSignatures([]);
     },
     [outCommand, systemId],
@@ -409,6 +421,15 @@ export const SystemSignaturesContent = ({
                   dataType="date"
                   bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
                   body={renderUpdatedTimeLeft}
+                  sortable
+                ></Column>
+              )}
+
+              {showCharacterColumn && (
+                <Column
+                  field="character_name"
+                  header="Character"
+                  bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
                   sortable
                 ></Column>
               )}
