@@ -2,9 +2,18 @@ import { SystemSignature } from '@/hooks/Mapper/types';
 import { GROUPS_LIST } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import { getState } from './getState';
 
+/**
+ * Compare two lists of signatures and return which are added, updated, or removed.
+ * 
+ * @param oldSignatures existing signatures (in memory or from server)
+ * @param newSignatures newly parsed or incoming signatures from user input
+ * @param updateOnly    if true, do NOT remove old signatures not found in newSignatures
+ * @param skipUpdateUntouched if true, do NOT push unmodified signatures into the `updated` array
+ */
 export const getActualSigs = (
   oldSignatures: SystemSignature[],
   newSignatures: SystemSignature[],
+  updateOnly?: boolean,
   skipUpdateUntouched?: boolean,
 ): { added: SystemSignature[]; updated: SystemSignature[]; removed: SystemSignature[] } => {
   const updated: SystemSignature[] = [];
@@ -17,6 +26,7 @@ export const getActualSigs = (
       const needUpgrade = getState(GROUPS_LIST, newSig) > getState(GROUPS_LIST, oldSig);
       const mergedSig = { ...oldSig };
       let changed = false;
+
       if (needUpgrade) {
         mergedSig.group = newSig.group;
         mergedSig.name = newSig.name;
@@ -26,6 +36,7 @@ export const getActualSigs = (
         mergedSig.description = newSig.description;
         changed = true;
       }
+
       try {
         const oldInfo = JSON.parse(oldSig.custom_info || '{}');
         const newInfo = JSON.parse(newSig.custom_info || '{}');
@@ -43,17 +54,21 @@ export const getActualSigs = (
       } catch (e) {
         console.error(`getActualSigs: Error merging custom_info for ${oldSig.eve_id}`, e);
       }
+
       if (newSig.updated_at !== oldSig.updated_at) {
         mergedSig.updated_at = newSig.updated_at;
         changed = true;
       }
+
       if (changed) {
         updated.push(mergedSig);
       } else if (!skipUpdateUntouched) {
         updated.push({ ...oldSig });
       }
     } else {
-      removed.push(oldSig);
+      if (!updateOnly) {
+        removed.push(oldSig);
+      }
     }
   });
 
@@ -63,5 +78,6 @@ export const getActualSigs = (
       added.push(s);
     }
   });
+
   return { added, updated, removed };
 };
