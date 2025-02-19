@@ -29,6 +29,15 @@
   >
     <.icon name="hero-key-solid" class="w-6 h-6" />
   </.link>
+
+  <.link
+    :if={(@user_permissions || %{}) |> Map.get(:delete_map, false)}
+    id={"map-characters-#{@map_slug}"}
+    class="h-8 w-8 hover:text-white"
+    navigate={~p"/#{@map_slug}/characters"}
+  >
+    <.icon name="hero-user-group-solid" class="w-6 h-6" />
+  </.link>
 </div>
 
 <.modal

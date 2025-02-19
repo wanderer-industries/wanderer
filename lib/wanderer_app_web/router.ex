@@ -143,7 +143,6 @@ defmodule WandererAppWeb.Router do
     post "/acls", MapAccessListAPIController, :create
   end
 
-
   scope "/api/characters", WandererAppWeb do
     pipe_through [:api, :api_character]
     get "/", CharactersAPIController, :index
@@ -260,6 +259,7 @@ defmodule WandererAppWeb.Router do
       live "/profile/deposit", ProfileLive, :deposit
       live "/profile/subscribe", ProfileLive, :subscribe
       live "/:slug/audit", MapAuditLive, :index
+      live "/:slug/characters", MapCharactersLive, :index
       live "/:slug", MapLive, :index
     end
   end

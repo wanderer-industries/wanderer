@@ -1,0 +1,23 @@
+<nav class="fixed top-0 z-100 px-6 pl-20 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-stone-800  bg-opacity-70 bg-neutral-900">
+  <span className="w-full font-medium text-sm">
+    <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
+      <%= @map_name %>
+    </.link>
+    - Characters [<%= @characters_count %>]
+  </span>
+</nav>
+<main
+  id="map-character-list"
+  class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
+>
+  <div class="flex flex-col gap-4 w-full">
+    <.live_component
+      module={MapCharacters}
+      id="map-characters"
+      notify_to={self()}
+      groups={@groups}
+      character_settings={@character_settings}
+      event_name="character_event"
+    />
+  </div>
+</main>

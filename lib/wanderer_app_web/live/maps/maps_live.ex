@@ -323,11 +323,17 @@ defmodule WandererAppWeb.MapsLive do
      |> push_patch(to: ~p"/maps/#{slug}/edit")}
   end
 
-  def handle_event("open_audit", %{"data" => slug}, socket) do
-    {:noreply,
-     socket
-     |> push_navigate(to: ~p"/#{slug}/audit?period=1H&activity=all")}
-  end
+  def handle_event("open_audit", %{"data" => slug}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_navigate(to: ~p"/#{slug}/audit?period=1H&activity=all")}
+
+  def handle_event("open_characters", %{"data" => slug}, socket),
+    do:
+      {:noreply,
+       socket
+       |> push_navigate(to: ~p"/#{slug}/characters")}
 
   def handle_event("open_settings", %{"data" => slug}, socket) do
     {:noreply,

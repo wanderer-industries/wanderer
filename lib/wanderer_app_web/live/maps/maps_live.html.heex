@@ -76,6 +76,16 @@
                 <div class="flex gap-2 justify-end">
                   <button
                     :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                    id={"map-characters-#{map.slug}"}
+                    phx-hook="MapAction"
+                    data-event="open_characters"
+                    data-data={map.slug}
+                    class="h-8 w-8 hover:text-white"
+                  >
+                    <.icon name="hero-user-group-solid" class="w-6 h-6" />
+                  </button>
+                  <button
+                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
                     id={"map-audit-#{map.slug}"}
                     phx-hook="MapAction"
                     data-event="open_audit"
@@ -257,7 +267,9 @@
                   :if={@map_subscriptions_enabled?}
                   class={[
                     "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "subscription")
+                    classes(
+                      "p-tabview-selected p-highlight": @active_settings_tab == "subscription"
+                    )
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -309,7 +321,9 @@
                   :if={not WandererApp.Env.public_api_disabled?()}
                   class={[
                     "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
+                    classes(
+                      "p-tabview-selected p-highlight": @active_settings_tab == "public_api"
+                    )
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -411,7 +425,10 @@
               </div>
 
               <div
-                :if={@active_settings_tab == "public_api" and not WandererApp.Env.public_api_disabled?()}
+                :if={
+                  @active_settings_tab == "public_api" and
+                    not WandererApp.Env.public_api_disabled?()
+                }
                 class="p-6"
               >
                 <h2 class="text-lg font-semibold mb-4">Public API</h2>
@@ -680,8 +697,10 @@
       <.button
         :if={@active_settings_tab == "subscription" && not @is_adding_subscription?}
         type="button"
-        disabled={@map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
-            @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha}
+        disabled={
+          @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
+            @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha
+        }
         phx-click="add_subscription"
       >
         Add subscription
