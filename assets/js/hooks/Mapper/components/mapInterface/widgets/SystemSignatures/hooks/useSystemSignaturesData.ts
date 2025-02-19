@@ -33,7 +33,6 @@ export function useSystemSignaturesData({
       systemId,
       setSignatures,
     });
-
   const { pendingUndoAdditions, setPendingUndoAdditions, processAddedSignatures, clearPendingAdditions } =
     usePendingAdditions({
       setSignatures,
@@ -49,6 +48,7 @@ export function useSystemSignaturesData({
   const handlePaste = useCallback(
     async (clipboardString: string) => {
       const lazyDeleteValue = settings.find(s => s.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
+
       const incomingSignatures = parseSignatures(
         clipboardString,
         settings.map(s => s.key),
@@ -64,6 +64,7 @@ export function useSystemSignaturesData({
       if (added.length > 0) {
         processAddedSignatures(added);
       }
+
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);
       } else {
@@ -89,7 +90,9 @@ export function useSystemSignaturesData({
 
       const keepLazy = settings.find(s => s.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
       if (lazyDeleteValue && !keepLazy) {
-        onLazyDeleteChange?.(false);
+        setTimeout(() => {
+          onLazyDeleteChange?.(false);
+        }, 0);
       }
     },
     [
@@ -108,6 +111,7 @@ export function useSystemSignaturesData({
     if (!selectedSignatures.length) return;
     const selectedIds = selectedSignatures.map(s => s.eve_id);
     const finalList = signatures.filter(s => !selectedIds.includes(s.eve_id));
+
     await handleUpdateSignatures(finalList, false, true);
     setSelectedSignatures([]);
   }, [selectedSignatures, signatures, handleUpdateSignatures]);
@@ -122,6 +126,7 @@ export function useSystemSignaturesData({
     setSignatures(prev =>
       prev.map(x => (x.pendingDeletion ? { ...x, pendingDeletion: false, pendingUntil: undefined } : x)),
     );
+
     if (pendingUndoAdditions.length) {
       pendingUndoAdditions.forEach(async sig => {
         await outCommand({

@@ -30,10 +30,12 @@ export function useSignatureFetching({
       data: { system_id: systemId },
     });
     const serverSigs = (resp.signatures ?? []) as SystemSignature[];
+
     const extended = serverSigs.map(s => ({
       ...s,
       character_name: characters.find(c => c.eve_id === s.character_eve_id)?.name,
     })) as ExtendedSystemSignature[];
+
     setSignatures(prev => mergeLocalPendingAdditions(extended, prev));
   }, [characters, systemId, localPendingDeletions, outCommand, setSignatures]);
 
