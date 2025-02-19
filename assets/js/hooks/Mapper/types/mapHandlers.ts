@@ -66,6 +66,7 @@ export type CommandInit = {
   routes: RoutesList;
   options: Record<string, string | boolean>;
   reset?: boolean;
+  is_subscription_active?: boolean;
 };
 export type CommandAddSystems = SolarSystemRawType[];
 export type CommandUpdateSystems = SolarSystemRawType[];
