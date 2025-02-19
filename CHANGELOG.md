@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.51.3](https://github.com/wanderer-industries/wanderer/compare/v1.51.2...v1.51.3) (2025-02-19)
+
+
+
+
+### Bug Fixes:
+
+* pending deletion working again (#185)
+
 ## [v1.51.2](https://github.com/wanderer-industries/wanderer/compare/v1.51.1...v1.51.2) (2025-02-18)
 
 
