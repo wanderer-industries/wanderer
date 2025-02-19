@@ -156,10 +156,13 @@ export function SystemSignaturesContent({
     [selectable, onSelect, setSelectedSignatures],
   );
 
-  const groupSettings = settings.filter(s => GROUPS_LIST.includes(s.key as SignatureGroup));
   const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
   const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
   const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
+
+  const enabledGroups = settings
+    .filter(s => GROUPS_LIST.includes(s.key as SignatureGroup) && s.value === true)
+    .map(s => s.key);
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
@@ -168,18 +171,16 @@ export function SystemSignaturesContent({
       }
       if (sig.kind === COSMIC_SIGNATURE) {
         const showCosmic = settings.find(y => y.key === COSMIC_SIGNATURE)?.value;
-        if (!showCosmic) {
-          return false;
-        }
-        if (sig.group && groupSettings.find(y => y.key === sig.group)?.value === false) {
-          return false;
+        if (!showCosmic) return false;
+        if (sig.group) {
+          return enabledGroups.includes(sig.group);
         }
         return true;
       } else {
         return settings.find(y => y.key === sig.kind)?.value;
       }
     });
-  }, [signatures, settings, groupSettings, hideLinkedSignatures]);
+  }, [signatures, hideLinkedSignatures, settings, enabledGroups]);
 
   return (
     <div ref={tableRef} className="h-full">
