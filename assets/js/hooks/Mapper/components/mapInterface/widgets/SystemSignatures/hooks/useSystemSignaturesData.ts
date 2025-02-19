@@ -89,7 +89,10 @@ export function useSystemSignaturesData({
 
       const keepLazy = settings.find(s => s.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
       if (lazyDeleteValue && !keepLazy) {
-        onLazyDeleteChange?.(false);
+        // Defer the lazy delete change update to avoid immediate re-render clearing selection
+        setTimeout(() => {
+          onLazyDeleteChange?.(false);
+        }, 0);
       }
     },
     [
