@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.52.0](https://github.com/wanderer-industries/wanderer/compare/v1.51.3...v1.52.0) (2025-02-19)
+
+
+
+
+### Features:
+
+* Map: Added map characters view
+
 ## [v1.51.3](https://github.com/wanderer-industries/wanderer/compare/v1.51.2...v1.51.3) (2025-02-19)
 
 
