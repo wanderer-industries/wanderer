@@ -85,7 +85,7 @@ export const SystemSignatures: React.FC = () => {
 
   const [sigCount, setSigCount] = useState<number>(0);
   const [pendingSigs, setPendingSigs] = useState<SystemSignature[]>([]);
-  const [undoPending, setUndoPending] = useState<() => void>(() => () => {});
+  const [undoPendingFn, setUndoPendingFn] = useState<() => void>(() => () => {});
 
   const handleSigCountChange = useCallback((count: number) => {
     setSigCount(count);
@@ -117,18 +117,31 @@ export const SystemSignatures: React.FC = () => {
     if (pendingSigs.length > 0) {
       event.preventDefault();
       event.stopPropagation();
-      undoPending();
+      undoPendingFn();
       setPendingSigs([]);
     }
   });
 
   const handleUndoClick = useCallback(() => {
-    undoPending();
+    undoPendingFn();
     setPendingSigs([]);
-  }, [undoPending]);
+  }, [undoPendingFn]);
 
   const handleSettingsButtonClick = useCallback(() => {
     setVisible(true);
+  }, []);
+
+  const handlePendingChange = useCallback((newPending: SystemSignature[], newUndo: () => void) => {
+    setPendingSigs(prev => {
+      if (newPending.length === prev.length && newPending.every(np => prev.some(pp => pp.eve_id === np.eve_id))) {
+        return prev;
+      }
+      return newPending;
+    });
+
+    setUndoPendingFn(oldUndo => {
+      return oldUndo === newUndo ? oldUndo : newUndo;
+    });
   }, []);
 
   const renderLabel = () => (
@@ -203,10 +216,7 @@ export const SystemSignatures: React.FC = () => {
           settings={currentSettings}
           onLazyDeleteChange={handleLazyDeleteChange}
           onCountChange={handleSigCountChange}
-          onPendingChange={(pending, undo) => {
-            setPendingSigs(pending);
-            setUndoPending(() => undo);
-          }}
+          onPendingChange={handlePendingChange}
         />
       )}
       {visible && (
