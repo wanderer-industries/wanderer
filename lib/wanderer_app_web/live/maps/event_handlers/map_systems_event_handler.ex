@@ -58,6 +58,17 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       socket
     else
       # Check if we already selected this exact system for this char:
+      case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
+        {:ok, system} ->
+          WandererApp.Cache.put(
+            "map_#{map_id}:system_#{system.id}:last_activity",
+            DateTime.utc_now(),
+            ttl: @system_inactive_timeout
+          )
+        _ ->
+          :ok
+      end
+
       last_selected =
         WandererApp.Cache.lookup!(
           "char:#{character_id}:map:#{map_id}:last_selected_system_id",
