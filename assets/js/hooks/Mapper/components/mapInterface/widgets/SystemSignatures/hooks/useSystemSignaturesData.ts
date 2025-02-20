@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 import { useMapEventListener } from '@/hooks/Mapper/events';
-import { Commands, SystemSignature } from '@/hooks/Mapper/types';
+import { Commands, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import {
@@ -14,6 +14,7 @@ import { usePendingAdditions } from './usePendingAdditions';
 import { usePendingDeletions } from './usePendingDeletions';
 import { UseSystemSignaturesDataProps } from './types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { TIME_ONE_DAY, TIME_ONE_WEEK } from '../constants';
 
 export function useSystemSignaturesData({
   systemId,
@@ -156,6 +157,41 @@ export function useSystemSignaturesData({
     const combined = [...localPendingDeletions, ...pendingUndoAdditions];
     onPendingChange?.(combined, undoPending);
   }, [localPendingDeletions, pendingUndoAdditions, onPendingChange, undoPending]);
+
+  useEffect(() => {
+    if (!systemId) return;
+    const now = Date.now();
+    const oldOnes = signaturesRef.current.filter(sig => {
+      if (!sig.inserted_at) return false;
+      const inserted = new Date(sig.inserted_at).getTime();
+      const threshold = sig.group === SignatureGroup.Wormhole ? TIME_ONE_DAY : TIME_ONE_WEEK;
+      return now - inserted > threshold;
+    });
+    if (oldOnes.length) {
+      const remain = signaturesRef.current.filter(x => !oldOnes.includes(x));
+      handleUpdateSignatures(remain, false, true);
+    }
+  }, [systemId, handleUpdateSignatures, signaturesRef]);
+
+  useEffect(() => {
+    if (!systemId) return;
+
+    const timerId = setTimeout(() => {
+      const now = Date.now();
+      const oldOnes = signaturesRef.current.filter(sig => {
+        if (!sig.inserted_at) return false;
+        const inserted = new Date(sig.inserted_at).getTime();
+        const threshold = sig.group === SignatureGroup.Wormhole ? TIME_ONE_DAY : TIME_ONE_WEEK;
+        return now - inserted > threshold;
+      });
+      if (oldOnes.length) {
+        const remain = signaturesRef.current.filter(x => !oldOnes.includes(x));
+        handleUpdateSignatures(remain, false, true);
+      }
+    }, 0); // defers execution to next macrotask
+
+    return () => clearTimeout(timerId);
+  }, [systemId, handleUpdateSignatures, signaturesRef]);
 
   useMapEventListener(event => {
     if (event.name === Commands.signaturesUpdated && String(event.data) === String(systemId)) {
