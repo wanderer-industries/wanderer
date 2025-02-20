@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import clsx from 'clsx';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { VirtualScroller } from 'primereact/virtualscroller';
@@ -6,7 +6,6 @@ import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsItemTemplate'
 import classes from './SystemKillsContent.module.scss';
 
 export const ITEM_HEIGHT = 35;
-export const CONTENT_MARGINS = 5;
 
 export interface SystemKillsContentProps {
   kills: DetailedKill[];
@@ -39,45 +38,21 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     }
   }, [kills, timeRange, limit]);
 
-  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * ITEM_HEIGHT + CONTENT_MARGINS : undefined;
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollerRef = useRef<VirtualScroller | null>(null);
-  const [containerHeight, setContainerHeight] = useState<number>(0);
-
-  useEffect(() => {
-    if (!autoSize && containerRef.current) {
-      const measure = () => {
-        const newHeight = containerRef.current?.clientHeight || 0;
-        setContainerHeight(newHeight);
-      };
-
-      measure();
-      const observer = new ResizeObserver(measure);
-      observer.observe(containerRef.current);
-      window.addEventListener('resize', measure);
-
-      return () => {
-        observer.disconnect();
-        window.removeEventListener('resize', measure);
-      };
-    }
-  }, [autoSize]);
+  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * ITEM_HEIGHT : undefined;
+  const scrollerHeight = autoSize ? `${computedHeight}px` : '100%';
 
   const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
-  const scrollerHeight = autoSize ? `${computedHeight}px` : containerHeight ? `${containerHeight}px` : '100%';
 
   return (
-    <div ref={autoSize ? undefined : containerRef} className={clsx('w-full h-full', classes.wrapper)}>
+    <div className={clsx('w-full h-full', classes.wrapper)}>
       <VirtualScroller
-        ref={autoSize ? undefined : scrollerRef}
         items={processedKills}
         itemSize={ITEM_HEIGHT}
         itemTemplate={itemTemplate}
         autoSize={autoSize}
         scrollWidth="100%"
         style={{ height: scrollerHeight }}
-        className={clsx('w-full h-full custom-scrollbar select-none overflow-x-hidden overflow-y-auto', {
+        className={clsx('w-full h-full custom-scrollbar select-none', {
           [classes.VirtualScroller]: !autoSize,
         })}
         pt={{
@@ -89,3 +64,5 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     </div>
   );
 };
+
+export default SystemKillsContent;
