@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.52.1](https://github.com/wanderer-industries/wanderer/compare/v1.52.0...v1.52.1) (2025-02-20)
+
+
+
+
+### Bug Fixes:
+
+* proper virtual scroller usage (#192)
+
+* restore delete key functionality for nodes (#191)
+
 ## [v1.52.0](https://github.com/wanderer-industries/wanderer/compare/v1.51.3...v1.52.0) (2025-02-19)
 
 
