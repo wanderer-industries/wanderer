@@ -18,6 +18,7 @@ import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useHotkey } from '@/hooks/Mapper/hooks';
 import { COMPACT_MAX_WIDTH } from './constants';
 import { renderHeaderLabel } from './renders';
+
 const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_5';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
@@ -47,8 +48,9 @@ const SETTINGS: Setting[] = [
   { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true, isFilter: true },
 ];
 
-const getDefaultSettings = (): Setting[] => [...SETTINGS];
-
+function getDefaultSettings(): Setting[] {
+  return [...SETTINGS];
+}
 
 export const SystemSignatures: React.FC = () => {
   const {
@@ -75,7 +77,8 @@ export const SystemSignatures: React.FC = () => {
 
   const [sigCount, setSigCount] = useState<number>(0);
   const [pendingSigs, setPendingSigs] = useState<SystemSignature[]>([]);
-  const [undoPendingFn, setUndoPendingFn] = useState<() => void>(() => () => {});
+
+  const undoPendingFnRef = useRef<() => void>(() => {});
 
   const handleSigCountChange = useCallback((count: number) => {
     setSigCount(count);
@@ -86,7 +89,7 @@ export const SystemSignatures: React.FC = () => {
 
   const lazyDeleteValue = useMemo(
     () => currentSettings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value || false,
-    [currentSettings],
+    [currentSettings]
   );
 
   const handleSettingsChange = useCallback((newSettings: Setting[]) => {
@@ -96,26 +99,26 @@ export const SystemSignatures: React.FC = () => {
 
   const handleLazyDeleteChange = useCallback((value: boolean) => {
     setCurrentSettings(prevSettings =>
-      prevSettings.map(setting => (setting.key === LAZY_DELETE_SIGNATURES_SETTING ? { ...setting, value } : setting)),
+      prevSettings.map(setting => (setting.key === LAZY_DELETE_SIGNATURES_SETTING ? { ...setting, value } : setting))
     );
   }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isCompact = useMaxWidth(containerRef, COMPACT_MAX_WIDTH);
 
-  useHotkey(true, ['z'], (event: KeyboardEvent) => {
+  useHotkey(true, ['z'], event => {
     if (pendingSigs.length > 0) {
       event.preventDefault();
       event.stopPropagation();
-      undoPendingFn();
+      undoPendingFnRef.current();
       setPendingSigs([]);
     }
   });
 
   const handleUndoClick = useCallback(() => {
-    undoPendingFn();
+    undoPendingFnRef.current();
     setPendingSigs([]);
-  }, [undoPendingFn]);
+  }, []);
 
   const handleSettingsButtonClick = useCallback(() => {
     setVisible(true);
@@ -128,13 +131,13 @@ export const SystemSignatures: React.FC = () => {
       }
       return newPending;
     });
-    setUndoPendingFn(oldUndo => (oldUndo === newUndo ? oldUndo : newUndo));
+    undoPendingFnRef.current = newUndo;
   }, []);
 
   return (
     <Widget
       label={
-        <div ref={containerRef}>
+        <div ref={containerRef} className="w-full">
           {renderHeaderLabel({
             systemId,
             isNotSelectedSystem,
