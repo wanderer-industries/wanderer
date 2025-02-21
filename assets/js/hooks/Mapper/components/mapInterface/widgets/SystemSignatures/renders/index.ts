@@ -5,3 +5,4 @@ export * from './renderAddedTimeLeft';
 export * from './renderUpdatedTimeLeft';
 export * from './renderLinkedSystem';
 export * from './renderInfoColumn';
+export * from './renderHeaderLabel';
