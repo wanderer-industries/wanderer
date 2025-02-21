@@ -16,13 +16,15 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
 
     const kind = MAPPING_TYPE_TO_ENG[sigArrInfo[1] as SignatureKind];
 
-    outArr.push({
+    const signature: SystemSignature = {
       eve_id: sigArrInfo[0],
       kind: availableKeys.includes(kind) ? kind : SignatureKind.CosmicSignature,
       group: sigArrInfo[2] as SignatureGroup,
       name: sigArrInfo[3],
       type: '',
-    });
+    };
+
+    outArr.push(signature);
   }
 
   return outArr;
