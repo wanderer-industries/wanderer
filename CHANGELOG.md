@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.52.3](https://github.com/wanderer-industries/wanderer/compare/v1.52.2...v1.52.3) (2025-02-21)
+
+
+
+
+### Bug Fixes:
+
+* remove signature expiration (#196)
+
+## [v1.52.2](https://github.com/wanderer-industries/wanderer/compare/v1.52.1...v1.52.2) (2025-02-21)
+
+
+
+
+### Bug Fixes:
+
+* prevent constant full signature widget rerender (#195)
+
 ## [v1.52.1](https://github.com/wanderer-industries/wanderer/compare/v1.52.0...v1.52.1) (2025-02-20)
 
 

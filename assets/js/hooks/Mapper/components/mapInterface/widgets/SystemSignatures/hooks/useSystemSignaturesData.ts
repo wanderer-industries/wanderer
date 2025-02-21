@@ -13,8 +13,6 @@ import { useSignatureFetching } from './useSignatureFetching';
 import { usePendingAdditions } from './usePendingAdditions';
 import { usePendingDeletions } from './usePendingDeletions';
 import { UseSystemSignaturesDataProps } from './types';
-import { TIME_ONE_DAY, TIME_ONE_WEEK } from '../constants';
-import { SignatureGroup } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export function useSystemSignaturesData({
@@ -158,21 +156,6 @@ export function useSystemSignaturesData({
     const combined = [...localPendingDeletions, ...pendingUndoAdditions];
     onPendingChange?.(combined, undoPending);
   }, [localPendingDeletions, pendingUndoAdditions, onPendingChange, undoPending]);
-
-  useEffect(() => {
-    if (!systemId) return;
-    const now = Date.now();
-    const oldOnes = signaturesRef.current.filter(sig => {
-      if (!sig.inserted_at) return false;
-      const inserted = new Date(sig.inserted_at).getTime();
-      const threshold = sig.group === SignatureGroup.Wormhole ? TIME_ONE_DAY : TIME_ONE_WEEK;
-      return now - inserted > threshold;
-    });
-    if (oldOnes.length) {
-      const remain = signaturesRef.current.filter(x => !oldOnes.includes(x));
-      handleUpdateSignatures(remain, false, true);
-    }
-  }, [systemId, handleUpdateSignatures, signaturesRef]);
 
   useMapEventListener(event => {
     if (event.name === Commands.signaturesUpdated && String(event.data) === String(systemId)) {
