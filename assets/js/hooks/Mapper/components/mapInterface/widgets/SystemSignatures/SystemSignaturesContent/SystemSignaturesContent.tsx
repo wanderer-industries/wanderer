@@ -13,17 +13,14 @@ import {
   GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
+  getGroupIdByRawGroup,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import {
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
   SHOW_CHARACTER_COLUMN_SETTING,
+  SIGNATURE_WINDOW_ID,
 } from '../SystemSignatures';
-
-import {
-  getGroupIdByRawGroup,
-  GROUPS_LIST,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
 import {
@@ -105,6 +102,12 @@ export function SystemSignaturesContent({
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
+    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${SIGNATURE_WINDOW_ID}"]`);
+
+    if (!targetWindow) {
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     handleDeleteSelected();
