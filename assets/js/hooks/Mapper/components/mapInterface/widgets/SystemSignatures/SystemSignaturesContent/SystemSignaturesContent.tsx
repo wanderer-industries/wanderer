@@ -104,7 +104,11 @@ export function SystemSignaturesContent({
   }, [selectable, clipboardContent]);
 
   useHotkey(true, ['a'], handleSelectAll);
-  useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
+  useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handleDeleteSelected();
+  });
 
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const handleResize = useCallback(() => {
