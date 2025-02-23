@@ -187,7 +187,7 @@ const MapComp = ({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const systemsIdsToRemove: string[] = [];
+      // const systemsIdsToRemove: string[] = [];
 
       // prevents single node deselection on background / same node click
       // allows deseletion of all nodes if multiple are currently selected
@@ -196,26 +196,27 @@ const MapComp = ({
       }
 
       const nextChanges = changes.reduce((acc, change) => {
-        if (change.type !== 'remove') {
-          return [...acc, change];
-        }
-
-        const node = getNode(change.id);
-        if (!node) {
-          return [...acc, change];
-        }
-
-        if (node.data.locked) {
-          return acc;
-        }
-
-        systemsIdsToRemove.push(node.data.id);
         return [...acc, change];
+        // if (change.type !== 'remove') {
+
+        // }
+
+        // const node = getNode(change.id);
+        // if (!node) {
+        //   return [...acc, change];
+        // }
+
+        // if (node.data.locked) {
+        //   return acc;
+        // }
+
+        // systemsIdsToRemove.push(node.data.id);
+        // return [...acc, change];
       }, [] as NodeChange[]);
 
-      if (systemsIdsToRemove.length > 0) {
-        onManualDelete(systemsIdsToRemove);
-      }
+      // if (systemsIdsToRemove.length > 0) {
+      //   onManualDelete(systemsIdsToRemove);
+      // }
 
       onNodesChange(nextChanges);
     },
@@ -276,7 +277,7 @@ const MapComp = ({
           minZoom={0.2}
           maxZoom={1.5}
           elevateNodesOnSelect
-          deleteKeyCode={['Delete']}
+          deleteKeyCode={['']}
           {...(isPanAndDrag
             ? {
                 selectionOnDrag: true,
