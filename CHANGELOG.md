@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.52.5](https://github.com/wanderer-industries/wanderer/compare/v1.52.4...v1.52.5) (2025-02-22)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed delete system on signature deletion
+
+* Map: Fixed delete system on signature deletion
+
 ## [v1.52.4](https://github.com/wanderer-industries/wanderer/compare/v1.52.3...v1.52.4) (2025-02-21)
 
 
