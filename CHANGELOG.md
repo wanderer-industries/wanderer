@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.52.6](https://github.com/wanderer-industries/wanderer/compare/v1.52.5...v1.52.6) (2025-02-23)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed delete systems on map changes
+
 ## [v1.52.5](https://github.com/wanderer-industries/wanderer/compare/v1.52.4...v1.52.5) (2025-02-22)
 
 
