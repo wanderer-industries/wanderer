@@ -28,7 +28,8 @@ defmodule WandererAppWeb.MapsLive do
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
        acls: [],
-       location: nil
+       location: nil,
+       is_version_valid?: false
      )
      |> assign_async(:maps, fn ->
        _load_maps(current_user)
@@ -43,7 +44,8 @@ defmodule WandererAppWeb.MapsLive do
        maps: [],
        characters: [],
        location: nil,
-       map_subscriptions: []
+       map_subscriptions: [],
+       is_version_valid?: false
      )}
   end
 

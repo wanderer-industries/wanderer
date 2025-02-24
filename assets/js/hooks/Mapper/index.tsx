@@ -1,6 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import Mapper from './MapRoot';
 
+const LAST_VERSION_KEY = 'wandererLastVersion';
+const UI_LOADED_EVENT = 'ui_loaded';
+
 export default {
   _rootEl: null,
   _errorCount: 0,
@@ -8,7 +11,7 @@ export default {
   mounted() {
     // create react root element
     const rootEl = document.getElementById(this.el.id);
-    this._version = this.el.dataset.version;
+    const activeVersion = localStorage.getItem(LAST_VERSION_KEY);
     this._rootEl = createRoot(rootEl!);
 
     const handleError = (error: Error, componentStack: string) => {
@@ -22,7 +25,7 @@ export default {
       onError: handleError,
     });
 
-    this.pushEvent('ui_loaded');
+    this.pushEvent(UI_LOADED_EVENT, { version: activeVersion });
   },
 
   handleEventWrapper(event: string, handler: (payload: any) => void) {
@@ -32,7 +35,8 @@ export default {
   },
 
   reconnected() {
-    this.pushEvent('ui_loaded');
+    const activeVersion = localStorage.getItem(LAST_VERSION_KEY);
+    this.pushEvent(UI_LOADED_EVENT, { version: activeVersion });
   },
 
   async pushEventAsync(event: string, payload: any) {

@@ -128,18 +128,26 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     socket
   end
 
-  def handle_ui_event("ui_loaded", _body, %{assigns: %{map_slug: map_slug} = assigns} = socket) do
-    assigns
-    |> Map.get(:map_id)
-    |> case do
-      map_id when not is_nil(map_id) ->
-        maybe_start_map(map_id)
+  def handle_ui_event(
+        "ui_loaded",
+        %{"version" => version},
+        %{assigns: %{map_slug: map_slug, app_version: app_version} = assigns} = socket
+      ) do
+    is_version_valid? = to_string(version) == to_string(app_version)
 
-      _ ->
-        WandererApp.Cache.insert("map_#{map_slug}:ui_loaded", true)
+    if is_version_valid? do
+      assigns
+      |> Map.get(:map_id)
+      |> case do
+        map_id when not is_nil(map_id) ->
+          maybe_start_map(map_id)
+
+        _ ->
+          WandererApp.Cache.insert("map_#{map_slug}:ui_loaded", true)
+      end
     end
 
-    {:noreply, socket}
+    {:noreply, socket |> assign(:is_version_valid?, is_version_valid?)}
   end
 
   def handle_ui_event(
