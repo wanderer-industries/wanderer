@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.52.7](https://github.com/wanderer-industries/wanderer/compare/v1.52.6...v1.52.7) (2025-02-24)
+
+
+
+
+### Bug Fixes:
+
+* update news image link (#204)
+
+* Map: Block map events for old client versions
+
 ## [v1.52.6](https://github.com/wanderer-industries/wanderer/compare/v1.52.5...v1.52.6) (2025-02-23)
 
 
