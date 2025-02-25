@@ -16,7 +16,13 @@ import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useHotkey } from '@/hooks/Mapper/hooks';
-import { COMPACT_MAX_WIDTH } from './constants';
+import {
+  COMPACT_MAX_WIDTH,
+  DELETION_TIMING_DEFAULT,
+  DELETION_TIMING_EXTENDED,
+  DELETION_TIMING_IMMEDIATE,
+  DELETION_TIMING_SETTING_KEY,
+} from './constants';
 import { renderHeaderLabel } from './renders';
 
 const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_5';
@@ -26,13 +32,30 @@ export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
 export const SHOW_CHARACTER_COLUMN_SETTING = 'SHOW_CHARACTER_COLUMN_SETTING';
 export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
 export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
+export const DELETION_TIMING_SETTING = DELETION_TIMING_SETTING_KEY;
 
-const SETTINGS: Setting[] = [
+// Extend the Setting type to include options for dropdown settings
+type ExtendedSetting = Setting & {
+  options?: { label: string; value: number }[];
+};
+
+const SETTINGS: ExtendedSetting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
   { key: SHOW_CHARACTER_COLUMN_SETTING, name: 'Show Character Column', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
+  {
+    key: DELETION_TIMING_SETTING,
+    name: 'Deletion Timing',
+    value: DELETION_TIMING_DEFAULT,
+    isFilter: false,
+    options: [
+      { label: '0s', value: DELETION_TIMING_IMMEDIATE },
+      { label: '10s', value: DELETION_TIMING_DEFAULT },
+      { label: '30s', value: DELETION_TIMING_EXTENDED },
+    ],
+  },
 
   { key: COSMIC_ANOMALY, name: 'Show Anomalies', value: true, isFilter: true },
   { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true, isFilter: true },
@@ -49,7 +72,7 @@ const SETTINGS: Setting[] = [
   { key: SignatureGroup.CombatSite, name: 'Show Combat Sites', value: true, isFilter: true },
 ];
 
-function getDefaultSettings(): Setting[] {
+function getDefaultSettings(): ExtendedSetting[] {
   return [...SETTINGS];
 }
 
@@ -60,11 +83,25 @@ export const SystemSignatures: React.FC = () => {
 
   const [visible, setVisible] = useState(false);
 
-  const [currentSettings, setCurrentSettings] = useState<Setting[]>(() => {
+  const [currentSettings, setCurrentSettings] = useState<ExtendedSetting[]>(() => {
     const stored = localStorage.getItem(SIGNATURE_SETTINGS_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored) as Setting[];
+        const parsedSettings = JSON.parse(stored) as ExtendedSetting[];
+        // Merge stored settings with default settings to ensure new settings are included
+        const defaultSettings = getDefaultSettings();
+        const mergedSettings = defaultSettings.map(defaultSetting => {
+          const storedSetting = parsedSettings.find(s => s.key === defaultSetting.key);
+          if (storedSetting) {
+            // Keep the stored value but ensure options are from default settings
+            return {
+              ...defaultSetting,
+              value: storedSetting.value,
+            };
+          }
+          return defaultSetting;
+        });
+        return mergedSettings;
       } catch (error) {
         console.error('Error parsing stored settings', error);
       }
@@ -78,6 +115,7 @@ export const SystemSignatures: React.FC = () => {
 
   const [sigCount, setSigCount] = useState<number>(0);
   const [pendingSigs, setPendingSigs] = useState<SystemSignature[]>([]);
+  const [minPendingTimeRemaining, setMinPendingTimeRemaining] = useState<number | undefined>(undefined);
 
   const undoPendingFnRef = useRef<() => void>(() => {});
 
@@ -88,14 +126,20 @@ export const SystemSignatures: React.FC = () => {
   const [systemId] = selectedSystems;
   const isNotSelectedSystem = selectedSystems.length !== 1;
 
-  const lazyDeleteValue = useMemo(
-    () => currentSettings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value || false,
-    [currentSettings],
-  );
+  const lazyDeleteValue = useMemo(() => {
+    const setting = currentSettings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING);
+    return typeof setting?.value === 'boolean' ? setting.value : false;
+  }, [currentSettings]);
+
+  const deletionTimingValue = useMemo(() => {
+    const setting = currentSettings.find(setting => setting.key === DELETION_TIMING_SETTING);
+    return typeof setting?.value === 'number' ? setting.value : DELETION_TIMING_DEFAULT;
+  }, [currentSettings]);
 
   const handleSettingsChange = useCallback((newSettings: Setting[]) => {
-    setCurrentSettings(newSettings);
+    setCurrentSettings(newSettings as ExtendedSetting[]);
     setVisible(false);
+    console.log('Settings changed:', newSettings);
   }, []);
 
   const handleLazyDeleteChange = useCallback((value: boolean) => {
@@ -113,17 +157,20 @@ export const SystemSignatures: React.FC = () => {
       event.stopPropagation();
       undoPendingFnRef.current();
       setPendingSigs([]);
+      setMinPendingTimeRemaining(undefined);
     }
   });
 
   const handleUndoClick = useCallback(() => {
     undoPendingFnRef.current();
     setPendingSigs([]);
+    setMinPendingTimeRemaining(undefined);
   }, []);
 
   const handleSettingsButtonClick = useCallback(() => {
+    console.log('Opening settings dialog with settings:', currentSettings);
     setVisible(true);
-  }, []);
+  }, [currentSettings]);
 
   const handlePendingChange = useCallback((newPending: SystemSignature[], newUndo: () => void) => {
     setPendingSigs(prev => {
@@ -134,6 +181,32 @@ export const SystemSignatures: React.FC = () => {
     });
     undoPendingFnRef.current = newUndo;
   }, []);
+
+  // Calculate the minimum time remaining for any pending signature
+  useEffect(() => {
+    if (pendingSigs.length === 0) {
+      setMinPendingTimeRemaining(undefined);
+      return;
+    }
+
+    const calculateTimeRemaining = () => {
+      const now = Date.now();
+      let minTime: number | undefined = undefined;
+
+      pendingSigs.forEach(sig => {
+        const extendedSig = sig as unknown as { pendingUntil?: number };
+        if (extendedSig.pendingUntil && (minTime === undefined || extendedSig.pendingUntil - now < minTime)) {
+          minTime = extendedSig.pendingUntil - now;
+        }
+      });
+
+      setMinPendingTimeRemaining(minTime && minTime > 0 ? minTime : undefined);
+    };
+
+    calculateTimeRemaining();
+    const interval = setInterval(calculateTimeRemaining, 1000);
+    return () => clearInterval(interval);
+  }, [pendingSigs]);
 
   return (
     <Widget
@@ -146,6 +219,7 @@ export const SystemSignatures: React.FC = () => {
             sigCount,
             lazyDeleteValue,
             pendingCount: pendingSigs.length,
+            pendingTimeRemaining: minPendingTimeRemaining,
             onLazyDeleteChange: handleLazyDeleteChange,
             onUndoClick: handleUndoClick,
             onSettingsClick: handleSettingsButtonClick,
@@ -165,6 +239,7 @@ export const SystemSignatures: React.FC = () => {
           onLazyDeleteChange={handleLazyDeleteChange}
           onCountChange={handleSigCountChange}
           onPendingChange={handlePendingChange}
+          deletionTiming={deletionTimingValue}
         />
       )}
       {visible && (

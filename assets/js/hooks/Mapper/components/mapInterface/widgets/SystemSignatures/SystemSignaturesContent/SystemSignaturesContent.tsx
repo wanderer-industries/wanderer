@@ -48,13 +48,14 @@ const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
 
 interface SystemSignaturesContentProps {
   systemId: string;
-  settings: { key: string; value: boolean }[];
+  settings: { key: string; value: boolean | number }[];
   hideLinkedSignatures?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
+  deletionTiming?: number;
 }
 
 const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
@@ -68,6 +69,7 @@ export function SystemSignaturesContent({
   onLazyDeleteChange,
   onCountChange,
   onPendingChange,
+  deletionTiming,
 }: SystemSignaturesContentProps) {
   const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
     useSystemSignaturesData({
@@ -76,6 +78,7 @@ export function SystemSignaturesContent({
       onCountChange,
       onPendingChange,
       onLazyDeleteChange,
+      deletionTiming,
     });
 
   const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
@@ -98,7 +101,7 @@ export function SystemSignaturesContent({
     handlePaste(clipboardContent.text);
 
     setClipboardContent(null);
-  }, [selectable, clipboardContent]);
+  }, [selectable, clipboardContent, handlePaste, setClipboardContent]);
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {

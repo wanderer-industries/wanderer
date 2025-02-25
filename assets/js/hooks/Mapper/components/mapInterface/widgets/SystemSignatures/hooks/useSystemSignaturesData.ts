@@ -21,6 +21,7 @@ export function useSystemSignaturesData({
   onCountChange,
   onPendingChange,
   onLazyDeleteChange,
+  deletionTiming,
 }: UseSystemSignaturesDataProps) {
   const { outCommand } = useMapRootState();
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
@@ -30,10 +31,12 @@ export function useSystemSignaturesData({
     usePendingDeletions({
       systemId,
       setSignatures,
+      deletionTiming,
     });
   const { pendingUndoAdditions, setPendingUndoAdditions, processAddedSignatures, clearPendingAdditions } =
     usePendingAdditions({
       setSignatures,
+      deletionTiming,
     });
 
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({

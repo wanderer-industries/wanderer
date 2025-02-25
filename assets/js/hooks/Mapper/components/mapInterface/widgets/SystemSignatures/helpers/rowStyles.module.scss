@@ -1,17 +1,19 @@
 .pendingDeletion {
-  background-color: #f87171;
+  background-color: rgba(248, 113, 113, 0.4);
   transition: background-color 0.2s ease;
 }
-
 
 .pendingDeletion td {
-  background-color: #f87171;
+  background-color: rgba(248, 113, 113, 0.4);
   transition: background-color 0.2s ease;
 }
 
-.pendingDeletion {
-  background-color: #f87171;
-  transition: background-color 0.2s ease;
+.pendingDeletion:hover {
+  background-color: rgba(248, 113, 113, 0.5);
+}
+
+.pendingDeletion:hover td {
+  background-color: rgba(248, 113, 113, 0.5);
 }
 
 .Table thead tr {
