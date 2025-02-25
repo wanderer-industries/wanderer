@@ -190,11 +190,39 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
   defp parse_partial(_other, _cutoff_dt), do: :skip
 
   defp fetch_full_killmail(k_id, k_hash) do
-    case WandererApp.Esi.get_killmail(k_id, k_hash) do
-      {:ok, full_km} -> {:ok, full_km}
-      {:error, reason} -> {:error, reason}
+    retry with: exponential_backoff(300) |> randomize() |> cap(5_000) |> expiry(30_000), rescue_only: [RuntimeError] do
+      case WandererApp.Esi.get_killmail(k_id, k_hash) do
+        {:ok, full_km} ->
+          {:ok, full_km}
+
+        {:error, :timeout} ->
+          Logger.warning("[Fetcher] ESI get_killmail timeout => kill_id=#{k_id}, retrying...")
+          raise "ESI timeout, will retry"
+
+        {:error, :not_found} ->
+          Logger.warning("[Fetcher] ESI get_killmail not_found => kill_id=#{k_id}")
+          {:error, :not_found}
+
+        {:error, reason} ->
+          if retriable_error?(reason) do
+            Logger.warning("[Fetcher] ESI get_killmail retriable error => kill_id=#{k_id}, reason=#{inspect(reason)}")
+            raise "ESI error: #{inspect(reason)}, will retry"
+          else
+            Logger.warning("[Fetcher] ESI get_killmail failed => kill_id=#{k_id}, reason=#{inspect(reason)}")
+            {:error, reason}
+          end
+      end
     end
   end
+
+  # Helper to determine if an error is retriable
+  defp retriable_error?(:timeout), do: true
+  defp retriable_error?("Unexpected status: 500"), do: true
+  defp retriable_error?("Unexpected status: 502"), do: true
+  defp retriable_error?("Unexpected status: 503"), do: true
+  defp retriable_error?("Unexpected status: 504"), do: true
+  defp retriable_error?("Request failed"), do: true
+  defp retriable_error?(_), do: false
 
   defp hours_ago(h),
     do: DateTime.utc_now() |> DateTime.add(-h * 3600, :second)
