@@ -56,6 +56,7 @@ interface SystemSignaturesContentProps {
   onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
   deletionTiming?: number;
+  colorByType?: boolean;
 }
 
 const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
@@ -70,6 +71,7 @@ export function SystemSignaturesContent({
   onCountChange,
   onPendingChange,
   deletionTiming,
+  colorByType,
 }: SystemSignaturesContentProps) {
   const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
     useSystemSignaturesData({
@@ -220,7 +222,9 @@ export function SystemSignaturesContent({
                 }
               : undefined
           }
-          rowClassName={rowData => getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures)}
+          rowClassName={rowData =>
+            getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures, colorByType)
+          }
         >
           <Column
             field="icon"

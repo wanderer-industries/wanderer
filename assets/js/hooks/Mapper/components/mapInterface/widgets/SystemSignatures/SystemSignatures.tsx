@@ -32,7 +32,9 @@ export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
 export const SHOW_CHARACTER_COLUMN_SETTING = 'SHOW_CHARACTER_COLUMN_SETTING';
 export const LAZY_DELETE_SIGNATURES_SETTING = 'LAZY_DELETE_SIGNATURES_SETTING';
 export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
+// eslint-disable-next-line react-refresh/only-export-components
 export const DELETION_TIMING_SETTING = DELETION_TIMING_SETTING_KEY;
+export const COLOR_BY_TYPE_SETTING = 'COLOR_BY_TYPE_SETTING';
 
 // Extend the Setting type to include options for dropdown settings
 type ExtendedSetting = Setting & {
@@ -45,6 +47,7 @@ const SETTINGS: ExtendedSetting[] = [
   { key: SHOW_CHARACTER_COLUMN_SETTING, name: 'Show Character Column', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
+  { key: COLOR_BY_TYPE_SETTING, name: 'Color Signatures by Type', value: false, isFilter: false },
   {
     key: DELETION_TIMING_SETTING,
     name: 'Deletion Timing',
@@ -133,7 +136,12 @@ export const SystemSignatures: React.FC = () => {
 
   const deletionTimingValue = useMemo(() => {
     const setting = currentSettings.find(setting => setting.key === DELETION_TIMING_SETTING);
-    return typeof setting?.value === 'number' ? setting.value : DELETION_TIMING_DEFAULT;
+    return typeof setting?.value === 'number' ? setting.value : DELETION_TIMING_IMMEDIATE;
+  }, [currentSettings]);
+
+  const colorByTypeValue = useMemo(() => {
+    const setting = currentSettings.find(setting => setting.key === COLOR_BY_TYPE_SETTING);
+    return typeof setting?.value === 'boolean' ? setting.value : false;
   }, [currentSettings]);
 
   const handleSettingsChange = useCallback((newSettings: Setting[]) => {
@@ -240,6 +248,7 @@ export const SystemSignatures: React.FC = () => {
           onCountChange={handleSigCountChange}
           onPendingChange={handlePendingChange}
           deletionTiming={deletionTimingValue}
+          colorByType={colorByTypeValue}
         />
       )}
       {visible && (
