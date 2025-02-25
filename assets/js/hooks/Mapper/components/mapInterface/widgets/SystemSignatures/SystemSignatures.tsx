@@ -20,6 +20,7 @@ import { COMPACT_MAX_WIDTH } from './constants';
 import { renderHeaderLabel } from './renders';
 
 const SIGNATURE_SETTINGS_KEY = 'wanderer_system_signature_settings_v5_5';
+export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
 export const SHOW_DESCRIPTION_COLUMN_SETTING = 'show_description_column_setting';
 export const SHOW_UPDATED_COLUMN_SETTING = 'SHOW_UPDATED_COLUMN_SETTING';
 export const SHOW_CHARACTER_COLUMN_SETTING = 'SHOW_CHARACTER_COLUMN_SETTING';
@@ -89,7 +90,7 @@ export const SystemSignatures: React.FC = () => {
 
   const lazyDeleteValue = useMemo(
     () => currentSettings.find(setting => setting.key === LAZY_DELETE_SIGNATURES_SETTING)?.value || false,
-    [currentSettings]
+    [currentSettings],
   );
 
   const handleSettingsChange = useCallback((newSettings: Setting[]) => {
@@ -99,7 +100,7 @@ export const SystemSignatures: React.FC = () => {
 
   const handleLazyDeleteChange = useCallback((value: boolean) => {
     setCurrentSettings(prevSettings =>
-      prevSettings.map(setting => (setting.key === LAZY_DELETE_SIGNATURES_SETTING ? { ...setting, value } : setting))
+      prevSettings.map(setting => (setting.key === LAZY_DELETE_SIGNATURES_SETTING ? { ...setting, value } : setting)),
     );
   }, []);
 
@@ -151,6 +152,7 @@ export const SystemSignatures: React.FC = () => {
           })}
         </div>
       }
+      windowId={SIGNATURE_WINDOW_ID}
     >
       {isNotSelectedSystem ? (
         <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">

@@ -13,14 +13,15 @@ import {
   GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
+  getGroupIdByRawGroup,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import {
-  KEEP_LAZY_DELETE_SETTING,
-  LAZY_DELETE_SIGNATURES_SETTING,
   SHOW_DESCRIPTION_COLUMN_SETTING,
   SHOW_UPDATED_COLUMN_SETTING,
   SHOW_CHARACTER_COLUMN_SETTING,
+  SIGNATURE_WINDOW_ID,
 } from '../SystemSignatures';
+
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
 import {
   renderAddedTimeLeft,
@@ -89,9 +90,6 @@ export function SystemSignaturesContent({
   const isCompact = useMaxWidth(tableRef, COMPACT_MAX_WIDTH);
   const isMedium = useMaxWidth(tableRef, MEDIUM_MAX_WIDTH);
 
-  const lazyDeleteEnabled = settings.find(s => s.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
-  const keepLazyDeleteEnabled = settings.find(s => s.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
-
   const { clipboardContent, setClipboardContent } = useClipboard();
   useEffect(() => {
     if (selectable) return;
@@ -99,22 +97,21 @@ export function SystemSignaturesContent({
 
     handlePaste(clipboardContent.text);
 
-    if (lazyDeleteEnabled && !keepLazyDeleteEnabled) {
-      onLazyDeleteChange?.(false);
-    }
     setClipboardContent(null);
-  }, [
-    selectable,
-    clipboardContent,
-    handlePaste,
-    setClipboardContent,
-    lazyDeleteEnabled,
-    keepLazyDeleteEnabled,
-    onLazyDeleteChange,
-  ]);
+  }, [selectable, clipboardContent]);
 
   useHotkey(true, ['a'], handleSelectAll);
-  useHotkey(false, ['Backspace', 'Delete'], handleDeleteSelected);
+  useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
+    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${SIGNATURE_WINDOW_ID}"]`);
+
+    if (!targetWindow) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleDeleteSelected();
+  });
 
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const handleResize = useCallback(() => {
@@ -165,11 +162,14 @@ export function SystemSignaturesContent({
       if (hideLinkedSignatures && sig.linked_system) {
         return false;
       }
-      if (sig.kind === COSMIC_SIGNATURE) {
+      const isCosmicSignature = sig.kind === COSMIC_SIGNATURE;
+
+      if (isCosmicSignature) {
         const showCosmic = settings.find(y => y.key === COSMIC_SIGNATURE)?.value;
         if (!showCosmic) return false;
         if (sig.group) {
-          return enabledGroups.includes(sig.group);
+          const preparedGroup = getGroupIdByRawGroup(sig.group);
+          return enabledGroups.includes(preparedGroup);
         }
         return true;
       } else {

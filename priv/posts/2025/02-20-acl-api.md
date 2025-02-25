@@ -1,7 +1,7 @@
 %{
   title: "User Guide: Characters & ACL API Endpoints",
   author: "Wanderer Team",
-  cover_image_uri: "/images/news/02-20-acl-api/generate-key.png",
+  cover_image_uri: "/images/news/02-20-acl-api/generate-acl-key.png",
   tags: ~w(acl characters guide interface),
   description: "Learn how to retrieve and manage Access Lists and Characters through the Wanderer public APIs. This guide covers available endpoints, request examples, and sample responses."
 }

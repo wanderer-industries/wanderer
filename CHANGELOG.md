@@ -2,6 +2,46 @@
 
 <!-- changelog -->
 
+## [v1.52.7](https://github.com/wanderer-industries/wanderer/compare/v1.52.6...v1.52.7) (2025-02-24)
+
+
+
+
+### Bug Fixes:
+
+* update news image link (#204)
+
+* Map: Block map events for old client versions
+
+## [v1.52.6](https://github.com/wanderer-industries/wanderer/compare/v1.52.5...v1.52.6) (2025-02-23)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed delete systems on map changes
+
+## [v1.52.5](https://github.com/wanderer-industries/wanderer/compare/v1.52.4...v1.52.5) (2025-02-22)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed delete system on signature deletion
+
+* Map: Fixed delete system on signature deletion
+
+## [v1.52.4](https://github.com/wanderer-industries/wanderer/compare/v1.52.3...v1.52.4) (2025-02-21)
+
+
+
+
+### Bug Fixes:
+
+* signature paste for russian lang
+
 ## [v1.52.3](https://github.com/wanderer-industries/wanderer/compare/v1.52.2...v1.52.3) (2025-02-21)
 
 

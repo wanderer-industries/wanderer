@@ -257,13 +257,23 @@ defmodule WandererAppWeb.MapEventHandler do
     end
   end
 
-  def push_map_event(socket, type, body),
-    do:
-      socket
-      |> Phoenix.LiveView.Utils.push_event("map_event", %{
-        type: type,
-        body: body
-      })
+  def push_map_event(
+        %{
+          assigns: %{
+            is_version_valid?: true
+          }
+        } = socket,
+        type,
+        body
+      ),
+      do:
+        socket
+        |> Phoenix.LiveView.Utils.push_event("map_event", %{
+          type: type,
+          body: body
+        })
+
+  def push_map_event(socket, _type, _body), do: socket
 
   def map_ui_character_stat(character),
     do:

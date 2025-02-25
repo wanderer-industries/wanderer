@@ -5,12 +5,14 @@ import clsx from 'clsx';
 
 export interface WidgetProps {
   label: React.ReactNode | string;
+  windowId?: string;
   children?: React.ReactNode;
 }
 
-export const Widget = ({ label, children }: WidgetProps) => {
+export const Widget = ({ label, children, windowId }: WidgetProps) => {
   return (
     <div
+      data-window-id={windowId}
       className={clsx(
         classes.root,
         'flex flex-col w-full h-full rounded',
