@@ -2,7 +2,6 @@ import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo }
 import ReactFlow, {
   Background,
   Edge,
-  EdgeChange,
   MiniMap,
   Node,
   NodeChange,
@@ -79,11 +78,12 @@ const edgeTypes = {
   floating: SolarSystemEdge,
 };
 
+export const MAP_ROOT_ID = 'MAP_ROOT_ID';
+
 interface MapCompProps {
   refn: ForwardedRef<MapHandlers>;
   onCommand: OutCommandHandler;
   onSelectionChange: OnMapSelectionChange;
-  onManualDelete(systems: string[]): void;
   onConnectionInfoClick?(e: SolarSystemConnection): void;
   onAddSystem?: OnMapAddSystemCallback;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
@@ -105,7 +105,6 @@ const MapComp = ({
   onSystemContextMenu,
   onConnectionInfoClick,
   onSelectionContextMenu,
-  onManualDelete,
   isShowMinimap,
   showKSpaceBG,
   isThickConnections,
@@ -114,7 +113,7 @@ const MapComp = ({
   theme,
   onAddSystem,
 }: MapCompProps) => {
-  const { getNode, getNodes } = useReactFlow();
+  const { getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
@@ -187,8 +186,6 @@ const MapComp = ({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      // const systemsIdsToRemove: string[] = [];
-
       // prevents single node deselection on background / same node click
       // allows deseletion of all nodes if multiple are currently selected
       if (changes.length === 1 && changes[0].type == 'select' && changes[0].selected === false) {
@@ -197,30 +194,11 @@ const MapComp = ({
 
       const nextChanges = changes.reduce((acc, change) => {
         return [...acc, change];
-        // if (change.type !== 'remove') {
-
-        // }
-
-        // const node = getNode(change.id);
-        // if (!node) {
-        //   return [...acc, change];
-        // }
-
-        // if (node.data.locked) {
-        //   return acc;
-        // }
-
-        // systemsIdsToRemove.push(node.data.id);
-        // return [...acc, change];
       }, [] as NodeChange[]);
-
-      // if (systemsIdsToRemove.length > 0) {
-      //   onManualDelete(systemsIdsToRemove);
-      // }
 
       onNodesChange(nextChanges);
     },
-    [getNode, getNodes, onManualDelete, onNodesChange],
+    [getNodes, onNodesChange],
   );
 
   useEffect(() => {
@@ -233,7 +211,10 @@ const MapComp = ({
 
   return (
     <>
-      <div className={clsx(classes.MapRoot, { [classes.BackgroundAlternateColor]: isSoftBackground })}>
+      <div
+        data-window-id={MAP_ROOT_ID}
+        className={clsx(classes.MapRoot, { [classes.BackgroundAlternateColor]: isSoftBackground })}
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}

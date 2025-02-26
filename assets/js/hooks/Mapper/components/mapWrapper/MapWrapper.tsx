@@ -1,4 +1,4 @@
-import { Map } from '@/hooks/Mapper/components/map/Map.tsx';
+import { Map, MAP_ROOT_ID } from '@/hooks/Mapper/components/map/Map.tsx';
 import { useCallback, useRef, useState } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
@@ -15,7 +15,7 @@ import { Connections } from '@/hooks/Mapper/components/mapRootContent/components
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { Node, XYPosition } from 'reactflow';
+import { Node, useReactFlow, XYPosition } from 'reactflow';
 
 import { useCommandsSystems } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
@@ -27,6 +27,7 @@ import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
+import { useHotkey } from '../../hooks/useHotkey';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
@@ -46,6 +47,7 @@ export const MapWrapper = () => {
   } = useMapRootState();
   const { deleteSystems } = useDeleteSystems();
   const { mapRef, runCommand } = useCommonMapEventProcessor();
+  const { getNodes } = useReactFlow();
 
   const { updateLinkSignatureToSystem } = useCommandsSystems();
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
@@ -114,12 +116,14 @@ export const MapWrapper = () => {
 
   const handleConnectionDbClick = useCallback((e: SolarSystemConnection) => setSelectedConnection(e), []);
 
-  const handleManualDelete = useCallback((toDelete: string[]) => {
-    const restDel = toDelete.filter(x => ref.current.systems.some(y => y.id === x));
+  const handleDeleteSelected = useCallback(() => {
+    const restDel = getNodes()
+      .filter(x => x.selected && !x.data.locked)
+      .map(x => x.data.id);
     if (restDel.length > 0) {
       ref.current.deleteSystems(restDel);
     }
-  }, []);
+  }, [getNodes]);
 
   const onAddSystem: OnMapAddSystemCallback = useCallback(({ coordinates }) => {
     setOpenAddSystem(coordinates);
@@ -143,6 +147,18 @@ export const MapWrapper = () => {
     [openAddSystem, outCommand],
   );
 
+  useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
+    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
+
+    if (!targetWindow) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleDeleteSelected();
+  });
+
   return (
     <>
       <Map
@@ -155,7 +171,6 @@ export const MapWrapper = () => {
         minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
         isShowMinimap={isShowMinimap}
         showKSpaceBG={isShowKSpace}
-        onManualDelete={handleManualDelete}
         isThickConnections={isThickConnections}
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
