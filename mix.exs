@@ -2,7 +2,7 @@ defmodule WandererApp.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/wanderer-industries/wanderer"
-  
+
   @version "1.52.7"
 
   def project do
@@ -90,7 +90,7 @@ defmodule WandererApp.MixProject do
       {:exsync, "~> 0.4", only: :dev},
       {:nimble_csv, "~> 1.2.0"},
       {:cachex, "~> 3.6"},
-      {:live_select, "~> 1.4"},
+      {:live_select, "~> 1.5"},
       {:nebulex, "~> 2.6"},
       {:decorator, "~> 1.4"},
       {:slugify, "~> 1.3"},

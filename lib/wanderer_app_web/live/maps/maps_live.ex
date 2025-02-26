@@ -665,6 +665,7 @@ defmodule WandererAppWeb.MapsLive do
 
     form =
       form
+      |> Map.put("acls", form["acls"] || [])
       |> Map.put("scope", scope)
       |> Map.put(
         "only_tracked_characters",
@@ -675,14 +676,6 @@ defmodule WandererAppWeb.MapsLive do
     |> WandererApp.Api.Map.update(form)
     |> case do
       {:ok, updated_map} ->
-        case form["acls"] do
-          nil ->
-            {:ok, _} = WandererApp.Api.Map.update_acls(updated_map, %{acls: []})
-
-          acls when is_list(acls) ->
-            {:ok, _} = WandererApp.Api.Map.update_acls(updated_map, %{acls: acls})
-        end
-
         {added_acls, removed_acls} = map.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
 
         Phoenix.PubSub.broadcast(
@@ -720,10 +713,7 @@ defmodule WandererAppWeb.MapsLive do
 
         {:noreply,
          socket
-         |> assign_async(:maps, fn ->
-           _load_maps(current_user)
-         end)
-         |> push_patch(to: ~p"/maps")}
+         |> push_navigate(to: ~p"/maps")}
 
       {:error, error} ->
         {:noreply,

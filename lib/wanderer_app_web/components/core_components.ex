@@ -730,7 +730,7 @@ defmodule WandererAppWeb.CoreComponents do
       )
 
     ~H"""
-    <label
+    <div
       phx-feedback-for={@field.name}
       class={[
         "form-control",
@@ -762,7 +762,7 @@ defmodule WandererAppWeb.CoreComponents do
       <div for="form_description" class="label">
         <.error :for={msg <- @errors}><%= msg %></.error>
       </div>
-    </label>
+    </div>
     """
   end
 
