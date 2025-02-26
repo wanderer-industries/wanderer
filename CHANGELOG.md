@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.52.8](https://github.com/wanderer-industries/wanderer/compare/v1.52.7...v1.52.8) (2025-02-26)
+
+
+
+
+### Bug Fixes:
+
+* Map: Added delete systems hotkey
+
 ## [v1.52.7](https://github.com/wanderer-industries/wanderer/compare/v1.52.6...v1.52.7) (2025-02-24)
 
 
