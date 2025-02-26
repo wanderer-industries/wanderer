@@ -2,6 +2,26 @@
 
 <!-- changelog -->
 
+## [v1.53.0](https://github.com/wanderer-industries/wanderer/compare/v1.52.8...v1.53.0) (2025-02-26)
+
+
+
+
+### Features:
+
+* Auto-set connection EOL status and ship size when linking/editing signatures (#194)
+
+* Automatically set connection EOL status and ship size type when linking/updating signatures
+
+## [v1.52.8](https://github.com/wanderer-industries/wanderer/compare/v1.52.7...v1.52.8) (2025-02-26)
+
+
+
+
+### Bug Fixes:
+
+* Map: Added delete systems hotkey
+
 ## [v1.52.7](https://github.com/wanderer-industries/wanderer/compare/v1.52.6...v1.52.7) (2025-02-24)
 
 

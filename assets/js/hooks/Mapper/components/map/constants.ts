@@ -750,6 +750,14 @@ export const SHIP_SIZES_SIZE = {
   [ShipSizeStatus.capital]: '2M',
 };
 
+export const SHIP_MASSES_SIZE: Record<number, ShipSizeStatus> = {
+  5_000_000: ShipSizeStatus.small,
+  62_000_000: ShipSizeStatus.medium,
+  375_000_000: ShipSizeStatus.large,
+  1_000_000_000: ShipSizeStatus.freight,
+  2_000_000_000: ShipSizeStatus.capital,
+};
+
 export const SHIP_SIZES_DESCRIPTION = {
   [ShipSizeStatus.small]: 'Frigate wormhole - up to Destroyer | 5K t.',
   [ShipSizeStatus.medium]: 'Cruise wormhole - up to Battlecruiser | 62K t.',
