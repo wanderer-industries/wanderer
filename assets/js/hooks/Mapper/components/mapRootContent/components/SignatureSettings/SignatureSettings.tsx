@@ -1,6 +1,6 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useEffect } from 'react';
-import { OutCommand, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import { OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import {
   SignatureGroupContent,
@@ -10,6 +10,7 @@ import { InputText } from 'primereact/inputtext';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { Button } from 'primereact/button';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & { linked_system: string };
 
@@ -21,7 +22,10 @@ export interface MapSettingsProps {
 }
 
 export const SignatureSettings = ({ systemId, show, onHide, signatureData }: MapSettingsProps) => {
-  const { outCommand } = useMapRootState();
+  const {
+    outCommand,
+    data: { wormholes },
+  } = useMapRootState();
 
   const handleShow = async () => {};
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
@@ -47,6 +51,31 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                 solar_system_target: values.linked_system,
               },
             });
+
+            if (values.isEOL) {
+              await outCommand({
+                type: OutCommand.updateConnectionTimeStatus,
+                data: {
+                  source: systemId,
+                  target: values.linked_system,
+                  value: TimeStatus.eol,
+                },
+              });
+            }
+
+            if (values.type) {
+              const whShipSize = getWhSize(wormholes, values.type);
+              if (whShipSize) {
+                outCommand({
+                  type: OutCommand.updateConnectionShipSizeType,
+                  data: {
+                    source: systemId,
+                    target: values.linked_system,
+                    value: whShipSize,
+                  },
+                });
+              }
+            }
           }
 
           out = {
