@@ -270,6 +270,32 @@ defmodule WandererApp.Map.SubscriptionManager do
             amount: estimated_price - discount
           })
 
+          # Check if a license already exists, if not create one
+          case WandererApp.License.LicenseManager.get_license_by_map_id(map.id) do
+            {:error, :license_not_found} ->
+              # No license found, create one
+              # The License Manager service will verify the subscription is active
+              case WandererApp.License.LicenseManager.create_license_for_map(map.id) do
+                {:ok, license} ->
+                  @logger.info("Automatically created license #{license.license_key} for map #{map.id} during renewal")
+                {:error, :no_active_subscription} ->
+                  @logger.warn("Cannot create license for map #{map.id}: No active subscription found")
+                {:error, reason} ->
+                  @logger.error("Failed to create license for map #{map.id} during renewal: #{inspect(reason)}")
+              end
+            {:ok, _license} ->
+              # License exists, update its expiration date
+              case WandererApp.License.LicenseManager.update_license_expiration_from_subscription(map.id) do
+                {:ok, updated_license} ->
+                  @logger.info("Updated license expiration for map #{map.id} to #{updated_license.expire_at}")
+                {:error, reason} ->
+                  @logger.error("Failed to update license expiration for map #{map.id}: #{inspect(reason)}")
+              end
+            _ ->
+              # Error occurred, do nothing
+              :ok
+          end
+
           :ok
 
         _ ->

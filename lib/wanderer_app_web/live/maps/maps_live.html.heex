@@ -345,6 +345,16 @@
                     </span>
                   </a>
                 </li>
+                <li
+                  :if={@map_subscriptions_enabled?}
+                  class={
+                    classes("p-tabview-nav-link", "p-tabview-selected p-highlight": @active_settings_tab == "bot")
+                  }
+                >
+                  <a href="#" phx-click="change_settings_tab" phx-value-tab="bot">
+                    Bot
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -683,6 +693,37 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div :if={@active_settings_tab == "bot"}>
+    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+      <h3 class="text-lg font-semibold mb-2">Bot Integration</h3>
+      <p class="mb-2">
+        The bot license allows you to integrate your map with automated tools and bots. 
+        Here's how to use it:
+      </p>
+      <ol class="list-decimal pl-5 mb-4 space-y-2">
+        <li>Create a license key below (requires an active subscription)</li>
+        <li>Use the license key to authenticate your bot with our API</li>
+        <li>
+          Make API calls to <code class="bg-gray-100 px-1 py-0.5 rounded">GET /api/license/validate</code> 
+          with the license key as a Bearer token in the Authorization header
+        </li>
+        <li>
+          If valid, you'll receive the map ID which you can use for other API endpoints
+        </li>
+      </ol>
+      <p class="text-sm text-gray-600">
+        For detailed API documentation, please refer to our 
+        <a href="/license" class="text-blue-600 hover:underline">API documentation</a>.
+      </p>
+    </div>
+
+    <.live_component
+      module={WandererAppWeb.Maps.LicenseComponent}
+      id="license-component"
+      map_id={@map.id}
+    />
   </div>
 
   <div class="modal-action">
