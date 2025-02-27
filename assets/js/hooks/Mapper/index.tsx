@@ -50,4 +50,8 @@ export default {
   render(hooks) {
     this._rootEl.render(<Mapper hooks={hooks} />);
   },
+
+  destroyed() {
+    this._rootEl.unmount();
+  },
 };
