@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.53.3](https://github.com/wanderer-industries/wanderer/compare/v1.53.2...v1.53.3) (2025-02-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: little bit up performance for windows manager
+
 ## [v1.53.2](https://github.com/wanderer-industries/wanderer/compare/v1.53.1...v1.53.2) (2025-02-27)
 
 
