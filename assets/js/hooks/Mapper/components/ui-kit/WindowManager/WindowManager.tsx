@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import styles from './WindowManager.module.scss';
 import debounce from 'lodash.debounce';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
+import fastDeepEqual from 'fast-deep-equal';
 
 const MIN_WINDOW_SIZE = 100;
 const SNAP_THRESHOLD = 10;
@@ -100,6 +101,8 @@ export const WindowManager: React.FC<WindowManagerProps> = ({
   );
 
   const refPrevSize = useRef({ w: 0, h: 0 });
+  const ref = useRef({ windows, viewPort, onChange });
+  ref.current = { windows, viewPort, onChange };
 
   useEffect(() => {
     if (!viewPort) {
@@ -110,6 +113,16 @@ export const WindowManager: React.FC<WindowManagerProps> = ({
   }, [viewPort]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const next = initialWindows.map(({ content, ...x }) => x);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const prev = ref.current.windows.map(({ content, ...x }) => x);
+
+    // Here we avoid unnecessary renders if changes was emitted from here.
+    if (fastDeepEqual(next, prev)) {
+      return;
+    }
+
     setWindows(initialWindows.slice(0));
   }, [initialWindows]);
 
@@ -119,9 +132,6 @@ export const WindowManager: React.FC<WindowManagerProps> = ({
   const resizeDirectionRef = useRef<string | null>(null);
   const startMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startWindowStateRef = useRef<{ x: number; y: number; width: number; height: number }>(DefaultWindowState);
-
-  const ref = useRef({ windows, viewPort, onChange });
-  ref.current = { windows, viewPort, onChange };
 
   const onDebouncedChange = useMemo(() => {
     return debounce(() => {

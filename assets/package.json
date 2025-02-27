@@ -16,6 +16,7 @@
     "@shopify/draggable": "^1.1.3",
     "clsx": "^2.1.1",
     "daisyui": "^4.11.1",
+    "fast-deep-equal": "^3.1.3",
     "live_select": "file:../deps/live_select",
     "lodash.debounce": "^4.0.8",
     "lodash.isequal": "^4.5.0",
