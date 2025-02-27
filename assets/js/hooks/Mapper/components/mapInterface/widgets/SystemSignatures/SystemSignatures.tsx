@@ -35,6 +35,7 @@ export const KEEP_LAZY_DELETE_SETTING = 'KEEP_LAZY_DELETE_ENABLED_SETTING';
 // eslint-disable-next-line react-refresh/only-export-components
 export const DELETION_TIMING_SETTING = DELETION_TIMING_SETTING_KEY;
 export const COLOR_BY_TYPE_SETTING = 'COLOR_BY_TYPE_SETTING';
+export const SHOW_CHARACTER_PORTRAIT_SETTING = 'SHOW_CHARACTER_PORTRAIT_SETTING';
 
 // Extend the Setting type to include options for dropdown settings
 type ExtendedSetting = Setting & {
@@ -45,6 +46,7 @@ const SETTINGS: ExtendedSetting[] = [
   { key: SHOW_UPDATED_COLUMN_SETTING, name: 'Show Updated Column', value: false, isFilter: false },
   { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: false, isFilter: false },
   { key: SHOW_CHARACTER_COLUMN_SETTING, name: 'Show Character Column', value: false, isFilter: false },
+  { key: SHOW_CHARACTER_PORTRAIT_SETTING, name: 'Show Character Portrait in Tooltip', value: false, isFilter: false },
   { key: LAZY_DELETE_SIGNATURES_SETTING, name: 'Lazy Delete Signatures', value: false, isFilter: false },
   { key: KEEP_LAZY_DELETE_SETTING, name: 'Keep "Lazy Delete" Enabled', value: false, isFilter: false },
   { key: COLOR_BY_TYPE_SETTING, name: 'Color Signatures by Type', value: false, isFilter: false },

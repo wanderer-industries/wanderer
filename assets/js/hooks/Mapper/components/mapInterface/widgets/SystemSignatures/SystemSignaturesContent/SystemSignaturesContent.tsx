@@ -20,6 +20,7 @@ import {
   SHOW_UPDATED_COLUMN_SETTING,
   SHOW_CHARACTER_COLUMN_SETTING,
   SIGNATURE_WINDOW_ID,
+  SHOW_CHARACTER_PORTRAIT_SETTING,
 } from '../SystemSignatures';
 
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
@@ -157,6 +158,7 @@ export function SystemSignaturesContent({
   const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
   const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
   const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
+  const showCharacterPortrait = settings.find(s => s.key === SHOW_CHARACTER_PORTRAIT_SETTING)?.value;
 
   const enabledGroups = settings
     .filter(s => GROUPS_LIST.includes(s.key as SignatureGroup) && s.value === true)
@@ -206,22 +208,14 @@ export function SystemSignaturesContent({
           sortField={sortSettings.sortField}
           sortOrder={sortSettings.sortOrder}
           onSort={e => setSortSettings({ sortField: e.sortField, sortOrder: e.sortOrder })}
-          onRowMouseEnter={
-            isCompact || isMedium
-              ? (e: DataTableRowMouseEvent) => {
-                  setHoveredSignature(filteredSignatures[e.index]);
-                  tooltipRef.current?.show(e.originalEvent);
-                }
-              : undefined
-          }
-          onRowMouseLeave={
-            isCompact || isMedium
-              ? () => {
-                  setHoveredSignature(null);
-                  tooltipRef.current?.hide();
-                }
-              : undefined
-          }
+          onRowMouseEnter={(e: DataTableRowMouseEvent) => {
+            setHoveredSignature(e.data as SystemSignature);
+            tooltipRef.current?.show(e.originalEvent);
+          }}
+          onRowMouseLeave={() => {
+            setHoveredSignature(null);
+            tooltipRef.current?.hide();
+          }}
           rowClassName={rowData =>
             getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures, colorByType)
           }
@@ -325,7 +319,11 @@ export function SystemSignaturesContent({
       <WdTooltip
         className="bg-stone-900/95 text-slate-50"
         ref={tooltipRef}
-        content={hoveredSignature ? <SignatureView {...hoveredSignature} /> : null}
+        content={
+          hoveredSignature ? (
+            <SignatureView {...hoveredSignature} showCharacterPortrait={!!showCharacterPortrait} />
+          ) : null
+        }
       />
 
       {showSignatureSettings && (
