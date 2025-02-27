@@ -149,7 +149,6 @@ export const SystemSignatures: React.FC = () => {
   const handleSettingsChange = useCallback((newSettings: Setting[]) => {
     setCurrentSettings(newSettings as ExtendedSetting[]);
     setVisible(false);
-    console.log('Settings changed:', newSettings);
   }, []);
 
   const handleLazyDeleteChange = useCallback((value: boolean) => {
@@ -178,9 +177,8 @@ export const SystemSignatures: React.FC = () => {
   }, []);
 
   const handleSettingsButtonClick = useCallback(() => {
-    console.log('Opening settings dialog with settings:', currentSettings);
     setVisible(true);
-  }, [currentSettings]);
+  }, []);
 
   const handlePendingChange = useCallback((newPending: SystemSignature[], newUndo: () => void) => {
     setPendingSigs(prev => {

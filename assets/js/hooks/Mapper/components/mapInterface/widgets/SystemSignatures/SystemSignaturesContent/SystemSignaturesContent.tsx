@@ -321,7 +321,7 @@ export function SystemSignaturesContent({
         ref={tooltipRef}
         content={
           hoveredSignature ? (
-            <SignatureView {...hoveredSignature} showCharacterPortrait={!!showCharacterPortrait} />
+            <SignatureView signature={hoveredSignature} showCharacterPortrait={!!showCharacterPortrait} />
           ) : null
         }
       />
