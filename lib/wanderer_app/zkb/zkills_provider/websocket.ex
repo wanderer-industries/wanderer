@@ -7,6 +7,7 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
   require Logger
   alias WandererApp.Zkb.KillsProvider.Parser
   alias WandererApp.Esi
+  alias WandererApp.Utils.HttpUtil
   use Retry
 
   @heartbeat_interval 1_000
@@ -89,7 +90,7 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
           :skip
 
         {:error, reason} ->
-          if retriable_error?(reason) do
+          if HttpUtil.retriable_error?(reason) do
             Logger.warning("[KillsProvider.Websocket] ESI get_killmail retriable error => kill_id=#{kill_id}, reason=#{inspect(reason)}")
             raise "ESI error: #{inspect(reason)}, will retry"
           else
@@ -110,13 +111,4 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
 
   defp parse_and_store_zkb_partial(_),
     do: :skip
-
-  # Helper to determine if an error is retriable
-  defp retriable_error?(:timeout), do: true
-  defp retriable_error?("Unexpected status: 500"), do: true
-  defp retriable_error?("Unexpected status: 502"), do: true
-  defp retriable_error?("Unexpected status: 503"), do: true
-  defp retriable_error?("Unexpected status: 504"), do: true
-  defp retriable_error?("Request failed"), do: true
-  defp retriable_error?(_), do: false
 end

@@ -10,6 +10,7 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
 
   require Logger
   alias WandererApp.Zkb.KillsProvider.KillsCache
+  alias WandererApp.Utils.HttpUtil
   use Retry
 
   # Maximum retries for enrichment calls
@@ -272,7 +273,7 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
               :skip
 
             {:error, reason} ->
-              if retriable_error?(reason) do
+              if HttpUtil.retriable_error?(reason) do
                 Logger.debug(fn -> "[Parser] Character info retriable error => id=#{eve_id}, reason=#{inspect(reason)}" end)
                 raise "Character info error: #{inspect(reason)}, will retry"
               else
@@ -308,7 +309,7 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
               :skip
 
             {:error, reason} ->
-              if retriable_error?(reason) do
+              if HttpUtil.retriable_error?(reason) do
                 Logger.debug(fn -> "[Parser] Corporation info retriable error => id=#{corp_id}, reason=#{inspect(reason)}" end)
                 raise "Corporation info error: #{inspect(reason)}, will retry"
               else
@@ -347,7 +348,7 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
               :skip
 
             {:error, reason} ->
-              if retriable_error?(reason) do
+              if HttpUtil.retriable_error?(reason) do
                 Logger.debug(fn -> "[Parser] Alliance info retriable error => id=#{alliance_id}, reason=#{inspect(reason)}" end)
                 raise "Alliance info error: #{inspect(reason)}, will retry"
               else
@@ -385,7 +386,7 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
               :skip
 
             {:error, reason} ->
-              if retriable_error?(reason) do
+              if HttpUtil.retriable_error?(reason) do
                 Logger.debug(fn -> "[Parser] Ship type retriable error => id=#{type_id}, reason=#{inspect(reason)}" end)
                 raise "Ship type error: #{inspect(reason)}, will retry"
               else
@@ -401,15 +402,6 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
         end
     end
   end
-
-  # Helper to determine if an error is retriable
-  defp retriable_error?(:timeout), do: true
-  defp retriable_error?("Unexpected status: 500"), do: true
-  defp retriable_error?("Unexpected status: 502"), do: true
-  defp retriable_error?("Unexpected status: 503"), do: true
-  defp retriable_error?("Unexpected status: 504"), do: true
-  defp retriable_error?("Request failed"), do: true
-  defp retriable_error?(_), do: false
 
   # Utility
   defp within_last_hour?(nil), do: false
