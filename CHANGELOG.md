@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.53.1](https://github.com/wanderer-industries/wanderer/compare/v1.53.0...v1.53.1) (2025-02-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map ACLs add/remove behaviour
+
 ## [v1.53.0](https://github.com/wanderer-industries/wanderer/compare/v1.52.8...v1.53.0) (2025-02-26)
 
 
