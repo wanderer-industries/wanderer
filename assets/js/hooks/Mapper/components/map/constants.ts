@@ -753,8 +753,11 @@ export const SHIP_SIZES_SIZE = {
 export const SHIP_MASSES_SIZE: Record<number, ShipSizeStatus> = {
   5_000_000: ShipSizeStatus.small,
   62_000_000: ShipSizeStatus.medium,
+  300_000_000: ShipSizeStatus.large,
   375_000_000: ShipSizeStatus.large,
   1_000_000_000: ShipSizeStatus.freight,
+  1_350_000_000: ShipSizeStatus.capital,
+  1_800_000_000: ShipSizeStatus.capital,
   2_000_000_000: ShipSizeStatus.capital,
 };
 
