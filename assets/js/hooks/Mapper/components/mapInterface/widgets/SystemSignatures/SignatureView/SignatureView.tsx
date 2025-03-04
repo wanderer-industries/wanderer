@@ -1,5 +1,6 @@
 import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { renderIcon } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
+import { getCharacterPortraitUrl } from '@/hooks/Mapper/helpers';
 
 export interface SignatureViewProps {
   signature: SystemSignature;
@@ -22,7 +23,7 @@ export const SignatureView = ({ signature, showCharacterPortrait = false }: Sign
         {hasCharacterInfo && (
           <div className="flex items-center gap-1 ml-2 pl-2 border-l border-stone-700">
             <img
-              src={`https://images.evetech.net/characters/${signature.character_eve_id}/portrait`}
+              src={getCharacterPortraitUrl(signature.character_eve_id)}
               alt={characterName}
               className="w-5 h-5 rounded-sm border border-stone-700"
             />

@@ -1,5 +1,5 @@
 const ZKILL_URL = 'https://zkillboard.com';
-const BASE_IMAGE_URL = 'https://images.evetech.net';
+import { getEveImageUrl } from '@/hooks/Mapper/helpers';
 
 export function zkillLink(type: 'kill' | 'character' | 'corporation' | 'alliance', id?: number | null): string {
   if (!id) return `${ZKILL_URL}`;
@@ -10,21 +10,7 @@ export function zkillLink(type: 'kill' | 'character' | 'corporation' | 'alliance
   return `${ZKILL_URL}`;
 }
 
-export function eveImageUrl(
-  category: 'characters' | 'corporations' | 'alliances' | 'types',
-  id?: number | null,
-  variation: string = 'icon',
-  size?: number,
-): string | null {
-  if (!id || id <= 0) {
-    return null;
-  }
-  let url = `${BASE_IMAGE_URL}/${category}/${id}/${variation}`;
-  if (size) {
-    url += `?size=${size}`;
-  }
-  return url;
-}
+export const eveImageUrl = getEveImageUrl;
 
 export function buildVictimImageUrls(args: {
   victim_char_id?: number | null;
