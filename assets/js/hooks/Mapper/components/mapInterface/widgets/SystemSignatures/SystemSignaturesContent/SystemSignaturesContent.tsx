@@ -58,6 +58,7 @@ interface SystemSignaturesContentProps {
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
   deletionTiming?: number;
   colorByType?: boolean;
+  filterSignature?: (signature: SystemSignature) => boolean;
 }
 
 const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
@@ -73,6 +74,7 @@ export function SystemSignaturesContent({
   onPendingChange,
   deletionTiming,
   colorByType,
+  filterSignature,
 }: SystemSignaturesContentProps) {
   const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
     useSystemSignaturesData({
@@ -166,6 +168,10 @@ export function SystemSignaturesContent({
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
+      if (filterSignature && !filterSignature(sig)) {
+        return false;
+      }
+      
       if (hideLinkedSignatures && sig.linked_system) {
         return false;
       }
@@ -183,7 +189,7 @@ export function SystemSignaturesContent({
         return settings.find(y => y.key === sig.kind)?.value;
       }
     });
-  }, [signatures, hideLinkedSignatures, settings, enabledGroups]);
+  }, [signatures, hideLinkedSignatures, settings, enabledGroups, filterSignature]);
 
   return (
     <div ref={tableRef} className="h-full">
