@@ -171,7 +171,7 @@ export function SystemSignaturesContent({
       if (filterSignature && !filterSignature(sig)) {
         return false;
       }
-      
+
       if (hideLinkedSignatures && sig.linked_system) {
         return false;
       }

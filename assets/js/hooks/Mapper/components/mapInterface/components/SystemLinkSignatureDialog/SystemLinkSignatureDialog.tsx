@@ -15,8 +15,14 @@ import { SignatureGroup } from '@/hooks/Mapper/types';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
-import { SOLAR_SYSTEM_CLASS_IDS } from '@/hooks/Mapper/components/map/constants.ts';
+import {
+  SOLAR_SYSTEM_CLASS_IDS,
+  SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
+  WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
+} from '@/hooks/Mapper/components/map/constants.ts';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+
+const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
 
 interface SystemLinkSignatureDialogProps {
   data: CommandLinkSignatureToSystem;
@@ -36,95 +42,6 @@ interface ExtendedSignatureCustomInfo {
   [key: string]: unknown;
 }
 
-// Define system class constants to use as a single source of truth
-const SYSTEM_CLASSES = {
-  C1: 'c1',
-  C2: 'c2',
-  C3: 'c3',
-  C4: 'c4',
-  C5: 'c5',
-  C6: 'c6',
-  HS: 'hs',
-  LS: 'ls',
-  NS: 'ns',
-  THERA: 'thera',
-  C13: 'c13',
-  ANY: 'any', // Special case for K162
-} as const;
-
-// Create a type from our constants for better type safety
-type SystemClass = (typeof SYSTEM_CLASSES)[keyof typeof SYSTEM_CLASSES];
-
-// Map system class IDs to their group names
-const systemClassToGroup: Record<number, SystemClass> = {
-  [SOLAR_SYSTEM_CLASS_IDS.c1]: SYSTEM_CLASSES.C1,
-  [SOLAR_SYSTEM_CLASS_IDS.c2]: SYSTEM_CLASSES.C2,
-  [SOLAR_SYSTEM_CLASS_IDS.c3]: SYSTEM_CLASSES.C3,
-  [SOLAR_SYSTEM_CLASS_IDS.c4]: SYSTEM_CLASSES.C4,
-  [SOLAR_SYSTEM_CLASS_IDS.c5]: SYSTEM_CLASSES.C5,
-  [SOLAR_SYSTEM_CLASS_IDS.c6]: SYSTEM_CLASSES.C6,
-  [SOLAR_SYSTEM_CLASS_IDS.hs]: SYSTEM_CLASSES.HS,
-  [SOLAR_SYSTEM_CLASS_IDS.ls]: SYSTEM_CLASSES.LS,
-  [SOLAR_SYSTEM_CLASS_IDS.ns]: SYSTEM_CLASSES.NS,
-  [SOLAR_SYSTEM_CLASS_IDS.thera]: SYSTEM_CLASSES.THERA,
-  [SOLAR_SYSTEM_CLASS_IDS.c13]: SYSTEM_CLASSES.C13,
-};
-
-// Map of wormhole types to the system classes they can lead to
-const wormholeTypeToDestination: Record<string, SystemClass> = {
-  // C1 wormholes
-  Z971: SYSTEM_CLASSES.C1,
-  L614: SYSTEM_CLASSES.C1,
-  C125: SYSTEM_CLASSES.C1,
-  O128: SYSTEM_CLASSES.C1,
-  Q317: SYSTEM_CLASSES.C1,
-  // C2 wormholes
-  Z142: SYSTEM_CLASSES.C2,
-  D382: SYSTEM_CLASSES.C2,
-  N766: SYSTEM_CLASSES.C2,
-  R474: SYSTEM_CLASSES.C2,
-  X877: SYSTEM_CLASSES.C2,
-  // C3 wormholes
-  V301: SYSTEM_CLASSES.C3,
-  H296: SYSTEM_CLASSES.C3,
-  U210: SYSTEM_CLASSES.C3,
-  N968: SYSTEM_CLASSES.C3,
-  S804: SYSTEM_CLASSES.C3,
-  // C4 wormholes
-  N110: SYSTEM_CLASSES.C4,
-  C247: SYSTEM_CLASSES.C4,
-  O477: SYSTEM_CLASSES.C4,
-  M267: SYSTEM_CLASSES.C4,
-  // C5 wormholes
-  H900: SYSTEM_CLASSES.C5,
-  N062: SYSTEM_CLASSES.C5,
-  V753: SYSTEM_CLASSES.C5,
-  Z457: SYSTEM_CLASSES.C5,
-  // C6 wormholes
-  V911: SYSTEM_CLASSES.C6,
-  W237: SYSTEM_CLASSES.C6,
-  B520: SYSTEM_CLASSES.C6,
-  // HS wormholes
-  B274: SYSTEM_CLASSES.HS,
-  A239: SYSTEM_CLASSES.HS,
-  D845: SYSTEM_CLASSES.HS,
-  // LS wormholes
-  N944: SYSTEM_CLASSES.LS,
-  C391: SYSTEM_CLASSES.LS,
-  R943: SYSTEM_CLASSES.LS,
-  // NS wormholes
-  E545: SYSTEM_CLASSES.NS,
-  K346: SYSTEM_CLASSES.NS,
-  N432: SYSTEM_CLASSES.NS,
-  // Thera wormholes
-  V928: SYSTEM_CLASSES.THERA,
-  E587: SYSTEM_CLASSES.THERA,
-  // C13 wormholes
-  S199: SYSTEM_CLASSES.C13,
-
-  K162: SYSTEM_CLASSES.ANY,
-};
-
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const {
     outCommand,
@@ -142,9 +59,15 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     if (!targetSystemInfo) return null;
     const systemClassId = targetSystemInfo.system_class;
 
-    // Get the group name from our mapping
-    const group = systemClassToGroup[systemClassId as number] || null;
-    return group;
+    const systemClassKey = Object.keys(SOLAR_SYSTEM_CLASS_IDS).find(
+      key => SOLAR_SYSTEM_CLASS_IDS[key as keyof typeof SOLAR_SYSTEM_CLASS_IDS] === systemClassId,
+    );
+
+    if (!systemClassKey) return null;
+
+    return (
+      SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS[systemClassKey as keyof typeof SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS] || null
+    );
   }, [targetSystemInfo]);
 
   const handleHide = useCallback(() => {
@@ -161,7 +84,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         return true;
       }
 
-      if (signature.type === 'K162') {
+      if (signature.type === K162_SIGNATURE_TYPE) {
         // Parse the custom info to see if the user has specified what class this K162 leads to
         const customInfo = parseSignatureCustomInfo(signature.custom_info) as ExtendedSignatureCustomInfo;
 
@@ -180,15 +103,20 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         return true;
       }
 
-      const destinationClass = wormholeTypeToDestination[signature.type];
-      if (!destinationClass) {
+      // Find the wormhole data for this signature type
+      const wormholeData = wormholes.find(wh => wh.name === signature.type);
+      if (!wormholeData) {
         return true; // If we don't know the destination, don't filter it out
       }
 
+      // Get the destination system class from the wormhole data
+      const destinationClass = wormholeData.dest;
+
+      // Check if the destination class matches the target system class
       const isMatch = destinationClass === targetSystemClassGroup;
       return isMatch;
     },
-    [targetSystemClassGroup],
+    [targetSystemClassGroup, wormholes],
   );
 
   const handleSelect = useCallback(

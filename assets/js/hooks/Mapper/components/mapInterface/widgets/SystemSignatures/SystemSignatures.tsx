@@ -81,6 +81,32 @@ function getDefaultSettings(): ExtendedSetting[] {
   return [...SETTINGS];
 }
 
+function getInitialSettings(): ExtendedSetting[] {
+  const stored = localStorage.getItem(SIGNATURE_SETTINGS_KEY);
+  if (stored) {
+    try {
+      const parsedSettings = JSON.parse(stored) as ExtendedSetting[];
+      // Merge stored settings with default settings to ensure new settings are included
+      const defaultSettings = getDefaultSettings();
+      const mergedSettings = defaultSettings.map(defaultSetting => {
+        const storedSetting = parsedSettings.find(s => s.key === defaultSetting.key);
+        if (storedSetting) {
+          // Keep the stored value but ensure options are from default settings
+          return {
+            ...defaultSetting,
+            value: storedSetting.value,
+          };
+        }
+        return defaultSetting;
+      });
+      return mergedSettings;
+    } catch (error) {
+      console.error('Error parsing stored settings', error);
+    }
+  }
+  return getDefaultSettings();
+}
+
 export const SystemSignatures: React.FC = () => {
   const {
     data: { selectedSystems },
@@ -88,31 +114,7 @@ export const SystemSignatures: React.FC = () => {
 
   const [visible, setVisible] = useState(false);
 
-  const [currentSettings, setCurrentSettings] = useState<ExtendedSetting[]>(() => {
-    const stored = localStorage.getItem(SIGNATURE_SETTINGS_KEY);
-    if (stored) {
-      try {
-        const parsedSettings = JSON.parse(stored) as ExtendedSetting[];
-        // Merge stored settings with default settings to ensure new settings are included
-        const defaultSettings = getDefaultSettings();
-        const mergedSettings = defaultSettings.map(defaultSetting => {
-          const storedSetting = parsedSettings.find(s => s.key === defaultSetting.key);
-          if (storedSetting) {
-            // Keep the stored value but ensure options are from default settings
-            return {
-              ...defaultSetting,
-              value: storedSetting.value,
-            };
-          }
-          return defaultSetting;
-        });
-        return mergedSettings;
-      } catch (error) {
-        console.error('Error parsing stored settings', error);
-      }
-    }
-    return getDefaultSettings();
-  });
+  const [currentSettings, setCurrentSettings] = useState<ExtendedSetting[]>(getInitialSettings);
 
   useEffect(() => {
     localStorage.setItem(SIGNATURE_SETTINGS_KEY, JSON.stringify(currentSettings));
