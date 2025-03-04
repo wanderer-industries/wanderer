@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 
-function usePageVisibility() {
+export const usePageVisibility = () => {
   const [isVisible, setIsVisible] = useState(!document.hidden);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsVisible(!document.hidden);
-    };
-
+    const handleVisibilityChange = () => setIsVisible(!document.hidden);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
@@ -16,6 +13,4 @@ function usePageVisibility() {
   }, []);
 
   return isVisible;
-}
-
-export default usePageVisibility;
+};
