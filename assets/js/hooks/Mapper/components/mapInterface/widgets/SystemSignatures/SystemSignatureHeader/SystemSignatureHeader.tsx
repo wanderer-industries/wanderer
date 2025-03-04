@@ -13,6 +13,7 @@ export type HeaderProps = {
   lazyDeleteValue: boolean;
   onLazyDeleteChange: (checked: boolean) => void;
   pendingCount: number;
+  pendingTimeRemaining?: number; // Time remaining in ms
   onUndoClick: () => void;
   onSettingsClick: () => void;
 };
@@ -25,9 +26,17 @@ function HeaderImpl({
   lazyDeleteValue,
   onLazyDeleteChange,
   pendingCount,
+  pendingTimeRemaining,
   onUndoClick,
   onSettingsClick,
 }: HeaderProps) {
+  // Format time remaining as seconds
+  const formatTimeRemaining = () => {
+    if (!pendingTimeRemaining) return '';
+    const seconds = Math.ceil(pendingTimeRemaining / 1000);
+    return ` (${seconds}s remaining)`;
+  };
+
   return (
     <div className="flex justify-between items-center text-xs w-full h-full">
       <div className="flex justify-between items-center gap-1">
@@ -55,7 +64,10 @@ function HeaderImpl({
           <WdImgButton
             className={PrimeIcons.UNDO}
             style={{ color: 'red' }}
-            tooltip={{ content: `Undo pending changes (${pendingCount})` }}
+            tooltip={{
+              content: `Undo pending changes (${pendingCount})${formatTimeRemaining()}`,
+              position: TooltipPosition.top,
+            }}
             onClick={onUndoClick}
           />
         )}

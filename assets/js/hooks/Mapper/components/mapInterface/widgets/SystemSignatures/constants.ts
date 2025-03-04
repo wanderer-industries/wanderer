@@ -14,6 +14,12 @@ export const TIME_ONE_DAY = 24 * 60 * 60 * 1000;
 export const TIME_ONE_WEEK = 7 * TIME_ONE_DAY;
 export const FINAL_DURATION_MS = 10000;
 
+// Signature deletion timing options
+export const DELETION_TIMING_IMMEDIATE = 0;
+export const DELETION_TIMING_DEFAULT = 10000;
+export const DELETION_TIMING_EXTENDED = 30000;
+export const DELETION_TIMING_SETTING_KEY = 'DELETION_TIMING_SETTING';
+
 export const COMPACT_MAX_WIDTH = 260;
 export const MEDIUM_MAX_WIDTH = 380;
 export const OTHER_COLUMNS_WIDTH = 276;

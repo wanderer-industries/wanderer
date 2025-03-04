@@ -3,33 +3,49 @@ import { ExtendedSystemSignature, schedulePendingAdditionForSig } from '../helpe
 import { UsePendingAdditionParams } from './types';
 import { FINAL_DURATION_MS } from '../constants';
 
-export function usePendingAdditions({ setSignatures }: UsePendingAdditionParams) {
+export function usePendingAdditions({ setSignatures, deletionTiming }: UsePendingAdditionParams) {
   const [pendingUndoAdditions, setPendingUndoAdditions] = useState<ExtendedSystemSignature[]>([]);
   const pendingAdditionMapRef = useRef<Record<string, { finalUntil: number; finalTimeoutId: number }>>({});
+
+  // Use the provided deletion timing or fall back to the default
+  const finalDuration = deletionTiming !== undefined ? deletionTiming : FINAL_DURATION_MS;
 
   const processAddedSignatures = useCallback(
     (added: ExtendedSystemSignature[]) => {
       if (!added.length) return;
+
+      // If duration is 0, don't show pending state
+      if (finalDuration === 0) {
+        setSignatures(prev => [
+          ...prev,
+          ...added.map(sig => ({
+            ...sig,
+            pendingAddition: false,
+          })),
+        ]);
+        return;
+      }
+
       const now = Date.now();
       setSignatures(prev => [
         ...prev,
         ...added.map(sig => ({
           ...sig,
           pendingAddition: true,
-          pendingUntil: now + FINAL_DURATION_MS,
+          pendingUntil: now + finalDuration,
         })),
       ]);
       added.forEach(sig => {
         schedulePendingAdditionForSig(
           sig,
-          FINAL_DURATION_MS,
+          finalDuration,
           setSignatures,
           pendingAdditionMapRef,
           setPendingUndoAdditions,
         );
       });
     },
-    [setSignatures],
+    [setSignatures, finalDuration],
   );
 
   const clearPendingAdditions = useCallback(() => {
