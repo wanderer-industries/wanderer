@@ -7,8 +7,11 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
   require Logger
   alias WandererApp.Zkb.KillsProvider.Parser
   alias WandererApp.Esi
+  alias WandererApp.Utils.HttpUtil
+  use Retry
 
   @heartbeat_interval 1_000
+  @max_esi_retries 3
 
   # Called by `KillsProvider.handle_connect`
   def handle_connect(_status, _headers, %{connected: _} = state) do
@@ -69,14 +72,39 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
   # The partial from zKillboard has killmail_id + zkb.hash, but no time/victim/attackers
   defp parse_and_store_zkb_partial(%{"killmail_id" => kill_id, "zkb" => %{"hash" => kill_hash}} = partial) do
     Logger.debug(fn -> "[KillsProvider.Websocket] parse_and_store_zkb_partial => kill_id=#{kill_id}" end)
-    case Esi.get_killmail(kill_id, kill_hash) do
-      {:ok, full_esi_data} ->
-        # Merge partial zKB fields (like totalValue) onto ESI data
-        enriched = Map.merge(full_esi_data, %{"zkb" => partial["zkb"]})
-        Parser.parse_and_store_killmail(enriched)
 
+    result = retry with: exponential_backoff(300) |> randomize() |> cap(5_000) |> expiry(30_000), rescue_only: [RuntimeError] do
+      case Esi.get_killmail(kill_id, kill_hash) do
+        {:ok, full_esi_data} ->
+          # Merge partial zKB fields (like totalValue) onto ESI data
+          enriched = Map.merge(full_esi_data, %{"zkb" => partial["zkb"]})
+          Parser.parse_and_store_killmail(enriched)
+          :ok
+
+        {:error, :timeout} ->
+          Logger.warning("[KillsProvider.Websocket] ESI get_killmail timeout => kill_id=#{kill_id}, retrying...")
+          raise "ESI timeout, will retry"
+
+        {:error, :not_found} ->
+          Logger.warning("[KillsProvider.Websocket] ESI get_killmail not_found => kill_id=#{kill_id}")
+          :skip
+
+        {:error, reason} ->
+          if HttpUtil.retriable_error?(reason) do
+            Logger.warning("[KillsProvider.Websocket] ESI get_killmail retriable error => kill_id=#{kill_id}, reason=#{inspect(reason)}")
+            raise "ESI error: #{inspect(reason)}, will retry"
+          else
+            Logger.warning("[KillsProvider.Websocket] ESI get_killmail failed => kill_id=#{kill_id}, reason=#{inspect(reason)}")
+            :skip
+          end
+      end
+    end
+
+    case result do
+      :ok -> :ok
+      :skip -> :skip
       {:error, reason} ->
-        Logger.warning("[KillsProvider.Websocket] ESI get_killmail failed => kill_id=#{kill_id}, reason=#{inspect(reason)}")
+        Logger.error("[KillsProvider.Websocket] ESI get_killmail exhausted retries => kill_id=#{kill_id}, reason=#{inspect(reason)}")
         :skip
     end
   end

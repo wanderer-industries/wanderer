@@ -14,11 +14,7 @@ interface UseSystemKillsProps {
   sinceHours?: number;
 }
 
-function combineKills(
-  existing: DetailedKill[],
-  incoming: DetailedKill[],
-  sinceHours: number
-): DetailedKill[] {
+function combineKills(existing: DetailedKill[], incoming: DetailedKill[], sinceHours: number): DetailedKill[] {
   const cutoff = Date.now() - sinceHours * 60 * 60 * 1000;
   const byId: Record<string, DetailedKill> = {};
 
@@ -37,27 +33,25 @@ interface DetailedKillsEvent extends MapEvent<Commands> {
   payload: Record<string, DetailedKill[]>;
 }
 
-export function useSystemKills({
-  systemId,
-  outCommand,
-  showAllVisible = false,
-  sinceHours = 24,
-}: UseSystemKillsProps) {
+export function useSystemKills({ systemId, outCommand, showAllVisible = false, sinceHours = 24 }: UseSystemKillsProps) {
   const { data, update } = useMapRootState();
   const { detailedKills = {}, systems = [] } = data;
   const [settings] = useKillsWidgetSettings();
   const excludedSystems = settings.excludedSystems;
 
-  const updateDetailedKills = useCallback((newKillsMap: Record<string, DetailedKill[]>) => {
-    update((prev) => {
-      const oldKills = prev.detailedKills ?? {};
-      const updated = { ...oldKills };
-      for (const [sid, killsArr] of Object.entries(newKillsMap)) {
-        updated[sid] = killsArr;
-      }
-      return { ...prev, detailedKills: updated };
-    }, true);
-  }, [update]);
+  const updateDetailedKills = useCallback(
+    (newKillsMap: Record<string, DetailedKill[]>) => {
+      update(prev => {
+        const oldKills = prev.detailedKills ?? {};
+        const updated = { ...oldKills };
+        for (const [sid, killsArr] of Object.entries(newKillsMap)) {
+          updated[sid] = killsArr;
+        }
+        return { ...prev, detailedKills: updated };
+      }, true);
+    },
+    [update],
+  );
 
   useMapEventListener((event: MapEvent<Commands>) => {
     if (event.name === Commands.detailedKillsUpdated) {
@@ -73,77 +67,82 @@ export function useSystemKills({
 
   const effectiveSystemIds = useMemo(() => {
     if (showAllVisible) {
-      return systems.map((s) => s.id).filter((id) => !excludedSystems.includes(Number(id)));
+      return systems.map(s => s.id).filter(id => !excludedSystems.includes(Number(id)));
     }
-    return systems.map((s) => s.id);
+    return systems.map(s => s.id);
   }, [systems, excludedSystems, showAllVisible]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const didFallbackFetch = useRef(Object.keys(detailedKills).length !== 0);
 
-  const mergeKillsIntoGlobal = useCallback((killsMap: Record<string, DetailedKill[]>) => {
-    update((prev) => {
-      const oldMap = prev.detailedKills ?? {};
-      const updated: Record<string, DetailedKill[]> = { ...oldMap };
+  const mergeKillsIntoGlobal = useCallback(
+    (killsMap: Record<string, DetailedKill[]>) => {
+      update(prev => {
+        const oldMap = prev.detailedKills ?? {};
+        const updated: Record<string, DetailedKill[]> = { ...oldMap };
 
-      for (const [sid, newKills] of Object.entries(killsMap)) {
-        const existing = updated[sid] ?? [];
-        const combined = combineKills(existing, newKills, sinceHours);
-        updated[sid] = combined;
-      }
+        for (const [sid, newKills] of Object.entries(killsMap)) {
+          const existing = updated[sid] ?? [];
+          const combined = combineKills(existing, newKills, sinceHours);
+          updated[sid] = combined;
+        }
 
-      return { ...prev, detailedKills: updated };
-    });
-  }, [update, sinceHours]);
-
-  const fetchKills = useCallback(async (forceFallback = false) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      let eventType: OutCommand;
-      let requestData: Record<string, unknown>;
-
-      if (showAllVisible || forceFallback) {
-        eventType = OutCommand.getSystemsKills;
-        requestData = {
-          system_ids: effectiveSystemIds,
-          since_hours: sinceHours,
-        };
-      } else if (systemId) {
-        eventType = OutCommand.getSystemKills;
-        requestData = {
-          system_id: systemId,
-          since_hours: sinceHours,
-        };
-      } else {
-        setIsLoading(false);
-        return;
-      }
-
-      const resp = await outCommand({
-        type: eventType,
-        data: requestData,
+        return { ...prev, detailedKills: updated };
       });
+    },
+    [update, sinceHours],
+  );
 
-      if (resp?.kills) {
-        const arr = resp.kills as DetailedKill[];
-        const sid = systemId ?? 'unknown';
-        mergeKillsIntoGlobal({ [sid]: arr });
+  const fetchKills = useCallback(
+    async (forceFallback = false) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        let eventType: OutCommand;
+        let requestData: Record<string, unknown>;
+
+        if (showAllVisible || forceFallback) {
+          eventType = OutCommand.getSystemsKills;
+          requestData = {
+            system_ids: effectiveSystemIds,
+            since_hours: sinceHours,
+          };
+        } else if (systemId) {
+          eventType = OutCommand.getSystemKills;
+          requestData = {
+            system_id: systemId,
+            since_hours: sinceHours,
+          };
+        } else {
+          setIsLoading(false);
+          return;
+        }
+
+        const resp = await outCommand({
+          type: eventType,
+          data: requestData,
+        });
+
+        if (resp?.kills) {
+          const arr = resp.kills as DetailedKill[];
+          const sid = systemId ?? 'unknown';
+          mergeKillsIntoGlobal({ [sid]: arr });
+        } else if (resp?.systems_kills) {
+          mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
+        } else {
+          console.warn('[useSystemKills] Unexpected kills response =>', resp);
+        }
+      } catch (err) {
+        console.error('[useSystemKills] Failed to fetch kills:', err);
+        setError(err instanceof Error ? err.message : 'Error fetching kills');
+      } finally {
+        setIsLoading(false);
       }
-      else if (resp?.systems_kills) {
-        mergeKillsIntoGlobal(resp.systems_kills as Record<string, DetailedKill[]>);
-      } else {
-        console.warn('[useSystemKills] Unexpected kills response =>', resp);
-      }
-    } catch (err) {
-      console.error('[useSystemKills] Failed to fetch kills:', err);
-      setError(err instanceof Error ? err.message : 'Error fetching kills');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showAllVisible, systemId, outCommand, effectiveSystemIds, sinceHours, mergeKillsIntoGlobal]);
+    },
+    [showAllVisible, systemId, outCommand, effectiveSystemIds, sinceHours, mergeKillsIntoGlobal],
+  );
 
   const debouncedFetchKills = useMemo(
     () =>
@@ -156,11 +155,11 @@ export function useSystemKills({
 
   const finalKills = useMemo(() => {
     if (showAllVisible) {
-      return effectiveSystemIds.flatMap((sid) => detailedKills[sid] ?? []);
+      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     } else if (systemId) {
       return detailedKills[systemId] ?? [];
     } else if (didFallbackFetch.current) {
-      return effectiveSystemIds.flatMap((sid) => detailedKills[sid] ?? []);
+      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     }
     return [];
   }, [showAllVisible, systemId, effectiveSystemIds, detailedKills]);
@@ -171,7 +170,7 @@ export function useSystemKills({
     if (!systemId && !showAllVisible && !didFallbackFetch.current) {
       didFallbackFetch.current = true;
       debouncedFetchKills.cancel();
-      fetchKills(true); 
+      fetchKills(true);
     }
   }, [systemId, showAllVisible, debouncedFetchKills, fetchKills]);
 

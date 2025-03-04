@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.53.4](https://github.com/wanderer-industries/wanderer/compare/v1.53.3...v1.53.4) (2025-03-04)
+
+
+
+
+### Bug Fixes:
+
+* add retry on kills retrieval (#207)
+
+* add missing masses to wh sizes const (#215)
+
 ## [v1.53.3](https://github.com/wanderer-industries/wanderer/compare/v1.53.2...v1.53.3) (2025-02-27)
 
 
