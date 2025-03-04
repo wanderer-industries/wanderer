@@ -58,7 +58,11 @@ export const useMapInit = () => {
       update(updateData);
 
       if (systems) {
-        rf.setNodes(systems.map(convertSystem2Node));
+        // rf.setNod7es(systems.map(convertSystem2Node));
+        const prev = rf.getNodes();
+        const areaNodes = prev.filter(x => x.type !== 'resizableAreaNode');
+
+        rf.setNodes([...areaNodes, ...systems.map(convertSystem2Node)]);
       }
 
       if (connections) {

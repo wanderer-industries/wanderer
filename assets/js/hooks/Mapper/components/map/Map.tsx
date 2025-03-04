@@ -33,6 +33,7 @@ import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import clsx from 'clsx';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
+import { ResizableAreaNode } from '@/hooks/Mapper/components/map/components/ResizableAreaNode';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -59,6 +60,20 @@ const initialNodes: Node<SolarSystemRawType>[] = [
   //   },
   //   type: 'custom',
   // },
+  {
+    id: '1231213',
+    type: 'resizableAreaNode',
+    width: 200,
+    height: 100,
+    position: { x: 100, y: 100 },
+    data: {
+      width: 200,
+      height: 100,
+      bgColor: 'rgba(255, 0, 0, 0.2)',
+      // этот коллбэк переопределим позже
+      onResize: () => {},
+    },
+  },
 ];
 
 const initialEdges = [
@@ -128,6 +143,7 @@ const MapComp = ({
   const nodeTypes = useMemo(() => {
     return {
       custom: nodeComponent,
+      resizableAreaNode: ResizableAreaNode,
     };
   }, [nodeComponent]);
 
@@ -191,6 +207,9 @@ const MapComp = ({
       if (changes.length === 1 && changes[0].type == 'select' && changes[0].selected === false) {
         changes[0].selected = getNodes().filter(node => node.selected).length === 1;
       }
+
+      // eslint-disable-next-line no-console
+      console.log('JOipP', `changes`, changes);
 
       const nextChanges = changes.reduce((acc, change) => {
         return [...acc, change];

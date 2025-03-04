@@ -32,6 +32,7 @@
     "react-event-hook": "^3.1.2",
     "react-flow-renderer": "^10.3.17",
     "react-hook-form": "^7.53.1",
+    "react-rnd": "^10.5.2",
     "react-usestateref": "^1.0.9",
     "reactflow": "^11.11.4",
     "tailwindcss": "^3.3.6",
