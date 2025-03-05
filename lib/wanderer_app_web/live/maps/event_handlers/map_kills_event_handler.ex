@@ -100,10 +100,45 @@ defmodule WandererAppWeb.MapKillsEventHandler do
   def handle_ui_event("get_systems_kills", %{"system_ids" => sids, "since_hours" => sh} = payload, socket) do
     with {:ok, since_hours} <- parse_id(sh),
          {:ok, parsed_ids}  <- parse_system_ids(sids) do
+      Logger.debug(fn -> "[#{__MODULE__}] get_systems_kills => system_ids=#{inspect(parsed_ids)}, since_hours=#{since_hours}" end)
+
+      # Get the cutoff time based on since_hours
+      cutoff = DateTime.utc_now() |> DateTime.add(-since_hours * 3600, :second)
+      Logger.debug(fn -> "[#{__MODULE__}] get_systems_kills => cutoff=#{DateTime.to_iso8601(cutoff)}" end)
+
+      # Fetch and filter kills for each system
       cached_map =
         Enum.reduce(parsed_ids, %{}, fn sid, acc ->
-          kills_list = KillsCache.fetch_cached_kills(sid)
-          Map.put(acc, sid, kills_list)
+          # Get all cached kills for this system
+          all_kills = KillsCache.fetch_cached_kills(sid)
+
+          # Filter kills based on the cutoff time
+          filtered_kills = Enum.filter(all_kills, fn kill ->
+            kill_time = kill["kill_time"]
+
+            case kill_time do
+              %DateTime{} = dt ->
+                # Keep kills that occurred after the cutoff
+                DateTime.compare(dt, cutoff) != :lt
+
+              time when is_binary(time) ->
+                # Try to parse the string time
+                case DateTime.from_iso8601(time) do
+                  {:ok, dt, _} -> DateTime.compare(dt, cutoff) != :lt
+                  _ -> false
+                end
+
+              # If it's something else (nil, or a weird format), skip
+              _ ->
+                false
+            end
+          end)
+
+          Logger.debug(fn ->
+            "[#{__MODULE__}] get_systems_kills => system_id=#{sid}, all_kills=#{length(all_kills)}, filtered_kills=#{length(filtered_kills)}"
+          end)
+
+          Map.put(acc, sid, filtered_kills)
         end)
 
       reply_payload = %{"systems_kills" => cached_map}

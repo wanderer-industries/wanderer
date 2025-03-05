@@ -14,7 +14,7 @@ export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
   whOnly: true,
   excludedSystems: [],
   version: 2,
-  timeRange: 1,
+  timeRange: 4,
 };
 
 function mergeWithDefaults(settings?: Partial<KillsWidgetSettings>): KillsWidgetSettings {

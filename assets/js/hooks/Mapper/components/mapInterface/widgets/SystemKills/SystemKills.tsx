@@ -43,6 +43,7 @@ export const SystemKills: React.FC = React.memo(() => {
     systemId,
     outCommand,
     showAllVisible: visible,
+    sinceHours: settings.timeRange,
   });
 
   const isNothingSelected = !systemId && !visible;
@@ -61,45 +62,41 @@ export const SystemKills: React.FC = React.memo(() => {
   }, [kills, settings.whOnly, systemBySolarSystemId, visible]);
 
   return (
-    <div className="h-full flex flex-col min-h-0">
-      <div className="flex flex-col flex-1 min-h-0">
-        <Widget label={<KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />}>
-          {!isSubscriptionActive ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="select-none text-center text-stone-400/80 text-sm">
-                Kills available with &#39;Active&#39; map subscription only (contact map administrators)
-              </span>
-            </div>
-          ) : isNothingSelected ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="select-none text-center text-stone-400/80 text-sm">
-                No system selected (or toggle “Show all systems”)
-              </span>
-            </div>
-          ) : showLoading ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="select-none text-center text-stone-400/80 text-sm">Loading Kills...</span>
-            </div>
-          ) : error ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="select-none text-center text-red-400 text-sm">{error}</span>
-            </div>
-          ) : !filteredKills || filteredKills.length === 0 ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="select-none text-center text-stone-400/80 text-sm">No kills found</span>
-            </div>
-          ) : (
-            <div className="w-full h-full" style={{ height: '100%' }}>
-              <SystemKillsContent
-                kills={filteredKills}
-                systemNameMap={systemNameMap}
-                onlyOneSystem={!visible}
-                timeRange={settings.timeRange}
-              />
-            </div>
-          )}
-        </Widget>
-      </div>
+    <div className="h-full flex flex-col">
+      <Widget label={<KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />}>
+        {!isSubscriptionActive ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="select-none text-center text-stone-400/80 text-sm">
+              Kills available with &#39;Active&#39; map subscription only (contact map administrators)
+            </span>
+          </div>
+        ) : isNothingSelected ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="select-none text-center text-stone-400/80 text-sm">
+              No system selected (or toggle &quot;Show all systems&quot;)
+            </span>
+          </div>
+        ) : showLoading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="select-none text-center text-stone-400/80 text-sm">Loading Kills...</span>
+          </div>
+        ) : error ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="select-none text-center text-red-400 text-sm">{error}</span>
+          </div>
+        ) : !filteredKills || filteredKills.length === 0 ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="select-none text-center text-stone-400/80 text-sm">No kills found</span>
+          </div>
+        ) : (
+          <SystemKillsContent
+            kills={filteredKills}
+            systemNameMap={systemNameMap}
+            onlyOneSystem={!visible}
+            timeRange={settings.timeRange}
+          />
+        )}
+      </Widget>
 
       {settingsDialogVisible && <KillsSettingsDialog visible setVisible={setSettingsDialogVisible} />}
     </div>

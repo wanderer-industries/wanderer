@@ -123,8 +123,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     socket
   end
 
+  def handle_server_event(%{payload: kill_data}, socket) when is_map(kill_data) and map_size(kill_data) > 0 do
+    socket
+  end
+
   def handle_server_event(event, socket) do
-    Logger.warning(fn -> "unhandled map core event: #{inspect(event)} #{inspect(socket)} " end)
+    Logger.warning(fn -> "unhandled map core event: #{inspect(event)}" end)
     socket
   end
 

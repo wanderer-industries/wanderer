@@ -1,14 +1,22 @@
-.wrapper {
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-
+// Custom scrollbar styling is now handled by the global custom-scrollbar class
 .scrollerContent {
-  width: 100%;
-  box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
+// VirtualScroller specific styles that can't be handled with Tailwind
 .VirtualScroller {
-  height: 100% !important;
+  overflow: hidden !important;
+}
+
+// Fix for PrimeReact VirtualScroller - these need to be global
+:global {
+  .p-virtualscroller {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .p-virtualscroller-content {
+    flex: 1;
+  }
 }
