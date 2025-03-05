@@ -1,17 +1,64 @@
 defmodule WandererAppWeb.CommonAPIController do
   use WandererAppWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias WandererApp.CachedInfo
   alias WandererAppWeb.UtilAPIController, as: Util
 
+  @system_static_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          solar_system_id: %OpenApiSpex.Schema{type: :integer},
+          region_id: %OpenApiSpex.Schema{type: :integer},
+          constellation_id: %OpenApiSpex.Schema{type: :integer},
+          solar_system_name: %OpenApiSpex.Schema{type: :string},
+          solar_system_name_lc: %OpenApiSpex.Schema{type: :string},
+          constellation_name: %OpenApiSpex.Schema{type: :string},
+          region_name: %OpenApiSpex.Schema{type: :string},
+          system_class: %OpenApiSpex.Schema{type: :integer},
+          security: %OpenApiSpex.Schema{type: :string},
+          type_description: %OpenApiSpex.Schema{type: :string},
+          class_title: %OpenApiSpex.Schema{type: :string},
+          is_shattered: %OpenApiSpex.Schema{type: :boolean},
+          effect_name: %OpenApiSpex.Schema{type: :string},
+          effect_power: %OpenApiSpex.Schema{type: :integer},
+          statics: %OpenApiSpex.Schema{type: :array, items: %OpenApiSpex.Schema{type: :string}},
+          wandering: %OpenApiSpex.Schema{type: :array, items: %OpenApiSpex.Schema{type: :string}},
+          triglavian_invasion_status: %OpenApiSpex.Schema{type: :string},
+          sun_type_id: %OpenApiSpex.Schema{type: :integer}
+        },
+        required: ["solar_system_id", "solar_system_name"]
+      }
+    },
+    required: ["data"]
+  }
+
   @doc """
-  GET /api/common/system_static?id=<solar_system_id>
-
-  Requires 'id' (the solar_system_id).
-
-  Example:
-      GET /api/common/system_static?id=31002229
+  GET /api/common/system-static-info?id=<solar_system_id>
   """
+  @spec show_system_static(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :show_system_static,
+    summary: "Get System Static Information",
+    description: "Retrieves static information for a given solar system.",
+    parameters: [
+      id: [
+        in: :query,
+        description: "Solar system ID",
+        type: :string,
+        example: "30000142",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {
+        "System static info",
+        "application/json",
+        @system_static_response_schema
+      }
+    ]
   def show_system_static(conn, params) do
     with {:ok, solar_system_str} <- Util.require_param(params, "id"),
          {:ok, solar_system_id} <- Util.parse_int(solar_system_str) do
@@ -32,10 +79,6 @@ defmodule WandererAppWeb.CommonAPIController do
         |> json(%{error: msg})
     end
   end
-
-  # ----------------------------------------------
-  # Private helpers
-  # ----------------------------------------------
 
   defp static_system_to_json(system) do
     system
