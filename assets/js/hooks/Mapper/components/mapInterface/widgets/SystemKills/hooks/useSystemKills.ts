@@ -39,6 +39,8 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
   const [settings] = useKillsWidgetSettings();
   const excludedSystems = settings.excludedSystems;
 
+  const effectiveSinceHours = sinceHours;
+
   const updateDetailedKills = useCallback(
     (newKillsMap: Record<string, DetailedKill[]>) => {
       update(prev => {
@@ -84,14 +86,14 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
 
         for (const [sid, newKills] of Object.entries(killsMap)) {
           const existing = updated[sid] ?? [];
-          const combined = combineKills(existing, newKills, sinceHours);
+          const combined = combineKills(existing, newKills, effectiveSinceHours);
           updated[sid] = combined;
         }
 
         return { ...prev, detailedKills: updated };
       });
     },
-    [update, sinceHours],
+    [update, effectiveSinceHours],
   );
 
   const fetchKills = useCallback(
@@ -107,13 +109,13 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
           eventType = OutCommand.getSystemsKills;
           requestData = {
             system_ids: effectiveSystemIds,
-            since_hours: sinceHours,
+            since_hours: effectiveSinceHours,
           };
         } else if (systemId) {
           eventType = OutCommand.getSystemKills;
           requestData = {
             system_id: systemId,
-            since_hours: sinceHours,
+            since_hours: effectiveSinceHours,
           };
         } else {
           setIsLoading(false);
@@ -141,7 +143,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
         setIsLoading(false);
       }
     },
-    [showAllVisible, systemId, outCommand, effectiveSystemIds, sinceHours, mergeKillsIntoGlobal],
+    [showAllVisible, systemId, outCommand, effectiveSystemIds, effectiveSinceHours, mergeKillsIntoGlobal],
   );
 
   const debouncedFetchKills = useMemo(
@@ -154,15 +156,18 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
   );
 
   const finalKills = useMemo(() => {
+    let result: DetailedKill[] = [];
+
     if (showAllVisible) {
-      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
+      result = effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     } else if (systemId) {
-      return detailedKills[systemId] ?? [];
+      result = detailedKills[systemId] ?? [];
     } else if (didFallbackFetch.current) {
-      return effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
+      result = effectiveSystemIds.flatMap(sid => detailedKills[sid] ?? []);
     }
-    return [];
-  }, [showAllVisible, systemId, effectiveSystemIds, detailedKills]);
+
+    return result;
+  }, [showAllVisible, systemId, effectiveSystemIds, detailedKills, didFallbackFetch]);
 
   const effectiveIsLoading = isLoading && finalKills.length === 0;
 
@@ -178,10 +183,13 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
     if (effectiveSystemIds.length === 0) return;
 
     if (showAllVisible || systemId) {
-      debouncedFetchKills();
+      // Cancel any pending debounced fetch
+      debouncedFetchKills.cancel();
+      // Fetch kills immediately
+      fetchKills();
       return () => debouncedFetchKills.cancel();
     }
-  }, [showAllVisible, systemId, effectiveSystemIds, debouncedFetchKills]);
+  }, [showAllVisible, systemId, effectiveSystemIds, debouncedFetchKills, fetchKills]);
 
   const refetch = useCallback(() => {
     debouncedFetchKills.cancel();

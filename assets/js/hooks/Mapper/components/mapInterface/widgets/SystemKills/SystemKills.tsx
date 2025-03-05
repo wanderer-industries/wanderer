@@ -43,6 +43,7 @@ export const SystemKills: React.FC = React.memo(() => {
     systemId,
     outCommand,
     showAllVisible: visible,
+    sinceHours: settings.timeRange,
   });
 
   const isNothingSelected = !systemId && !visible;
@@ -61,8 +62,8 @@ export const SystemKills: React.FC = React.memo(() => {
   }, [kills, settings.whOnly, systemBySolarSystemId, visible]);
 
   return (
-    <div className="h-full flex flex-col min-h-0">
-      <div className="flex flex-col flex-1 min-h-0">
+    <div className="h-full flex flex-col min-h-0" style={{ minHeight: '100px' }}>
+      <div className="flex flex-col flex-1 min-h-0" style={{ minHeight: '100px' }}>
         <Widget label={<KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />}>
           {!isSubscriptionActive ? (
             <div className="w-full h-full flex items-center justify-center">
@@ -73,7 +74,7 @@ export const SystemKills: React.FC = React.memo(() => {
           ) : isNothingSelected ? (
             <div className="w-full h-full flex items-center justify-center">
               <span className="select-none text-center text-stone-400/80 text-sm">
-                No system selected (or toggle “Show all systems”)
+                No system selected (or toggle &quot;Show all systems&quot;)
               </span>
             </div>
           ) : showLoading ? (
@@ -89,13 +90,15 @@ export const SystemKills: React.FC = React.memo(() => {
               <span className="select-none text-center text-stone-400/80 text-sm">No kills found</span>
             </div>
           ) : (
-            <div className="w-full h-full" style={{ height: '100%' }}>
-              <SystemKillsContent
-                kills={filteredKills}
-                systemNameMap={systemNameMap}
-                onlyOneSystem={!visible}
-                timeRange={settings.timeRange}
-              />
+            <div className="w-full h-full flex flex-col" style={{ minHeight: '80px' }}>
+              <div className="flex-1 overflow-hidden">
+                <SystemKillsContent
+                  kills={filteredKills}
+                  systemNameMap={systemNameMap}
+                  onlyOneSystem={!visible}
+                  timeRange={settings.timeRange}
+                />
+              </div>
             </div>
           )}
         </Widget>

@@ -11,53 +11,66 @@ export interface SystemKillsContentProps {
   kills: DetailedKill[];
   systemNameMap: Record<string, string>;
   onlyOneSystem?: boolean;
-  autoSize?: boolean;
   timeRange?: number;
   limit?: number;
 }
 
+/**
+ * A simple VirtualScroller-based list of kills.
+ * Always uses 100% height, so the parent container
+ * dictates how tall this scroller is.
+ */
 export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   kills,
   systemNameMap,
   onlyOneSystem = false,
-  autoSize = false,
   timeRange = 4,
   limit,
 }) => {
   const processedKills = useMemo(() => {
+    // Make sure we have kills to process
+    if (!kills || kills.length === 0) return [];
+
+    // First sort by time (most recent first)
     const sortedKills = kills
       .filter(k => k.kill_time)
       .sort((a, b) => new Date(b.kill_time!).getTime() - new Date(a.kill_time!).getTime());
 
+    // Apply timeRange filter if specified
+    let filteredKills = sortedKills;
+    if (timeRange !== undefined) {
+      const cutoffTime = new Date();
+      cutoffTime.setHours(cutoffTime.getHours() - timeRange);
+      const cutoffTimestamp = cutoffTime.getTime();
+
+      filteredKills = filteredKills.filter(kill => {
+        const killTime = new Date(kill.kill_time!).getTime();
+        return killTime >= cutoffTimestamp;
+      });
+    }
+
     if (limit !== undefined) {
-      return sortedKills.slice(0, limit);
+      return filteredKills.slice(0, limit);
     } else {
-      const now = Date.now();
-      const cutoff = now - timeRange * 60 * 60 * 1000;
-      return sortedKills.filter(k => new Date(k.kill_time!).getTime() >= cutoff);
+      return filteredKills;
     }
   }, [kills, timeRange, limit]);
-
-  const computedHeight = autoSize ? Math.max(processedKills.length, 1) * ITEM_HEIGHT : undefined;
-  const scrollerHeight = autoSize ? `${computedHeight}px` : '100%';
 
   const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
 
   return (
-    <div className={clsx('w-full h-full', classes.wrapper)}>
+    <div className={clsx('w-full h-full overflow-hidden', classes.wrapper)}>
       <VirtualScroller
         items={processedKills}
         itemSize={ITEM_HEIGHT}
         itemTemplate={itemTemplate}
-        autoSize={autoSize}
         scrollWidth="100%"
-        style={{ height: scrollerHeight }}
-        className={clsx('w-full h-full custom-scrollbar select-none', {
-          [classes.VirtualScroller]: !autoSize,
-        })}
+        style={{ height: '100%', minHeight: '100px' }}
+        className={clsx('w-full custom-scrollbar select-none', classes.VirtualScroller)}
         pt={{
           content: {
             className: classes.scrollerContent,
+            style: { minHeight: '100px' },
           },
         }}
       />
