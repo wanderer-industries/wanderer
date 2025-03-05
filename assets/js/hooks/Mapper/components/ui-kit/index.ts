@@ -13,3 +13,4 @@ export * from './WdCheckbox';
 export * from './TimeAgo';
 export * from './WdTooltipWrapper';
 export * from './WdResponsiveCheckBox';
+export * from './WdRadioButton';

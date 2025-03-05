@@ -1,0 +1,469 @@
+/* TrackAndFollow Dialog Styles */
+.track-follow {
+  &-dialog {
+    z-index: 1000 !important;
+    background-color: var(--surface-card);
+    color: var(--text-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+
+    /* Dialog header */
+    .p-dialog-header {
+      padding: 1rem 1.5rem;
+      background-color: var(--surface-section);
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      border-bottom: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .p-dialog-title {
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: var(--text-color);
+      }
+
+      .p-dialog-header-icons {
+        display: flex;
+        align-items: center;
+
+        .p-dialog-header-icon {
+          color: var(--text-color-secondary);
+          border: none;
+          background: transparent;
+          width: 2rem;
+          height: 2rem;
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+          border-radius: 50%;
+          
+          &:hover {
+            color: var(--text-color);
+            background-color: var(--surface-hover);
+          }
+
+          &:focus {
+            outline: 0 none;
+            outline-offset: 0;
+            box-shadow: 0 0 0 0.2rem var(--focus-ring);
+          }
+        }
+
+        .p-dialog-header-close {
+          color: var(--text-color);
+          background: transparent;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+          margin-left: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          
+          &:hover {
+            background: var(--surface-hover);
+            color: var(--primary-color);
+          }
+          
+          &:focus {
+            box-shadow: 0 0 0 0.2rem var(--primary-color-light);
+            outline: none;
+          }
+          
+          .p-dialog-header-close-icon {
+            font-size: 1.25rem;
+          }
+        }
+      }
+
+      .refresh-button {
+        color: var(--text-color-secondary);
+        
+        &:hover {
+          color: var(--text-color);
+          background-color: var(--surface-hover);
+        }
+        
+        &:focus {
+          box-shadow: 0 0 0 0.2rem var(--focus-ring);
+        }
+        
+        &:active {
+          background-color: var(--surface-hover);
+          color: var(--primary-color);
+        }
+      }
+    }
+
+    /* Dialog content */
+    .p-dialog-content {
+      padding: 0.5rem;
+      background-color: var(--surface-card);
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      height: calc(100% - 70px);
+      max-height: 70vh;
+      overflow: hidden;
+    }
+
+    /* Dialog mask */
+    &.p-dialog-mask.p-component-overlay {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+      backdrop-filter: blur(2px);
+    }
+  }
+
+  &-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+/* Enhance close button visibility */
+.p-dialog-header-close {
+  color: var(--text-color) !important;
+  background: var(--surface-hover) !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  margin-left: 0.5rem !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1000 !important;
+  
+  &:hover {
+    background: var(--surface-hover) !important;
+    color: var(--primary-color) !important;
+    transform: scale(1.05);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
+    outline: none !important;
+  }
+  
+  .p-dialog-header-close-icon {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Additional styles to ensure the close button is visible */
+.track-follow-dialog {
+  .p-dialog-header {
+    .p-dialog-header-icons {
+      .p-dialog-header-close {
+        opacity: 1 !important;
+        visibility: visible !important;
+        color: var(--text-color) !important;
+        background-color: var(--surface-hover) !important;
+        
+        &:hover {
+          color: var(--primary-color) !important;
+          background-color: var(--surface-section) !important;
+        }
+      }
+    }
+  }
+}
+
+/* Character grid styles */
+.character-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.character-grid-header {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr;
+  background-color: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  padding: 0.75rem 0;
+  text-align: center;
+}
+
+.character-grid-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.character-grid-row {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr;
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.5rem 0;
+  align-items: center;
+  transition: background-color 0.2s;
+  min-height: 48px;
+  
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.grid-cell-track, 
+.grid-cell-follow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.grid-cell-character {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Character info styles */
+.character-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.character-portrait {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.character-details {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.character-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.character-corp {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+}
+
+.alliance-ticker {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+}
+
+/* Empty state message */
+.empty-message {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}
+
+/* Custom Checkbox and Radio Button Styles */
+.wd-checkbox, .wd-radio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--surface-border);
+  background-color: var(--surface-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  margin: 0 auto;
+  
+  &:hover {
+    border-color: var(--primary-color);
+  }
+}
+
+.wd-checkbox {
+  border-radius: 4px;
+}
+
+.wd-checkbox-checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  
+  &:hover {
+    background-color: var(--primary-color-dark);
+  }
+}
+
+.wd-checkbox-icon {
+  color: var(--primary-color-text);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wd-radio {
+  border-radius: 50%;
+}
+
+.wd-radio-checked {
+  border-color: var(--primary-color);
+  
+  &:hover {
+    border-color: var(--primary-color-dark);
+  }
+}
+
+.wd-radio-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: block;
+}
+
+/* Existing Checkbox and Radio Button Styling */
+.tracking-cell {
+  .p-checkbox {
+    .p-checkbox-box {
+      background-color: var(--surface-card);
+      border: 2px solid var(--surface-border);
+      width: 1.25rem;
+      height: 1.25rem;
+      
+      &:hover {
+        border-color: var(--primary-color);
+      }
+      
+      &.p-highlight {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        
+        .p-checkbox-icon {
+          color: var(--primary-color-text);
+          font-size: 0.875rem;
+        }
+        
+        &:hover {
+          background-color: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+.follow-cell {
+  .p-radiobutton {
+    .p-radiobutton-box {
+      background-color: var(--surface-card);
+      border: 2px solid var(--surface-border);
+      width: 1.25rem;
+      height: 1.25rem;
+      
+      &:hover {
+        border-color: var(--primary-color);
+      }
+      
+      &.p-highlight {
+        background-color: var(--surface-card);
+        border-color: var(--primary-color);
+        
+        .p-radiobutton-icon {
+          background-color: var(--primary-color);
+          width: 0.625rem;
+          height: 0.625rem;
+        }
+        
+        &:hover {
+          border-color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .tracking-character-header {
+    grid-template-columns: 60px 60px 1fr;
+  }
+
+  .tracking-character-row {
+    grid-template-columns: 60px 60px 1fr;
+  }
+
+  .character-portrait {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.checkbox-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.radio-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.corporation-ticker {
+  margin-left: 0.5rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+}
+
+.alliance-ticker {
+  margin-left: 0.25rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+} 

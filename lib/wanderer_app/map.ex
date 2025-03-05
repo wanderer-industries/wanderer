@@ -521,4 +521,101 @@ defmodule WandererApp.Map do
 
   defp _maybe_limit_list(list, nil), do: list
   defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
+
+  @doc """
+  Gets character activity data for a map.
+  Returns a list of character activity records with passages, connections, and signatures.
+  Only includes characters that are on the map's ACL.
+  """
+  def get_character_activity(map_id) do
+    # Get the map with ACLs
+    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
+    map = Ash.load!(map, :acls)
+
+    # Extract ACL information for filtering
+    map_acls = map.acls |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
+
+    map_acl_owner_ids = map_acls |> Enum.map(fn acl -> acl.owner_id end)
+
+    map_members =
+      map_acls
+      |> Enum.map(fn acl -> acl.members end)
+      |> List.flatten()
+      |> Enum.filter(fn member -> member.role != :blocked end)
+
+    map_member_eve_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
+      |> Enum.map(fn member -> member.eve_character_id end)
+
+    map_member_corporation_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
+      |> Enum.map(fn member -> member.eve_corporation_id end)
+
+    map_member_alliance_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
+      |> Enum.map(fn member -> member.eve_alliance_id end)
+
+    # Get all character activity
+    {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
+
+    result = jumps
+    |> Enum.filter(fn p ->
+      # Filter characters based on ACL
+      # Include the map owner and ACL owners
+      p.character.id == map.owner_id or
+        p.character.id in map_acl_owner_ids or
+        p.character.eve_id in map_member_eve_ids or
+        (not is_nil(p.character.corporation_id) and to_string(p.character.corporation_id) in map_member_corporation_ids) or
+        (not is_nil(p.character.alliance_id) and to_string(p.character.alliance_id) in map_member_alliance_ids)
+    end)
+    |> Enum.map(fn p ->
+      # Load the user information for this character
+      _user =
+        case WandererApp.Api.User.by_id(p.character.user_id) do
+          {:ok, user} -> user
+          _ -> nil
+        end
+
+      # For user_name, we should use the character name, not the user name
+      # The frontend will use this for display when is_user is true
+      user_name = p.character.name
+
+      portrait_url = get_portrait_url(p.character.eve_id, 64)
+
+      %{
+        character_id: p.character.id, # This is the UUID that matches with character_settings.character_id
+        character_name: p.character.name,
+        corporation_ticker: p.character.corporation_ticker,
+        alliance_ticker: p.character.alliance_ticker || "",
+        portrait_url: portrait_url,
+        passages: p.count,
+        connections: 0, # Default to 0 for now
+        signatures: 0,  # Default to 0 for now
+        user_id: p.character.user_id,
+        user_name: user_name,
+        is_user: false, # Default to false
+        # Add fields expected by the frontend with default values
+        system_id: "unknown",
+        system_name: "Unknown System",
+        region_name: "Unknown Region",
+        security_status: 0.0,
+        security_class: "unknown",
+        jumps: 0,
+        timestamp: DateTime.utc_now(),
+        character_eve_id: p.character.eve_id
+      }
+    end)
+
+    result
+  end
+
+  # Helper function to generate portrait URL
+  defp get_portrait_url(nil, size), do: "https://images.evetech.net/characters/0/portrait?size=#{size}"
+  defp get_portrait_url("", size), do: "https://images.evetech.net/characters/0/portrait?size=#{size}"
+  defp get_portrait_url(eve_id, size) do
+    "https://images.evetech.net/characters/#{eve_id}/portrait?size=#{size}"
+  end
 end

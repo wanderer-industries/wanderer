@@ -93,3 +93,17 @@ body .p-dialog {
 .p-dialog-header-close .pi {
   font-size: 1.25rem;
 }
+
+/* Убедитесь, что поставщики предложений и выбор дат отображаются поверх диалоговых окон */
+body .p-component-overlay + .p-dropdown-panel,
+body .p-component-overlay + .p-autocomplete-panel,
+body .p-component-overlay + .p-calendar-panel,
+body .p-component-overlay + .p-datepicker,
+body .p-component-overlay + .p-multiselect-panel,
+body .p-component-overlay + .p-overlaypanel,
+body .p-datepicker,
+body .p-dropdown-panel,
+body .p-autocomplete-panel {
+  position: fixed !important;
+  z-index: 10000 !important;
+}

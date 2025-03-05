@@ -220,20 +220,6 @@ defmodule WandererAppWeb.MapAccessListAPIController do
     end
   end
 
-  # Helper to find a character by internal id.
-  defp find_character_by_id(id) do
-    query =
-      Character
-      |> Ash.Query.new()
-      |> filter(id == ^id)
-
-    case WandererApp.Api.read(query) do
-      {:ok, [character]} -> {:ok, character}
-      {:ok, []} -> {:error, "Character not found"}
-      other -> other
-    end
-  end
-
   # Helper to associate a new ACL with a map.
   defp associate_acl_with_map(map, new_acl) do
     with {:ok, api_map} <- WandererApp.Api.Map.by_id(map.id),

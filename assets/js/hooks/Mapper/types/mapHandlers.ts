@@ -4,9 +4,16 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { SignatureGroup, UserPermissions } from '@/hooks/Mapper/types';
+import { UserPermissions } from '@/hooks/Mapper/types';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
+/**
+ * Commands that can be sent from the server to the client
+ * or used for event handling
+ */
 export enum Commands {
+  // Map data commands
   init = 'init',
   addSystems = 'add_systems',
   updateSystems = 'update_systems',
@@ -27,9 +34,17 @@ export enum Commands {
   selectSystem = 'select_system',
   linkSignatureToSystem = 'link_signature_to_system',
   signaturesUpdated = 'signatures_updated',
+
+  // Activity and tracking commands
+  characterActivityData = 'character_activity_data',
+  trackingCharactersData = 'tracking_characters_data',
+  updateActivity = 'update_activity',
+  updateTracking = 'update_tracking',
+  userSettingsUpdated = 'user_settings_updated',
 }
 
 export type Command =
+  // Map data commands
   | Commands.init
   | Commands.addSystems
   | Commands.updateSystems
@@ -49,7 +64,14 @@ export type Command =
   | Commands.selectSystem
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
-  | Commands.signaturesUpdated;
+  | Commands.signaturesUpdated
+
+  // Activity and tracking commands
+  | Commands.characterActivityData
+  | Commands.trackingCharactersData
+  | Commands.userSettingsUpdated
+  | Commands.updateActivity
+  | Commands.updateTracking;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -57,7 +79,7 @@ export type CommandInit = {
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
   wormholes: WormholeDataRaw[];
-  effects: any[];
+  effects: unknown[];
   characters: CharacterTypeRaw[];
   present_characters: string[];
   user_characters: string[];
@@ -91,8 +113,53 @@ export type CommandLinkSignatureToSystem = {
   solar_system_target: number;
 };
 export type CommandLinkSignaturesUpdated = number;
+export type CommandCharacterActivityData = { activity: ActivitySummary[] };
+export type CommandTrackingCharactersData = { characters: TrackingCharacter[] };
+export type CommandUserSettingsUpdated = {
+  settings: UserSettings;
+};
 
+export type CommandShowActivity = null;
+export type CommandHideActivity = null;
+export type CommandShowTracking = null;
+export type CommandHideTracking = null;
+export type CommandRefreshCharacters = null;
+export type CommandUiLoaded = { version: string | null };
+export type CommandLogMapError = { error: string; componentStack: string };
+export type CommandMapEvent = { type: Command; data: unknown };
+export type CommandMapEvents = Array<{ type: Command; data: unknown }>;
+export type CommandUpdateActivity = {
+  characterId: number;
+  systemId: number;
+  shipTypeId: number;
+  timestamp: number;
+};
+export type CommandUpdateTracking = {
+  characterId: number;
+  track: boolean;
+  follow: boolean;
+};
+
+export interface UserSettings {
+  primaryCharacterId?: string;
+  mapSettings?: {
+    showGrid?: boolean;
+    snapToGrid?: boolean;
+    gridSize?: number;
+  };
+  interfaceSettings?: {
+    theme?: string;
+    showMinimap?: boolean;
+    showMenu?: boolean;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * Interface mapping Commands to their data types
+ */
 export interface CommandData {
+  // Map data commands
   [Commands.init]: CommandInit;
   [Commands.addSystems]: CommandAddSystems;
   [Commands.updateSystems]: CommandUpdateSystems;
@@ -113,6 +180,45 @@ export interface CommandData {
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
   [Commands.signaturesUpdated]: CommandLinkSignaturesUpdated;
+
+  // Activity and tracking commands
+  [Commands.characterActivityData]: CommandCharacterActivityData;
+  [Commands.trackingCharactersData]: CommandTrackingCharactersData;
+  [Commands.userSettingsUpdated]: CommandUserSettingsUpdated;
+  [Commands.updateActivity]: CommandUpdateActivity;
+  [Commands.updateTracking]: CommandUpdateTracking;
+}
+
+/**
+ * Type for command event handlers
+ */
+export type CommandEventHandler<T extends keyof CommandData> = (payload: CommandData[T]) => void;
+
+/**
+ * Interface for the hooks passed to the Mapper component
+ */
+export interface MapperHooks {
+  onError: (error: Error, componentStack: string) => void;
+  handleEvent: <T extends keyof CommandData>(
+    event: T | string,
+    handler: CommandEventHandler<T> | ((payload: unknown) => void),
+  ) => void;
+  pushEventAsync: <T = unknown>(event: string, payload: unknown) => Promise<T>;
+  pushEvent: (event: string, payload: unknown, callback?: (reply: unknown) => void) => void;
+}
+
+/**
+ * Interface for the event handlers used in MapRootContent
+ */
+export interface MapEventHandlers {
+  handleShowActivity: () => void;
+  handleUpdateActivity: (activityData: CommandData[Commands.updateActivity]) => void;
+  handleHideActivity: () => void;
+  handleShowTracking: () => void;
+  handleUpdateTracking: (trackingData: CommandData[Commands.updateTracking]) => void;
+  handleHideTracking: () => void;
+  handleRefreshCharacters: () => void;
+  handleUserSettingsUpdated: (settingsData: CommandData[Commands.userSettingsUpdated]) => void;
 }
 
 export interface MapHandlers {
@@ -163,6 +269,17 @@ export enum OutCommand {
   // Only UI commands
   openSettings = 'open_settings',
 
+  // Character activity commands
+  hideActivity = 'hide_activity',
+  showActivity = 'show_activity',
+
+  // Character tracking commands
+  hideTracking = 'hide_tracking',
+  showTracking = 'show_tracking',
+  toggleTrack = 'toggle_track',
+  toggleFollow = 'toggle_follow',
+  refreshCharacters = 'refresh_characters',
+
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',
@@ -171,3 +288,11 @@ export enum OutCommand {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;
+
+/**
+ * Interface for map events used with the event system
+ */
+export interface MapEvent<T extends Command> {
+  name: T;
+  data: CommandData[T];
+}

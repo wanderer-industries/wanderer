@@ -13,13 +13,14 @@
     event_name="change_map"
   />
 
-  <.button
-    :if={(@user_permissions || %{}) |> Map.get(:view_character, false)}
+  <button
+    :if={(@user_permissions || %{}) |> Map.get(:track_character, false)}
+    id="show-activity-button"
+    class="h-8 w-8 hover:text-white"
     phx-click="show_activity"
-    class="btn-link -mt-1 text-gray-400 hover:text-white"
   >
     <.icon name="hero-chart-bar-solid" class="w-6 h-6" />
-  </.button>
+  </button>
 
   <.link
     :if={(@user_permissions || %{}) |> Map.get(:delete_map, false)}
@@ -39,89 +40,3 @@
     <.icon name="hero-user-group-solid" class="w-6 h-6" />
   </.link>
 </div>
-
-<.modal
-  :if={assigns |> Map.get(:show_activity?, false)}
-  id="map-activity-modal"
-  title="Activity of Characters"
-  class="!w-[500px]"
-  show
-  on_cancel={JS.push("hide_activity")}
->
-  <.async_result :let={character_activity} assign={@character_activity}>
-    <:loading>Loading...</:loading>
-    <:failed :let={reason}><%= reason %></:failed>
-
-    <span :if={character_activity}>
-      <.live_component
-        module={WandererAppWeb.CharacterActivity}
-        id="character-activity"
-        activity={character_activity}
-        notify_to={self()}
-      />
-    </span>
-  </.async_result>
-</.modal>
-
-<.modal
-  :if={assigns |> Map.get(:show_tracking?, false)}
-  id="map-tracking-modal"
-  title="Track and Follow Characters"
-  show
-  on_cancel={JS.push("hide_tracking")}
->
-  <.async_result :let={characters} assign={@characters}>
-    <:loading>
-      <span class="loading loading-dots loading-xs" />
-    </:loading>
-    <:failed :let={reason}>
-      <%= reason %>
-    </:failed>
-
-    <.table
-      :if={characters}
-      id="characters-tracking-table"
-      class="h-[400px] !overflow-y-auto"
-      rows={characters}
-    >
-      <:col :let={character} label="Track">
-        <label class="flex items-center gap-2 justify-center">
-          <input
-            type="checkbox"
-            class="checkbox"
-            phx-click="toggle_track"
-            phx-value-character-id={character.id}
-            id={"character-track-#{character.id}"}
-            checked={character.tracked}
-          />
-        </label>
-      </:col>
-      <:col :let={character} label="Follow">
-        <label class="flex items-center gap-2 justify-center">
-          <input
-            type="radio"
-            name="followed_character"
-            class="radio"
-            phx-click="toggle_follow"
-            phx-value-character-id={character.id}
-            checked={Map.get(character, :followed, false)}
-          />
-        </label>
-      </:col>
-      <:col :let={character} label="Character">
-        <div class="flex items-center gap-3">
-          <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
-          <div>
-            <div class="font-bold">
-              <%= character.name %>
-              <span class="ml-1 text-gray-400">
-                [<%= character.corporation_ticker %>]
-              </span>
-            </div>
-            <div class="text-sm opacity-50"></div>
-          </div>
-        </div>
-      </:col>
-    </.table>
-  </.async_result>
-</.modal>

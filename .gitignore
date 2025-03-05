@@ -1,3 +1,4 @@
+changes.txt
 # Also ignore archive artifacts (built via "mix archive.build").
 *.ez
 
