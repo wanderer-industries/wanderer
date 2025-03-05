@@ -1,7 +1,6 @@
 /* Character Activity Component Styles */
 .character-activity {
   &-dialog {
-    z-index: 1000 !important;
     background-color: var(--surface-card);
     color: var(--text-color);
     border-radius: 8px;
@@ -68,7 +67,6 @@
       margin-left: 0.5rem !important;
       opacity: 1 !important;
       visibility: visible !important;
-      z-index: 1000 !important;
     }
 
     .p-dialog-header-close:hover {
@@ -175,7 +173,6 @@
       text-align: center;
       position: sticky;
       top: 0;
-      z-index: 5;
       line-height: 1.333;
       font-size: 12px;
       height: 24px !important;

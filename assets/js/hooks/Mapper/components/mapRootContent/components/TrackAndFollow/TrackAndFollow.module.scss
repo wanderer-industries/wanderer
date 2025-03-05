@@ -1,7 +1,6 @@
 /* TrackAndFollow Dialog Styles */
 .track-follow {
   &-dialog {
-    z-index: 1000 !important;
     background-color: var(--surface-card);
     color: var(--text-color);
     border-radius: 8px;
@@ -142,7 +141,6 @@
   margin-left: 0.5rem !important;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 1000 !important;
   
   &:hover {
     background: var(--surface-hover) !important;

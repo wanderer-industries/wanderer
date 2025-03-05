@@ -197,6 +197,7 @@ export const MapSettings = ({ visible, onHide }: MapSettingsProps) => {
             value={currentValue}
             options={item.options}
             onChange={e => handleSettingChange(item.prop, e.value)}
+            appendTo={document.body}
             placeholder="Select a theme"
           />
         </div>
