@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.54.0](https://github.com/wanderer-industries/wanderer/compare/v1.53.4...v1.54.0) (2025-03-05)
+
+
+
+
+### Features:
+
+* added auto-refresh timeout for cloud new version updates
+
+* add selectable sig deletion timing, and color options (#208)
+
 ## [v1.53.4](https://github.com/wanderer-industries/wanderer/compare/v1.53.3...v1.53.4) (2025-03-04)
 
 
