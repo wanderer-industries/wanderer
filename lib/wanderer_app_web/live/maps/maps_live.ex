@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapsLive do
   require Logger
 
   alias BetterNumber, as: Number
+  alias WandererAppWeb.Maps.LicenseComponent
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
@@ -20,6 +21,11 @@ defmodule WandererAppWeb.MapsLive do
       active_characters
       |> Enum.map(&map_character/1)
 
+    if connected?(socket) do
+      socket
+      |> push_event("init-js", %{})
+    end
+
     {:ok,
      socket
      |> assign(
@@ -31,6 +37,7 @@ defmodule WandererAppWeb.MapsLive do
        location: nil,
        is_version_valid?: false
      )
+     |> push_event("init-copy-to-clipboard", %{})
      |> assign_async(:maps, fn ->
        _load_maps(current_user)
      end)}
@@ -549,6 +556,17 @@ defmodule WandererAppWeb.MapsLive do
           amount: estimated_price - discount
         })
 
+        # Automatically create a license for the map
+        # The License Manager service will verify the subscription is active
+        case WandererApp.License.LicenseManager.create_license_for_map(map_id) do
+          {:ok, license} ->
+            Logger.info("Automatically created license #{license.license_key} for map #{map_id}")
+          {:error, :no_active_subscription} ->
+            Logger.warn("Cannot create license for map #{map_id}: No active subscription found")
+          {:error, reason} ->
+            Logger.error("Failed to create license for map #{map_id}: #{inspect(reason)}")
+        end
+
         {:noreply,
          socket
          |> assign(
@@ -618,6 +636,32 @@ defmodule WandererAppWeb.MapsLive do
           map_id: map_id,
           amount: additional_price
         })
+
+        # Check if a license exists, if not create one, otherwise update its expiration
+        # The License Manager service will verify the subscription is active
+        case WandererApp.License.LicenseManager.get_license_by_map_id(map_id) do
+          {:error, :license_not_found} ->
+            # No license found, create one
+            case WandererApp.License.LicenseManager.create_license_for_map(map_id) do
+              {:ok, license} ->
+                Logger.info("Automatically created license #{license.license_key} for map #{map_id} during subscription update")
+              {:error, :no_active_subscription} ->
+                Logger.warn("Cannot create license for map #{map_id}: No active subscription found")
+              {:error, reason} ->
+                Logger.error("Failed to create license for map #{map_id} during subscription update: #{inspect(reason)}")
+            end
+          {:ok, _license} ->
+            # License exists, update its expiration date
+            case WandererApp.License.LicenseManager.update_license_expiration_from_subscription(map_id) do
+              {:ok, updated_license} ->
+                Logger.info("Updated license expiration for map #{map_id} to #{updated_license.expire_at}")
+              {:error, reason} ->
+                Logger.error("Failed to update license expiration for map #{map_id}: #{inspect(reason)}")
+            end
+          _ ->
+            # Error occurred, do nothing
+            :ok
+        end
 
         {:noreply,
          socket
