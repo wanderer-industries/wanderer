@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import clsx from 'clsx';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { VirtualScroller } from 'primereact/virtualscroller';
 import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsItemTemplate';
@@ -15,11 +14,6 @@ export interface SystemKillsContentProps {
   limit?: number;
 }
 
-/**
- * A simple VirtualScroller-based list of kills.
- * Always uses 100% height, so the parent container
- * dictates how tall this scroller is.
- */
 export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   kills,
   systemNameMap,
@@ -28,49 +22,49 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   limit,
 }) => {
   const processedKills = useMemo(() => {
-    // Make sure we have kills to process
     if (!kills || kills.length === 0) return [];
 
-    // First sort by time (most recent first)
+    // sort by newest first
     const sortedKills = kills
       .filter(k => k.kill_time)
       .sort((a, b) => new Date(b.kill_time!).getTime() - new Date(a.kill_time!).getTime());
 
-    // Apply timeRange filter if specified
+    // filter by timeRange
     let filteredKills = sortedKills;
     if (timeRange !== undefined) {
       const cutoffTime = new Date();
       cutoffTime.setHours(cutoffTime.getHours() - timeRange);
-      const cutoffTimestamp = cutoffTime.getTime();
-
-      filteredKills = filteredKills.filter(kill => {
+      filteredKills = sortedKills.filter(kill => {
         const killTime = new Date(kill.kill_time!).getTime();
-        return killTime >= cutoffTimestamp;
+        return killTime >= cutoffTime.getTime();
       });
     }
 
+    // apply limit if present
     if (limit !== undefined) {
       return filteredKills.slice(0, limit);
-    } else {
-      return filteredKills;
     }
+    return filteredKills;
   }, [kills, timeRange, limit]);
 
   const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
 
+  // Define style for the VirtualScroller
+  const virtualScrollerStyle: React.CSSProperties = {
+    boxSizing: 'border-box',
+  };
+
   return (
-    <div className={clsx('w-full h-full overflow-hidden', classes.wrapper)}>
+    <div className="h-full w-full flex flex-col overflow-hidden" data-testid="system-kills-content">
       <VirtualScroller
         items={processedKills}
         itemSize={ITEM_HEIGHT}
         itemTemplate={itemTemplate}
-        scrollWidth="100%"
-        style={{ height: '100%', minHeight: '100px' }}
-        className={clsx('w-full custom-scrollbar select-none', classes.VirtualScroller)}
+        className={`w-full h-full flex-1 select-none ${classes.VirtualScroller}`}
+        style={virtualScrollerStyle}
         pt={{
           content: {
-            className: classes.scrollerContent,
-            style: { minHeight: '100px' },
+            className: `custom-scrollbar ${classes.scrollerContent}`,
           },
         }}
       />

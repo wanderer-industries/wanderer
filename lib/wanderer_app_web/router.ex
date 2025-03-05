@@ -4,7 +4,6 @@ defmodule WandererAppWeb.Router do
   use Plug.ErrorHandler
 
   import PlugDynamic.Builder
-  import Logger
 
   import WandererAppWeb.UserAuth,
     warn: false,

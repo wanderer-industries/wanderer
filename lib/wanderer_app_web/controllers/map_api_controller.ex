@@ -184,13 +184,12 @@ defmodule WandererAppWeb.MapAPIController do
   Returns kills data for all *visible* systems on the map.
 
   Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
-  Optional hours_ago
+  Optional hours_ago parameter.
 
   Example:
       GET /api/map/systems_kills?map_id=<uuid>
       GET /api/map/systems_kills?slug=<map-slug>
-      GET /api/map/systems_kills?map_id=<uuid>&hour_ago=<somehours>
-
+      GET /api/map/systems_kills?map_id=<uuid>&hours_ago=<somehours>
   """
   def list_systems_kills(conn, params) do
     with {:ok, map_id} <- Util.fetch_map_id(params),
@@ -199,8 +198,10 @@ defmodule WandererAppWeb.MapAPIController do
 
       Logger.debug(fn -> "[list_systems_kills] Found #{length(systems)} visible systems for map_id=#{map_id}" end)
 
-      # Parse the hours_ago param
-      hours_ago = parse_hours_ago(params["hours_ago"])
+      # Parse the hours_ago param (check both "hours_ago" and "hour_ago" for backward compatibility)
+      hours_ago = parse_hours_ago(params["hours_ago"] || params["hour_ago"])
+
+      Logger.debug(fn -> "[list_systems_kills] Using hours_ago=#{inspect(hours_ago)}, from params: hours_ago=#{inspect(params["hours_ago"])}, hour_ago=#{inspect(params["hour_ago"])}" end)
 
       # Gather system IDs
       solar_ids = Enum.map(systems, & &1.solar_system_id)
@@ -216,11 +217,11 @@ defmodule WandererAppWeb.MapAPIController do
           # Filter out kills older than hours_ago
           filtered_kills = maybe_filter_kills_by_time(kills, hours_ago)
 
-          Logger.debug(fn -> "
-            [list_systems_kills] For system_id=#{sys.solar_system_id},
-            found #{length(kills)} kills total,
-            returning #{length(filtered_kills)} kills after hours_ago filter
-          " end)
+          Logger.debug(fn ->
+            "[list_systems_kills] For system_id=#{sys.solar_system_id}, " <>
+            "found #{length(kills)} kills total, " <>
+            "returning #{length(filtered_kills)} kills after hours_ago=#{inspect(hours_ago)} filter"
+          end)
 
           %{
             solar_system_id: sys.solar_system_id,
@@ -231,7 +232,7 @@ defmodule WandererAppWeb.MapAPIController do
       json(conn, %{data: data})
     else
       {:error, msg} when is_binary(msg) ->
-        Logger.warn("[list_systems_kills] Bad request: #{msg}")
+        Logger.warning("[list_systems_kills] Bad request: #{msg}")
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})
@@ -244,34 +245,74 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
+  @doc """
+  GET /api/map/systems-kills
+
+  This is an alias for list_systems_kills to support the hyphenated URL format.
+  See list_systems_kills for full documentation.
+  """
+  def list_systems_kills_hyphenated(conn, params) do
+    list_systems_kills(conn, params)
+  end
+
   # If hours_str is present and valid, parse it. Otherwise return nil (no filter).
   defp parse_hours_ago(nil), do: nil
   defp parse_hours_ago(hours_str) do
-    case Integer.parse(hours_str) do
-      {num, ""} when num > 0 -> num
-      _ -> nil
+    Logger.debug(fn -> "[parse_hours_ago] Parsing hours_str: #{inspect(hours_str)}" end)
+
+    result = case Integer.parse(hours_str) do
+      {num, ""} when num > 0 ->
+        Logger.debug(fn -> "[parse_hours_ago] Successfully parsed to #{num}" end)
+        num
+      {num, rest} ->
+        Logger.debug(fn -> "[parse_hours_ago] Parsed with remainder: #{num}, rest: #{inspect(rest)}" end)
+        nil
+      :error ->
+        Logger.debug(fn -> "[parse_hours_ago] Failed to parse" end)
+        nil
     end
+
+    Logger.debug(fn -> "[parse_hours_ago] Final result: #{inspect(result)}" end)
+    result
   end
 
   defp maybe_filter_kills_by_time(kills, hours_ago) when is_integer(hours_ago) do
     cutoff = DateTime.utc_now() |> DateTime.add(-hours_ago * 3600, :second)
+    Logger.debug(fn -> "[maybe_filter_kills_by_time] Filtering kills with cutoff: #{DateTime.to_iso8601(cutoff)}" end)
 
-    Enum.filter(kills, fn kill ->
+    filtered = Enum.filter(kills, fn kill ->
       kill_time = kill["kill_time"]
 
-      case kill_time do
+      result = case kill_time do
         %DateTime{} = dt ->
           # Keep kills that occurred after the cutoff
           DateTime.compare(dt, cutoff) != :lt
+
+        time when is_binary(time) ->
+          # Try to parse the string time
+          case DateTime.from_iso8601(time) do
+            {:ok, dt, _} -> DateTime.compare(dt, cutoff) != :lt
+            _ -> false
+          end
 
         # If it's something else (nil, or a weird format), skip
         _ ->
           false
       end
+
+      Logger.debug(fn ->
+        kill_time_str = if is_binary(kill_time), do: kill_time, else: inspect(kill_time)
+        "[maybe_filter_kills_by_time] Kill time: #{kill_time_str}, included: #{result}"
+      end)
+
+      result
     end)
+
+    Logger.debug(fn -> "[maybe_filter_kills_by_time] Filtered #{length(kills)} kills to #{length(filtered)} kills" end)
+    filtered
   end
 
-  # If hours_ago is nil, maybe no time filtering:
+  # If hours_ago is nil, no time filtering:
   defp maybe_filter_kills_by_time(kills, nil), do: kills
 
   defp handle_all_structure_timers(conn, map_id) do

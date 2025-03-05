@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { SystemKillsContent } from '../../../mapInterface/widgets/SystemKills/SystemKillsContent/SystemKillsContent';
 import { useKillsCounter } from '../../hooks/useKillsCounter';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common';
 
 const ITEM_HEIGHT = 35;
+const MIN_TOOLTIP_HEIGHT = 40;
 
 type TooltipSize = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -26,7 +27,6 @@ export const KillsCounter = ({ killsCount, systemId, className, children, size =
     realSystemId: systemId,
   });
 
-  // Limit kills to killsCount
   const limitedKills = useMemo(() => {
     if (!detailedKills || detailedKills.length === 0) return [];
     return detailedKills.slice(0, killsCount);
@@ -36,23 +36,21 @@ export const KillsCounter = ({ killsCount, systemId, className, children, size =
     return null;
   }
 
+  // Calculate height based on number of kills, but ensure a minimum height
   const killsNeededHeight = limitedKills.length * ITEM_HEIGHT;
-
-  const totalNeededHeight = killsNeededHeight;
-
-  const tooltipHeight = Math.min(totalNeededHeight, 500);
+  const tooltipHeight = Math.max(MIN_TOOLTIP_HEIGHT, Math.min(killsNeededHeight, 500));
 
   const tooltipContent = (
     <div
       style={{
         width: '400px',
         height: `${tooltipHeight}px`,
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
+      className="overflow-hidden"
     >
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 h-full">
         <SystemKillsContent kills={limitedKills} systemNameMap={systemNameMap} onlyOneSystem />
       </div>
     </div>
