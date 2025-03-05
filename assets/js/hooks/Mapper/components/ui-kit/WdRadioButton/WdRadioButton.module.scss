@@ -1,0 +1,56 @@
+.RadioInput {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--surface-border, #ccc);
+  border-radius: 50%;
+  background-color: var(--surface-card, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    border-color: var(--primary-color, #3B82F6);
+  }
+  
+  &:checked {
+    border-color: var(--primary-color, #3B82F6);
+    
+    &::after {
+      content: '';
+      width: 0.625rem;
+      height: 0.625rem;
+      background-color: var(--primary-color, #3B82F6);
+      border-radius: 50%;
+      display: block;
+    }
+    
+    &:hover {
+      border-color: var(--primary-color-dark, #2563EB);
+      
+      &::after {
+        background-color: var(--primary-color-dark, #2563EB);
+      }
+    }
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem var(--primary-color-light, rgba(59, 130, 246, 0.25));
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    border-color: var(--surface-border, #ccc);
+    
+    &:checked::after {
+      background-color: var(--surface-border, #ccc);
+    }
+  }
+} 

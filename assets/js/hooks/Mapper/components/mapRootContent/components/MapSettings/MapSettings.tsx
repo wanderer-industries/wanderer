@@ -40,7 +40,7 @@ export type UserSettingsRemote = {
 export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
 
 export interface MapSettingsProps {
-  show: boolean;
+  visible: boolean;
   onHide: () => void;
 }
 
@@ -128,7 +128,7 @@ const THEME_SETTING: SettingsListItem = {
   options: THEME_OPTIONS,
 };
 
-export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
+export const MapSettings = ({ visible, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
   const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
@@ -197,6 +197,7 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
             value={currentValue}
             options={item.options}
             onChange={e => handleSettingChange(item.prop, e.value)}
+            appendTo={document.body}
             placeholder="Select a theme"
           />
         </div>
@@ -213,12 +214,12 @@ export const MapSettings = ({ show, onHide }: MapSettingsProps) => {
   return (
     <Dialog
       header="Map user settings"
-      visible={show}
+      visible={visible}
       draggable={false}
       style={{ width: '550px' }}
       onShow={handleShow}
       onHide={() => {
-        if (!show) return;
+        if (!visible) return;
         setActiveIndex(0);
         onHide();
       }}

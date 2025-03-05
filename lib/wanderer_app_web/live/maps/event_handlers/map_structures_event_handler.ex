@@ -37,11 +37,6 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
       ) do
     with {:ok, system} <- get_map_system(map_id, solar_system_id),
          :ok <- ensure_user_has_tracked_character(user_characters) do
-      Logger.debug(fn ->
-        "[handle_ui_event:update_structures] loaded map_system =>\n" <>
-          inspect(system, pretty: true)
-      end)
-
       Structure.update_structures(
         system,
         added_structures,
@@ -142,10 +137,6 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
         |> Map.update!(:inserted_at, &Calendar.strftime(&1, "%Y/%m/%d %H:%M:%S"))
         |> Map.update!(:updated_at, &Calendar.strftime(&1, "%Y/%m/%d %H:%M:%S"))
       end)
-
-    Logger.debug(fn ->
-      "[get_system_structures] => returning:\n" <> inspect(results, pretty: true)
-    end)
 
     results
   end

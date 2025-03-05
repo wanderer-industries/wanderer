@@ -231,7 +231,7 @@ defmodule WandererAppWeb.MapAPIController do
       json(conn, %{data: data})
     else
       {:error, msg} when is_binary(msg) ->
-        Logger.warn("[list_systems_kills] Bad request: #{msg}")
+        Logger.warning("[list_systems_kills] Bad request: #{msg}")
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})

@@ -95,31 +95,58 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
-  def handle_ui_event(
-        "manual_add_system",
-        %{"solar_system_id" => solar_system_id, "coordinates" => coordinates} = _event,
-        %{
-          assigns: %{
-            current_user: current_user,
-            has_tracked_characters?: true,
-            map_id: map_id,
-            tracked_character_ids: tracked_character_ids,
-            user_permissions: %{add_system: true}
-          }
-        } =
-          socket
-      ) do
-    WandererApp.Map.Server.add_system(
-      map_id,
-      %{
-        solar_system_id: solar_system_id,
-        coordinates: coordinates
-      },
-      current_user.id,
-      tracked_character_ids |> List.first()
-    )
+  def handle_ui_event("manual_add_system", %{"solar-system-id" => solar_system_id, "coordinates" => coordinates}, socket) do
+    %{
+      map_id: map_id
+    } = socket.assigns
 
-    {:noreply, socket}
+    # Get the solar system info from the API
+    {:ok, solar_system} = WandererApp.Api.SolarSystemRepo.by_id(solar_system_id)
+
+    if solar_system do
+      # Add the system to the map
+      WandererApp.Map.Server.add_system(
+        map_id,
+        %{
+          solar_system_id: solar_system_id,
+          coordinates: coordinates
+        },
+        socket.assigns.current_user.id,
+        socket.assigns.tracked_character_ids |> List.first()
+      )
+
+      # Send a notification to the client
+      {:noreply, socket |> put_flash(:info, "System added successfully")}
+    else
+      {:noreply, socket |> put_flash(:error, "System not found")}
+    end
+  end
+
+  def handle_ui_event("add_system", %{"system_id" => system_id, "coordinates" => coordinates}, socket) do
+    %{
+      map_id: map_id
+    } = socket.assigns
+
+    # Get the solar system info from the API
+    {:ok, solar_system} = WandererApp.Api.SolarSystemRepo.by_id(system_id)
+
+    if solar_system do
+      # Add the system to the map
+      WandererApp.Map.Server.add_system(
+        map_id,
+        %{
+          solar_system_id: system_id,
+          coordinates: coordinates
+        },
+        socket.assigns.current_user.id,
+        socket.assigns.tracked_character_ids |> List.first()
+      )
+
+      # Send a notification to the client
+      {:noreply, socket |> put_flash(:info, "System added successfully")}
+    else
+      {:noreply, socket |> put_flash(:error, "System not found")}
+    end
   end
 
   def handle_ui_event(
@@ -333,8 +360,9 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     {:noreply, socket}
   end
 
-  def handle_ui_event(event, body, socket),
-    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket) do
+    MapCoreEventHandler.handle_ui_event(event, body, socket)
+  end
 
   def map_system(
         %{
