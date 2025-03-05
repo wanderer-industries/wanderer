@@ -11,6 +11,7 @@ defmodule WandererAppWeb.MapEventHandler do
     MapRoutesEventHandler,
     MapSignaturesEventHandler,
     MapSystemsEventHandler,
+    MapSystemCommentsEventHandler,
     MapStructuresEventHandler,
     MapKillsEventHandler
   }
@@ -54,6 +55,16 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_tag",
     "update_system_temporary_name",
     "update_system_status"
+  ]
+
+  @map_system_comments_events [
+    :system_comments_updated
+  ]
+
+  @map_system_comments_ui_events [
+    "addSystemComment",
+    "getSystemComments",
+    "deleteSystemComment"
   ]
 
   @map_connection_events [
@@ -136,6 +147,10 @@ defmodule WandererAppWeb.MapEventHandler do
       do: MapSystemsEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
+      when event_name in @map_system_comments_events,
+      do: MapSystemCommentsEventHandler.handle_server_event(event, socket)
+
+  def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_connection_events,
       do: MapConnectionsEventHandler.handle_server_event(event, socket)
 
@@ -209,6 +224,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_ui_event(event, body, socket)
       when event in @map_system_ui_events,
       do: MapSystemsEventHandler.handle_ui_event(event, body, socket)
+
+  def handle_ui_event(event, body, socket)
+      when event in @map_system_comments_ui_events,
+      do: MapSystemCommentsEventHandler.handle_ui_event(event, body, socket)
 
   def handle_ui_event(event, body, socket)
       when event in @map_connection_ui_events,

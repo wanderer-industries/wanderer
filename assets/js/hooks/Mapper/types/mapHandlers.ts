@@ -4,12 +4,13 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { SignatureGroup, UserPermissions } from '@/hooks/Mapper/types';
+import { UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
   addSystems = 'add_systems',
   updateSystems = 'update_systems',
+  systemCommentsUpdated = 'system_comments_updated',
   removeSystems = 'remove_systems',
   addConnections = 'add_connections',
   removeConnections = 'remove_connections',
@@ -159,6 +160,9 @@ export enum OutCommand {
   getCorporationTicker = 'get_corporation_ticker',
   getSystemKills = 'get_system_kills',
   getSystemsKills = 'get_systems_kills',
+  addSystemComment = 'addSystemComment',
+  deleteSystemComment = 'deleteSystemComment',
+  getSystemComments = 'getSystemComments',
 
   // Only UI commands
   openSettings = 'open_settings',

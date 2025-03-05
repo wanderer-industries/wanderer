@@ -3,7 +3,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   require Logger
 
-  alias WandererApp.Map.Server.{Impl}
+  alias WandererApp.Map.Server.Impl
 
   @ddrt Application.compile_env(:wanderer_app, :ddrt)
   @system_auto_expire_minutes 15
@@ -55,6 +55,47 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       {:error, :already_exists} ->
         state
     end
+  end
+
+  def add_system_comment(
+        %{map_id: map_id} = state,
+        %{
+          solar_system_id: solar_system_id,
+          text: text
+        } = comment_info,
+        user_id,
+        character_id
+      ) do
+    system =
+      WandererApp.Map.find_system_by_location(map_id, %{
+        solar_system_id: solar_system_id |> String.to_integer()
+      })
+
+    {:ok, comment} =
+      WandererApp.MapSystemCommentRepo.create(%{
+        system_id: system.id,
+        character_id: character_id,
+        text: text
+      })
+
+    Impl.broadcast!(map_id, :system_comments_updated, system.solar_system_id)
+    state
+  end
+
+  def remove_system_comment(
+        %{map_id: map_id} = state,
+        comment_id,
+        user_id,
+        character_id
+      ) do
+    {:ok, %{system: system} = comment} =
+      WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
+
+    :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
+
+    Impl.broadcast!(map_id, :system_comments_updated, system.solar_system_id)
+
+    state
   end
 
   def cleanup_systems(%{map_id: map_id} = state) do

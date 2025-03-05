@@ -99,6 +99,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.add_system/4, [system_info, user_id, character_id]})
 
+  def add_system_comment(map_id, comment_info, user_id, character_id) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.add_system_comment/4, [comment_info, user_id, character_id]})
+
+  def remove_system_comment(map_id, comment_id, user_id, character_id) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.remove_system_comment/4, [comment_id, user_id, character_id]})
+
   def update_system_position(map_id, update) when is_binary(map_id),
     do:
       map_id
