@@ -29,30 +29,20 @@ defmodule WandererApp.License.LicenseManagerClient do
   def create_license(license_params) do
     url = "#{api_url()}/api/manage/licenses"
 
-    headers = [
-      {"Authorization", "Bearer #{auth_key()}"},
-      {"Content-Type", "application/json"},
-      {"Accept", "application/json"}
-    ]
+    auth_opts = [auth: {:bearer, auth_key()}]
 
     log_request("POST", url, license_params)
 
-    with {:ok, body} <- Jason.encode(license_params),
-         {:ok, %{status_code: status, body: response_body}} when status in 200..299 <-
-           HTTPoison.post(url, body, headers),
-         {:ok, license} <- Jason.decode(response_body) do
+    with {:ok, %{status: status, body: license}} when status in 200..299 <-
+           Req.post(url, [json: license_params] ++ auth_opts) do
       log_response(status, license)
       {:ok, license}
     else
-      {:ok, %{status_code: status, body: body}} ->
+      {:ok, %{status: status, body: body}} ->
         Logger.error("Failed to create license. Status: #{status}, Body: #{body}")
         parse_error_response(status, body)
 
-      {:error, %Jason.DecodeError{} = error} ->
-        Logger.error("Failed to decode response: #{inspect(error)}")
-        {:error, :invalid_response}
-
-      {:error, %HTTPoison.Error{} = error} ->
+      {:error, error} ->
         Logger.error("HTTP request failed: #{inspect(error)}")
         {:error, :request_failed}
     end
@@ -76,30 +66,20 @@ defmodule WandererApp.License.LicenseManagerClient do
   def update_license(license_id, update_params) do
     url = "#{api_url()}/api/manage/licenses/#{license_id}"
 
-    headers = [
-      {"Authorization", "Bearer #{auth_key()}"},
-      {"Content-Type", "application/json"},
-      {"Accept", "application/json"}
-    ]
+    auth_opts = [auth: {:bearer, auth_key()}]
 
     log_request("PUT", url, update_params)
 
-    with {:ok, body} <- Jason.encode(update_params),
-         {:ok, %{status_code: status, body: response_body}} when status in 200..299 <-
-           HTTPoison.put(url, body, headers),
-         {:ok, license} <- Jason.decode(response_body) do
+    with {:ok, %{status: status, body: license}} when status in 200..299 <-
+           Req.put(url, [json: update_params] ++ auth_opts) do
       log_response(status, license)
       {:ok, license}
     else
-      {:ok, %{status_code: status, body: body}} ->
+      {:ok, %{status: status, body: body}} ->
         Logger.error("Failed to update license. Status: #{status}, Body: #{body}")
         parse_error_response(status, body)
 
-      {:error, %Jason.DecodeError{} = error} ->
-        Logger.error("Failed to decode response: #{inspect(error)}")
-        {:error, :invalid_response}
-
-      {:error, %HTTPoison.Error{} = error} ->
+      {:error, error} ->
         Logger.error("HTTP request failed: #{inspect(error)}")
         {:error, :request_failed}
     end
@@ -125,37 +105,28 @@ defmodule WandererApp.License.LicenseManagerClient do
   def validate_license(license_key) do
     url = "#{api_url()}/api/license/validate"
 
-    headers = [
-      {"Authorization", "Bearer #{license_key}"},
-      {"Accept", "application/json"}
-    ]
+    auth_opts = [auth: {:bearer, license_key}]
 
     log_request("GET", url, nil)
 
-    with {:ok, %{status_code: 200, body: response_body}} <- HTTPoison.get(url, headers),
-         {:ok, validation_result} <- Jason.decode(response_body) do
+    with {:ok, %{status: 200, body: validation_result}} <- Req.get(url, auth_opts) do
       log_response(200, validation_result)
       {:ok, validation_result}
     else
-      {:ok, %{status_code: 401}} ->
+      {:ok, %{status: 401}} ->
         {:error, :invalid_license}
 
-      {:ok, %{status_code: status, body: body}} ->
+      {:ok, %{status: status, body: body}} ->
         Logger.error("Failed to validate license. Status: #{status}, Body: #{body}")
         parse_error_response(status, body)
 
-      {:error, %Jason.DecodeError{} = error} ->
-        Logger.error("Failed to decode response: #{inspect(error)}")
-        {:error, :invalid_response}
-
-      {:error, %HTTPoison.Error{} = error} ->
+      {:error, error} ->
         Logger.error("HTTP request failed: #{inspect(error)}")
         {:error, :request_failed}
     end
   end
 
   # Private helper functions
-
   defp api_url do
     Application.get_env(:wanderer_app, :license_manager)[:api_url]
   end

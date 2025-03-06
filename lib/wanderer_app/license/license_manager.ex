@@ -9,9 +9,11 @@ defmodule WandererApp.License.LicenseManager do
   - Generating unique license keys
   """
 
+  require Logger
+
   alias WandererApp.Api.License
   alias WandererApp.Api.Map
-  alias WandererApp.MapSubscription.MapSubscriptionManager
+  alias WandererApp.Map.SubscriptionManager
   alias WandererApp.License.LicenseManagerClient
 
   @doc """
@@ -20,16 +22,9 @@ defmodule WandererApp.License.LicenseManager do
   """
   def create_license_for_map(map_id) do
     with {:ok, map} <- Map.by_id(map_id),
-         {:ok, true} <- has_active_subscription?(map_id),
-         {:ok, subscription} <- get_subscription(map_id) do
-
+         {:ok, true} <- WandererApp.Map.is_subscription_active?(map_id),
+         {:ok, subscription} <- SubscriptionManager.get_active_map_subscription(map_id) do
       # Create a license in the local database
-      {:ok, local_license} = License.create(%{
-        map_id: map_id,
-        license_key: "BOT-#{generate_random_string(16)}",
-        is_valid: true,
-        expire_at: subscription.active_till
-      })
 
       # Create a license in the external License Manager service
       license_params = %{
@@ -43,16 +38,18 @@ defmodule WandererApp.License.LicenseManager do
 
       case LicenseManagerClient.create_license(license_params) do
         {:ok, external_license} ->
-          # Update the local license with the external license key
-          License.update_key(local_license, %{license_key: external_license["key"]})
+          License.create(%{
+            map_id: map_id,
+            license_key: external_license["key"],
+            is_valid: true,
+            expire_at: subscription.active_till
+          })
 
         {:error, reason} ->
           # Log the error but don't fail the operation
-          require Logger
           Logger.error("Failed to create license in external service: #{inspect(reason)}")
+          {:error, reason}
       end
-
-      {:ok, local_license}
     else
       {:ok, false} -> {:error, :no_active_subscription}
       error -> error
@@ -70,22 +67,27 @@ defmodule WandererApp.License.LicenseManager do
         cond do
           not license.is_valid ->
             {:error, :license_invalidated}
+
           expired?(license) ->
             invalidate_license(license.id)
             {:error, :license_expired}
+
           true ->
             # Also validate with the external License Manager service
             case LicenseManagerClient.validate_license(license_key) do
               {:ok, _validation_result} ->
                 # External validation succeeded
                 {:ok, license}
+
               {:error, _reason} ->
                 # External validation failed, but we'll still consider it valid
                 # if it's valid in our local database
                 {:ok, license}
             end
         end
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -128,7 +130,7 @@ defmodule WandererApp.License.LicenseManager do
   Returns {:ok, license} if found, {:error, reason} otherwise.
   """
   def get_license_by_map_id(map_id) do
-    case License.by_map_id(map_id) do
+    case License.by_map_id(%{map_id: map_id}) do
       {:ok, [license | _]} -> {:ok, license}
       {:ok, []} -> {:error, :license_not_found}
       error -> error
@@ -140,38 +142,8 @@ defmodule WandererApp.License.LicenseManager do
   """
   def update_license_expiration_from_subscription(map_id) do
     with {:ok, license} <- get_license_by_map_id(map_id),
-         {:ok, subscription} <- get_subscription(map_id) do
+         {:ok, subscription} <- SubscriptionManager.get_active_map_subscription(map_id) do
       update_expiration(license.id, %{expire_at: subscription.active_till})
-    end
-  end
-
-  @doc """
-  Checks if a map has an active subscription.
-  """
-  defp has_active_subscription?(map_id) do
-    case get_subscription(map_id) do
-      {:ok, _subscription} -> {:ok, true}
-      _ -> {:ok, false}
-    end
-  end
-
-  @doc """
-  Gets the active subscription for a map.
-  """
-  defp get_subscription(map_id) do
-    case MapSubscriptionManager.get_active_map_subscription(map_id) do
-      nil -> {:error, :no_active_subscription}
-      subscription -> {:ok, subscription}
-    end
-  end
-
-  @doc """
-  Calculates the expiration date based on the map's subscription.
-  """
-  defp calculate_expiration_date(map_id) do
-    case get_subscription(map_id) do
-      {:ok, subscription} -> subscription.active_till
-      _ -> DateTime.utc_now() |> DateTime.add(30, :day)
     end
   end
 

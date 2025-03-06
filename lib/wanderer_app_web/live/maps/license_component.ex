@@ -35,13 +35,6 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
   end
 
   @impl true
-  def handle_event("copy_key", _, socket) do
-    # Send JS command to copy the key to clipboard
-    {:noreply,
-     push_event(socket, "copy-to-clipboard", %{text: socket.assigns.license.license_key})}
-  end
-
-  @impl true
   def handle_event("create_license", _, socket) do
     case LicenseManager.create_license_for_map(socket.assigns.map_id) do
       {:ok, license} ->
@@ -83,7 +76,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
   def render(assigns) do
     ~H"""
     <div class="license-info">
-      <h3 class="text-lg font-semibold mb-4">Bot License</h3>
+      <h3 class="text-lg font-semibold mb-4">Map License</h3>
 
       <%= if @loading do %>
         <div class="flex justify-center py-4">
@@ -91,48 +84,53 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
         </div>
       <% else %>
         <%= if @error do %>
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div class="border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <p><%= @error %></p>
           </div>
         <% end %>
 
         <%= if @license do %>
-          <div class="mt-4 p-4 border rounded-md bg-gray-50">
+          <div class="mt-4 p-4 border rounded-md">
             <div class="flex justify-between items-center">
-              <span class="font-medium">License Key:</span>
-              <div class="flex items-center">
-                <span class="font-mono bg-gray-100 px-2 py-1 rounded">
-                  <%= if @show_key, do: @license.license_key, else: "••••••••••••••••" %>
+              <div class="flex items-center gap-2">
+                <span class="font-medium">License Key:</span>
+                <span class="font-mono bg-gray-800 px-2 py-1 rounded">
+                  <%= if @show_key,
+                    do: @license.license_key,
+                    else: "••••••••••••••••" %>
                 </span>
                 <button
                   type="button"
                   phx-click="toggle_key_visibility"
                   phx-target={@myself}
-                  class="ml-2 text-blue-600 hover:text-blue-800"
+                  class="ml-2 btn"
                 >
                   <%= if @show_key, do: "Hide", else: "Show" %>
                 </button>
-                <button
-                  type="button"
-                  phx-click="copy_key"
-                  phx-target={@myself}
-                  class="ml-2 text-blue-600 hover:text-blue-800"
+                <.button
+                  phx-hook="CopyToClipboard"
+                  id="copy-key"
+                  class="copy-link btn"
+                  data-url={@license.license_key}
                 >
                   Copy
-                </button>
+                  <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
+                    Key copied
+                  </div>
+                </.button>
               </div>
             </div>
 
             <div class="mt-3 grid grid-cols-2 gap-2">
               <div>
-                <span class="text-sm text-gray-500">Status:</span>
-                <span class={@license.is_valid && "text-green-600" || "text-red-600"}>
-                  <%= @license.is_valid && "Active" || "Inactive" %>
+                <span class="font-medium">Status:</span>
+                <span class={(@license.is_valid && "text-green-600") || "text-red-600"}>
+                  <%= (@license.is_valid && "Active") || "Inactive" %>
                 </span>
               </div>
 
               <div>
-                <span class="text-sm text-gray-500">Expires:</span>
+                <span class="font-medium">Expires:</span>
                 <span>
                   <%= if @license.expire_at do %>
                     <%= Calendar.strftime(@license.expire_at, "%Y-%m-%d") %>
@@ -150,7 +148,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
             </div>
           </div>
         <% else %>
-          <div class="mt-4 p-4 border rounded-md bg-gray-50">
+          <div class="mt-4 p-4 border rounded-md">
             <p class="mb-4">No license found for this map.</p>
 
             <button

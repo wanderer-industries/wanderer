@@ -12,7 +12,7 @@ defmodule WandererApp.Api.License do
 
   postgres do
     repo(WandererApp.Repo)
-    table("bot_licenses_v1")
+    table("map_licenses_v1")
   end
 
   code_interface do

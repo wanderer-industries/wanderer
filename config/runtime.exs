@@ -356,5 +356,5 @@ end
 
 # License Manager API Configuration
 config :wanderer_app, :license_manager,
-  api_url: System.get_env("LICENSE_MANAGER_API_URL", "http://localhost:4000"),
+  api_url: System.get_env("LM_API_URL", "http://localhost:4000"),
   auth_key: System.get_env("LM_AUTH_KEY")

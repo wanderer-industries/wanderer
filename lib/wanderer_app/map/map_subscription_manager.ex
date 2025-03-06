@@ -277,20 +277,37 @@ defmodule WandererApp.Map.SubscriptionManager do
               # The License Manager service will verify the subscription is active
               case WandererApp.License.LicenseManager.create_license_for_map(map.id) do
                 {:ok, license} ->
-                  @logger.info("Automatically created license #{license.license_key} for map #{map.id} during renewal")
+                  @logger.info(
+                    "Automatically created license #{license.license_key} for map #{map.id} during renewal"
+                  )
+
                 {:error, :no_active_subscription} ->
-                  @logger.warn("Cannot create license for map #{map.id}: No active subscription found")
+                  @logger.warn(
+                    "Cannot create license for map #{map.id}: No active subscription found"
+                  )
+
                 {:error, reason} ->
-                  @logger.error("Failed to create license for map #{map.id} during renewal: #{inspect(reason)}")
+                  @logger.error(
+                    "Failed to create license for map #{map.id} during renewal: #{inspect(reason)}"
+                  )
               end
+
             {:ok, _license} ->
               # License exists, update its expiration date
-              case WandererApp.License.LicenseManager.update_license_expiration_from_subscription(map.id) do
+              case WandererApp.License.LicenseManager.update_license_expiration_from_subscription(
+                     map.id
+                   ) do
                 {:ok, updated_license} ->
-                  @logger.info("Updated license expiration for map #{map.id} to #{updated_license.expire_at}")
+                  Logger.info(
+                    "Updated license expiration for map #{map.id} to #{updated_license.expire_at}"
+                  )
+
                 {:error, reason} ->
-                  @logger.error("Failed to update license expiration for map #{map.id}: #{inspect(reason)}")
+                  @logger.error(
+                    "Failed to update license expiration for map #{map.id}: #{inspect(reason)}"
+                  )
               end
+
             _ ->
               # Error occurred, do nothing
               :ok

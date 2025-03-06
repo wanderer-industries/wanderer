@@ -26,5 +26,6 @@ defmodule WandererApp.Api do
     resource WandererApp.Api.UserActivity
     resource WandererApp.Api.UserTransaction
     resource WandererApp.Api.CorpWalletTransaction
+    resource WandererApp.Api.License
   end
 end
