@@ -52,6 +52,7 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
   // Define style for the VirtualScroller
   const virtualScrollerStyle: React.CSSProperties = {
     boxSizing: 'border-box',
+    height: '100%', // Use 100% height to fill the container
   };
 
   return (

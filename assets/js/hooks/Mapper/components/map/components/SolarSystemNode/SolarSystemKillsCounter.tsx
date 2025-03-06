@@ -38,7 +38,8 @@ export const KillsCounter = ({ killsCount, systemId, className, children, size =
 
   // Calculate height based on number of kills, but ensure a minimum height
   const killsNeededHeight = limitedKills.length * ITEM_HEIGHT;
-  const tooltipHeight = Math.max(MIN_TOOLTIP_HEIGHT, Math.min(killsNeededHeight, 500));
+  // Add a small buffer (10px) to prevent scrollbar from appearing unnecessarily
+  const tooltipHeight = Math.max(MIN_TOOLTIP_HEIGHT, Math.min(killsNeededHeight + 10, 500));
 
   const tooltipContent = (
     <div
