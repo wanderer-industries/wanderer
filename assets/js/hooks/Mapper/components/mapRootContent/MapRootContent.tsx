@@ -8,13 +8,20 @@ import { OnTheMap, RightBar } from '@/hooks/Mapper/components/mapRootContent/com
 import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/components/MapContextMenu/MapContextMenu.tsx';
 import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings';
+import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { TrackAndFollow } from '@/hooks/Mapper/components/mapRootContent/components/TrackAndFollow/TrackAndFollow';
+import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
+import { useTrackAndFollowHandlers } from './hooks/useTrackAndFollowHandlers';
 
 export interface MapRootContentProps {}
 
 // eslint-disable-next-line no-empty-pattern
 export const MapRootContent = ({}: MapRootContentProps) => {
-  const { interfaceSettings } = useMapRootState();
+  const { interfaceSettings, data } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
+  const { showCharacterActivity, characterActivityData, showTrackAndFollow, trackingCharactersData } = data;
+  const { handleHideCharacterActivity } = useCharacterActivityHandlers();
+  const { handleHideTracking } = useTrackAndFollowHandlers();
 
   const themeClass = `${interfaceSettings.theme ?? 'default'}-theme`;
 
@@ -49,7 +56,17 @@ export const MapRootContent = ({}: MapRootContentProps) => {
           </div>
         )}
         <OnTheMap show={showOnTheMap} onHide={() => setShowOnTheMap(false)} />
-        <MapSettings show={showMapSettings} onHide={() => setShowMapSettings(false)} />
+        <MapSettings visible={showMapSettings} onHide={() => setShowMapSettings(false)} />
+        <CharacterActivity
+          visible={showCharacterActivity}
+          activity={characterActivityData || []}
+          onHide={handleHideCharacterActivity}
+        />
+        <TrackAndFollow
+          visible={showTrackAndFollow}
+          characters={trackingCharactersData || []}
+          onHide={handleHideTracking}
+        />
       </Layout>
     </div>
   );

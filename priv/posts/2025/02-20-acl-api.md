@@ -10,7 +10,7 @@
 
 ## Introduction
 
-Wanderer’s expanded public API now lets you retrieve **all characters** in the system and manage “Access Lists” (ACLs) for controlling visibility or permissions. These endpoints allow you to:
+Wanderer's expanded public API now lets you retrieve **all characters** in the system and manage "Access Lists" (ACLs) for controlling visibility or permissions. These endpoints allow you to:
 
 - Fetch a list of **all** EVE characters known to the system.
 - List ACLs for a given map.
@@ -30,8 +30,8 @@ Unless otherwise noted, these endpoints require a valid **Bearer** token. Pass i
 Authorization: Bearer <REDACTED_TOKEN>
 ```
 
-If the token is missing or invalid, you’ll receive a `401 Unauthorized` error.  
-_(No API key is required for some “common” endpoints, but ACL- and character-related endpoints require a valid token.)_
+If the token is missing or invalid, you'll receive a `401 Unauthorized` error.
+_(No API key is required for some "common" endpoints, but ACL- and character-related endpoints require a valid token.)_
 
 There are two types of tokens in use:
 
@@ -152,16 +152,34 @@ curl -H "Authorization: Bearer <REDACTED_TOKEN>" \
     "members": [
       {
         "id": "8d63ab1e-b44f-4e81-8227-8fb8d928dad8",
-        "name": "Other Character",
+        "name": "Character Name",
         "role": "admin",
+        "eve_character_id": "2122019111",
         "inserted_at": "2025-02-13T03:33:32.332598Z",
         "updated_at": "2025-02-13T03:33:36.644520Z"
       },
-      ...
+      {
+        "id": "7e52ab1e-c33f-5e81-9338-7fb8d928ebc9",
+        "name": "Corporation Name",
+        "role": "viewer",
+        "eve_corporation_id": "98140648",
+        "inserted_at": "2025-02-13T03:33:32.332598Z",
+        "updated_at": "2025-02-13T03:33:36.644520Z"
+      },
+      {
+        "id": "6f41bc2f-d44e-6f92-8449-8ec9e039fad7",
+        "name": "Alliance Name",
+        "role": "viewer",
+        "eve_alliance_id": "99013806",
+        "inserted_at": "2025-02-13T03:33:32.332598Z",
+        "updated_at": "2025-02-13T03:33:36.644520Z"
+      }
     ]
   }
 }
 ```
+
+**Note:** The response for each member will include only one of `eve_character_id`, `eve_corporation_id`, or `eve_alliance_id` depending on the type of member.
 
 ---
 
@@ -295,14 +313,13 @@ POST /api/acls/:acl_id/members
 ```json
 {
   "member": {
-    "name": "New Member",
     "eve_character_id": "EXTERNAL_EVE_ID", 
     "role": "viewer"
   }
 }
 ```
 
-- **Example Request:**
+- **Example Request for Character:**
 
 ```bash
 curl -X POST \
@@ -310,7 +327,6 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{
         "member": {
-          "name": "New Member",
           "eve_character_id": "EXTERNAL_EVE_ID",
           "role": "viewer"
         }
@@ -318,14 +334,45 @@ curl -X POST \
   "https://wanderer.example.com/api/acls/ACL_UUID/members"
 ```
 
-- **Example Response (redacted):**
+- **Example Request for Corporation:**
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <ACL_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "member": {
+          "eve_corporation_id": "CORPORATION_ID",
+          "role": "viewer"
+        }
+      }' \
+  "https://wanderer.example.com/api/acls/ACL_UUID/members"
+```
+
+- **Example Response for Character (redacted):**
 
 ```json
 {
   "data": {
     "id": "MEMBERSHIP_UUID",
-    "name": "New Member",
+    "name": "Character Name",
     "role": "viewer",
+    "eve_character_id": "EXTERNAL_EVE_ID",
+    "inserted_at": "...",
+    "updated_at": "..."
+  }
+}
+```
+
+- **Example Response for Corporation (redacted):**
+
+```json
+{
+  "data": {
+    "id": "MEMBERSHIP_UUID",
+    "name": "Corporation Name",
+    "role": "viewer",
+    "eve_corporation_id": "CORPORATION_ID",
     "inserted_at": "...",
     "updated_at": "..."
   }
@@ -334,13 +381,13 @@ curl -X POST \
 
 ---
 
-### 7. Change a Member’s Role
+### 7. Change a Member's Role
 
 ```bash
 PUT /api/acls/:acl_id/members/:member_id
 ```
 
-- **Description:** Updates an ACL member’s role (e.g. from `viewer` to `admin`).  
+- **Description:** Updates an ACL member's role (e.g. from `viewer` to `admin`).
   The `:member_id` is the external EVE id (or corp/alliance id) used when creating the membership.
 - **Authentication:** Requires the ACL API Token.
 - **Request Body Example:**
@@ -373,12 +420,16 @@ curl -X PUT \
 {
   "data": {
     "id": "MEMBERSHIP_UUID",
-    "name": "New Member",
+    "name": "Character Name",
     "role": "admin",
-    ...
+    "eve_character_id": "EXTERNAL_EVE_ID",
+    "inserted_at": "...",
+    "updated_at": "..."
   }
 }
 ```
+
+**Note:** The response will include only one of `eve_character_id`, `eve_corporation_id`, or `eve_alliance_id` depending on the type of member.
 
 ---
 
@@ -416,7 +467,7 @@ This guide outlines how to:
 4. **Create** a new ACL for a map (`POST /api/map/acls`), which generates a new ACL API key.
 5. **Update** an existing ACL (`PUT /api/acls/:id`).
 6. **Add** members (characters, corporations, alliances) to an ACL (`POST /api/acls/:acl_id/members`).
-7. **Change** a member’s role (`PUT /api/acls/:acl_id/members/:member_id`).
+7. **Change** a member's role (`PUT /api/acls/:acl_id/members/:member_id`).
 8. **Remove** a member from an ACL (`DELETE /api/acls/:acl_id/members/:member_id`).
 
 By following these request patterns, you can manage your ACL resources in a fully programmatic fashion. If you have any questions, feel free to reach out to the Wanderer Team.

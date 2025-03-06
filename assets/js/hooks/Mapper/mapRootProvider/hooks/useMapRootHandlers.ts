@@ -2,6 +2,7 @@ import { ForwardedRef, useImperativeHandle } from 'react';
 import {
   CommandAddConnections,
   CommandAddSystems,
+  CommandCharacterActivityData,
   CommandCharacterAdded,
   CommandCharacterRemoved,
   CommandCharactersUpdated,
@@ -13,10 +14,12 @@ import {
   CommandRemoveConnections,
   CommandRemoveSystems,
   CommandRoutes,
-  Commands,
   CommandSignaturesUpdated,
+  CommandTrackingCharactersData,
   CommandUpdateConnection,
   CommandUpdateSystems,
+  CommandUserSettingsUpdated,
+  Commands,
   MapHandlers,
 } from '@/hooks/Mapper/types/mapHandlers.ts';
 
@@ -29,6 +32,7 @@ import {
   useRoutes,
 } from './api';
 
+import { useCommandsActivity } from './api/useCommandsActivity';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 import { DetailedKill } from '../../types/kills';
 
@@ -47,6 +51,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
     useCommandsCharacters();
   const mapUpdated = useMapUpdated();
   const mapRoutes = useRoutes();
+  const { characterActivityData, trackingCharactersData, userSettingsUpdated } = useCommandsActivity();
 
   useImperativeHandle(
     ref,
@@ -121,6 +126,24 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
 
             case Commands.detailedKillsUpdated:
               updateDetailedKills(data as Record<string, DetailedKill[]>);
+              break;
+
+            case Commands.characterActivityData:
+              characterActivityData(data as CommandCharacterActivityData);
+              break;
+
+            case Commands.trackingCharactersData:
+              trackingCharactersData(data as CommandTrackingCharactersData);
+              break;
+
+            case Commands.updateActivity:
+              break;
+
+            case Commands.updateTracking:
+              break;
+
+            case Commands.userSettingsUpdated:
+              userSettingsUpdated(data as CommandUserSettingsUpdated);
               break;
 
             default:

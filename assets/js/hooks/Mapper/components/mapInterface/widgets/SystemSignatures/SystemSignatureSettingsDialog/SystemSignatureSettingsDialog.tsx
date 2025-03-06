@@ -68,6 +68,7 @@ export const SystemSignatureSettingsDialog = ({
             }))}
             onChange={e => handleDropdownChange(setting.key, e.value)}
             className="w-40"
+            appendTo={document.body}
           />
         </div>
       );

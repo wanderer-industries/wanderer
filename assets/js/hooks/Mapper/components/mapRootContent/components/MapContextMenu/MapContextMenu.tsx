@@ -22,8 +22,15 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
 
   const handleAddCharacter = useCallback(() => {
     outCommand({
-      type: OutCommand.addCharacter,
-      data: null,
+      type: OutCommand.showTracking,
+      data: {},
+    });
+  }, [outCommand]);
+
+  const handleShowActivity = useCallback(() => {
+    outCommand({
+      type: OutCommand.showActivity,
+      data: {},
     });
   }, [outCommand]);
 
@@ -35,6 +42,12 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
           icon: 'pi pi-user-plus',
           command: handleAddCharacter,
           visible: true,
+        },
+        {
+          label: 'Character Activity',
+          icon: 'pi pi-chart-bar',
+          command: handleShowActivity,
+          visible: canTrackCharacters,
         },
         {
           label: 'On the map',
@@ -61,7 +74,14 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
         },
       ] as MenuItem[]
     ).filter(item => item.visible);
-  }, [canTrackCharacters, handleAddCharacter, onShowMapSettings, onShowOnTheMap, setInterfaceSettings]);
+  }, [
+    canTrackCharacters,
+    handleAddCharacter,
+    handleShowActivity,
+    onShowMapSettings,
+    onShowOnTheMap,
+    setInterfaceSettings,
+  ]);
 
   return (
     <div className="ml-1">

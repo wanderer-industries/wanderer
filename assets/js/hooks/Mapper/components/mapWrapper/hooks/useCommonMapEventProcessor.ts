@@ -1,6 +1,5 @@
 import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
-import { Command, Commands, MapHandlers } from '@/hooks/Mapper/types';
-import { MapEvent } from '@/hooks/Mapper/events';
+import { Command, Commands, MapHandlers, MapEvent } from '@/hooks/Mapper/types/mapHandlers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export const useCommonMapEventProcessor = () => {

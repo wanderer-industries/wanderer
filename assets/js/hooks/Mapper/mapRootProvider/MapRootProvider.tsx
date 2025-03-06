@@ -2,6 +2,7 @@ import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import {
   CommandLinkSignatureToSystem,
+  MapHandlers,
   MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
@@ -16,12 +17,18 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
   selectedConnections: Pick<SolarSystemConnection, 'source' | 'target'>[];
   linkSignatureToSystem: CommandLinkSignatureToSystem | null;
   detailedKills: Record<string, DetailedKill[]>;
+  showCharacterActivity: boolean;
+  characterActivityData: ActivitySummary[];
+  showTrackAndFollow: boolean;
+  trackingCharactersData: TrackingCharacter[];
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -44,6 +51,10 @@ const INITIAL_DATA: MapRootData = {
   options: {},
   isSubscriptionActive: false,
   linkSignatureToSystem: null,
+  showCharacterActivity: false,
+  characterActivityData: [],
+  showTrackAndFollow: false,
+  trackingCharactersData: [],
 };
 
 export enum AvailableThemes {
@@ -106,18 +117,17 @@ const MapRootContext = createContext<MapRootContextProps>({
 });
 
 type MapRootProviderProps = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fwdRef: ForwardedRef<any>;
+  fwdRef: ForwardedRef<MapHandlers>;
   outCommand: OutCommandHandler;
 } & WithChildren;
 
-// eslint-disable-next-line react/display-name
-const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: ForwardedRef<any>) => {
+const MapRootHandlers = forwardRef<MapHandlers, WithChildren>(({ children }, fwdRef) => {
   useMapRootHandlers(fwdRef);
   return <>{children}</>;
 });
 
-// eslint-disable-next-line react/display-name
+MapRootHandlers.displayName = 'MapRootHandlers';
+
 export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProviderProps) => {
   const { update, ref } = useContextStore<MapRootData>({ ...INITIAL_DATA });
 
