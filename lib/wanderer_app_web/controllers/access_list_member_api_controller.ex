@@ -1,23 +1,132 @@
 defmodule WandererAppWeb.AccessListMemberAPIController do
   @moduledoc """
   Handles creation, role updates, and deletion of individual ACL members.
-
-  This controller supports creation of members by accepting one of the following keys:
-    - "eve_character_id"
-    - "eve_corporation_id"
-    - "eve_alliance_id"
-
-  For corporation and alliance members, roles "admin" and "manager" are disallowed.
   """
 
   use WandererAppWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
   alias WandererApp.Api.AccessListMember
   import Ash.Query
   require Logger
 
+  # ------------------------------------------------------------------------
+  # Inline Schemas
+  # ------------------------------------------------------------------------
+  @acl_member_create_request_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      member: %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          eve_character_id: %OpenApiSpex.Schema{type: :string},
+          eve_corporation_id: %OpenApiSpex.Schema{type: :string},
+          eve_alliance_id: %OpenApiSpex.Schema{type: :string},
+          role: %OpenApiSpex.Schema{type: :string}
+        }
+        # no 'required' fields if you truly allow any of them
+      }
+    },
+    required: ["member"]
+  }
+
+  @acl_member_create_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          id: %OpenApiSpex.Schema{type: :string},
+          name: %OpenApiSpex.Schema{type: :string},
+          role: %OpenApiSpex.Schema{type: :string},
+          eve_character_id: %OpenApiSpex.Schema{type: :string},
+          eve_corporation_id: %OpenApiSpex.Schema{type: :string},
+          eve_alliance_id: %OpenApiSpex.Schema{type: :string},
+          inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
+          updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+        },
+        required: ["id", "name", "role"]
+      }
+    },
+    required: ["data"]
+  }
+
+  @acl_member_update_request_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      member: %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          role: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["role"]
+      }
+    },
+    required: ["member"]
+  }
+
+  @acl_member_update_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          id: %OpenApiSpex.Schema{type: :string},
+          name: %OpenApiSpex.Schema{type: :string},
+          role: %OpenApiSpex.Schema{type: :string},
+          eve_character_id: %OpenApiSpex.Schema{type: :string},
+          eve_corporation_id: %OpenApiSpex.Schema{type: :string},
+          eve_alliance_id: %OpenApiSpex.Schema{type: :string},
+          inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
+          updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+        },
+        required: ["id", "name", "role"]
+      }
+    },
+    required: ["data"]
+  }
+
+  @acl_member_delete_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      ok: %OpenApiSpex.Schema{type: :boolean}
+    },
+    required: ["ok"]
+  }
+
+  # ------------------------------------------------------------------------
+  # ENDPOINTS
+  # ------------------------------------------------------------------------
+
   @doc """
   POST /api/acls/:acl_id/members
+
+  Creates a new ACL member.
   """
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :create,
+    summary: "Create ACL Member",
+    description: "Creates a new ACL member for a given ACL.",
+    parameters: [
+      acl_id: [
+        in: :path,
+        description: "Access List ID",
+        type: :string,
+        required: true
+      ]
+    ],
+    request_body: {
+      "ACL Member parameters",
+      "application/json",
+      @acl_member_create_request_schema
+    },
+    responses: [
+      ok: {
+        "Created ACL Member",
+        "application/json",
+        @acl_member_create_response_schema
+      }
+    ]
   def create(conn, %{"acl_id" => acl_id, "member" => member_params}) do
     chosen =
       cond do
@@ -44,7 +153,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
     else
       {key, type} = chosen
       raw_id = Map.get(member_params, key)
-      id_str = to_string(raw_id)  # handle string/integer input
+      id_str = to_string(raw_id)
       role = Map.get(member_params, "role", "viewer")
 
       if type in ["corporation", "alliance"] and role in ["admin", "manager"] do
@@ -93,13 +202,44 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
 
   @doc """
   PUT /api/acls/:acl_id/members/:member_id
+
+  Updates the role of an ACL member.
   """
+  @spec update_role(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :update_role,
+    summary: "Update ACL Member Role",
+    description: "Updates the role of an ACL member identified by ACL ID and member external ID.",
+    parameters: [
+      acl_id: [
+        in: :path,
+        description: "Access List ID",
+        type: :string,
+        required: true
+      ],
+      member_id: [
+        in: :path,
+        description: "Member external ID",
+        type: :string,
+        required: true
+      ]
+    ],
+    request_body: {
+      "ACL Member update payload",
+      "application/json",
+      @acl_member_update_request_schema
+    },
+    responses: [
+      ok: {
+        "Updated ACL Member",
+        "application/json",
+        @acl_member_update_response_schema
+      }
+    ]
   def update_role(conn, %{
         "acl_id" => acl_id,
         "member_id" => external_id,
         "member" => member_params
       }) do
-    # Convert external_id to string if you expect it may come in as integer
     external_id_str = to_string(external_id)
 
     membership_query =
@@ -157,7 +297,34 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
 
   @doc """
   DELETE /api/acls/:acl_id/members/:member_id
+
+  Deletes an ACL member.
   """
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :delete,
+    summary: "Delete ACL Member",
+    description: "Deletes an ACL member identified by ACL ID and member external ID.",
+    parameters: [
+      acl_id: [
+        in: :path,
+        description: "Access List ID",
+        type: :string,
+        required: true
+      ],
+      member_id: [
+        in: :path,
+        description: "Member external ID",
+        type: :string,
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {
+        "ACL Member deletion confirmation",
+        "application/json",
+        @acl_member_delete_response_schema
+      }
+    ]
   def delete(conn, %{"acl_id" => acl_id, "member_id" => external_id}) do
     external_id_str = to_string(external_id)
 
@@ -204,6 +371,9 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       id: member.id,
       name: member.name,
       role: member.role,
+      eve_character_id: member.eve_character_id,
+      eve_corporation_id: member.eve_corporation_id,
+      eve_alliance_id: member.eve_alliance_id,
       inserted_at: member.inserted_at,
       updated_at: member.updated_at
     }

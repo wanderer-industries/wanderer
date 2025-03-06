@@ -1,0 +1,13 @@
+# Wanderer API Testing Tool Configuration
+# Example configuration file - Copy to .api_test_config and modify as needed
+
+# Base configuration
+HOST="http://localhost:4000"
+MAP_SLUG="flygd"
+MAP_API_KEY="589016d9-c9ac-48ef-ae74-7a55483b3cc2"
+ACL_API_KEY="acl-api-key-here"
+
+# Selected IDs
+SELECTED_ACL_ID="123"
+SELECTED_SYSTEM_ID="31002019"
+CHARACTER_EVE_ID="456" 
