@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.54.1](https://github.com/wanderer-industries/wanderer/compare/v1.54.0...v1.54.1) (2025-03-06)
+
+
+
+
+### Bug Fixes:
+
+* fix scroll and size issues with kills widget (#219)
+
+* fix scroll and size issues with kills widget
+
 ## [v1.54.0](https://github.com/wanderer-industries/wanderer/compare/v1.53.4...v1.54.0) (2025-03-05)
 
 
