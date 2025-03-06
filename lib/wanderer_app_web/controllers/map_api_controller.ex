@@ -200,7 +200,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
         required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        example: ""
       ],
       slug: [
         in: :query,
@@ -272,7 +272,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
         required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        example: ""
       ],
       slug: [
         in: :query,
@@ -353,7 +353,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
         required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        example: ""
       ],
       slug: [
         in: :query,
@@ -451,7 +451,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
         required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        example: ""
       ],
       slug: [
         in: :query,
@@ -535,7 +535,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
         required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        example: ""
       ],
       slug: [
         in: :query,

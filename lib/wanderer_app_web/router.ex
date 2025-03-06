@@ -180,14 +180,13 @@ defmodule WandererAppWeb.Router do
   pipeline :api_spec do
     plug OpenApiSpex.Plug.PutApiSpec,
       otp_app: :wanderer_app,
-      module: WandererAppWeb.ApiSpec,
-      render_options: [pretty: true]
+      module: WandererAppWeb.ApiSpec
   end
 
   scope "/api/map/systems-kills", WandererAppWeb do
     pipe_through [:api, :api_map, :api_kills]
 
-    get "/", MapAPIController, :list_systems_kills_hyphenated
+    get "/", MapAPIController, :list_systems_kills
   end
 
   scope "/api/map", WandererAppWeb do
@@ -222,7 +221,7 @@ defmodule WandererAppWeb.Router do
 
   scope "/api" do
     pipe_through [:browser, :api, :api_spec]
-    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
   end
 
   #
@@ -274,12 +273,7 @@ defmodule WandererAppWeb.Router do
       favicon_url: "https://example.com/my_favicon.ico",
       swagger_ui_config: %{
         "docExpansion" => "none",
-        "deepLinking" => true,
-        "persistAuthorization" => true,
-        "displayOperationId" => false,
-        "filter" => true,
-        "supportedSubmitMethods" => ["get", "put", "post", "delete"],
-        "tagsSorter" => "alpha"
+        "deepLinking" => true
       }
   end
 
