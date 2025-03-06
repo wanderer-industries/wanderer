@@ -90,6 +90,14 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   const excluded = localData.excludedSystems || [];
   const timeRangeOptions = [4, 12, 24];
 
+  // Ensure timeRange is one of the valid options
+  useEffect(() => {
+    if (visible && !timeRangeOptions.includes(localData.timeRange)) {
+      // If current timeRange is not in options, set it to the default (4 hours)
+      handleTimeRangeChange(4);
+    }
+  }, [visible, localData.timeRange, handleTimeRangeChange]);
+
   return (
     <Dialog header="Kills Settings" visible={visible} style={{ width: '440px' }} draggable={false} onHide={handleHide}>
       <div className="flex flex-col gap-3 p-2.5">

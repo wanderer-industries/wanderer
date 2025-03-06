@@ -14,7 +14,6 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
   use Retry
 
   # Maximum retries for enrichment calls
-  @max_enrichment_retries 2
 
   @doc """
   Merges the 'partial' from zKB and the 'full' killmail from ESI, checks its time
