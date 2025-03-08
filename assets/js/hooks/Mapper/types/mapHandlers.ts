@@ -113,7 +113,7 @@ export type CommandLinkSignatureToSystem = {
   solar_system_target: number;
 };
 export type CommandLinkSignaturesUpdated = number;
-export type CommandCharacterActivityData = { activity: ActivitySummary[] };
+export type CommandCharacterActivityData = { activity: ActivitySummary[]; loading?: boolean };
 export type CommandTrackingCharactersData = { characters: TrackingCharacter[] };
 export type CommandUserSettingsUpdated = {
   settings: UserSettings;

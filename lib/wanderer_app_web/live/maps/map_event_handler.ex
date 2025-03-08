@@ -79,7 +79,8 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_activity_events [
-    :character_activity
+    :character_activity,
+    :character_activity_data
   ]
 
   @map_activity_ui_events [
@@ -196,6 +197,14 @@ defmodule WandererAppWeb.MapEventHandler do
         )
 
         socket
+
+      # Handle direct activity data results from Task.async
+      activity_data when is_list(activity_data) ->
+        socket
+        |> WandererAppWeb.MapEventHandler.push_map_event(
+          "character_activity_data",
+          %{activity: activity_data, loading: false}
+        )
 
       _ ->
         socket

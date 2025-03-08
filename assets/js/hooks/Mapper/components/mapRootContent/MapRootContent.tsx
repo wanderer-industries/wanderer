@@ -56,9 +56,11 @@ export const MapRootContent = ({}: MapRootContentProps) => {
           </div>
         )}
         <OnTheMap show={showOnTheMap} onHide={() => setShowOnTheMap(false)} />
-        <MapSettings visible={showMapSettings} onHide={() => setShowMapSettings(false)} />
-        <CharacterActivity visible={showCharacterActivity} onHide={handleHideCharacterActivity} />
-        <TrackAndFollow visible={showTrackAndFollow} onHide={handleHideTracking} />
+        {showMapSettings && <MapSettings visible={showMapSettings} onHide={() => setShowMapSettings(false)} />}
+        {showCharacterActivity && (
+          <CharacterActivity visible={showCharacterActivity} onHide={handleHideCharacterActivity} />
+        )}
+        {showTrackAndFollow && <TrackAndFollow visible={showTrackAndFollow} onHide={handleHideTracking} />}
       </Layout>
     </div>
   );

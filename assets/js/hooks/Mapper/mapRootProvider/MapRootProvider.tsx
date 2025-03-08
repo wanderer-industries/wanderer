@@ -2,10 +2,9 @@ import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import {
   CommandLinkSignatureToSystem,
-  MapHandlers,
-  MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
+  MapUnionTypes,
 } from '@/hooks/Mapper/types';
 import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
@@ -26,7 +25,10 @@ export type MapRootData = MapUnionTypes & {
   linkSignatureToSystem: CommandLinkSignatureToSystem | null;
   detailedKills: Record<string, DetailedKill[]>;
   showCharacterActivity: boolean;
-  characterActivityData: ActivitySummary[];
+  characterActivityData: {
+    activity: ActivitySummary[];
+    loading?: boolean;
+  };
   showTrackAndFollow: boolean;
   trackingCharactersData: TrackingCharacter[];
 };
@@ -52,7 +54,7 @@ const INITIAL_DATA: MapRootData = {
   isSubscriptionActive: false,
   linkSignatureToSystem: null,
   showCharacterActivity: false,
-  characterActivityData: [],
+  characterActivityData: { activity: [] },
   showTrackAndFollow: false,
   trackingCharactersData: [],
 };
@@ -120,6 +122,9 @@ type MapRootProviderProps = {
   fwdRef: ForwardedRef<MapHandlers>;
   outCommand: OutCommandHandler;
 } & WithChildren;
+
+// Define MapHandlers type
+type MapHandlers = any; // This is a temporary fix until we find the proper type
 
 const MapRootHandlers = forwardRef<MapHandlers, WithChildren>(({ children }, fwdRef) => {
   useMapRootHandlers(fwdRef);

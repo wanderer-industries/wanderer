@@ -4,6 +4,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import classes from './CharacterActivity.module.scss';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { ProgressSpinner } from 'primereact/progressspinner';
 
 /**
  * Summary of a character's activity
@@ -73,11 +74,17 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
   const { data } = useMapRootState();
   const { characterActivityData } = data;
   const [localActivity, setLocalActivity] = useState<ActivitySummary[]>([]);
-  const activity = useMemo(() => characterActivityData || [], [characterActivityData]);
+  const [loading, setLoading] = useState(true);
+
+  // Use the new structure directly
+  const activity = useMemo(() => {
+    return characterActivityData?.activity || [];
+  }, [characterActivityData]);
 
   useEffect(() => {
     setLocalActivity(activity);
-  }, [activity]);
+    setLoading(characterActivityData?.loading !== false);
+  }, [activity, characterActivityData]);
 
   return (
     <Dialog
@@ -89,13 +96,21 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
       draggable={false}
       resizable={false}
       closeOnEscape
-      showHeader={true}
-      closable={true}
+      showHeader
+      closable
       modal={true}
     >
       <div className={classes.characterActivityContainer}>
-        {localActivity.length === 0 && <div className={classes.emptyMessage}>No character activity data available</div>}
-        {localActivity.length > 0 && (
+        {loading && (
+          <div className={classes.loadingContainer}>
+            <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" />
+            <div className={classes.loadingText}>Loading character activity data...</div>
+          </div>
+        )}
+        {!loading && localActivity.length === 0 && (
+          <div className={classes.emptyMessage}>No character activity data available</div>
+        )}
+        {!loading && localActivity.length > 0 && (
           <DataTable
             value={localActivity}
             className={classes.characterActivityDatatable}

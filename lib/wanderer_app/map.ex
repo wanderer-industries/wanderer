@@ -527,6 +527,25 @@ defmodule WandererApp.Map do
   Gets character activity data for a map.
   Returns a list of character activity records with passages, connections, and signatures.
   Only includes characters that are on the map's ACL.
+
+  ## Returns
+  A list of maps with the following keys:
+  - character_name: The name of the character
+  - corporation_ticker: The corporation ticker of the character
+  - alliance_ticker: The alliance ticker of the character (if any)
+  - portrait_url: URL to the character's portrait
+  - passages: Number of passages through systems
+  - connections: Number of connections created
+  - signatures: Number of signatures scanned
+  - user_id: The ID of the user who owns the character
+  - system_id: The ID of the system the character is in (if available)
+  - system_name: The name of the system the character is in (if available)
+  - region_name: The name of the region the character is in (if available)
+  - security_status: The security status of the system the character is in (if available)
+  - security_class: The security class of the system the character is in (if available)
+  - jumps: The number of jumps the character has made (if available)
+  - timestamp: The timestamp of the most recent activity
+  - character_eve_id: The EVE ID of the character
   """
   def get_character_activity(map_id) do
     # Get the map with ACLs
@@ -641,7 +660,6 @@ defmodule WandererApp.Map do
         connections: connections_count,
         signatures: signatures_count,
         user_id: p.character.user_id,
-        is_user: false,
         system_id: "unknown",
         system_name: "Unknown System",
         region_name: "Unknown Region",

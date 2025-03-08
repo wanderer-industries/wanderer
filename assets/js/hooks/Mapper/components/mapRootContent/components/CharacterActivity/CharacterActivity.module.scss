@@ -344,6 +344,22 @@
   font-style: italic;
 }
 
+/* Loading container */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  width: 100%;
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+}
+
 /* Error message styling */
 .errorMessage {
   padding: 2rem;

@@ -26,7 +26,7 @@ defmodule WandererAppWeb.MapActivityEventHandler do
     socket
     |> MapEventHandler.push_map_event(
       "character_activity_data",
-      %{activity: activity_data}
+      %{activity: activity_data, loading: false}
     )
   end
 

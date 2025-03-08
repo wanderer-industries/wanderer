@@ -257,182 +257,137 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   def handle_ui_event(
         "show_activity",
         _,
-        %{assigns: %{map_id: _map_id, current_user: _current_user}} = socket
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
-    %{
-      map_id: map_id,
-      current_user: current_user
-    } = socket.assigns
+    # Show loading state immediately
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: true}
+      )
 
-    # Get all activity for the map
-    all_activity = WandererApp.Map.get_character_activity(map_id)
-
-    # Get user characters with access to the map
-    {:ok, user_characters} = WandererApp.Api.Character.active_by_user(%{user_id: current_user.id})
-    user_character_ids = Enum.map(user_characters, & &1.id)
-
-    # Get character settings for the map
-    character_settings =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
-        {:ok, settings} -> settings
-        _ -> []
+    # Start async task to fetch and process activity data
+    # Use Task.async so we can properly handle the result
+    task = Task.async(fn ->
+      try do
+        WandererApp.Utils.CharacterUtil.process_character_activity(map_id, current_user)
+      rescue
+        e ->
+          Logger.error("Error processing character activity: #{inspect(e)}")
+          Logger.error("#{Exception.format_stacktrace()}")
+          []
       end
+    end)
 
-    # Process activity data
-    activity_data =
-      if all_activity != [] && Map.has_key?(hd(all_activity), :is_user) do
-        # This is activity data from get_character_activity
-        # It doesn't have system_id, system_name, etc. fields
-        # Just pass it through as is
-        all_activity
-      else
-        # Group by user_id first
-        activity_by_user_id = Enum.group_by(all_activity, & &1.user_id)
-
-        # For each user, select one character to display
-        Enum.flat_map(activity_by_user_id, fn {user_id, user_activities} ->
-          is_current_user = user_id == current_user.id
-
-          # Group by character_id
-          activities_by_character = Enum.group_by(user_activities, & &1.character_id)
-
-          # For current user, check if any character is followed
-          followed_char_id =
-            if is_current_user do
-              followed_chars =
-                character_settings
-                |> Enum.filter(& &1.followed)
-                |> Enum.map(& &1.character_id)
-
-              # Find if any of user's characters is followed
-              user_char_ids = Map.keys(activities_by_character)
-              Enum.find(followed_chars, fn followed_id ->
-                followed_id in user_char_ids
-              end)
-            else
-              nil
-            end
-
-          # Decide which character to show
-          char_id_to_show =
-            if followed_char_id do
-              followed_char_id
-            else
-              # Find character with most activity
-              {char_id, _} =
-                activities_by_character
-                |> Enum.map(fn {char_id, activities} ->
-                  total_activity =
-                    activities
-                    |> Enum.map(fn a ->
-                      (Map.get(a, :passages, 0)) +
-                      (Map.get(a, :connections, 0)) +
-                      (Map.get(a, :signatures, 0))
-                    end)
-                    |> Enum.sum()
-                  {char_id, total_activity}
-                end)
-                |> Enum.max_by(fn {_, count} -> count end, fn -> {nil, 0} end)
-
-              char_id
-            end
-
-          # If we found a character to show
-          if char_id_to_show do
-            # Get this character's activities
-            char_activities = Map.get(activities_by_character, char_id_to_show, [])
-
-            # Get character details
-            char_details =
-              if is_current_user do
-                # For current user, we have the full character details
-                Enum.find(user_characters, &(&1.id == char_id_to_show))
-              else
-                # For other users, extract details from the activity
-                sample_activity = List.first(char_activities)
-                %{
-                  id: char_id_to_show,
-                  name: Map.get(sample_activity, :character_name, "Unknown"),
-                  eve_id: Map.get(sample_activity, :character_eve_id, nil),
-                  corporation_ticker: Map.get(sample_activity, :corporation_ticker, ""),
-                  alliance_ticker: Map.get(sample_activity, :alliance_ticker, "")
-                }
-              end
-
-            # If we have character details
-            if char_details do
-              # Calculate aggregated activity
-              total_passages = char_activities |> Enum.map(&Map.get(&1, :passages, 0)) |> Enum.sum()
-              total_connections = char_activities |> Enum.map(&Map.get(&1, :connections, 0)) |> Enum.sum()
-              total_signatures = char_activities |> Enum.map(&Map.get(&1, :signatures, 0)) |> Enum.sum()
-
-              # Get most recent timestamp
-              most_recent =
-                char_activities
-                |> Enum.map(&Map.get(&1, :timestamp, DateTime.utc_now()))
-                |> Enum.sort_by(&(&1), {:desc, DateTime})
-                |> List.first() || DateTime.utc_now()
-
-              # Create one activity entry for this user
-              [%{
-                character_id: char_details.eve_id,
-                character_name: char_details.name,
-                portrait_url: EVEUtil.get_portrait_url(char_details.eve_id, 64),
-                corporation_ticker: char_details.corporation_ticker,
-                alliance_ticker: Map.get(char_details, :alliance_ticker, ""),
-                passages: total_passages,
-                connections: total_connections,
-                signatures: total_signatures,
-                timestamp: most_recent,
-                is_current_user: is_current_user,
-                # user_id: user_id,
-              }]
-            else
-              []
-            end
-          else
-            []
-          end
-        end)
-        |> Enum.sort_by(&(&1.timestamp), {:desc, DateTime})
-      end
-
-    # FORCE one character per user by taking the most active character for each user
-    activity_data =
-      activity_data
-      |> Enum.group_by(& &1.user_id)
-      |> Enum.map(fn {_user_id, activities} ->
-        # Sort by total activity (passages + connections + signatures) and take the first one
-        activities
-        |> Enum.sort_by(fn activity ->
-          (Map.get(activity, :passages, 0) +
-           Map.get(activity, :connections, 0) +
-           Map.get(activity, :signatures, 0))
-        end, :desc)
-        |> List.first()
-      end)
-
-    {:noreply,
-     socket
-     |> MapEventHandler.push_map_event(
-       "character_activity_data",
-       %{activity: activity_data}
-     )}
+    {:noreply, socket |> assign(:character_activity_task, task)}
   end
 
-  def handle_ui_event(
-        "show_tracking",
-        _,
-        %{assigns: %{map_id: _map_id, _current_user: _current_user}} = socket
-      ) do
-    # This handler is now in MapCharactersEventHandler
-    # Delegate to the appropriate handler
-    MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
-  end
+  def handle_ui_event("hide_activity", _, socket),
+    do: {:noreply, socket |> assign(show_activity?: false)}
+
+  def handle_ui_event("show_tracking", _, socket),
+    do: MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
 
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
+  end
+
+  def handle_info(
+        {ref, activity_data},
+        %{assigns: %{character_activity_task: %Task{ref: ref}}} = socket
+      ) do
+    # Demonitor the task to avoid receiving DOWN messages
+    Process.demonitor(ref, [:flush])
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: activity_data, loading: false}
+      )
+      |> assign(:character_activity_task, nil)
+
+    {:noreply, socket}
+  end
+
+  # Fallback handler for task results when the character_activity_task assign is missing
+  def handle_info(
+        {ref, activity_data},
+        socket
+      ) when is_reference(ref) do
+    # Demonitor the task to avoid receiving DOWN messages
+    Process.demonitor(ref, [:flush])
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: activity_data, loading: false}
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        %{assigns: %{character_activity_task: %Task{ref: ref}}} = socket
+      ) do
+    # Task failed, log the error and update the client
+    Logger.error("Character activity task failed: #{inspect(reason)}")
+
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: false}
+      )
+      |> assign(:character_activity_task, nil)
+
+    {:noreply, socket}
+  end
+
+  # Fallback handler for DOWN messages when the character_activity_task assign is missing
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        socket
+      ) when is_reference(ref) do
+    # Log that we're handling a DOWN message without a matching task reference
+    Logger.error("Character activity task failed: #{inspect(reason)}")
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: false}
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        :refresh_character_activity,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    # Show loading state immediately
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: true}
+      )
+
+    # Start async task to fetch and process activity data
+    task = Task.async(fn ->
+      try do
+        WandererApp.Utils.CharacterUtil.process_character_activity(map_id, current_user)
+      rescue
+        e ->
+          Logger.error("Error processing character activity: #{inspect(e)}")
+          Logger.error("#{Exception.format_stacktrace()}")
+          []
+      end
+    end)
+
+    {:noreply, socket |> assign(:character_activity_task, task)}
   end
 
   defp maybe_start_map(map_id) do
@@ -822,174 +777,5 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       show_offline? || character.online ||
         user_character_eve_ids |> Enum.member?(character.eve_id)
     end)
-  end
-
-  def handle_info(
-        :refresh_character_activity,
-        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
-      ) do
-    # Get character settings for the map
-    character_settings =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
-        {:ok, settings} -> settings
-        _ -> []
-      end
-
-    # Get all character activity
-    all_activity = WandererApp.Map.get_character_activity(map_id)
-
-    # Get user characters with access to the map
-    {:ok, user_characters} = WandererApp.Api.Character.active_by_user(%{user_id: current_user.id})
-
-    # Process activity data
-    activity_data =
-      if all_activity != [] && Map.has_key?(hd(all_activity), :is_user) do
-        # This is activity data from get_character_activity
-        # It doesn't have system_id, system_name, etc. fields
-        # Just pass it through as is
-        all_activity
-      else
-        # Group by user_id first
-        activity_by_user_id = Enum.group_by(all_activity, & &1.user_id)
-
-        # For each user, select one character to display
-        Enum.flat_map(activity_by_user_id, fn {user_id, user_activities} ->
-          is_current_user = user_id == current_user.id
-
-          # Group by character_id
-          activities_by_character = Enum.group_by(user_activities, & &1.character_id)
-
-          # For current user, check if any character is followed
-          followed_char_id =
-            if is_current_user do
-              followed_chars =
-                character_settings
-                |> Enum.filter(& &1.followed)
-                |> Enum.map(& &1.character_id)
-
-              # Find if any of user's characters is followed
-              user_char_ids = Map.keys(activities_by_character)
-              Enum.find(followed_chars, fn followed_id ->
-                followed_id in user_char_ids
-              end)
-            else
-              nil
-            end
-
-          # Decide which character to show
-          char_id_to_show =
-            if followed_char_id do
-              followed_char_id
-            else
-              # Find character with most activity
-              {char_id, _} =
-                activities_by_character
-                |> Enum.map(fn {char_id, activities} ->
-                  total_activity =
-                    activities
-                    |> Enum.map(fn a ->
-                      (Map.get(a, :passages, 0)) +
-                      (Map.get(a, :connections, 0)) +
-                      (Map.get(a, :signatures, 0))
-                    end)
-                    |> Enum.sum()
-                  {char_id, total_activity}
-                end)
-                |> Enum.max_by(fn {_, count} -> count end, fn -> {nil, 0} end)
-
-              char_id
-            end
-
-          # If we found a character to show
-          if char_id_to_show do
-            # Get this character's activities
-            char_activities = Map.get(activities_by_character, char_id_to_show, [])
-
-            # Get character details
-            char_details =
-              if is_current_user do
-                # For current user, we have the full character details
-                Enum.find(user_characters, &(&1.id == char_id_to_show))
-              else
-                # For other users, extract details from the activity
-                sample_activity = List.first(char_activities)
-                %{
-                  id: char_id_to_show,
-                  name: Map.get(sample_activity, :character_name, "Unknown"),
-                  eve_id: Map.get(sample_activity, :character_eve_id, nil),
-                  corporation_ticker: Map.get(sample_activity, :corporation_ticker, ""),
-                  alliance_ticker: Map.get(sample_activity, :alliance_ticker, "")
-                }
-              end
-
-            # If we have character details
-            if char_details do
-              # Calculate aggregated activity
-              total_passages = char_activities |> Enum.map(&Map.get(&1, :passages, 0)) |> Enum.sum()
-              total_connections = char_activities |> Enum.map(&Map.get(&1, :connections, 0)) |> Enum.sum()
-              total_signatures = char_activities |> Enum.map(&Map.get(&1, :signatures, 0)) |> Enum.sum()
-
-              # Get most recent timestamp
-              most_recent =
-                char_activities
-                |> Enum.map(&Map.get(&1, :timestamp, DateTime.utc_now()))
-                |> Enum.sort_by(&(&1), {:desc, DateTime})
-                |> List.first() || DateTime.utc_now()
-
-              # Create one activity entry for this user
-              [%{
-                character_id: char_details.id,
-                character_name: char_details.name,
-                portrait_url: EVEUtil.get_portrait_url(char_details.eve_id, 64),
-                corporation_ticker: char_details.corporation_ticker,
-                alliance_ticker: Map.get(char_details, :alliance_ticker, ""),
-                # Use the most recent system information if available
-                system_id: Map.get(List.first(char_activities) || %{}, :system_id, "unknown"),
-                system_name: Map.get(List.first(char_activities) || %{}, :system_name, "Unknown System"),
-                region_name: Map.get(List.first(char_activities) || %{}, :region_name, "Unknown Region"),
-                security_status: Map.get(List.first(char_activities) || %{}, :security_status, 0.0),
-                security_class: Map.get(List.first(char_activities) || %{}, :security_class, "unknown"),
-                jumps: Map.get(List.first(char_activities) || %{}, :jumps, 0),
-                # Use aggregated activity counts
-                passages: total_passages,
-                connections: total_connections,
-                signatures: total_signatures,
-                timestamp: most_recent,
-                is_current_user: is_current_user,
-                user_id: user_id,
-                user_name: if(is_current_user, do: current_user.name, else: char_details.name)
-              }]
-            else
-              []
-            end
-          else
-            []
-          end
-        end)
-        |> Enum.sort_by(&(&1.timestamp), {:desc, DateTime})
-      end
-
-    # Group by user_id and take the most active character for each user
-    activity_data =
-      activity_data
-      |> Enum.group_by(& &1.user_id)
-      |> Enum.map(fn {_user_id, activities} ->
-        # Sort by total activity and take the first one
-        activities
-        |> Enum.sort_by(fn activity ->
-          (Map.get(activity, :passages, 0) +
-           Map.get(activity, :connections, 0) +
-           Map.get(activity, :signatures, 0))
-        end, :desc)
-        |> List.first()
-      end)
-
-    # Send the activity data to the client
-    {:noreply,
-     socket
-     |> MapEventHandler.push_map_event(
-       "character_activity_data",
-       %{activity: activity_data}
-     )}
   end
 end

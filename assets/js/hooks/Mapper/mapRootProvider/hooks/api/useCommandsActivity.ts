@@ -19,7 +19,10 @@ export const useCommandsActivity = () => {
     try {
       ref.current.update((state: MapRootData) => ({
         ...state,
-        characterActivityData: data.activity,
+        characterActivityData: {
+          activity: data.activity,
+          loading: data.loading,
+        },
         showCharacterActivity: true,
       }));
     } catch (error) {
