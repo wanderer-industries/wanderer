@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler, MapSystemsEventHandler}
+  alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(:update_permissions, socket) do
     DebounceAndThrottle.Debounce.apply(
@@ -123,12 +124,16 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     socket
   end
 
-  def handle_server_event(%{payload: kill_data}, socket) when is_map(kill_data) and map_size(kill_data) > 0 do
+  def handle_server_event(%{event: :detailed_kills_updated, payload: payload}, socket) do
     socket
+    |> MapEventHandler.push_map_event(
+      "detailed_kills_updated",
+      payload
+    )
   end
 
   def handle_server_event(event, socket) do
-    Logger.warning(fn -> "unhandled map core event: #{inspect(event)}" end)
+    Logger.debug(fn -> "unhandled map core event: #{inspect(event)}" end)
     socket
   end
 
@@ -249,9 +254,140 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          )
          |> MapCharactersEventHandler.add_character()}
 
+  def handle_ui_event(
+        "show_activity",
+        _,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    # Show loading state immediately
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: true}
+      )
+
+    # Start async task to fetch and process activity data
+    # Use Task.async so we can properly handle the result
+    task = Task.async(fn ->
+      try do
+        WandererApp.Utils.CharacterUtil.process_character_activity(map_id, current_user)
+      rescue
+        e ->
+          Logger.error("Error processing character activity: #{inspect(e)}")
+          Logger.error("#{Exception.format_stacktrace()}")
+          []
+      end
+    end)
+
+    {:noreply, socket |> assign(:character_activity_task, task)}
+  end
+
+  def handle_ui_event("hide_activity", _, socket),
+    do: {:noreply, socket |> assign(show_activity?: false)}
+
+  def handle_ui_event("show_tracking", _, socket),
+    do: MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
+
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
+  end
+
+  def handle_info(
+        {ref, activity_data},
+        %{assigns: %{character_activity_task: %Task{ref: ref}}} = socket
+      ) do
+    # Demonitor the task to avoid receiving DOWN messages
+    Process.demonitor(ref, [:flush])
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: activity_data, loading: false}
+      )
+      |> assign(:character_activity_task, nil)
+
+    {:noreply, socket}
+  end
+
+  # Fallback handler for task results when the character_activity_task assign is missing
+  def handle_info(
+        {ref, activity_data},
+        socket
+      ) when is_reference(ref) do
+    # Demonitor the task to avoid receiving DOWN messages
+    Process.demonitor(ref, [:flush])
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: activity_data, loading: false}
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        %{assigns: %{character_activity_task: %Task{ref: ref}}} = socket
+      ) do
+    # Task failed, log the error and update the client
+    Logger.error("Character activity task failed: #{inspect(reason)}")
+
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: false}
+      )
+      |> assign(:character_activity_task, nil)
+
+    {:noreply, socket}
+  end
+
+  # Fallback handler for DOWN messages when the character_activity_task assign is missing
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        socket
+      ) when is_reference(ref) do
+    # Log that we're handling a DOWN message without a matching task reference
+    Logger.error("Character activity task failed: #{inspect(reason)}")
+
+    # Send the result to the client with loading: false
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: false}
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        :refresh_character_activity,
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    # Show loading state immediately
+    socket = socket
+      |> WandererAppWeb.MapEventHandler.push_map_event(
+        "character_activity_data",
+        %{activity: [], loading: true}
+      )
+
+    # Start async task to fetch and process activity data
+    task = Task.async(fn ->
+      try do
+        WandererApp.Utils.CharacterUtil.process_character_activity(map_id, current_user)
+      rescue
+        e ->
+          Logger.error("Error processing character activity: #{inspect(e)}")
+          Logger.error("#{Exception.format_stacktrace()}")
+          []
+      end
+    end)
+
+    {:noreply, socket |> assign(:character_activity_task, task)}
   end
 
   defp maybe_start_map(map_id) do
@@ -273,7 +409,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
            user_permissions: user_permissions,
            name: map_name,
            owner_id: owner_id
-         } = map
+         } = _map
        ) do
     user_permissions =
       WandererApp.Permissions.get_map_permissions(
@@ -290,18 +426,25 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         _ -> {:ok, []}
       end
 
-    {:ok, %{characters: availaible_map_characters}} =
-      WandererApp.Maps.load_characters(map, character_settings, current_user.id)
+    # Get characters that have access to the map
+    {:ok, available_map_characters} =
+      WandererApp.Maps.get_tracked_map_characters(map_id, current_user)
 
     can_view? = user_permissions.view_system
     can_track? = user_permissions.track_character
 
     tracked_character_ids =
-      availaible_map_characters |> Enum.filter(& &1.tracked) |> Enum.map(& &1.id)
+      available_map_characters |> Enum.filter(fn char ->
+        setting = Enum.find(character_settings, &(&1.character_id == char.id))
+        setting != nil && setting.tracked == true
+      end) |> Enum.map(& &1.id)
 
     all_character_tracked? =
-      not (availaible_map_characters |> Enum.empty?()) and
-        availaible_map_characters |> Enum.all?(& &1.tracked)
+      not (available_map_characters |> Enum.empty?()) and
+        available_map_characters |> Enum.all?(fn char ->
+          setting = Enum.find(character_settings, &(&1.character_id == char.id))
+          setting != nil && setting.tracked == true
+        end)
 
     cond do
       (only_tracked_characters and can_track? and all_character_tracked?) or
@@ -467,6 +610,21 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       initial_data
       |> Map.get(:user_permissions)
 
+    # Use the current user directly without reloading
+    current_user = socket.assigns.current_user
+
+    # Get character settings for this map
+    {:ok, character_settings} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
+
+    # Get the map with ACLs
+    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
+    map = Ash.load!(map, :acls)
+
+    # Get characters that have access to the map using load_characters
+    # This will include all characters with access, even if they're not tracked
+    {:ok, %{characters: characters_with_access}} =
+      WandererApp.Maps.load_characters(map, character_settings, current_user.id)
+
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
@@ -500,7 +658,52 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         |> MapCharactersEventHandler.add_character()
 
       _ ->
-        socket
+        # Check if there are any characters that are not tracked
+        untracked_characters = Enum.filter(characters_with_access, fn char ->
+          # Find settings for this character if they exist
+          setting = Enum.find(character_settings, &(&1.character_id == char.id))
+          # A character is untracked if it has no settings or tracked is false
+          is_tracked = setting && setting.tracked
+          is_untracked = !is_tracked
+
+          is_untracked
+        end)
+
+        if length(untracked_characters) > 0 && user_permissions.track_character do
+          # Show the Track and Follow dialog
+
+          # Create tracking data for all user characters with access to the map
+          tracking_data = Enum.map(characters_with_access, fn char ->
+            # Find settings for this character if they exist
+            setting = Enum.find(character_settings, &(&1.character_id == char.id))
+            tracked = if setting, do: setting.tracked, else: false
+            followed = if setting, do: setting.followed, else: false
+
+            %{
+              id: char.id,
+              name: char.name,
+              portrait_url: EVEUtil.get_portrait_url(char.eve_id, 64),
+              corporation_ticker: char.corporation_ticker,
+              alliance_ticker: Map.get(char, :alliance_ticker, ""),
+              tracked: tracked,
+              followed: followed
+            }
+          end)
+
+          # Push both events directly
+          socket
+          |> push_event("map_event", %{
+            type: "show_tracking",
+            body: %{}
+          })
+          |> push_event("map_event", %{
+            type: "tracking_characters_data",
+            body: %{characters: tracking_data}
+          })
+          |> assign(:show_tracking, true)
+        else
+          socket
+        end
     end
   end
 

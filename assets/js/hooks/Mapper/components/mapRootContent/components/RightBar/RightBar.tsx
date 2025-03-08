@@ -21,10 +21,11 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
 
   const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
 
-  const handleAddCharacter = useCallback(() => {
+  const handleShowTracking = useCallback(() => {
+    // Use the OutCommand pattern for showing the tracking dialog
     outCommand({
-      type: OutCommand.addCharacter,
-      data: null,
+      type: OutCommand.showTracking,
+      data: {},
     });
   }, [outCommand]);
 
@@ -63,22 +64,25 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
             type="button"
-            onClick={handleAddCharacter}
+            onClick={handleShowTracking}
+            id="show-tracking-button"
           >
             <i className="pi pi-user-plus"></i>
           </button>
         </WdTooltipWrapper>
 
         {canTrackCharacters && (
-          <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
-            <button
-              className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-              type="button"
-              onClick={onShowOnTheMap}
-            >
-              <i className="pi pi-hashtag"></i>
-            </button>
-          </WdTooltipWrapper>
+          <>
+            <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
+              <button
+                className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                type="button"
+                onClick={onShowOnTheMap}
+              >
+                <i className="pi pi-hashtag"></i>
+              </button>
+            </WdTooltipWrapper>
+          </>
         )}
       </div>
 

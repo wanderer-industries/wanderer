@@ -1,0 +1,366 @@
+/* TrackAndFollow Dialog Styles */
+.trackFollowDialog {
+  background-color: var(--surface-card);
+  color: var(--text-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  width: 500px;
+
+  :global {
+    /* Dialog header */
+    .p-dialog-header {
+      padding: 1rem 1.5rem;
+      background-color: var(--surface-section);
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      border-bottom: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .p-dialog-title {
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: var(--text-color);
+      }
+
+      .p-dialog-header-icons {
+        display: flex;
+        align-items: center;
+
+        .p-dialog-header-close {
+          color: var(--text-color);
+          background: transparent;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+          margin-left: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          
+          &:hover {
+            background: var(--surface-hover);
+            color: var(--primary-color);
+          }
+          
+          &:focus {
+            box-shadow: 0 0 0 0.2rem var(--primary-color-light);
+            outline: none;
+          }
+        }
+      }
+    }
+
+    /* Dialog content */
+    .p-dialog-content {
+      padding: 0.5rem;
+      background-color: var(--surface-card);
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      height: calc(100% - 70px);
+      max-height: 70vh;
+      overflow: hidden;
+    }
+
+    /* Dialog mask */
+    .p-dialog-mask.p-component-overlay {
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+    }
+  }
+}
+
+/* Character grid styles */
+.characterGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.characterGridHeader {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr;
+  background-color: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  padding: 0.75rem 0;
+  text-align: center;
+}
+
+.characterGridBody {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.characterGridRow {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr;
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.5rem 0;
+  align-items: center;
+  transition: background-color 0.2s;
+  min-height: 48px;
+  
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.gridCellTrack, 
+.gridCellFollow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.gridCellCharacter {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Character info styles */
+.characterInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.characterPortrait {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.characterDetails {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.characterName {
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.characterCorp {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+}
+
+.allianceTicker {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+}
+
+/* Empty state message */
+.emptyMessage {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}
+
+/* Custom Checkbox and Radio Button Styles */
+.wdCheckbox, .wdRadio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--surface-border);
+  background-color: var(--surface-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  margin: 0 auto;
+  
+  &:hover {
+    border-color: var(--primary-color);
+  }
+}
+
+.wdCheckbox {
+  border-radius: 4px;
+}
+
+.wdCheckboxChecked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  
+  &:hover {
+    background-color: var(--primary-color-dark);
+  }
+}
+
+.wdCheckboxIcon {
+  color: var(--primary-color-text);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wdRadio {
+  border-radius: 50%;
+}
+
+.wdRadioChecked {
+  border-color: var(--primary-color);
+  
+  &:hover {
+    border-color: var(--primary-color-dark);
+  }
+}
+
+.wdRadioDot {
+  width: 0.625rem;
+  height: 0.625rem;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: block;
+}
+
+.trackingCell {
+  .p-checkbox {
+    .p-checkbox-box {
+      background-color: var(--surface-card);
+      border: 2px solid var(--surface-border);
+      width: 1.25rem;
+      height: 1.25rem;
+      
+      &:hover {
+        border-color: var(--primary-color);
+      }
+      
+      &.p-highlight {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        
+        .p-checkbox-icon {
+          color: var(--primary-color-text);
+          font-size: 0.875rem;
+        }
+        
+        &:hover {
+          background-color: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+.followCell {
+  .p-radiobutton {
+    .p-radiobutton-box {
+      background-color: var(--surface-card);
+      border: 2px solid var(--surface-border);
+      width: 1.25rem;
+      height: 1.25rem;
+      
+      &:hover {
+        border-color: var(--primary-color);
+      }
+      
+      &.p-highlight {
+        background-color: var(--surface-card);
+        border-color: var(--primary-color);
+        
+        .p-radiobutton-icon {
+          background-color: var(--primary-color);
+          width: 0.625rem;
+          height: 0.625rem;
+        }
+        
+        &:hover {
+          border-color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .trackingCharacterHeader {
+    grid-template-columns: 60px 60px 1fr;
+  }
+
+  .trackingCharacterRow {
+    grid-template-columns: 60px 60px 1fr;
+  }
+
+  .characterPortrait {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.checkboxContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.radioContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.portraitImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.corporationTicker {
+  margin-left: 0.5rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+}
+
+.allianceTicker {
+  margin-left: 0.25rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+} 
+
+.hoverRow:hover {
+  background-color: var(--surface-hover);
+}

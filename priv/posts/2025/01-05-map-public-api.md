@@ -1,9 +1,9 @@
 %{
-  title: "User Guide: Public API Endpoints for Map Data",
-  author: "Wanderer Team",
-  cover_image_uri: "/images/news/01-05-map-public-api/generate-key.png",
-  tags: ~w(map public-api guide interface),
-  description: "Learn how to use the Wanderer public API endpoints to retrieve system and character data from your map. This guide covers available endpoints, request examples, and sample responses."
+title: "User Guide: Public API Endpoints for Map Data",
+author: "Wanderer Team",
+cover_image_uri: "/images/news/01-05-map-public-api/generate-key.png",
+tags: ~w(map public-api guide interface),
+description: "Learn how to use the Wanderer public API endpoints to retrieve system and character data from your map. This guide covers available endpoints, request examples, and sample responses."
 }
 
 ---
@@ -24,7 +24,7 @@ Each request to the Wanderer APIs that being with /api/map must include a valid 
 
     Authorization: Bearer <YOUR_MAP_API_KEY>
 
-If the API key is missing or incorrect, you’ll receive a `401 Unauthorized` response.
+If the API key is missing or incorrect, you'll receive a `401 Unauthorized` response.
 
 No api key is required for routes that being with /api/common
 
@@ -42,13 +42,16 @@ No api key is required for routes that being with /api/common
 - **Parameters:**
   - `map_id` (optional if `slug` is provided) — the UUID of the map.
   - `slug` (optional if `map_id` is provided) — the slug identifier of the map.
-  - `all=true` (optional) — if set, returns *all* systems instead of only "visible" systems.
+  - `all=true` (optional) — if set, returns _all_ systems instead of only "visible" systems.
 
 #### Example Request
+
 ```
     curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/systems?slug=some-slug"
 ```
+
 #### Example Response
+
 ```
     {
       "data": [
@@ -73,6 +76,7 @@ No api key is required for routes that being with /api/common
       ]
     }
 ```
+
 ---
 
 ### 2. Show Single System
@@ -86,10 +90,13 @@ No api key is required for routes that being with /api/common
 - **Authentication:** Required via `Authorization` header.
 
 #### Example Request
+
 ```
     curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/system?id=<REDACTED_NUMBER>&slug=<REDACTED_SLUG>"
 ```
+
 #### Example Response
+
 ```
     {
       "data": {
@@ -111,6 +118,7 @@ No api key is required for routes that being with /api/common
       }
     }
 ```
+
 ---
 
 ### 2. Show Single System Static Info
@@ -122,10 +130,13 @@ No api key is required for routes that being with /api/common
 - **Authentication:** No API token required
 
 #### Example Request
+
 ```
     curl "https://wanderer.example.com/api/common/static-system-info?id=31002229
 ```
+
 #### Example Response
+
 ```
 {
   "data": {
@@ -157,6 +168,7 @@ No api key is required for routes that being with /api/common
 }
 
 ```
+
 ---
 
 ### 3. List Tracked Characters
@@ -168,10 +180,13 @@ No api key is required for routes that being with /api/common
 - **Authentication:** Required via `Authorization` header.
 
 #### Example Request
+
 ```
     curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/characters?slug=some-slug"
 ```
+
 #### Example Response
+
 ```
     {
       "data": [
@@ -197,6 +212,7 @@ No api key is required for routes that being with /api/common
       ]
     }
 ```
+
 ---
 
 ### 4. Kills Activity
@@ -207,10 +223,13 @@ No api key is required for routes that being with /api/common
 - **Description:** Retrieves the kill activity for the specified map (by `map_id` or `slug`), including details on the attacker and victim
 
 #### Example Request
+
 ```
     curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/systems-kills?slug==some-slug"
 ```
+
 #### Example Response
+
 ```
     {
       "data": [
@@ -292,11 +311,52 @@ No api key is required for routes that being with /api/common
       ]
     }
 ```
+
+---
+
+### 5. Character Activity
+
+    GET /api/map/activity?map_id=<UUID>
+    GET /api/map/activity?slug=<map-slug>
+
+- **Description:** Retrieves activity statistics for all characters on the specified map, including connections made, passages through systems, and signatures added.
+- **Authentication:** Required via `Authorization` header.
+- **Parameters:**
+  - `map_id` (optional if `slug` is provided) — the UUID of the map.
+  - `slug` (optional if `map_id` is provided) — the slug identifier of the map.
+
+#### Example Request
+
+```
+    curl -H "Authorization: Bearer <REDACTED_TOKEN>" "https://wanderer.example.com/api/map/activity?slug=some-slug"
+```
+
+#### Example Response
+
+```
+    {
+      "data": [
+        {
+          "character": {
+            "name": "Character Name",
+            "corporation_ticker": "CORP",
+            "alliance_ticker": "ALLY",
+            "eve_id": "12345"
+          },
+          "connections": 4,
+          "passages": 28,
+          "signatures": 1
+        },
+        ...
+      ]
+    }
+```
+
 ---
 
 ## Conclusion
 
-Using these APIs, you can programmatically retrieve system and character information from your map. Whether you’re building a custom analytics dashboard, a corp management tool, or just want to explore data outside the standard UI, these endpoints provide a straightforward way to fetch up-to-date map details.
+Using these APIs, you can programmatically retrieve system and character information from your map. Whether you're building a custom analytics dashboard, a corp management tool, or just want to explore data outside the standard UI, these endpoints provide a straightforward way to fetch up-to-date map details.
 
 For questions or additional support, please reach out to the Wanderer Team.
 

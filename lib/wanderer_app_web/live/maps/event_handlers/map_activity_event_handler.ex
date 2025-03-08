@@ -11,36 +11,31 @@ defmodule WandererAppWeb.MapActivityEventHandler do
           payload: character_activity
         },
         socket
-      ),
-      do: socket |> assign(:character_activity, character_activity)
+      ) do
+    socket
+    |> MapEventHandler.push_map_event(
+      "character_activity_data",
+      %{activity: character_activity}
+    )
+  end
+
+  def handle_server_event(
+        %{event: :character_activity_data, payload: activity_data},
+        socket
+      ) do
+    socket
+    |> MapEventHandler.push_map_event(
+      "character_activity_data",
+      %{activity: activity_data, loading: false}
+    )
+  end
 
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
-
-  def handle_ui_event("show_activity", _, %{assigns: %{map_id: map_id}} = socket) do
-    {:noreply,
-     socket
-     |> assign(:show_activity?, true)
-     |> assign_async(:character_activity, fn ->
-       map_id |> get_character_activity()
-     end)}
-  end
 
   def handle_ui_event("hide_activity", _, socket),
     do: {:noreply, socket |> assign(show_activity?: false)}
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
-
-  defp get_character_activity(map_id) do
-    {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
-
-    jumps =
-      jumps
-      |> Enum.map(fn p ->
-        %{p | character: p.character |> MapEventHandler.map_ui_character_stat()}
-      end)
-
-    {:ok, %{character_activity: jumps}}
-  end
 end

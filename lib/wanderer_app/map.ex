@@ -4,6 +4,7 @@ defmodule WandererApp.Map do
   it
   """
   require Logger
+  alias WandererApp.Utils.EVEUtil
 
   defstruct map_id: nil,
             name: nil,
@@ -521,4 +522,155 @@ defmodule WandererApp.Map do
 
   defp _maybe_limit_list(list, nil), do: list
   defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
+
+  @doc """
+  Gets character activity data for a map.
+  Returns a list of character activity records with passages, connections, and signatures.
+  Only includes characters that are on the map's ACL.
+
+  ## Returns
+  A list of maps with the following keys:
+  - character_name: The name of the character
+  - corporation_ticker: The corporation ticker of the character
+  - alliance_ticker: The alliance ticker of the character (if any)
+  - portrait_url: URL to the character's portrait
+  - passages: Number of passages through systems
+  - connections: Number of connections created
+  - signatures: Number of signatures scanned
+  - user_id: The ID of the user who owns the character
+  - system_id: The ID of the system the character is in (if available)
+  - system_name: The name of the system the character is in (if available)
+  - region_name: The name of the region the character is in (if available)
+  - security_status: The security status of the system the character is in (if available)
+  - security_class: The security class of the system the character is in (if available)
+  - jumps: The number of jumps the character has made (if available)
+  - timestamp: The timestamp of the most recent activity
+  - character_eve_id: The EVE ID of the character
+  """
+  def get_character_activity(map_id) do
+    # Get the map with ACLs
+    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
+    map = Ash.load!(map, :acls)
+
+    # Extract ACL information for filtering
+    map_acls = map.acls |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
+
+    map_acl_owner_ids = map_acls |> Enum.map(fn acl -> acl.owner_id end)
+
+    map_members =
+      map_acls
+      |> Enum.map(fn acl -> acl.members end)
+      |> List.flatten()
+      |> Enum.filter(fn member -> member.role != :blocked end)
+
+    map_member_eve_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
+      |> Enum.map(fn member -> member.eve_character_id end)
+
+    map_member_corporation_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
+      |> Enum.map(fn member -> member.eve_corporation_id end)
+
+    map_member_alliance_ids =
+      map_members
+      |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
+      |> Enum.map(fn member -> member.eve_alliance_id end)
+
+    # Get all character activity
+    {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
+
+    # Get connections and signatures activity from UserActivity
+    # Get activity from the last 30 days
+    thirty_days_ago = DateTime.utc_now() |> DateTime.add(-30 * 24 * 3600, :second)
+
+    # Query for connections activity using Ecto query
+    import Ecto.Query
+    connections_query =
+      from(ua in WandererApp.Api.UserActivity,
+        join: c in assoc(ua, :character),
+        where: ua.entity_id == ^map_id and
+               ua.entity_type == :map and
+               ua.event_type == :map_connection_added and
+               ua.inserted_at > ^thirty_days_ago,
+        group_by: [c.id],
+        select: {c.id, count(ua.id)}
+      )
+
+    # Query for signatures activity
+    signatures_query =
+      from(ua in WandererApp.Api.UserActivity,
+        join: c in assoc(ua, :character),
+        where: ua.entity_id == ^map_id and
+               ua.entity_type == :map and
+               ua.event_type == :signatures_added and
+               ua.inserted_at > ^thirty_days_ago,
+        select: {ua.character_id, ua.event_data}
+      )
+
+    # Execute queries
+    connections_by_character =
+      WandererApp.Repo.all(connections_query)
+      |> Map.new()
+
+    # Process signatures data
+    signatures_by_character =
+      WandererApp.Repo.all(signatures_query)
+      |> Enum.group_by(fn {character_id, _} -> character_id end)
+      |> Enum.map(fn {character_id, activities} ->
+        # Parse event_data to get signature count
+        signature_count = activities
+          |> Enum.map(fn {_, event_data} ->
+            case Jason.decode(event_data) do
+              {:ok, data} ->
+                signatures = Map.get(data, "signatures", [])
+                length(signatures)
+              _ -> 0
+            end
+          end)
+          |> Enum.sum()
+        {character_id, signature_count}
+      end)
+      |> Map.new()
+
+    result = jumps
+    |> Enum.filter(fn p ->
+      # Filter characters based on ACL
+      # Include the map owner and ACL owners
+      p.character.id == map.owner_id or
+        p.character.id in map_acl_owner_ids or
+        p.character.eve_id in map_member_eve_ids or
+        (not is_nil(p.character.corporation_id) and to_string(p.character.corporation_id) in map_member_corporation_ids) or
+        (not is_nil(p.character.alliance_id) and to_string(p.character.alliance_id) in map_member_alliance_ids)
+    end)
+    |> Enum.map(fn p ->
+      portrait_url = EVEUtil.get_portrait_url(p.character.eve_id, 64)
+
+      # Get connections and signatures counts for this character
+      connections_count = Map.get(connections_by_character, p.character.id, 0)
+      signatures_count = Map.get(signatures_by_character, p.character.id, 0)
+
+      %{
+        character_name: p.character.name,
+        corporation_ticker: p.character.corporation_ticker,
+        alliance_ticker: p.character.alliance_ticker || "",
+        portrait_url: portrait_url,
+        passages: p.count,
+        connections: connections_count,
+        signatures: signatures_count,
+        user_id: p.character.user_id,
+        system_id: "unknown",
+        system_name: "Unknown System",
+        region_name: "Unknown Region",
+        security_status: 0.0,
+        security_class: "unknown",
+        jumps: 0,
+        timestamp: DateTime.utc_now(),
+        character_eve_id: p.character.eve_id
+      }
+    end)
+
+    result
+  end
 end
