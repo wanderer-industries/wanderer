@@ -28,7 +28,7 @@ interface CharacterActivityProps {
   onHide: () => void;
 }
 
-const getRowClassName = () => classes.tableRowCompact;
+const getRowClassName = () => [classes.tableRowCompact, 'p-selectable-row'];
 
 const renderCharacterTemplate = (rowData: ActivitySummary) => {
   return (
@@ -61,12 +61,6 @@ const renderValueTemplate = (rowData: ActivitySummary, field: keyof ActivitySumm
   return <div className={classes.activityValueCell}>{rowData[field] as number}</div>;
 };
 
-const renderHeader = () => (
-  <div className="flex justify-between items-center">
-    <h2 className="text-xl font-semibold">Character Activity</h2>
-  </div>
-);
-
 /**
  * Component that displays character activity in a dialog.
  */
@@ -88,7 +82,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
 
   return (
     <Dialog
-      header={renderHeader}
+      header="Character Activity"
       visible={visible}
       className={classes.characterActivityDialog}
       onHide={onHide}

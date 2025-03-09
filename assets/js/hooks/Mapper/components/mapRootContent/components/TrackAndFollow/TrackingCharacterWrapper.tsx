@@ -1,8 +1,8 @@
 import { TrackingCharacter } from './types';
-import { Tooltip } from 'primereact/tooltip';
 import { WdCheckbox } from '@/hooks/Mapper/components/ui-kit/WdCheckbox/WdCheckbox';
 import WdRadioButton from '@/hooks/Mapper/components/ui-kit/WdRadioButton';
 import classes from './TrackingCharacterWrapper.module.scss';
+import { TooltipPosition, WdTooltipWrapper } from '../../../ui-kit';
 
 interface TrackingCharacterWrapperProps {
   character: TrackingCharacter;
@@ -25,21 +25,23 @@ export const TrackingCharacterWrapper = ({
   return (
     <div className={classes.characterGridRow}>
       <div className={classes.gridCellTrack}>
-        <Tooltip target={`#${trackCheckboxId}`} content="Track this character on the map" position="top" />
-        <div className={classes.checkboxContainer}>
-          <WdCheckbox label="" value={isTracked} onChange={() => onTrackToggle()} />
-        </div>
+        <WdTooltipWrapper content="Track this character on the map" position={TooltipPosition.top}>
+          <div className={classes.checkboxContainer}>
+            <WdCheckbox id={trackCheckboxId} label="" value={isTracked} onChange={() => onTrackToggle()} />
+          </div>
+        </WdTooltipWrapper>
       </div>
       <div className={classes.gridCellFollow}>
-        <Tooltip target={`#${followRadioId}`} content="Follow this character's movements on the map" position="top" />
-        <div className={classes.radioContainer}>
-          <WdRadioButton
-            id={followRadioId}
-            name="followed_character"
-            checked={isFollowed}
-            onChange={() => onFollowToggle()}
-          />
-        </div>
+        <WdTooltipWrapper content="Follow this character's movements on the map" position={TooltipPosition.top}>
+          <div className={classes.radioContainer}>
+            <WdRadioButton
+              id={followRadioId}
+              name="followed_character"
+              checked={isFollowed}
+              onChange={() => onFollowToggle()}
+            />
+          </div>
+        </WdTooltipWrapper>
       </div>
       <div className={classes.gridCellCharacter}>
         <div className={classes.characterInfo}>

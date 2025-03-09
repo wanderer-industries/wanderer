@@ -246,20 +246,15 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           socket
       ),
       do:
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "You should enable tracking for at least one character!"
-         )
-         |> MapCharactersEventHandler.add_character()}
-
-  def handle_ui_event(
-        "show_tracking",
-        _,
-        socket
-      ),
-      do: MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
+        MapCharactersEventHandler.handle_ui_event(
+          "show_tracking",
+          %{},
+          socket
+          |> put_flash(
+            :error,
+            "You should enable tracking for at least one character!"
+          )
+        )
 
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
@@ -285,9 +280,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
            user_permissions: user_permissions,
            name: map_name,
            owner_id: owner_id
-         } = _map
+         } = map
        ) do
-    with {:ok, init_data} <- setup_map_data(map_id, current_user, user_permissions, owner_id),
+    with {:ok, init_data} <- setup_map_data(map, current_user, user_permissions, owner_id),
          :ok <- check_map_access(init_data, only_tracked_characters) do
       setup_map_socket(socket, map_id, map_slug, map_name, init_data, only_tracked_characters)
     else
@@ -301,7 +296,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
-  defp setup_map_data(map_id, current_user, user_permissions, owner_id) do
+  defp setup_map_data(
+         %{
+           id: map_id
+         } = map,
+         current_user,
+         user_permissions,
+         owner_id
+       ) do
     user_permissions =
       WandererApp.Permissions.get_map_permissions(
         user_permissions,
@@ -311,8 +313,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     with {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user.id),
          {:ok, character_settings} <- get_character_settings(map_id),
-         {:ok, available_map_characters} <-
-           WandererApp.Maps.get_tracked_map_characters(map_id, current_user) do
+         {:ok, %{characters: available_map_characters}} =
+           WandererApp.Maps.load_characters(map, character_settings, current_user.id) do
       tracked_data = get_tracked_data(available_map_characters, character_settings)
 
       {:ok,
@@ -541,9 +543,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       })
 
     # Initialize character tracking
-    {socket, needs_tracking_setup} =
-      MapCharactersEventHandler.init_character_tracking(
-        socket,
+    socket =
+      socket
+      |> MapCharactersEventHandler.init_character_tracking(
         map_id,
         %{
           current_user: current_user,
@@ -551,10 +553,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         }
       )
 
-    if not socket.assigns.has_tracked_characters? && user_permissions.track_character &&
-         not needs_tracking_setup do
+    if socket.assigns.needs_tracking_setup do
+      {:noreply, socket} = MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
       socket
-      |> MapCharactersEventHandler.add_character()
     else
       socket
     end

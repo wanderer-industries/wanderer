@@ -3,235 +3,74 @@
   &Dialog {
     background-color: var(--surface-card);
     color: var(--text-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     width: 80vw;
     max-width: 650px;
-
-    /* Note: Overlay z-index settings are handled in fix-dialog.scss */
-
-    .p-dialog-header {
-      padding: 0.75rem 1rem;
-      background-color: var(--surface-section);
-      border-top-left-radius: 8px;
-      border-top-right-radius: 8px;
-      border-bottom: 1px solid var(--surface-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .p-dialog-title {
-        font-weight: 600;
-        font-size: 1.25rem;
-        color: var(--text-color);
-      }
-
-      .p-dialog-header-icons {
-        display: flex;
-        align-items: center;
-
-        .p-dialog-header-icon {
-          color: var(--text-color-secondary);
-          border: none;
-          background: transparent;
-          width: 2rem;
-          height: 2rem;
-          transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
-          border-radius: 50%;
-          
-          &:hover {
-            color: var(--text-color);
-            background-color: var(--surface-hover);
-          }
-
-          &:focus {
-            outline: 0 none;
-            outline-offset: 0;
-            box-shadow: 0 0 0 0.2rem var(--focus-ring);
-          }
-        }
-      }
-    }
-
-    /* Enhanced close button styling */
-    .p-dialog-header-close {
-      color: var(--text-color) !important;
-      background: var(--surface-hover) !important;
-      width: 2.5rem !important;
-      height: 2.5rem !important;
-      border-radius: 50% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      transition: all 0.2s ease !important;
-      position: relative !important;
-      margin-left: 0.5rem !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-    }
-
-    .p-dialog-header-close:hover {
-      background: var(--surface-hover) !important;
-      color: var(--primary-color) !important;
-      transform: scale(1.05);
-    }
-
-    .p-dialog-header-close:focus {
-      box-shadow: 0 0 0 0.2rem var(--primary-color-light) !important;
-      outline: none !important;
-    }
-
-    .p-dialog-header-close-icon {
-      font-size: 1.25rem !important;
-    }
-
-    .p-dialog-content {
-      padding: 0;
-      background-color: var(--surface-card);
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-      height: calc(100% - 70px);
-      max-height: 60vh;
-      overflow: hidden;
-    }
-
-    /* Footer styling */
-    .p-dialog-footer {
-      padding: 0.75rem 1rem;
-      background-color: var(--surface-section);
-      border-top: 1px solid var(--surface-border);
-      border-bottom-left-radius: 8px;
-      border-bottom-right-radius: 8px;
-      display: flex;
-      justify-content: flex-end;
-    }
   }
 
   /* Set a fixed height for the container so scrolling works properly */
   &Container {
     width: 100%;
-    height: 400px;  // fixed height to match the DataTable's scrollHeight
+    height: 400px; // fixed height to match the DataTable's scrollHeight
     display: flex;
     flex-direction: column;
     overflow: hidden;
     padding: 0;
     margin: 0;
   }
+}
 
-  &Datatable {
-    width: 100%;
+:global {
+  .p-dialog-content {
+    padding: 0;
+    background-color: var(--surface-card);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 60vh;
+    overflow: hidden;
+  }
+
+  .p-datatable-wrapper {
+    border-radius: 0;
+    overflow: auto !important;
+    padding: 0;
+    margin: 0;
     height: 100%;
-    background-color: transparent !important;
+    max-height: 100%;
     border: none;
-    flex: 1;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--surface-section);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--surface-border);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--text-color-secondary);
+    }
+  }
+
+  .p-datatable-table {
+    width: 100% !important;
     table-layout: fixed !important;
+    border-collapse: collapse;
     margin: 0;
     padding: 0;
-
-    .p-datatable-wrapper {
-      border-radius: 0;
-      overflow: auto !important;
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      max-height: 100%;
-      border: none;
-
-      &::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: var(--surface-section);
-        border-radius: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: var(--surface-border);
-        border-radius: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: var(--text-color-secondary);
-      }
-    }
-
-    .p-datatable-table {
-      width: 100% !important;
-      table-layout: fixed !important;
-      border-collapse: collapse;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Header styling */
-    .p-datatable-thead > tr > th {
-      background-color: var(--surface-section);
-      color: var(--text-color);
-      border: 1px solid var(--surface-border);
-      padding: 2px 8px;
-      font-weight: 600;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      line-height: 1.333;
-      font-size: 12px;
-      height: 24px !important;
-
-      &.headerCharacter {
-        text-align: left;
-        padding-left: 12px;
-      }
-
-      &.headerStandard {
-        text-align: center;
-      }
-    }
-
-    /* Row styling */
-    .p-datatable-tbody > tr {
-      background-color: var(--surface-card);
-      transition: background-color 0.2s;
-      height: 24px !important;
-      max-height: 24px !important;
-
-      &:nth-child(even) {
-        background-color: var(--surface-hover);
-      }
-
-      &:hover {
-        background-color: var(--surface-hover);
-      }
-
-      /* Cell styling */
-      & > td {
-        border: 1px solid var(--surface-border);
-        padding: 2px;
-        font-size: 12px;
-        line-height: 1.333;
-        color: var(--text-color);
-        height: 24px !important;
-        max-height: 24px !important;
-
-        &:first-child {
-          padding-left: 12px;
-        }
-      }
-
-      &:last-child > td {
-        border-bottom: none;
-      }
-    }
-
-    /* Empty message styling */
-    .p-datatable-emptymessage td {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-color-secondary);
-      font-style: italic;
-    }
+  }
+  /* Empty message styling */
+  .p-datatable-emptymessage td {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
   }
 }
 
@@ -242,7 +81,6 @@
   gap: 0.5rem;
   width: 100%;
   overflow: hidden;
-  height: 24px !important;
 }
 
 .characterPortrait {
@@ -264,10 +102,10 @@
   flex-direction: column;
   width: 100%;
   overflow: hidden;
-  height: 24px !important;
 }
 
 .characterName {
+  display: flex;
   font-weight: 500;
   width: 100%;
   overflow: hidden;
@@ -275,7 +113,7 @@
   line-height: 1.333;
   white-space: nowrap;
   text-overflow: ellipsis;
-  height: 24px !important;
+  gap: 0.5rem;
 }
 
 .nameText {
@@ -310,7 +148,6 @@
   padding: 2px;
   width: 100%;
   overflow: hidden;
-  height: 24px !important;
 }
 
 .activityValueCell {
@@ -319,21 +156,18 @@
   font-size: 12px;
   line-height: 1.333;
   font-variant-numeric: tabular-nums;
-  height: 24px !important;
 }
 
 /* Column styles */
 .characterColumn {
   min-width: 200px;
   width: 40%;
-  height: 24px;
 }
 
 .numericColumn {
   width: 20%;
   text-align: center;
   white-space: nowrap;
-  height: 24px;
 }
 
 /* Empty state message */
@@ -371,6 +205,4 @@
 .tableRowCompact {
   font-size: 12px !important;
   line-height: 1.333 !important;
-  height: 24px !important;
-  max-height: 24px !important;
 }

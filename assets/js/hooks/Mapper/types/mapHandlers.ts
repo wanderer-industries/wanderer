@@ -209,7 +209,6 @@ export enum OutCommand {
   manualDeleteConnection = 'manual_delete_connection',
   setAutopilotWaypoint = 'set_autopilot_waypoint',
   addSystem = 'add_system',
-  addCharacter = 'add_character',
   openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
   linkSignatureToSystem = 'link_signature_to_system',
