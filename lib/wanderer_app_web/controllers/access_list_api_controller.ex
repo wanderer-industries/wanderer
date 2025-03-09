@@ -351,7 +351,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
         |> put_status(:bad_request)
         |> json(%{error: "Missing required field: owner_eve_id"})
 
-      {:error, "owner_eve_id does not match any existing character"} = error ->
+      {:error, "owner_eve_id does not match any existing character"} = _error ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Character not found: The provided owner_eve_id does not match any existing character"})

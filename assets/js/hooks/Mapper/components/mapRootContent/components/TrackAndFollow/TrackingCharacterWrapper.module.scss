@@ -1,0 +1,118 @@
+/* Character grid row styles */
+.characterGridRow {
+  display: grid;
+  grid-template-columns: 80px 80px 1fr;
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.5rem 0;
+  align-items: center;
+  transition: background-color 0.2s;
+  min-height: 48px;
+  
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.gridCellTrack, 
+.gridCellFollow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.gridCellCharacter {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Character info styles */
+.characterInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.characterPortrait {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.characterDetails {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.characterName {
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.checkboxContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.radioContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.portraitImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.corporationTicker {
+  margin-left: 0.5rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+}
+
+.allianceTicker {
+  margin-left: 0.25rem;
+  color: var(--text-color-secondary, #9ca3af);
+  font-size: 0.875rem;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .characterGridRow {
+    grid-template-columns: 60px 60px 1fr;
+  }
+
+  .characterPortrait {
+    width: 2rem;
+    height: 2rem;
+  }
+} 

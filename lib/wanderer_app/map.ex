@@ -4,6 +4,8 @@ defmodule WandererApp.Map do
   it
   """
   require Logger
+  alias WandererApp.Utils.EVEUtil
+  alias WandererApp.Utils.CharacterUtil
 
   defstruct map_id: nil,
             name: nil,
@@ -521,4 +523,93 @@ defmodule WandererApp.Map do
 
   defp _maybe_limit_list(list, nil), do: list
   defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
+
+  @doc """
+  Gets raw character activity data for a map.
+  Returns the raw activity data that can be processed by CharacterUtil.
+  Only includes characters that are on the map's ACL.
+  """
+  def get_character_activity(map_id) do
+    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
+    map = Ash.load!(map, :acls)
+
+    {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
+    thirty_days_ago = DateTime.utc_now() |> DateTime.add(-30 * 24 * 3600, :second)
+
+    # Get activity data
+    connections_activity = get_connections_activity(map_id, thirty_days_ago)
+    signatures_activity = get_signatures_activity(map_id, thirty_days_ago)
+
+    # Return raw activity data
+    jumps
+    |> Enum.map(fn passage ->
+      %{
+        character_name: passage.character.name,
+        corporation_ticker: passage.character.corporation_ticker,
+        alliance_ticker: passage.character.alliance_ticker || "",
+        portrait_url: EVEUtil.get_portrait_url(passage.character.eve_id, 64),
+        passages: passage.count,
+        connections: Map.get(connections_activity, passage.character.id, 0),
+        signatures: Map.get(signatures_activity, passage.character.id, 0),
+        timestamp: DateTime.utc_now(),
+        character_eve_id: passage.character.eve_id,
+        character_id: passage.character.id,
+        user_id: passage.character.user_id
+      }
+    end)
+  end
+
+  defp get_connections_activity(map_id, thirty_days_ago) do
+    import Ecto.Query
+
+    from(ua in WandererApp.Api.UserActivity,
+      join: c in assoc(ua, :character),
+      where:
+        ua.entity_id == ^map_id and
+          ua.entity_type == :map and
+          ua.event_type == :map_connection_added and
+          ua.inserted_at > ^thirty_days_ago,
+      group_by: [c.id],
+      select: {c.id, count(ua.id)}
+    )
+    |> WandererApp.Repo.all()
+    |> Map.new()
+  end
+
+  defp get_signatures_activity(map_id, thirty_days_ago) do
+    import Ecto.Query
+
+    from(ua in WandererApp.Api.UserActivity,
+      join: c in assoc(ua, :character),
+      where:
+        ua.entity_id == ^map_id and
+          ua.entity_type == :map and
+          ua.event_type == :signatures_added and
+          ua.inserted_at > ^thirty_days_ago,
+      select: {ua.character_id, ua.event_data}
+    )
+    |> WandererApp.Repo.all()
+    |> process_signatures_data()
+  end
+
+  defp process_signatures_data(signatures_data) do
+    signatures_data
+    |> Enum.group_by(fn {character_id, _} -> character_id end)
+    |> Enum.map(&process_character_signatures/1)
+    |> Map.new()
+  end
+
+  defp process_character_signatures({character_id, activities}) do
+    signature_count =
+      activities
+      |> Enum.map(fn {_, event_data} ->
+        case Jason.decode(event_data) do
+          {:ok, data} -> length(Map.get(data, "signatures", []))
+          _ -> 0
+        end
+      end)
+      |> Enum.sum()
+
+    {character_id, signature_count}
+  end
 end
