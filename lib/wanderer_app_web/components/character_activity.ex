@@ -17,6 +17,7 @@ defmodule WandererAppWeb.CharacterActivity do
      |> handle_info_or_assign(assigns)}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div id={@id}>

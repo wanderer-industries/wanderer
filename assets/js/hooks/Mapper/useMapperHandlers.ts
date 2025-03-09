@@ -1,5 +1,4 @@
 import { RefObject, useCallback } from 'react';
-
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
 
 export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRef: RefObject<any>) => {
