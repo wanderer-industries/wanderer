@@ -63,19 +63,59 @@ defmodule WandererApp.Api.MapCharacterSettings do
     end
 
     update :track do
-      change(set_attribute(:tracked, true))
+      accept [:map_id, :character_id]
+      argument :map_id, :string, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      # Load the record first
+      load do
+        filter expr(map_id == ^arg(:map_id) and character_id == ^arg(:character_id))
+      end
+
+      # Only update the tracked field
+      change set_attribute(:tracked, true)
     end
 
     update :untrack do
-      change(set_attribute(:tracked, false))
+      accept [:map_id, :character_id]
+      argument :map_id, :string, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      # Load the record first
+      load do
+        filter expr(map_id == ^arg(:map_id) and character_id == ^arg(:character_id))
+      end
+
+      # Only update the tracked field
+      change set_attribute(:tracked, false)
     end
 
     update :follow do
-      change(set_attribute(:followed, true))
+      accept [:map_id, :character_id]
+      argument :map_id, :string, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      # Load the record first
+      load do
+        filter expr(map_id == ^arg(:map_id) and character_id == ^arg(:character_id))
+      end
+
+      # Only update the followed field
+      change set_attribute(:followed, true)
     end
 
     update :unfollow do
-      change(set_attribute(:followed, false))
+      accept [:map_id, :character_id]
+      argument :map_id, :string, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      # Load the record first
+      load do
+        filter expr(map_id == ^arg(:map_id) and character_id == ^arg(:character_id))
+      end
+
+      # Only update the followed field
+      change set_attribute(:followed, false)
     end
   end
 

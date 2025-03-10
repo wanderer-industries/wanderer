@@ -7,7 +7,6 @@ defmodule WandererAppWeb.MapAPIController do
 
   alias WandererApp.Api
   alias WandererApp.Api.Character
-  alias WandererApp.Api.MapSolarSystem
   alias WandererApp.MapSystemRepo
   alias WandererApp.MapCharacterSettingsRepo
 
