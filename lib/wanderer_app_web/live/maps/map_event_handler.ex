@@ -354,6 +354,17 @@ defmodule WandererAppWeb.MapEventHandler do
         is_nil(signature.linked_system) && signature.group == "Wormhole"
       end)
 
+    comments_count =
+      system_id
+      |> WandererApp.Maps.get_system_comments_activity()
+      |> case do
+        [{count}] when not is_nil(count) ->
+          count
+
+        _ ->
+          0
+      end
+
     %{
       id: "#{solar_system_id}",
       position: %{x: position_x, y: position_y},
@@ -367,6 +378,7 @@ defmodule WandererAppWeb.MapEventHandler do
       status: status,
       tag: tag,
       temporary_name: temporary_name,
+      comments_count: comments_count,
       visible: visible
     }
   end

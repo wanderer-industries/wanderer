@@ -79,11 +79,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       })
 
     comment =
-      |> comment
+      comment
       |> Ash.load!([:character, :system])
 
     Impl.broadcast!(map_id, :system_comment_added, %{
-      solar_system_id: solar_system_id,,
+      solar_system_id: solar_system_id,
       comment: comment
     })
 

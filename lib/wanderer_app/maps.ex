@@ -3,6 +3,7 @@ defmodule WandererApp.Maps do
   use Nebulex.Caching
 
   require Ash.Query
+  import Ecto.Query
 
   @minimum_route_attrs [
     :system_class,
@@ -263,6 +264,20 @@ defmodule WandererApp.Maps do
           end
       end
     end)
+  end
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "map_system_comments_count-#{system_id}",
+              opts: [ttl: :timer.minutes(1)]
+            )
+  def get_system_comments_activity(system_id) do
+    from(sc in WandererApp.Api.MapSystemComment,
+      where: sc.system_id == ^system_id,
+      group_by: [sc.id],
+      select: {count(sc.id)}
+    )
+    |> WandererApp.Repo.all()
   end
 
   def can_edit?(map, user) do
