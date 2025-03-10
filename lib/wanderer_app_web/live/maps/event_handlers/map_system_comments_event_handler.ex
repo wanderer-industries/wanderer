@@ -5,10 +5,33 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
-  def handle_server_event(%{event: :system_comments_updated, payload: system_id}, socket),
-    do:
-      socket
-      |> MapEventHandler.push_map_event("system_comments_updated", system_id)
+  def handle_server_event(
+        %{
+          event: :system_comment_added,
+          payload: %{solar_system_id: solar_system_id, comment: comment}
+        },
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event("system_comment_added", %{
+          solarSystemId: solar_system_id,
+          comment: comment |> map_system_comment()
+        })
+
+  def handle_server_event(
+        %{
+          event: :system_comment_removed,
+          payload: %{solar_system_id: solar_system_id, comment_id: comment_id}
+        },
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event("system_comment_removed", %{
+          solarSystemId: solar_system_id,
+          commentId: comment_id
+        })
 
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
@@ -92,6 +115,8 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
 
     {:noreply, socket}
   end
+
+  def map_system_comment(nil), do: nil
 
   def map_system_comment(
         %{

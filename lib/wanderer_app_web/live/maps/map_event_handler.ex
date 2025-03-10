@@ -58,7 +58,8 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_system_comments_events [
-    :system_comments_updated
+    :system_comment_added,
+    :system_comment_removed
   ]
 
   @map_system_comments_ui_events [

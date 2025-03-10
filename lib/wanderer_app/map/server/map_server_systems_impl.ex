@@ -78,7 +78,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         text: text
       })
 
-    Impl.broadcast!(map_id, :system_comments_updated, system.solar_system_id)
+    comment =
+      |> comment
+      |> Ash.load!([:character, :system])
+
+    Impl.broadcast!(map_id, :system_comment_added, %{
+      solar_system_id: solar_system_id,,
+      comment: comment
+    })
+
     state
   end
 
@@ -93,7 +101,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
 
-    Impl.broadcast!(map_id, :system_comments_updated, system.solar_system_id)
+    Impl.broadcast!(map_id, :system_comment_removed, %{
+      solar_system_id: system.solar_system_id,
+      comment_id: comment_id
+    })
 
     state
   end
