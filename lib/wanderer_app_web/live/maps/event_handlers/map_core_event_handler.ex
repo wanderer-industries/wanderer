@@ -544,8 +544,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     # Initialize character tracking
     socket =
-      socket
-      |> MapCharactersEventHandler.init_character_tracking(
+      MapCharactersEventHandler.init_character_tracking(
+        socket,
         map_id,
         %{
           current_user: current_user,

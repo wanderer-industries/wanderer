@@ -208,6 +208,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:noreply,
      socket
      |> MapEventHandler.push_map_event(
+       "show_tracking",
+       %{}
+     )
+     |> MapEventHandler.push_map_event(
        "tracking_characters_data",
        %{characters: tracking_data}
      )}
@@ -299,6 +303,23 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   def handle_ui_event("hide_activity", _, socket),
     do: {:noreply, socket |> assign(show_activity?: false)}
+
+  def handle_ui_event("add_character", _, socket) do
+    {:noreply, show_tracking_dialog(socket, [], [])}
+  end
+
+  def handle_ui_event(
+        "add_character",
+        _,
+        %{assigns: %{user_permissions: %{track_character: false}}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> put_flash(
+       :error,
+       "You don't have permissions to track characters. Please contact administrator."
+     )}
+  end
 
   def handle_ui_event(event, params, socket) do
     Logger.debug(fn ->
@@ -472,13 +493,23 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:ok, %{characters: characters_with_access}} =
       load_map_characters(map, character_settings, current_user)
 
+    socket = init_tracking_state(socket, current_user)
+
+    needs_tracking_setup =
+      needs_tracking_setup?(characters_with_access, character_settings, user_permissions)
+
+    socket =
+      socket
+      |> assign(:needs_tracking_setup, needs_tracking_setup)
+      |> then(fn socket ->
+        if needs_tracking_setup do
+          show_tracking_dialog(socket, characters_with_access, character_settings)
+        else
+          socket
+        end
+      end)
+
     socket
-    |> init_tracking_state(
-      characters_with_access,
-      character_settings,
-      current_user,
-      user_permissions
-    )
   end
 
   defp get_map_with_acls(map_id) do
@@ -491,54 +522,26 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     WandererApp.Maps.load_characters(map, character_settings, current_user.id)
   end
 
-  defp init_tracking_state(
-         socket,
-         characters_with_access,
-         character_settings,
-         current_user,
-         user_permissions
-       ) do
+  def init_tracking_state(socket, current_user) do
     user_character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
     has_tracked_characters? = has_tracked_characters?(user_character_eve_ids)
-
-    needs_tracking_setup =
-      needs_tracking_setup?(
-        socket.assigns.only_tracked_characters,
-        characters_with_access,
-        character_settings,
-        user_permissions
-      )
 
     socket
     |> assign(
       has_tracked_characters?: has_tracked_characters?,
-      user_characters: user_character_eve_ids,
-      needs_tracking_setup: needs_tracking_setup
+      user_characters: user_character_eve_ids
     )
   end
 
-  defp needs_tracking_setup?(
-         only_tracked_characters,
-         characters,
-         character_settings,
-         user_permissions
-       ) do
-    tracked_count =
-      characters
-      |> Enum.count(fn char ->
-        setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        setting && setting.tracked
-      end)
-
+  def needs_tracking_setup?(characters, character_settings, user_permissions) do
     untracked_count =
       characters
       |> Enum.count(fn char ->
         setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        not (setting && setting.tracked)
+        setting == nil || !setting.tracked
       end)
 
-    user_permissions.track_character &&
-      ((untracked_count > 0 && only_tracked_characters) || tracked_count == 0)
+    untracked_count > 0 && user_permissions.track_character
   end
 
   @doc """
@@ -601,22 +604,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   Shows the tracking dialog with the given characters.
   """
   def show_tracking_dialog(socket, characters_with_access, character_settings) do
-    tracking_data =
-      Enum.map(characters_with_access, fn char ->
-        setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        tracked = if setting, do: setting.tracked, else: false
-        followed = if setting, do: setting.followed, else: false
-
-        %{
-          id: char.id,
-          name: char.name,
-          portrait_url: EVEUtil.get_portrait_url(char.eve_id, 64),
-          corporation_ticker: char.corporation_ticker,
-          alliance_ticker: Map.get(char, :alliance_ticker, ""),
-          tracked: tracked,
-          followed: followed
-        }
-      end)
+    tracking_data = build_tracking_data_for_characters(characters_with_access, character_settings)
 
     socket
     |> push_event("map_event", %{
@@ -628,6 +616,24 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       body: %{characters: tracking_data}
     })
     |> assign(:show_tracking, true)
+  end
+
+  defp build_tracking_data_for_characters(characters, character_settings) do
+    Enum.map(characters, fn char ->
+      setting = Enum.find(character_settings, &(&1.character_id == char.id))
+      tracked = if setting, do: setting.tracked, else: false
+      followed = if setting, do: setting.followed, else: false
+
+      %{
+        id: char.id,
+        name: char.name,
+        portrait_url: EVEUtil.get_portrait_url(char.eve_id, 64),
+        corporation_ticker: char.corporation_ticker,
+        alliance_ticker: Map.get(char, :alliance_ticker, ""),
+        tracked: tracked,
+        followed: followed
+      }
+    end)
   end
 
   def handle_activity_data(socket, activity_data) do

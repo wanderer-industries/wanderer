@@ -99,7 +99,6 @@ defmodule WandererApp.Utils.CharacterUtil do
     |> group_by_user_id()
     |> process_users_activity(character_settings, user_characters, current_user)
     |> sort_by_timestamp()
-    |> group_and_select_most_active()
   end
 
   defp group_by_user_id(activities) do
@@ -237,22 +236,5 @@ defmodule WandererApp.Utils.CharacterUtil do
 
   defp sort_by_timestamp(activities) do
     Enum.sort_by(activities, & &1.timestamp, {:desc, DateTime})
-  end
-
-  defp group_and_select_most_active(activities) do
-    activities
-    |> Enum.group_by(&Map.get(&1, :user_id, "unknown"))
-    |> Enum.map(fn {_user_id, user_activities} ->
-      user_activities
-      |> Enum.sort_by(
-        fn activity ->
-          Map.get(activity, :passages, 0) +
-            Map.get(activity, :connections, 0) +
-            Map.get(activity, :signatures, 0)
-        end,
-        :desc
-      )
-      |> List.first()
-    end)
   end
 end

@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { VirtualScroller } from 'primereact/virtualscroller';
-import classes from './TrackAndFollow.module.scss';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { TrackingCharacterWrapper } from './TrackingCharacterWrapper';
 import { TrackingCharacter } from './types';
+import styles from './TrackAndFollow.module.scss';
 
 interface TrackAndFollowProps {
   visible: boolean;
@@ -28,9 +28,10 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
   const characters = useMemo(() => trackingCharactersData || [], [trackingCharactersData]);
 
   useEffect(() => {
-    if (!visible || characters.length === 0) {
+    if (!visible) {
       return;
     }
+
     const tracked = characters.filter(char => char.tracked).map(char => char.id);
     setTrackedCharacters(tracked);
 
@@ -92,23 +93,26 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
       visible={visible}
       onHide={onHide}
       modal
-      className={classes.trackFollowDialog}
+      className="w-[500px] bg-surface-card text-text-color"
       closeOnEscape
       showHeader={true}
       closable={true}
     >
-      <div className={classes.characterGrid}>
-        <div className={classes.characterGridHeader}>
+      <div className="w-full overflow-hidden">
+        <div
+          className={`
+            grid grid-cols-[80px_80px_1fr] 
+            ${styles.trackFollowHeader} 
+            border-b border-surface-border 
+            font-normal text-sm text-text-color 
+            p-0.5 text-center
+          `}
+        >
           <div>Track</div>
           <div>Follow</div>
-          <div>Character</div>
+          <div className="text-center">Character</div>
         </div>
-        <VirtualScroller
-          items={characters}
-          itemSize={48}
-          itemTemplate={rowTemplate}
-          className={`${classes.characterGridBody} h-72 w-full`}
-        />
+        <VirtualScroller items={characters} itemSize={48} itemTemplate={rowTemplate} className="h-72 w-full" />
       </div>
     </Dialog>
   );

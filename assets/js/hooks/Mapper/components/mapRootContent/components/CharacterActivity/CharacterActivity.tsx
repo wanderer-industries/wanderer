@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import classes from './CharacterActivity.module.scss';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import styles from './CharacterActivity.module.scss';
 
 /**
  * Summary of a character's activity
@@ -28,29 +28,21 @@ interface CharacterActivityProps {
   onHide: () => void;
 }
 
-const getRowClassName = () => [classes.tableRowCompact, 'p-selectable-row'];
+const getRowClassName = () => ['text-xs leading-tight', 'p-selectable-row'];
 
 const renderCharacterTemplate = (rowData: ActivitySummary) => {
+  const displayName = rowData.is_user ? rowData.user_name : rowData.character_name;
+
   return (
-    <div className={classes.characterNameCell}>
-      <div className={classes.characterInfo}>
-        <div className={classes.characterPortrait}>
-          <img src={rowData.portrait_url} alt={rowData.character_name} className="w-full h-full object-cover" />
+    <div className="flex items-center p-0.5 w-full overflow-hidden min-w-0">
+      <div className="flex items-center w-full">
+        <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mr-2">
+          <img src={rowData.portrait_url} alt={displayName} className="w-full h-full object-cover" />
         </div>
-        <div className={classes.characterNameContainer}>
-          <div className={classes.characterName}>
-            {rowData.is_user ? (
-              <>
-                <span className={classes.nameText}>{rowData.user_name}</span>
-                <span className={classes.corporationTicker}>[{rowData.corporation_ticker}]</span>
-              </>
-            ) : (
-              <>
-                <span className={classes.nameText}>{rowData.character_name}</span>
-                <span className={classes.corporationTicker}>[{rowData.corporation_ticker}]</span>
-              </>
-            )}
-          </div>
+
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap w-[calc(100%-1.75rem)]">
+          <span className="font-medium text-text-color-secondary">{displayName}</span>
+          <span className="text-text-color-secondary opacity-80 text-xs ml-1">[{rowData.corporation_ticker}]</span>
         </div>
       </div>
     </div>
@@ -58,7 +50,9 @@ const renderCharacterTemplate = (rowData: ActivitySummary) => {
 };
 
 const renderValueTemplate = (rowData: ActivitySummary, field: keyof ActivitySummary) => {
-  return <div className={classes.activityValueCell}>{rowData[field] as number}</div>;
+  return (
+    <div className="text-center font-medium text-xs leading-tight tabular-nums p-0.5">{rowData[field] as number}</div>
+  );
 };
 
 /**
@@ -70,7 +64,6 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
   const [localActivity, setLocalActivity] = useState<ActivitySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Use the new structure directly
   const activity = useMemo(() => {
     return characterActivityData?.activity || [];
   }, [characterActivityData]);
@@ -84,7 +77,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
     <Dialog
       header="Character Activity"
       visible={visible}
-      className={classes.characterActivityDialog}
+      className="bg-surface-card text-text-color w-4/5 max-w-[650px]"
       onHide={onHide}
       dismissableMask
       draggable={false}
@@ -92,20 +85,20 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
       closable
       modal={true}
     >
-      <div className={classes.characterActivityContainer}>
+      <div className="w-full h-[400px] flex flex-col overflow-hidden p-0 m-0">
         {loading && (
-          <div className={classes.loadingContainer}>
-            <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" />
-            <div className={classes.loadingText}>Loading character activity data...</div>
+          <div className="flex flex-col items-center justify-center h-[400px] w-full">
+            <ProgressSpinner className={styles.spinnerContainer} strokeWidth="4" />
+            <div className="mt-4 text-text-color-secondary text-sm">Loading character activity data...</div>
           </div>
         )}
         {!loading && localActivity.length === 0 && (
-          <div className={classes.emptyMessage}>No character activity data available</div>
+          <div className="p-8 text-center text-text-color-secondary italic">No character activity data available</div>
         )}
         {!loading && localActivity.length > 0 && (
           <DataTable
             value={localActivity}
-            className={classes.characterActivityDatatable}
+            className="w-full"
             scrollable
             scrollHeight="400px"
             emptyMessage="No character activity data available"
@@ -115,38 +108,41 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
             size="small"
             rowClassName={getRowClassName}
             rowHover
+            resizableColumns
+            columnResizeMode="expand"
+            tableClassName={styles.dataTable}
           >
             <Column
               field="character_name"
               header="Character"
               body={renderCharacterTemplate}
               sortable
-              className={classes.characterColumn}
-              headerClassName={`${classes.headerCharacter} text-xs`}
+              className={`overflow-hidden text-ellipsis ${styles.characterColumn}`}
+              headerClassName="text-xs bg-surface-ground"
             />
             <Column
               field="passages"
               header="Passages"
               body={rowData => renderValueTemplate(rowData, 'passages')}
               sortable
-              className={classes.numericColumn}
-              headerClassName={`${classes.headerStandard} text-xs`}
+              className={`text-center ${styles.numericColumn}`}
+              headerClassName="text-xs bg-surface-ground"
             />
             <Column
               field="connections"
               header="Connections"
               body={rowData => renderValueTemplate(rowData, 'connections')}
               sortable
-              className={classes.numericColumn}
-              headerClassName={`${classes.headerStandard} text-xs`}
+              className={`text-center ${styles.numericColumn}`}
+              headerClassName="text-xs bg-surface-ground"
             />
             <Column
               field="signatures"
               header="Signatures"
               body={rowData => renderValueTemplate(rowData, 'signatures')}
               sortable
-              className={classes.numericColumn}
-              headerClassName={`${classes.headerStandard} text-xs`}
+              className={`text-center ${styles.numericColumn}`}
+              headerClassName="text-xs bg-surface-ground"
             />
           </DataTable>
         )}

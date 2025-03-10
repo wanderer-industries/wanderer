@@ -13,17 +13,17 @@ export const useTrackAndFollowHandlers = () => {
    * Handle hiding the track and follow dialog
    */
   const handleHideTracking = useCallback(() => {
-    // Update local state to hide the dialog
-    update(state => ({
-      ...state,
-      showTrackAndFollow: false,
-    }));
-
-    // Send the command to the server
+    // Send the command to the server first
     outCommand({
       type: OutCommand.hideTracking,
       data: {},
     });
+    
+    // Then update local state to hide the dialog
+    update(state => ({
+      ...state,
+      showTrackAndFollow: false,
+    }));
   }, [outCommand, update]);
 
   /**
