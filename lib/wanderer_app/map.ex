@@ -3,6 +3,8 @@ defmodule WandererApp.Map do
   Represents the map structure and exposes actions that can be taken to update
   it
   """
+  import Ecto.Query
+
   require Logger
   alias WandererApp.Utils.EVEUtil
   alias WandererApp.Utils.CharacterUtil
@@ -560,8 +562,6 @@ defmodule WandererApp.Map do
   end
 
   defp get_connections_activity(map_id, thirty_days_ago) do
-    import Ecto.Query
-
     from(ua in WandererApp.Api.UserActivity,
       join: c in assoc(ua, :character),
       where:
@@ -577,8 +577,6 @@ defmodule WandererApp.Map do
   end
 
   defp get_signatures_activity(map_id, thirty_days_ago) do
-    import Ecto.Query
-
     from(ua in WandererApp.Api.UserActivity,
       join: c in assoc(ua, :character),
       where:
