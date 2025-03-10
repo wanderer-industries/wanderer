@@ -266,11 +266,6 @@ defmodule WandererApp.Maps do
     end)
   end
 
-  @decorate cacheable(
-              cache: WandererApp.Cache,
-              key: "map_system_comments_count-#{system_id}",
-              opts: [ttl: :timer.minutes(1)]
-            )
   def get_system_comments_activity(system_id) do
     from(sc in WandererApp.Api.MapSystemComment,
       where: sc.system_id == ^system_id,
