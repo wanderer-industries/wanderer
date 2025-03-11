@@ -143,7 +143,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_activity_events,
-      do: MapCharactersEventHandler.handle_server_event(event, socket)
+      do: MapActivityEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_routes_events,
