@@ -277,9 +277,9 @@ defmodule WandererApp.Map.SubscriptionManager do
               # The License Manager service will verify the subscription is active
               case WandererApp.License.LicenseManager.create_license_for_map(map.id) do
                 {:ok, license} ->
-                  @logger.info(
+                  @logger.debug(fn ->
                     "Automatically created license #{license.license_key} for map #{map.id} during renewal"
-                  )
+                  end)
 
                 {:error, :no_active_subscription} ->
                   @logger.warn(
@@ -325,6 +325,15 @@ defmodule WandererApp.Map.SubscriptionManager do
             :subscription_settings_updated
           )
 
+          case WandererApp.License.LicenseManager.get_license_by_map_id(map.id) do
+            {:ok, license} ->
+              WandererApp.License.LicenseManager.invalidate_license(license.id)
+              Logger.info("Cancelled license for map #{map.id}")
+
+            {:error, reason} ->
+              Logger.error("Failed to cancel license for map #{map.id}: #{inspect(reason)}")
+          end
+
           :telemetry.execute([:wanderer_app, :map, :subscription, :cancel], %{count: 1}, %{
             map_id: map.id
           })
@@ -350,6 +359,17 @@ defmodule WandererApp.Map.SubscriptionManager do
       "maps:#{subscription.map_id}",
       :subscription_settings_updated
     )
+
+    case WandererApp.License.LicenseManager.get_license_by_map_id(subscription.map_id) do
+      {:ok, license} ->
+        WandererApp.License.LicenseManager.invalidate_license(license.id)
+        Logger.info("Cancelled license for map #{subscription.map_id}")
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to cancel license for map #{subscription.map_id}: #{inspect(reason)}"
+        )
+    end
 
     :telemetry.execute([:wanderer_app, :map, :subscription, :expired], %{count: 1}, %{
       map_id: subscription.map_id

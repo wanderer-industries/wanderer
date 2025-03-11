@@ -35,6 +35,14 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
   end
 
   @impl true
+  def handle_event("refresh_license", _, socket) do
+    {:noreply,
+     socket
+     |> assign(loading: true, error: nil)
+     |> load_license(socket.assigns.map_id)}
+  end
+
+  @impl true
   def handle_event("create_license", _, socket) do
     case LicenseManager.create_license_for_map(socket.assigns.map_id) do
       {:ok, license} ->
@@ -60,8 +68,14 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
 
   defp load_license(socket, map_id) do
     case LicenseManager.get_license_by_map_id(map_id) do
-      {:ok, license} ->
-        assign(socket, license: license, loading: false, error: nil)
+      {:ok, %{license_key: license_key}} ->
+        case LicenseManager.validate_license(license_key) do
+          {:ok, license} ->
+            assign(socket, license: license, loading: false, error: nil)
+
+          {:error, reason} ->
+            assign(socket, license: nil, loading: false, error: reason)
+        end
 
       {:error, :license_not_found} ->
         assign(socket, license: nil, loading: false, error: nil)
@@ -118,6 +132,14 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
                     Key copied
                   </div>
                 </.button>
+                <button
+                  type="button"
+                  phx-click="refresh_license"
+                  phx-target={@myself}
+                  class="ml-2 btn"
+                >
+                  Refresh
+                </button>
               </div>
             </div>
 

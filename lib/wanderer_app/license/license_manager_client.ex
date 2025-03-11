@@ -76,7 +76,7 @@ defmodule WandererApp.License.LicenseManagerClient do
       {:ok, license}
     else
       {:ok, %{status: status, body: body}} ->
-        Logger.error("Failed to update license. Status: #{status}, Body: #{body}")
+        Logger.error("Failed to update license. Status: #{status}, Body: #{inspect(body)}")
         parse_error_response(status, body)
 
       {:error, error} ->
@@ -135,14 +135,12 @@ defmodule WandererApp.License.LicenseManagerClient do
     Application.get_env(:wanderer_app, :license_manager)[:auth_key]
   end
 
-  defp parse_error_response(status, body) do
-    case Jason.decode(body) do
-      {:ok, %{"error" => error_message}} ->
-        {:error, error_message}
+  defp parse_error_response(status, %{"error" => error_message}) do
+    {:error, error_message}
+  end
 
-      _ ->
-        {:error, "HTTP #{status}: #{body}"}
-    end
+  defp parse_error_response(status, error) do
+    {:error, "HTTP #{status}: #{inspect(error)}"}
   end
 
   defp log_request(method, url, params) do

@@ -14,9 +14,9 @@ defmodule WandererAppWeb.Router do
     warn: false,
     only: [admin_basic_auth: 2]
 
-  import WandererAppWeb.Plugs.LicenseAuth,
-    warn: false,
-    only: [authenticate_lm: 2, authenticate_license: 2]
+  # import WandererAppWeb.Plugs.LicenseAuth,
+  #   warn: false,
+  #   only: [authenticate_lm: 2, authenticate_license: 2]
 
   @code_reloading Application.compile_env(
                     :wanderer_app,
@@ -131,13 +131,13 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckAclApiKey
   end
 
-  pipeline :api_license_management do
-    plug :authenticate_lm
-  end
+  # pipeline :api_license_management do
+  #   plug :authenticate_lm
+  # end
 
-  pipeline :api_license_validation do
-    plug :authenticate_license
-  end
+  # pipeline :api_license_validation do
+  #   plug :authenticate_license
+  # end
 
   scope "/api/map/systems-kills", WandererAppWeb do
     pipe_through [:api, :api_map, :api_kills]
@@ -175,20 +175,20 @@ defmodule WandererAppWeb.Router do
     get "/system-static-info", CommonAPIController, :show_system_static
   end
 
-  scope "/api/licenses", WandererAppWeb do
-    pipe_through [:api, :api_license_management]
+  # scope "/api/licenses", WandererAppWeb do
+  #   pipe_through [:api, :api_license_management]
 
-    post "/", LicenseApiController, :create
-    put "/:id/validity", LicenseApiController, :update_validity
-    put "/:id/expiration", LicenseApiController, :update_expiration
-    get "/map/:map_id", LicenseApiController, :get_by_map_id
-  end
+  #   post "/", LicenseApiController, :create
+  #   put "/:id/validity", LicenseApiController, :update_validity
+  #   put "/:id/expiration", LicenseApiController, :update_expiration
+  #   get "/map/:map_id", LicenseApiController, :get_by_map_id
+  # end
 
-  scope "/api/license", WandererAppWeb do
-    pipe_through [:api, :api_license_validation]
+  # scope "/api/license", WandererAppWeb do
+  #   pipe_through [:api, :api_license_validation]
 
-    get "/validate", LicenseApiController, :validate
-  end
+  #   get "/validate", LicenseApiController, :validate
+  # end
 
   #
   # Browser / blog stuff

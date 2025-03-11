@@ -40,6 +40,7 @@ defmodule WandererApp.License.LicenseManager do
         {:ok, external_license} ->
           License.create(%{
             map_id: map_id,
+            lm_id: external_license["id"],
             license_key: external_license["key"],
             is_valid: true,
             expire_at: subscription.active_till
@@ -64,26 +65,14 @@ defmodule WandererApp.License.LicenseManager do
     # First check in our local database
     case License.by_key(license_key) do
       {:ok, license} ->
-        cond do
-          not license.is_valid ->
-            {:error, :license_invalidated}
+        case LicenseManagerClient.validate_license(license_key) do
+          {:ok, %{"license_valid" => is_valid}} ->
+            {:ok, %{license | is_valid: is_valid}}
 
-          expired?(license) ->
-            invalidate_license(license.id)
-            {:error, :license_expired}
-
-          true ->
-            # Also validate with the external License Manager service
-            case LicenseManagerClient.validate_license(license_key) do
-              {:ok, _validation_result} ->
-                # External validation succeeded
-                {:ok, license}
-
-              {:error, _reason} ->
-                # External validation failed, but we'll still consider it valid
-                # if it's valid in our local database
-                {:ok, license}
-            end
+          {:error, reason} ->
+            # External validation failed, but we'll still consider it valid
+            # if it's valid in our local database
+            {:error, reason}
         end
 
       error ->
@@ -96,15 +85,16 @@ defmodule WandererApp.License.LicenseManager do
   """
   def invalidate_license(license_id) do
     with {:ok, license} <- License.by_id(license_id) do
-      # Invalidate in local database
-      {:ok, updated_license} = License.update_valid(license, %{is_valid: false})
-
       # Try to invalidate in external service
-      LicenseManagerClient.update_license(license_id, %{
-        "is_valid" => false
-      })
+      case LicenseManagerClient.update_license(license.lm_id, %{
+             "is_valid" => false
+           }) do
+        {:ok, _} ->
+          License.invalidate(license)
 
-      {:ok, updated_license}
+        error ->
+          error
+      end
     end
   end
 
@@ -114,14 +104,18 @@ defmodule WandererApp.License.LicenseManager do
   def update_expiration(license_id, expire_at) do
     with {:ok, license} <- License.by_id(license_id) do
       # Update in local database
-      {:ok, updated_license} = License.update_expire_at(license, %{expire_at: expire_at})
 
       # Try to update in external service
-      LicenseManagerClient.update_license(license_id, %{
+      LicenseManagerClient.update_license(license.lm_id, %{
         "valid_to" => format_date(expire_at)
       })
+      |> case do
+        {:ok, _license} ->
+          License.update_expire_at(license, %{expire_at: expire_at})
 
-      {:ok, updated_license}
+        {:error, error} ->
+          {:error, error}
+      end
     end
   end
 
@@ -131,9 +125,14 @@ defmodule WandererApp.License.LicenseManager do
   """
   def get_license_by_map_id(map_id) do
     case License.by_map_id(%{map_id: map_id}) do
-      {:ok, [license | _]} -> {:ok, license}
-      {:ok, []} -> {:error, :license_not_found}
-      error -> error
+      {:ok, [license | _]} ->
+        {:ok, license}
+
+      {:ok, []} ->
+        {:error, :license_not_found}
+
+      error ->
+        error
     end
   end
 
@@ -143,7 +142,7 @@ defmodule WandererApp.License.LicenseManager do
   def update_license_expiration_from_subscription(map_id) do
     with {:ok, license} <- get_license_by_map_id(map_id),
          {:ok, subscription} <- SubscriptionManager.get_active_map_subscription(map_id) do
-      update_expiration(license.id, %{expire_at: subscription.active_till})
+      update_expiration(license.id, subscription.active_till)
     end
   end
 
