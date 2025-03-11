@@ -95,8 +95,9 @@ defmodule WandererAppWeb.MapLive do
        |> WandererAppWeb.MapEventHandler.handle_event(info)}
 
   @impl true
-  def handle_event(event, body, socket),
-    do: WandererAppWeb.MapEventHandler.handle_ui_event(event, body, socket)
+  def handle_event(event, body, socket) do
+    WandererAppWeb.MapEventHandler.handle_ui_event(event, body, socket)
+  end
 
   defp apply_action(socket, :index, _params) do
     socket

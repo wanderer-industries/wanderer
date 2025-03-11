@@ -146,6 +146,30 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               userSettingsUpdated(data as CommandUserSettingsUpdated);
               break;
 
+            case Commands.showTracking:
+              // This command is handled by the TrackAndFollow component
+              break;
+
+            case Commands.hideTracking:
+              // This command is handled by the TrackAndFollow component
+              break;
+
+            case Commands.showActivity:
+              // This command is handled by the CharacterActivity component
+              break;
+
+            case Commands.hideActivity:
+              // This command is handled by the CharacterActivity component
+              break;
+
+            case Commands.toggleTrack:
+              // This command is handled by the TrackAndFollow component
+              break;
+
+            case Commands.toggleFollow:
+              // This command is handled by the TrackAndFollow component
+              break;
+
             default:
               console.warn(`JOipP Interface handlers: Unknown command: ${type}`, data);
               break;

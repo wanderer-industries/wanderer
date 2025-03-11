@@ -7,7 +7,6 @@ defmodule WandererApp.Map do
 
   require Logger
   alias WandererApp.Utils.EVEUtil
-  alias WandererApp.Utils.CharacterUtil
 
   defstruct map_id: nil,
             name: nil,
@@ -527,13 +526,12 @@ defmodule WandererApp.Map do
   defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
 
   @doc """
-  Gets raw character activity data for a map.
-  Returns the raw activity data that can be processed by CharacterUtil.
+  Returns the raw activity data that can be processed by WandererApp.Character.Activity.
   Only includes characters that are on the map's ACL.
   """
   def get_character_activity(map_id) do
     {:ok, map} = WandererApp.Api.Map.by_id(map_id)
-    map = Ash.load!(map, :acls)
+    _map_with_acls = Ash.load!(map, :acls)
 
     {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
     thirty_days_ago = DateTime.utc_now() |> DateTime.add(-30 * 24 * 3600, :second)

@@ -1,7 +1,8 @@
-defmodule WandererApp.Utils.CharacterUtil do
+defmodule WandererApp.Character.Activity do
   @moduledoc """
-  Utility functions for character-related operations.
+  Functions for processing and managing character activity data.
   """
+  require Logger
 
   @doc """
   Finds a followed character ID from a list of character settings and activities.
@@ -99,7 +100,6 @@ defmodule WandererApp.Utils.CharacterUtil do
     |> group_by_user_id()
     |> process_users_activity(character_settings, user_characters, current_user)
     |> sort_by_timestamp()
-    |> group_and_select_most_active()
   end
 
   defp group_by_user_id(activities) do
@@ -191,7 +191,7 @@ defmodule WandererApp.Utils.CharacterUtil do
     end
   end
 
-  defp get_character_details(char_id, char_activities, user_characters, true) do
+  defp get_character_details(char_id, _char_activities, user_characters, true) do
     Enum.find(user_characters, fn char ->
       char.id == char_id || to_string(char.eve_id) == char_id
     end)
@@ -207,7 +207,13 @@ defmodule WandererApp.Utils.CharacterUtil do
     }
   end
 
-  defp build_activity_entry(char_details, char_activities, current_user, is_current_user, user_id) do
+  defp build_activity_entry(
+         char_details,
+         char_activities,
+         current_user,
+         is_current_user,
+         _user_id
+       ) do
     %{
       character_id: char_details.eve_id || char_details.id,
       character_name: char_details.name,
@@ -222,9 +228,6 @@ defmodule WandererApp.Utils.CharacterUtil do
     }
   end
 
-  defp get_system_info(activities, key, default),
-    do: Map.get(List.first(activities) || %{}, key, default)
-
   defp sum_activity(activities, key),
     do: activities |> Enum.map(&Map.get(&1, key, 0)) |> Enum.sum()
 
@@ -237,22 +240,5 @@ defmodule WandererApp.Utils.CharacterUtil do
 
   defp sort_by_timestamp(activities) do
     Enum.sort_by(activities, & &1.timestamp, {:desc, DateTime})
-  end
-
-  defp group_and_select_most_active(activities) do
-    activities
-    |> Enum.group_by(&Map.get(&1, :user_id, "unknown"))
-    |> Enum.map(fn {_user_id, user_activities} ->
-      user_activities
-      |> Enum.sort_by(
-        fn activity ->
-          Map.get(activity, :passages, 0) +
-            Map.get(activity, :connections, 0) +
-            Map.get(activity, :signatures, 0)
-        end,
-        :desc
-      )
-      |> List.first()
-    end)
   end
 end

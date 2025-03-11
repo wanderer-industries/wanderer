@@ -1,208 +1,82 @@
-/* Character Activity Component Styles */
-.characterActivity {
-  &Dialog {
-    background-color: var(--surface-card);
-    color: var(--text-color);
-    width: 80vw;
-    max-width: 650px;
-  }
-
-  /* Set a fixed height for the container so scrolling works properly */
-  &Container {
-    width: 100%;
-    height: 400px; // fixed height to match the DataTable's scrollHeight
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-  }
-}
-
 :global {
-  .p-dialog-content {
-    padding: 0;
-    background-color: var(--surface-card);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    max-height: 60vh;
-    overflow: hidden;
+  .p-datatable .p-datatable-thead > tr > th {
+    background-color: var(--surface-ground);
+    padding: 0.5rem;
+    text-align: center;
+    white-space: normal;
+    overflow: visible;
+    height: auto;
+  }
+
+  .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .p-datatable {
+    width: 100%;
+    border: none;
   }
 
   .p-datatable-wrapper {
-    border-radius: 0;
-    overflow: auto !important;
-    padding: 0;
-    margin: 0;
-    height: 100%;
-    max-height: 100%;
-    border: none;
-
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--surface-section);
-      border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--surface-border);
-      border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background: var(--text-color-secondary);
-    }
-  }
-
-  .p-datatable-table {
-    width: 100% !important;
-    table-layout: fixed !important;
-    border-collapse: collapse;
-    margin: 0;
-    padding: 0;
-  }
-  /* Empty message styling */
-  .p-datatable-emptymessage td {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-color-secondary);
-    font-style: italic;
+    border: none !important;
   }
 }
 
-/* Character info styles */
-.characterInfo {
+.spinnerContainer {
+  width: 50px;
+  height: 50px;
+}
+
+.columnHeader {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.75rem; /* text-xs */
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+.numericColumnHeader {
+  padding: 0.5rem !important;
+}
+
+.dataTable {
+  width: 100%;
+  border: none;
+}
+
+.cellContent {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   width: 100%;
   overflow: hidden;
+  padding: 0.25rem 0;
 }
 
-.characterPortrait {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.characterNameContainer {
+.characterInfo {
   display: flex;
   flex-direction: column;
-  width: 100%;
   overflow: hidden;
+  min-width: 0;
+  width: 100%;
 }
 
 .characterName {
-  display: flex;
-  font-weight: 500;
-  width: 100%;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.333;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  gap: 0.5rem;
-}
-
-.nameText {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
-  display: inline;
-  max-width: 180px;
+  width: 100%;
 }
 
-.corporationTicker {
-  color: var(--text-color-secondary);
-  opacity: 0.8;
-  display: inline;
-  font-size: 0.75rem;
+.characterTicker {
   white-space: nowrap;
-  max-width: 60px;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.allianceTicker {
-  color: var(--text-color-secondary);
-  font-size: 0.75rem;
-}
-
-/* Cell styling */
-.characterNameCell {
-  display: flex;
-  align-items: center;
-  padding: 2px;
   width: 100%;
-  overflow: hidden;
 }
 
-.activityValueCell {
+.numericValueCell {
   text-align: center;
+  font-size: 0.75rem; /* text-xs */
   font-weight: 500;
-  font-size: 12px;
-  line-height: 1.333;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Column styles */
-.characterColumn {
-  min-width: 200px;
-  width: 40%;
-}
-
-.numericColumn {
-  width: 20%;
-  text-align: center;
   white-space: nowrap;
-}
-
-/* Empty state message */
-.emptyMessage {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-color-secondary);
-  font-style: italic;
-}
-
-/* Loading container */
-.loadingContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  width: 100%;
-}
-
-.loadingText {
-  margin-top: 1rem;
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
-}
-
-/* Error message styling */
-.errorMessage {
-  padding: 2rem;
-  text-align: center;
-  color: var(--red-500);
-}
-
-/* Table row compact style */
-.tableRowCompact {
-  font-size: 12px !important;
-  line-height: 1.333 !important;
 }

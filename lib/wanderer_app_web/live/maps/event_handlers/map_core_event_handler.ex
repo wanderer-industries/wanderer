@@ -4,7 +4,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler, MapSystemsEventHandler}
-  alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(:update_permissions, socket) do
     DebounceAndThrottle.Debounce.apply(
@@ -175,7 +174,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:noreply, socket}
   end
 
-  def handle_ui_event("toggle_track_" <> character_id, _, socket),
+  def handle_ui_event("toggle_track", %{"character-id" => character_id}, socket),
     do:
       MapCharactersEventHandler.handle_ui_event(
         "toggle_track",
@@ -183,7 +182,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         socket
       )
 
-  def handle_ui_event("toggle_follow_" <> character_id, _, socket),
+  def handle_ui_event("toggle_follow", %{"character-id" => character_id}, socket),
     do:
       MapCharactersEventHandler.handle_ui_event(
         "toggle_follow",
@@ -239,6 +238,11 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
   def handle_ui_event("noop", _, socket), do: {:noreply, socket}
 
+  def handle_ui_event(event, body, socket) do
+    Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
+    {:noreply, socket}
+  end
+
   def handle_ui_event(
         _event,
         _body,
@@ -255,11 +259,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             "You should enable tracking for at least one character!"
           )
         )
-
-  def handle_ui_event(event, body, socket) do
-    Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
-    {:noreply, socket}
-  end
 
   defp maybe_start_map(map_id) do
     {:ok, map_server_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
@@ -544,8 +543,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     # Initialize character tracking
     socket =
-      socket
-      |> MapCharactersEventHandler.init_character_tracking(
+      MapCharactersEventHandler.init_character_tracking(
+        socket,
         map_id,
         %{
           current_user: current_user,
@@ -598,22 +597,4 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         user_character_eve_ids |> Enum.member?(character.eve_id)
     end)
   end
-
-  defp handle_task_result(socket, {:activity_data, activity_data}),
-    do: MapCharactersEventHandler.handle_activity_data(socket, activity_data)
-
-  defp handle_task_result(socket, {:ok, %{type: type} = result})
-       when type in [
-              :character_activity,
-              :character_tracking,
-              :character_settings,
-              :character_location,
-              :character_online,
-              :character_ship,
-              :character_fleet
-            ] do
-    MapCharactersEventHandler.handle_character_result(socket, type, result)
-  end
-
-  defp handle_task_result(socket, _), do: socket
 end

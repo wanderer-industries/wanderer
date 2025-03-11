@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { VirtualScroller } from 'primereact/virtualscroller';
-import classes from './TrackAndFollow.module.scss';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { TrackingCharacterWrapper } from './TrackingCharacterWrapper';
 import { TrackingCharacter } from './types';
+import classes from './TrackAndFollow.module.scss';
 
 interface TrackAndFollowProps {
   visible: boolean;
@@ -28,30 +28,30 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
   const characters = useMemo(() => trackingCharactersData || [], [trackingCharactersData]);
 
   useEffect(() => {
-    if (!visible || characters.length === 0) {
-      return;
-    }
-    const tracked = characters.filter(char => char.tracked).map(char => char.id);
-    setTrackedCharacters(tracked);
+    if (trackingCharactersData) {
+      const newTrackedCharacters = trackingCharactersData
+        .filter(character => character.tracked)
+        .map(character => character.id);
 
-    const followed = characters.find(char => char.followed);
-    setFollowedCharacter(followed ? followed.id : null);
-  }, [visible, characters]);
+      setTrackedCharacters(newTrackedCharacters);
+
+      const followedChar = trackingCharactersData.find(character => character.followed);
+
+      if (followedChar?.id !== followedCharacter) {
+        setFollowedCharacter(followedChar?.id || null);
+      }
+    }
+  }, [followedCharacter, trackingCharactersData]);
 
   const handleTrackToggle = (characterId: string) => {
-    setTrackedCharacters(prev => {
-      if (!prev.includes(characterId)) {
-        return [...prev, characterId];
-      }
-      if (followedCharacter === characterId) {
-        setFollowedCharacter(null);
-        outCommand({
-          type: OutCommand.toggleFollow,
-          data: { 'character-id': characterId },
-        });
-      }
-      return prev.filter(id => id !== characterId);
-    });
+    const isCurrentlyTracked = trackedCharacters.includes(characterId);
+
+    if (isCurrentlyTracked) {
+      setTrackedCharacters(prev => prev.filter(id => id !== characterId));
+    } else {
+      setTrackedCharacters(prev => [...prev, characterId]);
+    }
+
     outCommand({
       type: OutCommand.toggleTrack,
       data: { 'character-id': characterId },
@@ -59,14 +59,31 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
   };
 
   const handleFollowToggle = (characterId: string) => {
-    if (followedCharacter !== characterId && !trackedCharacters.includes(characterId)) {
+    const isCurrentlyFollowed = followedCharacter === characterId;
+    const isCurrentlyTracked = trackedCharacters.includes(characterId);
+
+    // If not followed and not tracked, we need to track it first
+    if (!isCurrentlyFollowed && !isCurrentlyTracked) {
       setTrackedCharacters(prev => [...prev, characterId]);
+
+      // Send track command first
       outCommand({
         type: OutCommand.toggleTrack,
         data: { 'character-id': characterId },
       });
+
+      // Then send follow command after a short delay
+      setTimeout(() => {
+        outCommand({
+          type: OutCommand.toggleFollow,
+          data: { 'character-id': characterId },
+        });
+      }, 100);
+
+      return;
     }
-    setFollowedCharacter(prev => (prev === characterId ? null : characterId));
+
+    // Otherwise just toggle follow
     outCommand({
       type: OutCommand.toggleFollow,
       data: { 'character-id': characterId },
@@ -91,24 +108,23 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
       header={renderHeader()}
       visible={visible}
       onHide={onHide}
-      modal
-      className={classes.trackFollowDialog}
-      closeOnEscape
-      showHeader={true}
-      closable={true}
+      className="w-[500px] bg-surface-card text-text-color"
     >
-      <div className={classes.characterGrid}>
-        <div className={classes.characterGridHeader}>
+      <div className="w-full overflow-hidden">
+        <div
+          className={`
+            grid grid-cols-[80px_80px_1fr] 
+            ${classes.trackFollowHeader} 
+            border-b border-surface-border 
+            font-normal text-sm text-text-color 
+            p-0.5 text-center
+          `}
+        >
           <div>Track</div>
           <div>Follow</div>
-          <div>Character</div>
+          <div className="text-center">Character</div>
         </div>
-        <VirtualScroller
-          items={characters}
-          itemSize={48}
-          itemTemplate={rowTemplate}
-          className={`${classes.characterGridBody} h-72 w-full`}
-        />
+        <VirtualScroller items={characters} itemSize={48} itemTemplate={rowTemplate} className="h-72 w-full" />
       </div>
     </Dialog>
   );
