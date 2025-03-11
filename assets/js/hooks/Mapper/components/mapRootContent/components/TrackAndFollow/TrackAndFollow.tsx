@@ -56,36 +56,34 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
     });
   };
 
-  const handleFollowToggle = (characterId: string) => {
-    const isCurrentlyFollowed = followedCharacter === characterId;
-    const isCurrentlyTracked = trackedCharacters.includes(characterId);
+  const handleFollowToggle = async (characterEveId: string) => {
+    const isCurrentlyFollowed = followedCharacter === characterEveId;
+    const isCurrentlyTracked = trackedCharacters.includes(characterEveId);
 
     // If not followed and not tracked, we need to track it first
     if (!isCurrentlyFollowed && !isCurrentlyTracked) {
-      setTrackedCharacters(prev => [...prev, characterId]);
+      setTrackedCharacters(prev => [...prev, characterEveId]);
 
       // Send track command first
-      outCommand({
+      await outCommand({
         type: OutCommand.toggleTrack,
-        data: { 'character-id': characterId },
+        data: { 'character-id': characterEveId },
       });
 
       // Then send follow command after a short delay
       setTimeout(() => {
         outCommand({
           type: OutCommand.toggleFollow,
-          data: { 'character-id': characterId },
+          data: { 'character-id': characterEveId },
         });
       }, 100);
-
-      return;
+    } else {
+      // Otherwise just toggle follow
+      await outCommand({
+        type: OutCommand.toggleFollow,
+        data: { 'character-id': characterEveId },
+      });
     }
-
-    // Otherwise just toggle follow
-    outCommand({
-      type: OutCommand.toggleFollow,
-      data: { 'character-id': characterId },
-    });
   };
 
   const rowTemplate = (tc: TrackingCharacter) => {

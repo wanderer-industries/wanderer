@@ -99,20 +99,17 @@ export const MapWrapper = () => {
     [outCommand],
   );
 
-  const handleSystemContextMenu = useCallback(
-    (ev: any, systemId: string) => {
-      const { selectedSystems, systems } = ref.current;
-      if (selectedSystems.length > 1) {
-        const systemsInfo: Node[] = selectedSystems.map(x => ({ data: getSystemById(systems, x), id: x }) as Node);
+  const handleSystemContextMenu = useCallback((ev: any, systemId: string) => {
+    const { selectedSystems, systems } = ref.current;
+    if (selectedSystems.length > 1) {
+      const systemsInfo: Node[] = selectedSystems.map(x => ({ data: getSystemById(systems, x), id: x }) as Node);
 
-        handleSystemMultipleContext(ev, systemsInfo);
-        return;
-      }
+      handleSystemMultipleContext(ev, systemsInfo);
+      return;
+    }
 
-      open(ev, systemId);
-    },
-    [open],
-  );
+    open(ev, systemId);
+  }, []);
 
   const handleConnectionDbClick = useCallback((e: SolarSystemConnection) => setSelectedConnection(e), []);
 

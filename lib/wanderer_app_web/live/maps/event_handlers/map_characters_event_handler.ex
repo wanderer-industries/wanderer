@@ -108,6 +108,16 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   # UI Event Handlers
   def handle_ui_event(
+        "getCharacterInfo",
+        %{"characterEveId" => character_eve_id},
+        socket
+      ) do
+    {:ok, character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
+
+    {:reply, character |> MapEventHandler.map_ui_character_stat(), socket}
+  end
+
+  def handle_ui_event(
         "toggle_track",
         %{"character-id" => character_eve_id},
         %{

@@ -220,6 +220,9 @@ export enum OutCommand {
   addSystemComment = 'addSystemComment',
   deleteSystemComment = 'deleteSystemComment',
   getSystemComments = 'getSystemComments',
+  toggleTrack = 'toggle_track',
+  toggleFollow = 'toggle_follow',
+  getCharacterInfo = 'getCharacterInfo',
 
   // Only UI commands
   openSettings = 'open_settings',
@@ -227,8 +230,6 @@ export enum OutCommand {
   showActivity = 'show_activity',
   hideTracking = 'hide_tracking',
   showTracking = 'show_tracking',
-  toggleTrack = 'toggle_track',
-  toggleFollow = 'toggle_follow',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',

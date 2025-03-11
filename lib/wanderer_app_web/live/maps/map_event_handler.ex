@@ -30,7 +30,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "toggle_track",
     "toggle_follow",
     "hide_tracking",
-    "show_tracking"
+    "show_tracking",
+    "getCharacterInfo"
   ]
 
   @map_system_events [
