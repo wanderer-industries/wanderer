@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 let counter = 0;
 
 export interface WdCheckboxProps {
+  id?: string;
   label: React.ReactNode | string;
   classNameLabel?: string;
   value: boolean;
@@ -16,6 +17,7 @@ export interface WdCheckboxProps {
 }
 
 export const WdCheckbox = ({
+  id: defaultId,
   label,
   className,
   classNameLabel,
@@ -24,7 +26,7 @@ export const WdCheckbox = ({
   labelSide = 'right',
   size = 'normal',
 }: WdCheckboxProps & WithClassName) => {
-  const id = useMemo(() => (++counter).toString(), []);
+  const id = useMemo(() => defaultId || (++counter).toString(), [defaultId]);
 
   const labelElement = (
     <label

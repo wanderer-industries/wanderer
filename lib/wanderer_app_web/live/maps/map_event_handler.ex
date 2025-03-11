@@ -4,7 +4,6 @@ defmodule WandererAppWeb.MapEventHandler do
   require Logger
 
   alias WandererAppWeb.{
-    MapActivityEventHandler,
     MapCharactersEventHandler,
     MapConnectionsEventHandler,
     MapCoreEventHandler,
@@ -20,14 +19,16 @@ defmodule WandererAppWeb.MapEventHandler do
     :character_removed,
     :character_updated,
     :characters_updated,
-    :present_characters_updated
+    :present_characters_updated,
+    :tracking_characters_data,
+    :refresh_user_characters
   ]
 
   @map_characters_ui_events [
-    "add_character",
     "toggle_track",
     "toggle_follow",
-    "hide_tracking"
+    "hide_tracking",
+    "show_tracking"
   ]
 
   @map_system_events [
@@ -76,7 +77,8 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_activity_events [
-    :character_activity
+    :character_activity,
+    :character_activity_data
   ]
 
   @map_activity_ui_events [
@@ -141,7 +143,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_activity_events,
-      do: MapActivityEventHandler.handle_server_event(event, socket)
+      do: MapCharactersEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_routes_events,
@@ -185,6 +187,12 @@ defmodule WandererAppWeb.MapEventHandler do
         Process.send_after(self(), map_error, 100)
         socket
 
+      {:activity_data, activity_data} ->
+        MapCharactersEventHandler.handle_server_event(
+          %{event: :character_activity_data, payload: {:activity_data, activity_data}},
+          socket
+        )
+
       {event, payload} ->
         Process.send_after(
           self(),
@@ -195,55 +203,54 @@ defmodule WandererAppWeb.MapEventHandler do
         socket
 
       _ ->
+        Logger.warning("Unhandled task result: #{inspect(result)}")
         socket
     end
+  end
+
+  def handle_event(socket, {:DOWN, ref, :process, _pid, reason}) when is_reference(ref) do
+    # Task failed, log the error and update the client
+    Logger.error("Task failed: #{inspect(reason)}")
+
+    MapCharactersEventHandler.handle_server_event(
+      %{event: :character_activity_data, payload: []},
+      socket
+    )
   end
 
   def handle_event(socket, event),
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_characters_ui_events,
-      do: MapCharactersEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket) do
+    cond do
+      event in @map_characters_ui_events ->
+        MapCharactersEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_system_ui_events,
-      do: MapSystemsEventHandler.handle_ui_event(event, body, socket)
+      event in @map_system_ui_events ->
+        MapSystemsEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_connection_ui_events,
-      do: MapConnectionsEventHandler.handle_ui_event(event, body, socket)
+      event in @map_connection_ui_events ->
+        MapConnectionsEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_routes_ui_events,
-      do: MapRoutesEventHandler.handle_ui_event(event, body, socket)
+      event in @map_routes_ui_events ->
+        MapRoutesEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_signatures_ui_events,
-      do: MapSignaturesEventHandler.handle_ui_event(event, body, socket)
+      event in @map_signatures_ui_events ->
+        MapSignaturesEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_structures_ui_events,
-      do: MapStructuresEventHandler.handle_ui_event(event, body, socket)
+      event in @map_structures_ui_events ->
+        MapStructuresEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket)
-      when event in @map_activity_ui_events,
-      do: MapActivityEventHandler.handle_ui_event(event, body, socket)
+      event in @map_activity_ui_events ->
+        MapCharactersEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(
-        event,
-        body,
-        %{
-          assigns: %{
-            is_subscription_active?: true
-          }
-        } = socket
-      )
-      when event in @map_kills_ui_events,
-      do: MapKillsEventHandler.handle_ui_event(event, body, socket)
+      event in @map_kills_ui_events and socket.assigns[:is_subscription_active?] ->
+        MapKillsEventHandler.handle_ui_event(event, body, socket)
 
-  def handle_ui_event(event, body, socket),
-    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+      true ->
+        MapCoreEventHandler.handle_ui_event(event, body, socket)
+    end
+  end
 
   def get_system_static_info(nil), do: nil
 

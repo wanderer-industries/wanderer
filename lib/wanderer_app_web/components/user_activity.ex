@@ -21,7 +21,7 @@ defmodule WandererAppWeb.UserActivity do
   # attr(:stream, :any, required: true)
   # attr(:page, :integer, required: true)
   # attr(:end_of_stream?, :boolean, required: true)
-
+  @impl true
   def render(assigns) do
     ~H"""
     <div id={@id}>
@@ -123,7 +123,7 @@ defmodule WandererAppWeb.UserActivity do
   end
 
   @impl true
-  def handle_event("undo", %{"event-data" => event_data} = _params, socket) do
+  def handle_event("undo", %{"event-data" => _event_data} = _params, socket) do
     # notify_to(socket.assigns.notify_to, socket.assigns.event_name, map_slug)
 
     {:noreply, socket}

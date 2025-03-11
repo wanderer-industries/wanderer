@@ -430,7 +430,7 @@ defmodule WandererAppWeb.MapsLive do
     map
     |> WandererApp.Api.Map.update(form)
     |> case do
-      {:ok, updated_map} ->
+      {:ok, _updated_map} ->
         {added_acls, removed_acls} = map.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
 
         Phoenix.PubSub.broadcast(

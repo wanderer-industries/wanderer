@@ -1,7 +1,7 @@
 <div class="grid grid-flow-row gap-2 p-3 h-full w-full pl-20">
   <main class="w-full rounded-lg shadow col-span-2 lg:col-span-1 overflow-auto p-3">
     <%= if @maps != [] do %>
-      <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 ">
+      <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-3 ">
         <.link
           :if={not @restrict_maps_creation?}
           class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"

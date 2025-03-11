@@ -1,7 +1,7 @@
 defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   @moduledoc """
   A plug that checks the "Authorization: Bearer <token>" header
-  against the map’s stored public_api_key. Halts with 401 if invalid.
+  against the map's stored public_api_key. Halts with 401 if invalid.
   """
 
   import Plug.Conn
@@ -20,19 +20,22 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
               conn
             else
               conn
-              |> send_resp(401, "Unauthorized (invalid token for map)")
+              |> put_resp_content_type("application/json")
+              |> send_resp(401, Jason.encode!(%{error: "Unauthorized (invalid token for map)"}))
               |> halt()
             end
 
           {:error, _reason} ->
             conn
-            |> send_resp(404, "Map not found")
+            |> put_resp_content_type("application/json")
+            |> send_resp(404, Jason.encode!(%{error: "Map not found"}))
             |> halt()
         end
 
       _ ->
         conn
-        |> send_resp(401, "Missing or invalid 'Bearer' token")
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{error: "Missing or invalid 'Bearer' token"}))
         |> halt()
     end
   end

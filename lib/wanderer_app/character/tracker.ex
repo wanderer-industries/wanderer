@@ -556,7 +556,7 @@ defmodule WandererApp.Character.Tracker do
       {:ok, [character_aff_info]} when not is_nil(character_aff_info) ->
         update_corporation(state, character_aff_info |> Map.get("corporation_id"))
 
-      error ->
+      _error ->
         state
     end
   end

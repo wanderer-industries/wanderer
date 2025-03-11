@@ -19,7 +19,7 @@
   <.ping_container rtt_class={@rtt_class} />
   <.donate_container />
   <.feedback_container />
-  <.new_version_banner app_version={@app_version} />
+  <.new_version_banner app_version={@app_version} enabled={@map_subscriptions_enabled?} />
 </div>
 
 <%= live_render(@socket, WandererAppWeb.ServerStatusLive,
