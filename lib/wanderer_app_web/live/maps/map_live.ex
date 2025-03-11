@@ -76,16 +76,13 @@ defmodule WandererAppWeb.MapLive do
 
   def handle_info(:not_all_characters_tracked, %{assigns: %{map_slug: map_slug}} = socket),
     do:
-      WandererAppWeb.MapEventHandler.handle_ui_event(
-        "add_character",
-        nil,
-        socket
-        |> put_flash(
-          :error,
-          "You should enable tracking for all characters that have access to this map first!"
-        )
-        |> push_navigate(to: ~p"/tracking/#{map_slug}")
-      )
+      {:noreply,
+       socket
+       |> put_flash(
+         :error,
+         "You should enable tracking for all characters that have access to this map first!"
+       )
+       |> push_navigate(to: ~p"/tracking/#{map_slug}")}
 
   @impl true
   def handle_info(info, socket),

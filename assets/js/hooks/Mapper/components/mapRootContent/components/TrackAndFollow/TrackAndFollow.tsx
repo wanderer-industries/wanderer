@@ -29,16 +29,14 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
 
   useEffect(() => {
     if (trackingCharactersData) {
-      const newTrackedCharacters = trackingCharactersData
-        .filter(character => character.tracked)
-        .map(character => character.id);
+      const newTrackedCharacters = trackingCharactersData.filter(tc => tc.tracked).map(tc => tc.character.eve_id);
 
       setTrackedCharacters(newTrackedCharacters);
 
-      const followedChar = trackingCharactersData.find(character => character.followed);
+      const followedChar = trackingCharactersData.find(tc => tc.followed);
 
-      if (followedChar?.id !== followedCharacter) {
-        setFollowedCharacter(followedChar?.id || null);
+      if (followedChar?.character?.eve_id !== followedCharacter) {
+        setFollowedCharacter(followedChar?.character?.eve_id || null);
       }
     }
   }, [followedCharacter, trackingCharactersData]);
@@ -90,15 +88,15 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
     });
   };
 
-  const rowTemplate = (character: TrackingCharacter) => {
+  const rowTemplate = (tc: TrackingCharacter) => {
     return (
       <TrackingCharacterWrapper
-        key={character.id}
-        character={character}
-        isTracked={trackedCharacters.includes(character.id)}
-        isFollowed={followedCharacter === character.id}
-        onTrackToggle={() => handleTrackToggle(character.id)}
-        onFollowToggle={() => handleFollowToggle(character.id)}
+        key={tc.character.eve_id}
+        character={tc.character}
+        isTracked={trackedCharacters.includes(tc.character.eve_id)}
+        isFollowed={followedCharacter === tc.character.eve_id}
+        onTrackToggle={() => handleTrackToggle(tc.character.eve_id)}
+        onFollowToggle={() => handleFollowToggle(tc.character.eve_id)}
       />
     );
   };
@@ -108,18 +106,11 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
       header={renderHeader()}
       visible={visible}
       onHide={onHide}
-      className="w-[500px] bg-surface-card text-text-color"
+      className="w-[500px] text-text-color"
+      contentClassName="!p-0"
     >
       <div className="w-full overflow-hidden">
-        <div
-          className={`
-            grid grid-cols-[80px_80px_1fr] 
-            ${classes.trackFollowHeader} 
-            border-b border-surface-border 
-            font-normal text-sm text-text-color 
-            p-0.5 text-center
-          `}
-        >
+        <div className="grid grid-cols-[80px_80px_1fr] p-1 font-normal text-sm text-center bg-neutral-800">
           <div>Track</div>
           <div>Follow</div>
           <div className="text-center">Character</div>

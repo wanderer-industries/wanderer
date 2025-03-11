@@ -1,12 +1,9 @@
+import { CharacterTypeRaw } from '@/hooks/Mapper/types';
 /**
  * Interface for a character that can be tracked and followed
  */
 export interface TrackingCharacter {
-  id: string;
-  name: string;
-  corporation_ticker: string;
-  alliance_ticker?: string;
-  portrait_url: string;
+  character: CharacterTypeRaw;
   tracked: boolean;
   followed: boolean;
 }

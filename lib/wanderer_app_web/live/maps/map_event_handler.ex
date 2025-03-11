@@ -25,7 +25,6 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_characters_ui_events [
-    "add_character",
     "toggle_track",
     "toggle_follow",
     "hide_tracking",
@@ -84,9 +83,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   @map_activity_ui_events [
     "show_activity",
-    "hide_activity",
-    "toggle_follow",
-    "toggle_track"
+    "hide_activity"
   ]
 
   @map_routes_events [
