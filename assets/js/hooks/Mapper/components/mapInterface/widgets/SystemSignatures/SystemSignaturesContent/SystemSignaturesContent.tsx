@@ -20,6 +20,7 @@ import {
   SHOW_UPDATED_COLUMN_SETTING,
   SHOW_CHARACTER_COLUMN_SETTING,
   SIGNATURE_WINDOW_ID,
+  SHOW_CHARACTER_PORTRAIT_SETTING,
 } from '../SystemSignatures';
 
 import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
@@ -48,13 +49,16 @@ const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
 
 interface SystemSignaturesContentProps {
   systemId: string;
-  settings: { key: string; value: boolean }[];
+  settings: { key: string; value: boolean | number }[];
   hideLinkedSignatures?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
+  deletionTiming?: number;
+  colorByType?: boolean;
+  filterSignature?: (signature: SystemSignature) => boolean;
 }
 
 const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
@@ -68,6 +72,9 @@ export function SystemSignaturesContent({
   onLazyDeleteChange,
   onCountChange,
   onPendingChange,
+  deletionTiming,
+  colorByType,
+  filterSignature,
 }: SystemSignaturesContentProps) {
   const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
     useSystemSignaturesData({
@@ -76,6 +83,7 @@ export function SystemSignaturesContent({
       onCountChange,
       onPendingChange,
       onLazyDeleteChange,
+      deletionTiming,
     });
 
   const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
@@ -98,7 +106,7 @@ export function SystemSignaturesContent({
     handlePaste(clipboardContent.text);
 
     setClipboardContent(null);
-  }, [selectable, clipboardContent]);
+  }, [selectable, clipboardContent, handlePaste, setClipboardContent]);
 
   useHotkey(true, ['a'], handleSelectAll);
   useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
@@ -152,6 +160,7 @@ export function SystemSignaturesContent({
   const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
   const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
   const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
+  const showCharacterPortrait = settings.find(s => s.key === SHOW_CHARACTER_PORTRAIT_SETTING)?.value;
 
   const enabledGroups = settings
     .filter(s => GROUPS_LIST.includes(s.key as SignatureGroup) && s.value === true)
@@ -159,6 +168,10 @@ export function SystemSignaturesContent({
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
+      if (filterSignature && !filterSignature(sig)) {
+        return false;
+      }
+
       if (hideLinkedSignatures && sig.linked_system) {
         return false;
       }
@@ -176,7 +189,7 @@ export function SystemSignaturesContent({
         return settings.find(y => y.key === sig.kind)?.value;
       }
     });
-  }, [signatures, hideLinkedSignatures, settings, enabledGroups]);
+  }, [signatures, hideLinkedSignatures, settings, enabledGroups, filterSignature]);
 
   return (
     <div ref={tableRef} className="h-full">
@@ -201,23 +214,17 @@ export function SystemSignaturesContent({
           sortField={sortSettings.sortField}
           sortOrder={sortSettings.sortOrder}
           onSort={e => setSortSettings({ sortField: e.sortField, sortOrder: e.sortOrder })}
-          onRowMouseEnter={
-            isCompact || isMedium
-              ? (e: DataTableRowMouseEvent) => {
-                  setHoveredSignature(filteredSignatures[e.index]);
-                  tooltipRef.current?.show(e.originalEvent);
-                }
-              : undefined
+          onRowMouseEnter={(e: DataTableRowMouseEvent) => {
+            setHoveredSignature(e.data as SystemSignature);
+            tooltipRef.current?.show(e.originalEvent);
+          }}
+          onRowMouseLeave={() => {
+            setHoveredSignature(null);
+            tooltipRef.current?.hide();
+          }}
+          rowClassName={rowData =>
+            getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures, colorByType)
           }
-          onRowMouseLeave={
-            isCompact || isMedium
-              ? () => {
-                  setHoveredSignature(null);
-                  tooltipRef.current?.hide();
-                }
-              : undefined
-          }
-          rowClassName={rowData => getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures)}
         >
           <Column
             field="icon"
@@ -318,7 +325,11 @@ export function SystemSignaturesContent({
       <WdTooltip
         className="bg-stone-900/95 text-slate-50"
         ref={tooltipRef}
-        content={hoveredSignature ? <SignatureView {...hoveredSignature} /> : null}
+        content={
+          hoveredSignature ? (
+            <SignatureView signature={hoveredSignature} showCharacterPortrait={!!showCharacterPortrait} />
+          ) : null
+        }
       />
 
       {showSignatureSettings && (

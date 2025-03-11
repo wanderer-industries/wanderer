@@ -12,11 +12,11 @@ export const getRowBackgroundColor = (date: Date | undefined): string => {
   const diff = currentDate.getTime() + currentDate.getTimezoneOffset() * TIME_ONE_MINUTE - date.getTime();
 
   if (diff < TIME_ONE_MINUTE) {
-    return 'bg-lime-600/50 transition hover:bg-lime-600/60';
+    return 'bg-lime-600/40 transition hover:bg-lime-600/50';
   }
 
   if (diff < TIME_TEN_MINUTES) {
-    return 'bg-lime-700/40 transition hover:bg-lime-700/50';
+    return 'bg-lime-700/30 transition hover:bg-lime-700/40';
   }
 
   return '';

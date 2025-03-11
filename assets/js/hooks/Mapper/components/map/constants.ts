@@ -322,6 +322,9 @@ export const WORMHOLES_ADDITIONAL_INFO: Record<string, WormholesAdditionalInfoTy
 export const WORMHOLES_ADDITIONAL_INFO_BY_CLASS_ID: Record<string, WormholesAdditionalInfoType> =
   WORMHOLES_ADDITIONAL_INFO_RAW.reduce((acc, x) => ({ ...acc, [x.wormholeClassID]: x }), {});
 
+export const WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME: Record<string, WormholesAdditionalInfoType> =
+  WORMHOLES_ADDITIONAL_INFO_RAW.reduce((acc, x) => ({ ...acc, [x.shortName]: x }), {});
+
 // export const SOLAR_SYSTEM_CLASS_NAMES = {
 //   ccp1 =  ,
 //   c1 = ,
@@ -650,6 +653,7 @@ export enum LABELS {
   l3 = '3',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const LABELS_INFO: Record<string, any> = {
   [LABELS.clear]: { id: 'clear', name: 'Clear', shortName: '', icon: '' },
   [LABELS.la]: { id: 'la', name: 'Label A', shortName: 'A', icon: '' },
@@ -753,8 +757,11 @@ export const SHIP_SIZES_SIZE = {
 export const SHIP_MASSES_SIZE: Record<number, ShipSizeStatus> = {
   5_000_000: ShipSizeStatus.small,
   62_000_000: ShipSizeStatus.medium,
+  300_000_000: ShipSizeStatus.large,
   375_000_000: ShipSizeStatus.large,
   1_000_000_000: ShipSizeStatus.freight,
+  1_350_000_000: ShipSizeStatus.capital,
+  1_800_000_000: ShipSizeStatus.capital,
   2_000_000_000: ShipSizeStatus.capital,
 };
 

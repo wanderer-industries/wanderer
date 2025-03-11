@@ -5,6 +5,8 @@ import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
 import { UserPermissions } from '@/hooks/Mapper/types';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export enum Commands {
   init = 'init',
@@ -28,6 +30,11 @@ export enum Commands {
   selectSystem = 'select_system',
   linkSignatureToSystem = 'link_signature_to_system',
   signaturesUpdated = 'signatures_updated',
+  characterActivityData = 'character_activity_data',
+  trackingCharactersData = 'tracking_characters_data',
+  updateActivity = 'update_activity',
+  updateTracking = 'update_tracking',
+  userSettingsUpdated = 'user_settings_updated',
 }
 
 export type Command =
@@ -50,7 +57,12 @@ export type Command =
   | Commands.selectSystem
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
-  | Commands.signaturesUpdated;
+  | Commands.signaturesUpdated
+  | Commands.characterActivityData
+  | Commands.trackingCharactersData
+  | Commands.userSettingsUpdated
+  | Commands.updateActivity
+  | Commands.updateTracking;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -69,6 +81,7 @@ export type CommandInit = {
   reset?: boolean;
   is_subscription_active?: boolean;
 };
+
 export type CommandAddSystems = SolarSystemRawType[];
 export type CommandUpdateSystems = SolarSystemRawType[];
 export type CommandRemoveSystems = number[];
@@ -92,6 +105,46 @@ export type CommandLinkSignatureToSystem = {
   solar_system_target: number;
 };
 export type CommandLinkSignaturesUpdated = number;
+export type CommandCharacterActivityData = { activity: ActivitySummary[]; loading?: boolean };
+export type CommandTrackingCharactersData = { characters: TrackingCharacter[] };
+export type CommandUserSettingsUpdated = {
+  settings: UserSettings;
+};
+
+export type CommandShowActivity = null;
+export type CommandHideActivity = null;
+export type CommandShowTracking = null;
+export type CommandHideTracking = null;
+export type CommandUiLoaded = { version: string | null };
+export type CommandLogMapError = { error: string; componentStack: string };
+export type CommandMapEvent = { type: Command; data: unknown };
+export type CommandMapEvents = Array<{ type: Command; data: unknown }>;
+export type CommandUpdateActivity = {
+  characterId: number;
+  systemId: number;
+  shipTypeId: number;
+  timestamp: number;
+};
+export type CommandUpdateTracking = {
+  characterId: number;
+  track: boolean;
+  follow: boolean;
+};
+
+export interface UserSettings {
+  primaryCharacterId?: string;
+  mapSettings?: {
+    showGrid?: boolean;
+    snapToGrid?: boolean;
+    gridSize?: number;
+  };
+  interfaceSettings?: {
+    theme?: string;
+    showMinimap?: boolean;
+    showMenu?: boolean;
+  };
+  [key: string]: unknown;
+}
 
 export interface CommandData {
   [Commands.init]: CommandInit;
@@ -114,6 +167,11 @@ export interface CommandData {
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
   [Commands.signaturesUpdated]: CommandLinkSignaturesUpdated;
+  [Commands.characterActivityData]: CommandCharacterActivityData;
+  [Commands.trackingCharactersData]: CommandTrackingCharactersData;
+  [Commands.userSettingsUpdated]: CommandUserSettingsUpdated;
+  [Commands.updateActivity]: CommandUpdateActivity;
+  [Commands.updateTracking]: CommandUpdateTracking;
 }
 
 export interface MapHandlers {
@@ -152,7 +210,6 @@ export enum OutCommand {
   manualDeleteConnection = 'manual_delete_connection',
   setAutopilotWaypoint = 'set_autopilot_waypoint',
   addSystem = 'add_system',
-  addCharacter = 'add_character',
   openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
   linkSignatureToSystem = 'link_signature_to_system',
@@ -166,7 +223,12 @@ export enum OutCommand {
 
   // Only UI commands
   openSettings = 'open_settings',
-
+  hideActivity = 'hide_activity',
+  showActivity = 'show_activity',
+  hideTracking = 'hide_tracking',
+  showTracking = 'show_tracking',
+  toggleTrack = 'toggle_track',
+  toggleFollow = 'toggle_follow',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',

@@ -4,6 +4,11 @@ defmodule WandererAppWeb.MapRefresh do
   def render(assigns) do
     ~H"""
     <div id="map-refresh" class="socket">
+      <div class="flex z-100 h-full w-full items-center justify-center z-auto">
+        <p class="text-[30px] ">
+          <span id="version-update-seconds"></span>
+        </p>
+      </div>
       <div class="gel center-gel">
         <div class="hex-brick h1"></div>
         <div class="hex-brick h2"></div>

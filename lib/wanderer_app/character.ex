@@ -257,4 +257,51 @@ defmodule WandererApp.Character do
       corporation: true
     }
   end
+
+  @doc """
+  Finds a character by EVE ID from a user's active characters.
+
+  ## Parameters
+  - `current_user`: The current user struct
+  - `character_eve_id`: The EVE ID of the character to find
+
+  ## Returns
+  - `{:ok, character}` if the character is found
+  - `{:error, :character_not_found}` if the character is not found
+  """
+  def find_character_by_eve_id(current_user, character_eve_id) do
+    {:ok, all_user_characters} =
+      WandererApp.Api.Character.active_by_user(%{user_id: current_user.id})
+
+    case Enum.find(all_user_characters, fn char ->
+           "#{char.eve_id}" == "#{character_eve_id}"
+         end) do
+      nil ->
+        {:error, :character_not_found}
+
+      character ->
+        {:ok, character}
+    end
+  end
+
+  @doc """
+  Finds a character by character ID from a user's characters.
+
+  ## Parameters
+  - `current_user`: The current user struct
+  - `char_id`: The character ID to find
+
+  ## Returns
+  - `{:ok, character}` if the character is found
+  - `{:error, :character_not_found}` if the character is not found
+  """
+  def find_user_character(current_user, char_id) do
+    case Enum.find(current_user.characters, &("#{&1.id}" == "#{char_id}")) do
+      nil ->
+        {:error, :character_not_found}
+
+      char ->
+        {:ok, char}
+    end
+  end
 end

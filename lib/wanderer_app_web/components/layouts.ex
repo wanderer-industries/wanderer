@@ -22,6 +22,7 @@ defmodule WandererAppWeb.Layouts do
   end
 
   attr :app_version, :string
+  attr :enabled, :boolean
 
   def new_version_banner(assigns) do
     ~H"""
@@ -30,6 +31,7 @@ defmodule WandererAppWeb.Layouts do
       phx-hook="NewVersionUpdate"
       phx-update="ignore"
       data-version={@app_version}
+      data-enabled={Jason.encode!(@enabled)}
       class="!z-1000 hidden absolute top-0 left-0 w-full h-full group items-center fade-in-scale text-white !bg-opacity-70 rounded p-px overflow-hidden flex items-center"
     >
       <div class="hs-overlay-backdrop transition duration absolute left-0 top-0 w-full h-full bg-gray-900 bg-opacity-50 dark:bg-opacity-80 dark:bg-neutral-900">

@@ -10,6 +10,10 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
 
   require Logger
   alias WandererApp.Zkb.KillsProvider.KillsCache
+  alias WandererApp.Utils.HttpUtil
+  use Retry
+
+  # Maximum retries for enrichment calls
 
   @doc """
   Merges the 'partial' from zKB and the 'full' killmail from ESI, checks its time
@@ -254,12 +258,33 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
       nil -> km
       0 -> km
       eve_id ->
-        case WandererApp.Esi.get_character_info(eve_id) do
-          {:ok, %{"name" => char_name}} ->
-            Map.put(km, name_key, char_name)
+        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
+          case WandererApp.Esi.get_character_info(eve_id) do
+            {:ok, %{"name" => char_name}} ->
+              {:ok, char_name}
 
-          _ ->
-            km
+            {:error, :timeout} ->
+              Logger.debug(fn -> "[Parser] Character info timeout, retrying => id=#{eve_id}" end)
+              raise "Character info timeout, will retry"
+
+            {:error, :not_found} ->
+              Logger.debug(fn -> "[Parser] Character not found => id=#{eve_id}" end)
+              :skip
+
+            {:error, reason} ->
+              if HttpUtil.retriable_error?(reason) do
+                Logger.debug(fn -> "[Parser] Character info retriable error => id=#{eve_id}, reason=#{inspect(reason)}" end)
+                raise "Character info error: #{inspect(reason)}, will retry"
+              else
+                Logger.debug(fn -> "[Parser] Character info failed => id=#{eve_id}, reason=#{inspect(reason)}" end)
+                :skip
+              end
+          end
+        end
+
+        case result do
+          {:ok, char_name} -> Map.put(km, name_key, char_name)
+          _ -> km
         end
     end
   end
@@ -269,18 +294,36 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
       nil -> km
       0 -> km
       corp_id ->
-        case WandererApp.Esi.get_corporation_info(corp_id) do
-          {:ok, %{"ticker" => ticker, "name" => corp_name}} ->
+        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
+          case WandererApp.Esi.get_corporation_info(corp_id) do
+            {:ok, %{"ticker" => ticker, "name" => corp_name}} ->
+              {:ok, {ticker, corp_name}}
+
+            {:error, :timeout} ->
+              Logger.debug(fn -> "[Parser] Corporation info timeout, retrying => id=#{corp_id}" end)
+              raise "Corporation info timeout, will retry"
+
+            {:error, :not_found} ->
+              Logger.debug(fn -> "[Parser] Corporation not found => id=#{corp_id}" end)
+              :skip
+
+            {:error, reason} ->
+              if HttpUtil.retriable_error?(reason) do
+                Logger.debug(fn -> "[Parser] Corporation info retriable error => id=#{corp_id}, reason=#{inspect(reason)}" end)
+                raise "Corporation info error: #{inspect(reason)}, will retry"
+              else
+                Logger.warning("[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}")
+                :skip
+              end
+          end
+        end
+
+        case result do
+          {:ok, {ticker, corp_name}} ->
             km
             |> Map.put(ticker_key, ticker)
             |> Map.put(name_key, corp_name)
-
-          {:error, reason} ->
-            Logger.warning("[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}")
-            km
-
-          _ ->
-            km
+          _ -> km
         end
     end
   end
@@ -290,14 +333,36 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
       nil -> km
       0 -> km
       alliance_id ->
-        case WandererApp.Esi.get_alliance_info(alliance_id) do
-          {:ok, %{"ticker" => alliance_ticker, "name" => alliance_name}} ->
+        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
+          case WandererApp.Esi.get_alliance_info(alliance_id) do
+            {:ok, %{"ticker" => alliance_ticker, "name" => alliance_name}} ->
+              {:ok, {alliance_ticker, alliance_name}}
+
+            {:error, :timeout} ->
+              Logger.debug(fn -> "[Parser] Alliance info timeout, retrying => id=#{alliance_id}" end)
+              raise "Alliance info timeout, will retry"
+
+            {:error, :not_found} ->
+              Logger.debug(fn -> "[Parser] Alliance not found => id=#{alliance_id}" end)
+              :skip
+
+            {:error, reason} ->
+              if HttpUtil.retriable_error?(reason) do
+                Logger.debug(fn -> "[Parser] Alliance info retriable error => id=#{alliance_id}, reason=#{inspect(reason)}" end)
+                raise "Alliance info error: #{inspect(reason)}, will retry"
+              else
+                Logger.debug(fn -> "[Parser] Alliance info failed => id=#{alliance_id}, reason=#{inspect(reason)}" end)
+                :skip
+              end
+          end
+        end
+
+        case result do
+          {:ok, {alliance_ticker, alliance_name}} ->
             km
             |> Map.put(ticker_key, alliance_ticker)
             |> Map.put(name_key, alliance_name)
-
-          _ ->
-            km
+          _ -> km
         end
     end
   end
@@ -307,13 +372,31 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
       nil -> km
       0 -> km
       type_id ->
-        case WandererApp.CachedInfo.get_ship_type(type_id) do
-          {:ok, nil} -> km
-          {:ok, %{name: ship_name}} -> Map.put(km, name_key, ship_name)
-          {:error, reason} ->
-            Logger.warning("[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(reason)}")
-            km
+        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
+          case WandererApp.CachedInfo.get_ship_type(type_id) do
+            {:ok, nil} -> :skip
+            {:ok, %{name: ship_name}} -> {:ok, ship_name}
+            {:error, :timeout} ->
+              Logger.debug(fn -> "[Parser] Ship type timeout, retrying => id=#{type_id}" end)
+              raise "Ship type timeout, will retry"
 
+            {:error, :not_found} ->
+              Logger.debug(fn -> "[Parser] Ship type not found => id=#{type_id}" end)
+              :skip
+
+            {:error, reason} ->
+              if HttpUtil.retriable_error?(reason) do
+                Logger.debug(fn -> "[Parser] Ship type retriable error => id=#{type_id}, reason=#{inspect(reason)}" end)
+                raise "Ship type error: #{inspect(reason)}, will retry"
+              else
+                Logger.warning("[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(reason)}")
+                :skip
+              end
+          end
+        end
+
+        case result do
+          {:ok, ship_name} -> Map.put(km, name_key, ship_name)
           _ -> km
         end
     end

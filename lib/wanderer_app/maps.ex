@@ -4,6 +4,7 @@ defmodule WandererApp.Maps do
 
   require Ash.Query
   import Ecto.Query
+  require Logger
 
   @minimum_route_attrs [
     :system_class,
@@ -120,10 +121,10 @@ defmodule WandererApp.Maps do
 
   @decorate cacheable(
               cache: WandererApp.Cache,
-              key: "map_characters-#{_map_id}",
+              key: "map_characters-#{map_id}",
               opts: [ttl: :timer.seconds(5)]
             )
-  defp _get_map_characters(%{id: _map_id} = map) do
+  defp _get_map_characters(%{id: map_id} = map) do
     map_acls =
       map.acls
       |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
@@ -173,10 +174,15 @@ defmodule WandererApp.Maps do
 
     user_characters
     |> Enum.filter(fn c ->
-      c.id == map.owner_id or
-        c.id in map_acl_owner_ids or c.eve_id in map_member_eve_ids or
-        to_string(c.corporation_id) in map_member_corporation_ids or
-        to_string(c.alliance_id) in map_member_alliance_ids
+      is_owner = c.id == map.owner_id
+      is_acl_owner = c.id in map_acl_owner_ids
+      is_member_eve = c.eve_id in map_member_eve_ids
+      is_member_corp = to_string(c.corporation_id) in map_member_corporation_ids
+      is_member_alliance = to_string(c.alliance_id) in map_member_alliance_ids
+
+      has_access = is_owner or is_acl_owner or is_member_eve or is_member_corp or is_member_alliance
+
+      has_access
     end)
   end
 

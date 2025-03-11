@@ -1,0 +1,10 @@
+.characterRow {
+  border-color: var(--surface-border);
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  opacity: 0.5;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+} 

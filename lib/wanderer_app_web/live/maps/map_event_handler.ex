@@ -21,14 +21,16 @@ defmodule WandererAppWeb.MapEventHandler do
     :character_removed,
     :character_updated,
     :characters_updated,
-    :present_characters_updated
+    :present_characters_updated,
+    :tracking_characters_data,
+    :refresh_user_characters
   ]
 
   @map_characters_ui_events [
-    "add_character",
     "toggle_track",
     "toggle_follow",
-    "hide_tracking"
+    "hide_tracking",
+    "show_tracking"
   ]
 
   @map_system_events [
@@ -88,7 +90,7 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_activity_events [
-    :character_activity
+    :character_activity_data
   ]
 
   @map_activity_ui_events [
@@ -201,6 +203,12 @@ defmodule WandererAppWeb.MapEventHandler do
         Process.send_after(self(), map_error, 100)
         socket
 
+      {:activity_data, activity_data} ->
+        MapActivityEventHandler.handle_server_event(
+          %{event: :character_activity_data, payload: activity_data},
+          socket
+        )
+
       {event, payload} ->
         Process.send_after(
           self(),
@@ -211,8 +219,19 @@ defmodule WandererAppWeb.MapEventHandler do
         socket
 
       _ ->
+        Logger.warning("Unhandled task result: #{inspect(result)}")
         socket
     end
+  end
+
+  def handle_event(socket, {:DOWN, ref, :process, _pid, reason}) when is_reference(ref) do
+    # Task failed, log the error and update the client
+    Logger.error("Task failed: #{inspect(reason)}")
+
+    MapActivityEventHandler.handle_server_event(
+      %{event: :character_activity_data, payload: []},
+      socket
+    )
   end
 
   def handle_event(socket, event),

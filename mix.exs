@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.53.3"
+  @version "1.54.1"
 
   def project do
     [
@@ -54,6 +54,7 @@ defmodule WandererApp.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_check, "~> 0.14.0", only: [:dev], runtime: false},
+      {:open_api_spex, github: "mbuhot/open_api_spex", branch: "master"},
       {:ex_rated, "~> 2.0"},
       {:retry, "~> 0.18.0"},
       {:phoenix, "~> 1.7.12"},

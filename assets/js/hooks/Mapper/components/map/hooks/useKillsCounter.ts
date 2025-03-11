@@ -27,13 +27,12 @@ export function useKillsCounter({ realSystemId }: UseKillsCounterProps) {
   const filteredKills = useMemo(() => {
     if (!allKills || allKills.length === 0) return [];
 
-    return [...allKills]
-      .sort((a, b) => {
-        const aTime = a.kill_time ? new Date(a.kill_time).getTime() : 0;
-        const bTime = b.kill_time ? new Date(b.kill_time).getTime() : 0;
-        return bTime - aTime;
-      })
-      .slice(0, 10);
+    // Sort kills by time, most recent first, but don't limit the number of kills
+    return [...allKills].sort((a, b) => {
+      const aTime = a.kill_time ? new Date(a.kill_time).getTime() : 0;
+      const bTime = b.kill_time ? new Date(b.kill_time).getTime() : 0;
+      return bTime - aTime;
+    });
   }, [allKills]);
 
   return {

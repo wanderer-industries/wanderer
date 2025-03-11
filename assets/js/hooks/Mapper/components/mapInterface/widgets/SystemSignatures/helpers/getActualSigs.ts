@@ -4,7 +4,7 @@ import { getState } from './getState';
 
 /**
  * Compare two lists of signatures and return which are added, updated, or removed.
- * 
+ *
  * @param oldSignatures existing signatures (in memory or from server)
  * @param newSignatures newly parsed or incoming signatures from user input
  * @param updateOnly    if true, do NOT remove old signatures not found in newSignatures

@@ -2,6 +2,39 @@
 
 <!-- changelog -->
 
+## [v1.54.1](https://github.com/wanderer-industries/wanderer/compare/v1.54.0...v1.54.1) (2025-03-06)
+
+
+
+
+### Bug Fixes:
+
+* fix scroll and size issues with kills widget (#219)
+
+* fix scroll and size issues with kills widget
+
+## [v1.54.0](https://github.com/wanderer-industries/wanderer/compare/v1.53.4...v1.54.0) (2025-03-05)
+
+
+
+
+### Features:
+
+* added auto-refresh timeout for cloud new version updates
+
+* add selectable sig deletion timing, and color options (#208)
+
+## [v1.53.4](https://github.com/wanderer-industries/wanderer/compare/v1.53.3...v1.53.4) (2025-03-04)
+
+
+
+
+### Bug Fixes:
+
+* add retry on kills retrieval (#207)
+
+* add missing masses to wh sizes const (#215)
+
 ## [v1.53.3](https://github.com/wanderer-industries/wanderer/compare/v1.53.2...v1.53.3) (2025-02-27)
 
 

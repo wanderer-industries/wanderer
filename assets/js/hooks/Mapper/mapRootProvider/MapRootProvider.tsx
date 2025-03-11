@@ -16,12 +16,21 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
   selectedConnections: Pick<SolarSystemConnection, 'source' | 'target'>[];
   linkSignatureToSystem: CommandLinkSignatureToSystem | null;
   detailedKills: Record<string, DetailedKill[]>;
+  showCharacterActivity: boolean;
+  characterActivityData: {
+    activity: ActivitySummary[];
+    loading?: boolean;
+  };
+  showTrackAndFollow: boolean;
+  trackingCharactersData: TrackingCharacter[];
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -29,6 +38,13 @@ const INITIAL_DATA: MapRootData = {
   wormholes: [],
   effects: {},
   characters: [],
+  showCharacterActivity: false,
+  characterActivityData: {
+    activity: [],
+    loading: false
+  },
+  showTrackAndFollow: false,
+  trackingCharactersData: [],
   userCharacters: [],
   presentCharacters: [],
   systems: [],
