@@ -270,7 +270,6 @@ defmodule WandererAppWeb.Router do
         "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-bundle.min.js",
         "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-standalone-preset.min.js"
       ],
-      favicon_url: "https://example.com/my_favicon.ico",
       swagger_ui_config: %{
         "docExpansion" => "none",
         "deepLinking" => true
