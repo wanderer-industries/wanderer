@@ -7,7 +7,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
-  alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(%{event: :character_added, payload: character}, socket) do
     socket
@@ -72,25 +71,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     |> MapEventHandler.push_map_event(
       "tracking_characters_data",
       %{characters: tracking_data}
-    )
-  end
-
-  def handle_server_event(
-        %{event: :character_activity_data, payload: {:activity_data, activity_data}},
-        socket
-      ) do
-    socket
-    |> MapEventHandler.push_map_event(
-      "character_activity_data",
-      %{activity: activity_data, loading: false}
-    )
-  end
-
-  def handle_server_event(%{event: :character_activity, payload: activity_data}, socket) do
-    socket
-    |> MapEventHandler.push_map_event(
-      "character_activity",
-      activity_data
     )
   end
 
@@ -246,39 +226,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         {:noreply, socket}
     end
   end
-
-  def handle_ui_event(
-        "show_activity",
-        _,
-        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
-      ) do
-    socket =
-      socket
-      |> MapEventHandler.push_map_event(
-        "character_activity_data",
-        %{activity: [], loading: true}
-      )
-
-    task =
-      Task.async(fn ->
-        try do
-          result =
-            WandererApp.Character.Activity.process_character_activity(map_id, current_user)
-
-          {:activity_data, result}
-        rescue
-          e ->
-            Logger.error("Error processing character activity: #{inspect(e)}")
-            Logger.error("#{Exception.format_stacktrace()}")
-            {:activity_data, []}
-        end
-      end)
-
-    {:noreply, socket |> assign(:character_activity_task, task)}
-  end
-
-  def handle_ui_event("hide_activity", _, socket),
-    do: {:noreply, socket |> assign(show_activity?: false)}
 
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)

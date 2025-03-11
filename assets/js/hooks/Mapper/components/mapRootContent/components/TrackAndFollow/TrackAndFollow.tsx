@@ -110,7 +110,7 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
       contentClassName="!p-0"
     >
       <div className="w-full overflow-hidden">
-        <div className="grid grid-cols-[80px_80px_1fr] p-1 font-normal text-sm text-center bg-neutral-800">
+        <div className="grid grid-cols-[80px_80px_1fr] p-1 font-normal text-sm text-center border-b border-[#383838]">
           <div>Track</div>
           <div>Follow</div>
           <div className="text-center">Character</div>

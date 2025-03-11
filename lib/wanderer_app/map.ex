@@ -544,15 +544,11 @@ defmodule WandererApp.Map do
     jumps
     |> Enum.map(fn passage ->
       %{
-        character_name: passage.character.name,
-        corporation_ticker: passage.character.corporation_ticker,
-        alliance_ticker: passage.character.alliance_ticker || "",
-        portrait_url: EVEUtil.get_portrait_url(passage.character.eve_id, 64),
+        character: passage.character,
         passages: passage.count,
         connections: Map.get(connections_activity, passage.character.id, 0),
         signatures: Map.get(signatures_activity, passage.character.id, 0),
         timestamp: DateTime.utc_now(),
-        character_eve_id: passage.character.eve_id,
         character_id: passage.character.id,
         user_id: passage.character.user_id
       }

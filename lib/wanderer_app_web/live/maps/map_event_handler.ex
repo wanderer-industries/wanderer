@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapEventHandler do
   require Logger
 
   alias WandererAppWeb.{
+    MapActivityEventHandler,
     MapCharactersEventHandler,
     MapConnectionsEventHandler,
     MapCoreEventHandler,
@@ -77,7 +78,6 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_activity_events [
-    :character_activity,
     :character_activity_data
   ]
 
@@ -188,8 +188,8 @@ defmodule WandererAppWeb.MapEventHandler do
         socket
 
       {:activity_data, activity_data} ->
-        MapCharactersEventHandler.handle_server_event(
-          %{event: :character_activity_data, payload: {:activity_data, activity_data}},
+        MapActivityEventHandler.handle_server_event(
+          %{event: :character_activity_data, payload: activity_data},
           socket
         )
 
@@ -212,7 +212,7 @@ defmodule WandererAppWeb.MapEventHandler do
     # Task failed, log the error and update the client
     Logger.error("Task failed: #{inspect(reason)}")
 
-    MapCharactersEventHandler.handle_server_event(
+    MapActivityEventHandler.handle_server_event(
       %{event: :character_activity_data, payload: []},
       socket
     )
@@ -242,7 +242,7 @@ defmodule WandererAppWeb.MapEventHandler do
         MapStructuresEventHandler.handle_ui_event(event, body, socket)
 
       event in @map_activity_ui_events ->
-        MapCharactersEventHandler.handle_ui_event(event, body, socket)
+        MapActivityEventHandler.handle_ui_event(event, body, socket)
 
       event in @map_kills_ui_events and socket.assigns[:is_subscription_active?] ->
         MapKillsEventHandler.handle_ui_event(event, body, socket)

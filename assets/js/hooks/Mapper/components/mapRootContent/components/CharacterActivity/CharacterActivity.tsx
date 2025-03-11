@@ -5,19 +5,14 @@ import { Column } from 'primereact/column';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import classes from './CharacterActivity.module.scss';
+import { CharacterCard } from '../../../ui-kit';
+import { CharacterTypeRaw } from '@/hooks/Mapper/types';
 
 export interface ActivitySummary {
-  character_id: string;
-  character_name: string;
-  corporation_ticker: string;
-  alliance_ticker?: string;
-  portrait_url: string;
+  character: CharacterTypeRaw;
   passages: number;
   connections: number;
   signatures: number;
-  user_id?: string;
-  user_name?: string;
-  is_user?: boolean;
 }
 
 interface CharacterActivityProps {
@@ -25,28 +20,12 @@ interface CharacterActivityProps {
   onHide: () => void;
 }
 
-const getRowClassName = () => ['text-xs leading-tight', 'p-selectable-row'];
+const getRowClassName = () => ['text-xs', 'leading-tight', 'p-selectable-row'];
 
 const renderCharacterTemplate = (rowData: ActivitySummary) => {
-  const displayName = rowData.is_user ? rowData.user_name : rowData.character_name;
-  const ticker = rowData.corporation_ticker;
-  const allianceTicker = rowData.alliance_ticker ? `[${rowData.alliance_ticker}]` : '';
-
   return (
     <div className={classes.cellContent}>
-      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mr-3">
-        <img src={rowData.portrait_url} alt={displayName} className="w-full h-full object-cover" />
-      </div>
-      <div className={classes.characterInfo}>
-        <div className={classes.characterName}>
-          <span className="font-medium text-text-color">{displayName}</span>
-        </div>
-        <div className={classes.characterTicker}>
-          <span className="text-text-color-secondary text-xs">
-            [{ticker}] {allianceTicker}
-          </span>
-        </div>
-      </div>
+      <CharacterCard showShipName={false} showSystem={false} compact isOwn {...rowData.character} />
     </div>
   );
 };
@@ -108,7 +87,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Character"
           body={renderCharacterTemplate}
           sortable
-          headerStyle={{ minWidth: '75px', padding: '0.5rem', height: 'auto', overflow: 'visible' }}
+          headerStyle={{ minWidth: '75px', height: 'auto', overflow: 'visible' }}
           bodyStyle={{ minWidth: '75px' }}
           className={classes.characterColumn}
           headerClassName={`${classes.columnHeader} ${classes.characterHeader}`}
@@ -119,7 +98,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Passages"
           body={rowData => renderValueTemplate(rowData, 'passages')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', padding: '0.5rem', height: 'auto', overflow: 'visible' }}
+          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
           bodyStyle={{ width: '120px', textAlign: 'center' }}
           className={classes.numericColumn}
           headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
@@ -129,7 +108,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Connections"
           body={rowData => renderValueTemplate(rowData, 'connections')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', padding: '0.5rem', height: 'auto', overflow: 'visible' }}
+          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
           bodyStyle={{ width: '120px', textAlign: 'center' }}
           className={classes.numericColumn}
           headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
@@ -139,7 +118,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Signatures"
           body={rowData => renderValueTemplate(rowData, 'signatures')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', padding: '0.5rem', height: 'auto', overflow: 'visible' }}
+          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
           bodyStyle={{ width: '120px', textAlign: 'center' }}
           className={classes.numericColumn}
           headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
@@ -149,13 +128,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
   };
 
   return (
-    <Dialog
-      header="Character Activity"
-      visible={visible}
-      className="bg-surface-card text-text-color w-11/12 max-w-[600px]"
-      onHide={onHide}
-      dismissableMask
-    >
+    <Dialog header="Character Activity" visible={visible} className="max-w-[600px]" onHide={onHide} dismissableMask>
       <div className="w-full h-[400px] flex flex-col overflow-hidden p-0 m-0">{renderContent()}</div>
     </Dialog>
   );

@@ -180,10 +180,7 @@ defmodule WandererApp.Character.Activity do
       [
         build_activity_entry(
           char_details,
-          char_activities,
-          current_user,
-          is_current_user,
-          user_id
+          char_activities
         )
       ]
     else
@@ -209,22 +206,14 @@ defmodule WandererApp.Character.Activity do
 
   defp build_activity_entry(
          char_details,
-         char_activities,
-         current_user,
-         is_current_user,
-         _user_id
+         char_activities
        ) do
     %{
-      character_id: char_details.eve_id || char_details.id,
-      character_name: char_details.name,
-      portrait_url: WandererApp.Utils.EVEUtil.get_portrait_url(char_details.eve_id, 64),
-      corporation_ticker: char_details.corporation_ticker,
-      alliance_ticker: Map.get(char_details, :alliance_ticker, ""),
+      character: char_details,
       passages: sum_activity(char_activities, :passages),
       connections: sum_activity(char_activities, :connections),
       signatures: sum_activity(char_activities, :signatures),
-      timestamp: get_most_recent_timestamp(char_activities),
-      user_name: if(is_current_user, do: current_user.name, else: char_details.name)
+      timestamp: get_most_recent_timestamp(char_activities)
     }
   end
 
