@@ -50,7 +50,7 @@ defmodule WandererApp.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev], runtime: false},
       {:doctor, ">= 0.0.0", only: [:dev], runtime: false},
-      {:ex_doc, ">= 0.0.0", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.37", runtime: false},
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_check, "~> 0.14.0", only: [:dev], runtime: false},
@@ -117,7 +117,8 @@ defmodule WandererApp.MixProject do
       {:version_tasks, "~> 0.12.0"},
       {:error_tracker, "~> 0.2"},
       {:ddrt, "~> 0.2.1"},
-      {:live_view_events, "~> 0.1.0"}
+      {:live_view_events, "~> 0.1.0"},
+      {:ash_pagify, "~> 1.4.1"}
     ]
   end
 

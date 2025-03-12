@@ -951,4 +951,64 @@ defmodule WandererAppWeb.CoreComponents do
       when is_binary(eve_alliance_id) or is_integer(eve_alliance_id) do
     "#{@image_base_url}/alliances/#{eve_alliance_id}/logo?size=32"
   end
+
+  def pagination_opts do
+    [
+      ellipsis_attrs: [class: "ellipsis"],
+      ellipsis_content: "‥",
+      next_link_content: next_icon(),
+      page_links: {:ellipsis, 7},
+      previous_link_content: previous_icon(),
+      current_link_attrs: [
+        class:
+          "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
+        aria: [current: "page"]
+      ],
+      next_link_attrs: [
+        aria: [label: "Go to next page"],
+        class: ""
+      ],
+      pagination_link_attrs: [
+        class:
+          "relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      ],
+      previous_link_attrs: [
+        aria: [label: "Go to previous page"],
+        class: ""
+      ]
+    ]
+  end
+
+  defp next_icon do
+    assigns = %{}
+
+    ~H"""
+    <.icon name="hero-chevron-right" class="h-5 w-5" />
+    """
+  end
+
+  defp previous_icon do
+    assigns = %{}
+
+    ~H"""
+    <.icon name="hero-chevron-left" class="h-5 w-5" />
+    """
+  end
+
+  def table_opts do
+    [
+      container: true,
+      container_attrs: [class: "table-container"],
+      no_results_content: no_results_content(),
+      table_attrs: [class: "table"]
+    ]
+  end
+
+  defp no_results_content do
+    assigns = %{}
+
+    ~H"""
+    <p>Nothing found.</p>
+    """
+  end
 end

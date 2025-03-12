@@ -5,6 +5,16 @@ defmodule WandererApp.Api.UserActivity do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
+  require Ash.Expr
+
+  @ash_pagify_options %{
+    default_limit: 15,
+    scopes: %{
+      role: []
+    }
+  }
+  def ash_pagify_options, do: @ash_pagify_options
+
   postgres do
     repo(WandererApp.Repo)
     table("user_activity_v1")
@@ -31,7 +41,13 @@ defmodule WandererApp.Api.UserActivity do
 
     read :read do
       primary?(true)
-      pagination(offset?: true, keyset?: true)
+
+      pagination offset?: true,
+                 default_limit: @ash_pagify_options.default_limit,
+                 countable: true,
+                 required?: false
+
+      prepare WandererApp.Api.Preparations.LoadCharacter
     end
 
     create :new do
