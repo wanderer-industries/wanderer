@@ -277,7 +277,7 @@ defmodule WandererApp.Map.SubscriptionManager do
               # The License Manager service will verify the subscription is active
               case WandererApp.License.LicenseManager.create_license_for_map(map.id) do
                 {:ok, license} ->
-                  Logger.info(fn ->
+                  Logger.debug(fn ->
                     "Automatically created license #{license.license_key} for map #{map.id} during renewal"
                   end)
 
