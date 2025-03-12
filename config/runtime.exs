@@ -353,3 +353,8 @@ if config_env() == :prod do
       cowboy_opts: [ip: {0, 0, 0, 0}]
     ]
 end
+
+# License Manager API Configuration
+config :wanderer_app, :license_manager,
+  api_url: System.get_env("LM_API_URL", "http://localhost:4000"),
+  auth_key: System.get_env("LM_AUTH_KEY")
