@@ -386,14 +386,6 @@ defmodule WandererAppWeb.MapsLive do
     end
   end
 
-  @impl true
-  def handle_info(
-        {"subscriptions_event", {:flash, type, message}},
-        socket
-      ) do
-    {:noreply, socket |> put_flash(type, message)}
-  end
-
   def handle_event("open_acl", %{"data" => id}, socket) do
     {:noreply,
      socket
@@ -540,6 +532,24 @@ defmodule WandererAppWeb.MapsLive do
   @impl true
   def handle_event(_event, _, socket) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(
+        {"subscriptions_event", {:flash, type, message}},
+        socket
+      ) do
+    {:noreply, socket |> put_flash(type, message)}
+  end
+
+  @impl true
+  def handle_info(
+        {"subscriptions_event", :update_map_balance},
+        %{assigns: %{map: map}} = socket
+      )
+      when not is_nil(map) do
+    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
+    {:noreply, socket |> assign(map_balance: map_balance)}
   end
 
   @impl true

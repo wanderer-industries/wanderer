@@ -38,8 +38,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
     {:ok, map} = WandererApp.MapRepo.get(map_id)
 
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
     {:ok, estimated_price, discount} =
       WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
 
@@ -54,8 +52,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         map_subscriptions: map_subscriptions,
         subscription_form: subscription_form |> to_form(),
         estimated_price: estimated_price,
-        discount: discount,
-        map_balance: map_balance
+        discount: discount
       )
 
     {:ok, socket}
@@ -200,8 +197,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         {:ok, map_subscriptions} =
           WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
 
-        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "maps:#{map_id}",
@@ -222,12 +217,17 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {:flash, :info, "Subscription added!"}
         )
 
+        notify_to(
+          socket.assigns.notify_to,
+          socket.assigns.event_name,
+          :update_map_balance
+        )
+
         {:noreply,
          socket
          |> assign(
            is_adding_subscription?: false,
-           map_subscriptions: map_subscriptions,
-           map_balance: map_balance
+           map_subscriptions: map_subscriptions
          )}
 
       _ ->
@@ -284,8 +284,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         {:ok, map_subscriptions} =
           WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
 
-        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "maps:#{map_id}",
@@ -340,12 +338,17 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {:flash, :info, "Subscription updated!"}
         )
 
+        notify_to(
+          socket.assigns.notify_to,
+          socket.assigns.event_name,
+          :update_map_balance
+        )
+
         {:noreply,
          socket
          |> assign(
            is_adding_subscription?: false,
            selected_subscription: nil,
-           map_balance: map_balance,
            map_subscriptions: map_subscriptions
          )}
 
@@ -379,8 +382,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {:flash, :info, "Automatically created license for map"}
         )
 
-      {:error, :no_active_subscription} ->
-        Logger.warn("Cannot create license for map #{map_id}: No active subscription found")
+        {:ok, license}
 
       {:error, reason} ->
         Logger.error(
@@ -393,6 +395,8 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {:flash, :error,
            "Failed to create license for map #{map_id} during subscription update: #{inspect(reason)}"}
         )
+
+        {:error, reason}
     end
   end
 
