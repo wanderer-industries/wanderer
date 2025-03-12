@@ -6,7 +6,6 @@ defmodule WandererApp.Map do
   import Ecto.Query
 
   require Logger
-  alias WandererApp.Utils.EVEUtil
 
   defstruct map_id: nil,
             name: nil,

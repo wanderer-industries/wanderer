@@ -94,27 +94,8 @@ defmodule WandererApp.Character.Activity do
 
   defp process_activity_data([], _character_settings, _user_characters, _current_user), do: []
 
-  defp process_activity_data([%{is_user: _is_user} | _] = activity_data, _, _, _) do
-    Enum.map(activity_data, fn entry ->
-      entry = if Map.has_key?(entry, :portrait_url) do
-        entry
-      else
-        Map.put(entry, :portrait_url, WandererApp.Utils.EVEUtil.get_portrait_url(Map.get(entry, :character_id), 64))
-      end
-
-      entry = if is_nil(Map.get(entry, :character_name)) || Map.get(entry, :character_name) == "Unknown" do
-        Map.put(entry, :character_name, "Character ##{Map.get(entry, :character_id, "unknown")}")
-      else
-        entry
-      end
-
-      if is_nil(Map.get(entry, :corporation_ticker)) do
-        Map.put(entry, :corporation_ticker, "")
-      else
-        entry
-      end
-    end)
-  end
+  # Simplify the pre-processed data handling - just pass it through
+  defp process_activity_data([%{character: _} | _] = activity_data, _, _, _), do: activity_data
 
   defp process_activity_data(all_activity, character_settings, user_characters, current_user) do
     all_activity
@@ -151,25 +132,25 @@ defmodule WandererApp.Character.Activity do
          user_characters,
          current_user
        ) do
+    # Determine if this is the current user's activity
     is_current_user = user_id == current_user.id
+
+    # Group activities by character
     activities_by_character = group_activities_by_character(user_activities)
 
+    # Find the character to show (followed or most active)
     char_id_to_show =
       select_character_to_show(activities_by_character, character_settings, is_current_user)
 
+    # Create activity entry for the selected character
     case char_id_to_show do
-      nil ->
-        []
-
-      id ->
-        create_character_activity_entry(
-          id,
-          activities_by_character,
-          user_characters,
-          current_user,
-          is_current_user,
-          user_id
-        )
+      nil -> []
+      id -> create_character_activity_entry(
+              id,
+              activities_by_character,
+              user_characters,
+              is_current_user
+            )
     end
   end
 
@@ -196,9 +177,7 @@ defmodule WandererApp.Character.Activity do
          char_id,
          activities_by_character,
          user_characters,
-         current_user,
-         is_current_user,
-         user_id
+         is_current_user
        ) do
     char_activities = Map.get(activities_by_character, char_id, [])
 
@@ -208,59 +187,17 @@ defmodule WandererApp.Character.Activity do
     end
   end
 
-  defp get_character_details(char_id, [activity | _rest], _user_characters, false) do
-    # Extract character from the nested structure
+  defp get_character_details(_char_id, [activity | _], _user_characters, false) do
     character = Map.get(activity, :character)
 
-    if character do
-      # Character data is available in the nested structure
-      %{
-        id: character.id,
-        eve_id: character.eve_id,
-        name: character.name,
-        corporation_ticker: character.corporation_ticker || "???",
-        alliance_ticker: character.alliance_ticker || "",
-        portrait_url: WandererApp.Utils.EVEUtil.get_portrait_url(character.eve_id, 256)
-      }
-    else
-      # Fallback to old structure if character field is not present
-      case Map.get(activity, :character_name) do
-        nil ->
-          Logger.error("Missing character name for activity entry",
-            character_id: char_id,
-            activity: inspect(activity, limit: 3)
-          )
-          nil
-
-        "" ->
-          Logger.error("Empty character name for activity entry",
-            character_id: char_id,
-            activity: inspect(activity, limit: 3)
-          )
-          nil
-
-        name when is_binary(name) ->
-          %{
-            id: char_id,
-            eve_id: Map.get(activity, :character_eve_id) || char_id,
-            name: name,
-            corporation_ticker: Map.get(activity, :corporation_ticker) || "???",
-            alliance_ticker: Map.get(activity, :alliance_ticker) || "",
-            portrait_url: WandererApp.Utils.EVEUtil.get_portrait_url(
-              Map.get(activity, :character_eve_id) || char_id,
-              256
-            )
-          }
-
-        invalid ->
-          Logger.error("Invalid character name format",
-            character_id: char_id,
-            value: invalid,
-            type: inspect(invalid)
-          )
-          nil
-      end
-    end
+    %{
+      id: character.id,
+      eve_id: character.eve_id,
+      name: character.name,
+      corporation_ticker: character.corporation_ticker || "",
+      alliance_ticker: character.alliance_ticker || "",
+      portrait_url: WandererApp.Utils.EVEUtil.get_portrait_url(character.eve_id, 64)
+    }
   end
 
   defp get_character_details(char_id, _char_activities, user_characters, true) do
@@ -273,19 +210,8 @@ defmodule WandererApp.Character.Activity do
          char_details,
          char_activities
        ) do
-    # Ensure all required fields are present
-    character = %{
-      id: char_details.id,
-      eve_id: char_details.eve_id,
-      name: char_details.name,
-      corporation_ticker: char_details.corporation_ticker,
-      alliance_ticker: Map.get(char_details, :alliance_ticker) || "",
-      portrait_url: Map.get(char_details, :portrait_url) ||
-                   WandererApp.Utils.EVEUtil.get_portrait_url(char_details.eve_id, 256)
-    }
-
     %{
-      character: character,
+      character: char_details,
       passages: sum_activity(char_activities, :passages),
       connections: sum_activity(char_activities, :connections),
       signatures: sum_activity(char_activities, :signatures),
