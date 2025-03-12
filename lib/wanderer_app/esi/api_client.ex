@@ -371,10 +371,12 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
     cache: Cache,
-    key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
+    key: fn character_eve_id, search_val, categories_val, _merged_opts ->
+      "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}"
+    end,
     opts: [ttl: @ttl]
   )
-  defp _search(character_eve_id, search_val, categories_val, merged_opts) do
+  defp _search(character_eve_id, _search_val, _categories_val, merged_opts) do
     _get_character_auth_data(character_eve_id, "search", merged_opts)
   end
 

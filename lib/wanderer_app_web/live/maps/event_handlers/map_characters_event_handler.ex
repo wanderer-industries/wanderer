@@ -88,7 +88,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
     user_character_eve_ids = map_characters |> Enum.map(& &1.eve_id)
 
-    {:ok, tracking_data} = build_tracking_data(map_id, current_user)
+    {:ok, _tracking_data} = build_tracking_data(map_id, current_user)
 
     # Update socket assigns but don't affect followed state
     socket
@@ -133,14 +133,14 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     # Find the character we're toggling
     with {:ok, character} <-
            WandererApp.Character.find_character_by_eve_id(current_user, character_eve_id),
-         {:ok, updated_settings} <-
+         {:ok, _updated_settings} <-
            toggle_character_tracking(character, map_id, only_tracked_characters) do
       # Get the map with ACLs
       {:ok, map} = WandererApp.Api.Map.by_id(map_id)
       map = Ash.load!(map, :acls)
 
       # Get characters that have access to the map
-      {:ok, %{characters: characters_with_access}} =
+      {:ok, %{characters: _characters_with_access}} =
         WandererApp.Maps.load_characters(map, all_settings, current_user.id)
 
       # If there was a followed character before, check if it's still followed
@@ -212,7 +212,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
          {:ok, _updated_settings} <-
            toggle_character_follow(map_id, clicked_char, is_already_followed) do
       # Get the state after the toggle_character_follow operation
-      {:ok, all_settings_after} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
+      {:ok, _all_settings_after} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
 
       # Build tracking data
       {:ok, tracking_data} = build_tracking_data(map_id, current_user)

@@ -189,9 +189,6 @@ defmodule WandererApp.Character.Tracker do
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
                 {:error, error}
             end
-
-          _ ->
-            {:error, :skipped}
         end
 
       _ ->

@@ -374,7 +374,7 @@ defmodule WandererApp.EveDataService do
   defp get_security(security) do
     case security do
       nil -> {:ok, ""}
-      _ -> {:ok, String.to_float(security) |> get_true_security() |> Float.to_string(decimals: 1)}
+      _ -> {:ok, String.to_float(security) |> get_true_security() |> (fn f -> :erlang.float_to_binary(f, decimals: 1) end).()}
     end
   end
 
@@ -435,23 +435,24 @@ defmodule WandererApp.EveDataService do
     do: {:ok, 10_100}
 
   defp get_wormhole_class_id(systems, region_id, constellation_id, solar_system_id) do
-    with region <-
-           Enum.find(systems, fn system ->
-             system.location_id |> Integer.parse() |> elem(0) == region_id
-           end),
-         constellation <-
-           Enum.find(systems, fn system ->
-             system.location_id |> Integer.parse() |> elem(0) == constellation_id
-           end),
-         solar_system <-
-           Enum.find(systems, fn system ->
-             system.location_id |> Integer.parse() |> elem(0) == solar_system_id
-           end),
-         wormhole_class_id <- get_wormhole_class_id(region, constellation, solar_system) do
-      {:ok, wormhole_class_id}
-    else
-      _ -> {:ok, -1}
-    end
+    region =
+      Enum.find(systems, fn system ->
+        system.location_id |> Integer.parse() |> elem(0) == region_id
+      end)
+
+    constellation =
+      Enum.find(systems, fn system ->
+        system.location_id |> Integer.parse() |> elem(0) == constellation_id
+      end)
+
+    solar_system =
+      Enum.find(systems, fn system ->
+        system.location_id |> Integer.parse() |> elem(0) == solar_system_id
+      end)
+
+    wormhole_class_id = get_wormhole_class_id(region, constellation, solar_system)
+
+    {:ok, wormhole_class_id}
   end
 
   defp get_wormhole_class_id(_region, _constellation, solar_system)

@@ -120,10 +120,10 @@ defmodule WandererApp.Maps do
 
   @decorate cacheable(
               cache: WandererApp.Cache,
-              key: "map_characters-#{map_id}",
+              key: fn %{id: map_id} -> "map_characters-#{map_id}" end,
               opts: [ttl: :timer.seconds(5)]
             )
-  defp _get_map_characters(%{id: map_id} = map) do
+  defp _get_map_characters(%{id: _map_id} = map) do
     map_acls =
       map.acls
       |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)

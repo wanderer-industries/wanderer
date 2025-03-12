@@ -3,8 +3,6 @@ defmodule WandererApp.Map.Server.AclsImpl do
 
   require Logger
 
-  alias WandererApp.Map.Server.Impl
-
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def handle_map_acl_updated(%{map_id: map_id, map: old_map} = state, added_acls, removed_acls) do

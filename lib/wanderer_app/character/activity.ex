@@ -169,9 +169,9 @@ defmodule WandererApp.Character.Activity do
          char_id,
          activities_by_character,
          user_characters,
-         current_user,
+         _current_user,
          is_current_user,
-         user_id
+         _user_id
        ) do
     char_activities = Map.get(activities_by_character, char_id, [])
 

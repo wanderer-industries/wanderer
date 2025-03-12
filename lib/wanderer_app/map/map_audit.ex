@@ -6,8 +6,6 @@ defmodule WandererApp.Map.Audit do
   require Ash.Query
   require Logger
 
-  @logger Application.compile_env(:wanderer_app, :logger)
-
   @week_seconds :timer.hours(24 * 7)
   @month_seconds @week_seconds * 4
   @audit_expired_seconds @month_seconds * 3

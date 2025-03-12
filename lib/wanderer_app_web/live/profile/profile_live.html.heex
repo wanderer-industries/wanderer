@@ -59,33 +59,33 @@
                               rows={@transactions}
                               class="!max-h-[40vh] !overflow-y-auto"
                             >
-                              <:col :let={transaction}>
+                              <:col :let={_transaction}>
                                 <div class=" text-22">
                                   <.icon name="hero-credit-card-solid" class="h-5 w-5" />
                                 </div>
                               </:col>
-                              <:col :let={transaction} label="Transaction">
+                              <:col :let={_transaction} label="Transaction">
                                 <div>
                                   <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
-                                    <%= transaction.reason_encoded %>
+                                    <%= _transaction.reason_encoded %>
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     <.local_time
-                                      id={"invoice-inserted-#{transaction.id}"}
-                                      at={transaction.date}
+                                      id={"invoice-inserted-#{_transaction.id}"}
+                                      at={_transaction.date}
                                     >
-                                      <%= transaction.date %>
+                                      <%= _transaction.date %>
                                     </.local_time>
                                   </p>
                                 </div>
                               </:col>
-                              <:col :let={transaction} label="Description">
-                                <%= transaction.description %>
+                              <:col :let={_transaction} label="Description">
+                                <%= _transaction.description %>
                               </:col>
-                              <:col :let={transaction} label="">
+                              <:col :let={_transaction} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= transaction.amount_encoded
+                                    <%= _transaction.amount_encoded
                                     |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
@@ -145,30 +145,30 @@
                               rows={@invoices}
                               class="!max-h-[40vh] !overflow-y-auto"
                             >
-                              <:col :let={invoice}>
+                              <:col :let={_invoice}>
                                 <div class=" text-22">
                                   Map subscription
                                 </div>
                               </:col>
-                              <:col :let={invoice} label="Map">
+                              <:col :let={_invoice} label="Map">
                                 <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
-                                  <%= invoice.map.name %>
+                                  <%= _invoice.map.name %>
                                 </p>
                               </:col>
-                              <:col :let={invoice} label="Date">
+                              <:col :let={_invoice} label="Date">
                                 <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                   <.local_time
-                                    id={"invoice-inserted-#{invoice.id}"}
-                                    at={invoice.inserted_at}
+                                    id={"invoice-inserted-#{_invoice.id}"}
+                                    at={_invoice.inserted_at}
                                   >
-                                    <%= invoice.inserted_at %>
+                                    <%= _invoice.inserted_at %>
                                   </.local_time>
                                 </p>
                               </:col>
-                              <:col :let={invoice} label="">
+                              <:col :let={_invoice} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= invoice.amount
+                                    <%= _invoice.amount
                                     |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">

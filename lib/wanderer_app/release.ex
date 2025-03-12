@@ -19,7 +19,7 @@ defmodule WandererApp.Release do
     IO.puts("Creation of Db successful!")
   end
 
-  def migrate(repos \\ repos()) do
+  def migrate(_repos \\ repos()) do
     IO.puts("Run migrations..")
     prepare()
 
