@@ -93,7 +93,9 @@ defmodule WandererApp.Character.Activity do
   end
 
   defp process_activity_data([], _character_settings, _user_characters, _current_user), do: []
-  defp process_activity_data([%{is_user: _} | _] = activity_data, _, _, _), do: activity_data
+
+  # Simplify the pre-processed data handling - just pass it through
+  defp process_activity_data([%{character: _} | _] = activity_data, _, _, _), do: activity_data
 
   defp process_activity_data(all_activity, character_settings, user_characters, current_user) do
     all_activity
@@ -130,31 +132,37 @@ defmodule WandererApp.Character.Activity do
          user_characters,
          current_user
        ) do
+    # Determine if this is the current user's activity
     is_current_user = user_id == current_user.id
+
+    # Group activities by character
     activities_by_character = group_activities_by_character(user_activities)
 
+    # Find the character to show (followed or most active)
     char_id_to_show =
       select_character_to_show(activities_by_character, character_settings, is_current_user)
 
+    # Create activity entry for the selected character
     case char_id_to_show do
-      nil ->
-        []
-
-      id ->
-        create_character_activity_entry(
-          id,
-          activities_by_character,
-          user_characters,
-          current_user,
-          is_current_user,
-          user_id
-        )
+      nil -> []
+      id -> create_character_activity_entry(
+              id,
+              activities_by_character,
+              user_characters,
+              is_current_user
+            )
     end
   end
 
   defp group_activities_by_character(activities) do
     Enum.group_by(activities, fn activity ->
-      Map.get(activity, :character_id) || Map.get(activity, :character_eve_id)
+      # Character info is now in a nested 'character' field
+      cond do
+        character = Map.get(activity, :character) -> Map.get(character, :id)
+        id = Map.get(activity, :character_id) -> id
+        id = Map.get(activity, :character_eve_id) -> id
+        true -> "unknown_#{System.unique_integer([:positive])}"
+      end
     end)
   end
 
@@ -169,39 +177,26 @@ defmodule WandererApp.Character.Activity do
          char_id,
          activities_by_character,
          user_characters,
-         current_user,
-         is_current_user,
-         user_id
+         is_current_user
        ) do
     char_activities = Map.get(activities_by_character, char_id, [])
 
-    with char_details when not is_nil(char_details) <-
-           get_character_details(char_id, char_activities, user_characters, is_current_user) do
-      [
-        build_activity_entry(
-          char_details,
-          char_activities
-        )
-      ]
-    else
-      _ -> []
+    case get_character_details(char_id, char_activities, user_characters, is_current_user) do
+      nil -> []
+      char_details -> [build_activity_entry(char_details, char_activities)]
     end
   end
 
+  defp get_character_details(_char_id, [activity | _], _user_characters, false) do
+    # Return the raw character data without mapping
+    Map.get(activity, :character)
+  end
+
   defp get_character_details(char_id, _char_activities, user_characters, true) do
+    # Find the character in user_characters and return it without mapping
     Enum.find(user_characters, fn char ->
       char.id == char_id || to_string(char.eve_id) == char_id
     end)
-  end
-
-  defp get_character_details(char_id, [activity | _], _user_characters, false) do
-    %{
-      id: char_id,
-      name: Map.get(activity, :character_name, "Unknown"),
-      eve_id: Map.get(activity, :character_eve_id, nil),
-      corporation_ticker: Map.get(activity, :corporation_ticker, ""),
-      alliance_ticker: Map.get(activity, :alliance_ticker, "")
-    }
   end
 
   defp build_activity_entry(
