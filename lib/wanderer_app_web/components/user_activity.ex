@@ -25,31 +25,11 @@ defmodule WandererAppWeb.UserActivity do
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <span
-        :if={@page > 1}
-        class="text-1xl fixed bottom-10 right-10 bg-zinc-700 text-white rounded-lg p-1 text-center min-w-[65px] z-50 opacity-70"
-      >
-        <%= @page %>
-      </span>
-      <ul
-        id="events"
-        class="space-y-4"
-        phx-update="stream"
-        phx-viewport-top={@page > 1 && "prev-page"}
-        phx-viewport-bottom={!@end_of_stream? && "next-page"}
-        phx-page-loading
-        class={[
-          if(@end_of_stream?, do: "pb-10", else: "pb-[calc(200vh)]"),
-          if(@page == 1, do: "pt-10", else: "pt-[calc(200vh)]")
-        ]}
-      >
+      <ul id="events" class="space-y-4" phx-update="stream" phx-page-loading class={["pt-10"]}>
         <li :for={{dom_id, activity} <- @stream} id={dom_id}>
           <.activity_entry activity={activity} can_undo_types={@can_undo_types} />
         </li>
       </ul>
-      <div :if={@end_of_stream?} class="mt-5 text-center">
-        No more activity
-      </div>
     </div>
     """
   end

@@ -52,7 +52,7 @@ defmodule WandererAppWeb.MapAuditLive do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    apply_action(socket, socket.assigns.live_action, params)
   end
 
   @impl true
@@ -81,26 +81,6 @@ defmodule WandererAppWeb.MapAuditLive do
     {:noreply,
      socket
      |> push_navigate(to: ~p"/#{map_slug}/audit?period=#{period}&activity=#{activity}")}
-  end
-
-  def handle_event("top", _, socket) do
-    {:noreply, socket |> load_activity(1)}
-  end
-
-  def handle_event("next-page", _, socket) do
-    {:noreply, load_activity(socket, socket.assigns.page + 1)}
-  end
-
-  def handle_event("prev-page", %{"_overran" => true}, socket) do
-    {:noreply, load_activity(socket, 1)}
-  end
-
-  def handle_event("prev-page", _, socket) do
-    if socket.assigns.page > 1 do
-      {:noreply, load_activity(socket, socket.assigns.page - 1)}
-    else
-      {:noreply, socket}
-    end
   end
 
   def handle_event(
@@ -138,7 +118,7 @@ defmodule WandererAppWeb.MapAuditLive do
     {:noreply, socket}
   end
 
-  defp apply_action(socket, :index, _params) do
+  defp apply_action(socket, :index, params) do
     socket
     |> assign(:active_page, :audit)
     |> assign(:page_title, "Map - Audit")
@@ -158,45 +138,29 @@ defmodule WandererAppWeb.MapAuditLive do
       {"Signatures Added", :signatures_added},
       {"Signatures Removed", :signatures_removed}
     ])
-    |> load_activity(1)
+    |> list_activity(params)
   end
 
-  defp load_activity(socket, new_page) when new_page >= 1 do
+  defp list_activity(socket, params, opts \\ []) do
     %{
       activity: activity,
-      per_page: per_page,
-      page: cur_page,
       map_id: map_id,
+      map_slug: map_slug,
       map_subscription_active: map_subscription_active,
       period: period
     } =
       socket.assigns
 
-    period = get_valid_period(period, map_subscription_active)
+    query = WandererApp.Map.Audit.get_activity_query(map_id, period, activity)
 
-    with {:ok, page} <-
-           WandererApp.Map.Audit.get_activity_page(map_id, new_page, per_page, period, activity) do
-      {activity, at, limit} =
-        if new_page >= cur_page do
-          {page.results, -1, per_page * 3 * -1}
-        else
-          {Enum.reverse(page.results), 0, per_page * 3}
-        end
+    AshPagify.validate_and_run(query, params, opts)
+    |> case do
+      {:ok, {activity, meta}} ->
+        {:noreply, socket |> assign(:meta, meta) |> stream(:activity, activity, reset: true)}
 
-      case activity do
-        [] ->
-          socket
-          |> assign(end_of_stream?: at == -1)
-          |> stream(:activity, [])
-
-        [_ | _] = _ ->
-          socket
-          |> assign(end_of_stream?: false)
-          |> assign(page: if(activity == [], do: cur_page, else: new_page))
-          |> stream(:activity, activity, at: at, limit: limit)
-      end
-    else
-      _ -> socket
+      {:error, meta} ->
+        valid_path = AshPagify.Components.build_path(~p"/#{map_slug}/audit", meta.params)
+        {:noreply, socket |> push_navigate(to: valid_path)}
     end
   end
 

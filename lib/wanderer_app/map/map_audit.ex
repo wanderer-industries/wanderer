@@ -39,7 +39,7 @@ defmodule WandererApp.Map.Audit do
     :ok
   end
 
-  def get_activity_page(map_id, page, per_page, period, activity) do
+  def get_activity_query(map_id, period, activity) do
     {from, to} = period |> get_period()
 
     query =
@@ -65,10 +65,6 @@ defmodule WandererApp.Map.Audit do
 
     query
     |> Ash.Query.sort(inserted_at: :desc)
-    |> WandererApp.Api.read(
-      page: [limit: per_page, offset: (page - 1) * per_page],
-      load: [:character]
-    )
   end
 
   def track_acl_event(

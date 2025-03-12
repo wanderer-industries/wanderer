@@ -101,6 +101,10 @@
   class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
 >
   <div class="flex flex-col gap-4 w-full">
+    <div class="flex justify-between w-full">
+      <div />
+      <WandererAppWeb.Components.pagination meta={@meta} path={~p"/#{@map_slug}/audit?period=#{@period}&activity=#{@activity}"} />
+    </div>
     <.live_component
       module={UserActivity}
       id="user-activity"
@@ -111,5 +115,10 @@
       end_of_stream?={@end_of_stream?}
       event_name="activity_event"
     />
+
+    <div class="flex justify-between w-full">
+      <div />
+      <WandererAppWeb.Components.pagination meta={@meta} path={~p"/#{@map_slug}/audit?period=#{@period}&activity=#{@activity}"} />
+    </div>
   </div>
 </main>

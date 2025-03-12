@@ -75,6 +75,17 @@ config :phoenix_ddos,
      request_paths: ["/auth/eve"], allowed: 20, period: {1, :minute}}
   ]
 
+config :ash_pagify,
+  default_limit: 50,
+  max_limit: 1000,
+  scopes: %{
+    role: []
+  },
+  reset_on_filter?: true,
+  replace_invalid_params?: true,
+  pagination: [opts: {WandererAppWeb.CoreComponents, :pagination_opts}],
+  table: [opts: {WandererAppWeb.CoreComponents, :table_opts}]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
