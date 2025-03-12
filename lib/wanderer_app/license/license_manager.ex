@@ -32,7 +32,7 @@ defmodule WandererApp.License.LicenseManager do
         "description" => "License for #{map.name} map",
         "is_valid" => true,
         "valid_to" => format_date(subscription.active_till),
-        "link" => generate_map_link(map_id),
+        "link" => generate_map_link(map.slug),
         "contact_email" => get_map_owner_email(map)
       }
 
@@ -175,17 +175,16 @@ defmodule WandererApp.License.LicenseManager do
   @doc """
   Generates a link to the map.
   """
-  defp generate_map_link(map_id) do
-    base_url = Application.get_env(:wanderer_app, :web_app_url, "http://localhost:4000")
-    "#{base_url}/#{map_id}"
+  defp generate_map_link(map_slug) do
+    base_url = Application.get_env(:wanderer_app, :web_app_url)
+    "#{base_url}/#{map_slug}"
   end
 
   @doc """
-  Gets the map owner's email.
+  Gets the map owner's data.
   """
   defp get_map_owner_email(map) do
-    # This is a placeholder. In a real implementation, you would
-    # load the map owner and get their email.
-    "map-owner@example.com"
+    {:ok, %{owner: owner}} = map |> Ash.load([:owner])
+    "#{owner.name}(#{owner.eve_id})"
   end
 end
