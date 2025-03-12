@@ -35,6 +35,7 @@ defmodule WandererAppWeb.MapActivityEventHandler do
       ) do
     Task.async(fn ->
       try do
+        # Get raw activity data from the domain logic
         result =
           WandererApp.Character.Activity.process_character_activity(map_id, current_user)
 
@@ -42,7 +43,8 @@ defmodule WandererAppWeb.MapActivityEventHandler do
         summarized_result =
           result
           |> Enum.group_by(fn activity ->
-            activity.character.user_id || "unknown"
+            # Get user_id from the character
+            activity.character.user_id
           end)
           |> Enum.map(fn {_user_id, user_activities} ->
             # Get the most active or followed character for this user
@@ -57,9 +59,14 @@ defmodule WandererAppWeb.MapActivityEventHandler do
             total_connections = Enum.sum(Enum.map(user_activities, & &1.connections))
             total_signatures = Enum.sum(Enum.map(user_activities, & &1.signatures))
 
-            # Return summarized activity with the representative character
+            # Map the character data for the UI here
+            mapped_character =
+              representative_activity.character
+              |> MapEventHandler.map_ui_character_stat()
+
+            # Return summarized activity with the mapped character
             %{
-              character: representative_activity.character |> MapEventHandler.map_ui_character_stat(),
+              character: mapped_character,
               passages: total_passages,
               connections: total_connections,
               signatures: total_signatures,
