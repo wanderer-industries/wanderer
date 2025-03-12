@@ -3,6 +3,7 @@ defmodule WandererApp.Character.Activity do
   Functions for processing and managing character activity data.
   """
   require Logger
+  alias WandererAppWeb.MapEventHandler
 
   @doc """
   Finds a followed character ID from a list of character settings and activities.
@@ -188,22 +189,19 @@ defmodule WandererApp.Character.Activity do
   end
 
   defp get_character_details(_char_id, [activity | _], _user_characters, false) do
-    character = Map.get(activity, :character)
-
-    %{
-      id: character.id,
-      eve_id: character.eve_id,
-      name: character.name,
-      corporation_ticker: character.corporation_ticker || "",
-      alliance_ticker: character.alliance_ticker || "",
-      portrait_url: WandererApp.Utils.EVEUtil.get_portrait_url(character.eve_id, 64)
-    }
+    # Use the common MapEventHandler.map_ui_character_stat method
+    Map.get(activity, :character) |> MapEventHandler.map_ui_character_stat()
   end
 
   defp get_character_details(char_id, _char_activities, user_characters, true) do
-    Enum.find(user_characters, fn char ->
+    character = Enum.find(user_characters, fn char ->
       char.id == char_id || to_string(char.eve_id) == char_id
     end)
+
+    if character do
+      # Use the common mapping method here too
+      MapEventHandler.map_ui_character_stat(character)
+    end
   end
 
   defp build_activity_entry(

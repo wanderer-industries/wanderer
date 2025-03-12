@@ -38,13 +38,36 @@ defmodule WandererAppWeb.MapActivityEventHandler do
         result =
           WandererApp.Character.Activity.process_character_activity(map_id, current_user)
 
-        {:activity_data,
-         result
-         |> Enum.map(fn activity ->
-           activity
-           |> Map.take([:passages, :connections, :signatures, :timestamp])
-           |> Map.put(:character, activity.character |> MapEventHandler.map_ui_character_stat())
-         end)}
+        # Group activities by user_id and summarize
+        summarized_result =
+          result
+          |> Enum.group_by(fn activity ->
+            activity.character.user_id || "unknown"
+          end)
+          |> Enum.map(fn {_user_id, user_activities} ->
+            # Get the most active or followed character for this user
+            representative_activity =
+              user_activities
+              |> Enum.max_by(fn activity ->
+                activity.passages + activity.connections + activity.signatures
+              end)
+
+            # Sum up all activities for this user
+            total_passages = Enum.sum(Enum.map(user_activities, & &1.passages))
+            total_connections = Enum.sum(Enum.map(user_activities, & &1.connections))
+            total_signatures = Enum.sum(Enum.map(user_activities, & &1.signatures))
+
+            # Return summarized activity with the representative character
+            %{
+              character: representative_activity.character |> MapEventHandler.map_ui_character_stat(),
+              passages: total_passages,
+              connections: total_connections,
+              signatures: total_signatures,
+              timestamp: representative_activity.timestamp
+            }
+          end)
+
+        {:activity_data, summarized_result}
       rescue
         e ->
           Logger.error("Error processing character activity: #{inspect(e)}")
