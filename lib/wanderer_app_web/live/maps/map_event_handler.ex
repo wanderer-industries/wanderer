@@ -321,7 +321,9 @@ defmodule WandererAppWeb.MapEventHandler do
       |> Map.take([
         :eve_id,
         :name,
+        :corporation_id,
         :corporation_ticker,
+        :alliance_id,
         :alliance_ticker
       ])
 
