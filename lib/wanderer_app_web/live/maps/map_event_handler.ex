@@ -82,8 +82,7 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_activity_ui_events [
-    "show_activity",
-    "hide_activity"
+    "show_activity"
   ]
 
   @map_routes_events [

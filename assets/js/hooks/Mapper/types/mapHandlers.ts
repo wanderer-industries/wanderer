@@ -217,7 +217,6 @@ export enum OutCommand {
   getSystemKills = 'get_system_kills',
   getSystemsKills = 'get_systems_kills',
   openSettings = 'open_settings',
-  hideActivity = 'hide_activity',
   showActivity = 'show_activity',
   hideTracking = 'hide_tracking',
   showTracking = 'show_tracking',

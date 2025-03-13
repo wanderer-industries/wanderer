@@ -81,6 +81,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       :timer.hours(get_connection_auto_expire_hours() - get_connection_auto_eol_hours()) +
         :timer.minutes(get_eol_expire_timeout_mins())
 
+  def get_connection_expire_timeout(),
+    do:
+      :timer.hours(get_connection_auto_expire_hours()) +
+        :timer.minutes(get_eol_expire_timeout_mins())
+
   def init_eol_cache(map_id, connections_eol_time) do
     eol_expire_timeout = get_eol_expire_timeout()
 
@@ -93,6 +98,15 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       )
     end)
   end
+
+  def init_start_cache(map_id, connections_start_time) when not is_nil(connections_start_time) do
+    connections_start_time
+    |> Enum.each(fn {connection_id, start_time} ->
+      set_start_time(map_id, connection_id, start_time)
+    end)
+  end
+
+  def init_start_cache(_map_id, _connections_start_time), do: :ok
 
   def add_connection(
         %{map_id: map_id} = state,
@@ -158,7 +172,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       ),
       do:
         update_connection(state, :update_time_status, [:time_status], connection_update, fn
-          %{id: connection_id, time_status: time_status} ->
+          %{time_status: old_time_status}, %{id: connection_id, time_status: time_status} ->
             case time_status == @connection_time_status_eol do
               true ->
                 WandererApp.Cache.put(
@@ -168,7 +182,10 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                 )
 
               _ ->
-                WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
+                if old_time_status == @connection_time_status_eol do
+                  WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
+                  set_start_time(map_id, connection_id, DateTime.utc_now())
+                end
             end
         end)
 
@@ -205,18 +222,22 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   def cleanup_connections(%{map_id: map_id} = state) do
     connection_auto_expire_hours = get_connection_auto_expire_hours()
     connection_auto_eol_hours = get_connection_auto_eol_hours()
+    connection_eol_expire_timeout_hours = get_eol_expire_timeout_mins() / 60
 
     state =
       map_id
       |> WandererApp.Map.list_connections!()
       |> Enum.filter(fn %{
+                          id: connection_id,
                           inserted_at: inserted_at,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
                           type: type
                         } ->
+        connection_start_time = get_start_time(map_id, connection_id)
+
         type != @connection_type_stargate &&
-          DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
+          DateTime.diff(DateTime.utc_now(), connection_start_time, :hour) >=
             connection_auto_eol_hours &&
           is_connection_valid(
             :wormholes,
@@ -242,7 +263,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       |> WandererApp.Map.list_connections!()
       |> Enum.filter(fn %{
                           id: connection_id,
-                          inserted_at: inserted_at,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
                           type: type
@@ -273,10 +293,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         not is_connection_exist ||
           (type != @connection_type_stargate && is_connection_valid &&
-             (DateTime.diff(DateTime.utc_now(), inserted_at, :hour) >=
-                connection_auto_expire_hours ||
-                DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
-                  connection_auto_expire_hours - connection_auto_eol_hours))
+             DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
+               connection_auto_expire_hours - connection_auto_eol_hours +
+                 +connection_eol_expire_timeout_hours)
       end)
       |> Enum.reduce(state, fn %{
                                  solar_system_source: solar_system_source_id,
@@ -341,6 +360,10 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             type: connection_type
           })
 
+        if connection_type == @connection_type_wormhole do
+          set_start_time(map_id, connection.id, DateTime.utc_now())
+        end
+
         WandererApp.Map.add_connection(map_id, connection)
 
         Impl.broadcast!(map_id, :maybe_select_system, %{
@@ -384,6 +407,24 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         :ok
     end
+  end
+
+  def get_start_time(map_id, connection_id) do
+    case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:start_time") do
+      nil ->
+        set_start_time(map_id, connection_id, DateTime.utc_now())
+        DateTime.utc_now()
+
+      value ->
+        value
+    end
+  end
+
+  def set_start_time(map_id, connection_id, start_time) do
+    WandererApp.Cache.put(
+      "map_#{map_id}:conn_#{connection_id}:start_time",
+      start_time
+    )
   end
 
   def maybe_add_connection(_map_id, _location, _old_location, _character_id), do: :ok
@@ -499,6 +540,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         Impl.broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
 
+        WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
+
       _error ->
         :ok
     end
@@ -534,7 +577,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
              connection |> Map.merge(update_map)
            ) do
       if not is_nil(callback_fn) do
-        callback_fn.(updated_connection)
+        callback_fn.(connection, updated_connection)
       end
 
       Impl.broadcast!(map_id, :update_connection, updated_connection)

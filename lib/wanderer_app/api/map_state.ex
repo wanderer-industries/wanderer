@@ -32,7 +32,8 @@ defmodule WandererApp.Api.MapState do
     default_accept [
       :map_id,
       :systems_last_activity,
-      :connections_eol_time
+      :connections_eol_time,
+      :connections_start_time
     ]
 
     defaults [:read, :update, :destroy]
@@ -45,6 +46,7 @@ defmodule WandererApp.Api.MapState do
       upsert_fields [
         :systems_last_activity,
         :connections_eol_time,
+        :connections_start_time,
         :updated_at
       ]
     end
@@ -60,6 +62,10 @@ defmodule WandererApp.Api.MapState do
     uuid_primary_key :id
 
     attribute :systems_last_activity, WandererApp.Schema.AshErlangBinary do
+      allow_nil?(true)
+    end
+
+    attribute :connections_start_time, WandererApp.Schema.AshErlangBinary do
       allow_nil?(true)
     end
 

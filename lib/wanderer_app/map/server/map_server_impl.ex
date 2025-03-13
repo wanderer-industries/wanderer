@@ -90,7 +90,7 @@ defmodule WandererApp.Map.Server.Impl do
       Process.send_after(self(), :update_characters, @update_characters_timeout)
       Process.send_after(self(), :update_tracked_characters, 100)
       Process.send_after(self(), :update_presence, @update_presence_timeout)
-      Process.send_after(self(), :cleanup_connections, 5000)
+      Process.send_after(self(), :cleanup_connections, 5_000)
       Process.send_after(self(), :cleanup_systems, 10_000)
       Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
       Process.send_after(self(), :backup_state, @backup_state_timeout)
@@ -359,9 +359,12 @@ defmodule WandererApp.Map.Server.Impl do
         end
       end)
 
-    connections_eol_time =
+    connections =
       map_id
       |> WandererApp.Map.list_connections!()
+
+    connections_eol_time =
+      connections
       |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
         case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time") do
           nil ->
@@ -372,10 +375,18 @@ defmodule WandererApp.Map.Server.Impl do
         end
       end)
 
+    connections_start_time =
+      connections
+      |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
+        connection_start_time = ConnectionsImpl.get_start_time(map_id, connection_id)
+        acc |> Map.put_new(connection_id, connection_start_time)
+      end)
+
     WandererApp.Api.MapState.create(%{
       map_id: map_id,
       systems_last_activity: systems_last_activity,
-      connections_eol_time: connections_eol_time
+      connections_eol_time: connections_eol_time,
+      connections_start_time: connections_start_time
     })
   end
 
@@ -396,10 +407,12 @@ defmodule WandererApp.Map.Server.Impl do
       {:ok,
        %{
          systems_last_activity: systems_last_activity,
-         connections_eol_time: connections_eol_time
+         connections_eol_time: connections_eol_time,
+         connections_start_time: connections_start_time
        }} ->
         SystemsImpl.init_last_activity_cache(map_id, systems_last_activity)
         ConnectionsImpl.init_eol_cache(map_id, connections_eol_time)
+        ConnectionsImpl.init_start_cache(map_id, connections_start_time)
 
         state
 
