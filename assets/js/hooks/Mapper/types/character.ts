@@ -37,3 +37,22 @@ export type CharacterTypeRaw = {
 export type WithIsOwnCharacter = {
   isOwn: boolean;
 };
+
+export interface EveCharacterType {
+  alliance_ticker: string;
+  corporation_ticker: string;
+  eve_id: string;
+  name: string;
+}
+
+export interface CharacterCache {
+  loading: boolean;
+  loaded: boolean;
+  data: EveCharacterType | null;
+}
+
+export interface UseCharactersCacheData {
+  loadCharacter: (systemId: string) => Promise<void>;
+  characters: Map<string, CharacterCache>;
+  lastUpdateKey: number;
+}

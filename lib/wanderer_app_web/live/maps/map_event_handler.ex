@@ -11,6 +11,7 @@ defmodule WandererAppWeb.MapEventHandler do
     MapRoutesEventHandler,
     MapSignaturesEventHandler,
     MapSystemsEventHandler,
+    MapSystemCommentsEventHandler,
     MapStructuresEventHandler,
     MapKillsEventHandler
   }
@@ -29,7 +30,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "toggle_track",
     "toggle_follow",
     "hide_tracking",
-    "show_tracking"
+    "show_tracking",
+    "getCharacterInfo"
   ]
 
   @map_system_events [
@@ -56,6 +58,17 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_tag",
     "update_system_temporary_name",
     "update_system_status"
+  ]
+
+  @map_system_comments_events [
+    :system_comment_added,
+    :system_comment_removed
+  ]
+
+  @map_system_comments_ui_events [
+    "addSystemComment",
+    "getSystemComments",
+    "deleteSystemComment"
   ]
 
   @map_connection_events [
@@ -135,6 +148,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_system_events,
       do: MapSystemsEventHandler.handle_server_event(event, socket)
+
+  def handle_event(socket, %{event: event_name} = event)
+      when event_name in @map_system_comments_events,
+      do: MapSystemCommentsEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_connection_events,
@@ -220,36 +237,52 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, event),
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
-  def handle_ui_event(event, body, socket) do
-    cond do
-      event in @map_characters_ui_events ->
-        MapCharactersEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_characters_ui_events,
+      do: MapCharactersEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_system_ui_events ->
-        MapSystemsEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_system_ui_events,
+      do: MapSystemsEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_connection_ui_events ->
-        MapConnectionsEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_system_comments_ui_events,
+      do: MapSystemCommentsEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_routes_ui_events ->
-        MapRoutesEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_connection_ui_events,
+      do: MapConnectionsEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_signatures_ui_events ->
-        MapSignaturesEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_routes_ui_events,
+      do: MapRoutesEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_structures_ui_events ->
-        MapStructuresEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_signatures_ui_events,
+      do: MapSignaturesEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_activity_ui_events ->
-        MapActivityEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_structures_ui_events,
+      do: MapStructuresEventHandler.handle_ui_event(event, body, socket)
 
-      event in @map_kills_ui_events and socket.assigns[:is_subscription_active?] ->
-        MapKillsEventHandler.handle_ui_event(event, body, socket)
+  def handle_ui_event(event, body, socket)
+      when event in @map_activity_ui_events,
+      do: MapActivityEventHandler.handle_ui_event(event, body, socket)
 
-      true ->
-        MapCoreEventHandler.handle_ui_event(event, body, socket)
-    end
-  end
+  def handle_ui_event(
+        event,
+        body,
+        %{
+          assigns: %{
+            is_subscription_active?: true
+          }
+        } = socket
+      )
+      when event in @map_kills_ui_events,
+      do: MapKillsEventHandler.handle_ui_event(event, body, socket)
+
+  def handle_ui_event(event, body, socket),
+    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
   def get_system_static_info(nil), do: nil
 
@@ -287,7 +320,9 @@ defmodule WandererAppWeb.MapEventHandler do
       |> Map.take([
         :eve_id,
         :name,
+        :corporation_id,
         :corporation_ticker,
+        :alliance_id,
         :alliance_ticker
       ])
 
@@ -340,6 +375,17 @@ defmodule WandererAppWeb.MapEventHandler do
         is_nil(signature.linked_system) && signature.group == "Wormhole"
       end)
 
+    comments_count =
+      system_id
+      |> WandererApp.Maps.get_system_comments_activity()
+      |> case do
+        [{count}] when not is_nil(count) ->
+          count
+
+        _ ->
+          0
+      end
+
     %{
       id: "#{solar_system_id}",
       position: %{x: position_x, y: position_y},
@@ -353,6 +399,7 @@ defmodule WandererAppWeb.MapEventHandler do
       status: status,
       tag: tag,
       temporary_name: temporary_name,
+      comments_count: comments_count,
       visible: visible
     }
   end

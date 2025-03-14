@@ -1,17 +1,17 @@
 import { useCallback } from 'react';
-import { SystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { ExtendedSystemSignature, prepareUpdatePayload, getActualSigs, mergeLocalPendingAdditions } from '../helpers';
+import { prepareUpdatePayload, getActualSigs, mergeLocalPendingAdditions } from '../helpers';
 import { UseFetchingParams } from './types';
 import { FINAL_DURATION_MS } from '../constants';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
-export function useSignatureFetching({
+export const useSignatureFetching = ({
   systemId,
   signaturesRef,
   setSignatures,
   localPendingDeletions,
-}: UseFetchingParams) {
+}: UseFetchingParams) => {
   const {
     data: { characters },
     outCommand,
@@ -72,4 +72,4 @@ export function useSignatureFetching({
     handleGetSignatures,
     handleUpdateSignatures,
   };
-}
+};

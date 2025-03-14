@@ -140,6 +140,10 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate add_system(state, system_info, user_id, character_id), to: SystemsImpl
 
+  defdelegate add_system_comment(state, comment_info, user_id, character_id), to: SystemsImpl
+
+  defdelegate remove_system_comment(state, comment_id, user_id, character_id), to: SystemsImpl
+
   defdelegate delete_systems(
                 state,
                 removed_ids,

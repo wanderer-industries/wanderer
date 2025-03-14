@@ -1,24 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { VirtualScroller } from 'primereact/virtualscroller';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { TrackingCharacterWrapper } from './TrackingCharacterWrapper';
 import { TrackingCharacter } from './types';
-import classes from './TrackAndFollow.module.scss';
 
 interface TrackAndFollowProps {
   visible: boolean;
   onHide: () => void;
 }
-
-const renderHeader = () => {
-  return (
-    <div className="dialog-header">
-      <span>Track & Follow</span>
-    </div>
-  );
-};
 
 export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
   const [trackedCharacters, setTrackedCharacters] = useState<string[]>([]);
@@ -56,36 +47,34 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
     });
   };
 
-  const handleFollowToggle = (characterId: string) => {
-    const isCurrentlyFollowed = followedCharacter === characterId;
-    const isCurrentlyTracked = trackedCharacters.includes(characterId);
+  const handleFollowToggle = async (characterEveId: string) => {
+    const isCurrentlyFollowed = followedCharacter === characterEveId;
+    const isCurrentlyTracked = trackedCharacters.includes(characterEveId);
 
     // If not followed and not tracked, we need to track it first
     if (!isCurrentlyFollowed && !isCurrentlyTracked) {
-      setTrackedCharacters(prev => [...prev, characterId]);
+      setTrackedCharacters(prev => [...prev, characterEveId]);
 
       // Send track command first
-      outCommand({
+      await outCommand({
         type: OutCommand.toggleTrack,
-        data: { 'character-id': characterId },
+        data: { 'character-id': characterEveId },
       });
 
       // Then send follow command after a short delay
       setTimeout(() => {
         outCommand({
           type: OutCommand.toggleFollow,
-          data: { 'character-id': characterId },
+          data: { 'character-id': characterEveId },
         });
       }, 100);
-
-      return;
+    } else {
+      // Otherwise just toggle follow
+      await outCommand({
+        type: OutCommand.toggleFollow,
+        data: { 'character-id': characterEveId },
+      });
     }
-
-    // Otherwise just toggle follow
-    outCommand({
-      type: OutCommand.toggleFollow,
-      data: { 'character-id': characterId },
-    });
   };
 
   const rowTemplate = (tc: TrackingCharacter) => {
@@ -103,7 +92,11 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
 
   return (
     <Dialog
-      header={renderHeader()}
+      header={
+        <div className="dialog-header">
+          <span>Track & Follow</span>
+        </div>
+      }
       visible={visible}
       onHide={onHide}
       className="w-[500px] text-text-color"

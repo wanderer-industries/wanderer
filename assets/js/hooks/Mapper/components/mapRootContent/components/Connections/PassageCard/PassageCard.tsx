@@ -68,7 +68,7 @@ export const PassageCard = ({ inserted_at, character: char, ship }: PassageCardT
               <div className="grid gap-1 grid-cols-[1fr_1px_auto]">
                 {ship.ship_name && (
                   <>
-                    <span className="text-ellipsis overflow-hidden whitespace-nowrap">
+                    <span className="text-ellipsis overflow-hidden whitespace-nowrap flex justify-end text-neutral-400">
                       {getShipName(ship.ship_name)}
                     </span>
                     <div className="h-3 border-r border-neutral-500 my-0.5"></div>

@@ -22,7 +22,7 @@ export const TrackingCharacterWrapper = ({
   const followRadioId = `follow-${character.eve_id}`;
 
   return (
-    <div className="p-selectable-row grid grid-cols-[80px_80px_1fr] items-center min-h-8 hover:bg-neutral-800  border-b border-[#383838]">
+    <div className="grid grid-cols-[80px_80px_1fr] items-center min-h-8 hover:bg-neutral-800  border-b border-[#383838]">
       <div className="flex justify-center items-center p-0.5 text-center">
         <WdTooltipWrapper content="Track this character on the map" position={TooltipPosition.top}>
           <div className="flex justify-center items-center w-full">

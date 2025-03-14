@@ -1,17 +1,10 @@
-import { useCallback, useRef, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { CommandLinkSignatureToSystem } from '@/hooks/Mapper/types';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
-import { SHOW_DESCRIPTION_COLUMN_SETTING } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatures';
-import {
-  Setting,
-  COSMIC_SIGNATURE,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignatureSettingsDialog';
-import { SignatureGroup } from '@/hooks/Mapper/types';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
@@ -21,6 +14,10 @@ import {
   WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import {
+  SETTINGS_KEYS,
+  SignatureSettingsType,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
 
@@ -29,11 +26,11 @@ interface SystemLinkSignatureDialogProps {
   setVisible: (visible: boolean) => void;
 }
 
-const signatureSettings: Setting[] = [
-  { key: COSMIC_SIGNATURE, name: 'Show Cosmic Signatures', value: true },
-  { key: SignatureGroup.Wormhole, name: 'Wormhole', value: true },
-  { key: SHOW_DESCRIPTION_COLUMN_SETTING, name: 'Show Description Column', value: true, isFilter: false },
-];
+export const LINK_SIGNTATURE_SETTINGS: SignatureSettingsType = {
+  [SETTINGS_KEYS.COSMIC_SIGNATURE]: true,
+  [SETTINGS_KEYS.WORMHOLE]: true,
+  [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
+};
 
 // Extend the SignatureCustomInfo type to include k162Type
 interface ExtendedSignatureCustomInfo {
@@ -175,7 +172,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       <SystemSignaturesContent
         systemId={`${data.solar_system_source}`}
         hideLinkedSignatures
-        settings={signatureSettings}
+        settings={LINK_SIGNTATURE_SETTINGS}
         onSelect={handleSelect}
         selectable={true}
         filterSignature={filterSignature}

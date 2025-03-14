@@ -15,6 +15,7 @@ defmodule WandererApp.Api do
     resource WandererApp.Api.MapConnection
     resource WandererApp.Api.MapState
     resource WandererApp.Api.MapSystem
+    resource WandererApp.Api.MapSystemComment
     resource WandererApp.Api.MapSystemSignature
     resource WandererApp.Api.MapSystemStructure
     resource WandererApp.Api.MapCharacterSettings

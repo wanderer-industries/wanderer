@@ -5,8 +5,10 @@ import {
   MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
+  UseCharactersCacheData,
+  UseCommentsData,
 } from '@/hooks/Mapper/types';
-import { useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
+import { useCharactersCache, useComments, useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import useLocalStorageState from 'use-local-storage-state';
 import {
@@ -16,7 +18,7 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
 import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export type MapRootData = MapUnionTypes & {
@@ -41,7 +43,7 @@ const INITIAL_DATA: MapRootData = {
   showCharacterActivity: false,
   characterActivityData: {
     activity: [],
-    loading: false
+    loading: false,
   },
   showTrackAndFollow: false,
   trackingCharactersData: [],
@@ -110,6 +112,8 @@ export interface MapRootContextProps {
   toggleWidgetVisibility: ToggleWidgetVisibility;
   updateWidgetSettings: WindowsManagerOnChange;
   resetWidgets: () => void;
+  comments: UseCommentsData;
+  charactersCache: UseCharactersCacheData;
 }
 
 const MapRootContext = createContext<MapRootContextProps>({
@@ -119,6 +123,24 @@ const MapRootContext = createContext<MapRootContextProps>({
   outCommand: async () => void 0,
   interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
   setInterfaceSettings: () => null,
+  comments: {
+    loadComments: async () => {},
+    comments: new Map(),
+    lastUpdateKey: 0,
+    addComment: function (): void {
+      throw new Error('Function not implemented.');
+    },
+    removeComment: function (): void {
+      throw new Error('Function not implemented.');
+    },
+  },
+  charactersCache: {
+    loadCharacter: function (): Promise<void> {
+      throw new Error('Function not implemented.');
+    },
+    characters: new Map(),
+    lastUpdateKey: 0,
+  },
 });
 
 type MapRootProviderProps = {
@@ -163,18 +185,23 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     }
   }, []);
 
+  const comments = useComments({ outCommand });
+  const charactersCache = useCharactersCache({ outCommand });
+
   return (
     <MapRootContext.Provider
       value={{
         update,
         data: ref,
-        outCommand: outCommand,
+        outCommand,
         setInterfaceSettings,
         interfaceSettings,
         windowsSettings,
         updateWidgetSettings,
         toggleWidgetVisibility,
         resetWidgets,
+        comments,
+        charactersCache,
       }}
     >
       <MapRootHandlers ref={fwdRef}>{children}</MapRootHandlers>

@@ -1,9 +1,8 @@
-import { EdgeMouseHandler } from 'reactflow';
+import { Edge, EdgeMouseHandler } from 'reactflow';
 import { useCallback, useRef, useState } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
 import { useMapState } from '../../MapProvider.tsx';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { Edge } from '@reactflow/core/dist/esm/types/edges';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 

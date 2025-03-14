@@ -1,0 +1,45 @@
+.p-confirm-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  @apply p-[12px];
+
+  &::before, &::after {
+    display: none;
+  }
+
+  .p-confirm-popup-content, .p-confirm-popup-footer {
+    @apply p-0 m-0;
+  }
+
+  .p-confirm-popup-content {
+    display: flex;
+    gap: 6px;
+  }
+
+  .p-confirm-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .p-confirm-popup-icon {
+    font-size: 14px;
+  }
+
+  .p-confirm-popup-message {
+    @apply m-0;
+    font-size: 12px;
+  }
+
+  .p-confirm-popup-reject.p-button-sm,
+  .p-confirm-popup-accept.p-button-sm {
+    @apply px-1.5 py-1 m-0;
+
+    & > span {
+      font-size: 12px;
+      line-height: 12px;
+    }
+  }
+
+}

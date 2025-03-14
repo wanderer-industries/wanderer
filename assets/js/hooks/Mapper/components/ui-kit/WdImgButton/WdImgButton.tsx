@@ -29,6 +29,7 @@ export const WdImgButton = ({
   height = 20,
   textSize = WdImageSize.normal,
   tooltip,
+  disabled,
   ...props
 }: WdImgButtonProps) => {
   const content = (
@@ -39,11 +40,12 @@ export const WdImgButton = ({
         {
           [classes.Normal]: textSize === WdImageSize.normal,
           [classes.Large]: textSize === WdImageSize.large,
+          [classes.Disabled]: disabled,
         },
         'pi cursor-pointer',
         className,
       )}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
     >
       {source && <img src={source} width={width} height={height} className="external-icon" />}
     </div>

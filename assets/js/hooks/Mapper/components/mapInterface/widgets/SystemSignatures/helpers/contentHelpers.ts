@@ -1,11 +1,5 @@
-import { SystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
 import { FINAL_DURATION_MS } from '../constants';
-
-export interface ExtendedSystemSignature extends SystemSignature {
-  pendingDeletion?: boolean;
-  pendingAddition?: boolean;
-  pendingUntil?: number;
-}
 
 export function prepareUpdatePayload(
   systemId: string,

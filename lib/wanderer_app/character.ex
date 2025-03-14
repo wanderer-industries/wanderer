@@ -1,10 +1,19 @@
 defmodule WandererApp.Character do
   @moduledoc false
+  use Nebulex.Caching
 
   require Logger
 
   @read_character_wallet_scope "esi-wallet.read_character_wallet.v1"
   @read_corp_wallet_scope "esi-wallet.read_corporation_wallets.v1"
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "characters-#{character_eve_id}"
+            )
+  def get_by_eve_id(character_eve_id) when is_binary(character_eve_id) do
+    WandererApp.Api.Character.by_eve_id(character_eve_id)
+  end
 
   def get_character(character_id) when not is_nil(character_id) do
     case Cachex.get(:character_cache, character_id) do

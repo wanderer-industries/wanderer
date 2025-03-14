@@ -53,7 +53,7 @@ const MapContext = createContext<MapContextProps>({
   outCommand: async () => void 0,
 });
 
-export const MapProvider: React.FC<MapProviderProps> = ({ children, onCommand }) => {
+export const MapProvider = ({ children, onCommand }: MapProviderProps) => {
   const { update, ref } = useContextStore<MapData>({ ...INITIAL_DATA });
 
   return (

@@ -1,29 +1,30 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { DataTable, DataTableRowClickEvent, DataTableRowMouseEvent, SortOrder } from 'primereact/datatable';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DataTable,
+  DataTableRowClickEvent,
+  DataTableRowMouseEvent,
+  DataTableStateEvent,
+  SortOrder,
+} from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { PrimeIcons } from 'primereact/api';
 import useLocalStorageState from 'use-local-storage-state';
 
-import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
 import { WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
   COMPACT_MAX_WIDTH,
+  getGroupIdByRawGroup,
   GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
-  getGroupIdByRawGroup,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
-import {
-  SHOW_DESCRIPTION_COLUMN_SETTING,
-  SHOW_UPDATED_COLUMN_SETTING,
-  SHOW_CHARACTER_COLUMN_SETTING,
+  SETTINGS_KEYS,
   SIGNATURE_WINDOW_ID,
-  SHOW_CHARACTER_PORTRAIT_SETTING,
-} from '../SystemSignatures';
+  SignatureSettingsType,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 
-import { COSMIC_SIGNATURE } from '../SystemSignatureSettingsDialog';
 import {
   renderAddedTimeLeft,
   renderDescription,
@@ -31,11 +32,12 @@ import {
   renderInfoColumn,
   renderUpdatedTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
-import { ExtendedSystemSignature } from '../helpers/contentHelpers';
 import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
+
+const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
 type SystemSignaturesSortSettings = {
   sortField: string;
@@ -49,7 +51,7 @@ const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
 
 interface SystemSignaturesContentProps {
   systemId: string;
-  settings: { key: string; value: boolean | number }[];
+  settings: SignatureSettingsType;
   hideLinkedSignatures?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
@@ -57,13 +59,10 @@ interface SystemSignaturesContentProps {
   onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
   deletionTiming?: number;
-  colorByType?: boolean;
   filterSignature?: (signature: SystemSignature) => boolean;
 }
 
-const headerInlineStyle = { padding: '2px', fontSize: '12px', lineHeight: '1.333' };
-
-export function SystemSignaturesContent({
+export const SystemSignaturesContent = ({
   systemId,
   settings,
   hideLinkedSignatures,
@@ -73,9 +72,26 @@ export function SystemSignaturesContent({
   onCountChange,
   onPendingChange,
   deletionTiming,
-  colorByType,
   filterSignature,
-}: SystemSignaturesContentProps) {
+}: SystemSignaturesContentProps) => {
+  const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
+  const [showSignatureSettings, setShowSignatureSettings] = useState(false);
+  const [nameColumnWidth, setNameColumnWidth] = useState('auto');
+  const [hoveredSignature, setHoveredSignature] = useState<SystemSignature | null>(null);
+
+  const tableRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<WdTooltipHandlers>(null);
+
+  const isCompact = useMaxWidth(tableRef, COMPACT_MAX_WIDTH);
+  const isMedium = useMaxWidth(tableRef, MEDIUM_MAX_WIDTH);
+
+  const { clipboardContent, setClipboardContent } = useClipboard();
+
+  const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
+    'window:signatures:sort',
+    { defaultValue: SORT_DEFAULT_VALUES },
+  );
+
   const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
     useSystemSignaturesData({
       systemId,
@@ -86,19 +102,6 @@ export function SystemSignaturesContent({
       deletionTiming,
     });
 
-  const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
-    'window:signatures:sort',
-    { defaultValue: SORT_DEFAULT_VALUES },
-  );
-
-  const tableRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<WdTooltipHandlers>(null);
-  const [hoveredSignature, setHoveredSignature] = useState<SystemSignature | null>(null);
-
-  const isCompact = useMaxWidth(tableRef, COMPACT_MAX_WIDTH);
-  const isMedium = useMaxWidth(tableRef, MEDIUM_MAX_WIDTH);
-
-  const { clipboardContent, setClipboardContent } = useClipboard();
   useEffect(() => {
     if (selectable) return;
     if (!clipboardContent?.text) return;
@@ -109,6 +112,7 @@ export function SystemSignaturesContent({
   }, [selectable, clipboardContent, handlePaste, setClipboardContent]);
 
   useHotkey(true, ['a'], handleSelectAll);
+
   useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${SIGNATURE_WINDOW_ID}"]`);
 
@@ -121,50 +125,45 @@ export function SystemSignaturesContent({
     handleDeleteSelected();
   });
 
-  const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const handleResize = useCallback(() => {
     if (!tableRef.current) return;
-    const tableWidth = tableRef.current.offsetWidth;
-    const otherColumnsWidth = OTHER_COLUMNS_WIDTH;
-    setNameColumnWidth(`${tableWidth - otherColumnsWidth}px`);
+
+    setNameColumnWidth(`${tableRef.current.offsetWidth - OTHER_COLUMNS_WIDTH}px`);
   }, []);
+
   useEffect(() => {
     if (!tableRef.current) return;
+
     const observer = new ResizeObserver(handleResize);
     observer.observe(tableRef.current);
     handleResize();
+
     return () => {
       observer.disconnect();
     };
   }, [handleResize]);
 
-  const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
-  const [showSignatureSettings, setShowSignatureSettings] = useState(false);
-
-  const handleRowClick = (e: DataTableRowClickEvent) => {
+  const handleRowClick = useCallback((e: DataTableRowClickEvent) => {
     setSelectedSignatureForDialog(e.data as SystemSignature);
     setShowSignatureSettings(true);
-  };
+  }, []);
 
   const handleSelectSignatures = useCallback(
     (e: { value: SystemSignature[] }) => {
-      if (selectable) {
-        onSelect?.(e.value[0]);
-      } else {
-        setSelectedSignatures(e.value as ExtendedSystemSignature[]);
-      }
+      selectable ? onSelect?.(e.value[0]) : setSelectedSignatures(e.value as ExtendedSystemSignature[]);
     },
-    [selectable, onSelect, setSelectedSignatures],
+    [selectable, onSelect],
   );
 
-  const showDescriptionColumn = settings.find(s => s.key === SHOW_DESCRIPTION_COLUMN_SETTING)?.value;
-  const showUpdatedColumn = settings.find(s => s.key === SHOW_UPDATED_COLUMN_SETTING)?.value;
-  const showCharacterColumn = settings.find(s => s.key === SHOW_CHARACTER_COLUMN_SETTING)?.value;
-  const showCharacterPortrait = settings.find(s => s.key === SHOW_CHARACTER_PORTRAIT_SETTING)?.value;
-
-  const enabledGroups = settings
-    .filter(s => GROUPS_LIST.includes(s.key as SignatureGroup) && s.value === true)
-    .map(s => s.key);
+  const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(
+    () => ({
+      showDescriptionColumn: settings[SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN] as boolean,
+      showUpdatedColumn: settings[SETTINGS_KEYS.SHOW_UPDATED_COLUMN] as boolean,
+      showCharacterColumn: settings[SETTINGS_KEYS.SHOW_CHARACTER_COLUMN] as boolean,
+      showCharacterPortrait: settings[SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT] as boolean,
+    }),
+    [settings],
+  );
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
@@ -175,21 +174,58 @@ export function SystemSignaturesContent({
       if (hideLinkedSignatures && sig.linked_system) {
         return false;
       }
-      const isCosmicSignature = sig.kind === COSMIC_SIGNATURE;
 
-      if (isCosmicSignature) {
-        const showCosmic = settings.find(y => y.key === COSMIC_SIGNATURE)?.value;
-        if (!showCosmic) return false;
-        if (sig.group) {
-          const preparedGroup = getGroupIdByRawGroup(sig.group);
-          return enabledGroups.includes(preparedGroup);
+      if (sig.kind === SignatureKind.CosmicSignature) {
+        if (!settings[SETTINGS_KEYS.COSMIC_SIGNATURE]) {
+          return false;
         }
+
+        if (sig.group) {
+          const enabledGroups = Object.keys(settings).filter(
+            x => GROUPS_LIST.includes(x as SignatureGroup) && settings[x as SETTINGS_KEYS],
+          );
+
+          return enabledGroups.includes(getGroupIdByRawGroup(sig.group));
+        }
+
         return true;
-      } else {
-        return settings.find(y => y.key === sig.kind)?.value;
       }
+
+      return settings[sig.kind];
     });
-  }, [signatures, hideLinkedSignatures, settings, enabledGroups, filterSignature]);
+  }, [signatures, hideLinkedSignatures, settings, filterSignature]);
+
+  const onRowMouseEnter = useCallback((e: DataTableRowMouseEvent) => {
+    setHoveredSignature(e.data as SystemSignature);
+    tooltipRef.current?.show(e.originalEvent);
+  }, []);
+
+  const onRowMouseLeave = useCallback(() => {
+    setHoveredSignature(null);
+    tooltipRef.current?.hide();
+  }, []);
+
+  const refVars = useRef({ settings, selectedSignatures, setSortSettings });
+  refVars.current = { settings, selectedSignatures, setSortSettings };
+
+  // @ts-ignore
+  const getRowClassName = useCallback(([rowData]) => {
+    // TODO с какого-то хрена изменился формат. И тут в аргументе прилетает массив вместо даты... а дата лежит первым элементом
+    if (!rowData) {
+      return null;
+    }
+
+    return getSignatureRowClass(
+      rowData as ExtendedSystemSignature,
+      refVars.current.selectedSignatures,
+      refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
+    );
+  }, []);
+
+  const handleSortSettings = useCallback(
+    (e: DataTableStateEvent) => refVars.current.setSortSettings({ sortField: e.sortField, sortOrder: e.sortOrder }),
+    [],
+  );
 
   return (
     <div ref={tableRef} className="h-full">
@@ -213,31 +249,22 @@ export function SystemSignaturesContent({
           onRowDoubleClick={handleRowClick}
           sortField={sortSettings.sortField}
           sortOrder={sortSettings.sortOrder}
-          onSort={e => setSortSettings({ sortField: e.sortField, sortOrder: e.sortOrder })}
-          onRowMouseEnter={(e: DataTableRowMouseEvent) => {
-            setHoveredSignature(e.data as SystemSignature);
-            tooltipRef.current?.show(e.originalEvent);
-          }}
-          onRowMouseLeave={() => {
-            setHoveredSignature(null);
-            tooltipRef.current?.hide();
-          }}
-          rowClassName={rowData =>
-            getSignatureRowClass(rowData as ExtendedSystemSignature, selectedSignatures, colorByType)
-          }
+          onSort={handleSortSettings}
+          onRowMouseEnter={onRowMouseEnter}
+          onRowMouseLeave={onRowMouseLeave}
+          // @ts-ignore
+          rowClassName={getRowClassName}
         >
           <Column
             field="icon"
             header=""
-            headerStyle={headerInlineStyle}
-            body={sig => renderIcon(sig)}
+            body={renderColIcon}
             bodyClassName="p-0 px-1"
             style={{ maxWidth: 26, minWidth: 26, width: 26 }}
           />
           <Column
             field="eve_id"
             header="Id"
-            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: 72, minWidth: 72, width: 72 }}
             sortable
@@ -245,7 +272,6 @@ export function SystemSignaturesContent({
           <Column
             field="group"
             header="Group"
-            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: 110, minWidth: 110, width: 110 }}
             body={sig => sig.group ?? ''}
@@ -255,7 +281,6 @@ export function SystemSignaturesContent({
           <Column
             field="info"
             header="Info"
-            headerStyle={headerInlineStyle}
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: nameColumnWidth }}
             hidden={isCompact || isMedium}
@@ -265,7 +290,6 @@ export function SystemSignaturesContent({
             <Column
               field="description"
               header="Description"
-              headerStyle={headerInlineStyle}
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               hidden={isCompact}
               body={renderDescription}
@@ -275,18 +299,16 @@ export function SystemSignaturesContent({
           <Column
             field="inserted_at"
             header="Added"
-            headerStyle={headerInlineStyle}
             dataType="date"
             body={renderAddedTimeLeft}
             style={{ minWidth: 70, maxWidth: 80 }}
-            bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+            bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
             sortable
           />
           {showUpdatedColumn && (
             <Column
               field="updated_at"
               header="Updated"
-              headerStyle={headerInlineStyle}
               dataType="date"
               body={renderUpdatedTimeLeft}
               style={{ minWidth: 70, maxWidth: 80 }}
@@ -307,7 +329,6 @@ export function SystemSignaturesContent({
           {!selectable && (
             <Column
               header=""
-              headerStyle={headerInlineStyle}
               body={() => (
                 <div className="flex justify-end items-center gap-2 mr-[4px]">
                   <WdTooltipWrapper content="Double-click a row to edit signature">
@@ -327,7 +348,7 @@ export function SystemSignaturesContent({
         ref={tooltipRef}
         content={
           hoveredSignature ? (
-            <SignatureView signature={hoveredSignature} showCharacterPortrait={!!showCharacterPortrait} />
+            <SignatureView signature={hoveredSignature} showCharacterPortrait={showCharacterPortrait} />
           ) : null
         }
       />
@@ -342,4 +363,4 @@ export function SystemSignaturesContent({
       )}
     </div>
   );
-}
+};

@@ -263,7 +263,8 @@ export const WdTooltip = forwardRef(function WdTooltip(
       className={clsx(
         classes.tooltip,
         interactive ? 'pointer-events-auto' : 'pointer-events-none',
-        'absolute p-1 border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
+        'absolute px-2 py-1',
+        'border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
         className,
         pos === null ? 'invisible' : '',
       )}

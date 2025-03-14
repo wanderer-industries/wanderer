@@ -12,10 +12,12 @@ export const useHotkey = (isMetaKey: boolean, hotkeys: string[], callback: (e: K
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // TODO not sure that capture still needs
+    window.addEventListener('keydown', handleKeyDown, { capture: false });
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      // TODO not sure that capture still needs
+      window.removeEventListener('keydown', handleKeyDown, { capture: false });
     };
   }, [isMetaKey, hotkeys, callback]);
 };

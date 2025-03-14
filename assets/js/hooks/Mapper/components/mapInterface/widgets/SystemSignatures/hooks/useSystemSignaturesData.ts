@@ -1,28 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 import { useMapEventListener } from '@/hooks/Mapper/events';
-import { Commands, SystemSignature } from '@/hooks/Mapper/types';
+import { Commands, ExtendedSystemSignature, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
-import {
-  KEEP_LAZY_DELETE_SETTING,
-  LAZY_DELETE_SIGNATURES_SETTING,
-} from '@/hooks/Mapper/components/mapInterface/widgets';
-import { ExtendedSystemSignature, getActualSigs, mergeLocalPendingAdditions } from '../helpers';
+
+import { getActualSigs, mergeLocalPendingAdditions } from '../helpers';
 import { useSignatureFetching } from './useSignatureFetching';
 import { usePendingAdditions } from './usePendingAdditions';
 import { usePendingDeletions } from './usePendingDeletions';
 import { UseSystemSignaturesDataProps } from './types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { SETTINGS_KEYS } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
-export function useSystemSignaturesData({
+export const useSystemSignaturesData = ({
   systemId,
   settings,
   onCountChange,
   onPendingChange,
   onLazyDeleteChange,
   deletionTiming,
-}: UseSystemSignaturesDataProps) {
+}: UseSystemSignaturesDataProps) => {
   const { outCommand } = useMapRootState();
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
@@ -33,6 +31,7 @@ export function useSystemSignaturesData({
       setSignatures,
       deletionTiming,
     });
+
   const { pendingUndoAdditions, setPendingUndoAdditions, processAddedSignatures, clearPendingAdditions } =
     usePendingAdditions({
       setSignatures,
@@ -48,17 +47,16 @@ export function useSystemSignaturesData({
 
   const handlePaste = useCallback(
     async (clipboardString: string) => {
-      const lazyDeleteValue = settings.find(s => s.key === LAZY_DELETE_SIGNATURES_SETTING)?.value ?? false;
+      const lazyDeleteValue = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
 
       const incomingSignatures = parseSignatures(
         clipboardString,
-        settings.map(s => s.key),
+        Object.keys(settings).filter(skey => skey in SignatureKind),
       ) as ExtendedSystemSignature[];
 
-      const current = signaturesRef.current;
       const currentNonPending = lazyDeleteValue
-        ? current.filter(sig => !sig.pendingDeletion)
-        : current.filter(sig => !sig.pendingDeletion && !sig.pendingAddition);
+        ? signaturesRef.current.filter(sig => !sig.pendingDeletion)
+        : signaturesRef.current.filter(sig => !sig.pendingDeletion && !sig.pendingAddition);
 
       const { added, updated, removed } = getActualSigs(currentNonPending, incomingSignatures, !lazyDeleteValue, true);
 
@@ -78,6 +76,7 @@ export function useSystemSignaturesData({
             removed: [],
           },
         });
+
         if (resp) {
           const finalSigs = (resp.signatures ?? []) as SystemSignature[];
           setSignatures(prev =>
@@ -89,11 +88,9 @@ export function useSystemSignaturesData({
         }
       }
 
-      const keepLazy = settings.find(s => s.key === KEEP_LAZY_DELETE_SETTING)?.value ?? false;
+      const keepLazy = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
       if (lazyDeleteValue && !keepLazy) {
-        setTimeout(() => {
-          onLazyDeleteChange?.(false);
-        }, 0);
+        onLazyDeleteChange?.(false);
       }
     },
     [
@@ -187,4 +184,4 @@ export function useSystemSignaturesData({
     handleSelectAll,
     handlePaste,
   };
-}
+};

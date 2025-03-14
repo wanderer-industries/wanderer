@@ -7,8 +7,9 @@ import {
   SystemStructures,
   SystemKills,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
+import { CommentsWidget } from '@/hooks/Mapper/components/mapInterface/widgets/CommentsWidget';
 
-export const CURRENT_WINDOWS_VERSION = 8;
+export const CURRENT_WINDOWS_VERSION = 9;
 export const WINDOWS_LOCAL_STORE_KEY = 'windows:settings:v2';
 
 export enum WidgetsIds {
@@ -18,6 +19,7 @@ export enum WidgetsIds {
   routes = 'routes',
   structures = 'structures',
   kills = 'kills',
+  comments = 'comments',
 }
 
 export const STORED_VISIBLE_WIDGETS_DEFAULT = [
@@ -70,6 +72,13 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     zIndex: 0,
     content: () => <SystemKills />,
   },
+  {
+    id: WidgetsIds.comments,
+    position: { x: 10, y: 10 },
+    size: { width: 250, height: 300 },
+    zIndex: 0,
+    content: () => <CommentsWidget />,
+  },
 ];
 
 type WidgetsCheckboxesType = {
@@ -101,5 +110,9 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
   {
     id: WidgetsIds.kills,
     label: 'Kills',
+  },
+  {
+    id: WidgetsIds.comments,
+    label: 'Comments',
   },
 ];

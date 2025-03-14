@@ -2,8 +2,6 @@
 .scrollerContent {
   overflow-x: hidden;
   overflow-y: auto;
-  padding-right: 8px;
-  padding-left: 8px;
   height: 100% !important;
 }
 
@@ -13,11 +11,11 @@
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
-  
+
   // Target this specific VirtualScroller instance
   &:global(.p-virtualscroller) {
     height: 100% !important;
-    
+
     :global(.p-virtualscroller-content) {
       height: 100% !important;
     }

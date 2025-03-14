@@ -6,4 +6,6 @@ export * from './useRoutes';
 export * from './useCommandsConnections';
 export * from './useCommandsSystems';
 export * from './useCommandsCharacters';
+export * from './useCommandComments';
+export * from './useGetCacheCharacter';
 export * from './useCommandsActivity';

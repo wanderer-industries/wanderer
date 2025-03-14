@@ -4,14 +4,15 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { UserPermissions } from '@/hooks/Mapper/types';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
 import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
+import { CommentType, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
   addSystems = 'add_systems',
   updateSystems = 'update_systems',
+  systemCommentsUpdated = 'system_comments_updated',
   removeSystems = 'remove_systems',
   addConnections = 'add_connections',
   removeConnections = 'remove_connections',
@@ -29,6 +30,8 @@ export enum Commands {
   selectSystem = 'select_system',
   linkSignatureToSystem = 'link_signature_to_system',
   signaturesUpdated = 'signatures_updated',
+  systemCommentAdded = 'system_comment_added',
+  systemCommentRemoved = 'system_comment_removed',
   characterActivityData = 'character_activity_data',
   trackingCharactersData = 'tracking_characters_data',
   updateActivity = 'update_activity',
@@ -57,6 +60,8 @@ export type Command =
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
   | Commands.signaturesUpdated
+  | Commands.systemCommentAdded
+  | Commands.systemCommentRemoved
   | Commands.characterActivityData
   | Commands.trackingCharactersData
   | Commands.userSettingsUpdated
@@ -104,6 +109,14 @@ export type CommandLinkSignatureToSystem = {
   solar_system_target: number;
 };
 export type CommandLinkSignaturesUpdated = number;
+export type CommandCommentAdd = {
+  solarSystemId: string;
+  comment: CommentType;
+};
+export type CommandCommentRemoved = {
+  commentId: string;
+  solarSystemId: number;
+};
 export type CommandCharacterActivityData = { activity: ActivitySummary[]; loading?: boolean };
 export type CommandTrackingCharactersData = { characters: TrackingCharacter[] };
 export type CommandUserSettingsUpdated = {
@@ -171,6 +184,8 @@ export interface CommandData {
   [Commands.userSettingsUpdated]: CommandUserSettingsUpdated;
   [Commands.updateActivity]: CommandUpdateActivity;
   [Commands.updateTracking]: CommandUpdateTracking;
+  [Commands.systemCommentAdded]: CommandCommentAdd;
+  [Commands.systemCommentRemoved]: CommandCommentRemoved;
 }
 
 export interface MapHandlers {
@@ -216,12 +231,18 @@ export enum OutCommand {
   getCorporationTicker = 'get_corporation_ticker',
   getSystemKills = 'get_system_kills',
   getSystemsKills = 'get_systems_kills',
+  addSystemComment = 'addSystemComment',
+  deleteSystemComment = 'deleteSystemComment',
+  getSystemComments = 'getSystemComments',
+  toggleTrack = 'toggle_track',
+  toggleFollow = 'toggle_follow',
+  getCharacterInfo = 'getCharacterInfo',
+
+  // Only UI commands
   openSettings = 'open_settings',
   showActivity = 'show_activity',
   hideTracking = 'hide_tracking',
   showTracking = 'show_tracking',
-  toggleTrack = 'toggle_track',
-  toggleFollow = 'toggle_follow',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',

@@ -9,16 +9,10 @@ import {
 } from '@/hooks/Mapper/types';
 
 export const TIME_ONE_MINUTE = 1000 * 60;
-export const TIME_TEN_MINUTES = 1000 * 60 * 10;
-export const TIME_ONE_DAY = 24 * 60 * 60 * 1000;
+export const TIME_TEN_MINUTES = TIME_ONE_MINUTE * 10;
+export const TIME_ONE_DAY = 24 * 60 * TIME_ONE_MINUTE;
 export const TIME_ONE_WEEK = 7 * TIME_ONE_DAY;
 export const FINAL_DURATION_MS = 10000;
-
-// Signature deletion timing options
-export const DELETION_TIMING_IMMEDIATE = 0;
-export const DELETION_TIMING_DEFAULT = 10000;
-export const DELETION_TIMING_EXTENDED = 30000;
-export const DELETION_TIMING_SETTING_KEY = 'DELETION_TIMING_SETTING';
 
 export const COMPACT_MAX_WIDTH = 260;
 export const MEDIUM_MAX_WIDTH = 380;
@@ -85,3 +79,124 @@ export const MAPPING_TYPE_TO_ENG = {
 };
 
 export const getGroupIdByRawGroup = (val: string) => MAPPING_GROUP_TO_ENG[val as SignatureGroup];
+
+export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
+export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_5';
+
+export enum SETTINGS_KEYS {
+  SHOW_DESCRIPTION_COLUMN = 'show_description_column',
+  SHOW_UPDATED_COLUMN = 'show_updated_column',
+  SHOW_CHARACTER_COLUMN = 'show_character_column',
+  LAZY_DELETE_SIGNATURES = 'lazy_delete_signatures',
+  KEEP_LAZY_DELETE = 'keep_lazy_delete_enabled',
+  DELETION_TIMING = 'deletion_timing',
+  COLOR_BY_TYPE = 'color_by_type',
+  SHOW_CHARACTER_PORTRAIT = 'show_character_portrait',
+
+  // From SignatureKind
+  COSMIC_ANOMALY = SignatureKind.CosmicAnomaly,
+  COSMIC_SIGNATURE = SignatureKind.CosmicSignature,
+  DEPLOYABLE = SignatureKind.Deployable,
+  STRUCTURE = SignatureKind.Structure,
+  STARBASE = SignatureKind.Starbase,
+  SHIP = SignatureKind.Ship,
+  DRONE = SignatureKind.Drone,
+
+  // From SignatureGroup
+  WORMHOLE = SignatureGroup.Wormhole,
+  RELIC_SITE = SignatureGroup.RelicSite,
+  DATA_SITE = SignatureGroup.DataSite,
+  ORE_SITE = SignatureGroup.OreSite,
+  GAS_SITE = SignatureGroup.GasSite,
+  COMBAT_SITE = SignatureGroup.CombatSite,
+}
+
+export enum SettingsTypes {
+  flag,
+  dropdown,
+}
+
+export type SignatureSettingsType = { [key in SETTINGS_KEYS]?: unknown };
+
+export type Setting = {
+  key: SETTINGS_KEYS;
+  name: string;
+  type: SettingsTypes;
+  isSeparator?: boolean;
+  options?: { label: string; value: any }[];
+};
+
+export enum SIGNATURES_DELETION_TIMING {
+  IMMEDIATE,
+  DEFAULT,
+  EXTENDED,
+}
+
+export const SIGNATURE_SETTINGS = {
+  filterFlags: [
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.COSMIC_ANOMALY, name: 'Show Anomalies' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.COSMIC_SIGNATURE, name: 'Show Cosmic Signatures' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.DEPLOYABLE, name: 'Show Deployables' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.STRUCTURE, name: 'Show Structures' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.STARBASE, name: 'Show Starbase' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHIP, name: 'Show Ships' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.DRONE, name: 'Show Drones And Charges' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.WORMHOLE, name: 'Show Wormholes' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.RELIC_SITE, name: 'Show Relic Sites' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.DATA_SITE, name: 'Show Data Sites' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.ORE_SITE, name: 'Show Ore Sites' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.GAS_SITE, name: 'Show Gas Sites' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.COMBAT_SITE, name: 'Show Combat Sites' },
+  ],
+  uiFlags: [
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_UPDATED_COLUMN, name: 'Show Updated Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN, name: 'Show Description Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_CHARACTER_COLUMN, name: 'Show Character Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
+    {
+      type: SettingsTypes.flag,
+      key: SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT,
+      name: 'Show Character Portrait in Tooltip',
+    },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.COLOR_BY_TYPE, name: 'Color Signatures by Type' },
+  ],
+  uiOther: [
+    {
+      type: SettingsTypes.dropdown,
+      key: SETTINGS_KEYS.DELETION_TIMING,
+      name: 'Deletion Timing',
+      options: [
+        { value: SIGNATURES_DELETION_TIMING.IMMEDIATE, label: '0s' },
+        { value: SIGNATURES_DELETION_TIMING.DEFAULT, label: '10s' },
+        { value: SIGNATURES_DELETION_TIMING.EXTENDED, label: '30s' },
+      ],
+    },
+  ],
+};
+
+export const SETTINGS_VALUES: SignatureSettingsType = {
+  [SETTINGS_KEYS.SHOW_UPDATED_COLUMN]: true,
+  [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
+  [SETTINGS_KEYS.SHOW_CHARACTER_COLUMN]: true,
+  [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: true,
+  [SETTINGS_KEYS.KEEP_LAZY_DELETE]: true,
+  [SETTINGS_KEYS.DELETION_TIMING]: SIGNATURES_DELETION_TIMING.DEFAULT,
+  [SETTINGS_KEYS.COLOR_BY_TYPE]: true,
+  [SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT]: true,
+
+  [SETTINGS_KEYS.COSMIC_ANOMALY]: true,
+  [SETTINGS_KEYS.COSMIC_SIGNATURE]: true,
+  [SETTINGS_KEYS.DEPLOYABLE]: true,
+  [SETTINGS_KEYS.STRUCTURE]: true,
+  [SETTINGS_KEYS.STARBASE]: true,
+  [SETTINGS_KEYS.SHIP]: true,
+  [SETTINGS_KEYS.DRONE]: true,
+
+  [SETTINGS_KEYS.WORMHOLE]: true,
+  [SETTINGS_KEYS.RELIC_SITE]: true,
+  [SETTINGS_KEYS.DATA_SITE]: true,
+  [SETTINGS_KEYS.ORE_SITE]: true,
+  [SETTINGS_KEYS.GAS_SITE]: true,
+  [SETTINGS_KEYS.COMBAT_SITE]: true,
+};

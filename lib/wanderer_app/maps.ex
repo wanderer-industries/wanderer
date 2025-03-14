@@ -3,6 +3,7 @@ defmodule WandererApp.Maps do
   use Nebulex.Caching
 
   require Ash.Query
+  import Ecto.Query
   require Logger
 
   @minimum_route_attrs [
@@ -171,7 +172,7 @@ defmodule WandererApp.Maps do
        map_member_alliance_ids: map_member_alliance_ids
      }} = _get_map_characters(map)
 
-    filtered_characters = user_characters
+    user_characters
     |> Enum.filter(fn c ->
       is_owner = c.id == map.owner_id
       is_acl_owner = c.id in map_acl_owner_ids
@@ -183,9 +184,6 @@ defmodule WandererApp.Maps do
 
       has_access
     end)
-
-
-    filtered_characters
   end
 
   defp filter_blocked_maps(maps, current_user) do
@@ -272,6 +270,15 @@ defmodule WandererApp.Maps do
           end
       end
     end)
+  end
+
+  def get_system_comments_activity(system_id) do
+    from(sc in WandererApp.Api.MapSystemComment,
+      where: sc.system_id == ^system_id,
+      group_by: [sc.id],
+      select: {count(sc.id)}
+    )
+    |> WandererApp.Repo.all()
   end
 
   def can_edit?(map, user) do

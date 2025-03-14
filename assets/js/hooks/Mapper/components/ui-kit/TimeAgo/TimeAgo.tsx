@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface TimeAgoProps {
   timestamp: string; // Теперь тип string, так как приходит ISO 8601 строка
 }
 
-export const TimeAgo: React.FC<TimeAgoProps> = ({ timestamp }) => {
+export const TimeAgo = ({ timestamp }: TimeAgoProps) => {
   const [timeAgo, setTimeAgo] = useState<string>('');
   const timeoutIdRef = useRef<number | null>(null);
 
