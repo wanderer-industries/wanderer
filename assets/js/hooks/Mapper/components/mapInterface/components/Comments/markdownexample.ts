@@ -1,26 +1,26 @@
 export const markdown = `
-# Заголовок 1
-## Заголовок 2
-### Заголовок 3
-#### Заголовок 4
-##### Заголовок 5
-###### Заголовок 6
+  # Heading 1
+  ## Heading 2
+  ### Heading 3
+  #### Heading 4
+  ##### Heading 5
+  ###### Heading 6
 
----
+  ---
 
-## Параграфы
-Это обычный текстовый параграф.
+  ## Paragraphs
+  This is a regular text paragraph.
 
-Еще один параграф, но с **жирным** и *курсивным* текстом, а также ~~зачеркнутым~~.
+  Another paragraph, but with **bold** and *italic* text, as well as ~~strikethrough~~.
 
-> Это блок цитаты.
-> Вторая строка цитаты.
+  > This is a block quote.
+  > Second line of the quote.
 
-## Ссылки
-[Ссылка на Google](https://www.google.com)
+  ## Links
+  [Link to Google](https://www.google.com)
 
-## Горизонтальная линия
-A block quote with ~strikethrough~ and a URL: https://reactjs.org.
----
+  ## Horizontal Line
+  A block quote with ~strikethrough~ and a URL: https://reactjs.org.
+  ---
 
   `;
