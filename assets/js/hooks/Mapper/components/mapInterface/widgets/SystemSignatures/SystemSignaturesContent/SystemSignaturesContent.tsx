@@ -209,8 +209,7 @@ export const SystemSignaturesContent = ({
   refVars.current = { settings, selectedSignatures, setSortSettings };
 
   // @ts-ignore
-  const getRowClassName = useCallback(([rowData]) => {
-    // TODO с какого-то хрена изменился формат. И тут в аргументе прилетает массив вместо даты... а дата лежит первым элементом
+  const getRowClassName = useCallback(rowData => {
     if (!rowData) {
       return null;
     }
