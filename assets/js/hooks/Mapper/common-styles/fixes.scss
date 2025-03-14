@@ -67,14 +67,20 @@
   }
 }
 
-.p-sortable-column {
-  font-size: 12px;
-  font-weight: bold;
-  padding: 3px 4px;
+.p-datatable-thead {
+  th, th.p-sortable-column {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 4px;
+  }
 }
 
 .p-selectable-row td {
   padding: 4px 4px;
+}
+
+.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 3px 4px;
 }
 
 .p-sortable-column > .p-column-header-content > span:last-child {

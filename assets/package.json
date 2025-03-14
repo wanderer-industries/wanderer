@@ -12,8 +12,11 @@
     "node": ">= 18.0.0"
   },
   "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.2",
+    "@codemirror/theme-one-dark": "^6.1.2",
     "@formkit/auto-animate": "0.7.0",
     "@shopify/draggable": "^1.1.3",
+    "@uiw/react-codemirror": "^4.23.10",
     "clsx": "^2.1.1",
     "daisyui": "^4.11.1",
     "fast-deep-equal": "^3.1.3",
@@ -26,14 +29,18 @@
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.6.5",
+    "prism-themes": "^1.9.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-error-boundary": "^4.0.13",
     "react-event-hook": "^3.1.2",
     "react-flow-renderer": "^10.3.17",
     "react-hook-form": "^7.53.1",
+    "react-markdown": "^10.0.1",
+    "react-transition-group": "^4.4.5",
     "react-usestateref": "^1.0.9",
     "reactflow": "^11.11.4",
+    "remark-breaks": "^4.0.0",
     "tailwindcss": "^3.3.6",
     "topbar": "^3.0.0",
     "use-local-storage-state": "^19.3.1"
@@ -71,15 +78,15 @@
     "vite-plugin-cdn-import": "^1.0.1"
   },
   "peerDependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.9.5"
   },
   "resolutions": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "keywords": [],
   "author": "",

@@ -7,3 +7,4 @@ export * from './mapUnionTypes';
 export * from './signatures';
 export * from './connectionPassages';
 export * from './permissions';
+export * from './comment';

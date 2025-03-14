@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import classes from './CharacterActivity.module.scss';
 import { CharacterCard } from '../../../ui-kit';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types';
 
@@ -20,18 +19,14 @@ interface CharacterActivityProps {
   onHide: () => void;
 }
 
-const getRowClassName = () => ['text-xs', 'leading-tight', 'p-selectable-row'];
+const getRowClassName = () => ['text-xs', 'leading-tight'];
 
 const renderCharacterTemplate = (rowData: ActivitySummary) => {
-  return (
-    <div className={classes.cellContent}>
-      <CharacterCard showShipName={false} showSystem={false} compact isOwn {...rowData.character} />
-    </div>
-  );
+  return <CharacterCard compact isOwn {...rowData.character} />;
 };
 
 const renderValueTemplate = (rowData: ActivitySummary, field: keyof ActivitySummary) => {
-  return <div className={`${classes.numericValueCell} tabular-nums`}>{rowData[field] as number}</div>;
+  return <div className="tabular-nums">{rowData[field] as number}</div>;
 };
 
 export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) => {
@@ -53,7 +48,7 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
     if (loading) {
       return (
         <div className="flex flex-col items-center justify-center h-[400px] w-full">
-          <ProgressSpinner className={classes.spinnerContainer} strokeWidth="4" />
+          <ProgressSpinner className="w-[50px] h-[50px]" strokeWidth="4" />
           <div className="mt-4 text-text-color-secondary text-sm">Loading character activity data...</div>
         </div>
       );
@@ -73,11 +68,10 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
         resizableColumns
         columnResizeMode="fit"
         className="w-full"
-        tableClassName={classes.dataTable}
+        tableClassName="w-full border-0"
         emptyMessage="No character activity data available"
         sortField="passages"
         sortOrder={-1}
-        responsiveLayout="scroll"
         size="small"
         rowClassName={getRowClassName}
         rowHover
@@ -87,10 +81,10 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Character"
           body={renderCharacterTemplate}
           sortable
-          headerStyle={{ minWidth: '75px', height: 'auto', overflow: 'visible' }}
-          bodyStyle={{ minWidth: '75px' }}
-          className={classes.characterColumn}
-          headerClassName={`${classes.columnHeader} ${classes.characterHeader}`}
+          // headerStyle={{ minWidth: '75px', height: 'auto', overflow: 'visible' }}
+          // bodyStyle={{ minWidth: '75px' }}
+          // className={classes.characterColumn}
+          // headerClassName={classes.columnHeader}
         />
 
         <Column
@@ -98,30 +92,30 @@ export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) =
           header="Passages"
           body={rowData => renderValueTemplate(rowData, 'passages')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
-          bodyStyle={{ width: '120px', textAlign: 'center' }}
-          className={classes.numericColumn}
-          headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
+          // headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
+          // bodyStyle={{ width: '120px', textAlign: 'center' }}
+          // className={classes.numericColumn}
+          // headerClassName={classes.columnHeader}
         />
         <Column
           field="connections"
           header="Connections"
           body={rowData => renderValueTemplate(rowData, 'connections')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
-          bodyStyle={{ width: '120px', textAlign: 'center' }}
-          className={classes.numericColumn}
-          headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
+          // headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
+          // bodyStyle={{ width: '120px', textAlign: 'center' }}
+          // className={classes.numericColumn}
+          // headerClassName={classes.columnHeader}
         />
         <Column
           field="signatures"
           header="Signatures"
           body={rowData => renderValueTemplate(rowData, 'signatures')}
           sortable
-          headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
-          bodyStyle={{ width: '120px', textAlign: 'center' }}
-          className={classes.numericColumn}
-          headerClassName={`${classes.columnHeader} ${classes.numericColumnHeader}`}
+          // headerStyle={{ width: '120px', textAlign: 'center', height: 'auto', overflow: 'visible' }}
+          // bodyStyle={{ width: '120px', textAlign: 'center' }}
+          // className={classes.numericColumn}
+          // headerClassName={classes.columnHeader}
         />
       </DataTable>
     );

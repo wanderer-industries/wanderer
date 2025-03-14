@@ -5,26 +5,16 @@ import { TabPanel, TabView } from 'primereact/tabview';
 import styles from './SystemSignatureSettingsDialog.module.scss';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
-
-export type Setting = {
-  key: string;
-  name: string;
-  value: boolean | number;
-  isFilter?: boolean;
-  options?: { label: string; value: number }[];
-};
-
-export const COSMIC_SIGNATURE = 'Cosmic Signature';
-export const COSMIC_ANOMALY = 'Cosmic Anomaly';
-export const DEPLOYABLE = 'Deployable';
-export const STRUCTURE = 'Structure';
-export const STARBASE = 'Starbase';
-export const SHIP = 'Ship';
-export const DRONE = 'Drone';
+import {
+  Setting,
+  SettingsTypes,
+  SIGNATURE_SETTINGS,
+  SignatureSettingsType,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 interface SystemSignatureSettingsDialogProps {
-  settings: Setting[];
-  onSave: (settings: Setting[]) => void;
+  settings: SignatureSettingsType;
+  onSave: (settings: SignatureSettingsType) => void;
   onCancel: () => void;
 }
 
@@ -34,21 +24,18 @@ export const SystemSignatureSettingsDialog = ({
   onCancel,
 }: SystemSignatureSettingsDialogProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [settings, setSettings] = useState<Setting[]>(defaultSettings);
+  const [settings, setSettings] = useState<SignatureSettingsType>(defaultSettings);
 
-  const filterSettings = settings.filter(setting => setting.isFilter);
-  const userSettings = settings.filter(setting => !setting.isFilter);
-
-  const handleSettingsChange = (key: string) => {
-    setSettings(prevState =>
-      prevState.map(item =>
-        item.key === key ? { ...item, value: typeof item.value === 'boolean' ? !item.value : item.value } : item,
-      ),
-    );
-  };
-
-  const handleDropdownChange = (key: string, value: number) => {
-    setSettings(prevState => prevState.map(item => (item.key === key ? { ...item, value } : item)));
+  const handleSettingsChange = ({ key, type }: Setting, value?: unknown) => {
+    setSettings(prev => {
+      switch (type) {
+        case SettingsTypes.dropdown:
+          return { ...prev, [key]: value };
+        case SettingsTypes.flag:
+          return { ...prev, [key]: !prev[key] };
+      }
+      return prev;
+    });
   };
 
   const handleSave = useCallback(() => {
@@ -56,17 +43,15 @@ export const SystemSignatureSettingsDialog = ({
   }, [onSave, settings]);
 
   const renderSetting = (setting: Setting) => {
+    const val = settings[setting.key];
     if (setting.options) {
       return (
         <div key={setting.key} className="flex items-center justify-between gap-2 mb-2">
           <label className="text-[#b8b8b8] text-[13px] select-none">{setting.name}</label>
           <Dropdown
-            value={setting.value}
-            options={setting.options.map(opt => ({
-              ...opt,
-              label: opt.label.split(' ')[0], // Just take the first part (e.g., "0s" from "Immediate (0s)")
-            }))}
-            onChange={e => handleDropdownChange(setting.key, e.value)}
+            value={val}
+            options={setting.options}
+            onChange={e => handleSettingsChange(setting, e.value)}
             className="w-40"
           />
         </div>
@@ -77,8 +62,8 @@ export const SystemSignatureSettingsDialog = ({
       <PrettySwitchbox
         key={setting.key}
         label={setting.name}
-        checked={!!setting.value}
-        setChecked={() => handleSettingsChange(setting.key)}
+        checked={!!val}
+        setChecked={() => handleSettingsChange(setting)}
       />
     );
   };
@@ -94,15 +79,15 @@ export const SystemSignatureSettingsDialog = ({
               className={styles.verticalTabView}
             >
               <TabPanel header="Filters" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">{filterSettings.map(renderSetting)}</div>
+                <div className="w-full h-full flex flex-col gap-1">
+                  {SIGNATURE_SETTINGS.filterFlags.map(renderSetting)}
+                </div>
               </TabPanel>
               <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
                 <div className="w-full h-full flex flex-col gap-1">
-                  {userSettings.filter(setting => !setting.options).map(renderSetting)}
-                  {userSettings.some(setting => setting.options) && (
-                    <div className="my-2 border-t border-stone-700/50"></div>
-                  )}
-                  {userSettings.filter(setting => setting.options).map(renderSetting)}
+                  {SIGNATURE_SETTINGS.uiFlags.map(renderSetting)}
+                  <div className="my-2 border-t border-stone-700/50"></div>
+                  {SIGNATURE_SETTINGS.uiOther.map(renderSetting)}
                 </div>
               </TabPanel>
             </TabView>

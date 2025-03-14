@@ -1,0 +1,40 @@
+.CERoot {
+  @apply border border-stone-400/30 rounded-[2px];
+
+  :global {
+    .cm-content {
+      @apply bg-stone-600/40;
+    }
+
+    .cm-scroller {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+    }
+
+    .cm-scroller::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .cm-scroller::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .cm-scroller::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    .cm-scroller::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .cm-scroller::-webkit-scrollbar-button {
+      display: none;
+      height: 0;
+      width: 0;
+    }
+
+  }
+}

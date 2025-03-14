@@ -17,6 +17,7 @@ export enum SignatureKind {
   Ship = 'Ship',
   Deployable = 'Deployable',
   Drone = 'Drone',
+  Starbase = 'Starbase',
 }
 
 export type GroupType = {
@@ -47,6 +48,12 @@ export type SystemSignature = {
   updated_at?: string;
 };
 
+export interface ExtendedSystemSignature extends SystemSignature {
+  pendingDeletion?: boolean;
+  pendingAddition?: boolean;
+  pendingUntil?: number;
+}
+
 export enum SignatureKindENG {
   CosmicSignature = 'Cosmic Signature',
   CosmicAnomaly = 'Cosmic Anomaly',
@@ -54,6 +61,7 @@ export enum SignatureKindENG {
   Ship = 'Ship',
   Deployable = 'Deployable',
   Drone = 'Drone',
+  Starbase = 'Starbase',
 }
 
 export enum SignatureKindRU {
@@ -63,6 +71,7 @@ export enum SignatureKindRU {
   Ship = 'Корабль',
   Deployable = 'Полевые блоки',
   Drone = 'Дрон',
+  Starbase = 'Starbase',
 }
 
 export enum SignatureGroupENG {

@@ -1,24 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { VirtualScroller } from 'primereact/virtualscroller';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { TrackingCharacterWrapper } from './TrackingCharacterWrapper';
 import { TrackingCharacter } from './types';
-import classes from './TrackAndFollow.module.scss';
 
 interface TrackAndFollowProps {
   visible: boolean;
   onHide: () => void;
 }
-
-const renderHeader = () => {
-  return (
-    <div className="dialog-header">
-      <span>Track & Follow</span>
-    </div>
-  );
-};
 
 export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
   const [trackedCharacters, setTrackedCharacters] = useState<string[]>([]);
@@ -101,7 +92,11 @@ export const TrackAndFollow = ({ visible, onHide }: TrackAndFollowProps) => {
 
   return (
     <Dialog
-      header={renderHeader()}
+      header={
+        <div className="dialog-header">
+          <span>Track & Follow</span>
+        </div>
+      }
       visible={visible}
       onHide={onHide}
       className="w-[500px] text-text-color"

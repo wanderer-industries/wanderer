@@ -26,7 +26,7 @@ const STORED_DEFAULT_VALUES: WindowLocalSettingsType = {
 const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: VirtualScrollerTemplateOptions) => {
   return (
     <div
-      className={clsx(classes.CharacterRow, 'w-full box-border', {
+      className={clsx(classes.CharacterRow, 'w-full box-border px-2 py-1', {
         'surface-hover': options.odd,
         ['border-b border-gray-600 border-opacity-20']: !options.last,
         ['bg-green-500 hover:bg-green-700 transition duration-300 bg-opacity-10 hover:bg-opacity-10']: item.online,

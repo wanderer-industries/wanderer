@@ -3,7 +3,12 @@
   opacity: 0.5;
   pointer-events: initial !important;
 
-  &:hover {
+  &.Disabled {
+    opacity: 0.3;
+    cursor: auto;
+  }
+
+  &:hover:not(&.Disabled) {
     opacity: 1;
   }
 }

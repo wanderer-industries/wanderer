@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
-import { ExtendedSystemSignature, schedulePendingAdditionForSig } from '../helpers/contentHelpers';
+import { useCallback, useRef, useState } from 'react';
 import { UsePendingAdditionParams } from './types';
 import { FINAL_DURATION_MS } from '../constants';
+import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
+import { schedulePendingAdditionForSig } from '../helpers/contentHelpers';
 
-export function usePendingAdditions({ setSignatures, deletionTiming }: UsePendingAdditionParams) {
+export const usePendingAdditions = ({ setSignatures, deletionTiming }: UsePendingAdditionParams) => {
   const [pendingUndoAdditions, setPendingUndoAdditions] = useState<ExtendedSystemSignature[]>([]);
   const pendingAdditionMapRef = useRef<Record<string, { finalUntil: number; finalTimeoutId: number }>>({});
 
@@ -66,4 +67,4 @@ export function usePendingAdditions({ setSignatures, deletionTiming }: UsePendin
     processAddedSignatures,
     clearPendingAdditions,
   };
-}
+};

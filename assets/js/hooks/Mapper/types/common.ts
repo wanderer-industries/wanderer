@@ -7,3 +7,5 @@ export interface WithChildren {
 export interface WithClassName {
   className?: string;
 }
+
+export type WithHTMLProps = React.HTMLAttributes<HTMLDivElement>;

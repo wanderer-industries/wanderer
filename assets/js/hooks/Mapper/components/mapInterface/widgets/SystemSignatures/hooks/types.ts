@@ -1,8 +1,9 @@
-import { ExtendedSystemSignature } from '../helpers/contentHelpers';
+import { SignatureSettingsType } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
 
 export interface UseSystemSignaturesDataProps {
   systemId: string;
-  settings: { key: string; value: boolean | number }[];
+  settings: SignatureSettingsType;
   hideLinkedSignatures?: boolean;
   onCountChange?: (count: number) => void;
   onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;

@@ -2,7 +2,6 @@ import React, { RefObject, useMemo } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
 import { PrimeIcons } from 'primereact/api';
 import { MenuItem } from 'primereact/menuitem';
-import { Edge } from '@reactflow/core/dist/esm/types/edges';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import clsx from 'clsx';
 import classes from './ContextMenuConnection.module.scss';
@@ -14,6 +13,7 @@ import {
   SHIP_SIZES_NAMES_SHORT,
   SHIP_SIZES_SIZE,
 } from '@/hooks/Mapper/components/map/constants.ts';
+import { Edge } from 'reactflow';
 
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;

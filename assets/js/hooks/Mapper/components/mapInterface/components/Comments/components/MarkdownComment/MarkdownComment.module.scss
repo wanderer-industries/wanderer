@@ -1,0 +1,70 @@
+.MarkdownCommentRoot {
+  border-left-width: 3px;
+
+  @apply text-[12px] leading-[1.2] text-stone-300 break-words;
+  @apply bg-gradient-to-r from-stone-600/40 via-stone-600/10 to-stone-600/0;
+
+  .h1 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  .h2 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  .h3 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  .h4 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  .h5 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  .h6 {
+    @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+  }
+
+  p {
+    @apply m-0 p-0 break-words whitespace-normal;
+  }
+
+  ul, ol {
+    @apply m-0 p-0 list-none;
+  }
+
+  li {
+    @apply m-0 break-words whitespace-normal;
+  }
+
+  blockquote {
+    @apply border-l-4 border-cyan-400 p-2 m-0 font-normal text-stone-300 italic break-words whitespace-normal;
+  }
+
+  a {
+    @apply text-violet-400 cursor-pointer transition-colors duration-200 break-words whitespace-normal;
+
+    &:hover {
+      @apply underline;
+    }
+  }
+
+  b, strong {
+    @apply font-bold text-green-400 break-words whitespace-normal;
+  }
+
+  i, em {
+    @apply italic text-pink-400 break-words whitespace-normal;
+  }
+
+  del {
+    @apply line-through text-stone-500 break-words whitespace-normal;
+  }
+
+  hr {
+    @apply border-none h-[1px] bg-cyan-400 opacity-50 my-2;
+  }
+}

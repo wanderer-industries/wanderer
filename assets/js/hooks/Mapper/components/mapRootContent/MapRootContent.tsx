@@ -8,7 +8,7 @@ import { OnTheMap, RightBar } from '@/hooks/Mapper/components/mapRootContent/com
 import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/components/MapContextMenu/MapContextMenu.tsx';
 import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings';
-import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
 import { TrackAndFollow } from '@/hooks/Mapper/components/mapRootContent/components/TrackAndFollow/TrackAndFollow';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
 import { useTrackAndFollowHandlers } from './hooks/useTrackAndFollowHandlers';
