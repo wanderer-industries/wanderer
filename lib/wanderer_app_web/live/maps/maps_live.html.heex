@@ -531,54 +531,15 @@
                 </div>
               </div>
 
-              <div :if={@active_settings_tab == "balance"}>
-                <div class="stats w-full bg-primary text-primary-content">
-                  <div class="stat">
-                    <div class="stat-figure text-primary">
-                      <.button
-                        :if={not @is_topping_up?}
-                        class="mt-2"
-                        type="button"
-                        phx-click="show_topup"
-                      >
-                        <.icon name="hero-banknotes-solid" class="w-4 h-4" /> Top Up
-                      </.button>
-                    </div>
-                    <div class="stat-title">Map balance</div>
-                    <div class="stat-value text-white">
-                      ISK <%= @map_balance
-                      |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
-                    </div>
-                    <div class="stat-actions text-end"></div>
-                  </div>
-                </div>
-
-                <.form
-                  :let={f}
-                  :if={@is_topping_up?}
-                  for={@topup_form}
-                  class="mt-2"
-                  phx-change="validate_topup"
-                  phx-submit="topup"
-                >
-                  <.input
-                    type="select"
-                    field={f[:amount]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Topup amount"
-                    placeholder="Select topup amount"
-                    options={@amounts}
-                  />
-                  <div class="modal-action">
-                    <.button class="mt-2" type="button" phx-click="hide_topup">
-                      Cancel
-                    </.button>
-                    <.button class="mt-2" type="submit">
-                      Top Up
-                    </.button>
-                  </div>
-                </.form>
-              </div>
+              <.live_component
+                :if={@active_settings_tab == "balance"}
+                module={WandererAppWeb.Maps.MapBalanceComponent}
+                id="map-balance-component"
+                map_id={@map.id}
+                notify_to={self()}
+                event_name="balance_event"
+                current_user={@current_user}
+              />
 
               <.live_component
                 :if={@active_settings_tab == "subscription"}

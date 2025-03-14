@@ -10,10 +10,20 @@ import { CommentsEditor } from '@/hooks/Mapper/components/mapInterface/component
 
 export const CommentsWidgetContent = () => {
   const {
-    data: { selectedSystems },
+    data: { selectedSystems, isSubscriptionActive },
   } = useMapRootState();
 
   const isNotSelectedSystem = selectedSystems.length !== 1;
+
+  if (!isSubscriptionActive) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">
+          Comments available with &#39;Active&#39; map subscription only (contact map administrators)
+        </span>
+      </div>
+    );
+  }
 
   if (isNotSelectedSystem) {
     return (

@@ -15,7 +15,7 @@
         <div class="card dark:bg-zinc-800 dark:border-zinc-600">
           <div class="card-body">
             <div class="col-span-6">
-              <span class="text-gray-700 dark:text-gray-400">Wanderer Balance</span>
+              <span class="text-gray-700 dark:text-gray-400">Account Balance</span>
               <h4 class="mt-4 font-medium text-gray-800 text-4xl dark:text-gray-100">
                 <span class="counter-value">
                   ISK <%= @wanderer_balance
@@ -308,27 +308,24 @@
         </h2>
         <ol class="list-decimal list-inside mb-4">
           <li class="mb-2">
-            <strong>Open Your Wallet:</strong>
-            Click on the wallet icon in the Neocom menu to access your financial overview.
+            <strong>Open corporations overview:</strong>
+            Click on the 'Social' and then on 'Corporation' in the Neocom menu to access corporations search.
           </li>
           <li class="mb-2">
-            <strong>Navigate to the 'Transfer ISK' Tab:</strong>
-            Find the 'Transfer ISK' option in your wallet interface.
+            <strong>Search for a Corporation:</strong>
+            Type in the search bar the name: <b><%= @corporation_info["name"] %></b>.
           </li>
           <li class="mb-2">
-            <strong>Choose 'Give ISK':</strong>
-            Click on the 'Give ISK' button to initiate the transfer.
+            <strong>Choose 'Give Money':</strong>
+            Select the 'Give Money' in the context menu to initiate the transfer.
           </li>
-          <li class="mb-2">
-            <strong>Enter Recipient's Name:</strong>
-            Type in the name of the Wanderer name: <b><%= @corporation_info["name"] %></b>.
-          </li>
+
           <li class="mb-2">
             <strong>Specify the Amount:</strong>
             Input the amount of ISK you wish to transfer to the corporate account.
           </li>
           <li class="mb-2">
-            <strong>Add a Note (Optional):</strong>
+            <strong>Add a Reason (Optional):</strong>
             Include a short note or reason for the transfer if desired.
           </li>
           <li class="mb-2">

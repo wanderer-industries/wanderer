@@ -144,8 +144,6 @@ defmodule WandererAppWeb.MapsLive do
           map
           |> WandererApp.Map.Server.get_export_settings()
 
-        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
         {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
 
         socket
@@ -165,8 +163,6 @@ defmodule WandererAppWeb.MapsLive do
           is_adding_subscription?: false,
           selected_subscription: nil,
           options_form: options_form_data |> to_form(),
-          map_balance: map_balance,
-          topup_form: %{} |> to_form(),
           layout_options: [
             {"Left To Right", "left_to_right"},
             {"Top To Bottom", "top_to_bottom"}
@@ -322,70 +318,6 @@ defmodule WandererAppWeb.MapsLive do
   def handle_event("change_settings_tab", %{"tab" => tab}, socket),
     do: {:noreply, socket |> assign(active_settings_tab: tab)}
 
-  @impl true
-  def handle_event("show_topup", _, socket),
-    do:
-      {:noreply,
-       socket
-       |> assign(
-         :amounts,
-         [
-           {"150M", 150_000_000},
-           {"300M", 300_000_000},
-           {"600M", 600_000_000},
-           {"1.2B", 1_200_000_000},
-           {"2.4B", 2_400_000_000},
-           {"5B", 5_000_000_000}
-         ]
-       )
-       |> assign(is_topping_up?: true)}
-
-  @impl true
-  def handle_event("hide_topup", _, socket),
-    do: {:noreply, socket |> assign(is_topping_up?: false)}
-
-  @impl true
-  def handle_event(
-        "topup",
-        %{"amount" => amount} = _event,
-        %{assigns: %{current_user: current_user, map: map, map_id: map_id}} = socket
-      ) do
-    amount = amount |> Decimal.new() |> Decimal.to_float()
-
-    user =
-      current_user.id
-      |> WandererApp.User.load()
-
-    {:ok, user_balance} =
-      user
-      |> WandererApp.User.get_balance()
-
-    case amount <= user_balance do
-      true ->
-        {:ok, _t} =
-          WandererApp.Api.MapTransaction.create(%{
-            map_id: map_id,
-            user_id: current_user.id,
-            amount: amount,
-            type: :in
-          })
-
-        {:ok, _user} =
-          user
-          |> WandererApp.Api.User.update_balance(%{
-            balance: (user_balance || 0.0) - amount
-          })
-
-        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
-        {:noreply, socket |> assign(is_topping_up?: false, map_balance: map_balance)}
-
-      _ ->
-        {:noreply,
-         socket |> put_flash(:error, "You don't have enough ISK on your account balance!")}
-    end
-  end
-
   def handle_event("open_acl", %{"data" => id}, socket) do
     {:noreply,
      socket
@@ -536,20 +468,10 @@ defmodule WandererAppWeb.MapsLive do
 
   @impl true
   def handle_info(
-        {"subscriptions_event", {:flash, type, message}},
+        {_event, {:flash, type, message}},
         socket
       ) do
     {:noreply, socket |> put_flash(type, message)}
-  end
-
-  @impl true
-  def handle_info(
-        {"subscriptions_event", :update_map_balance},
-        %{assigns: %{map: map}} = socket
-      )
-      when not is_nil(map) do
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-    {:noreply, socket |> assign(map_balance: map_balance)}
   end
 
   @impl true

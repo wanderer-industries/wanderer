@@ -25,7 +25,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
   end
 
   @impl true
-  def update(%{map_id: map_id, current_user: current_user} = assigns, socket) do
+  def update(%{map_id: map_id} = assigns, socket) do
     socket = handle_info_or_assign(socket, assigns)
 
     subscription_form = %{
@@ -217,12 +217,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {:flash, :info, "Subscription added!"}
         )
 
-        notify_to(
-          socket.assigns.notify_to,
-          socket.assigns.event_name,
-          :update_map_balance
-        )
-
         {:noreply,
          socket
          |> assign(
@@ -336,12 +330,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           socket.assigns.notify_to,
           socket.assigns.event_name,
           {:flash, :info, "Subscription updated!"}
-        )
-
-        notify_to(
-          socket.assigns.notify_to,
-          socket.assigns.event_name,
-          :update_map_balance
         )
 
         {:noreply,
@@ -464,22 +452,22 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         </.button>
       </div>
       <.table
-        class="!max-h-[300px] !overflow-y-auto"
+        class="!max-h-[200px] !overflow-y-auto"
         empty_label="No active subscriptions, using alpha plan by default."
         id="active-subscriptions-tbl"
         rows={@map_subscriptions}
       >
         <:col :let={subscription} label="Subscription Plan">
-          <%= subscription.plan %>
+          {subscription.plan}
         </:col>
         <:col :let={subscription} label="Status">
-          <%= subscription.status %>
+          {subscription.status}
         </:col>
         <:col :let={subscription} label="Characters Limit">
-          <%= subscription.characters_limit %>
+          {subscription.characters_limit}
         </:col>
         <:col :let={subscription} label="Hubs Limit">
-          <%= subscription.hubs_limit %>
+          {subscription.hubs_limit}
         </:col>
         <:col :let={subscription} label="Active Till">
           <.local_time
@@ -487,11 +475,11 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
             id={"subscription-active-till-#{subscription.id}"}
             at={subscription.active_till}
           >
-            <%= subscription.active_till %>
+            {subscription.active_till}
           </.local_time>
         </:col>
         <:col :let={subscription} label="Auto Renew">
-          <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+          {if subscription.auto_renew?, do: "Yes", else: "No"}
         </:col>
         <:action :let={subscription}>
           <div class="tooltip tooltip-left" data-tip="Edit subscription">
@@ -581,15 +569,15 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
                 <div>
                   <div class="stat-title">Estimated price</div>
                   <div class="stat-value text-white">
-                    ISK <%= (@estimated_price - @discount)
-                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                    ISK {(@estimated_price - @discount)
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                   </div>
                 </div>
                 <div>
                   <div class="stat-title">Discount</div>
                   <div class="stat-value text-white relative">
-                    ISK <%= @discount
-                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                    ISK {@discount
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                     <span class="absolute top-0 right-0 text-xs text-white discount" />
                   </div>
                 </div>
@@ -611,8 +599,8 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
               </div>
               <div class="stat-title">Additional price (mounthly)</div>
               <div class="stat-value text-white">
-                ISK <%= @additional_price
-                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                ISK {@additional_price
+                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
               </div>
               <div class="stat-actions text-end"></div>
             </div>
