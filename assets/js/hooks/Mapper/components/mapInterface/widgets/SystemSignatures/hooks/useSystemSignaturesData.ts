@@ -118,7 +118,7 @@ export const useSystemSignaturesData = ({
     setSelectedSignatures(signatures);
   }, [signatures]);
 
-  const undoPending = useCallback(() => {
+  const undoPending = useCallback(async () => {
     clearPendingDeletions();
     clearPendingAdditions();
     setSignatures(prev =>
@@ -126,20 +126,24 @@ export const useSystemSignaturesData = ({
     );
 
     if (pendingUndoAdditions.length) {
-      pendingUndoAdditions.forEach(async sig => {
+      try {
         await outCommand({
           type: OutCommand.updateSignatures,
           data: {
             system_id: systemId,
             added: [],
             updated: [],
-            removed: [sig],
+            removed: pendingUndoAdditions,
           },
         });
-      });
-      setSignatures(prev => prev.filter(x => !pendingUndoAdditions.some(u => u.eve_id === x.eve_id)));
-      setPendingUndoAdditions([]);
+
+        setSignatures(prev => prev.filter(x => !pendingUndoAdditions.some(u => u.eve_id === x.eve_id)));
+        setPendingUndoAdditions([]);
+      } catch (error) {
+        console.error('Failed to undo signature additions:', error);
+      }
     }
+
     setLocalPendingDeletions([]);
   }, [
     clearPendingDeletions,

@@ -45,17 +45,17 @@ export const SystemSignatures = () => {
     setCurrentSettings(prev => ({ ...prev, [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: value }));
   }, []);
 
-  useHotkey(true, ['z'], event => {
+  useHotkey(true, ['z'], async event => {
     if (pendingSigs.length > 0) {
       event.preventDefault();
       event.stopPropagation();
-      undoPendingFnRef.current();
+      await undoPendingFnRef.current();
       setPendingSigs([]);
     }
   });
 
-  const handleUndoClick = useCallback(() => {
-    undoPendingFnRef.current();
+  const handleUndoClick = useCallback(async () => {
+    await undoPendingFnRef.current();
     setPendingSigs([]);
   }, []);
 
