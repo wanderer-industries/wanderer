@@ -88,7 +88,7 @@ export const useSystemSignaturesData = ({
         }
       }
 
-      const keepLazy = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
+      const keepLazy = settings[SETTINGS_KEYS.KEEP_LAZY_DELETE] as boolean;
       if (lazyDeleteValue && !keepLazy) {
         onLazyDeleteChange?.(false);
       }

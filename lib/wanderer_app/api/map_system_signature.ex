@@ -47,6 +47,13 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     create :create do
       primary? true
+      upsert? true
+      upsert_identity :uniq_system_eve_id
+
+      upsert_fields [
+        :system_id,
+        :eve_id
+      ]
 
       accept [
         :system_id,
