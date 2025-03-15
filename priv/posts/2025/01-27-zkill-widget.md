@@ -72,6 +72,9 @@ The **zKill Widget** brings essential kill intel right to your map’s interface
 
 Start using the zKill Widget today and enjoy a more efficient, streamlined intel experience!
 
+
+---
+
 Fly safe,  
 **The Wanderer Team**
 

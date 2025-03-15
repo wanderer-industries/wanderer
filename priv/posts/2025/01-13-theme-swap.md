@@ -136,3 +136,8 @@ By following these steps, you’ll be able to quickly add your own themed experi
 ### Example of heavily customize node component and theme
 
 ![Faoble Theme]("/images/news/01-13-theme-swap/faoble-theme.png")
+
+---
+
+Fly safe,  
+**The Wanderer Team**

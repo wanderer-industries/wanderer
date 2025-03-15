@@ -86,3 +86,9 @@ The below settings are recommended for usability and security.
 - **Show offline characters to admins and managers Only**
 
    Prevents anyone that is not a manager or admin from seeing offline users and their ships and locations when viewing the 'On the map' feature.
+
+
+---
+
+Fly safe,  
+**The Wanderer Team**

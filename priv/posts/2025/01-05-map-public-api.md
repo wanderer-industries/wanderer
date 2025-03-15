@@ -360,5 +360,8 @@ Using these APIs, you can programmatically retrieve system and character informa
 
 For questions or additional support, please reach out to the Wanderer Team.
 
-Fly safe,
-WANDERER TEAM
+
+---
+
+Fly safe,  
+**The Wanderer Team**

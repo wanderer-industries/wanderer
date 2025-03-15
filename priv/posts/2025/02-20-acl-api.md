@@ -472,5 +472,9 @@ This guide outlines how to:
 
 By following these request patterns, you can manage your ACL resources in a fully programmatic fashion. If you have any questions, feel free to reach out to the Wanderer Team.
 
+---
+
 Fly safe,  
-**WANDERER TEAM**
+**The Wanderer Team**
+
+---
