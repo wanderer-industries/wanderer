@@ -2,6 +2,37 @@
 
 <!-- changelog -->
 
+## [v1.55.0](https://github.com/wanderer-industries/wanderer/compare/v1.54.1...v1.55.0) (2025-03-15)
+
+
+
+
+### Features:
+
+* News: added map subscription news
+
+* Api: added map audit base API. Added comments server validations.
+
+* enhance character activty and summmarize by user (#206)
+
+* enhance character activty and summmarize by user (#206)
+
+### Bug Fixes:
+
+* Core: updated balance top up instructions
+
+* updated connections cleanup logic
+
+* removed placeholder favicon (#240)
+
+* fixed activity aggregation and new user tracking (#230)
+
+* fixed activity aggregation and new user tracking (#230)
+
+* fixed activity aggregation and new user tracking (#230)
+
+* fixed activity aggregation and new user tracking (#230)
+
 ## [v1.54.1](https://github.com/wanderer-industries/wanderer/compare/v1.54.0...v1.54.1) (2025-03-06)
 
 
