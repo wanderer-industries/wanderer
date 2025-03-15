@@ -55,7 +55,7 @@ public_api_disabled =
 
 character_api_disabled =
   config_dir
-  |> get_var_from_path_or_env("WANDERER_CHARACTER_API_DISABLED", "false")
+  |> get_var_from_path_or_env("WANDERER_CHARACTER_API_DISABLED", "true")
   |> String.to_existing_atom()
 
 zkill_preload_disabled =
