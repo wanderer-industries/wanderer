@@ -1,29 +1,20 @@
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { Comments } from '@/hooks/Mapper/components/mapInterface/components/Comments';
-import { SystemView } from '@/hooks/Mapper/components/ui-kit';
+import { InfoDrawer, SystemView, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { useRef } from 'react';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
 import { COMPACT_MAX_WIDTH } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import clsx from 'clsx';
 import { CommentsEditor } from '@/hooks/Mapper/components/mapInterface/components/CommentsEditor';
+import { PrimeIcons } from 'primereact/api';
 
 export const CommentsWidgetContent = () => {
   const {
-    data: { selectedSystems, isSubscriptionActive },
+    data: { selectedSystems },
   } = useMapRootState();
 
   const isNotSelectedSystem = selectedSystems.length !== 1;
-
-  if (!isSubscriptionActive) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <span className="select-none text-center text-stone-400/80 text-sm">
-          Comments available with &#39;Active&#39; map subscription only (contact map administrators)
-        </span>
-      </div>
-    );
-  }
 
   if (isNotSelectedSystem) {
     return (
@@ -46,7 +37,7 @@ export const CommentsWidget = () => {
   const isCompact = useMaxWidth(containerRef, COMPACT_MAX_WIDTH);
 
   const {
-    data: { selectedSystems },
+    data: { selectedSystems, isSubscriptionActive },
   } = useMapRootState();
   const [systemId] = selectedSystems;
   const isNotSelectedSystem = selectedSystems.length !== 1;
@@ -54,13 +45,34 @@ export const CommentsWidget = () => {
   return (
     <Widget
       label={
-        <div ref={containerRef} className="flex items-center gap-1 text-xs w-full">
-          {!isCompact && (
-            <div className="flex whitespace-nowrap text-ellipsis overflow-hidden text-stone-400">
-              Comments {isNotSelectedSystem ? '' : 'in'}
-            </div>
-          )}
-          {!isNotSelectedSystem && <SystemView systemId={systemId} className="select-none text-center" hideRegion />}
+        <div ref={containerRef} className="flex justify-between items-center gap-1 text-xs w-full">
+          <div className="flex items-center gap-1">
+            {!isCompact && (
+              <div className="flex whitespace-nowrap text-ellipsis overflow-hidden text-stone-400">
+                Comments {isNotSelectedSystem ? '' : 'in'}
+              </div>
+            )}
+            {!isNotSelectedSystem && <SystemView systemId={systemId} className="select-none text-center" hideRegion />}
+          </div>
+          <WdImgButton
+            className={PrimeIcons.QUESTION_CIRCLE}
+            tooltip={{
+              position: TooltipPosition.left,
+              content: (
+                <div className="flex flex-col gap-1">
+                  <InfoDrawer title={<b className="text-slate-50">How to add/delete comment?</b>}>
+                    It is possible to use markdown formating. <br />
+                    Only users with tracking permission can add/delete comments. <br />
+                  </InfoDrawer>
+                  <InfoDrawer title={<b className="text-slate-50">Limitations</b>}>
+                    Each comment length is limited to <b>500</b> characters. <br />
+                    No more than <b>{isSubscriptionActive ? '500' : '30'}</b> comments are allowed per system*. <br />
+                    <small>* based on active map subscription.</small>
+                  </InfoDrawer>
+                </div>
+              ),
+            }}
+          />
         </div>
       }
     >

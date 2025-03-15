@@ -44,23 +44,51 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             current_user: current_user,
             has_tracked_characters?: true,
             map_id: map_id,
+            is_subscription_active?: is_subscription_active?,
             tracked_character_ids: tracked_character_ids,
             user_permissions: %{add_system: true}
           }
         } =
           socket
       ) do
-    map_id
-    |> WandererApp.Map.Server.add_system_comment(
-      %{
-        solar_system_id: solar_system_id,
-        text: text
-      },
-      current_user.id,
-      tracked_character_ids |> List.first()
-    )
+    system =
+      WandererApp.Map.find_system_by_location(map_id, %{
+        solar_system_id: solar_system_id |> String.to_integer()
+      })
 
-    {:noreply, socket}
+    comments_count =
+      system.id
+      |> WandererApp.Maps.get_system_comments_activity()
+      |> case do
+        [{count}] when not is_nil(count) ->
+          count
+
+        _ ->
+          0
+      end
+
+    cond do
+      (is_subscription_active? && comments_count < 500) || comments_count < 30 ->
+        map_id
+        |> WandererApp.Map.Server.add_system_comment(
+          %{
+            solar_system_id: solar_system_id,
+            text: text |> String.slice(0..500)
+          },
+          current_user.id,
+          tracked_character_ids |> List.first()
+        )
+
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> Phoenix.LiveView.put_flash(
+           :error,
+           "Your reach the maximum number of comments available. Please remove some comments before adding new ones."
+         )}
+    end
   end
 
   def handle_ui_event(
@@ -115,6 +143,9 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
 
     {:noreply, socket}
   end
+
+  def handle_ui_event(event, body, socket),
+    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
   def map_system_comment(nil), do: nil
 

@@ -54,7 +54,7 @@ defmodule WandererAppWeb.UserActivity do
       </p>
 
       <p class="text-sm text-[var(--color-gray-4)] w-[15%]">
-        <%= get_event_name(@activity.event_type) %>
+        {get_event_name(@activity.event_type)}
       </p>
       <.activity_event event_type={@activity.event_type} event_data={@activity.event_data} />
 
@@ -82,7 +82,7 @@ defmodule WandererAppWeb.UserActivity do
           <img src={member_icon_url(@character.eve_id)} alt={@character.name} />
         </div>
       </div>
-      <%= @character.name %>
+      {@character.name}
     </div>
     """
   end
@@ -95,7 +95,7 @@ defmodule WandererAppWeb.UserActivity do
     <div class="w-[40%]">
       <div class="flex items-center gap-1">
         <h6 class="text-base leading-[150%] font-semibold dark:text-white">
-          <%= get_event_data(@event_type, Jason.decode!(@event_data) |> Map.drop(["character_id"])) %>
+          {get_event_data(@event_type, Jason.decode!(@event_data) |> Map.drop(["character_id"]))}
         </h6>
       </div>
     </div>
@@ -109,26 +109,26 @@ defmodule WandererAppWeb.UserActivity do
     {:noreply, socket}
   end
 
-  defp get_event_name(:hub_added), do: "Hub Added"
-  defp get_event_name(:hub_removed), do: "Hub Removed"
-  defp get_event_name(:map_connection_added), do: "Connection Added"
-  defp get_event_name(:map_connection_updated), do: "Connection Updated"
-  defp get_event_name(:map_connection_removed), do: "Connection Removed"
-  defp get_event_name(:map_acl_added), do: "Acl Added"
-  defp get_event_name(:map_acl_removed), do: "Acl Removed"
-  defp get_event_name(:system_added), do: "System Added"
-  defp get_event_name(:system_updated), do: "System Updated"
-  defp get_event_name(:systems_removed), do: "System(s) Removed"
-  defp get_event_name(:signatures_added), do: "Signatures Added"
-  defp get_event_name(:signatures_removed), do: "Signatures Removed"
-  defp get_event_name(name), do: name
+  def get_event_name(:hub_added), do: "Hub Added"
+  def get_event_name(:hub_removed), do: "Hub Removed"
+  def get_event_name(:map_connection_added), do: "Connection Added"
+  def get_event_name(:map_connection_updated), do: "Connection Updated"
+  def get_event_name(:map_connection_removed), do: "Connection Removed"
+  def get_event_name(:map_acl_added), do: "Acl Added"
+  def get_event_name(:map_acl_removed), do: "Acl Removed"
+  def get_event_name(:system_added), do: "System Added"
+  def get_event_name(:system_updated), do: "System Updated"
+  def get_event_name(:systems_removed), do: "System(s) Removed"
+  def get_event_name(:signatures_added), do: "Signatures Added"
+  def get_event_name(:signatures_removed), do: "Signatures Removed"
+  def get_event_name(name), do: name
 
-  defp get_event_data(:map_acl_added, %{"acl_id" => acl_id}) do
+  def get_event_data(:map_acl_added, %{"acl_id" => acl_id}) do
     {:ok, acl} = WandererApp.AccessListRepo.get(acl_id)
     "#{acl.name}"
   end
 
-  defp get_event_data(:map_acl_removed, %{"acl_id" => acl_id}) do
+  def get_event_data(:map_acl_removed, %{"acl_id" => acl_id}) do
     {:ok, acl} = WandererApp.AccessListRepo.get(acl_id)
     "#{acl.name}"
   end
@@ -137,11 +137,11 @@ defmodule WandererAppWeb.UserActivity do
   # defp get_event_data(:system_added, data), do: data
   #
 
-  defp get_event_data(:system_updated, %{
-         "key" => "labels",
-         "solar_system_id" => solar_system_id,
-         "value" => value
-       }) do
+  def get_event_data(:system_updated, %{
+        "key" => "labels",
+        "solar_system_id" => solar_system_id,
+        "value" => value
+      }) do
     system_name = get_system_name(solar_system_id)
 
     try do
@@ -154,81 +154,81 @@ defmodule WandererAppWeb.UserActivity do
     end
   end
 
-  defp get_event_data(:system_added, %{
-         "solar_system_id" => solar_system_id
-       }),
-       do: get_system_name(solar_system_id)
+  def get_event_data(:system_added, %{
+        "solar_system_id" => solar_system_id
+      }),
+      do: get_system_name(solar_system_id)
 
-  defp get_event_data(:hub_added, %{
-         "solar_system_id" => solar_system_id
-       }),
-       do: get_system_name(solar_system_id)
+  def get_event_data(:hub_added, %{
+        "solar_system_id" => solar_system_id
+      }),
+      do: get_system_name(solar_system_id)
 
-  defp get_event_data(:hub_removed, %{
-         "solar_system_id" => solar_system_id
-       }),
-       do: get_system_name(solar_system_id)
+  def get_event_data(:hub_removed, %{
+        "solar_system_id" => solar_system_id
+      }),
+      do: get_system_name(solar_system_id)
 
-  defp get_event_data(:system_updated, %{
-         "key" => key,
-         "solar_system_id" => solar_system_id,
-         "value" => value
-       }) do
+  def get_event_data(:system_updated, %{
+        "key" => key,
+        "solar_system_id" => solar_system_id,
+        "value" => value
+      }) do
     system_name = get_system_name(solar_system_id)
     "#{system_name}: #{key} - #{inspect(value)}"
   end
 
-  defp get_event_data(:systems_removed, %{
-         "solar_system_ids" => solar_system_ids
-       }),
-       do:
-         solar_system_ids
-         |> Enum.map(&get_system_name/1)
-         |> Enum.join(", ")
+  def get_event_data(:systems_removed, %{
+        "solar_system_ids" => solar_system_ids
+      }),
+      do:
+        solar_system_ids
+        |> Enum.map(&get_system_name/1)
+        |> Enum.join(", ")
 
-  defp get_event_data(signatures_event, %{
-         "solar_system_id" => solar_system_id,
-         "signatures" => signatures
-       })
-       when signatures_event in [:signatures_added, :signatures_removed],
-       do: "#{get_system_name(solar_system_id)}: #{signatures |> Enum.join(", ")}"
+  def get_event_data(signatures_event, %{
+        "solar_system_id" => solar_system_id,
+        "signatures" => signatures
+      })
+      when signatures_event in [:signatures_added, :signatures_removed],
+      do: "#{get_system_name(solar_system_id)}: #{signatures |> Enum.join(", ")}"
 
-  defp get_event_data(signatures_event, %{
-         "signatures" => signatures
-       })
-       when signatures_event in [:signatures_added, :signatures_removed],
-       do: signatures |> Enum.join(", ")
+  def get_event_data(signatures_event, %{
+        "signatures" => signatures
+      })
+      when signatures_event in [:signatures_added, :signatures_removed],
+      do: signatures |> Enum.join(", ")
 
-  defp get_event_data(:map_connection_added, %{
-         "solar_system_source_id" => solar_system_source_id,
-         "solar_system_target_id" => solar_system_target_id
-       }) do
+  def get_event_data(:map_connection_added, %{
+        "solar_system_source_id" => solar_system_source_id,
+        "solar_system_target_id" => solar_system_target_id
+      }) do
     source_system_name = get_system_name(solar_system_source_id)
     target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}]"
   end
 
-  defp get_event_data(:map_connection_removed, %{
-         "solar_system_source_id" => solar_system_source_id,
-         "solar_system_target_id" => solar_system_target_id
-       }) do
+  def get_event_data(:map_connection_removed, %{
+        "solar_system_source_id" => solar_system_source_id,
+        "solar_system_target_id" => solar_system_target_id
+      }) do
     source_system_name = get_system_name(solar_system_source_id)
     target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}]"
   end
 
-  defp get_event_data(:map_connection_updated, %{
-         "key" => key,
-         "solar_system_source_id" => solar_system_source_id,
-         "solar_system_target_id" => solar_system_target_id,
-         "value" => value
-       }) do
+  def get_event_data(:map_connection_updated, %{
+        "key" => key,
+        "solar_system_source_id" => solar_system_source_id,
+        "solar_system_target_id" => solar_system_target_id,
+        "value" => value
+      }) do
     source_system_name = get_system_name(solar_system_source_id)
     target_system_name = get_system_name(solar_system_target_id)
     "[#{source_system_name}:#{target_system_name}] #{key} - #{inspect(value)}"
   end
 
-  defp get_event_data(_name, data), do: Jason.encode!(data)
+  def get_event_data(_name, data), do: Jason.encode!(data)
 
   defp get_system_name(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do

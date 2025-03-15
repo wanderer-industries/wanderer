@@ -180,7 +180,8 @@ defmodule WandererApp.Maps do
       is_member_corp = to_string(c.corporation_id) in map_member_corporation_ids
       is_member_alliance = to_string(c.alliance_id) in map_member_alliance_ids
 
-      has_access = is_owner or is_acl_owner or is_member_eve or is_member_corp or is_member_alliance
+      has_access =
+        is_owner or is_acl_owner or is_member_eve or is_member_corp or is_member_alliance
 
       has_access
     end)
@@ -275,8 +276,8 @@ defmodule WandererApp.Maps do
   def get_system_comments_activity(system_id) do
     from(sc in WandererApp.Api.MapSystemComment,
       where: sc.system_id == ^system_id,
-      group_by: [sc.id],
-      select: {count(sc.id)}
+      group_by: [sc.system_id],
+      select: {count(sc.system_id)}
     )
     |> WandererApp.Repo.all()
   end

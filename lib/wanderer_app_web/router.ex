@@ -114,9 +114,11 @@ defmodule WandererAppWeb.Router do
       http_url = URI.to_string(home_url)
 
       # Only add script-src-elem when in development mode
-      script_src_elem = if(@code_reloading, do:
-        @script_src_values ++ [ws_url, http_url],
-        else: @script_src_values)
+      script_src_elem =
+        if(@code_reloading,
+          do: @script_src_values ++ [ws_url, http_url],
+          else: @script_src_values
+        )
 
       directives = %{
         default_src: ~w('none'),
@@ -203,6 +205,7 @@ defmodule WandererAppWeb.Router do
 
   scope "/api/map", WandererAppWeb do
     pipe_through [:api, :api_map]
+    get "/audit", MapAuditAPIController, :index
     get "/systems", MapAPIController, :list_systems
     get "/system", MapAPIController, :show_system
     get "/characters", MapAPIController, :tracked_characters_with_info
