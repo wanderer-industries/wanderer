@@ -6,13 +6,6 @@ defmodule WandererAppWeb.CommonAPIController do
   alias WandererAppWeb.UtilAPIController, as: Util
   alias WandererApp.EveDataService
 
-  # Cache wormhole data at module compilation time
-  @wormhole_types WandererApp.EveDataService.load_wormhole_types()
-  @wormhole_classes WandererApp.EveDataService.load_wormhole_classes()
-  @wormhole_classes_by_id Enum.reduce(@wormhole_classes, %{}, fn class, acc ->
-    Map.put(acc, class.id, class)
-  end)
-
   @system_static_response_schema %OpenApiSpex.Schema{
     type: :object,
     properties: %{
@@ -168,11 +161,11 @@ defmodule WandererAppWeb.CommonAPIController do
   @doc """
   Gets detailed information for each static wormhole.
 
-  Uses the EveDataService to get wormhole type and class data.
+  Uses the CachedInfo to get wormhole type data and EveDataService for wormhole class data.
   """
   defp get_static_details(statics) do
-    # Load wormhole data from the service
-    wormhole_types = EveDataService.load_wormhole_types()
+    # Get wormhole data from CachedInfo and EveDataService
+    {:ok, wormhole_types} = CachedInfo.get_wormhole_types()
     wormhole_classes = EveDataService.load_wormhole_classes()
 
     # Create a map of wormhole classes by ID for quick lookup
