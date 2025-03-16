@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.55.2](https://github.com/wanderer-industries/wanderer/compare/v1.55.1...v1.55.2) (2025-03-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed lazy delete reset state
+
 ## [v1.55.1](https://github.com/wanderer-industries/wanderer/compare/v1.55.0...v1.55.1) (2025-03-16)
 
 
