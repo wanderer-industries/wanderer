@@ -65,19 +65,14 @@ defmodule WandererAppWeb.MapAPIController do
   @character_schema %OpenApiSpex.Schema{
     type: :object,
     properties: %{
-      id: %OpenApiSpex.Schema{type: :string},
       eve_id: %OpenApiSpex.Schema{type: :string},
       name: %OpenApiSpex.Schema{type: :string},
       corporation_id: %OpenApiSpex.Schema{type: :string},
-      corporation_name: %OpenApiSpex.Schema{type: :string},
       corporation_ticker: %OpenApiSpex.Schema{type: :string},
       alliance_id: %OpenApiSpex.Schema{type: :string},
-      alliance_name: %OpenApiSpex.Schema{type: :string},
-      alliance_ticker: %OpenApiSpex.Schema{type: :string},
-      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
-      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+      alliance_ticker: %OpenApiSpex.Schema{type: :string}
     },
-    required: ["id", "eve_id", "name"]
+    required: ["eve_id", "name"]
   }
 
   @tracked_char_schema %OpenApiSpex.Schema{
@@ -952,18 +947,6 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   defp character_to_json(ch) do
-    Map.take(ch, [
-      :id,
-      :eve_id,
-      :name,
-      :corporation_id,
-      :corporation_name,
-      :corporation_ticker,
-      :alliance_id,
-      :alliance_name,
-      :alliance_ticker,
-      :inserted_at,
-      :updated_at
-    ])
+    WandererAppWeb.MapEventHandler.map_ui_character_stat(ch)
   end
 end
