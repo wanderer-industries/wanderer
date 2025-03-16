@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
 import { SystemSignatureSettingsDialog } from './SystemSignatureSettingsDialog';
-import { SystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useHotkey } from '@/hooks/Mapper/hooks';
 import { SystemSignaturesHeader } from './SystemSignatureHeader';
@@ -10,15 +10,19 @@ import useLocalStorageState from 'use-local-storage-state';
 import {
   SETTINGS_KEYS,
   SETTINGS_VALUES,
+  SIGNATURE_DELETION_TIMEOUTS,
   SIGNATURE_SETTING_STORE_KEY,
   SIGNATURE_WINDOW_ID,
+  SIGNATURES_DELETION_TIMING,
   SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { calculateTimeRemaining } from './helpers';
 
 export const SystemSignatures = () => {
   const [visible, setVisible] = useState(false);
   const [sigCount, setSigCount] = useState<number>(0);
   const [pendingSigs, setPendingSigs] = useState<SystemSignature[]>([]);
+  const [pendingTimeRemaining, setPendingTimeRemaining] = useState<number | undefined>();
   const undoPendingFnRef = useRef<() => void>(() => {});
 
   const {
@@ -51,27 +55,45 @@ export const SystemSignatures = () => {
       event.stopPropagation();
       undoPendingFnRef.current();
       setPendingSigs([]);
+      setPendingTimeRemaining(undefined);
     }
   });
 
   const handleUndoClick = useCallback(() => {
     undoPendingFnRef.current();
     setPendingSigs([]);
+    setPendingTimeRemaining(undefined);
   }, []);
 
   const handleSettingsButtonClick = useCallback(() => {
     setVisible(true);
   }, []);
 
-  const handlePendingChange = useCallback((newPending: SystemSignature[], newUndo: () => void) => {
-    setPendingSigs(prev => {
-      if (newPending.length === prev.length && newPending.every(np => prev.some(pp => pp.eve_id === np.eve_id))) {
-        return prev;
-      }
-      return newPending;
-    });
-    undoPendingFnRef.current = newUndo;
-  }, []);
+  const handlePendingChange = useCallback(
+    (pending: React.MutableRefObject<Record<string, ExtendedSystemSignature>>, newUndo: () => void) => {
+      setPendingSigs(() => {
+        return Object.values(pending.current).filter(sig => sig.pendingDeletion);
+      });
+      undoPendingFnRef.current = newUndo;
+    },
+    [],
+  );
+
+  // Calculate the minimum time remaining for any pending signature
+  useEffect(() => {
+    if (pendingSigs.length === 0) {
+      setPendingTimeRemaining(undefined);
+      return;
+    }
+
+    const calculate = () => {
+      setPendingTimeRemaining(() => calculateTimeRemaining(pendingSigs));
+    };
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [pendingSigs]);
 
   return (
     <Widget
@@ -79,8 +101,8 @@ export const SystemSignatures = () => {
         <SystemSignaturesHeader
           sigCount={sigCount}
           lazyDeleteValue={currentSettings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
-          // lazyDeleteValue={lazyDeleteValue}
           pendingCount={pendingSigs.length}
+          pendingTimeRemaining={pendingTimeRemaining}
           onLazyDeleteChange={handleLazyDeleteChange}
           onUndoClick={handleUndoClick}
           onSettingsClick={handleSettingsButtonClick}
@@ -96,6 +118,12 @@ export const SystemSignatures = () => {
         <SystemSignaturesContent
           systemId={systemId}
           settings={currentSettings}
+          deletionTiming={
+            SIGNATURE_DELETION_TIMEOUTS[
+              (currentSettings[SETTINGS_KEYS.DELETION_TIMING] as keyof typeof SIGNATURE_DELETION_TIMEOUTS) ||
+                SIGNATURES_DELETION_TIMING.DEFAULT
+            ] as number
+          }
           onLazyDeleteChange={handleLazyDeleteChange}
           onCountChange={handleSigCountChange}
           onPendingChange={handlePendingChange}

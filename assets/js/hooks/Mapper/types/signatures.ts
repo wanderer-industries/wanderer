@@ -52,6 +52,7 @@ export interface ExtendedSystemSignature extends SystemSignature {
   pendingDeletion?: boolean;
   pendingAddition?: boolean;
   pendingUntil?: number;
+  finalTimeoutId?: number;
 }
 
 export enum SignatureKindENG {

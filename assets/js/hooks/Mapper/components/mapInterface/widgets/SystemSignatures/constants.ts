@@ -132,6 +132,8 @@ export enum SIGNATURES_DELETION_TIMING {
   EXTENDED,
 }
 
+export type SignatureDeletionTimingType = { [key in SIGNATURES_DELETION_TIMING]?: unknown };
+
 export const SIGNATURE_SETTINGS = {
   filterFlags: [
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COSMIC_ANOMALY, name: 'Show Anomalies' },
@@ -199,4 +201,10 @@ export const SETTINGS_VALUES: SignatureSettingsType = {
   [SETTINGS_KEYS.ORE_SITE]: true,
   [SETTINGS_KEYS.GAS_SITE]: true,
   [SETTINGS_KEYS.COMBAT_SITE]: true,
+};
+
+export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
+  [SIGNATURES_DELETION_TIMING.DEFAULT]: 10_000,
+  [SIGNATURES_DELETION_TIMING.IMMEDIATE]: 0,
+  [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
