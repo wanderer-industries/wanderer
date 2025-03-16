@@ -70,6 +70,7 @@ export function usePendingDeletions({
           });
           delete pendingDeletionMapRef.current[sig.eve_id];
           setSignatures(prev => prev.filter(x => x.eve_id !== sig.eve_id));
+          onPendingChange?.(pendingDeletionMapRef, clearPendingDeletions);
         },
         finalDuration,
       );

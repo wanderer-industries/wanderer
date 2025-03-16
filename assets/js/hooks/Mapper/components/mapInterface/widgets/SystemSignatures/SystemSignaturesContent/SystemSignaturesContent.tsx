@@ -57,7 +57,10 @@ interface SystemSignaturesContentProps {
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
-  onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
+  onPendingChange?: (
+    pending: React.MutableRefObject<Record<string, ExtendedSystemSignature>>,
+    undo: () => void,
+  ) => void;
   deletionTiming?: number;
   filterSignature?: (signature: SystemSignature) => boolean;
 }
