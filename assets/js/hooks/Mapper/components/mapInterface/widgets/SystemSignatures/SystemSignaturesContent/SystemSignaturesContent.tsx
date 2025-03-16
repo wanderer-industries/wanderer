@@ -57,7 +57,10 @@ interface SystemSignaturesContentProps {
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
-  onPendingChange?: (pending: ExtendedSystemSignature[], undo: () => void) => void;
+  onPendingChange?: (
+    pending: React.MutableRefObject<Record<string, ExtendedSystemSignature>>,
+    undo: () => void,
+  ) => void;
   deletionTiming?: number;
   filterSignature?: (signature: SystemSignature) => boolean;
 }
@@ -152,7 +155,7 @@ export const SystemSignaturesContent = ({
     (e: { value: SystemSignature[] }) => {
       selectable ? onSelect?.(e.value[0]) : setSelectedSignatures(e.value as ExtendedSystemSignature[]);
     },
-    [selectable, onSelect],
+    [selectable],
   );
 
   const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(
