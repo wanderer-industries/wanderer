@@ -3850,6 +3850,11 @@ minimatch@^3.0.4, minimatch@^3.0.5, minimatch@^3.1.1, minimatch@^3.1.2:
   dependencies:
     brace-expansion "^1.1.7"
 
+morphdom@2.7.4:
+  version "2.7.4"
+  resolved "https://registry.yarnpkg.com/morphdom/-/morphdom-2.7.4.tgz#c61d511e935cc25ca588dfaa752461f27865865e"
+  integrity sha512-ATTbWMgGa+FaMU3FhnFYB6WgulCqwf6opOll4CBzmVDTLvPMmUPrEv8CudmLPK0MESa64+6B89fWOxP3+YIlxQ==
+
 ms@2.1.2:
   version "2.1.2"
   resolved "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz"
@@ -4061,7 +4066,9 @@ path-type@^5.0.0:
   version "4.2.1"
 
 "phoenix_live_view@file:../deps/phoenix_live_view":
-  version "0.20.17"
+  version "1.0.5"
+  dependencies:
+    morphdom "2.7.4"
 
 picocolors@^1, picocolors@^1.0.0:
   version "1.0.0"
