@@ -131,6 +131,8 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         # If only tracked characters are shown, we might need to refresh the view
         if only_tracked_characters do
           Process.send_after(self(), :not_all_characters_tracked, 10)
+        else
+          Process.send_after(self(), %{event: :refresh_user_characters}, 10)
         end
 
         # Send the updated tracking data to the client
@@ -157,6 +159,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       {:ok, tracking_data} ->
         {:noreply,
          socket
+         |> MapEventHandler.push_map_event(
+           "show_tracking",
+           %{}
+         )
          |> MapEventHandler.push_map_event(
            "tracking_characters_data",
            %{characters: tracking_data}

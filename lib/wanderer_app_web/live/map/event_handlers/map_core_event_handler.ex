@@ -56,14 +56,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
         case track_character do
           false ->
-            :ok = MapCharactersEventHandler.untrack_characters(map_characters, map_id)
-            :ok = MapCharactersEventHandler.remove_characters(map_characters, map_id)
+            :ok = WandererApp.Character.TrackingUtils.untrack_characters(map_characters, map_id, self())
+            :ok = WandererApp.Character.TrackingUtils.remove_characters(map_characters, map_id)
 
           _ ->
-            :ok = MapCharactersEventHandler.track_characters(map_characters, map_id, true)
+            :ok = WandererApp.Character.TrackingUtils.track_characters(map_characters, map_id, true, self())
 
             :ok =
-              MapCharactersEventHandler.add_characters(map_characters, map_id, track_character)
+              WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
         end
 
         socket
