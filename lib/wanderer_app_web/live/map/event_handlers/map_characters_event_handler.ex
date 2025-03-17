@@ -156,10 +156,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         {:noreply,
          socket
          |> MapEventHandler.push_map_event(
-           "show_tracking",
-           %{}
-         )
-         |> MapEventHandler.push_map_event(
            "tracking_characters_data",
            %{characters: tracking_data}
          )}
