@@ -29,6 +29,15 @@ defmodule WandererAppWeb.MapActivityEventHandler do
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
+        "hide_activity",
+        _,
+        socket
+      ) do
+    # Simply return noreply as the client will handle hiding the dialog
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
         "show_activity",
         _,
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket

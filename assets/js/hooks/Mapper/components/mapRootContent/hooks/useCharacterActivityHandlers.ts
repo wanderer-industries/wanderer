@@ -56,7 +56,10 @@ export const useCharacterActivityHandlers = () => {
       // Update local state with the activity data
       update(state => ({
         ...state,
-        characterActivityData: activityData.activity,
+        characterActivityData: {
+          activity: activityData.activity,
+          loading: false,
+        },
         showCharacterActivity: true,
       }));
     },
