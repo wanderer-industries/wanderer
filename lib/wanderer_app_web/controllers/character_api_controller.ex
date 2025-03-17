@@ -15,13 +15,14 @@ defmodule WandererAppWeb.CharactersAPIController do
         items: %OpenApiSpex.Schema{
           type: :object,
           properties: %{
-            id: %OpenApiSpex.Schema{type: :string},
             eve_id: %OpenApiSpex.Schema{type: :string},
             name: %OpenApiSpex.Schema{type: :string},
-            corporation_name: %OpenApiSpex.Schema{type: :string},
-            alliance_name: %OpenApiSpex.Schema{type: :string}
+            corporation_id: %OpenApiSpex.Schema{type: :string},
+            corporation_ticker: %OpenApiSpex.Schema{type: :string},
+            alliance_id: %OpenApiSpex.Schema{type: :string},
+            alliance_ticker: %OpenApiSpex.Schema{type: :string}
           },
-          required: ["id", "eve_id", "name"]
+          required: ["eve_id", "name"]
         }
       }
     },
@@ -47,13 +48,7 @@ defmodule WandererAppWeb.CharactersAPIController do
       {:ok, characters} ->
         result =
           characters
-          |> Enum.map(&%{
-            id: &1.id,
-            eve_id: &1.eve_id,
-            name: &1.name,
-            corporation_name: &1.corporation_name,
-            alliance_name: &1.alliance_name
-          })
+          |> Enum.map(&WandererAppWeb.MapEventHandler.map_ui_character_stat/1)
 
         json(conn, %{data: result})
 
