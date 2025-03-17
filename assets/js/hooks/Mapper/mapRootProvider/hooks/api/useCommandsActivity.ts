@@ -45,16 +45,9 @@ export const useCommandsActivity = () => {
     }));
   }, []);
 
-  const hideTracking = useCallback(() => {
-    ref.current.update((state: MapRootData) => ({
-      ...state,
-      showTrackAndFollow: false,
-    }));
-  }, []);
-
   const userSettingsUpdated = useCallback((data: CommandUserSettingsUpdated) => {
     emitMapEvent({ name: Commands.userSettingsUpdated, data });
   }, []);
 
-  return { characterActivityData, trackingCharactersData, userSettingsUpdated, hideActivity, hideTracking };
+  return { characterActivityData, trackingCharactersData, userSettingsUpdated, hideActivity };
 };

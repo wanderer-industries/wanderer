@@ -241,7 +241,6 @@ export enum OutCommand {
   // Only UI commands
   openSettings = 'open_settings',
   showActivity = 'show_activity',
-  hideTracking = 'hide_tracking',
   showTracking = 'show_tracking',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
