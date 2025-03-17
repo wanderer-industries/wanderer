@@ -1,7 +1,9 @@
 import { WdCheckbox } from '@/hooks/Mapper/components/ui-kit/WdCheckbox/WdCheckbox';
-import WdRadioButton from '@/hooks/Mapper/components/ui-kit/WdRadioButton';
-import { CharacterCard, TooltipPosition, WdTooltipWrapper } from '../../../ui-kit';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit/WdTooltip/WdTooltip';
+import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
 import { CharacterTypeRaw } from '@/hooks/Mapper/types';
+import WdRadioButton from '@/hooks/Mapper/components/ui-kit/WdRadioButton';
 
 interface TrackingCharacterWrapperProps {
   character: CharacterTypeRaw;
@@ -26,7 +28,7 @@ export const TrackingCharacterWrapper = ({
       <div className="flex justify-center items-center p-0.5 text-center">
         <WdTooltipWrapper content="Track this character on the map" position={TooltipPosition.top}>
           <div className="flex justify-center items-center w-full">
-            <WdCheckbox id={trackCheckboxId} label="" value={isTracked} onChange={() => onTrackToggle()} />
+            <WdCheckbox id={trackCheckboxId} label="" value={isTracked} onChange={onTrackToggle} />
           </div>
         </WdTooltipWrapper>
       </div>

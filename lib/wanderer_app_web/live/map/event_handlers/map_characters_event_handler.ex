@@ -117,7 +117,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   def handle_ui_event(
         "toggle_track",
-        %{"character-id" => character_eve_id},
+        %{"character_id" => character_eve_id},
         %{
           assigns: %{
             map_id: map_id,
@@ -126,54 +126,24 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
-    # First, get all existing settings to preserve states
-    {:ok, all_settings} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
-
-    # Save the followed character ID before making any changes
-    followed_character_id =
-      all_settings
-      |> Enum.find(& &1.followed)
-      |> case do
-        nil -> nil
-        setting -> setting.character_id
-      end
-
-    # Find the character we're toggling
-    with {:ok, character} <-
-           WandererApp.Character.find_character_by_eve_id(current_user, character_eve_id),
-         {:ok, _updated_settings} <-
-           toggle_character_tracking(character, map_id, only_tracked_characters) do
-      # Get the map with ACLs
-      {:ok, map} = WandererApp.Api.Map.by_id(map_id)
-      map = Ash.load!(map, :acls)
-
-      # If there was a followed character before, check if it's still followed
-      # Only check if we're not toggling the followed character itself
-      if followed_character_id && followed_character_id != character.id do
-        # Get the current settings for the followed character
-        case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, followed_character_id) do
-          {:ok, current_settings} ->
-            # If it's not followed anymore, follow it again
-            if !current_settings.followed do
-              {:ok, _} = WandererApp.MapCharacterSettingsRepo.follow(current_settings)
-            end
-
-          _ ->
-            :ok
+    case WandererApp.Character.TrackingUtils.toggle_track(map_id, character_eve_id, current_user.id, self()) do
+      {:ok, tracking_data} ->
+        # If only tracked characters are shown, we might need to refresh the view
+        if only_tracked_characters do
+          Process.send_after(self(), :not_all_characters_tracked, 10)
         end
-      end
 
-      {:ok, tracking_data} = build_tracking_data(map_id, current_user)
+        # Send the updated tracking data to the client
+        {:noreply,
+         socket
+         |> MapEventHandler.push_map_event(
+           "tracking_characters_data",
+           %{characters: tracking_data}
+         )}
 
-      {:noreply,
-       socket
-       |> MapEventHandler.push_map_event(
-         "tracking_characters_data",
-         %{characters: tracking_data}
-       )}
-    else
-      _ ->
-        {:noreply, socket}
+      {:error, reason} ->
+        Logger.error("Failed to toggle track: #{inspect(reason)}")
+        {:noreply, socket |> put_flash(:error, "Failed to toggle character tracking")}
     end
   end
 
@@ -183,48 +153,35 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
     # Create tracking data for characters with access to the map
-    {:ok, tracking_data} = build_tracking_data(map_id, current_user)
+    case WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user.id) do
+      {:ok, tracking_data} ->
+        {:noreply,
+         socket
+         |> MapEventHandler.push_map_event(
+           "tracking_characters_data",
+           %{characters: tracking_data}
+         )}
 
-    {:noreply,
-     socket
-     |> MapEventHandler.push_map_event(
-       "show_tracking",
-       %{}
-     )
-     |> MapEventHandler.push_map_event(
-       "tracking_characters_data",
-       %{characters: tracking_data}
-     )}
+      {:error, reason} ->
+        Logger.error("Failed to load tracking data: #{inspect(reason)}")
+        {:noreply, socket |> put_flash(:error, "Failed to load tracking data")}
+    end
   end
 
   def handle_ui_event(
         "toggle_follow",
-        %{"character-id" => clicked_char_id},
+        %{"character_id" => clicked_char_id},
         %{assigns: %{current_user: current_user, map_id: map_id}} = socket
       ) do
-    # Get all settings before the operation to see the followed state
-    {:ok, all_settings_before} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
-    followed_before = all_settings_before |> Enum.find(& &1.followed)
+    case WandererApp.Character.TrackingUtils.toggle_follow(map_id, clicked_char_id, current_user.id, self()) do
+      {:ok, tracking_data} ->
+        {:noreply,
+         socket
+         |> MapEventHandler.push_map_event("tracking_characters_data", %{characters: tracking_data})}
 
-    # Check if the clicked character is already followed
-    is_already_followed =
-      followed_before && "#{followed_before.character_id}" == "#{clicked_char_id}"
-
-    # Use find_character_by_eve_id from WandererApp.Character
-    with {:ok, clicked_char} <-
-           WandererApp.Character.find_character_by_eve_id(current_user, clicked_char_id),
-         {:ok, _updated_settings} <-
-           toggle_character_follow(map_id, clicked_char, is_already_followed) do
-      # Build tracking data
-      {:ok, tracking_data} = build_tracking_data(map_id, current_user)
-
-      {:noreply,
-       socket
-       |> MapEventHandler.push_map_event("tracking_characters_data", %{characters: tracking_data})}
-    else
-      error ->
-        Logger.error("Failed to toggle follow: #{inspect(error)}")
-        {:noreply, socket}
+      {:error, reason} ->
+        Logger.error("Failed to toggle follow: #{inspect(reason)}")
+        {:noreply, socket |> put_flash(:error, "Failed to toggle character following")}
     end
   end
 
@@ -250,133 +207,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put(:alliance_ticker, Map.get(character, :alliance_ticker, ""))
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
-
-  def add_characters([], _map_id, _track_character), do: :ok
-
-  def add_characters([character | characters], map_id, track_character) do
-    map_id
-    |> WandererApp.Map.Server.add_character(character, track_character)
-
-    add_characters(characters, map_id, track_character)
-  end
-
-  def remove_characters([], _map_id), do: :ok
-
-  def remove_characters([character | characters], map_id) do
-    map_id
-    |> WandererApp.Map.Server.remove_character(character.id)
-
-    remove_characters(characters, map_id)
-  end
-
-  def untrack_characters(characters, map_id) do
-    characters
-    |> Enum.each(fn character ->
-      WandererAppWeb.Presence.untrack(self(), map_id, character.id)
-
-      WandererApp.Cache.put(
-        "#{inspect(self())}_map_#{map_id}:character_#{character.id}:tracked",
-        false
-      )
-
-      :ok =
-        Phoenix.PubSub.unsubscribe(
-          WandererApp.PubSub,
-          "character:#{character.eve_id}"
-        )
-    end)
-  end
-
-  def track_characters(_, _, false), do: :ok
-
-  def track_characters([], _map_id, _is_track_character?), do: :ok
-
-  def track_characters(
-        [character | characters],
-        map_id,
-        true
-      ) do
-    track_character(character, map_id)
-
-    track_characters(characters, map_id, true)
-  end
-
-  def track_character(
-        %{
-          id: character_id,
-          eve_id: eve_id,
-          corporation_id: corporation_id,
-          alliance_id: alliance_id
-        },
-        map_id
-      ) do
-    WandererAppWeb.Presence.track(self(), map_id, character_id, %{})
-
-    case WandererApp.Cache.lookup!(
-           "#{inspect(self())}_map_#{map_id}:character_#{character_id}:tracked",
-           false
-         ) do
-      true ->
-        :ok
-
-      _ ->
-        :ok =
-          Phoenix.PubSub.subscribe(
-            WandererApp.PubSub,
-            "character:#{eve_id}"
-          )
-
-        :ok =
-          WandererApp.Cache.put(
-            "#{inspect(self())}_map_#{map_id}:character_#{character_id}:tracked",
-            true
-          )
-    end
-
-    case WandererApp.Cache.lookup(
-           "#{inspect(self())}_map_#{map_id}:corporation_#{corporation_id}:tracked",
-           false
-         ) do
-      {:ok, true} ->
-        :ok
-
-      {:ok, false} ->
-        :ok =
-          Phoenix.PubSub.subscribe(
-            WandererApp.PubSub,
-            "corporation:#{corporation_id}"
-          )
-
-        :ok =
-          WandererApp.Cache.put(
-            "#{inspect(self())}_map_#{map_id}:corporation_#{corporation_id}:tracked",
-            true
-          )
-    end
-
-    case WandererApp.Cache.lookup(
-           "#{inspect(self())}_map_#{map_id}:alliance_#{alliance_id}:tracked",
-           false
-         ) do
-      {:ok, true} ->
-        :ok
-
-      {:ok, false} ->
-        :ok =
-          Phoenix.PubSub.subscribe(
-            WandererApp.PubSub,
-            "alliance:#{alliance_id}"
-          )
-
-        :ok =
-          WandererApp.Cache.put(
-            "#{inspect(self())}_map_#{map_id}:alliance_#{alliance_id}:tracked",
-            true
-          )
-    end
-
-    :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
-  end
 
   defp get_location(character),
     do: %{solar_system_id: character.solar_system_id, structure_id: character.structure_id}
@@ -461,8 +291,8 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   end
 
   defp handle_tracking_event({:track_characters, map_characters, track_character}, socket, map_id) do
-    :ok = track_characters(map_characters, map_id, track_character)
-    :ok = add_characters(map_characters, map_id, track_character)
+    :ok = WandererApp.Character.TrackingUtils.track_characters(map_characters, map_id, track_character, self())
+    :ok = WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
     socket
   end
 
@@ -553,167 +383,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       :character_online -> handle_online_result(socket, result)
       :character_ship -> handle_ship_result(socket, result)
       :character_fleet -> handle_fleet_result(socket, result)
-    end
-  end
-
-  defp toggle_character_follow(map_id, clicked_char, is_already_followed) do
-    with {:ok, clicked_char_settings} <-
-           WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, clicked_char.id) do
-      if is_already_followed do
-        # If already followed, just unfollow without affecting other characters
-        WandererApp.MapCharacterSettingsRepo.unfollow(clicked_char_settings)
-      else
-        # Normal follow toggle
-        update_follow_status(map_id, clicked_char, clicked_char_settings)
-      end
-    else
-      {:error, :not_found} ->
-        # Character not found in settings, create new settings
-        update_follow_status(map_id, clicked_char, nil)
-    end
-  end
-
-  defp update_follow_status(map_id, clicked_char, nil) do
-    # Create new settings with tracked=true and followed=true
-    # If we're following this character, unfollow all others first
-    :ok = maybe_unfollow_others(map_id, clicked_char.id, true)
-
-    result =
-      WandererApp.MapCharacterSettingsRepo.create(%{
-        character_id: clicked_char.id,
-        map_id: map_id,
-        tracked: true,
-        followed: true
-      })
-
-    result
-  end
-
-  defp update_follow_status(map_id, clicked_char, clicked_char_settings) do
-    # Toggle the followed state
-    followed = !clicked_char_settings.followed
-
-    # Only unfollow other characters if we're explicitly following this character
-    # This prevents unfollowing other characters when just tracking a character
-    if followed do
-      # We're following this character, so unfollow all others
-      :ok = maybe_unfollow_others(map_id, clicked_char.id, followed)
-    end
-
-    # If we're following, make sure the character is also tracked
-    :ok = maybe_track_character(clicked_char_settings, followed)
-
-    # Update the follow status
-    {:ok, settings} = update_follow(clicked_char_settings, followed)
-
-    {:ok, settings}
-  end
-
-  defp maybe_unfollow_others(_map_id, _char_id, false), do: :ok
-
-  defp maybe_unfollow_others(map_id, char_id, true) do
-    # This function should only be called when explicitly following a character,
-    # not when tracking a character. It unfollows all other characters when
-    # setting a character as followed.
-
-    {:ok, all_settings} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
-
-    # Unfollow other characters
-    all_settings
-    |> Enum.filter(&(&1.character_id != char_id && &1.followed))
-    |> Enum.each(fn setting ->
-      WandererApp.MapCharacterSettingsRepo.unfollow(setting)
-    end)
-
-    :ok
-  end
-
-  defp maybe_track_character(_settings, false), do: :ok
-
-  defp maybe_track_character(settings, true) do
-    if not settings.tracked do
-      {:ok, _} = WandererApp.MapCharacterSettingsRepo.track(settings)
-    end
-
-    :ok
-  end
-
-  defp update_follow(settings, true), do: WandererApp.MapCharacterSettingsRepo.follow(settings)
-  defp update_follow(settings, false), do: WandererApp.MapCharacterSettingsRepo.unfollow(settings)
-
-  defp build_tracking_data(map_id, current_user) do
-    with {:ok, map} <- WandererApp.Api.Map.by_id(map_id),
-         map <- Ash.load!(map, :acls),
-         {:ok, character_settings} <- WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id),
-         {:ok, %{characters: characters_with_access}} <-
-           WandererApp.Maps.load_characters(map, character_settings, current_user.id) do
-      tracking_data =
-        Enum.map(characters_with_access, fn char ->
-          setting = Enum.find(character_settings, &(&1.character_id == char.id))
-          tracked = if setting, do: setting.tracked, else: false
-          # Important: Preserve the followed state
-          followed = if setting, do: setting.followed, else: false
-
-          %{
-            character: char |> MapEventHandler.map_ui_character_stat(),
-            tracked: tracked,
-            followed: followed
-          }
-        end)
-
-      {:ok, tracking_data}
-    end
-  end
-
-  # Helper function to toggle character tracking
-  defp toggle_character_tracking(character, map_id, only_tracked_characters) do
-    case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character.id) do
-      {:ok, existing_settings} ->
-        if existing_settings.tracked do
-          # Untrack the character
-          {:ok, updated_settings} =
-            WandererApp.MapCharacterSettingsRepo.untrack(existing_settings)
-
-          :ok = untrack_characters([character], map_id)
-          :ok = remove_characters([character], map_id)
-
-          if only_tracked_characters do
-            Process.send_after(self(), :not_all_characters_tracked, 10)
-          end
-
-          # If the character was followed, we need to unfollow it too
-          # But we should NOT unfollow other characters
-          if existing_settings.followed do
-            {:ok, final_settings} =
-              WandererApp.MapCharacterSettingsRepo.unfollow(updated_settings)
-
-            {:ok, final_settings}
-          else
-            {:ok, updated_settings}
-          end
-        else
-          # Track the character
-          {:ok, updated_settings} =
-            WandererApp.MapCharacterSettingsRepo.track(existing_settings)
-
-          :ok = track_characters([character], map_id, true)
-          :ok = add_characters([character], map_id, true)
-          Process.send_after(self(), %{event: :refresh_user_characters}, 10)
-
-          {:ok, updated_settings}
-        end
-
-      {:error, :not_found} ->
-        # Create new settings
-        result =
-          WandererApp.MapCharacterSettingsRepo.create(%{
-            character_id: character.id,
-            map_id: map_id,
-            tracked: true,
-            followed: false
-          })
-
-        result
     end
   end
 end
