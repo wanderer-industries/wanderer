@@ -73,11 +73,11 @@ defmodule WandererAppWeb.CharactersTrackingLive do
 
   @impl true
   def handle_event("toggle_track_" <> character_id, _, socket) do
-    handle_event("toggle_track", %{"character-id" => character_id}, socket)
+    handle_event("toggle_track", %{"character_id" => character_id}, socket)
   end
 
   @impl true
-  def handle_event("toggle_track", %{"character-id" => character_id}, socket) do
+  def handle_event("toggle_track", %{"character_id" => character_id}, socket) do
     selected_map = socket.assigns.selected_map
     character_settings = socket.assigns.character_settings
 
