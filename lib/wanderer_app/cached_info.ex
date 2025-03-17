@@ -112,6 +112,31 @@ defmodule WandererApp.CachedInfo do
     end
   end
 
+  def get_wormhole_classes() do
+    case WandererApp.Cache.lookup(:wormhole_classes) do
+      {:ok, nil} ->
+        wormhole_classes = WandererApp.EveDataService.load_wormhole_classes()
+
+        cache_items(wormhole_classes, :wormhole_classes)
+
+        {:ok, wormhole_classes}
+
+      {:ok, wormhole_classes} ->
+        {:ok, wormhole_classes}
+    end
+  end
+
+  def get_wormhole_classes!() do
+    case get_wormhole_classes() do
+      {:ok, wormhole_classes} ->
+        wormhole_classes
+
+      error ->
+        Logger.error("Error loading wormhole classes: #{inspect(error)}")
+        error
+    end
+  end
+
   def get_effects() do
     case WandererApp.Cache.lookup(:effects) do
       {:ok, nil} ->

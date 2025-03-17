@@ -161,12 +161,12 @@ defmodule WandererAppWeb.CommonAPIController do
   @doc """
   Gets detailed information for each static wormhole.
 
-  Uses the CachedInfo to get wormhole type data and EveDataService for wormhole class data.
+  Uses the CachedInfo to get both wormhole type data and wormhole class data.
   """
   defp get_static_details(statics) do
-    # Get wormhole data from CachedInfo and EveDataService
+    # Get wormhole data from CachedInfo
     {:ok, wormhole_types} = CachedInfo.get_wormhole_types()
-    wormhole_classes = EveDataService.load_wormhole_classes()
+    wormhole_classes = CachedInfo.get_wormhole_classes!()
 
     # Create a map of wormhole classes by ID for quick lookup
     classes_by_id = Enum.reduce(wormhole_classes, %{}, fn class, acc ->
