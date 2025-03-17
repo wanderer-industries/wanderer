@@ -126,14 +126,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
-    case WandererApp.Character.TrackingUtils.toggle_track(map_id, character_eve_id, current_user.id, self()) do
-      {:ok, tracking_data} ->
-        # If only tracked characters are shown, we might need to refresh the view
-        if only_tracked_characters do
-          Process.send_after(self(), :not_all_characters_tracked, 10)
-        else
-          Process.send_after(self(), %{event: :refresh_user_characters}, 10)
-        end
+    case WandererApp.Character.TrackingUtils.toggle_track(map_id, character_eve_id, current_user.id, self(), only_tracked_characters) do
+      {:ok, tracking_data, event} ->
+        # Send the appropriate event based on the result from toggle_track
+        Process.send_after(self(), event, 10)
 
         # Send the updated tracking data to the client
         {:noreply,
@@ -180,7 +176,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{assigns: %{current_user: current_user, map_id: map_id}} = socket
       ) do
     case WandererApp.Character.TrackingUtils.toggle_follow(map_id, clicked_char_id, current_user.id, self()) do
-      {:ok, tracking_data} ->
+      {:ok, tracking_data, event} ->
+        # Send the appropriate event based on the result from toggle_follow
+        Process.send_after(self(), event, 10)
+
         {:noreply,
          socket
          |> MapEventHandler.push_map_event("tracking_characters_data", %{characters: tracking_data})}
