@@ -65,19 +65,14 @@ defmodule WandererAppWeb.MapAPIController do
   @character_schema %OpenApiSpex.Schema{
     type: :object,
     properties: %{
-      id: %OpenApiSpex.Schema{type: :string},
       eve_id: %OpenApiSpex.Schema{type: :string},
       name: %OpenApiSpex.Schema{type: :string},
       corporation_id: %OpenApiSpex.Schema{type: :string},
-      corporation_name: %OpenApiSpex.Schema{type: :string},
       corporation_ticker: %OpenApiSpex.Schema{type: :string},
       alliance_id: %OpenApiSpex.Schema{type: :string},
-      alliance_name: %OpenApiSpex.Schema{type: :string},
-      alliance_ticker: %OpenApiSpex.Schema{type: :string},
-      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
-      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+      alliance_ticker: %OpenApiSpex.Schema{type: :string}
     },
-    required: ["id", "eve_id", "name"]
+    required: ["eve_id", "name"]
   }
 
   @tracked_char_schema %OpenApiSpex.Schema{
@@ -169,6 +164,31 @@ defmodule WandererAppWeb.MapAPIController do
       data: %OpenApiSpex.Schema{
         type: :array,
         items: @system_kills_schema
+      }
+    },
+    required: ["data"]
+  }
+
+  # For operation :character_activity
+  @character_activity_item_schema %OpenApiSpex.Schema{
+    type: :object,
+    description: "Character activity data",
+    properties: %{
+      character: @character_schema,
+      passages: %OpenApiSpex.Schema{type: :integer, description: "Number of passages through systems"},
+      connections: %OpenApiSpex.Schema{type: :integer, description: "Number of connections created"},
+      signatures: %OpenApiSpex.Schema{type: :integer, description: "Number of signatures added"},
+      timestamp: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Timestamp of the activity"}
+    },
+    required: ["character", "passages", "connections", "signatures"]
+  }
+
+  @character_activity_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :array,
+        items: @character_activity_item_schema
       }
     },
     required: ["data"]
@@ -622,6 +642,103 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
+  @doc """
+  GET /api/map/character_activity
+
+  Returns character activity data for a map.
+
+  Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
+
+  Example:
+      GET /api/map/character_activity?map_id=<uuid>
+      GET /api/map/character_activity?slug=<map-slug>
+  """
+  @spec character_activity(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :character_activity,
+    summary: "Get Character Activity",
+    description: "Returns character activity data for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: ""
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: "map-name"
+      ]
+    ],
+    responses: [
+      ok: {
+        "Character activity data",
+        "application/json",
+        @character_activity_response_schema
+      },
+      bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          error: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["error"],
+        example: %{
+          "error" => "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        }
+      }}
+    ]
+  def character_activity(conn, params) do
+    with {:ok, map_id} <- Util.fetch_map_id(params),
+         current_user <- conn.assigns.current_user do
+      # Get raw activity data from the domain logic
+      result = WandererApp.Character.Activity.process_character_activity(map_id, current_user)
+
+      # Group activities by user_id and summarize
+      summarized_result =
+        result
+        |> Enum.group_by(fn activity ->
+          # Get user_id from the character
+          activity.character.user_id
+        end)
+        |> Enum.map(fn {_user_id, user_activities} ->
+          # Get the most active or followed character for this user
+          representative_activity =
+            user_activities
+            |> Enum.max_by(fn activity ->
+              activity.passages + activity.connections + activity.signatures
+            end)
+
+          # Sum up all activities for this user
+          total_passages = Enum.sum(Enum.map(user_activities, & &1.passages))
+          total_connections = Enum.sum(Enum.map(user_activities, & &1.connections))
+          total_signatures = Enum.sum(Enum.map(user_activities, & &1.signatures))
+
+          # Return summarized activity with the mapped character
+          %{
+            character: character_to_json(representative_activity.character),
+            passages: total_passages,
+            connections: total_connections,
+            signatures: total_signatures,
+            timestamp: representative_activity.timestamp
+          }
+        end)
+
+      json(conn, %{data: summarized_result})
+    else
+      {:error, msg} when is_binary(msg) ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Could not fetch character activity: #{inspect(reason)}"})
+    end
+  end
 
   # If hours_str is present and valid, parse it. Otherwise return nil (no filter).
   defp parse_hours_ago(nil), do: nil
@@ -830,18 +947,6 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   defp character_to_json(ch) do
-    Map.take(ch, [
-      :id,
-      :eve_id,
-      :name,
-      :corporation_id,
-      :corporation_name,
-      :corporation_ticker,
-      :alliance_id,
-      :alliance_name,
-      :alliance_ticker,
-      :inserted_at,
-      :updated_at
-    ])
+    WandererAppWeb.MapEventHandler.map_ui_character_stat(ch)
   end
 end

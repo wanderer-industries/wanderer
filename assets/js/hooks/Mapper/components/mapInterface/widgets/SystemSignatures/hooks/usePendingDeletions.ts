@@ -1,17 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { prepareUpdatePayload, scheduleLazyDeletionTimers } from '../helpers';
+import { prepareUpdatePayload, scheduleLazyTimers } from '../helpers';
 import { UsePendingDeletionParams } from './types';
 import { FINAL_DURATION_MS } from '../constants';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
 
-export function usePendingDeletions({ systemId, setSignatures, deletionTiming }: UsePendingDeletionParams) {
+export function usePendingDeletions({
+  systemId,
+  setSignatures,
+  deletionTiming,
+  onPendingChange,
+}: UsePendingDeletionParams) {
   const { outCommand } = useMapRootState();
-  const [localPendingDeletions, setLocalPendingDeletions] = useState<ExtendedSystemSignature[]>([]);
-  const [pendingDeletionMap, setPendingDeletionMap] = useState<
-    Record<string, { finalUntil: number; finalTimeoutId: number }>
-  >({});
+  const pendingDeletionMapRef = useRef<Record<string, ExtendedSystemSignature>>({});
 
   // Use the provided deletion timing or fall back to the default
   const finalDuration = deletionTiming !== undefined ? deletionTiming : FINAL_DURATION_MS;
@@ -37,15 +39,17 @@ export function usePendingDeletions({ systemId, setSignatures, deletionTiming }:
       const processedRemoved = removed.map(r => ({
         ...r,
         pendingDeletion: true,
-        pendingAddition: false,
         pendingUntil: now + finalDuration,
       }));
-      setLocalPendingDeletions(prev => [...prev, ...processedRemoved]);
+      pendingDeletionMapRef.current = {
+        ...pendingDeletionMapRef.current,
+        ...processedRemoved.reduce((acc: any, sig) => {
+          acc[sig.eve_id] = sig;
+          return acc;
+        }, {}),
+      };
 
-      outCommand({
-        type: OutCommand.updateSignatures,
-        data: prepareUpdatePayload(systemId, added, updated, []),
-      });
+      onPendingChange?.(pendingDeletionMapRef, clearPendingDeletions);
 
       setSignatures(prev =>
         prev.map(sig => {
@@ -56,37 +60,35 @@ export function usePendingDeletions({ systemId, setSignatures, deletionTiming }:
         }),
       );
 
-      scheduleLazyDeletionTimers(
+      scheduleLazyTimers(
         processedRemoved,
-        setPendingDeletionMap,
+        pendingDeletionMapRef,
         async sig => {
           await outCommand({
             type: OutCommand.updateSignatures,
             data: prepareUpdatePayload(systemId, [], [], [sig]),
           });
-          setLocalPendingDeletions(prev => prev.filter(x => x.eve_id !== sig.eve_id));
+          delete pendingDeletionMapRef.current[sig.eve_id];
           setSignatures(prev => prev.filter(x => x.eve_id !== sig.eve_id));
+          onPendingChange?.(pendingDeletionMapRef, clearPendingDeletions);
         },
         finalDuration,
       );
     },
-    [systemId, outCommand, setSignatures, finalDuration],
+    [systemId, outCommand, finalDuration],
   );
 
   const clearPendingDeletions = useCallback(() => {
-    Object.values(pendingDeletionMap).forEach(({ finalTimeoutId }) => clearTimeout(finalTimeoutId));
-    setPendingDeletionMap({});
-    setSignatures(prev =>
-      prev.map(x => (x.pendingDeletion ? { ...x, pendingDeletion: false, pendingUntil: undefined } : x)),
-    );
-    setLocalPendingDeletions([]);
-  }, [pendingDeletionMap, setSignatures]);
+    Object.values(pendingDeletionMapRef.current).forEach(({ finalTimeoutId }) => {
+      clearTimeout(finalTimeoutId);
+    });
+    pendingDeletionMapRef.current = {};
+    setSignatures(prev => prev.map(x => (x.pendingDeletion ? { ...x, pendingDeletion: false } : x)));
+    onPendingChange?.(pendingDeletionMapRef, clearPendingDeletions);
+  }, []);
 
   return {
-    localPendingDeletions,
-    setLocalPendingDeletions,
-    pendingDeletionMap,
-    setPendingDeletionMap,
+    pendingDeletionMapRef,
     processRemovedSignatures,
     clearPendingDeletions,
   };

@@ -1,4 +1,4 @@
-import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { FINAL_DURATION_MS } from '../constants';
 
 export function prepareUpdatePayload(
@@ -49,40 +49,56 @@ export function schedulePendingAdditionForSig(
   );
 }
 
-export function mergeLocalPendingAdditions(
+export function mergeLocalPending(
+  pendingMapRef: React.MutableRefObject<Record<string, ExtendedSystemSignature>>,
   serverSigs: ExtendedSystemSignature[],
-  localSigs: ExtendedSystemSignature[],
 ): ExtendedSystemSignature[] {
   const now = Date.now();
-  const pendingAdditions = localSigs.filter(sig => sig.pendingAddition && sig.pendingUntil && sig.pendingUntil > now);
+  const pendingDeletions = Object.values(pendingMapRef.current).filter(
+    sig => sig.pendingDeletion && sig.pendingUntil && sig.pendingUntil > now,
+  );
   const mergedMap = new Map<string, ExtendedSystemSignature>();
   serverSigs.forEach(sig => mergedMap.set(sig.eve_id, sig));
-  pendingAdditions.forEach(sig => {
-    if (!mergedMap.has(sig.eve_id)) {
+
+  pendingDeletions.forEach(sig => {
+    if (mergedMap.has(sig.eve_id)) {
       mergedMap.set(sig.eve_id, sig);
     }
   });
   return Array.from(mergedMap.values());
 }
 
-export function scheduleLazyDeletionTimers(
-  toRemove: ExtendedSystemSignature[],
-  setPendingMap: React.Dispatch<React.SetStateAction<Record<string, { finalUntil: number; finalTimeoutId: number }>>>,
-  finalizeRemoval: (sig: ExtendedSystemSignature) => Promise<void>,
+export function scheduleLazyTimers(
+  signatures: ExtendedSystemSignature[],
+  pendingMapRef: React.MutableRefObject<Record<string, ExtendedSystemSignature>>,
+  finalizeFn: (sig: ExtendedSystemSignature) => Promise<void>,
   finalDuration = FINAL_DURATION_MS,
 ) {
-  const now = Date.now();
-  toRemove.forEach(sig => {
+  signatures.forEach(sig => {
     const finalTimeoutId = window.setTimeout(async () => {
-      await finalizeRemoval(sig);
+      await finalizeFn(sig);
     }, finalDuration);
 
-    setPendingMap(prev => ({
-      ...prev,
+    pendingMapRef.current = {
+      ...pendingMapRef.current,
       [sig.eve_id]: {
-        finalUntil: now + finalDuration,
+        ...sig,
         finalTimeoutId,
       },
-    }));
+    };
   });
 }
+
+export const calculateTimeRemaining = (pendingSigs: SystemSignature[]) => {
+  const now = Date.now();
+  let minTime: number | undefined = undefined;
+
+  pendingSigs.forEach(sig => {
+    const extendedSig = sig as unknown as { pendingUntil?: number };
+    if (extendedSig.pendingUntil && (minTime === undefined || extendedSig.pendingUntil - now < minTime)) {
+      minTime = extendedSig.pendingUntil - now;
+    }
+  });
+
+  return minTime && minTime > 0 ? minTime : undefined;
+};

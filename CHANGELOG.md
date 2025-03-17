@@ -2,6 +2,28 @@
 
 <!-- changelog -->
 
+## [v1.55.2](https://github.com/wanderer-industries/wanderer/compare/v1.55.1...v1.55.2) (2025-03-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed lazy delete reset state
+
+## [v1.55.1](https://github.com/wanderer-industries/wanderer/compare/v1.55.0...v1.55.1) (2025-03-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed lazy delete timeouts
+
+* Core: fixed lazy delete settings
+
+* keep character api off by default (#258)
+
 ## [v1.55.0](https://github.com/wanderer-industries/wanderer/compare/v1.54.1...v1.55.0) (2025-03-15)
 
 
