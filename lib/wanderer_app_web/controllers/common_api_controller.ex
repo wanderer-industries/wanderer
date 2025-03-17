@@ -4,6 +4,7 @@ defmodule WandererAppWeb.CommonAPIController do
 
   alias WandererApp.CachedInfo
   alias WandererAppWeb.UtilAPIController, as: Util
+  alias WandererApp.EveDataService
 
   @system_static_response_schema %OpenApiSpex.Schema{
     type: :object,
@@ -26,6 +27,32 @@ defmodule WandererAppWeb.CommonAPIController do
           effect_name: %OpenApiSpex.Schema{type: :string},
           effect_power: %OpenApiSpex.Schema{type: :integer},
           statics: %OpenApiSpex.Schema{type: :array, items: %OpenApiSpex.Schema{type: :string}},
+          static_details: %OpenApiSpex.Schema{
+            type: :array,
+            items: %OpenApiSpex.Schema{
+              type: :object,
+              properties: %{
+                name: %OpenApiSpex.Schema{type: :string},
+                destination: %OpenApiSpex.Schema{
+                  type: :object,
+                  properties: %{
+                    id: %OpenApiSpex.Schema{type: :string},
+                    name: %OpenApiSpex.Schema{type: :string},
+                    short_name: %OpenApiSpex.Schema{type: :string}
+                  }
+                },
+                properties: %OpenApiSpex.Schema{
+                  type: :object,
+                  properties: %{
+                    lifetime: %OpenApiSpex.Schema{type: :string},
+                    max_mass: %OpenApiSpex.Schema{type: :integer},
+                    max_jump_mass: %OpenApiSpex.Schema{type: :integer},
+                    mass_regeneration: %OpenApiSpex.Schema{type: :integer}
+                  }
+                }
+              }
+            }
+          },
           wandering: %OpenApiSpex.Schema{type: :array, items: %OpenApiSpex.Schema{type: :string}},
           triglavian_invasion_status: %OpenApiSpex.Schema{type: :string},
           sun_type_id: %OpenApiSpex.Schema{type: :integer}
@@ -64,8 +91,14 @@ defmodule WandererAppWeb.CommonAPIController do
          {:ok, solar_system_id} <- Util.parse_int(solar_system_str) do
       case CachedInfo.get_system_static_info(solar_system_id) do
         {:ok, system} ->
+          # Get basic system data
           data = static_system_to_json(system)
-          json(conn, %{data: data})
+
+          # Enhance with wormhole type information if statics exist
+          enhanced_data = enhance_with_static_details(data)
+
+          # Return the enhanced data
+          json(conn, %{data: enhanced_data})
 
         {:error, :not_found} ->
           conn
@@ -80,6 +113,11 @@ defmodule WandererAppWeb.CommonAPIController do
     end
   end
 
+  @doc """
+  Converts a system map to a JSON-friendly format.
+
+  Takes only the fields that are needed for the API response.
+  """
   defp static_system_to_json(system) do
     system
     |> Map.take([
@@ -102,5 +140,98 @@ defmodule WandererAppWeb.CommonAPIController do
       :triglavian_invasion_status,
       :sun_type_id
     ])
+  end
+
+  @doc """
+  Enhances system data with wormhole type information.
+
+  If the system has static wormholes, adds detailed information about each static.
+  Otherwise, returns the original data unchanged.
+  """
+  defp enhance_with_static_details(data) do
+    if data[:statics] && length(data[:statics]) > 0 do
+      # Add the enhanced static details to the response
+      Map.put(data, :static_details, get_static_details(data[:statics]))
+    else
+      # No statics, return the original data
+      data
+    end
+  end
+
+  @doc """
+  Gets detailed information for each static wormhole.
+
+  Uses the CachedInfo to get both wormhole type data and wormhole class data.
+  """
+  defp get_static_details(statics) do
+    # Get wormhole data from CachedInfo
+    {:ok, wormhole_types} = CachedInfo.get_wormhole_types()
+    wormhole_classes = CachedInfo.get_wormhole_classes!()
+
+    # Create a map of wormhole classes by ID for quick lookup
+    classes_by_id = Enum.reduce(wormhole_classes, %{}, fn class, acc ->
+      Map.put(acc, class.id, class)
+    end)
+
+    # Find detailed information for each static
+    Enum.map(statics, fn static_name ->
+      # Find the wormhole type by name
+      wh_type = Enum.find(wormhole_types, fn type -> type.name == static_name end)
+
+      if wh_type do
+        create_wormhole_details(wh_type, classes_by_id)
+      else
+        create_fallback_wormhole_details(static_name)
+      end
+    end)
+  end
+
+  @doc """
+  Creates detailed wormhole information when the wormhole type is found.
+
+  Includes information about the destination and properties of the wormhole.
+  Ensures that destination.id is always a string to match the OpenAPI schema.
+  """
+  defp create_wormhole_details(wh_type, classes_by_id) do
+    # Get destination class info
+    dest_class = Map.get(classes_by_id, wh_type.dest)
+
+    # Create enhanced static info
+    %{
+      name: wh_type.name,
+      destination: %{
+        id: to_string(wh_type.dest),
+        name: (if dest_class, do: dest_class.title, else: wh_type.dest),
+        short_name: (if dest_class, do: dest_class.short_name, else: wh_type.dest)
+      },
+      properties: %{
+        lifetime: wh_type.lifetime,
+        max_mass: wh_type.total_mass,
+        max_jump_mass: wh_type.max_mass_per_jump,
+        mass_regeneration: wh_type.mass_regen
+      }
+    }
+  end
+
+  @doc """
+  Creates fallback information when a wormhole type is not found.
+
+  Provides a placeholder structure with nil values for unknown wormhole types.
+  """
+  defp create_fallback_wormhole_details(static_name) do
+    %{
+      name: static_name,
+      destination: %{
+        id: nil,
+        name: "Unknown",
+        short_name: "?"
+      },
+      properties: %{
+        lifetime: nil,
+        max_mass: nil,
+        max_jump_mass: nil,
+        mass_regeneration: nil
+      }
+    }
   end
 end
