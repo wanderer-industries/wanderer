@@ -2,6 +2,27 @@
 
 <!-- changelog -->
 
+## [v1.56.0](https://github.com/wanderer-industries/wanderer/compare/v1.55.2...v1.56.0) (2025-03-17)
+
+
+
+
+### Features:
+
+* add static wh info (#262)
+
+* add static wh info
+
+* api: add character activity api (#263)
+
+* api: add character activity api
+
+### Bug Fixes:
+
+* character activity hide error
+
+* character added to map on follow (#272)
+
 ## [v1.55.2](https://github.com/wanderer-industries/wanderer/compare/v1.55.1...v1.55.2) (2025-03-16)
 
 
