@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PrimeIcons } from 'primereact/api';
+import { Column } from 'primereact/column';
 import {
   DataTable,
   DataTableRowClickEvent,
@@ -6,13 +7,9 @@ import {
   DataTableStateEvent,
   SortOrder,
 } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { PrimeIcons } from 'primereact/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useLocalStorageState from 'use-local-storage-state';
 
-import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
-import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
-import { WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
   COMPACT_MAX_WIDTH,
@@ -24,6 +21,9 @@ import {
   SIGNATURE_WINDOW_ID,
   SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
+import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
+import { TooltipPosition, WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 
 import {
   renderAddedTimeLeft,
@@ -32,10 +32,10 @@ import {
   renderInfoColumn,
   renderUpdatedTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
-import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
-import { getSignatureRowClass } from '../helpers/rowStyles';
-import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
+import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
+import { getSignatureRowClass } from '../helpers/rowStyles';
+import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
@@ -348,6 +348,7 @@ export const SystemSignaturesContent = ({
       <WdTooltip
         className="bg-stone-900/95 text-slate-50"
         ref={tooltipRef}
+        position={TooltipPosition.top}
         content={
           hoveredSignature ? (
             <SignatureView signature={hoveredSignature} showCharacterPortrait={showCharacterPortrait} />
