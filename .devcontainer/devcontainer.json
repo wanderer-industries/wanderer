@@ -1,20 +1,30 @@
 {
   "name": "wanderer-dev",
   "dockerComposeFile": ["./docker-compose.yml"],
-  "extensions": [
-    "jakebecker.elixir-ls",
-    "JakeBecker.elixir-ls",
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
-  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "jakebecker.elixir-ls",
+        "JakeBecker.elixir-ls",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "search.exclude": {
+          "**/doc": true
+        },
+        "elixirLS.dialyzerEnabled": false
+      }
+    }
+  },
   "service": "wanderer",
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
-  "settings": {
-    "editor.formatOnSave": true,
-    "search.exclude": {
-      "**/doc": true
-    },
-    "elixirLS.dialyzerEnabled": false
-  }
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "networkArgs": ["--add-host=host.docker.internal:host-gateway"]
+    }
+  },
+  "forwardPorts": [4444]
 }
