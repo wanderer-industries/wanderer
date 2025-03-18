@@ -1,4 +1,4 @@
-.PHONY: deploy install cleanup start yarn migrate format test coverage versions
+.PHONY: deploy install cleanup start yarn migrate format test coverage versions standalone-tests
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
@@ -34,6 +34,11 @@ test t:
 
 coverage cover co:
 	mix test --cover
+
+unit-tests ut:
+	@echo "Running unit tests..."
+	@find test/unit -name "*.exs" -exec elixir {} \;
+	@echo "All unit tests completed."
 
 versions v:
 	@echo "Tool Versions"
