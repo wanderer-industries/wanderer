@@ -18,13 +18,7 @@ export const useCharacterActivityHandlers = () => {
       ...state,
       showCharacterActivity: false,
     }));
-
-    // Send the command to the server
-    outCommand({
-      type: OutCommand.hideActivity,
-      data: {},
-    });
-  }, [outCommand, update]);
+  }, [update]);
 
   /**
    * Handle showing the character activity dialog
@@ -56,7 +50,7 @@ export const useCharacterActivityHandlers = () => {
       // Update local state with the activity data
       update(state => ({
         ...state,
-        characterActivityData: activityData.activity,
+        characterActivityData: activityData,
         showCharacterActivity: true,
       }));
     },

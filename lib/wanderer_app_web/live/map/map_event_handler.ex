@@ -29,7 +29,6 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_characters_ui_events [
     "toggle_track",
     "toggle_follow",
-    "hide_tracking",
     "show_tracking",
     "getCharacterInfo"
   ]
@@ -305,12 +304,12 @@ defmodule WandererAppWeb.MapEventHandler do
         type,
         body
       ) do
-        socket
-        |> Phoenix.LiveView.Utils.push_event("map_event", %{
-          type: type,
-          body: body
-        })
-      end
+    socket
+    |> Phoenix.LiveView.Utils.push_event("map_event", %{
+      type: type,
+      body: body
+    })
+  end
 
   def push_map_event(socket, _type, _body), do: socket
 
