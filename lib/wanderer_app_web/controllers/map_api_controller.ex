@@ -691,40 +691,44 @@ defmodule WandererAppWeb.MapAPIController do
       }}
     ]
   def character_activity(conn, params) do
-    with {:ok, map_id} <- Util.fetch_map_id(params),
-         current_user <- conn.assigns.current_user do
-      # Get raw activity data from the domain logic
-      result = WandererApp.Character.Activity.process_character_activity(map_id, current_user)
+    with {:ok, map_id} <- Util.fetch_map_id(params) do
+      # Get raw activity data directly from the Map module instead of the Activity processor
+      raw_activity = WandererApp.Map.get_character_activity(map_id)
 
       # Group activities by user_id and summarize
       summarized_result =
-        result
-        |> Enum.group_by(fn activity ->
-          # Get user_id from the character
-          activity.character.user_id
-        end)
-        |> Enum.map(fn {_user_id, user_activities} ->
-          # Get the most active or followed character for this user
-          representative_activity =
-            user_activities
-            |> Enum.max_by(fn activity ->
-              activity.passages + activity.connections + activity.signatures
-            end)
+        if raw_activity == [] do
+          # Return empty list if there's no data
+          []
+        else
+          raw_activity
+          |> Enum.group_by(fn activity ->
+            # Get user_id from the character
+            activity.character.user_id
+          end)
+          |> Enum.map(fn {_user_id, user_activities} ->
+            # Get the most active or followed character for this user
+            representative_activity =
+              user_activities
+              |> Enum.max_by(fn activity ->
+                activity.passages + activity.connections + activity.signatures
+              end)
 
-          # Sum up all activities for this user
-          total_passages = Enum.sum(Enum.map(user_activities, & &1.passages))
-          total_connections = Enum.sum(Enum.map(user_activities, & &1.connections))
-          total_signatures = Enum.sum(Enum.map(user_activities, & &1.signatures))
+            # Sum up all activities for this user
+            total_passages = Enum.sum(Enum.map(user_activities, & &1.passages))
+            total_connections = Enum.sum(Enum.map(user_activities, & &1.connections))
+            total_signatures = Enum.sum(Enum.map(user_activities, & &1.signatures))
 
-          # Return summarized activity with the mapped character
-          %{
-            character: character_to_json(representative_activity.character),
-            passages: total_passages,
-            connections: total_connections,
-            signatures: total_signatures,
-            timestamp: representative_activity.timestamp
-          }
-        end)
+            # Return summarized activity with the mapped character
+            %{
+              character: character_to_json(representative_activity.character),
+              passages: total_passages,
+              connections: total_connections,
+              signatures: total_signatures,
+              timestamp: representative_activity.timestamp
+            }
+          end)
+        end
 
       json(conn, %{data: summarized_result})
     else
