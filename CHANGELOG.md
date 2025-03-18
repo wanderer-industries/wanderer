@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.56.2](https://github.com/wanderer-industries/wanderer/compare/v1.56.1...v1.56.2) (2025-03-18)
+
+
+
+
+### Bug Fixes:
+
+* show signature tooltip on top
+
 ## [v1.56.1](https://github.com/wanderer-industries/wanderer/compare/v1.56.0...v1.56.1) (2025-03-18)
 
 
