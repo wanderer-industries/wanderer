@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.56.1](https://github.com/wanderer-industries/wanderer/compare/v1.56.0...v1.56.1) (2025-03-18)
+
+
+
+
+### Bug Fixes:
+
+* update activity api (#284)
+
+* qol updates for dev (#283)
+
 ## [v1.56.0](https://github.com/wanderer-industries/wanderer/compare/v1.55.2...v1.56.0) (2025-03-17)
 
 
