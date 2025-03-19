@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.57.0](https://github.com/wanderer-industries/wanderer/compare/v1.56.6...v1.57.0) (2025-03-19)
+
+
+
+
+### Features:
+
+* doc: update bot news (#294)
+
 ## [v1.56.6](https://github.com/wanderer-industries/wanderer/compare/v1.56.5...v1.56.6) (2025-03-19)
 
 
