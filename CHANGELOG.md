@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.56.3](https://github.com/wanderer-industries/wanderer/compare/v1.56.2...v1.56.3) (2025-03-19)
+
+
+
+
+### Bug Fixes:
+
+* cloak key error behavior (#288)
+
 ## [v1.56.2](https://github.com/wanderer-industries/wanderer/compare/v1.56.1...v1.56.2) (2025-03-18)
 
 
