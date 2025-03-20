@@ -4,7 +4,12 @@ defmodule WandererApp.Env do
 
   @app :wanderer_app
 
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "vsn_version"
+            )
   def vsn(), do: Application.spec(@app)[:vsn]
+
   def git_sha(), do: get_key(:git_sha, "<GIT_SHA>")
   def base_url, do: get_key(:web_app_url, "<BASE_URL>")
   def custom_route_base_url, do: get_key(:custom_route_base_url, "<CUSTOM_ROUTE_BASE_URL>")

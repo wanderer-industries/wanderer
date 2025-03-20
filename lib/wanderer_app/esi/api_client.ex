@@ -9,6 +9,7 @@ defmodule WandererApp.Esi.ApiClient do
   @routes_ttl :timer.minutes(15)
 
   @base_url "https://esi.evetech.net/latest"
+  @wanderrer_user_agent "(wanderer-industries@proton.me; +https://github.com/wanderer-industries/wanderer)"
 
   @get_link_pairs_advanced_params [
     :include_mass_crit,
@@ -289,14 +290,13 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-
   @decorate cacheable(
-            cache: Cache,
-            key: "killmail-#{killmail_id}-#{killmail_hash}",
-            opts: [ttl: @ttl]
-          )
+              cache: Cache,
+              key: "killmail-#{killmail_id}-#{killmail_hash}",
+              opts: [ttl: @ttl]
+            )
   def get_killmail(killmail_id, killmail_hash, opts \\ []) do
-    get("/killmails/#{killmail_id}/#{killmail_hash}/", _with_cache_opts(opts))
+    get("/killmails/#{killmail_id}/#{killmail_hash}/", opts)
   end
 
   @decorate cacheable(
@@ -319,7 +319,7 @@ defmodule WandererApp.Esi.ApiClient do
   def get_character_info(eve_id, opts \\ []) do
     case get(
            "/characters/#{eve_id}/",
-           opts |> _with_cache_opts()
+           opts
          ) do
       {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
@@ -370,10 +370,10 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   @decorate cacheable(
-    cache: Cache,
-    key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
-    opts: [ttl: @ttl]
-  )
+              cache: Cache,
+              key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
+              opts: [ttl: @ttl]
+            )
   defp _search(character_eve_id, search_val, categories_val, merged_opts) do
     _get_character_auth_data(character_eve_id, "search", merged_opts)
   end
@@ -405,23 +405,23 @@ defmodule WandererApp.Esi.ApiClient do
     do:
       get(
         "/route/#{origin}/#{destination}/?#{params |> Plug.Conn.Query.encode()}",
-        opts |> _with_cache_opts()
+        opts
       )
 
-  defp _get_auth_opts(opts), do: [auth: {:bearer, opts[:access_token]}]
+  defp get_auth_opts(opts), do: [auth: {:bearer, opts[:access_token]}]
 
   defp _get_alliance_info(alliance_eve_id, info_path, opts),
     do:
       get(
         "/alliances/#{alliance_eve_id}/#{info_path}",
-        opts |> _with_cache_opts()
+        opts
       )
 
   defp _get_corporation_info(corporation_eve_id, info_path, opts),
     do:
       get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
-        opts |> _with_cache_opts()
+        opts
       )
 
   defp _get_character_auth_data(character_eve_id, info_path, opts) do
@@ -429,7 +429,7 @@ defmodule WandererApp.Esi.ApiClient do
 
     auth_opts =
       [params: opts[:params] || []] ++
-        (opts |> _get_auth_opts() |> _with_cache_opts())
+        (opts |> get_auth_opts())
 
     character_id = opts |> Keyword.get(:character_id, nil)
 
@@ -440,7 +440,7 @@ defmodule WandererApp.Esi.ApiClient do
         opts
       )
     else
-      _get_retry(path, auth_opts, opts)
+      get_retry(path, auth_opts, opts)
     end
   end
 
@@ -458,11 +458,18 @@ defmodule WandererApp.Esi.ApiClient do
       get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
         [params: opts[:params] || []] ++
-          (opts |> _get_auth_opts() |> _with_cache_opts()),
+          (opts |> get_auth_opts()),
         opts
       )
 
-  defp _with_cache_opts(opts) do
+  defp with_user_agent_opts(opts) do
+    opts
+    |> Keyword.merge(
+      headers: [{:user_agent, "Wanderer/#{WandererApp.Env.vsn()} #{@wanderrer_user_agent}"}]
+    )
+  end
+
+  defp with_cache_opts(opts) do
     opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
   end
 
@@ -470,12 +477,15 @@ defmodule WandererApp.Esi.ApiClient do
     do:
       post(
         "#{@base_url}#{path}",
-        [params: opts[:params] || []] ++ (opts |> _get_auth_opts())
+        [params: opts[:params] || []] ++ (opts |> get_auth_opts())
       )
 
   defp get(path, api_opts \\ [], opts \\ []) do
     try do
-      case Req.get("#{@base_url}#{path}", api_opts |> Keyword.merge(@retry_opts)) do
+      case Req.get(
+             "#{@base_url}#{path}",
+             api_opts |> with_user_agent_opts() |> with_cache_opts() |> Keyword.merge(@retry_opts)
+           ) do
         {:ok, %{status: 200, body: body}} ->
           {:ok, body}
 
@@ -486,10 +496,10 @@ defmodule WandererApp.Esi.ApiClient do
           {:error, :not_found}
 
         {:ok, %{status: 403} = _error} ->
-          _get_retry(path, api_opts, opts)
+          get_retry(path, api_opts, opts)
 
         {:ok, %{status: 420} = _error} ->
-          _get_retry(path, api_opts, opts)
+          get_retry(path, api_opts, opts)
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
@@ -507,7 +517,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp post(url, opts) do
     try do
-      case Req.post("#{url}", opts) do
+      case Req.post("#{url}", opts |> with_user_agent_opts()) do
         {:ok, %{status: status, body: body}} when status in [200, 201] ->
           {:ok, body}
 
@@ -531,7 +541,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp _get_retry(path, api_opts, opts) do
+  defp get_retry(path, api_opts, opts) do
     refresh_token? = opts |> Keyword.get(:refresh_token?, false)
     retry_count = opts |> Keyword.get(:retry_count, 0)
     character_id = opts |> Keyword.get(:character_id, nil)
@@ -541,7 +551,7 @@ defmodule WandererApp.Esi.ApiClient do
     else
       case _refresh_token(character_id) do
         {:ok, token} ->
-          auth_opts = [access_token: token.access_token] |> _get_auth_opts()
+          auth_opts = [access_token: token.access_token] |> get_auth_opts()
 
           get(
             path,
