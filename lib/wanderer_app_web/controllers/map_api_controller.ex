@@ -7,6 +7,7 @@ defmodule WandererAppWeb.MapAPIController do
 
   alias WandererApp.Api
   alias WandererApp.Api.Character
+  alias WandererApp.MapConnectionRepo
   alias WandererApp.MapSystemRepo
   alias WandererApp.MapCharacterSettingsRepo
 
@@ -57,6 +58,44 @@ defmodule WandererAppWeb.MapAPIController do
     type: :object,
     properties: %{
       data: @map_system_schema
+    },
+    required: ["data"]
+  }
+
+  # For operation :list_connections
+  @map_connection_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      id: %OpenApiSpex.Schema{type: :string},
+      map_id: %OpenApiSpex.Schema{type: :string},
+      solar_system_source: %OpenApiSpex.Schema{type: :integer},
+      solar_system_target: %OpenApiSpex.Schema{type: :integer},
+      mass_status: %OpenApiSpex.Schema{type: :integer},
+      time_status: %OpenApiSpex.Schema{type: :integer},
+      ship_size_type: %OpenApiSpex.Schema{type: :integer},
+      type: %OpenApiSpex.Schema{type: :integer},
+      womrhole_type: %OpenApiSpex.Schema{type: :string},
+      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
+      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+    },
+    required: ["id", "map_id", "solar_system_source", "solar_system_target", "type", "inserted_at", "updated_at"]
+  }
+
+  @list_map_connections_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :array,
+        items: @map_connection_schema
+      }
+    },
+    required: ["data"]
+  }
+
+  @show_map_system_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: @map_connection_schema
     },
     required: ["data"]
   }
@@ -352,6 +391,70 @@ defmodule WandererAppWeb.MapAPIController do
         |> json(%{error: "Could not load system: #{inspect(reason)}"})
     end
   end
+
+  @doc """
+  GET /api/map/connections
+
+  Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
+
+  Examples:
+      GET /api/map/connections?map_id=466e922b-e758-485e-9b86-afae06b88363
+      GET /api/map/connections?slug=my-unique-wormhole-map
+  """
+@spec list_connections(Plug.Conn.t(), map()) :: Plug.Conn.t()
+operation :list_connections,
+  summary: "List Map Connections",
+  description: "Lists all connections for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+  parameters: [
+    map_id: [
+      in: :query,
+      description: "Map identifier (UUID) - Either map_id or slug must be provided",
+      type: :string,
+      required: false,
+      example: ""
+    ],
+    slug: [
+      in: :query,
+      description: "Map slug - Either map_id or slug must be provided",
+      type: :string,
+      required: false,
+      example: "map-name"
+    ]
+  ],
+  responses: [
+    ok: {
+      "List of map connections",
+      "application/json",
+      @list_map_connections_response_schema
+    },
+    bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
+      type: :object,
+      properties: %{
+        error: %OpenApiSpex.Schema{type: :string}
+      },
+      required: ["error"],
+      example: %{
+        "error" => "Must provide either ?map_id=UUID or ?slug=SLUG"
+      }
+    }}
+  ]
+def list_connections(conn, params) do
+  with {:ok, map_id} <- Util.fetch_map_id(params),
+        {:ok, systems} <- MapConnectionRepo.get_by_map(map_id) do
+    data = Enum.map(systems, &connection_to_json/1)
+    json(conn, %{data: data})
+  else
+    {:error, msg} when is_binary(msg) ->
+      conn
+      |> put_status(:bad_request)
+      |> json(%{error: msg})
+
+    {:error, reason} ->
+      conn
+      |> put_status(:not_found)
+      |> json(%{error: "Could not fetch connections: #{inspect(reason)}"})
+  end
+end
 
   @doc """
   GET /api/map/tracked_characters_with_info
@@ -967,6 +1070,22 @@ defmodule WandererAppWeb.MapAPIController do
       _error ->
         "Unknown System"
     end
+  end
+
+  defp connection_to_json(c) do
+    Map.take(c, [
+      :id,
+      :map_id,
+      :solar_system_source,
+      :solar_system_target,
+      :mass_status,
+      :time_status,
+      :ship_size_type,
+      :type,
+      :wormhole_type,
+      :inserted_at,
+      :updated_at
+    ])
   end
 
   defp character_to_json(ch) do
