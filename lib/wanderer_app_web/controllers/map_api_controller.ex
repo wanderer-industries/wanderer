@@ -648,7 +648,7 @@ defmodule WandererAppWeb.MapAPIController do
   Returns character activity data for a map.
 
   Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
-  Optional `days` parameter to specify how many days of activity to return (defaults to 1).
+  Optional `days` parameter to filter activity to a specific time period.
 
   Example:
       GET /api/map/character_activity?map_id=<uuid>
@@ -658,7 +658,7 @@ defmodule WandererAppWeb.MapAPIController do
   @spec character_activity(Plug.Conn.t(), map()) :: Plug.Conn.t()
   operation :character_activity,
     summary: "Get Character Activity",
-    description: "Returns character activity data for a map for a specified time period. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    description: "Returns character activity data for a map. If days parameter is provided, filters activity to that time period, otherwise returns all activity. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
     parameters: [
       map_id: [
         in: :query,
@@ -676,7 +676,7 @@ defmodule WandererAppWeb.MapAPIController do
       ],
       days: [
         in: :query,
-        description: "Number of days to look back for activity data (defaults to 1 if not provided)",
+        description: "Optional: Number of days to look back for activity data. If not provided, returns all activity history.",
         type: :integer,
         required: false,
         example: "7"
@@ -702,7 +702,7 @@ defmodule WandererAppWeb.MapAPIController do
   def character_activity(conn, params) do
     with {:ok, map_id} <- Util.fetch_map_id(params),
          {:ok, days} <- parse_days(params["days"]) do
-      # Get raw activity data with the specified days parameter
+      # Get raw activity data (filtered by days if provided, otherwise all activity)
       raw_activity = WandererApp.Map.get_character_activity(map_id, days)
 
       # Group activities by user_id and summarize
@@ -754,12 +754,12 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
-  # Parse days parameter, default to 1 if not provided or invalid
-  defp parse_days(nil), do: {:ok, 1}
+  # Parse days parameter, return nil if not provided to show all activity
+  defp parse_days(nil), do: {:ok, nil}
   defp parse_days(days_str) do
     case Integer.parse(days_str) do
       {days, ""} when days > 0 -> {:ok, days}
-      _ -> {:ok, 1} # Default to 1 day if invalid
+      _ -> {:ok, nil} # Return nil if invalid to show all activity
     end
   end
 

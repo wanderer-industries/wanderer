@@ -527,19 +527,21 @@ defmodule WandererApp.Map do
   @doc """
   Returns the raw activity data that can be processed by WandererApp.Character.Activity.
   Only includes characters that are on the map's ACL.
+  If days parameter is provided, filters activity to that time period.
   """
-  def get_character_activity(map_id, days \\ 1) do
+  def get_character_activity(map_id, days \\ nil) do
     {:ok, map} = WandererApp.Api.Map.by_id(map_id)
     _map_with_acls = Ash.load!(map, :acls)
 
-    cutoff_date = DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second)
+    # Calculate cutoff date if days is provided
+    cutoff_date = if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
 
-    # Get activity data for the specified time period
+    # Get activity data
     passages_activity = get_passages_activity(map_id, cutoff_date)
     connections_activity = get_connections_activity(map_id, cutoff_date)
     signatures_activity = get_signatures_activity(map_id, cutoff_date)
 
-    # Return filtered activity data
+    # Return activity data
     passages_activity
     |> Enum.map(fn passage ->
       %{
@@ -554,8 +556,20 @@ defmodule WandererApp.Map do
     end)
   end
 
+  defp get_passages_activity(map_id, nil) do
+    # Query all map chain passages without time filter
+    from(p in WandererApp.Api.MapChainPassages,
+      join: c in assoc(p, :character),
+      where: p.map_id == ^map_id,
+      group_by: [c.id],
+      select: {c, count(p.id)}
+    )
+    |> WandererApp.Repo.all()
+    |> Enum.map(fn {character, count} -> %{character: character, count: count} end)
+  end
+
   defp get_passages_activity(map_id, cutoff_date) do
-    # Query map chain passages directly from the database with time filter
+    # Query map chain passages with time filter
     from(p in WandererApp.Api.MapChainPassages,
       join: c in assoc(p, :character),
       where:
@@ -566,6 +580,21 @@ defmodule WandererApp.Map do
     )
     |> WandererApp.Repo.all()
     |> Enum.map(fn {character, count} -> %{character: character, count: count} end)
+  end
+
+  defp get_connections_activity(map_id, nil) do
+    # Query all connection activity without time filter
+    from(ua in WandererApp.Api.UserActivity,
+      join: c in assoc(ua, :character),
+      where:
+        ua.entity_id == ^map_id and
+          ua.entity_type == :map and
+          ua.event_type == :map_connection_added,
+      group_by: [c.id],
+      select: {c.id, count(ua.id)}
+    )
+    |> WandererApp.Repo.all()
+    |> Map.new()
   end
 
   defp get_connections_activity(map_id, cutoff_date) do
@@ -581,6 +610,20 @@ defmodule WandererApp.Map do
     )
     |> WandererApp.Repo.all()
     |> Map.new()
+  end
+
+  defp get_signatures_activity(map_id, nil) do
+    # Query all signature activity without time filter
+    from(ua in WandererApp.Api.UserActivity,
+      join: c in assoc(ua, :character),
+      where:
+        ua.entity_id == ^map_id and
+          ua.entity_type == :map and
+          ua.event_type == :signatures_added,
+      select: {ua.character_id, ua.event_data}
+    )
+    |> WandererApp.Repo.all()
+    |> process_signatures_data()
   end
 
   defp get_signatures_activity(map_id, cutoff_date) do
