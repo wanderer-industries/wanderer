@@ -528,16 +528,16 @@ defmodule WandererApp.Map do
   Returns the raw activity data that can be processed by WandererApp.Character.Activity.
   Only includes characters that are on the map's ACL.
   """
-  def get_character_activity(map_id) do
+  def get_character_activity(map_id, days \\ 1) do
     {:ok, map} = WandererApp.Api.Map.by_id(map_id)
     _map_with_acls = Ash.load!(map, :acls)
 
     {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
-    thirty_days_ago = DateTime.utc_now() |> DateTime.add(-30 * 24 * 3600, :second)
+    cutoff_date = DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second)
 
     # Get activity data
-    connections_activity = get_connections_activity(map_id, thirty_days_ago)
-    signatures_activity = get_signatures_activity(map_id, thirty_days_ago)
+    connections_activity = get_connections_activity(map_id, cutoff_date)
+    signatures_activity = get_signatures_activity(map_id, cutoff_date)
 
     # Return raw activity data
     jumps
@@ -554,14 +554,14 @@ defmodule WandererApp.Map do
     end)
   end
 
-  defp get_connections_activity(map_id, thirty_days_ago) do
+  defp get_connections_activity(map_id, cutoff_date) do
     from(ua in WandererApp.Api.UserActivity,
       join: c in assoc(ua, :character),
       where:
         ua.entity_id == ^map_id and
           ua.entity_type == :map and
           ua.event_type == :map_connection_added and
-          ua.inserted_at > ^thirty_days_ago,
+          ua.inserted_at > ^cutoff_date,
       group_by: [c.id],
       select: {c.id, count(ua.id)}
     )
@@ -569,14 +569,14 @@ defmodule WandererApp.Map do
     |> Map.new()
   end
 
-  defp get_signatures_activity(map_id, thirty_days_ago) do
+  defp get_signatures_activity(map_id, cutoff_date) do
     from(ua in WandererApp.Api.UserActivity,
       join: c in assoc(ua, :character),
       where:
         ua.entity_id == ^map_id and
           ua.entity_type == :map and
           ua.event_type == :signatures_added and
-          ua.inserted_at > ^thirty_days_ago,
+          ua.inserted_at > ^cutoff_date,
       select: {ua.character_id, ua.event_data}
     )
     |> WandererApp.Repo.all()
