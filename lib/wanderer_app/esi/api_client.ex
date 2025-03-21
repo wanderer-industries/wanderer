@@ -401,12 +401,17 @@ defmodule WandererApp.Esi.ApiClient do
   defp _get_routes(origin, destination, params, opts),
     do: _get_routes_eve(origin, destination, params, opts)
 
-  defp _get_routes_eve(origin, destination, params, opts),
-    do:
-      get(
-        "/route/#{origin}/#{destination}/?#{params |> Plug.Conn.Query.encode()}",
-        opts
-      )
+  defp _get_routes_eve(origin, destination, params, opts) do
+    esi_params = Map.merge(params, %{
+      connections: params.connections |> Enum.join(","),
+      avoid: params.avoid |> Enum.join(",")
+    })
+
+    get(
+      "/route/#{origin}/#{destination}/?#{esi_params |> Plug.Conn.Query.encode()}",
+      opts
+    )
+  end
 
   defp get_auth_opts(opts), do: [auth: {:bearer, opts[:access_token]}]
 
