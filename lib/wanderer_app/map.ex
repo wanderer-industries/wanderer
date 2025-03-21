@@ -532,15 +532,15 @@ defmodule WandererApp.Map do
     {:ok, map} = WandererApp.Api.Map.by_id(map_id)
     _map_with_acls = Ash.load!(map, :acls)
 
-    {:ok, jumps} = WandererApp.Api.MapChainPassages.by_map_id(%{map_id: map_id})
     cutoff_date = DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second)
 
-    # Get activity data
+    # Get activity data for the specified time period
+    passages_activity = get_passages_activity(map_id, cutoff_date)
     connections_activity = get_connections_activity(map_id, cutoff_date)
     signatures_activity = get_signatures_activity(map_id, cutoff_date)
 
-    # Return raw activity data
-    jumps
+    # Return filtered activity data
+    passages_activity
     |> Enum.map(fn passage ->
       %{
         character: passage.character,
@@ -552,6 +552,20 @@ defmodule WandererApp.Map do
         user_id: passage.character.user_id
       }
     end)
+  end
+
+  defp get_passages_activity(map_id, cutoff_date) do
+    # Query map chain passages directly from the database with time filter
+    from(p in WandererApp.Api.MapChainPassages,
+      join: c in assoc(p, :character),
+      where:
+        p.map_id == ^map_id and
+          p.inserted_at > ^cutoff_date,
+      group_by: [c.id],
+      select: {c, count(p.id)}
+    )
+    |> WandererApp.Repo.all()
+    |> Enum.map(fn {character, count} -> %{character: character, count: count} end)
   end
 
   defp get_connections_activity(map_id, cutoff_date) do
