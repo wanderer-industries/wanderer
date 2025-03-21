@@ -648,15 +648,17 @@ defmodule WandererAppWeb.MapAPIController do
   Returns character activity data for a map.
 
   Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
+  Optional `days` parameter to filter activity to a specific time period.
 
   Example:
       GET /api/map/character_activity?map_id=<uuid>
       GET /api/map/character_activity?slug=<map-slug>
+      GET /api/map/character_activity?map_id=<uuid>&days=7
   """
   @spec character_activity(Plug.Conn.t(), map()) :: Plug.Conn.t()
   operation :character_activity,
     summary: "Get Character Activity",
-    description: "Returns character activity data for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    description: "Returns character activity data for a map. If days parameter is provided, filters activity to that time period, otherwise returns all activity. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
     parameters: [
       map_id: [
         in: :query,
@@ -671,6 +673,13 @@ defmodule WandererAppWeb.MapAPIController do
         type: :string,
         required: false,
         example: "map-name"
+      ],
+      days: [
+        in: :query,
+        description: "Optional: Number of days to look back for activity data. If not provided, returns all activity history.",
+        type: :integer,
+        required: false,
+        example: "7"
       ]
     ],
     responses: [
@@ -691,9 +700,10 @@ defmodule WandererAppWeb.MapAPIController do
       }}
     ]
   def character_activity(conn, params) do
-    with {:ok, map_id} <- Util.fetch_map_id(params) do
-      # Get raw activity data directly from the Map module instead of the Activity processor
-      raw_activity = WandererApp.Map.get_character_activity(map_id)
+    with {:ok, map_id} <- Util.fetch_map_id(params),
+         {:ok, days} <- parse_days(params["days"]) do
+      # Get raw activity data (filtered by days if provided, otherwise all activity)
+      raw_activity = WandererApp.Map.get_character_activity(map_id, days)
 
       # Group activities by user_id and summarize
       summarized_result =
@@ -741,6 +751,15 @@ defmodule WandererAppWeb.MapAPIController do
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Could not fetch character activity: #{inspect(reason)}"})
+    end
+  end
+
+  # Parse days parameter, return nil if not provided to show all activity
+  defp parse_days(nil), do: {:ok, nil}
+  defp parse_days(days_str) do
+    case Integer.parse(days_str) do
+      {days, ""} when days > 0 -> {:ok, days}
+      _ -> {:ok, nil} # Return nil if invalid to show all activity
     end
   end
 
