@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.58.0](https://github.com/wanderer-industries/wanderer/compare/v1.57.1...v1.58.0) (2025-03-22)
+
+
+
+
+### Features:
+
+* Core: Show online state on map characters page
+
+* api: update character activity and api to allow date range (#299)
+
+* api: update character activity and api to allow date range
+
 ## [v1.57.1](https://github.com/wanderer-industries/wanderer/compare/v1.57.0...v1.57.1) (2025-03-20)
 
 
