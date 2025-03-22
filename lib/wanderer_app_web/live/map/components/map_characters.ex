@@ -54,14 +54,20 @@ defmodule WandererAppWeb.MapCharacters do
       >
         Tracked
       </span>
+      <span :if={is_online?(@character.id)} class="text-green-500 rounded-full px-2 py-1">
+        Online
+      </span>
+      <span :if={not is_online?(@character.id)} class="text-red-500 rounded-full px-2 py-1">
+        Offline
+      </span>
       <div class="avatar">
         <div class="rounded-md w-8 h-8">
           <img src={member_icon_url(@character.eve_id)} alt={@character.name} />
         </div>
       </div>
-      <span><%= @character.name %></span>
-      <span :if={@character.alliance_ticker}>[<%= @character.alliance_ticker %>]</span>
-      <span :if={@character.corporation_ticker}>[<%= @character.corporation_ticker %>]</span>
+      <span>{@character.name}</span>
+      <span :if={@character.alliance_ticker}>[{@character.alliance_ticker}]</span>
+      <span :if={@character.corporation_ticker}>[{@character.corporation_ticker}]</span>
     </div>
     """
   end
@@ -79,4 +85,8 @@ defmodule WandererAppWeb.MapCharacters do
     end)
   end
 
+  defp is_online?(character_id) do
+    {:ok, state} = WandererApp.Character.get_character_state(character_id)
+    state.is_online
+  end
 end

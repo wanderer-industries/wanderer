@@ -10,6 +10,14 @@
   id="map-character-list"
   class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
 >
+
+<div class="mb-6 p-4 border rounded-md flex gap-2 items-center">
+  <.icon name="hero-information-circle-mini" class="h-5 w-5" />
+  <p>
+  'Untrack' characters leading to completely remove them from the map, required manually enable the tracking by users later.
+  </p>
+</div>
+
   <div class="flex flex-col gap-4 w-full">
     <.live_component
       module={MapCharacters}
