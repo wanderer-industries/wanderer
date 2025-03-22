@@ -74,7 +74,7 @@ defmodule WandererAppWeb.MapAPIController do
       time_status: %OpenApiSpex.Schema{type: :integer},
       ship_size_type: %OpenApiSpex.Schema{type: :integer},
       type: %OpenApiSpex.Schema{type: :integer},
-      womrhole_type: %OpenApiSpex.Schema{type: :string},
+      wormhole_type: %OpenApiSpex.Schema{type: :string},
       inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
       updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
     },
