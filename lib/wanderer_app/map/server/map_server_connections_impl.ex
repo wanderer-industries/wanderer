@@ -69,6 +69,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @connection_time_status_eol 1
   @connection_type_wormhole 0
   @connection_type_stargate 1
+  @connection_type_jumpgate 2
 
   def get_connection_auto_expire_hours(), do: WandererApp.Env.map_connection_auto_expire_hours()
 
@@ -140,6 +141,28 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       maybe_remove_connection(map_id, %{solar_system_id: solar_system_target_id}, %{
         solar_system_id: solar_system_source_id
       })
+
+    state
+  end
+
+  def update_connection_type(
+        %{map_id: map_id} = state,
+        %{
+          solar_system_source_id: solar_system_source_id,
+          solar_system_target_id: solar_system_target_id,
+          character_id: character_id
+        } = _connection_info,
+        type
+      ) do
+    # :ok =
+    #   maybe_add_connection(
+    #     map_id,
+    #     %{solar_system_id: solar_system_target_id},
+    #     %{
+    #       solar_system_id: solar_system_source_id
+    #     },
+    #     character_id
+    #   )
 
     state
   end
@@ -236,7 +259,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                         } ->
         connection_start_time = get_start_time(map_id, connection_id)
 
-        type != @connection_type_stargate &&
+        type == @connection_type_wormhole &&
           DateTime.diff(DateTime.utc_now(), connection_start_time, :hour) >=
             connection_auto_eol_hours &&
           is_connection_valid(
@@ -292,7 +315,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
 
         not is_connection_exist ||
-          (type != @connection_type_stargate && is_connection_valid &&
+          (type == @connection_type_wormhole && is_connection_valid &&
              DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
                connection_auto_expire_hours - connection_auto_eol_hours +
                  +connection_eol_expire_timeout_hours)

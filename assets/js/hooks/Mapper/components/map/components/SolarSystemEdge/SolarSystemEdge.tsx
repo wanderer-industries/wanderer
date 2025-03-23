@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import classes from './SolarSystemEdge.module.scss';
-import { EdgeLabelRenderer, EdgeProps, getBezierPath, getSmoothStepPath, Position, useStore } from 'reactflow';
-import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
-import clsx from 'clsx';
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
-import { PrimeIcons } from 'primereact/api';
-import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 import { SHIP_SIZES_DESCRIPTION, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants.ts';
+import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
+import { PrimeIcons } from 'primereact/api';
+import { EdgeLabelRenderer, EdgeProps, getBezierPath, getSmoothStepPath, Position, useStore } from 'reactflow';
+import classes from './SolarSystemEdge.module.scss';
 
 const MAP_TRANSLATES: Record<string, string> = {
   [Position.Top]: 'translate(-48%, 0%)',
@@ -42,7 +42,7 @@ export const SHIP_SIZES_COLORS = {
 export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: EdgeProps<SolarSystemConnection>) => {
   const sourceNode = useStore(useCallback(store => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback(store => store.nodeInternals.get(target), [target]));
-  const isWormhole = data?.type !== ConnectionType.gate;
+  const isWormhole = data?.type === ConnectionType.wormhole;
 
   const {
     data: { isThickConnections },

@@ -1,10 +1,3 @@
-import React, { RefObject, useMemo } from 'react';
-import { ContextMenu } from 'primereact/contextmenu';
-import { PrimeIcons } from 'primereact/api';
-import { MenuItem } from 'primereact/menuitem';
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
-import clsx from 'clsx';
-import classes from './ContextMenuConnection.module.scss';
 import {
   MASS_STATE_NAMES,
   MASS_STATE_NAMES_ORDER,
@@ -13,7 +6,14 @@ import {
   SHIP_SIZES_NAMES_SHORT,
   SHIP_SIZES_SIZE,
 } from '@/hooks/Mapper/components/map/constants.ts';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
+import { PrimeIcons } from 'primereact/api';
+import { ContextMenu } from 'primereact/contextmenu';
+import { MenuItem } from 'primereact/menuitem';
+import React, { RefObject, useMemo } from 'react';
 import { Edge } from 'reactflow';
+import classes from './ContextMenuConnection.module.scss';
 
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
@@ -42,7 +42,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
     }
 
     const isFrigateSize = edge.data?.ship_size_type === ShipSizeStatus.small;
-    const isWormhole = edge.data?.type !== ConnectionType.gate;
+    const isWormhole = edge.data?.type === ConnectionType.wormhole;
 
     return [
       ...(isWormhole
