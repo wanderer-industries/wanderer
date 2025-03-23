@@ -40,6 +40,12 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   defp apply_action(socket, :characters, %{"slug" => map_slug} = _params) do
     selected_map = socket.assigns.maps |> Enum.find(&(&1.slug == map_slug))
 
+    # Subscribe to character tracking updates
+    Phoenix.PubSub.subscribe(
+      WandererApp.PubSub,
+      "character_tracking"
+    )
+
     {:ok, character_settings} =
       case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
         {:ok, settings} ->
@@ -79,58 +85,65 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   @impl true
   def handle_event("toggle_track", %{"character_id" => character_id}, socket) do
     selected_map = socket.assigns.selected_map
-    character_settings = socket.assigns.character_settings
+    user_id = socket.assigns.user_id
 
-    case character_settings |> Enum.find(&(&1.character_id == character_id)) do
-      nil ->
-        WandererApp.MapCharacterSettingsRepo.create(%{
-          character_id: character_id,
-          map_id: selected_map.id,
-          tracked: true,
-          followed: false
-        })
+    # Use the TrackingUtils module which is shared with the React implementation
+    case WandererApp.Character.TrackingUtils.toggle_track(selected_map.id, character_id, user_id, self()) do
+      {:ok, _, _} ->
+        # Re-fetch character settings to update the UI
+        {:ok, character_settings} =
+          case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
+            {:ok, settings} -> {:ok, settings}
+            _ -> {:ok, []}
+          end
 
+        # Re-fetch and update characters with their settings
+        %{result: characters} = socket.assigns.characters
+        characters =
+          characters
+          |> Enum.map(fn c ->
+            WandererApp.Maps.map_character(
+              c,
+              character_settings |> Enum.find(&(&1.character_id == c.id))
+            )
+          end)
+
+        {:noreply,
+         socket
+         |> assign(character_settings: character_settings)
+         |> assign_async(:characters, fn ->
+           {:ok, %{characters: characters}}
+         end)}
+
+      {:error, reason} ->
+        Logger.warning("Failed to toggle track: #{inspect(reason)}")
         {:noreply, socket}
-
-      character_setting ->
-        case character_setting.tracked do
-          true ->
-            character_setting
-            |> WandererApp.MapCharacterSettingsRepo.untrack!()
-
-          _ ->
-            character_setting
-            |> WandererApp.MapCharacterSettingsRepo.track!()
-        end
     end
-
-    %{result: characters} = socket.assigns.characters
-
-    {:ok, character_settings} =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
-        {:ok, settings} -> {:ok, settings}
-        _ -> {:ok, []}
-      end
-
-    characters =
-      characters
-      |> Enum.map(fn c ->
-        WandererApp.Maps.map_character(
-          c,
-          character_settings |> Enum.find(&(&1.character_id == c.id))
-        )
-      end)
-
-    {:noreply,
-     socket
-     |> assign(character_settings: character_settings)
-     |> assign_async(:characters, fn ->
-       {:ok, %{characters: characters}}
-     end)}
   end
 
   @impl true
   def handle_event("noop", _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:character_tracking_updated, map_id}, %{assigns: %{selected_map: selected_map}} = socket)
+      when map_id == selected_map.id do
+    # The React UI updated character tracking, so we need to refresh our data
+    {:ok, character_settings} =
+      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
+        {:ok, settings} -> {:ok, settings}
+        _ -> {:ok, []}
+      end
+
+    # Re-fetch and update characters
+    socket =
+      socket
+      |> assign(character_settings: character_settings)
+      |> assign_async(:characters, fn ->
+        WandererApp.Maps.load_characters(selected_map, character_settings, socket.assigns.user_id)
+      end)
+
     {:noreply, socket}
   end
 
