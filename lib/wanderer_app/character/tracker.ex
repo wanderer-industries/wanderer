@@ -489,7 +489,7 @@ defmodule WandererApp.Character.Tracker do
 
   defp maybe_update_location(
          %{
-           character_id: character_id,
+           character_id: character_id
          } =
            state,
          location
@@ -515,11 +515,13 @@ defmodule WandererApp.Character.Tracker do
       end
     end
 
-    {:ok, %{solar_system_id: solar_system_id, structure_id: structure_id} = character} =
+    {:ok,
+     %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
+       character} =
       WandererApp.Character.get_character(character_id)
 
     (not is_location_started?(character_id) ||
-       is_location_updated?(location, solar_system_id, structure_id))
+       is_location_updated?(location, solar_system_id, structure_id, station_id))
     |> case do
       true ->
         {:ok, _character} = WandererApp.Api.Character.update_location(character, location)
@@ -542,10 +544,38 @@ defmodule WandererApp.Character.Tracker do
         false
       )
 
-  defp is_location_updated?(location, solar_system_id, structure_id),
-    do:
-      solar_system_id != location.solar_system_id ||
-        structure_id != location.structure_id
+  defp is_location_updated?(
+         %{solar_system_id: new_solar_system_id, station_id: new_station_id} = _location,
+         solar_system_id,
+         structure_id,
+         station_id
+       ),
+       do:
+         solar_system_id != new_solar_system_id ||
+           not is_nil(structure_id) ||
+           station_id != new_station_id
+
+  defp is_location_updated?(
+         %{solar_system_id: new_solar_system_id, structure_id: new_structure_id} = _location,
+         solar_system_id,
+         structure_id,
+         station_id
+       ),
+       do:
+         solar_system_id != new_solar_system_id ||
+           structure_id != new_structure_id ||
+           not is_nil(station_id)
+
+  defp is_location_updated?(
+         %{solar_system_id: new_solar_system_id} = _location,
+         solar_system_id,
+         structure_id,
+         station_id
+       ),
+       do:
+         solar_system_id != new_solar_system_id ||
+           not is_nil(structure_id) ||
+           not is_nil(station_id)
 
   defp maybe_update_corporation(
          state,
@@ -732,13 +762,22 @@ defmodule WandererApp.Character.Tracker do
        ),
        do: state
 
-  defp get_location(%{"solar_system_id" => solar_system_id, "structure_id" => structure_id}),
-    do: %{solar_system_id: solar_system_id, structure_id: structure_id}
+  defp get_location(%{
+         "solar_system_id" => solar_system_id,
+         "station_id" => station_id
+       }),
+       do: %{solar_system_id: solar_system_id, structure_id: nil, station_id: station_id}
+
+  defp get_location(%{
+         "solar_system_id" => solar_system_id,
+         "structure_id" => structure_id
+       }),
+       do: %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: nil}
 
   defp get_location(%{"solar_system_id" => solar_system_id}),
-    do: %{solar_system_id: solar_system_id, structure_id: nil}
+    do: %{solar_system_id: solar_system_id, structure_id: nil, station_id: nil}
 
-  defp get_location(_), do: %{solar_system_id: nil, structure_id: nil}
+  defp get_location(_), do: %{solar_system_id: nil, structure_id: nil, station_id: nil}
 
   defp get_online(%{"online" => online}), do: %{online: online}
 

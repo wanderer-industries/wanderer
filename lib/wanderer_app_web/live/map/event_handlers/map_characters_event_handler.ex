@@ -126,7 +126,13 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
-    case WandererApp.Character.TrackingUtils.toggle_track(map_id, character_eve_id, current_user.id, self(), only_tracked_characters) do
+    case WandererApp.Character.TrackingUtils.toggle_track(
+           map_id,
+           character_eve_id,
+           current_user.id,
+           self(),
+           only_tracked_characters
+         ) do
       {:ok, tracking_data, event} ->
         # Send the appropriate event based on the result from toggle_track
         Process.send_after(self(), event, 10)
@@ -171,14 +177,21 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{"character_id" => clicked_char_id},
         %{assigns: %{current_user: current_user, map_id: map_id}} = socket
       ) do
-    case WandererApp.Character.TrackingUtils.toggle_follow(map_id, clicked_char_id, current_user.id, self()) do
+    case WandererApp.Character.TrackingUtils.toggle_follow(
+           map_id,
+           clicked_char_id,
+           current_user.id,
+           self()
+         ) do
       {:ok, tracking_data, event} ->
         # Send the appropriate event based on the result from toggle_follow
         Process.send_after(self(), event, 10)
 
         {:noreply,
          socket
-         |> MapEventHandler.push_map_event("tracking_characters_data", %{characters: tracking_data})}
+         |> MapEventHandler.push_map_event("tracking_characters_data", %{
+           characters: tracking_data
+         })}
 
       {:error, reason} ->
         Logger.error("Failed to toggle follow: #{inspect(reason)}")
@@ -210,7 +223,11 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put_new(:location, get_location(character))
 
   defp get_location(character),
-    do: %{solar_system_id: character.solar_system_id, structure_id: character.structure_id}
+    do: %{
+      solar_system_id: character.solar_system_id,
+      structure_id: character.structure_id,
+      station_id: character.station_id
+    }
 
   @doc """
   Initializes character tracking for a map. This is called when the map is first loaded.
@@ -292,8 +309,17 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   end
 
   defp handle_tracking_event({:track_characters, map_characters, track_character}, socket, map_id) do
-    :ok = WandererApp.Character.TrackingUtils.track_characters(map_characters, map_id, track_character, self())
-    :ok = WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
+    :ok =
+      WandererApp.Character.TrackingUtils.track_characters(
+        map_characters,
+        map_id,
+        track_character,
+        self()
+      )
+
+    :ok =
+      WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
+
     socket
   end
 

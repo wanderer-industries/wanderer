@@ -17,6 +17,7 @@ export type ShipTypeRaw = {
 export type LocationRaw = {
   solar_system_id: number | null;
   structure_id: number | null;
+  station_id: number | null;
 };
 
 export type CharacterTypeRaw = {

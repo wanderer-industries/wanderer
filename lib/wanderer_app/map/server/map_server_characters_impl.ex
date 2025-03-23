@@ -282,13 +282,19 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             :ok =
               SystemsImpl.maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
 
-            :ok =
-              ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
+            if is_character_in_space?(location) do
+              :ok =
+                ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
+            end
 
           _ ->
             :ok
         end
     end
+  end
+
+  defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = location) do
+    is_nil(structure_id) and is_nil(station_id)
   end
 
   defp track_character(map_id, character_id),
@@ -367,7 +373,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         {:ok, old_solar_system_id} =
           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
 
-        {:ok, %{solar_system_id: solar_system_id}} =
+        {:ok,
+         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
           WandererApp.Character.get_character(character_id)
 
         WandererApp.Cache.insert(
@@ -378,9 +385,14 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         case solar_system_id != old_solar_system_id do
           true ->
             [
-              {:character_location, %{solar_system_id: solar_system_id},
-               %{solar_system_id: old_solar_system_id}}
+              {:character_location,
+               %{
+                 solar_system_id: solar_system_id,
+                 structure_id: structure_id,
+                 station_id: station_id
+               }, %{solar_system_id: old_solar_system_id}}
             ]
+
           _ ->
             [:skip]
         end
@@ -389,7 +401,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         {:ok, old_solar_system_id} =
           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
 
-        {:ok, %{solar_system_id: solar_system_id} = _character} =
+        {:ok,
+         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
+           _character} =
           WandererApp.Character.get_character(character_id)
 
         WandererApp.Cache.insert(
@@ -399,7 +413,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
         if is_nil(old_solar_system_id) or solar_system_id != old_solar_system_id do
           [
-            {:character_location, %{solar_system_id: solar_system_id}, %{solar_system_id: nil}}
+            {:character_location,
+             %{
+               solar_system_id: solar_system_id,
+               structure_id: structure_id,
+               station_id: station_id
+             }, %{solar_system_id: nil}}
           ]
         else
           [:skip]

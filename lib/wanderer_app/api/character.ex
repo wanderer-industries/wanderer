@@ -104,7 +104,7 @@ defmodule WandererApp.Api.Character do
     update :update_location do
       require_atomic? false
 
-      accept([:solar_system_id, :structure_id])
+      accept([:solar_system_id, :structure_id, :station_id])
     end
 
     update :update_ship do
@@ -141,6 +141,7 @@ defmodule WandererApp.Api.Character do
       :ship,
       :solar_system_id,
       :structure_id,
+      :station_id,
       :access_token,
       :refresh_token
     ])
@@ -150,6 +151,7 @@ defmodule WandererApp.Api.Character do
       :ship,
       :solar_system_id,
       :structure_id,
+      :station_id,
       :access_token,
       :refresh_token
     ])
@@ -185,6 +187,7 @@ defmodule WandererApp.Api.Character do
     attribute :location, :string
     attribute :solar_system_id, :integer
     attribute :structure_id, :integer
+    attribute :station_id, :integer
     attribute :ship, :integer
     attribute :ship_name, :string
     attribute :corporation_id, :integer

@@ -186,7 +186,7 @@ defmodule WandererApp.Character do
     do: %{ship_name: nil, ship_type_info: %{}}
 
   def get_location(
-        %{solar_system_id: solar_system_id, structure_id: structure_id} =
+        %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
           _character
       ) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
@@ -194,6 +194,7 @@ defmodule WandererApp.Character do
         %{
           solar_system_id: solar_system_id,
           structure_id: structure_id,
+          station_id: station_id,
           solar_system_info: system_static_info
         }
 
@@ -201,6 +202,7 @@ defmodule WandererApp.Character do
         %{
           solar_system_id: solar_system_id,
           structure_id: structure_id,
+          station_id: station_id,
           solar_system_info: %{}
         }
     end

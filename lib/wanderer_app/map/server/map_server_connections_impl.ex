@@ -495,8 +495,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           not is_prohibited_system_class?(to_system_static_info.system_class) and
           not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
           not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
-          known_jumps |> Enum.empty?() and to_solar_system_id != @jita and
-          from_solar_system_id != @jita
+          known_jumps |> Enum.empty?()
 
       :stargates ->
         not is_prohibited_system_class?(from_system_static_info.system_class) and
