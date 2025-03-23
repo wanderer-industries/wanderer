@@ -26,6 +26,13 @@ defmodule WandererApp.Character.TrackingUtils do
         # Get updated tracking data
         {:ok, tracking_data} = build_tracking_data(map_id, current_user_id)
 
+        # Broadcast tracking update to any LiveView pages
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "character_tracking",
+          {:character_tracking_updated, map_id}
+        )
+
         # Determine which event to send based on tracking mode and previous state
         event = case {only_tracked_characters, was_tracked} do
           {true, true} -> :not_all_characters_tracked  # Untracking in tracked-only mode
