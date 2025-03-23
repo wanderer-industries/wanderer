@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.0](https://github.com/wanderer-industries/wanderer/compare/v1.58.0...v1.59.0) (2025-03-23)
+
+
+
+
+### Features:
+
+* Core: added handling cases when wrong connections created
+
 ## [v1.58.0](https://github.com/wanderer-industries/wanderer/compare/v1.57.1...v1.58.0) (2025-03-22)
 
 
