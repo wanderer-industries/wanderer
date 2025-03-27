@@ -2,18 +2,21 @@ import { forwardRef, HTMLProps, ReactNode, useMemo } from 'react';
 import clsx from 'clsx';
 import { WdTooltip, WdTooltipHandlers, TooltipProps } from '@/hooks/Mapper/components/ui-kit';
 import classes from './WdTooltipWrapper.module.scss';
-
-type TooltipSize = 'xs' | 'sm' | 'md' | 'lg';
+import { sizeClass, TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 
 export type WdTooltipWrapperProps = {
   content?: (() => ReactNode) | ReactNode;
   size?: TooltipSize;
   interactive?: boolean;
+  tooltipClassName?: string;
 } & Omit<HTMLProps<HTMLDivElement>, 'content' | 'size'> &
   Omit<TooltipProps, 'content'>;
 
 export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperProps>(
-  ({ className, children, content, offset, position, targetSelector, interactive, size, ...props }, forwardedRef) => {
+  (
+    { className, children, content, offset, position, targetSelector, interactive, size, tooltipClassName, ...props },
+    forwardedRef,
+  ) => {
     const suffix = useMemo(() => Math.random().toString(36).slice(2, 7), []);
     const autoClass = `wdTooltipAutoTrigger-${suffix}`;
     const finalTargetSelector = targetSelector || `.${autoClass}`;
@@ -29,7 +32,7 @@ export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperPr
           content={content}
           interactive={interactive}
           targetSelector={finalTargetSelector}
-          className={size ? sizeClass(size) : undefined}
+          className={clsx(size && sizeClass(size), tooltipClassName)}
         />
       </div>
     );
@@ -37,18 +40,3 @@ export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperPr
 );
 
 WdTooltipWrapper.displayName = 'WdTooltipWrapper';
-
-function sizeClass(size: TooltipSize) {
-  switch (size) {
-    case 'xs':
-      return classes.wdTooltipSizeXs;
-    case 'sm':
-      return classes.wdTooltipSizeSm;
-    case 'md':
-      return classes.wdTooltipSizeMd;
-    case 'lg':
-      return classes.wdTooltipSizeLg;
-    default:
-      return undefined;
-  }
-}

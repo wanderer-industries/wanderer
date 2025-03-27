@@ -62,6 +62,7 @@ export type Command =
   | Commands.signaturesUpdated
   | Commands.systemCommentAdded
   | Commands.systemCommentRemoved
+  | Commands.systemCommentsUpdated
   | Commands.characterActivityData
   | Commands.trackingCharactersData
   | Commands.userSettingsUpdated
@@ -186,6 +187,7 @@ export interface CommandData {
   [Commands.updateTracking]: CommandUpdateTracking;
   [Commands.systemCommentAdded]: CommandCommentAdd;
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
+  [Commands.systemCommentsUpdated]: unknown;
 }
 
 export interface MapHandlers {

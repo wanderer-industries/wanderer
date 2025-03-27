@@ -5,7 +5,7 @@ import {
   SystemInfo,
   SystemSignatures,
   SystemStructures,
-  SystemKills,
+  WSystemKills,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 import { CommentsWidget } from '@/hooks/Mapper/components/mapInterface/widgets/CommentsWidget';
 
@@ -70,7 +70,7 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     position: { x: 270, y: 730 },
     size: { width: 510, height: 200 },
     zIndex: 0,
-    content: () => <SystemKills />,
+    content: () => <WSystemKills />,
   },
   {
     id: WidgetsIds.comments,

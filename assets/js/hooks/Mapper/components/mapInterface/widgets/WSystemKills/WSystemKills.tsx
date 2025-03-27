@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
-import { SystemKillsContent } from './SystemKillsContent/SystemKillsContent';
+import { SystemKillsList } from './SystemKillsList';
 import { KillsHeader } from './components/SystemKillsHeader';
 import { useKillsWidgetSettings } from './hooks/useKillsWidgetSettings';
 import { useSystemKills } from './hooks/useSystemKills';
@@ -9,14 +9,13 @@ import { KillsSettingsDialog } from './components/SystemKillsSettingsDialog';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 import { SolarSystemRawType } from '@/hooks/Mapper/types';
 
-export const SystemKills: React.FC = React.memo(() => {
+const SystemKillsContent = () => {
   const {
     data: { selectedSystems, systems, isSubscriptionActive },
     outCommand,
   } = useMapRootState();
 
   const [systemId] = selectedSystems || [];
-  const [settingsDialogVisible, setSettingsDialogVisible] = useState(false);
 
   const systemNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -61,46 +60,74 @@ export const SystemKills: React.FC = React.memo(() => {
     });
   }, [kills, settings.whOnly, systemBySolarSystemId, visible]);
 
+  if (!isSubscriptionActive) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">
+          Kills available with &#39;Active&#39; map subscription only (contact map administrators)
+        </span>
+      </div>
+    );
+  }
+
+  if (isNothingSelected) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">
+          No system selected (or toggle &quot;Show all systems&quot;)
+        </span>
+      </div>
+    );
+  }
+
+  if (showLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">Loading Kills...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-red-400 text-sm">{error}</span>
+      </div>
+    );
+  }
+
+  if (!filteredKills || filteredKills.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">No kills found</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col">
-      <Widget label={<KillsHeader systemId={systemId} onOpenSettings={() => setSettingsDialogVisible(true)} />}>
-        {!isSubscriptionActive ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="select-none text-center text-stone-400/80 text-sm">
-              Kills available with &#39;Active&#39; map subscription only (contact map administrators)
-            </span>
-          </div>
-        ) : isNothingSelected ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="select-none text-center text-stone-400/80 text-sm">
-              No system selected (or toggle &quot;Show all systems&quot;)
-            </span>
-          </div>
-        ) : showLoading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="select-none text-center text-stone-400/80 text-sm">Loading Kills...</span>
-          </div>
-        ) : error ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="select-none text-center text-red-400 text-sm">{error}</span>
-          </div>
-        ) : !filteredKills || filteredKills.length === 0 ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="select-none text-center text-stone-400/80 text-sm">No kills found</span>
-          </div>
-        ) : (
-          <SystemKillsContent
-            kills={filteredKills}
-            systemNameMap={systemNameMap}
-            onlyOneSystem={!visible}
-            timeRange={settings.timeRange}
-          />
-        )}
-      </Widget>
-
-      {settingsDialogVisible && <KillsSettingsDialog visible setVisible={setSettingsDialogVisible} />}
-    </div>
+    <SystemKillsList
+      kills={filteredKills}
+      systemNameMap={systemNameMap}
+      onlyOneSystem={!visible}
+      timeRange={settings.timeRange}
+    />
   );
-});
+};
 
-SystemKills.displayName = 'SystemKills';
+export const WSystemKills = () => {
+  const [settingsDialogVisible, setSettingsDialogVisible] = useState(false);
+  const {
+    data: { selectedSystems },
+  } = useMapRootState();
+
+  const [systemId] = selectedSystems || [];
+
+  const handleOpenSettings = useCallback(() => setSettingsDialogVisible(true), []);
+
+  return (
+    <Widget label={<KillsHeader systemId={systemId} onOpenSettings={handleOpenSettings} />}>
+      <SystemKillsContent />
+      {settingsDialogVisible && <KillsSettingsDialog visible setVisible={setSettingsDialogVisible} />}
+    </Widget>
+  );
+};

@@ -44,6 +44,7 @@ export const CommentsWidget = () => {
 
   return (
     <Widget
+      contentClassName="my-1"
       label={
         <div ref={containerRef} className="flex justify-between items-center gap-1 text-xs w-full">
           <div className="flex items-center gap-1">
