@@ -19,6 +19,8 @@ defmodule WandererApp.Api.MapUserSettings do
     )
 
     define(:update_settings, action: :update_settings)
+
+    define(:update_hubs, action: :update_hubs)
   end
 
   actions do
@@ -33,6 +35,10 @@ defmodule WandererApp.Api.MapUserSettings do
     update :update_settings do
       accept [:settings]
     end
+
+    update :update_hubs do
+      accept [:hubs]
+    end
   end
 
   attributes do
@@ -40,6 +46,12 @@ defmodule WandererApp.Api.MapUserSettings do
 
     attribute :settings, :string do
       allow_nil? true
+    end
+
+    attribute :hubs, {:array, :string} do
+      allow_nil?(true)
+
+      default([])
     end
   end
 
