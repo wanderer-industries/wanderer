@@ -9,9 +9,8 @@ import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/compone
 import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings';
 import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
-import { TrackAndFollow } from '@/hooks/Mapper/components/mapRootContent/components/TrackAndFollow/TrackAndFollow';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
-import { useTrackAndFollowHandlers } from './hooks/useTrackAndFollowHandlers';
+import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
 
 export interface MapRootContentProps {}
 
@@ -19,18 +18,21 @@ export interface MapRootContentProps {}
 export const MapRootContent = ({}: MapRootContentProps) => {
   const { interfaceSettings, data } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
-  const { showCharacterActivity, showTrackAndFollow } = data;
+  const { showCharacterActivity } = data;
   const { handleHideCharacterActivity } = useCharacterActivityHandlers();
-  const { handleHideTracking } = useTrackAndFollowHandlers();
 
   const themeClass = `${interfaceSettings.theme ?? 'default'}-theme`;
 
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
+  const [showTrackingDialog, setShowTrackingDialog] = useState(false);
+
+  /* Important Notice - this solution needs for use one instance of MapInterface */
   const mapInterface = <MapInterface />;
 
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
+  const handleShowTrackingDialog = useCallback(() => setShowTrackingDialog(true), []);
 
   useSkipContextMenu();
 
@@ -44,13 +46,21 @@ export const MapRootContent = ({}: MapRootContentProps) => {
               {mapInterface}
             </div>
             <div className="absolute top-0 right-0 w-14 h-[calc(100%+3.5rem)] pointer-events-auto">
-              <RightBar onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+              <RightBar
+                onShowOnTheMap={handleShowOnTheMap}
+                onShowMapSettings={handleShowMapSettings}
+                onShowTrackingDialog={handleShowTrackingDialog}
+              />
             </div>
           </div>
         ) : (
           <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
             <Topbar>
-              <MapContextMenu onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+              <MapContextMenu
+                onShowOnTheMap={handleShowOnTheMap}
+                onShowMapSettings={handleShowMapSettings}
+                onShowTrackingDialog={handleShowTrackingDialog}
+              />
             </Topbar>
             {mapInterface}
           </div>
@@ -60,7 +70,9 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         {showCharacterActivity && (
           <CharacterActivity visible={showCharacterActivity} onHide={handleHideCharacterActivity} />
         )}
-        {showTrackAndFollow && <TrackAndFollow visible={showTrackAndFollow} onHide={handleHideTracking} />}
+        {showTrackingDialog && (
+          <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
+        )}
       </Layout>
     </div>
   );

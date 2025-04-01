@@ -35,6 +35,12 @@ export type CharacterTypeRaw = {
   corporation_ticker: string;
 };
 
+export interface TrackingCharacter {
+  character: CharacterTypeRaw;
+  tracked: boolean;
+  followed: boolean;
+}
+
 export type WithIsOwnCharacter = {
   isOwn: boolean;
 };

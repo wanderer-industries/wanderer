@@ -7,7 +7,7 @@ import {
   InterfaceStoredSettingsProps,
   useMapRootState,
   InterfaceStoredSettings,
-  AvailableThemes
+  AvailableThemes,
 } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { Dropdown } from 'primereact/dropdown';
@@ -225,37 +225,39 @@ export const MapSettings = ({ visible, onHide }: MapSettingsProps) => {
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
-          <div className={styles.verticalTabsContainer}>
-            <TabView activeIndex={activeIndex} onTabChange={e => setActiveIndex(e.index)}>
-              <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(COMMON_CHECKBOXES_PROPS)}</div>
-              </TabPanel>
+          <TabView
+            activeIndex={activeIndex}
+            className="vertical-tabs-container"
+            onTabChange={e => setActiveIndex(e.index)}
+          >
+            <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
+              <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(COMMON_CHECKBOXES_PROPS)}</div>
+            </TabPanel>
 
-              <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
-              </TabPanel>
+            <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
+              <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
+            </TabPanel>
 
-              <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
-                {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
-              </TabPanel>
+            <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
+              {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
+            </TabPanel>
 
-              <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
-                {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
-              </TabPanel>
+            <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
+              {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
+            </TabPanel>
 
-              <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
-                {renderSettingsList(UI_CHECKBOXES_PROPS)}
-              </TabPanel>
+            <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
+              {renderSettingsList(UI_CHECKBOXES_PROPS)}
+            </TabPanel>
 
-              <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>
-                <WidgetsSettings />
-              </TabPanel>
+            <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <WidgetsSettings />
+            </TabPanel>
 
-              <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>
-                {renderSettingItem(THEME_SETTING)}
-              </TabPanel>
-            </TabView>
-          </div>
+            <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>
+              {renderSettingItem(THEME_SETTING)}
+            </TabPanel>
+          </TabView>
         </div>
       </div>
     </Dialog>

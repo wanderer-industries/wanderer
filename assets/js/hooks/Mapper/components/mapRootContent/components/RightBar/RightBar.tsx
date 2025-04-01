@@ -1,7 +1,6 @@
 import classes from './RightBar.module.scss';
 import clsx from 'clsx';
 import { useCallback } from 'react';
-import { OutCommand } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
@@ -12,22 +11,15 @@ import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
+  onShowTrackingDialog?: () => void;
 }
 
-export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) => {
-  const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+export const RightBar = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: RightBarProps) => {
+  const { interfaceSettings, setInterfaceSettings } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 
   const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
-
-  const handleShowTracking = useCallback(() => {
-    // Use the OutCommand pattern for showing the tracking dialog
-    outCommand({
-      type: OutCommand.showTracking,
-      data: {},
-    });
-  }, [outCommand]);
 
   const toggleMinimap = useCallback(() => {
     setInterfaceSettings(x => ({
@@ -60,19 +52,19 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
       )}
     >
       <div className="flex flex-col gap-2 items-center mt-1">
-        <WdTooltipWrapper content="Tracking status" position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={handleShowTracking}
-            id="show-tracking-button"
-          >
-            <i className="pi pi-user-plus"></i>
-          </button>
-        </WdTooltipWrapper>
-
         {canTrackCharacters && (
           <>
+            <WdTooltipWrapper content="Tracking status" position={TooltipPosition.left}>
+              <button
+                className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                type="button"
+                onClick={onShowTrackingDialog}
+                id="show-tracking-button"
+              >
+                <i className="pi pi-user-plus"></i>
+              </button>
+            </WdTooltipWrapper>
+
             <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
               <button
                 className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"

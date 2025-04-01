@@ -5,6 +5,7 @@ import {
   MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
+  TrackingCharacter,
   UseCharactersCacheData,
   UseCommentsData,
 } from '@/hooks/Mapper/types';
@@ -19,7 +20,6 @@ import {
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
 import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
-import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -31,7 +31,6 @@ export type MapRootData = MapUnionTypes & {
     activity: ActivitySummary[];
     loading?: boolean;
   };
-  showTrackAndFollow: boolean;
   trackingCharactersData: TrackingCharacter[];
 };
 
@@ -45,7 +44,6 @@ const INITIAL_DATA: MapRootData = {
     activity: [],
     loading: false,
   },
-  showTrackAndFollow: false,
   trackingCharactersData: [],
   userCharacters: [],
   presentCharacters: [],
@@ -183,6 +181,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     if (foundNew) {
       setInterfaceSettings(newVals);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const comments = useComments({ outCommand });
