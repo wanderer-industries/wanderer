@@ -36,23 +36,29 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } = socket
       ) do
-    is_user_character =
+    character =
       current_user.characters
-      |> Enum.map(& &1.id)
-      |> Enum.member?(character_id)
+      |> Enum.find(& &1.id)
+
+    is_user_character =
+      not is_nil(character)
 
     is_select_on_spash =
       map_user_settings
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("select_on_spash")
 
-    is_followed =
-      case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character_id) do
-        {:ok, setting} -> setting.followed == true
-        _ -> false
+    is_following =
+      case WandererApp.MapUserSettingsRepo.get(map_id, current_user.id) do
+        {:ok, %{following_character_eve_id: following_character_eve_id}}
+        when not is_nil(following_character_eve_id) ->
+          is_user_character && following_character_eve_id == character.eve_id
+
+        _ ->
+          false
       end
 
-    must_select? = is_user_character && (is_select_on_spash || is_followed)
+    must_select? = is_user_character && (is_select_on_spash || is_following)
 
     if not must_select? do
       socket
