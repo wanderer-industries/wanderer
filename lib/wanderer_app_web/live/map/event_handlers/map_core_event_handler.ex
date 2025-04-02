@@ -248,17 +248,16 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         _body,
         %{assigns: %{has_tracked_characters?: false}} =
           socket
-      ),
-      do:
-        MapCharactersEventHandler.handle_ui_event(
-          "show_tracking",
-          %{},
-          socket
-          |> put_flash(
-            :error,
-            "You should enable tracking for at least one character!"
-          )
-        )
+      ) do
+    Process.send_after(self(), %{event: :show_tracking}, 10)
+
+    {:noreply,
+     socket
+     |> put_flash(
+       :error,
+       "You should enable tracking for at least one character!"
+     )}
+  end
 
   defp maybe_start_map(map_id) do
     {:ok, map_server_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
@@ -554,7 +553,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       )
 
     if socket.assigns.needs_tracking_setup do
-      {:noreply, socket} = MapCharactersEventHandler.handle_ui_event("show_tracking", %{}, socket)
+      Process.send_after(self(), %{event: :show_tracking}, 10)
+
       socket
     else
       socket

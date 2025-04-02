@@ -90,6 +90,14 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     )
   end
 
+  def handle_server_event(%{event: :show_tracking}, socket) do
+    socket
+    |> MapEventHandler.push_map_event(
+      "show_tracking",
+      %{}
+    )
+  end
+
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
