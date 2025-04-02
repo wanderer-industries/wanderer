@@ -86,8 +86,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
         WandererApp.MapCharacterSettingsRepo.create(%{
           character_id: character_id,
           map_id: selected_map.id,
-          tracked: true,
-          followed: false
+          tracked: true
         })
 
         {:noreply, socket}

@@ -15,8 +15,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character,
-               followed: false
+               tracked: track_character
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
