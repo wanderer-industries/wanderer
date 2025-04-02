@@ -22,7 +22,6 @@ defmodule WandererAppWeb.MapEventHandler do
     :character_updated,
     :characters_updated,
     :present_characters_updated,
-    :tracking_characters_data,
     :refresh_user_characters
   ]
 

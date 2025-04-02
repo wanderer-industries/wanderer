@@ -64,17 +64,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         )
 
   def handle_server_event(
-        %{event: :tracking_characters_data, payload: tracking_data},
-        socket
-      ) do
-    socket
-    |> MapEventHandler.push_map_event(
-      "tracking_characters_data",
-      %{characters: tracking_data}
-    )
-  end
-
-  def handle_server_event(
         %{event: :refresh_user_characters},
         %{
           assigns: %{
@@ -91,7 +80,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     # Update socket assigns but don't affect followed state
     socket
     |> assign(user_characters: user_character_eve_ids)
-    |> assign(has_tracked_characters?: has_tracked_characters?(user_character_eve_ids))
+    |> assign(has_tracked_characters?: user_character_eve_ids |> Enum.empty?() |> Kernel.not())
     |> MapEventHandler.push_map_event(
       "init",
       %{
@@ -209,9 +198,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  def has_tracked_characters?([]), do: false
-  def has_tracked_characters?(_user_characters), do: true
-
   def map_ui_character(character),
     do:
       character
@@ -242,6 +228,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   """
   def init_character_tracking(socket, map_id, %{
         current_user: current_user,
+        user_characters: tracked_user_character_eve_ids,
         user_permissions: user_permissions
       }) do
     {:ok, character_settings} = WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)
@@ -249,8 +236,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
     {:ok, %{characters: characters_with_access}} =
       WandererApp.Maps.load_characters(map, character_settings, current_user.id)
-
-    socket = init_tracking_state(socket, current_user)
 
     needs_tracking_setup =
       needs_tracking_setup?(
@@ -261,24 +246,17 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       )
 
     socket
-    |> assign(:needs_tracking_setup, needs_tracking_setup)
+    |> assign(
+      has_tracked_characters?: tracked_user_character_eve_ids |> Enum.empty?() |> Kernel.not(),
+      user_characters: tracked_user_character_eve_ids,
+      needs_tracking_setup: needs_tracking_setup
+    )
   end
 
   defp get_map_with_acls(map_id) do
     with {:ok, map} <- WandererApp.Api.Map.by_id(map_id) do
       {:ok, Ash.load!(map, :acls)}
     end
-  end
-
-  def init_tracking_state(socket, current_user) do
-    user_character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
-    has_tracked_characters? = has_tracked_characters?(user_character_eve_ids)
-
-    socket
-    |> assign(
-      has_tracked_characters?: has_tracked_characters?,
-      user_characters: user_character_eve_ids
-    )
   end
 
   def needs_tracking_setup?(

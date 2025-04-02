@@ -283,7 +283,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
             if is_character_in_space?(location) do
               :ok =
-                ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
+                ConnectionsImpl.maybe_add_connection(
+                  map_id,
+                  location,
+                  old_location,
+                  character_id,
+                  false
+                )
             end
 
           _ ->

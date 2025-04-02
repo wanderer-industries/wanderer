@@ -56,14 +56,30 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
         case track_character do
           false ->
-            :ok = WandererApp.Character.TrackingUtils.untrack_characters(map_characters, map_id, self())
+            :ok =
+              WandererApp.Character.TrackingUtils.untrack_characters(
+                map_characters,
+                map_id,
+                self()
+              )
+
             :ok = WandererApp.Character.TrackingUtils.remove_characters(map_characters, map_id)
 
           _ ->
-            :ok = WandererApp.Character.TrackingUtils.track_characters(map_characters, map_id, true, self())
+            :ok =
+              WandererApp.Character.TrackingUtils.track_characters(
+                map_characters,
+                map_id,
+                true,
+                self()
+              )
 
             :ok =
-              WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
+              WandererApp.Character.TrackingUtils.add_characters(
+                map_characters,
+                map_id,
+                track_character
+              )
         end
 
         socket
@@ -483,7 +499,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          socket,
          %{
            map_id: map_id,
-           user_characters: user_character_eve_ids,
+           user_characters: tracked_user_character_eve_ids,
            initial_data: initial_data,
            events: events
          } = _started_data
@@ -506,7 +522,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
-      |> filter_map_characters(user_character_eve_ids, user_permissions, options)
+      |> filter_map_characters(tracked_user_character_eve_ids, user_permissions, options)
       |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
 
     socket =
@@ -532,7 +548,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         map_id,
         %{
           current_user: current_user,
-          user_permissions: user_permissions
+          user_permissions: user_permissions,
+          user_characters: tracked_user_character_eve_ids
         }
       )
 

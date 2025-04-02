@@ -402,10 +402,11 @@ defmodule WandererApp.Esi.ApiClient do
     do: _get_routes_eve(origin, destination, params, opts)
 
   defp _get_routes_eve(origin, destination, params, opts) do
-    esi_params = Map.merge(params, %{
-      connections: params.connections |> Enum.join(","),
-      avoid: params.avoid |> Enum.join(",")
-    })
+    esi_params =
+      Map.merge(params, %{
+        connections: params.connections |> Enum.join(","),
+        avoid: params.avoid |> Enum.join(",")
+      })
 
     get(
       "/route/#{origin}/#{destination}/?#{esi_params |> Plug.Conn.Query.encode()}",
@@ -504,7 +505,7 @@ defmodule WandererApp.Esi.ApiClient do
           get_retry(path, api_opts, opts)
 
         {:ok, %{status: 420} = _error} ->
-          get_retry(path, api_opts, opts)
+          get_retry(path, api_opts, opts, :error_limited)
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
@@ -532,6 +533,9 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: 403}} ->
           {:error, :forbidden}
 
+        {:ok, %{status: 420}} ->
+          {:error, :error_limited}
+
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
 
@@ -546,13 +550,13 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp get_retry(path, api_opts, opts) do
+  defp get_retry(path, api_opts, opts, status \\ :forbidden) do
     refresh_token? = opts |> Keyword.get(:refresh_token?, false)
     retry_count = opts |> Keyword.get(:retry_count, 0)
     character_id = opts |> Keyword.get(:character_id, nil)
 
     if not refresh_token? or is_nil(character_id) or retry_count >= @api_retry_count do
-      {:error, :forbidden}
+      {:error, status}
     else
       case _refresh_token(character_id) do
         {:ok, token} ->
@@ -565,7 +569,7 @@ defmodule WandererApp.Esi.ApiClient do
           )
 
         {:error, _error} ->
-          {:error, :forbidden}
+          {:error, status}
       end
     end
   end
