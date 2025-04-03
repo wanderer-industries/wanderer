@@ -96,7 +96,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
 
     map_id
     |> WandererApp.Map.Server.update_signatures(%{
-      solar_system_id: solar_system_id |> String.to_integer(),
+      solar_system_id: get_integer(solar_system_id),
       character_id: main_character_id,
       user_id: current_user_id,
       delete_connection_with_sigs: delete_connection_with_sigs,
@@ -119,7 +119,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
       ) do
     case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
-           solar_system_id: solar_system_id |> String.to_integer()
+           solar_system_id: get_integer(solar_system_id)
          }) do
       {:ok, system} ->
         {:reply, %{signatures: get_system_signatures(system.id)}, socket}
@@ -144,6 +144,9 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           }
         } = socket
       ) do
+    solar_system_source = get_integer(solar_system_source)
+    solar_system_target = get_integer(solar_system_target)
+
     case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
            solar_system_id: solar_system_source
@@ -199,6 +202,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           }
         } = socket
       ) do
+    solar_system_source = get_integer(solar_system_source)
+
     case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
            solar_system_id: solar_system_source
@@ -207,6 +212,12 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
         |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
         |> Enum.each(fn s ->
+          map_id
+          |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+            solar_system_id: s.linked_system_id,
+            linked_sig_eve_id: nil
+          })
+
           s
           |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
             linked_system_id: nil
@@ -252,4 +263,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
         |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
       end)
+
+  defp get_integer(nil), do: nil
+  defp get_integer(value) when is_binary(value), do: String.to_integer(value)
+  defp get_integer(value), do: value
 end
