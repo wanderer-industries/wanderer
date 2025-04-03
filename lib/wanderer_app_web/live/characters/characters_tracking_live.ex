@@ -41,13 +41,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     selected_map = socket.assigns.maps |> Enum.find(&(&1.slug == map_slug))
 
     {:ok, character_settings} =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
-        {:ok, settings} ->
-          {:ok, settings}
-
-        _ ->
-          {:ok, []}
-      end
+      WandererApp.Character.Activity.get_map_character_settings(selected_map.id)
 
     user_id = socket.assigns.user_id
 
@@ -106,10 +100,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     %{result: characters} = socket.assigns.characters
 
     {:ok, character_settings} =
-      case WandererApp.MapCharacterSettingsRepo.get_all_by_map(selected_map.id) do
-        {:ok, settings} -> {:ok, settings}
-        _ -> {:ok, []}
-      end
+      WandererApp.Character.Activity.get_map_character_settings(selected_map.id)
 
     characters =
       characters

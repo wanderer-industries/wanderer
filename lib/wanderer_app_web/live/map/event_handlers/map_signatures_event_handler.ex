@@ -81,21 +81,14 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         },
         %{
           assigns: %{
-            current_user: current_user,
+            current_user: %{id: current_user_id},
             map_id: map_id,
+            main_character_id: main_character_id,
             map_user_settings: map_user_settings,
-            user_characters: user_characters,
             user_permissions: %{update_system: true}
           }
         } = socket
       ) do
-    first_character_eve_id =
-      user_characters |> List.first()
-
-    character =
-      current_user.characters
-      |> Enum.find(fn c -> c.eve_id === first_character_eve_id end)
-
     delete_connection_with_sigs =
       map_user_settings
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
@@ -104,8 +97,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     map_id
     |> WandererApp.Map.Server.update_signatures(%{
       solar_system_id: solar_system_id |> String.to_integer(),
-      character: character,
-      user_id: current_user.id,
+      character_id: main_character_id,
+      user_id: current_user_id,
       delete_connection_with_sigs: delete_connection_with_sigs,
       added_signatures: added_signatures,
       updated_signatures: updated_signatures,
@@ -146,7 +139,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            user_characters: user_characters,
+            has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
@@ -156,50 +149,36 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
            solar_system_id: solar_system_source
          }) do
       {:ok, system} ->
-        first_character_eve_id =
-          user_characters |> List.first()
+        WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
+        |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
+        |> Enum.each(fn s ->
+          s
+          |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
+          |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
+            linked_system_id: solar_system_target
+          })
+        end)
 
-        case not is_nil(first_character_eve_id) do
-          true ->
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
-            |> Enum.each(fn s ->
-              s
-              |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
-              |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
-                linked_system_id: solar_system_target
-              })
-            end)
+        map_system =
+          WandererApp.Map.find_system_by_location(
+            map_id,
+            %{solar_system_id: solar_system_target}
+          )
 
-            map_system =
-              WandererApp.Map.find_system_by_location(
-                map_id,
-                %{solar_system_id: solar_system_target}
-              )
-
-            if not is_nil(map_system) && is_nil(map_system.linked_sig_eve_id) do
-              map_id
-              |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
-                solar_system_id: solar_system_target,
-                linked_sig_eve_id: signature_eve_id
-              })
-            end
-
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
-              event: :signatures_updated,
-              payload: solar_system_source
-            })
-
-            {:noreply, socket}
-
-          _ ->
-            {:noreply,
-             socket
-             |> put_flash(
-               :error,
-               "You should enable tracking for at least one character to work with signatures."
-             )}
+        if not is_nil(map_system) && is_nil(map_system.linked_sig_eve_id) do
+          map_id
+          |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+            solar_system_id: solar_system_target,
+            linked_sig_eve_id: signature_eve_id
+          })
         end
+
+        Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+          event: :signatures_updated,
+          payload: solar_system_source
+        })
+
+        {:noreply, socket}
 
       _ ->
         {:noreply, socket}
@@ -215,7 +194,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            user_characters: user_characters,
+            has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
@@ -225,35 +204,21 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
            solar_system_id: solar_system_source
          }) do
       {:ok, system} ->
-        first_character_eve_id =
-          user_characters |> List.first()
+        WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
+        |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
+        |> Enum.each(fn s ->
+          s
+          |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
+            linked_system_id: nil
+          })
+        end)
 
-        case not is_nil(first_character_eve_id) do
-          true ->
-            WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
-            |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
-            |> Enum.each(fn s ->
-              s
-              |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
-                linked_system_id: nil
-              })
-            end)
+        Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+          event: :signatures_updated,
+          payload: solar_system_source
+        })
 
-            Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
-              event: :signatures_updated,
-              payload: solar_system_source
-            })
-
-            {:noreply, socket}
-
-          _ ->
-            {:noreply,
-             socket
-             |> put_flash(
-               :error,
-               "You should enable tracking for at least one character to work with signatures."
-             )}
-        end
+        {:noreply, socket}
 
       _ ->
         {:noreply, socket}

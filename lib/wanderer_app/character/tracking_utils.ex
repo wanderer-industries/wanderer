@@ -56,7 +56,8 @@ defmodule WandererApp.Character.TrackingUtils do
   """
   def build_tracking_data(map_id, current_user_id) do
     with {:ok, map} <- WandererApp.MapRepo.get(map_id, [:acls]),
-         {:ok, character_settings} <- WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id),
+         {:ok, character_settings} <-
+           WandererApp.Character.Activity.get_map_character_settings(map_id),
          {:ok, user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
          {:ok, %{characters: characters_with_access}} <-
            WandererApp.Maps.load_characters(map, character_settings, current_user_id) do
@@ -221,4 +222,33 @@ defmodule WandererApp.Character.TrackingUtils do
     :ok = WandererApp.Map.Server.remove_character(map_id, character.id)
     remove_characters(characters, map_id)
   end
+
+  def get_main_character(
+        nil,
+        current_user_characters,
+        available_map_characters
+      ),
+      do:
+        get_main_character(
+          %{main_character_eve_id: nil},
+          current_user_characters,
+          available_map_characters
+        )
+
+  def get_main_character(
+        %{main_character_eve_id: nil} = _map_user_settings,
+        _current_user_characters,
+        available_map_characters
+      ),
+      do: {:ok, available_map_characters |> Enum.sort_by(& &1.inserted_at) |> List.first()}
+
+  def get_main_character(
+        %{main_character_eve_id: main_character_eve_id} = _map_user_settings,
+        current_user_characters,
+        _available_map_characters
+      ),
+      do:
+        {:ok,
+         current_user_characters
+         |> Enum.find(fn c -> c.eve_id === main_character_eve_id end)}
 end
