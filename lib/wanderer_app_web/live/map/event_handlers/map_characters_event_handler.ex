@@ -117,12 +117,12 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: current_user
+            current_user: %{id: current_user_id}
           }
         } = socket
       ) do
     {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user.id)
+      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
     {:reply, %{data: tracking_data}, socket}
   end
@@ -133,7 +133,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: current_user,
+            current_user: %{id: current_user_id},
             only_tracked_characters: only_tracked_characters
           }
         } = socket
@@ -142,7 +142,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
            map_id,
            character_eve_id,
            track,
-           current_user.id,
+           current_user_id,
            self(),
            only_tracked_characters
          ) do
@@ -171,7 +171,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{"characterEveId" => character_eve_id},
         %{
           assigns: %{
-            current_user: current_user,
+            current_user: %{id: current_user_id},
             map_id: map_id,
             map_user_settings: %{following_character_eve_id: following_character_eve_id}
           }
@@ -179,13 +179,13 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       )
       when not is_nil(character_eve_id) and character_eve_id != following_character_eve_id do
     {:ok, map_user_settings} =
-      WandererApp.MapUserSettingsRepo.get!(map_id, current_user.id)
+      WandererApp.MapUserSettingsRepo.get!(map_id, current_user_id)
       |> WandererApp.Api.MapUserSettings.update_following_character(%{
         following_character_eve_id: "#{character_eve_id}"
       })
 
     {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user.id)
+      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
     {:reply, %{data: tracking_data}, socket |> assign(:map_user_settings, map_user_settings)}
   end

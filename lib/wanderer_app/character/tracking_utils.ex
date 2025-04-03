@@ -65,10 +65,13 @@ defmodule WandererApp.Character.TrackingUtils do
       {:ok, characters_data} =
         build_character_tracking_data(characters_with_access, character_settings)
 
+      {:ok, main_character} =
+        get_main_character(user_settings, characters_with_access, characters_with_access)
+
       {:ok,
        %{
          characters: characters_data,
-         main: user_settings.main_character_eve_id,
+         main: main_character.eve_id,
          following: user_settings.following_character_eve_id
        }}
     else
