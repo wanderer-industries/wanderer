@@ -66,7 +66,9 @@ export const useMapInit = () => {
         updateData.options = options;
       }
 
-      updateData.isSubscriptionActive = is_subscription_active;
+      if (is_subscription_active) {
+        updateData.isSubscriptionActive = is_subscription_active;
+      }
 
       if (system_static_infos) {
         system_static_infos.forEach(static_info => {

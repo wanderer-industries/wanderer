@@ -15,8 +15,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character,
-               followed: false
+               tracked: track_character
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
@@ -284,7 +283,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
             if is_character_in_space?(location) do
               :ok =
-                ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
+                ConnectionsImpl.maybe_add_connection(
+                  map_id,
+                  location,
+                  old_location,
+                  character_id,
+                  false
+                )
             end
 
           _ ->

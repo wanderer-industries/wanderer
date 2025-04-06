@@ -92,7 +92,19 @@ defmodule WandererApp.Maps do
   end
 
   def map_character(
-        %{name: name, id: id, eve_id: eve_id, corporation_ticker: corporation_ticker} =
+        %{
+          name: name,
+          id: id,
+          eve_id: eve_id,
+          access_token: access_token,
+          corporation_id: corporation_id,
+          alliance_id: alliance_id,
+          corporation_ticker: corporation_ticker,
+          solar_system_id: solar_system_id,
+          ship: ship_type_id,
+          ship_name: ship_name,
+          inserted_at: inserted_at
+        } =
           _character,
         nil
       ),
@@ -100,29 +112,53 @@ defmodule WandererApp.Maps do
         name: name,
         id: id,
         eve_id: eve_id,
+        access_token: access_token,
+        corporation_id: corporation_id,
+        alliance_id: alliance_id,
         corporation_ticker: corporation_ticker,
-        tracked: false,
-        followed: false
+        solar_system_id: solar_system_id,
+        ship: ship_type_id,
+        ship_name: ship_name,
+        inserted_at: inserted_at,
+        tracked: false
       }
 
   def map_character(
-        %{name: name, id: id, eve_id: eve_id, corporation_ticker: corporation_ticker} =
+        %{
+          name: name,
+          id: id,
+          eve_id: eve_id,
+          access_token: access_token,
+          corporation_id: corporation_id,
+          alliance_id: alliance_id,
+          corporation_ticker: corporation_ticker,
+          solar_system_id: solar_system_id,
+          ship: ship_type_id,
+          ship_name: ship_name,
+          inserted_at: inserted_at
+        } =
           _character,
-        %{tracked: tracked, followed: followed} = _character_settings
+        %{tracked: tracked} = _character_settings
       ),
       do: %{
         name: name,
         id: id,
         eve_id: eve_id,
+        access_token: access_token,
+        corporation_id: corporation_id,
+        alliance_id: alliance_id,
         corporation_ticker: corporation_ticker,
-        tracked: tracked,
-        followed: followed
+        solar_system_id: solar_system_id,
+        ship: ship_type_id,
+        ship_name: ship_name,
+        inserted_at: inserted_at,
+        tracked: tracked
       }
 
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "map_characters-#{map_id}",
-              opts: [ttl: :timer.seconds(5)]
+              opts: [ttl: :timer.seconds(2)]
             )
   defp _get_map_characters(%{id: map_id} = map) do
     map_acls =

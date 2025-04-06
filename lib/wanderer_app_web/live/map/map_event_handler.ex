@@ -22,23 +22,23 @@ defmodule WandererAppWeb.MapEventHandler do
     :character_updated,
     :characters_updated,
     :present_characters_updated,
-    :tracking_characters_data,
-    :refresh_user_characters
+    :refresh_user_characters,
+    :show_tracking
   ]
 
   @map_characters_ui_events [
-    "toggle_track",
-    "toggle_follow",
-    "show_tracking",
-    "getCharacterInfo"
+    "getCharacterInfo",
+    "getCharactersTrackingInfo",
+    "updateCharacterTracking",
+    "updateFollowingCharacter",
+    "updateMainCharacter"
   ]
 
   @map_system_events [
     :add_system,
     :update_system,
     :systems_removed,
-    :maybe_select_system,
-    :kills_updated
+    :maybe_select_system
   ]
 
   @map_system_ui_events [
@@ -130,9 +130,9 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_kills_events [
-    :fetch_new_system_kills,
-    :detailed_kills_updated,
-    :fetch_new_map_kills
+    :init_kills,
+    :kills_updated,
+    :detailed_kills_updated
   ]
 
   @map_kills_ui_events [
@@ -166,7 +166,7 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_structures_events,
-      do: MapSignaturesEventHandler.handle_server_event(event, socket)
+      do: MapStructuresEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_signatures_events,
@@ -428,9 +428,4 @@ defmodule WandererAppWeb.MapEventHandler do
         :triglavian_invasion_status,
         :sun_type_id
       ])
-
-  def map_ui_kill({solar_system_id, kills}),
-    do: %{solar_system_id: solar_system_id, kills: kills}
-
-  def map_ui_kill(_kill), do: %{}
 end

@@ -85,7 +85,7 @@ defmodule WandererApp.Character.Activity do
     end
   end
 
-  defp get_map_character_settings(map_id) do
+  def get_map_character_settings(map_id) do
     case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
       {:ok, settings} -> {:ok, settings}
       _ -> {:ok, []}
@@ -144,13 +144,16 @@ defmodule WandererApp.Character.Activity do
 
     # Create activity entry for the selected character
     case char_id_to_show do
-      nil -> []
-      id -> create_character_activity_entry(
-              id,
-              activities_by_character,
-              user_characters,
-              is_current_user
-            )
+      nil ->
+        []
+
+      id ->
+        create_character_activity_entry(
+          id,
+          activities_by_character,
+          user_characters,
+          is_current_user
+        )
     end
   end
 

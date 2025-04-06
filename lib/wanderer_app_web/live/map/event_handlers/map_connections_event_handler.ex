@@ -43,8 +43,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            current_user: %{id: current_user_id},
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{add_connection: true}
           }
@@ -55,13 +55,13 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     |> WandererApp.Map.Server.add_connection(%{
       solar_system_source_id: solar_system_source_id |> String.to_integer(),
       solar_system_target_id: solar_system_target_id |> String.to_integer(),
-      character_id: tracked_character_ids |> List.first()
+      character_id: main_character_id
     })
 
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
+        character_id: main_character_id,
+        user_id: current_user_id,
         map_id: map_id,
         solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
         solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
@@ -76,8 +76,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            current_user: %{id: current_user_id},
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{delete_connection: true}
           }
@@ -92,8 +92,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
 
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
+        character_id: main_character_id,
+        user_id: current_user_id,
         map_id: map_id,
         solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
         solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
@@ -112,8 +112,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            current_user: %{id: current_user_id},
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
@@ -144,8 +144,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
 
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_updated, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
+        character_id: main_character_id,
+        user_id: current_user_id,
         map_id: map_id,
         solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
         solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer(),
