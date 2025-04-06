@@ -1,4 +1,4 @@
-import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
+import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/index.ts';
 import { WIDGETS_CHECKBOXES_PROPS, WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback } from 'react';
