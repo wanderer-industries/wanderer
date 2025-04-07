@@ -25,39 +25,42 @@ const renderCharacterTemplate = (row: TrackingCharacter | undefined) => {
 };
 
 export const TrackingSettings = () => {
-  const { trackingCharacters, following, updateFollowing } = useTracking();
+  const { trackingCharacters, following, main, updateFollowing, updateMain } = useTracking();
 
   const followingChar = useMemo(
     () => trackingCharacters.find(x => x.character.eve_id === following),
     [following, trackingCharacters],
   );
 
-  const handleSelectFollowed = useCallback(
+  const mainChar = useMemo(() => trackingCharacters.find(x => x.character.eve_id === main), [main, trackingCharacters]);
+
+  const handleSelectFollowing = useCallback(
     (e: TrackingCharacter) => updateFollowing(e.character.eve_id),
     [updateFollowing],
   );
 
+  const handleSelectMain = useCallback((e: TrackingCharacter) => updateMain(e.character.eve_id), [updateMain]);
+
   return (
     <div className="w-full h-full flex flex-col gap-1">
-      {/* TODO unblock it when will done BE part of Main character select */}
-      {/*<div className="flex items-center justify-between gap-2 mx-2">*/}
-      {/*  <label className="text-stone-400 text-[13px] select-none">Main character</label>*/}
-      {/*  <Dropdown*/}
-      {/*    options={characters}*/}
-      {/*    value={selectedMain}*/}
-      {/*    onChange={e => setSelectedMain(e.value)}*/}
-      {/*    className="w-[230px]"*/}
-      {/*    itemTemplate={renderCharacterTemplate}*/}
-      {/*    valueTemplate={renderValCharacterTemplate}*/}
-      {/*  />*/}
-      {/*</div>*/}
+      <div className="flex items-center justify-between gap-2 mx-2">
+        <label className="text-stone-400 text-[13px] select-none">Main character</label>
+        <Dropdown
+          options={trackingCharacters}
+          value={mainChar}
+          onChange={e => handleSelectMain(e.value)}
+          className="w-[230px]"
+          itemTemplate={renderCharacterTemplate}
+          valueTemplate={renderValCharacterTemplate}
+        />
+      </div>
 
       <div className="flex items-center justify-between gap-2 mx-2">
         <label className="text-stone-400 text-[13px] select-none">Following character</label>
         <Dropdown
           options={trackingCharacters}
           value={followingChar}
-          onChange={e => handleSelectFollowed(e.value)}
+          onChange={e => handleSelectFollowing(e.value)}
           className="w-[230px]"
           itemTemplate={renderCharacterTemplate}
           valueTemplate={renderValCharacterTemplate}

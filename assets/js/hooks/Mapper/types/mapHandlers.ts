@@ -240,6 +240,7 @@ export enum OutCommand {
   getCharactersTrackingInfo = 'getCharactersTrackingInfo',
   updateCharacterTracking = 'updateCharacterTracking',
   updateFollowingCharacter = 'updateFollowingCharacter',
+  updateMainCharacter = 'updateMainCharacter',
 
   // Only UI commands
   openSettings = 'open_settings',

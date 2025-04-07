@@ -1,4 +1,3 @@
-// TrackingContext.tsx
 import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
@@ -11,6 +10,7 @@ type TrackingContextType = {
   loadTracking: () => void;
   updateTracking: (selected: string[]) => void;
   updateFollowing: (characterId: string) => void;
+  updateMain: (characterId: string) => void;
   trackingCharacters: TrackingCharacter[];
   following: string | null;
   main: string | null;
@@ -101,14 +101,33 @@ export const TrackingProvider = ({ children }: WithChildren) => {
     [outCommand],
   );
 
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('JOipP', `trackingCharacters`, trackingCharacters);
-  }, [trackingCharacters]);
+  const updateMain = useCallback(
+    async (characterId: string) => {
+      try {
+        await outCommand({
+          type: OutCommand.updateMainCharacter,
+          data: { character_eve_id: characterId },
+        });
+        setMain(characterId);
+      } catch (error) {
+        console.error('Error toggling main:', error);
+      }
+    },
+    [outCommand],
+  );
 
   return (
     <TrackingContext.Provider
-      value={{ loadTracking, trackingCharacters, following, main, loading, updateTracking, updateFollowing }}
+      value={{
+        loadTracking,
+        trackingCharacters,
+        following,
+        main,
+        loading,
+        updateTracking,
+        updateFollowing,
+        updateMain,
+      }}
     >
       {children}
     </TrackingContext.Provider>
