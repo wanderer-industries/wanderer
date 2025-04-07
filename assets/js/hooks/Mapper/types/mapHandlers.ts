@@ -239,6 +239,7 @@ export enum OutCommand {
   getCharacterInfo = 'getCharacterInfo',
   getCharactersTrackingInfo = 'getCharactersTrackingInfo',
   updateCharacterTracking = 'updateCharacterTracking',
+  updateFollowingCharacter = 'updateFollowingCharacter',
 
   // Only UI commands
   openSettings = 'open_settings',

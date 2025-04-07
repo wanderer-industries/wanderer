@@ -10,6 +10,7 @@ type DiffTrackingInfo = { characterId: string; tracked: boolean };
 type TrackingContextType = {
   loadTracking: () => void;
   updateTracking: (selected: string[]) => void;
+  updateFollowing: (characterId: string) => void;
   trackingCharacters: TrackingCharacter[];
   following: string | null;
   main: string | null;
@@ -85,13 +86,30 @@ export const TrackingProvider = ({ children }: WithChildren) => {
     [changeTrackingCommand],
   );
 
+  const updateFollowing = useCallback(
+    async (characterId: string) => {
+      try {
+        await outCommand({
+          type: OutCommand.updateFollowingCharacter,
+          data: { character_eve_id: characterId },
+        });
+        setFollowing(characterId);
+      } catch (error) {
+        console.error('Error toggling follow:', error);
+      }
+    },
+    [outCommand],
+  );
+
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log('JOipP', `trackingCharacters`, trackingCharacters);
   }, [trackingCharacters]);
 
   return (
-    <TrackingContext.Provider value={{ loadTracking, trackingCharacters, following, main, loading, updateTracking }}>
+    <TrackingContext.Provider
+      value={{ loadTracking, trackingCharacters, following, main, loading, updateTracking, updateFollowing }}
+    >
       {children}
     </TrackingContext.Provider>
   );

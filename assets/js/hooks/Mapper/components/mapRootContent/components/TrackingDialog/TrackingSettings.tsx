@@ -1,8 +1,8 @@
 import { Dropdown } from 'primereact/dropdown';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
+import { useCallback, useMemo } from 'react';
+import { TrackingCharacter } from '@/hooks/Mapper/types';
 import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
+import { useTracking } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog/TrackingProvider.tsx';
 
 const renderValCharacterTemplate = (row: TrackingCharacter | undefined) => {
   if (!row) {
@@ -25,46 +25,16 @@ const renderCharacterTemplate = (row: TrackingCharacter | undefined) => {
 };
 
 export const TrackingSettings = () => {
-  // const [selectedMain, setSelectedMain] = useState(undefined);
-  const [selectedFollow, setSelectedFollow] = useState<TrackingCharacter>();
+  const { trackingCharacters, following, updateFollowing } = useTracking();
 
-  const {
-    outCommand,
-    data: { trackingCharactersData },
-  } = useMapRootState();
-
-  const characters = useMemo(() => trackingCharactersData ?? [], [trackingCharactersData]);
-  // const refVars = useRef({ characters });
-  // refVars.current = { characters };
-
-  useEffect(() => {
-    const followed = characters.find(x => x.followed);
-    if (!followed) {
-      return;
-    }
-
-    setSelectedFollow(followed);
-  }, [characters]);
-
-  const handleFollowToggle = useCallback(
-    async (characterId: string) => {
-      try {
-        await outCommand({
-          type: OutCommand.toggleFollow,
-          data: { character_id: characterId },
-        });
-      } catch (error) {
-        console.error('Error toggling follow:', error);
-      }
-    },
-    [outCommand],
+  const followingChar = useMemo(
+    () => trackingCharacters.find(x => x.character.eve_id === following),
+    [following, trackingCharacters],
   );
 
   const handleSelectFollowed = useCallback(
-    async (e: TrackingCharacter) => {
-      await handleFollowToggle(e.character.eve_id);
-    },
-    [handleFollowToggle],
+    (e: TrackingCharacter) => updateFollowing(e.character.eve_id),
+    [updateFollowing],
   );
 
   return (
@@ -85,8 +55,8 @@ export const TrackingSettings = () => {
       <div className="flex items-center justify-between gap-2 mx-2">
         <label className="text-stone-400 text-[13px] select-none">Following character</label>
         <Dropdown
-          options={characters}
-          value={selectedFollow}
+          options={trackingCharacters}
+          value={followingChar}
           onChange={e => handleSelectFollowed(e.value)}
           className="w-[230px]"
           itemTemplate={renderCharacterTemplate}
