@@ -38,7 +38,6 @@ export type CharacterTypeRaw = {
 export interface TrackingCharacter {
   character: CharacterTypeRaw;
   tracked: boolean;
-  followed: boolean;
 }
 
 export type WithIsOwnCharacter = {
@@ -62,4 +61,11 @@ export interface UseCharactersCacheData {
   loadCharacter: (systemId: string) => Promise<void>;
   characters: Map<string, CharacterCache>;
   lastUpdateKey: number;
+}
+
+export interface ActivitySummary {
+  character: CharacterTypeRaw;
+  passages: number;
+  connections: number;
+  signatures: number;
 }

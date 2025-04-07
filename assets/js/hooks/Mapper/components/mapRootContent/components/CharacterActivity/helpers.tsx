@@ -1,5 +1,5 @@
 import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
-import { ActivitySummary } from './types.ts';
+import { ActivitySummary } from '@/hooks/Mapper/types';
 
 export const getRowClassName = () => ['text-xs', 'leading-tight'];
 

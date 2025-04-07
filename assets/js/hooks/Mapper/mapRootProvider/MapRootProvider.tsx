@@ -1,6 +1,7 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import {
+  ActivitySummary,
   CommandLinkSignatureToSystem,
   MapUnionTypes,
   OutCommandHandler,
@@ -19,7 +20,6 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];

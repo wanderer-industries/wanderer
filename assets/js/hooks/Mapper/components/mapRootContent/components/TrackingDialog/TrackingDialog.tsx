@@ -2,18 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { TrackingSettings } from './TrackingSettings.tsx';
-import { TrackingCharactersList } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog/TrackingCharactersList.tsx';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { TrackingCharactersList } from './TrackingCharactersList.tsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { TrackingProvider, useTracking } from './TrackingProvider.tsx';
 
 interface TrackingDialogProps {
   visible: boolean;
   onHide: () => void;
 }
 
-export const TrackingDialog = ({ visible, onHide }: TrackingDialogProps) => {
+const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { outCommand } = useMapRootState();
+  const { loadTracking } = useTracking();
 
   const refVars = useRef({ outCommand });
   refVars.current = { outCommand };
@@ -23,11 +24,8 @@ export const TrackingDialog = ({ visible, onHide }: TrackingDialogProps) => {
       return;
     }
 
-    refVars.current.outCommand({
-      type: OutCommand.showTracking,
-      data: {},
-    });
-  }, [visible]);
+    loadTracking();
+  }, [loadTracking, visible]);
 
   return (
     <Dialog
@@ -56,5 +54,13 @@ export const TrackingDialog = ({ visible, onHide }: TrackingDialogProps) => {
         </TabPanel>
       </TabView>
     </Dialog>
+  );
+};
+
+export const TrackingDialog = (props: TrackingDialogProps) => {
+  return (
+    <TrackingProvider>
+      <TrackingDialogComp {...props} />
+    </TrackingProvider>
   );
 };

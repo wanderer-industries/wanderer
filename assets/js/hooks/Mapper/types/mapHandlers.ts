@@ -1,11 +1,9 @@
 import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
-import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
+import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
-import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 import { CommentType, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
@@ -236,9 +234,11 @@ export enum OutCommand {
   addSystemComment = 'addSystemComment',
   deleteSystemComment = 'deleteSystemComment',
   getSystemComments = 'getSystemComments',
-  toggleTrack = 'toggle_track',
+  // toggleTrack = 'toggle_track',
   toggleFollow = 'toggle_follow',
   getCharacterInfo = 'getCharacterInfo',
+  getCharactersTrackingInfo = 'getCharactersTrackingInfo',
+  updateCharacterTracking = 'updateCharacterTracking',
 
   // Only UI commands
   openSettings = 'open_settings',

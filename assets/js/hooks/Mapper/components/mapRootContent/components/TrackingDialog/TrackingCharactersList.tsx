@@ -1,58 +1,28 @@
 import { Column } from 'primereact/column';
 import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
 import { DataTable } from 'primereact/datatable';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { TrackingCharacter } from '@/hooks/Mapper/types';
+import { useTracking } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog/TrackingProvider.tsx';
 
 export const TrackingCharactersList = () => {
   const [selected, setSelected] = useState<TrackingCharacter[]>([]);
-
-  const {
-    outCommand,
-    data: { trackingCharactersData },
-  } = useMapRootState();
-
-  const characters = useMemo(() => trackingCharactersData ?? [], [trackingCharactersData]);
-  const refVars = useRef({ characters });
-  refVars.current = { characters };
+  const { trackingCharacters, updateTracking } = useTracking();
+  const refVars = useRef({ trackingCharacters });
+  refVars.current = { trackingCharacters };
 
   useEffect(() => {
-    setSelected(characters.filter(x => x.tracked));
-  }, [characters]);
-
-  const handleTrackToggle = useCallback(
-    async (characterId: string) => {
-      try {
-        await outCommand({
-          type: OutCommand.toggleTrack,
-          data: { character_id: characterId },
-        });
-      } catch (error) {
-        console.error('Error toggling track:', error);
-      }
-    },
-    [outCommand],
-  );
+    setSelected(trackingCharacters.filter(x => x.tracked));
+  }, [trackingCharacters]);
 
   const handleChangeSelect = useCallback(
-    (selected: TrackingCharacter[]) => {
-      const needToCheck = refVars.current.characters.filter(char => {
-        return !char.tracked && selected.some(x => x.character.eve_id === char.character.eve_id);
-      });
-      const needToUncheck = refVars.current.characters.filter(char => {
-        return char.tracked && !selected.some(x => x.character.eve_id === char.character.eve_id);
-      });
-
-      needToUncheck.map(x => handleTrackToggle(x.character.eve_id));
-      needToCheck.map(x => handleTrackToggle(x.character.eve_id));
-    },
-    [handleTrackToggle],
+    (selected: TrackingCharacter[]) => updateTracking(selected.map(x => x.character.eve_id)),
+    [updateTracking],
   );
 
   return (
     <DataTable
-      value={characters}
+      value={trackingCharacters}
       size="small"
       selectionMode={null}
       selection={selected}
