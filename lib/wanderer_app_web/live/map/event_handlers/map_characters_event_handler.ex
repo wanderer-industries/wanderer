@@ -216,6 +216,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:ok, main_character_id} =
       WandererApp.Character.TrackingUtils.get_main_character(
         map_user_settings,
+        current_user_characters,
         current_user_characters
       )
 
