@@ -168,7 +168,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   def handle_ui_event(
         "updateFollowingCharacter",
-        %{"characterEveId" => character_eve_id},
+        %{"character_eve_id" => character_eve_id},
         %{
           assigns: %{
             current_user: %{id: current_user_id},
@@ -187,12 +187,14 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:ok, tracking_data} =
       WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
+    IO.inspect(tracking_data)
+
     {:reply, %{data: tracking_data}, socket |> assign(:map_user_settings, map_user_settings)}
   end
 
   def handle_ui_event(
         "updateMainCharacter",
-        %{"characterEveId" => character_eve_id},
+        %{"character_eve_id" => character_eve_id},
         %{
           assigns: %{
             current_user: %{id: current_user_id, characters: current_user_characters},
