@@ -141,8 +141,8 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     case WandererApp.Character.TrackingUtils.update_tracking(
            map_id,
            character_eve_id,
-           track,
            current_user_id,
+           track,
            self(),
            only_tracked_characters
          ) do
