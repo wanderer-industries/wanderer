@@ -177,7 +177,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       )
-      when not is_nil(character_eve_id) and character_eve_id != following_character_eve_id do
+      when character_eve_id != following_character_eve_id do
     {:ok, map_user_settings} =
       WandererApp.MapUserSettingsRepo.get!(map_id, current_user_id)
       |> WandererApp.Api.MapUserSettings.update_following_character(%{
