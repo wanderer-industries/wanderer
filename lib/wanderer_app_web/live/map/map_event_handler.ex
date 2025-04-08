@@ -363,17 +363,9 @@ defmodule WandererAppWeb.MapEventHandler do
           status: status,
           visible: visible
         } = _system,
-        _include_static_data? \\ true
+        include_static_data? \\ true,
+        include_signatures? \\ true
       ) do
-    system_static_info = get_system_static_info(solar_system_id)
-
-    system_signatures =
-      system_id
-      |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
-      |> Enum.filter(fn signature ->
-        is_nil(signature.linked_system) && signature.group == "Wormhole"
-      end)
-
     comments_count =
       system_id
       |> WandererApp.Maps.get_system_comments_activity()
@@ -385,22 +377,45 @@ defmodule WandererAppWeb.MapEventHandler do
           0
       end
 
-    %{
-      id: "#{solar_system_id}",
-      position: %{x: position_x, y: position_y},
-      description: description,
-      name: name,
-      system_static_info: system_static_info,
-      system_signatures: system_signatures,
-      labels: labels,
-      locked: locked,
-      linked_sig_eve_id: linked_sig_eve_id,
-      status: status,
-      tag: tag,
-      temporary_name: temporary_name,
-      comments_count: comments_count,
-      visible: visible
-    }
+    system_info =
+      %{
+        id: "#{solar_system_id}",
+        position: %{x: position_x, y: position_y},
+        description: description,
+        name: name,
+        system_signatures: [],
+        labels: labels,
+        locked: locked,
+        linked_sig_eve_id: linked_sig_eve_id,
+        status: status,
+        tag: tag,
+        temporary_name: temporary_name,
+        comments_count: comments_count,
+        visible: visible
+      }
+
+    system_info =
+      if include_static_data? do
+        system_info |> Map.merge(%{system_static_info: get_system_static_info(solar_system_id)})
+      else
+        system_info
+      end
+
+    system_info =
+      if include_signatures? do
+        system_signatures =
+          system_id
+          |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
+          |> Enum.filter(fn signature ->
+            is_nil(signature.linked_system) && signature.group == "Wormhole"
+          end)
+
+        system_info |> Map.put(:system_signatures, system_signatures)
+      else
+        system_info
+      end
+
+    system_info
   end
 
   def map_ui_system_static_info(nil), do: %{}

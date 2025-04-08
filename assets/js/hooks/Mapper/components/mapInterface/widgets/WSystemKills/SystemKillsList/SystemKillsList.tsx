@@ -9,7 +9,6 @@ export const KILLS_ROW_HEIGHT = 40;
 
 export type SystemKillsContentProps = {
   kills: DetailedKill[];
-  systemNameMap: Record<string, string>;
   onlyOneSystem?: boolean;
   timeRange?: number;
   limit?: number;
@@ -17,7 +16,6 @@ export type SystemKillsContentProps = {
 
 export const SystemKillsList = ({
   kills,
-  systemNameMap,
   onlyOneSystem = false,
   timeRange = 4,
   limit,
@@ -49,7 +47,7 @@ export const SystemKillsList = ({
     return filteredKills;
   }, [kills, timeRange, limit]);
 
-  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
+  const itemTemplate = useSystemKillsItemTemplate(onlyOneSystem);
 
   return (
     <VirtualScroller

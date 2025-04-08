@@ -5,20 +5,20 @@ import { SystemInfoContent } from './SystemInfoContent';
 import { PrimeIcons } from 'primereact/api';
 import { useState, useCallback } from 'react';
 import { SystemSettingsDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemSettingsDialog/SystemSettingsDialog.tsx';
-import { getSystemById } from '@/hooks/Mapper/helpers';
 import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 export const SystemInfo = () => {
   const [visible, setVisible] = useState(false);
 
   const {
-    data: { selectedSystems, systems },
+    data: { selectedSystems },
   } = useMapRootState();
 
   const [systemId] = selectedSystems;
 
-  const sys = getSystemById(systems, systemId)!;
-  const { solar_system_name: solarSystemName } = sys?.system_static_info || {};
+  const systemStaticInfo = getSystemStaticInfo(systemId)!;
+  const { solar_system_name: solarSystemName } = systemStaticInfo || {};
 
   const isNotSelectedSystem = selectedSystems.length !== 1;
 

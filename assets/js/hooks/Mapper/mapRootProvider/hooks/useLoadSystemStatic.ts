@@ -9,6 +9,13 @@ type SystemStaticResult = {
 // TODO maybe later we can store in Static data in provider
 const cache = new Map<number, SolarSystemStaticInfoRaw>();
 
+export const getSystemStaticInfo = (solarSystemId: number | string | undefined) => {
+  if (!solarSystemId) {
+    return;
+  }
+  return cache.get(typeof solarSystemId == 'number' ? solarSystemId : parseInt(solarSystemId));
+};
+
 export const loadSystemStaticInfo = async (outCommand: OutCommandHandler, systems: number[]) => {
   const result = await outCommand({
     type: OutCommand.getSystemStaticInfos,

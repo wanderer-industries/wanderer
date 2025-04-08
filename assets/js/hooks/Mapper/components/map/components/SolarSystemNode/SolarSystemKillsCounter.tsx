@@ -53,7 +53,7 @@ export const KillsCounter = ({
       content={
         <div className="overflow-hidden flex w-[450px] flex-col" style={{ height: `${tooltipHeight}px` }}>
           <div className="flex-1 h-full">
-            <SystemKillsList kills={limitedKills} systemNameMap={systemNameMap} onlyOneSystem />
+            <SystemKillsList kills={limitedKills} onlyOneSystem />
           </div>
         </div>
       }

@@ -128,7 +128,7 @@ export const MapWrapper = () => {
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
     async item => {
-      if (ref.current.systems.some(x => x.system_static_info.solar_system_id === item.value)) {
+      if (ref.current.systems.some(x => parseInt(x.id) === item.value)) {
         emitMapEvent({
           name: Commands.centerSystem,
           data: item.value.toString(),

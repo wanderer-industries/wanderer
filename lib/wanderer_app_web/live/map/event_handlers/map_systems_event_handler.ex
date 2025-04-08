@@ -8,12 +8,16 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   def handle_server_event(%{event: :add_system, payload: system}, socket),
     do:
       socket
-      |> MapEventHandler.push_map_event("add_systems", [MapEventHandler.map_ui_system(system)])
+      |> MapEventHandler.push_map_event("add_systems", [
+        MapEventHandler.map_ui_system(system)
+      ])
 
   def handle_server_event(%{event: :update_system, payload: system}, socket),
     do:
       socket
-      |> MapEventHandler.push_map_event("update_systems", [MapEventHandler.map_ui_system(system)])
+      |> MapEventHandler.push_map_event("update_systems", [
+        MapEventHandler.map_ui_system(system, false)
+      ])
 
   def handle_server_event(%{event: :systems_removed, payload: solar_system_ids}, socket),
     do:

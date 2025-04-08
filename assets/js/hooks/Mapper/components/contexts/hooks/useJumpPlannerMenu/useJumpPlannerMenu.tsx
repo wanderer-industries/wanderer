@@ -4,8 +4,8 @@ import { useCallback } from 'react';
 import { isPossibleSpace } from '@/hooks/Mapper/components/map/helpers/isKnownSpace.ts';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
 import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
-import { getSystemById } from '@/hooks/Mapper/helpers';
 import { SOLAR_SYSTEM_CLASS_IDS } from '@/hooks/Mapper/components/map/constants.ts';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 const imperialSpace = [SOLAR_SYSTEM_CLASS_IDS.hs, SOLAR_SYSTEM_CLASS_IDS.ls, SOLAR_SYSTEM_CLASS_IDS.ns];
 const criminalSpace = [SOLAR_SYSTEM_CLASS_IDS.ls, SOLAR_SYSTEM_CLASS_IDS.ns];
@@ -47,7 +47,7 @@ export const useJumpPlannerMenu = (
         return [];
       }
 
-      const origin = getSystemById(systems, systemIdFrom)?.system_static_info;
+      const origin = getSystemStaticInfo(systemIdFrom);
 
       if (!origin) {
         return [];

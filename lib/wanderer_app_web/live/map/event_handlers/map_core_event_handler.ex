@@ -451,49 +451,27 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         end
 
       initial_data =
-        map_id
-        |> get_map_data()
-        |> Map.merge(%{
+        %{
           kills: nil,
           present_characters:
             present_character_ids
             |> WandererApp.Character.get_character_eve_ids!(),
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
-          user_permissions: user_permissions,
           system_static_infos: nil,
           wormhole_types: nil,
           effects: nil,
           reset: false
-        })
-
-      system_static_infos =
-        map_id
-        |> WandererApp.Map.list_systems!()
-        |> Enum.map(&WandererApp.CachedInfo.get_system_static_info!(&1.solar_system_id))
-        |> Enum.map(&MapEventHandler.map_ui_system_static_info/1)
-
-      initial_data =
-        initial_data
-        |> Map.put(
-          :wormholes,
-          WandererApp.CachedInfo.get_wormhole_types!()
-        )
-        |> Map.put(
-          :effects,
-          WandererApp.CachedInfo.get_effects!()
-        )
-        |> Map.put(
-          :system_static_infos,
-          system_static_infos
-        )
-        |> Map.put(:reset, true)
+        }
 
       socket
-      |> map_start(%{
-        map_id: map_id,
-        initial_data: initial_data,
-        events: events
-      })
+      |> map_start(
+        %{
+          map_id: map_id,
+          initial_data: initial_data,
+          events: events
+        },
+        user_permissions
+      )
     else
       error ->
         Logger.error(fn -> "map_start_error: #{error}" end)
@@ -518,7 +496,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
            map_id: map_id,
            initial_data: initial_data,
            events: events
-         } = _started_data
+         } = _started_data,
+         user_permissions
        ) do
     socket =
       socket
@@ -528,26 +507,37 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       map_id
       |> WandererApp.Map.get_options()
 
-    user_permissions =
-      initial_data
-      |> Map.get(:user_permissions)
-
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
       |> filter_map_characters(initial_data.user_characters, user_permissions, options)
       |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
 
+    {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+
+    map_data =
+      map_id
+      |> get_map_data()
+
     socket =
       socket
       |> assign(
         map_loaded?: true,
-        is_subscription_active?: Map.get(initial_data, :is_subscription_active, false)
+        is_subscription_active?: is_subscription_active
       )
       |> MapEventHandler.push_map_event(
         "init",
         initial_data
-        |> Map.put(:characters, map_characters)
+        |> Map.merge(map_data)
+        |> Map.merge(%{
+          is_subscription_active: is_subscription_active,
+          user_permissions: user_permissions,
+          characters: map_characters,
+          options: options,
+          wormholes: WandererApp.CachedInfo.get_wormhole_types!(),
+          effects: WandererApp.CachedInfo.get_effects!(),
+          reset: true
+        })
       )
       |> push_event("js-exec", %{
         to: "#map-loader",
@@ -565,21 +555,23 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
-  defp get_map_data(map_id, include_static_data? \\ true) do
+  defp get_map_data(map_id) do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
-    {:ok, options} = map_id |> WandererApp.Map.get_options()
-    {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+
+    system_static_infos =
+      systems
+      |> Enum.map(&WandererApp.CachedInfo.get_system_static_info!(&1.solar_system_id))
 
     %{
       systems:
         systems
-        |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, include_static_data?) end),
+        |> Enum.map(fn system -> MapEventHandler.map_ui_system(system, false) end),
+      system_static_infos:
+        system_static_infos |> Enum.map(&MapEventHandler.map_ui_system_static_info/1),
       hubs: hubs,
-      connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1),
-      options: options,
-      is_subscription_active: is_subscription_active
+      connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1)
     }
   end
 

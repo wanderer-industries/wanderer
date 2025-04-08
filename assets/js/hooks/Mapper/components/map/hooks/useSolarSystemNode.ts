@@ -13,6 +13,7 @@ import { CharacterTypeRaw, OutCommand, SystemSignature } from '@/hooks/Mapper/ty
 import { useUnsplashedSignatures } from './useUnsplashedSignatures';
 import { useSystemName } from './useSystemName';
 import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 function getActivityType(count: number): string {
   if (count <= 5) return 'activityNormal';
@@ -43,7 +44,7 @@ export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
 export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars {
   const { id, data, selected } = props;
   const {
-    system_static_info,
+    id: solar_system_id,
     system_signatures,
     locked,
     name,
@@ -55,22 +56,23 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   } = data;
 
   const {
+    interfaceSettings,
+    data: { systemSignatures: mapSystemSignatures },
+  } = useMapRootState();
+
+  const {
     system_class,
     security,
     class_title,
-    solar_system_id,
     statics,
     effect_name,
     region_name,
     region_id,
     is_shattered,
     solar_system_name,
-  } = system_static_info;
-
-  const {
-    interfaceSettings,
-    data: { systemSignatures: mapSystemSignatures },
-  } = useMapRootState();
+  } = useMemo(() => {
+    return getSystemStaticInfo(parseInt(solar_system_id))!;
+  }, [solar_system_id]);
 
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
@@ -101,7 +103,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   );
 
   const charactersInSystem = useMemo(() => {
-    return characters.filter(c => c.location?.solar_system_id === solar_system_id && c.online);
+    return characters.filter(c => c.location?.solar_system_id === parseInt(solar_system_id) && c.online);
   }, [characters, solar_system_id]);
 
   const isWormhole = isWormholeSpace(system_class);
@@ -121,7 +123,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
     isShowLinkedSigId,
   });
 
-  const killsCount = useMemo(() => kills[solar_system_id] ?? null, [kills, solar_system_id]);
+  const killsCount = useMemo(() => kills[parseInt(solar_system_id)] ?? null, [kills, solar_system_id]);
   const killsActivityType = killsCount ? getActivityType(killsCount) : null;
 
   const hasUserCharacters = useMemo(
