@@ -4,7 +4,7 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { CommentType, UserPermissions } from '@/hooks/Mapper/types';
+import { CommentType, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
@@ -69,6 +69,7 @@ export type Command =
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
+  system_signatures: Record<string, SystemSignature[]>;
   kills: Kill[];
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
@@ -201,6 +202,7 @@ export enum OutCommand {
   getSignatures = 'get_signatures',
   getSystemStaticInfos = 'get_system_static_infos',
   getConnectionInfo = 'get_connection_info',
+  loadSignatures = 'load_signatures',
   updateConnectionTimeStatus = 'update_connection_time_status',
   updateConnectionType = 'update_connection_type',
   updateConnectionMassStatus = 'update_connection_mass_status',

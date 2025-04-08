@@ -1,5 +1,5 @@
 import { Map, MAP_ROOT_ID } from '@/hooks/Mapper/components/map/Map.tsx';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
@@ -34,13 +34,14 @@ export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, systems, linkSignatureToSystem },
+    data: { selectedConnections, selectedSystems, hubs, systems, linkSignatureToSystem, systemSignatures },
     interfaceSettings: {
       isShowMenu,
       isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
       isShowKSpace,
       isThickConnections,
       isShowBackgroundPattern,
+      isShowUnsplashedSignatures,
       isSoftBackground,
       theme,
     },
@@ -58,8 +59,15 @@ export const MapWrapper = () => {
   const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
 
-  const ref = useRef({ selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems });
-  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, deleteSystems };
+  const ref = useRef({
+    selectedConnections,
+    selectedSystems,
+    systemContextProps,
+    systems,
+    systemSignatures,
+    deleteSystems,
+  });
+  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, systemSignatures, deleteSystems };
 
   useMapEventListener(event => {
     runCommand(event);
@@ -155,6 +163,15 @@ export const MapWrapper = () => {
     event.stopPropagation();
     handleDeleteSelected();
   });
+
+  useEffect(() => {
+    const { systemSignatures, systems } = ref.current;
+    if (!isShowUnsplashedSignatures || Object.keys(systemSignatures).length !== 0 || systems?.length === 0) {
+      return;
+    }
+
+    outCommand({ type: OutCommand.loadSignatures, data: {} });
+  }, [isShowUnsplashedSignatures, systems]);
 
   return (
     <>

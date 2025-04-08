@@ -72,6 +72,33 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
   def handle_ui_event(
+        "load_signatures",
+        _event,
+        %{
+          assigns: %{
+            map_id: map_id
+          }
+        } = socket
+      ) do
+    {:ok, systems} = map_id |> WandererApp.Map.list_systems()
+
+    system_signatures =
+      systems
+      |> Enum.reduce(%{}, fn %{id: system_id, solar_system_id: solar_system_id}, acc ->
+        signatures =
+          system_id
+          |> get_system_signatures()
+          |> Enum.filter(fn signature ->
+            is_nil(signature.linked_system) && signature.group == "Wormhole"
+          end)
+
+        acc |> Map.put(solar_system_id, signatures)
+      end)
+
+    {:noreply, socket |> MapEventHandler.push_map_event("init", %{system_signatures: system_signatures})}
+  end
+
+  def handle_ui_event(
         "update_signatures",
         %{
           "system_id" => solar_system_id,

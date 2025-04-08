@@ -4,6 +4,7 @@ import {
   ActivitySummary,
   CommandLinkSignatureToSystem,
   MapUnionTypes,
+  OutCommand,
   OutCommandHandler,
   SolarSystemConnection,
   TrackingCharacter,
@@ -20,6 +21,7 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
+import { useEdges } from 'reactflow';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -164,6 +166,8 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     },
   );
   const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } = useStoreWidgets();
+  const comments = useComments({ outCommand });
+  const charactersCache = useCharactersCache({ outCommand });
 
   useEffect(() => {
     let foundNew = false;
@@ -183,9 +187,6 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const comments = useComments({ outCommand });
-  const charactersCache = useCharactersCache({ outCommand });
 
   return (
     <MapRootContext.Provider

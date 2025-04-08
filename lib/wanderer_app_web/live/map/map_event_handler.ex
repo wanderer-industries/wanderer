@@ -112,6 +112,7 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_signatures_ui_events [
+    "load_signatures",
     "update_signatures",
     "get_signatures",
     "link_signature_to_system",
@@ -363,8 +364,7 @@ defmodule WandererAppWeb.MapEventHandler do
           status: status,
           visible: visible
         } = _system,
-        include_static_data? \\ true,
-        include_signatures? \\ true
+        include_static_data? \\ true
       ) do
     comments_count =
       system_id
@@ -383,7 +383,6 @@ defmodule WandererAppWeb.MapEventHandler do
         position: %{x: position_x, y: position_y},
         description: description,
         name: name,
-        system_signatures: [],
         labels: labels,
         locked: locked,
         linked_sig_eve_id: linked_sig_eve_id,
@@ -397,20 +396,6 @@ defmodule WandererAppWeb.MapEventHandler do
     system_info =
       if include_static_data? do
         system_info |> Map.merge(%{system_static_info: get_system_static_info(solar_system_id)})
-      else
-        system_info
-      end
-
-    system_info =
-      if include_signatures? do
-        system_signatures =
-          system_id
-          |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
-          |> Enum.filter(fn signature ->
-            is_nil(signature.linked_system) && signature.group == "Wormhole"
-          end)
-
-        system_info |> Map.put(:system_signatures, system_signatures)
       else
         system_info
       end

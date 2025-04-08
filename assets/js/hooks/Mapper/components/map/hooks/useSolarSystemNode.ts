@@ -45,7 +45,6 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   const { id, data, selected } = props;
   const {
     id: solar_system_id,
-    system_signatures,
     locked,
     name,
     tag,
@@ -97,10 +96,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
 
   const visible = useMemo(() => visibleNodes.has(id), [id, visibleNodes]);
 
-  const systemSigs = useMemo(
-    () => mapSystemSignatures[solar_system_id] || system_signatures,
-    [system_signatures, solar_system_id, mapSystemSignatures],
-  );
+  const systemSigs = useMemo(() => mapSystemSignatures[solar_system_id] || [], [solar_system_id, mapSystemSignatures]);
 
   const charactersInSystem = useMemo(() => {
     return characters.filter(c => c.location?.solar_system_id === parseInt(solar_system_id) && c.online);
