@@ -69,6 +69,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           assigns: %{
             map_id: map_id,
             main_character_eve_id: main_character_eve_id,
+            following_character_eve_id: following_character_eve_id,
             current_user: current_user
           }
         } = socket
@@ -85,6 +86,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       "init",
       %{
         main_character_eve_id: main_character_eve_id,
+        following_character_eve_id: following_character_eve_id,
         user_characters: user_character_eve_ids,
         reset: false
       }
@@ -150,14 +152,14 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
          ) do
       {:ok, tracking_data, event} when not is_nil(tracking_data) ->
         # Send the appropriate event based on the result
-        Process.send_after(self(), event, 10)
+        Process.send_after(self(), event, 50)
 
         # Send the updated tracking data to the client
         {:reply, %{data: tracking_data}, socket}
 
       {:ok, nil, event} ->
         # Send the appropriate event based on the result
-        Process.send_after(self(), event, 10)
+        Process.send_after(self(), event, 50)
 
         # Send the updated tracking data to the client
         {:reply, %{characters: []}, socket}
@@ -189,9 +191,14 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:ok, tracking_data} =
       WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
-    IO.inspect(tracking_data)
+    Process.send_after(self(), %{event: :refresh_user_characters}, 50)
 
-    {:reply, %{data: tracking_data}, socket |> assign(:map_user_settings, map_user_settings)}
+    {:reply, %{data: tracking_data},
+     socket
+     |> assign(
+       map_user_settings: map_user_settings,
+       following_character_eve_id: "#{character_eve_id}"
+     )}
   end
 
   def handle_ui_event(
@@ -221,6 +228,8 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         current_user_characters,
         current_user_characters
       )
+
+    Process.send_after(self(), %{event: :refresh_user_characters}, 50)
 
     {:reply, %{data: tracking_data},
      socket
