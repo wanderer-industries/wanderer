@@ -781,5 +781,5 @@ defmodule WandererApp.Character.Tracker do
 
   defp get_online(%{"online" => online}), do: %{online: online}
 
-  defp get_online(_), do: %{}
+  defp get_online(_), do: %{online: false}
 end

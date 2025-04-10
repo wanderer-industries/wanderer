@@ -473,13 +473,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
         )
 
-  def is_connection_valid(_scope, nil, _to_solar_system_id), do: false
-
   def is_connection_valid(:all, _from_solar_system_id, _to_solar_system_id), do: true
 
   def is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
 
-  def is_connection_valid(scope, from_solar_system_id, to_solar_system_id) do
+  def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
+      when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) do
     {:ok, known_jumps} =
       WandererApp.Api.MapSolarSystemJumps.find(%{
         before_system_id: from_solar_system_id,
@@ -503,6 +502,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           not (known_jumps |> Enum.empty?())
     end
   end
+
+  def is_connection_valid(_scope, _from_solar_system_id, _to_solar_system_id), do: false
 
   def get_connection_mark_eol_time(map_id, connection_id, default \\ DateTime.utc_now()) do
     WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
