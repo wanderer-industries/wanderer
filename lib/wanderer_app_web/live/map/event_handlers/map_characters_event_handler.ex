@@ -68,6 +68,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_eve_id: main_character_eve_id,
             current_user: current_user
           }
         } = socket
@@ -83,6 +84,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     |> MapEventHandler.push_map_event(
       "init",
       %{
+        main_character_eve_id: main_character_eve_id,
         user_characters: user_character_eve_ids,
         reset: false
       }

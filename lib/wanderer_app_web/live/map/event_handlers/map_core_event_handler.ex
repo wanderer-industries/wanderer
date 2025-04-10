@@ -287,6 +287,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         page_title: map_name,
         user_permissions: init_data.user_permissions,
         main_character_id: init_data.main_character_id,
+        main_character_eve_id: init_data.main_character_eve_id,
         tracked_characters: init_data.tracked_characters,
         has_tracked_characters?: init_data.has_tracked_characters?,
         needs_tracking_setup: init_data.needs_tracking_setup,
@@ -489,7 +490,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   defp map_start(
          %{
            assigns: %{
-             needs_tracking_setup: needs_tracking_setup
+             needs_tracking_setup: needs_tracking_setup,
+             main_character_eve_id: main_character_eve_id,
            }
          } = socket,
          %{
@@ -530,6 +532,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         initial_data
         |> Map.merge(map_data)
         |> Map.merge(%{
+          main_character_eve_id: main_character_eve_id,
           is_subscription_active: is_subscription_active,
           user_permissions: user_permissions,
           characters: map_characters,
