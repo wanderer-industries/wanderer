@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { IncomingEvent, WithChildren } from '@/hooks/Mapper/types/common.ts';
@@ -9,7 +9,7 @@ type DiffTrackingInfo = { characterId: string; tracked: boolean };
 type TrackingContextType = {
   loadTracking: () => void;
   updateTracking: (selected: string[]) => void;
-  updateFollowing: (characterId: string) => void;
+  updateFollowing: (characterId: string | null) => void;
   updateMain: (characterId: string) => void;
   trackingCharacters: TrackingCharacter[];
   following: string | null;
@@ -26,8 +26,8 @@ export const TrackingProvider = ({ children }: WithChildren) => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const { outCommand } = useMapRootState();
-  const refVars = useRef({ outCommand, trackingCharacters });
-  refVars.current = { outCommand, trackingCharacters };
+  const refVars = useRef({ outCommand, trackingCharacters, following });
+  refVars.current = { outCommand, trackingCharacters, following };
 
   const loadTracking = useCallback(async () => {
     setLoading(true);
@@ -62,11 +62,27 @@ export const TrackingProvider = ({ children }: WithChildren) => {
     [outCommand],
   );
 
+  const updateFollowing = useCallback(
+    async (characterId: string | null) => {
+      try {
+        await outCommand({
+          type: OutCommand.updateFollowingCharacter,
+          data: { character_eve_id: characterId },
+        });
+        setFollowing(characterId);
+      } catch (error) {
+        console.error('Error toggling follow:', error);
+      }
+    },
+    [outCommand],
+  );
+
   const updateTracking = useCallback(
     async (selected: string[]) => {
+      const { following, trackingCharacters } = refVars.current;
       const diffToUpdate: DiffTrackingInfo[] = [];
 
-      const newVal = refVars.current.trackingCharacters.map(x => {
+      const newVal = trackingCharacters.map(x => {
         const next = selected.includes(x.character.eve_id);
 
         if (next !== x.tracked) {
@@ -81,24 +97,14 @@ export const TrackingProvider = ({ children }: WithChildren) => {
 
       await Promise.all(diffToUpdate.map(x => changeTrackingCommand(x.characterId, x.tracked)));
 
+      if (newVal.some(x => following != null && x.character.eve_id === following && !x.tracked)) {
+        await updateFollowing(null);
+        setFollowing(null);
+      }
+
       setTrackingCharacters(newVal);
     },
-    [changeTrackingCommand],
-  );
-
-  const updateFollowing = useCallback(
-    async (characterId: string) => {
-      try {
-        await outCommand({
-          type: OutCommand.updateFollowingCharacter,
-          data: { character_eve_id: characterId },
-        });
-        setFollowing(characterId);
-      } catch (error) {
-        console.error('Error toggling follow:', error);
-      }
-    },
-    [outCommand],
+    [changeTrackingCommand, updateFollowing],
   );
 
   const updateMain = useCallback(

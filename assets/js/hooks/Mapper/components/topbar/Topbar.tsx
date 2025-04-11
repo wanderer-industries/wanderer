@@ -1,4 +1,4 @@
-import Characters from '../characters/Characters';
+import { Characters } from '../characters/Characters';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMemo } from 'react';
 import clsx from 'clsx';

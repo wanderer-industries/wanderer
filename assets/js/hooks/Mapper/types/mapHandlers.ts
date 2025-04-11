@@ -35,6 +35,7 @@ export enum Commands {
   updateActivity = 'update_activity',
   updateTracking = 'update_tracking',
   userSettingsUpdated = 'user_settings_updated',
+  showTracking = 'show_tracking',
 }
 
 export type Command =
@@ -65,7 +66,8 @@ export type Command =
   | Commands.trackingCharactersData
   | Commands.userSettingsUpdated
   | Commands.updateActivity
-  | Commands.updateTracking;
+  | Commands.updateTracking
+  | Commands.showTracking;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -84,6 +86,8 @@ export type CommandInit = {
   options: Record<string, string | boolean>;
   reset?: boolean;
   is_subscription_active?: boolean;
+  main_character_eve_id?: string | null;
+  following_character_eve_id?: string | null;
 };
 
 export type CommandAddSystems = SolarSystemRawType[];
@@ -123,14 +127,7 @@ export type CommandUserSettingsUpdated = {
   settings: UserSettings;
 };
 
-export type CommandShowActivity = null;
-export type CommandHideActivity = null;
 export type CommandShowTracking = null;
-export type CommandHideTracking = null;
-export type CommandUiLoaded = { version: string | null };
-export type CommandLogMapError = { error: string; componentStack: string };
-export type CommandMapEvent = { type: Command; data: unknown };
-export type CommandMapEvents = Array<{ type: Command; data: unknown }>;
 export type CommandUpdateActivity = {
   characterId: number;
   systemId: number;
@@ -187,6 +184,7 @@ export interface CommandData {
   [Commands.systemCommentAdded]: CommandCommentAdd;
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
   [Commands.systemCommentsUpdated]: unknown;
+  [Commands.showTracking]: CommandShowTracking;
 }
 
 export interface MapHandlers {

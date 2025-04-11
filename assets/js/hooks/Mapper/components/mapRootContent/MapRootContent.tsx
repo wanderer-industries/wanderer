@@ -11,6 +11,8 @@ import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components
 import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
 import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
+import { useMapEventListener } from '@/hooks/Mapper/events';
+import { Commands } from '@/hooks/Mapper/types';
 
 export interface MapRootContentProps {}
 
@@ -33,6 +35,13 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
   const handleShowTrackingDialog = useCallback(() => setShowTrackingDialog(true), []);
+
+  useMapEventListener(event => {
+    if (event.name === Commands.showTracking) {
+      setShowTrackingDialog(true);
+      return true;
+    }
+  });
 
   useSkipContextMenu();
 

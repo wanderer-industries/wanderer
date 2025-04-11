@@ -31,7 +31,7 @@ const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
     <Dialog
       header={
         <div className="dialog-header">
-          <span>Track & Follow</span>
+          <span className="pointer-events-none">Track & Follow</span>
         </div>
       }
       draggable={false}

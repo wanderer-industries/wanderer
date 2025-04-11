@@ -23,6 +23,8 @@ export const useMapInit = () => {
       user_permissions,
       options,
       is_subscription_active,
+      main_character_eve_id,
+      following_character_eve_id,
     }: CommandInit) => {
       const updateData: Partial<MapRootData> = {};
 
@@ -79,6 +81,14 @@ export const useMapInit = () => {
         system_static_infos.forEach(static_info => {
           addSystemStatic(static_info);
         });
+      }
+
+      if (main_character_eve_id) {
+        updateData.mainCharacterEveId = main_character_eve_id;
+      }
+
+      if (following_character_eve_id) {
+        updateData.followingCharacterEveId = following_character_eve_id;
       }
 
       update(updateData);

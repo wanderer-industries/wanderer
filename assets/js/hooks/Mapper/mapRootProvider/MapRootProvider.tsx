@@ -4,7 +4,6 @@ import {
   ActivitySummary,
   CommandLinkSignatureToSystem,
   MapUnionTypes,
-  OutCommand,
   OutCommandHandler,
   SolarSystemConnection,
   TrackingCharacter,
@@ -21,7 +20,6 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
-import { useEdges } from 'reactflow';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -62,6 +60,8 @@ const INITIAL_DATA: MapRootData = {
   options: {},
   isSubscriptionActive: false,
   linkSignatureToSystem: null,
+  mainCharacterEveId: null,
+  followingCharacterEveId: null,
 };
 
 export enum AvailableThemes {

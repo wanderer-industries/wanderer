@@ -28,14 +28,19 @@ export const TrackingSettings = () => {
   const { trackingCharacters, following, main, updateFollowing, updateMain } = useTracking();
 
   const followingChar = useMemo(
-    () => trackingCharacters.find(x => x.character.eve_id === following),
+    () => trackingCharacters.filter(x => x.tracked).find(x => x.character.eve_id === following),
     [following, trackingCharacters],
+  );
+
+  const availableForFollowingCharacters = useMemo(
+    () => trackingCharacters.filter(x => x.tracked),
+    [trackingCharacters],
   );
 
   const mainChar = useMemo(() => trackingCharacters.find(x => x.character.eve_id === main), [main, trackingCharacters]);
 
   const handleSelectFollowing = useCallback(
-    (e: TrackingCharacter) => updateFollowing(e.character.eve_id),
+    (e: TrackingCharacter | null) => updateFollowing(e == null ? null : e.character.eve_id),
     [updateFollowing],
   );
 
@@ -58,7 +63,8 @@ export const TrackingSettings = () => {
       <div className="flex items-center justify-between gap-2 mx-2">
         <label className="text-stone-400 text-[13px] select-none">Following character</label>
         <Dropdown
-          options={trackingCharacters}
+          disabled={availableForFollowingCharacters.length === 0}
+          options={availableForFollowingCharacters}
           value={followingChar}
           onChange={e => handleSelectFollowing(e.value)}
           className="w-[230px]"
