@@ -32,7 +32,12 @@ export function parseFormatOneLine(line: string): StructureItem | null {
     return null;
   }
 
-  if (rawTypeName != STRUCTURE_TYPE_MAP[rawTypeId]) {
+  // in some localizations (like russian) there is an option called "mark names with *"
+  // The example output will be "35826	Itamo - Research & Production	Azbel*	609 м"
+  // so, let's fix this
+  const localizationFixedName = rawTypeName.replace("*", "");
+
+  if (localizationFixedName != STRUCTURE_TYPE_MAP[rawTypeId]) {
     return null;
   }
 
