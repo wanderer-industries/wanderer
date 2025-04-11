@@ -112,19 +112,19 @@ body > div:first-of-type {
 }
 
 .wd-characters-icons {
-  display: flex;
-  transition:
-    border-color 250ms,
-    opacity 250ms;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  border-width: 2px;
-  border-style: solid;
-  border-color: #5a5a5a;
-  background-color: rgba(0, 0, 0, 0);
-  cursor: pointer;
-  opacity: 0.6;
+  /*display: flex;*/
+  /*transition:*/
+  /*  border-color 250ms,*/
+  /*  opacity 250ms;*/
+  /*width: 35px;*/
+  /*height: 35px;*/
+  /*border-radius: 50%;*/
+  /*border-width: 2px;*/
+  /*border-style: solid;*/
+  /*border-color: #5a5a5a;*/
+  /*background-color: rgba(0, 0, 0, 0);*/
+  /*cursor: pointer;*/
+  /*opacity: 0.6;*/
 }
 
 .wd-bg-default {

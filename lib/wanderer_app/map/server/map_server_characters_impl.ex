@@ -15,8 +15,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character,
-               followed: false
+               tracked: track_character
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
@@ -284,7 +283,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
             if is_character_in_space?(location) do
               :ok =
-                ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
+                ConnectionsImpl.maybe_add_connection(
+                  map_id,
+                  location,
+                  old_location,
+                  character_id,
+                  false
+                )
             end
 
           _ ->
@@ -336,7 +341,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_type_id"),
          {:ok, old_ship_name} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_name"),
-         {:ok, %{ship: ship_type_id, ship_name: ship_name}} <-
+         {:ok, %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}} <-
            WandererApp.Character.get_character(character_id) do
       case old_ship_type_id != ship_type_id or
              old_ship_name != ship_name do
@@ -351,7 +356,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             ship_name
           )
 
-          [{:character_ship, %{ship: ship_type_id, ship_name: ship_name}}]
+          [
+            {:character_ship,
+             %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}}
+          ]
 
         _ ->
           [:skip]

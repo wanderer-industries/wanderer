@@ -31,7 +31,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   end
 
   def init(args) do
-    character = _load_character(args[:character_id])
+    character = load_character(args[:character_id])
 
     %__MODULE__{
       character_id: args[:character_id],
@@ -70,7 +70,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
     do: %{state | server_online: not status.vip}
 
   def handle_event(:token_updated, %{character: character} = state),
-    do: %{state | character: _load_character(character.id)}
+    do: %{state | character: load_character(character.id)}
 
   def handle_event(
         :update_corp_wallets,
@@ -78,7 +78,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
       ) do
     Process.send_after(self(), :update_corp_wallets, @update_interval)
 
-    Task.async(fn -> _update_corp_wallets(character) end)
+    Task.async(fn -> update_corp_wallets(character) end)
 
     state
   end
@@ -105,7 +105,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         :check_wallets,
         %{character: character, wallets: wallets} = state
       ) do
-    _check_wallets(wallets, character)
+    check_wallets(wallets, character)
 
     Process.send_after(self(), :check_wallets, @update_interval)
 
@@ -133,18 +133,18 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   def handle_event(_action, state),
     do: state
 
-  defp _check_wallets([], _character), do: :ok
+  defp check_wallets([], _character), do: :ok
 
-  defp _check_wallets([wallet | wallets], character) do
-    _check_wallet(wallet, character)
-    _check_wallets(wallets, character)
+  defp check_wallets([wallet | wallets], character) do
+    check_wallet(wallet, character)
+    check_wallets(wallets, character)
   end
 
-  defp _check_wallet(%{"division" => division} = _wallet, character) do
-    Task.async(fn -> _get_wallet_journal(character, division) end)
+  defp check_wallet(%{"division" => division} = _wallet, character) do
+    Task.async(fn -> get_wallet_journal(character, division) end)
   end
 
-  defp _get_wallet_journal(
+  defp get_wallet_journal(
          %{corporation_id: corporation_id, access_token: access_token} = _character,
          division
        )
@@ -157,18 +157,22 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:corporation_wallet_journal, result}
 
       {:error, :forbidden} ->
-        Logger.warning("#{__MODULE__} failed to _update_corp_wallets: forbidden")
+        Logger.warning("#{__MODULE__} failed to get_wallet_journal: forbidden")
         {:error, :forbidden}
 
+      {:error, :error_limited} ->
+        Logger.warning("#{__MODULE__} failed to get_wallet_journal: error_limited")
+        {:error, :error_limited}
+
       {:error, error} ->
-        Logger.warning("#{__MODULE__} failed to _update_corp_wallets: #{inspect(error)}")
+        Logger.warning("#{__MODULE__} failed to get_wallet_journal: #{inspect(error)}")
         {:error, error}
     end
   end
 
-  defp _get_wallet_journal(_character, _division), do: {:error, :skipped}
+  defp get_wallet_journal(_character, _division), do: {:error, :skipped}
 
-  defp _update_corp_wallets(
+  defp update_corp_wallets(
          %{corporation_id: corporation_id, access_token: access_token} = _character
        )
        when not is_nil(access_token) do
@@ -180,16 +184,20 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:corporation_wallets, result}
 
       {:error, :forbidden} ->
-        Logger.warning("#{__MODULE__} failed to _update_corp_wallets: forbidden")
+        Logger.warning("#{__MODULE__} failed to update_corp_wallets: forbidden")
         {:error, :forbidden}
 
+      {:error, :error_limited} ->
+        Logger.warning("#{__MODULE__} failed to update_corp_wallets: error_limited")
+        {:error, :error_limited}
+
       {:error, error} ->
-        Logger.warning("#{__MODULE__} failed to _update_corp_wallets: #{inspect(error)}")
+        Logger.warning("#{__MODULE__} failed to update_corp_wallets: #{inspect(error)}")
         {:error, error}
     end
   end
 
-  defp _update_corp_wallets(_character), do: {:error, :skipped}
+  defp update_corp_wallets(_character), do: {:error, :skipped}
 
   defp maybe_update_total_balance(
          %{character: character, total_balance: total_balance} =
@@ -319,9 +327,9 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
     }
   end
 
-  defp _load_character(nil), do: nil
+  defp load_character(nil), do: nil
 
-  defp _load_character(character_id) do
+  defp load_character(character_id) do
     case Character.by_id(character_id) do
       {:ok, character} -> character
       {:error, _} -> nil

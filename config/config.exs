@@ -68,11 +68,11 @@ config :wanderer_app,
 config :phoenix_ddos,
   protections: [
     # ip rate limit
-    {PhoenixDDoS.IpRateLimit, allowed: 500, period: {2, :minutes}},
-    {PhoenixDDoS.IpRateLimit, allowed: 10_000, period: {1, :hour}},
+    {PhoenixDDoS.IpRateLimit, allowed: 10_000, period: {1, :minute}},
+    {PhoenixDDoS.IpRateLimit, allowed: 1_000_000, period: {1, :hour}},
     # ip rate limit on specific request_path
     {PhoenixDDoS.IpRateLimitPerRequestPath,
-     request_paths: ["/auth/eve"], allowed: 20, period: {1, :minute}}
+     request_paths: ["/auth/eve"], allowed: 100, period: {1, :minute}}
   ]
 
 config :ash_pagify,

@@ -11,21 +11,15 @@ import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 export interface MapContextMenuProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
+  onShowTrackingDialog?: () => void;
 }
 
-export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContextMenuProps) => {
+export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: MapContextMenuProps) => {
   const { outCommand, setInterfaceSettings } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 
   const menuRight = useRef<Menu>(null);
-
-  const handleAddCharacter = useCallback(() => {
-    outCommand({
-      type: OutCommand.showTracking,
-      data: {},
-    });
-  }, [outCommand]);
 
   const handleShowActivity = useCallback(() => {
     outCommand({
@@ -40,8 +34,8 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
         {
           label: 'Tracking',
           icon: 'pi pi-user-plus',
-          command: handleAddCharacter,
-          visible: true,
+          command: onShowTrackingDialog,
+          visible: canTrackCharacters,
         },
         {
           label: 'Character Activity',
@@ -76,7 +70,7 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings }: MapContext
     ).filter(item => item.visible);
   }, [
     canTrackCharacters,
-    handleAddCharacter,
+    onShowTrackingDialog,
     handleShowActivity,
     onShowMapSettings,
     onShowOnTheMap,

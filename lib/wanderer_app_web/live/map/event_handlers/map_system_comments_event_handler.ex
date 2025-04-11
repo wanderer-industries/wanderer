@@ -45,7 +45,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             has_tracked_characters?: true,
             map_id: map_id,
             is_subscription_active?: is_subscription_active?,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             user_permissions: %{add_system: true}
           }
         } =
@@ -76,7 +76,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             text: text |> String.slice(0..500)
           },
           current_user.id,
-          tracked_character_ids |> List.first()
+          main_character_id
         )
 
         {:noreply, socket}
@@ -99,7 +99,6 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             current_user: current_user,
             has_tracked_characters?: true,
             map_id: map_id,
-            tracked_character_ids: tracked_character_ids,
             user_permissions: %{add_system: true}
           }
         } =
@@ -127,7 +126,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           assigns: %{
             map_id: map_id,
             current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
@@ -138,7 +137,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
     |> WandererApp.Map.Server.remove_system_comment(
       comment_id,
       current_user.id,
-      tracked_character_ids |> List.first()
+      main_character_id
     )
 
     {:noreply, socket}

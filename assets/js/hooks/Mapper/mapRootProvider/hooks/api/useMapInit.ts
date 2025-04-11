@@ -11,6 +11,7 @@ export const useMapInit = () => {
   return useCallback(
     ({
       systems,
+      system_signatures,
       connections,
       effects,
       wormholes,
@@ -22,6 +23,8 @@ export const useMapInit = () => {
       user_permissions,
       options,
       is_subscription_active,
+      main_character_eve_id,
+      following_character_eve_id,
     }: CommandInit) => {
       const updateData: Partial<MapRootData> = {};
 
@@ -50,6 +53,10 @@ export const useMapInit = () => {
         updateData.systems = systems;
       }
 
+      if (system_signatures) {
+        updateData.systemSignatures = system_signatures;
+      }
+
       if (connections) {
         updateData.connections = connections;
       }
@@ -66,12 +73,22 @@ export const useMapInit = () => {
         updateData.options = options;
       }
 
-      updateData.isSubscriptionActive = is_subscription_active;
+      if (is_subscription_active) {
+        updateData.isSubscriptionActive = is_subscription_active;
+      }
 
       if (system_static_infos) {
         system_static_infos.forEach(static_info => {
           addSystemStatic(static_info);
         });
+      }
+
+      if (main_character_eve_id) {
+        updateData.mainCharacterEveId = main_character_eve_id;
+      }
+
+      if (following_character_eve_id) {
+        updateData.followingCharacterEveId = following_character_eve_id;
       }
 
       update(updateData);

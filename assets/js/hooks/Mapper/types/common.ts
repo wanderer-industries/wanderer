@@ -9,3 +9,5 @@ export interface WithClassName {
 }
 
 export type WithHTMLProps = React.HTMLAttributes<HTMLDivElement>;
+
+export type IncomingEvent<T> = { data: T };

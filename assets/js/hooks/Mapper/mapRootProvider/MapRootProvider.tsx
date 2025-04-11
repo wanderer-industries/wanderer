@@ -1,10 +1,12 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
 import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
 import {
+  ActivitySummary,
   CommandLinkSignatureToSystem,
   MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
+  TrackingCharacter,
   UseCharactersCacheData,
   UseCommentsData,
 } from '@/hooks/Mapper/types';
@@ -18,8 +20,6 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
-import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -31,7 +31,6 @@ export type MapRootData = MapUnionTypes & {
     activity: ActivitySummary[];
     loading?: boolean;
   };
-  showTrackAndFollow: boolean;
   trackingCharactersData: TrackingCharacter[];
 };
 
@@ -45,7 +44,6 @@ const INITIAL_DATA: MapRootData = {
     activity: [],
     loading: false,
   },
-  showTrackAndFollow: false,
   trackingCharactersData: [],
   userCharacters: [],
   presentCharacters: [],
@@ -62,6 +60,8 @@ const INITIAL_DATA: MapRootData = {
   options: {},
   isSubscriptionActive: false,
   linkSignatureToSystem: null,
+  mainCharacterEveId: null,
+  followingCharacterEveId: null,
 };
 
 export enum AvailableThemes {
@@ -166,6 +166,8 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     },
   );
   const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } = useStoreWidgets();
+  const comments = useComments({ outCommand });
+  const charactersCache = useCharactersCache({ outCommand });
 
   useEffect(() => {
     let foundNew = false;
@@ -183,10 +185,8 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
     if (foundNew) {
       setInterfaceSettings(newVals);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const comments = useComments({ outCommand });
-  const charactersCache = useCharactersCache({ outCommand });
 
   return (
     <MapRootContext.Provider

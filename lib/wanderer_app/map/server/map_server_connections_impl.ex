@@ -123,7 +123,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         %{
           solar_system_id: solar_system_source_id
         },
-        character_id
+        character_id,
+        true
       )
 
     state
@@ -312,28 +313,30 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     state
   end
 
-  def maybe_add_connection(map_id, location, old_location, character_id)
+  def maybe_add_connection(map_id, location, old_location, character_id, is_manual)
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
              location.solar_system_id != old_location.solar_system_id do
-    character_id
-    |> WandererApp.Character.get_character!()
-    |> case do
-      nil ->
-        :ok
+    if not is_manual do
+      character_id
+      |> WandererApp.Character.get_character!()
+      |> case do
+        nil ->
+          :ok
 
-      character ->
-        :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
+        character ->
+          :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
 
-        {:ok, _} =
-          WandererApp.Api.MapChainPassages.new(%{
-            map_id: map_id,
-            character_id: character_id,
-            ship_type_id: character.ship,
-            ship_name: character.ship_name,
-            solar_system_source_id: old_location.solar_system_id,
-            solar_system_target_id: location.solar_system_id
-          })
+          {:ok, _} =
+            WandererApp.Api.MapChainPassages.new(%{
+              map_id: map_id,
+              character_id: character_id,
+              ship_type_id: character.ship,
+              ship_name: character.ship_name,
+              solar_system_source_id: old_location.solar_system_id,
+              solar_system_target_id: location.solar_system_id
+            })
+      end
     end
 
     case WandererApp.Map.check_connection(map_id, location, old_location) do
@@ -409,6 +412,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     end
   end
 
+  def maybe_add_connection(_map_id, _location, _old_location, _character_id, _is_manual), do: :ok
+
   def get_start_time(map_id, connection_id) do
     case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:start_time") do
       nil ->
@@ -426,8 +431,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       start_time
     )
   end
-
-  def maybe_add_connection(_map_id, _location, _old_location, _character_id), do: :ok
 
   def can_add_location(_scope, nil), do: false
 

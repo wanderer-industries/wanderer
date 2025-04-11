@@ -28,6 +28,10 @@ defmodule WandererApp.MapUserSettingsRepo do
     end
   end
 
+  def create_or_update(map_id, user_id, nil) do
+    create_or_update(map_id, user_id, @default_form_data |> Jason.encode!())
+  end
+
   def create_or_update(map_id, user_id, settings) do
     get!(map_id, user_id)
     |> case do

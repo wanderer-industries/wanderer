@@ -1,4 +1,4 @@
-import React from 'react';
+import { useMemo } from 'react';
 import clsx from 'clsx';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import {
@@ -14,14 +14,15 @@ import {
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import classes from './KillRowDetail.module.scss';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { WithClassName } from '@/hooks/Mapper/types/common.ts';
 
-export interface CompactKillRowProps {
+export type CompactKillRowProps = {
   killDetails: DetailedKill;
   systemName: string;
   onlyOneSystem: boolean;
-}
+} & WithClassName;
 
-export const KillRowDetail: React.FC<CompactKillRowProps> = ({ killDetails, systemName, onlyOneSystem }) => {
+export const KillRowDetail = ({ killDetails, systemName, onlyOneSystem, className }: CompactKillRowProps) => {
   const {
     killmail_id = 0,
     // Victim data
@@ -80,13 +81,24 @@ export const KillRowDetail: React.FC<CompactKillRowProps> = ({ killDetails, syst
     'Victim',
   );
 
-  const { url: attackerPrimaryImageUrl, tooltip: attackerPrimaryTooltip } = getAttackerPrimaryImageAndTooltip(
-    attackerIsNpc,
-    attackerAllianceLogoUrl,
-    attackerCorpLogoUrl,
-    final_blow_alliance_name,
-    final_blow_corp_name,
-    final_blow_ship_type_id,
+  const { url: attackerPrimaryImageUrl, tooltip: attackerPrimaryTooltip } = useMemo(
+    () =>
+      getAttackerPrimaryImageAndTooltip(
+        attackerIsNpc,
+        attackerAllianceLogoUrl,
+        attackerCorpLogoUrl,
+        final_blow_alliance_name,
+        final_blow_corp_name,
+        final_blow_ship_type_id,
+      ),
+    [
+      attackerAllianceLogoUrl,
+      attackerCorpLogoUrl,
+      attackerIsNpc,
+      final_blow_alliance_name,
+      final_blow_corp_name,
+      final_blow_ship_type_id,
+    ],
   );
 
   // Define attackerTicker to use the alliance ticker if available, otherwise the corp ticker.
@@ -100,6 +112,8 @@ export const KillRowDetail: React.FC<CompactKillRowProps> = ({ killDetails, syst
       className={clsx(
         'h-10 flex items-center border-b border-stone-800',
         'text-xs whitespace-nowrap overflow-hidden leading-none',
+        'px-1',
+        className,
       )}
     >
       {/* Victim Section */}
@@ -142,12 +156,14 @@ export const KillRowDetail: React.FC<CompactKillRowProps> = ({ killDetails, syst
           {victim_char_name}
           <span className="text-stone-400"> / {victimAffiliationTicker}</span>
         </div>
-        <div className="truncate text-stone-300">
-          {victim_ship_name}
+        <div className="truncate text-stone-300 flex items-center gap-1">
+          <span className="text-stone-400 overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px]">
+            {victim_ship_name}
+          </span>
           {killValueFormatted && (
             <>
-              <span className="ml-1 text-stone-400">/</span>
-              <span className="ml-1 text-green-400">{killValueFormatted}</span>
+              <span className="text-stone-400">/</span>
+              <span className="text-green-400">{killValueFormatted}</span>
             </>
           )}
         </div>

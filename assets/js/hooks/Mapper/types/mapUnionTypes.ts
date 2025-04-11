@@ -23,4 +23,7 @@ export type MapUnionTypes = {
   userPermissions: Partial<UserPermissions>;
   options: Record<string, string | boolean>;
   isSubscriptionActive: boolean;
+
+  mainCharacterEveId: string | null;
+  followingCharacterEveId: string | null;
 };

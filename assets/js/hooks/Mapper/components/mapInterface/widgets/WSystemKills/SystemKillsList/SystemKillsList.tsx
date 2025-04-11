@@ -1,26 +1,26 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { VirtualScroller } from 'primereact/virtualscroller';
 import { useSystemKillsItemTemplate } from '../hooks/useSystemKillsItemTemplate';
-import classes from './SystemKillsContent.module.scss';
+import clsx from 'clsx';
+import { WithClassName } from '@/hooks/Mapper/types/common.ts';
 
-export const ITEM_HEIGHT = 35;
+export const KILLS_ROW_HEIGHT = 40;
 
-export interface SystemKillsContentProps {
+export type SystemKillsContentProps = {
   kills: DetailedKill[];
-  systemNameMap: Record<string, string>;
   onlyOneSystem?: boolean;
   timeRange?: number;
   limit?: number;
-}
+} & WithClassName;
 
-export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
+export const SystemKillsList = ({
   kills,
-  systemNameMap,
   onlyOneSystem = false,
   timeRange = 4,
   limit,
-}) => {
+  className,
+}: SystemKillsContentProps) => {
   const processedKills = useMemo(() => {
     if (!kills || kills.length === 0) return [];
 
@@ -47,30 +47,17 @@ export const SystemKillsContent: React.FC<SystemKillsContentProps> = ({
     return filteredKills;
   }, [kills, timeRange, limit]);
 
-  const itemTemplate = useSystemKillsItemTemplate(systemNameMap, onlyOneSystem);
-
-  // Define style for the VirtualScroller
-  const virtualScrollerStyle: React.CSSProperties = {
-    boxSizing: 'border-box',
-    height: '100%', // Use 100% height to fill the container
-  };
+  const itemTemplate = useSystemKillsItemTemplate(onlyOneSystem);
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden" data-testid="system-kills-content">
-      <VirtualScroller
-        items={processedKills}
-        itemSize={ITEM_HEIGHT}
-        itemTemplate={itemTemplate}
-        className={`w-full h-full flex-1 select-none ${classes.VirtualScroller}`}
-        style={virtualScrollerStyle}
-        pt={{
-          content: {
-            className: `custom-scrollbar ${classes.scrollerContent}`,
-          },
-        }}
-      />
-    </div>
+    <VirtualScroller
+      items={processedKills}
+      itemSize={KILLS_ROW_HEIGHT}
+      itemTemplate={itemTemplate}
+      className={clsx(
+        'w-full flex-1 select-none !h-full overflow-x-hidden overflow-y-auto custom-scrollbar',
+        className,
+      )}
+    />
   );
 };
-
-export default SystemKillsContent;

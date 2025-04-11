@@ -14,6 +14,7 @@ export const useMapInit = () => {
   return useCallback(
     ({
       systems,
+      system_signatures,
       kills,
       connections,
       wormholes,
@@ -49,6 +50,10 @@ export const useMapInit = () => {
 
       if (systems) {
         updateData.systems = systems;
+      }
+
+      if (system_signatures) {
+        updateData.systemSignatures = system_signatures;
       }
 
       if (kills) {

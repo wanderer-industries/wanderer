@@ -9,6 +9,7 @@ import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
@@ -32,6 +33,7 @@ export const useContextMenuSystemItems = ({
 
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
+    const systemStaticInfo = getSystemStaticInfo(systemId)!;
 
     if (!system || !systemId) {
       return [];
@@ -44,9 +46,9 @@ export const useContextMenuSystemItems = ({
           return (
             <FastSystemActions
               systemId={systemId}
-              systemName={system.system_static_info.solar_system_name}
-              regionName={system.system_static_info.region_name}
-              isWH={isWormholeSpace(system.system_static_info.system_class)}
+              systemName={systemStaticInfo.solar_system_name}
+              regionName={systemStaticInfo.region_name}
+              isWH={isWormholeSpace(systemStaticInfo.system_class)}
               showEdit
               onOpenSettings={onOpenSettings}
             />
@@ -57,7 +59,7 @@ export const useContextMenuSystemItems = ({
       getTags(),
       getStatus(),
       ...getLabels(),
-      ...getWaypointMenu(systemId, system.system_static_info.system_class),
+      ...getWaypointMenu(systemId, systemStaticInfo.system_class),
       {
         label: !hubs.includes(systemId) ? 'Add in Routes' : 'Remove from Routes',
         icon: PrimeIcons.MAP_MARKER,

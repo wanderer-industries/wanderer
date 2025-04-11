@@ -5,6 +5,8 @@ import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 import { CharacterPortrait, CharacterPortraitSize } from '@/hooks/Mapper/components/ui-kit';
+import { isDocked } from '@/hooks/Mapper/helpers/isDocked.ts';
+import classes from './CharacterCard.module.scss';
 
 type CharacterCardProps = {
   compact?: boolean;
@@ -45,8 +47,9 @@ export const CharacterCard = ({
   if (compact) {
     return (
       <div className={clsx('w-full text-xs box-border')} onClick={handleSelect}>
-        <div className="w-full flex items-center gap-1">
+        <div className="w-full flex items-center gap-1 relative">
           <CharacterPortrait characterEveId={char.eve_id} size={CharacterPortraitSize.w18} />
+          {isDocked(char.location) && <span className={classes.Docked} />}
           <div className="flex flex-grow overflow-hidden text-left">
             <div className="overflow-hidden text-ellipsis whitespace-nowrap">
               <span className={clsx(isOwn ? 'text-orange-400' : 'text-gray-200')}>{char.name}</span>{' '}

@@ -1,12 +1,10 @@
 import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
-import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
+import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
-import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
-import { CommentType, UserPermissions } from '@/hooks/Mapper/types';
+import { CommentType, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
@@ -37,6 +35,7 @@ export enum Commands {
   updateActivity = 'update_activity',
   updateTracking = 'update_tracking',
   userSettingsUpdated = 'user_settings_updated',
+  showTracking = 'show_tracking',
 }
 
 export type Command =
@@ -62,14 +61,17 @@ export type Command =
   | Commands.signaturesUpdated
   | Commands.systemCommentAdded
   | Commands.systemCommentRemoved
+  | Commands.systemCommentsUpdated
   | Commands.characterActivityData
   | Commands.trackingCharactersData
   | Commands.userSettingsUpdated
   | Commands.updateActivity
-  | Commands.updateTracking;
+  | Commands.updateTracking
+  | Commands.showTracking;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
+  system_signatures: Record<string, SystemSignature[]>;
   kills: Kill[];
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
@@ -84,6 +86,8 @@ export type CommandInit = {
   options: Record<string, string | boolean>;
   reset?: boolean;
   is_subscription_active?: boolean;
+  main_character_eve_id?: string | null;
+  following_character_eve_id?: string | null;
 };
 
 export type CommandAddSystems = SolarSystemRawType[];
@@ -123,14 +127,7 @@ export type CommandUserSettingsUpdated = {
   settings: UserSettings;
 };
 
-export type CommandShowActivity = null;
-export type CommandHideActivity = null;
 export type CommandShowTracking = null;
-export type CommandHideTracking = null;
-export type CommandUiLoaded = { version: string | null };
-export type CommandLogMapError = { error: string; componentStack: string };
-export type CommandMapEvent = { type: Command; data: unknown };
-export type CommandMapEvents = Array<{ type: Command; data: unknown }>;
 export type CommandUpdateActivity = {
   characterId: number;
   systemId: number;
@@ -186,6 +183,8 @@ export interface CommandData {
   [Commands.updateTracking]: CommandUpdateTracking;
   [Commands.systemCommentAdded]: CommandCommentAdd;
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
+  [Commands.systemCommentsUpdated]: unknown;
+  [Commands.showTracking]: CommandShowTracking;
 }
 
 export interface MapHandlers {
@@ -201,6 +200,7 @@ export enum OutCommand {
   getSignatures = 'get_signatures',
   getSystemStaticInfos = 'get_system_static_infos',
   getConnectionInfo = 'get_connection_info',
+  loadSignatures = 'load_signatures',
   updateConnectionTimeStatus = 'update_connection_time_status',
   updateConnectionType = 'update_connection_type',
   updateConnectionMassStatus = 'update_connection_mass_status',
@@ -234,9 +234,13 @@ export enum OutCommand {
   addSystemComment = 'addSystemComment',
   deleteSystemComment = 'deleteSystemComment',
   getSystemComments = 'getSystemComments',
-  toggleTrack = 'toggle_track',
+  // toggleTrack = 'toggle_track',
   toggleFollow = 'toggle_follow',
   getCharacterInfo = 'getCharacterInfo',
+  getCharactersTrackingInfo = 'getCharactersTrackingInfo',
+  updateCharacterTracking = 'updateCharacterTracking',
+  updateFollowingCharacter = 'updateFollowingCharacter',
+  updateMainCharacter = 'updateMainCharacter',
 
   // Only UI commands
   openSettings = 'open_settings',

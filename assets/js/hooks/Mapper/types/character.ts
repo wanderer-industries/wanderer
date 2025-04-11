@@ -35,6 +35,11 @@ export type CharacterTypeRaw = {
   corporation_ticker: string;
 };
 
+export interface TrackingCharacter {
+  character: CharacterTypeRaw;
+  tracked: boolean;
+}
+
 export type WithIsOwnCharacter = {
   isOwn: boolean;
 };
@@ -56,4 +61,11 @@ export interface UseCharactersCacheData {
   loadCharacter: (systemId: string) => Promise<void>;
   characters: Map<string, CharacterCache>;
   lastUpdateKey: number;
+}
+
+export interface ActivitySummary {
+  character: CharacterTypeRaw;
+  passages: number;
+  connections: number;
+  signatures: number;
 }
