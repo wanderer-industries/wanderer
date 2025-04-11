@@ -110,7 +110,7 @@ defmodule WandererApp.Api.Character do
     update :update_ship do
       require_atomic? false
 
-      accept([:ship, :ship_name])
+      accept([:ship, :ship_name, :ship_item_id])
     end
 
     update :update_corporation do
@@ -190,6 +190,7 @@ defmodule WandererApp.Api.Character do
     attribute :station_id, :integer
     attribute :ship, :integer
     attribute :ship_name, :string
+    attribute :ship_item_id, :integer
     attribute :corporation_id, :integer
     attribute :corporation_name, :string
     attribute :corporation_ticker, :string

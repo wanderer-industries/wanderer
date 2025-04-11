@@ -466,6 +466,7 @@ defmodule WandererApp.Character.Tracker do
        ) do
     ship_type_id = Map.get(ship, "ship_type_id")
     ship_name = Map.get(ship, "ship_name")
+    ship_item_id = Map.get(ship, "ship_item_id")
 
     {:ok, %{ship: old_ship_type_id, ship_name: old_ship_name} = character} =
       WandererApp.Character.get_character(character_id)
@@ -475,6 +476,7 @@ defmodule WandererApp.Character.Tracker do
     if ship_updated do
       character_update = %{
         ship: ship_type_id,
+        ship_item_id: ship_item_id,
         ship_name: ship_name
       }
 

@@ -341,7 +341,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_type_id"),
          {:ok, old_ship_name} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_name"),
-         {:ok, %{ship: ship_type_id, ship_name: ship_name}} <-
+         {:ok, %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}} <-
            WandererApp.Character.get_character(character_id) do
       case old_ship_type_id != ship_type_id or
              old_ship_name != ship_name do
@@ -356,7 +356,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             ship_name
           )
 
-          [{:character_ship, %{ship: ship_type_id, ship_name: ship_name}}]
+          [
+            {:character_ship,
+             %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}}
+          ]
 
         _ ->
           [:skip]
