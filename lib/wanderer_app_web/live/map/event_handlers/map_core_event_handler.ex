@@ -102,10 +102,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     map_slug
     |> WandererApp.MapRepo.get_by_slug_with_permissions(current_user)
     |> case do
-      {:ok, map} ->
+      {:ok, %{deleted: false} = map} ->
         socket |> init_map(map)
 
-      {:error, _} ->
+      _ ->
         socket
         |> put_flash(
           :error,
@@ -264,7 +264,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket,
          %{
            id: map_id,
-           deleted: false,
            only_tracked_characters: only_tracked_characters,
            user_permissions: user_permissions,
            name: map_name,
@@ -343,13 +342,18 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           available_map_characters
         )
 
+      following_character_eve_id = case map_user_settings do
+        nil -> nil
+        %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
+      end
+
       {:ok,
        %{
          user_permissions: user_permissions,
          map_user_settings: map_user_settings,
          main_character_id: main_character.id,
          main_character_eve_id: main_character.eve_id,
-         following_character_eve_id: map_user_settings.following_character_eve_id,
+         following_character_eve_id: following_character_eve_id,
          tracked_characters: tracked_data.tracked_characters,
          all_character_tracked?: tracked_data.all_tracked?,
          has_tracked_characters?: tracked_data.has_tracked_characters?,

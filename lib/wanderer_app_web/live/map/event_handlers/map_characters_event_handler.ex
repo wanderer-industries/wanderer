@@ -177,28 +177,37 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           assigns: %{
             current_user: %{id: current_user_id},
             map_id: map_id,
-            map_user_settings: %{following_character_eve_id: following_character_eve_id}
+            map_user_settings: map_user_settings,
+            following_character_eve_id: following_character_eve_id
           }
         } = socket
       )
       when character_eve_id != following_character_eve_id do
-    {:ok, map_user_settings} =
-      WandererApp.MapUserSettingsRepo.get!(map_id, current_user_id)
-      |> WandererApp.Api.MapUserSettings.update_following_character(%{
-        following_character_eve_id: "#{character_eve_id}"
-      })
+        settings = case map_user_settings do
+          nil -> nil
+          %{settings: settings} -> settings
+        end
 
-    {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+        {:ok, user_settings} =
+          WandererApp.MapUserSettingsRepo.create_or_update(map_id, current_user_id, settings)
 
-    Process.send_after(self(), %{event: :refresh_user_characters}, 50)
+        {:ok, map_user_settings} =
+          user_settings
+          |> WandererApp.Api.MapUserSettings.update_following_character(%{
+            following_character_eve_id: "#{character_eve_id}"
+          })
 
-    {:reply, %{data: tracking_data},
-     socket
-     |> assign(
-       map_user_settings: map_user_settings,
-       following_character_eve_id: "#{character_eve_id}"
-     )}
+        {:ok, tracking_data} =
+          WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+
+        Process.send_after(self(), %{event: :refresh_user_characters}, 50)
+
+        {:reply, %{data: tracking_data},
+        socket
+        |> assign(
+          map_user_settings: map_user_settings,
+          following_character_eve_id: "#{character_eve_id}"
+        )}
   end
 
   def handle_ui_event(
@@ -208,36 +217,45 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           assigns: %{
             current_user: %{id: current_user_id, characters: current_user_characters},
             map_id: map_id,
-            map_user_settings: %{main_character_eve_id: main_character_eve_id}
+            map_user_settings: map_user_settings,
+            main_character_eve_id: main_character_eve_id
           }
         } = socket
       )
       when not is_nil(character_eve_id) and character_eve_id != main_character_eve_id do
-    {:ok, map_user_settings} =
-      WandererApp.MapUserSettingsRepo.get!(map_id, current_user_id)
-      |> WandererApp.Api.MapUserSettings.update_main_character(%{
-        main_character_eve_id: "#{character_eve_id}"
-      })
+        settings = case map_user_settings do
+          nil -> nil
+          %{settings: settings} -> settings
+        end
 
-    {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+        {:ok, user_settings} =
+          WandererApp.MapUserSettingsRepo.create_or_update(map_id, current_user_id, settings)
 
-    {:ok, main_character_id} =
-      WandererApp.Character.TrackingUtils.get_main_character(
-        map_user_settings,
-        current_user_characters,
-        current_user_characters
-      )
+        {:ok, map_user_settings} =
+          user_settings
+          |> WandererApp.Api.MapUserSettings.update_main_character(%{
+            main_character_eve_id: "#{character_eve_id}"
+          })
 
-    Process.send_after(self(), %{event: :refresh_user_characters}, 50)
+        {:ok, tracking_data} =
+          WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
-    {:reply, %{data: tracking_data},
-     socket
-     |> assign(
-       map_user_settings: map_user_settings,
-       main_character_id: main_character_id,
-       main_character_eve_id: character_eve_id
-     )}
+        {:ok, main_character_id} =
+          WandererApp.Character.TrackingUtils.get_main_character(
+            map_user_settings,
+            current_user_characters,
+            current_user_characters
+          )
+
+        Process.send_after(self(), %{event: :refresh_user_characters}, 50)
+
+        {:reply, %{data: tracking_data},
+        socket
+        |> assign(
+          map_user_settings: map_user_settings,
+          main_character_id: main_character_id,
+          main_character_eve_id: character_eve_id
+        )}
   end
 
   def handle_ui_event(event, body, socket),
