@@ -466,7 +466,6 @@ defmodule WandererApp.Character.Tracker do
        ) do
     ship_type_id = Map.get(ship, "ship_type_id")
     ship_name = Map.get(ship, "ship_name")
-    ship_item_id = Map.get(ship, "ship_item_id")
 
     {:ok, %{ship: old_ship_type_id, ship_name: old_ship_name} = character} =
       WandererApp.Character.get_character(character_id)
@@ -476,7 +475,6 @@ defmodule WandererApp.Character.Tracker do
     if ship_updated do
       character_update = %{
         ship: ship_type_id,
-        ship_item_id: ship_item_id,
         ship_name: ship_name
       }
 
@@ -496,7 +494,7 @@ defmodule WandererApp.Character.Tracker do
            state,
          location
        ) do
-    location = get_location(location)
+         location = get_location(location)
 
     if not is_location_started?(character_id) do
       WandererApp.Cache.lookup!("character:#{character_id}:start_solar_system_id", nil)
@@ -527,7 +525,6 @@ defmodule WandererApp.Character.Tracker do
     |> case do
       true ->
         {:ok, _character} = WandererApp.Api.Character.update_location(character, location)
-
         WandererApp.Character.update_character(character_id, location)
 
         :ok
@@ -547,37 +544,25 @@ defmodule WandererApp.Character.Tracker do
       )
 
   defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id, station_id: new_station_id} = _location,
+         %{solar_system_id: new_solar_system_id, station_id: new_station_id, structure_id: new_structure_id} = _location,
          solar_system_id,
          structure_id,
          station_id
-       ),
-       do:
-         solar_system_id != new_solar_system_id ||
-           not is_nil(structure_id) ||
-           station_id != new_station_id
+       )
+       do
+         IO.inspect("is_location_updated")
+         IO.inspect(solar_system_id)
+         IO.inspect(new_solar_system_id)
+         IO.inspect(structure_id)
+         IO.inspect(new_structure_id)
+         IO.inspect(station_id)
+         IO.inspect(new_station_id)
 
-  defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id, structure_id: new_structure_id} = _location,
-         solar_system_id,
-         structure_id,
-         station_id
-       ),
-       do:
+       solar_system_id != new_solar_system_id ||
          solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
-           not is_nil(station_id)
-
-  defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id} = _location,
-         solar_system_id,
-         structure_id,
-         station_id
-       ),
-       do:
-         solar_system_id != new_solar_system_id ||
-           not is_nil(structure_id) ||
-           not is_nil(station_id)
+           station_id != new_station_id
+       end
 
   defp maybe_update_corporation(
          state,

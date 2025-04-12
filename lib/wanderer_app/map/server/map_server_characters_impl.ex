@@ -372,65 +372,45 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp maybe_update_location(map_id, character_id) do
-    WandererApp.Cache.lookup!(
-      "character:#{character_id}:location_started",
-      false
+    {:ok, old_solar_system_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
+
+    {:ok, old_station_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:station_id")
+
+    {:ok, old_structure_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:structure_id")
+
+    {:ok,
+      %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
+      WandererApp.Character.get_character(character_id)
+
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:solar_system_id",
+      solar_system_id
     )
-    |> case do
-      true ->
-        {:ok, old_solar_system_id} =
-          WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
 
-        {:ok,
-         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
-          WandererApp.Character.get_character(character_id)
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:station_id",
+      station_id
+    )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:structure_id",
+      structure_id
+    )
 
-        case solar_system_id != old_solar_system_id do
-          true ->
-            [
-              {:character_location,
-               %{
-                 solar_system_id: solar_system_id,
-                 structure_id: structure_id,
-                 station_id: station_id
-               }, %{solar_system_id: old_solar_system_id}}
-            ]
-
-          _ ->
-            [:skip]
-        end
-
-      false ->
-        {:ok, old_solar_system_id} =
-          WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
-
-        {:ok,
-         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
-           _character} =
-          WandererApp.Character.get_character(character_id)
-
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
-
-        if is_nil(old_solar_system_id) or solar_system_id != old_solar_system_id do
-          [
-            {:character_location,
-             %{
-               solar_system_id: solar_system_id,
-               structure_id: structure_id,
-               station_id: station_id
-             }, %{solar_system_id: nil}}
-          ]
-        else
-          [:skip]
-        end
+    if solar_system_id != old_solar_system_id || structure_id != old_structure_id || station_id != old_station_id do
+      [
+        {:character_location,
+          %{
+            solar_system_id: solar_system_id,
+            structure_id: structure_id,
+            station_id: station_id
+          }, %{solar_system_id: old_solar_system_id}}
+      ]
+    else
+      [:skip]
     end
   end
 
