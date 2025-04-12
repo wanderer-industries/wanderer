@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.5](https://github.com/wanderer-industries/wanderer/compare/v1.59.4...v1.59.5) (2025-04-12)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: avoid signatures delete on wrong buffer
+
 ## [v1.59.4](https://github.com/wanderer-industries/wanderer/compare/v1.59.3...v1.59.4) (2025-04-10)
 
 
