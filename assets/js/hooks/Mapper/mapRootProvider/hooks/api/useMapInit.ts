@@ -9,23 +9,25 @@ export const useMapInit = () => {
   const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
 
   return useCallback(
-    ({
-      systems,
-      system_signatures,
-      connections,
-      effects,
-      wormholes,
-      system_static_infos,
-      characters,
-      user_characters,
-      present_characters,
-      hubs,
-      user_permissions,
-      options,
-      is_subscription_active,
-      main_character_eve_id,
-      following_character_eve_id,
-    }: CommandInit) => {
+    (props: CommandInit) => {
+      const {
+        systems,
+        system_signatures,
+        connections,
+        effects,
+        wormholes,
+        system_static_infos,
+        characters,
+        user_characters,
+        present_characters,
+        hubs,
+        user_permissions,
+        options,
+        is_subscription_active,
+        main_character_eve_id,
+        following_character_eve_id,
+      } = props;
+
       const updateData: Partial<MapRootData> = {};
 
       if (wormholes) {
@@ -87,7 +89,7 @@ export const useMapInit = () => {
         updateData.mainCharacterEveId = main_character_eve_id;
       }
 
-      if (following_character_eve_id) {
+      if ('following_character_eve_id' in props) {
         updateData.followingCharacterEveId = following_character_eve_id;
       }
 

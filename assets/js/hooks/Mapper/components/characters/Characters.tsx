@@ -7,6 +7,7 @@ import { emitMapEvent } from '@/hooks/Mapper/events';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import classes from './Characters.module.scss';
 import { isDocked } from '@/hooks/Mapper/helpers/isDocked.ts';
+import { PrimeIcons } from 'primereact/api';
 
 interface CharactersProps {
   data: CharacterTypeRaw[];
@@ -34,18 +35,35 @@ export const Characters = ({ data }: CharactersProps) => {
     >
       <div
         className={clsx(
+          'overflow-hidden relative',
           'flex w-[35px] h-[35px] rounded-[4px] border-[1px] border-solid bg-transparent cursor-pointer',
           'transition-colors duration-250',
           {
-            ['overflow-hidden relative']: true,
             ['border-stone-800/90']: !character.online,
             ['border-lime-600/70']: character.online,
-            [classes.MainCharacter]: mainCharacterEveId === character.eve_id,
-            [classes.FollowingCharacter]: followingCharacterEveId === character.eve_id,
           },
         )}
         title={character.name}
       >
+        {mainCharacterEveId === character.eve_id && (
+          <span
+            className={clsx(
+              'absolute top-[2px] left-[22px] w-[9px] h-[9px]',
+              'text-yellow-500 text-[9px] rounded-[1px] z-10',
+              'pi',
+              PrimeIcons.STAR_FILL,
+            )}
+          />
+        )}
+        {followingCharacterEveId === character.eve_id && (
+          <span
+            className={clsx(
+              'absolute top-[23px] left-[22px] w-[10px] h-[10px]',
+              'text-sky-300 text-[10px] rounded-[1px] z-10',
+              'pi pi-angle-double-right',
+            )}
+          />
+        )}
         {isDocked(character.location) && <div className={classes.Docked} />}
         <div
           className={clsx(
