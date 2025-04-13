@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.6](https://github.com/wanderer-industries/wanderer/compare/v1.59.5...v1.59.6) (2025-04-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix icons of main, follow and shattered (#321)
+
 ## [v1.59.5](https://github.com/wanderer-industries/wanderer/compare/v1.59.4...v1.59.5) (2025-04-12)
 
 
