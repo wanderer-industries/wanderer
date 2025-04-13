@@ -14,6 +14,8 @@ import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/Worm
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 import { LocalCounter } from './SolarSystemLocalCounter';
 import { KillsCounter } from './SolarSystemKillsCounter';
+import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
@@ -31,8 +33,10 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
           )}
 
           {nodeVars.isShattered && (
-            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered)}>
-              <span className={clsx('pi pi-chart-pie', classes.icon)} />
+            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered, '!pr-[2px]')}>
+              <WdTooltipWrapper content="Shattered" position={TooltipPosition.top}>
+                <span className={clsx('block w-[10px] h-[10px]', classes.ShatteredIcon)} />
+              </WdTooltipWrapper>
             </div>
           )}
 
@@ -40,7 +44,7 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             <KillsCounter
               killsCount={localKillsCount}
               systemId={nodeVars.solarSystemId}
-              size="lg"
+              size={TooltipSize.lg}
               killsActivityType={nodeVars.killsActivityType}
               className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
             >

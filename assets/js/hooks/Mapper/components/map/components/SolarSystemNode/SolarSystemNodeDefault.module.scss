@@ -355,3 +355,15 @@ $tooltip-bg: #202020;
     }
   }
 }
+
+.ShatteredIcon {
+  position: relative;
+  //top: -1px;
+  left: -1px;
+
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  background-image: url(/images/chart-network-svgrepo-com.svg)
+}
