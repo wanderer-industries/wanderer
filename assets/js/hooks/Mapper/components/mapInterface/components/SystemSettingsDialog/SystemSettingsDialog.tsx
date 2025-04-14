@@ -10,6 +10,7 @@ import { OutCommand } from '@/hooks/Mapper/types';
 import { IconField } from 'primereact/iconfield';
 import { TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 interface SystemSettingsDialog {
   systemId: string;
@@ -26,6 +27,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
 
   const system = getSystemById(systems, systemId);
+  const systemStaticInfo = getSystemStaticInfo(systemId);
 
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
@@ -33,11 +35,11 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
   const [description, setDescription] = useState('');
   const inputRef = useRef<HTMLInputElement>();
 
-  const ref = useRef({ name, description, temporaryName, label, outCommand, systemId, system });
-  ref.current = { name, description, label, temporaryName, outCommand, systemId, system };
+  const ref = useRef({ name, description, temporaryName, label, outCommand, systemId, system, systemStaticInfo });
+  ref.current = { name, description, label, temporaryName, outCommand, systemId, system, systemStaticInfo };
 
   const handleSave = useCallback(() => {
-    const { name, description, label, temporaryName, outCommand, systemId, system } = ref.current;
+    const { name, description, label, temporaryName, outCommand, systemId, system, systemStaticInfo } = ref.current;
 
     const outLabel = new LabelsManager(system?.labels ?? '');
     outLabel.updateCustomLabel(label);
@@ -62,7 +64,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
       type: OutCommand.updateSystemName,
       data: {
         system_id: systemId,
-        value: name.trim() || system?.system_static_info.solar_system_name,
+        value: name.trim() || systemStaticInfo?.solar_system_name,
       },
     });
 
@@ -78,11 +80,11 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
   }, [setVisible]);
 
   const handleResetSystemName = useCallback(() => {
-    const { system } = ref.current;
-    if (!system) {
+    const { systemStaticInfo } = ref.current;
+    if (!systemStaticInfo) {
       return;
     }
-    setName(system.system_static_info.solar_system_name);
+    setName(systemStaticInfo.solar_system_name);
   }, []);
 
   const onShow = useCallback(() => {
@@ -130,7 +132,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
               <label htmlFor="username">Custom name</label>
 
               <IconField>
-                {name !== system?.system_static_info.solar_system_name && (
+                {name !== systemStaticInfo?.solar_system_name && (
                   <WdImgButton
                     className="pi pi-undo"
                     textSize={WdImageSize.large}

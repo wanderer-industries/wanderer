@@ -494,7 +494,7 @@ defmodule WandererApp.Character.Tracker do
            state,
          location
        ) do
-    location = get_location(location)
+         location = get_location(location)
 
     if not is_location_started?(character_id) do
       WandererApp.Cache.lookup!("character:#{character_id}:start_solar_system_id", nil)
@@ -525,7 +525,6 @@ defmodule WandererApp.Character.Tracker do
     |> case do
       true ->
         {:ok, _character} = WandererApp.Api.Character.update_location(character, location)
-
         WandererApp.Character.update_character(character_id, location)
 
         :ok
@@ -545,37 +544,16 @@ defmodule WandererApp.Character.Tracker do
       )
 
   defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id, station_id: new_station_id} = _location,
+         %{solar_system_id: new_solar_system_id, station_id: new_station_id, structure_id: new_structure_id} = _location,
          solar_system_id,
          structure_id,
          station_id
        ),
        do:
          solar_system_id != new_solar_system_id ||
-           not is_nil(structure_id) ||
-           station_id != new_station_id
-
-  defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id, structure_id: new_structure_id} = _location,
-         solar_system_id,
-         structure_id,
-         station_id
-       ),
-       do:
          solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
-           not is_nil(station_id)
-
-  defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id} = _location,
-         solar_system_id,
-         structure_id,
-         station_id
-       ),
-       do:
-         solar_system_id != new_solar_system_id ||
-           not is_nil(structure_id) ||
-           not is_nil(station_id)
+           station_id != new_station_id
 
   defp maybe_update_corporation(
          state,
@@ -781,5 +759,5 @@ defmodule WandererApp.Character.Tracker do
 
   defp get_online(%{"online" => online}), do: %{online: online}
 
-  defp get_online(_), do: %{}
+  defp get_online(_), do: %{online: false}
 end

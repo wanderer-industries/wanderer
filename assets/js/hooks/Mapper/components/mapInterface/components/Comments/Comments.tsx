@@ -43,7 +43,7 @@ export const Comments = ({}: CommentsProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-1 mt-1 whitespace-nowrap overflow-auto text-ellipsis custom-scrollbar">
+    <div className="flex flex-col gap-1 whitespace-nowrap overflow-auto text-ellipsis custom-scrollbar">
       {commentsList.map(({ id, text, updated_at, characterEveId }) => (
         <MarkdownComment key={id} text={text} time={updated_at} characterEveId={characterEveId} id={id} />
       ))}

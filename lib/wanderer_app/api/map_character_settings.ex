@@ -30,8 +30,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
     default_accept [
       :map_id,
       :character_id,
-      :tracked,
-      :followed
+      :tracked
     ]
 
     defaults [:create, :read, :update, :destroy]

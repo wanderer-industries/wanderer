@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import debounce from 'lodash.debounce';
-import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers';
+import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useKillsWidgetSettings } from './useKillsWidgetSettings';
-import { useMapEventListener, MapEvent } from '@/hooks/Mapper/events';
 
 interface UseSystemKillsProps {
   systemId?: string;
@@ -29,10 +28,6 @@ function combineKills(existing: DetailedKill[], incoming: DetailedKill[], sinceH
   return Object.values(byId);
 }
 
-interface DetailedKillsEvent extends MapEvent<Commands> {
-  payload: Record<string, DetailedKill[]>;
-}
-
 export function useSystemKills({ systemId, outCommand, showAllVisible = false, sinceHours = 24 }: UseSystemKillsProps) {
   const { data, update } = useMapRootState();
   const { detailedKills = {}, systems = [] } = data;
@@ -40,32 +35,6 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
   const excludedSystems = settings.excludedSystems;
 
   const effectiveSinceHours = sinceHours;
-
-  const updateDetailedKills = useCallback(
-    (newKillsMap: Record<string, DetailedKill[]>) => {
-      update(prev => {
-        const oldKills = prev.detailedKills ?? {};
-        const updated = { ...oldKills };
-        for (const [sid, killsArr] of Object.entries(newKillsMap)) {
-          updated[sid] = killsArr;
-        }
-        return { ...prev, detailedKills: updated };
-      }, true);
-    },
-    [update],
-  );
-
-  useMapEventListener((event: MapEvent<Commands>) => {
-    if (event.name === Commands.detailedKillsUpdated) {
-      const detailedEvent = event as DetailedKillsEvent;
-      if (systemId && !Object.keys(detailedEvent.payload).includes(systemId.toString())) {
-        return false;
-      }
-      updateDetailedKills(detailedEvent.payload);
-      return true;
-    }
-    return false;
-  });
 
   const effectiveSystemIds = useMemo(() => {
     if (showAllVisible) {

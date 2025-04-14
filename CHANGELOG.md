@@ -2,6 +2,52 @@
 
 <!-- changelog -->
 
+## [v1.59.7](https://github.com/wanderer-industries/wanderer/compare/v1.59.6...v1.59.7) (2025-04-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed auto-select splashed systems
+
+## [v1.59.6](https://github.com/wanderer-industries/wanderer/compare/v1.59.5...v1.59.6) (2025-04-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix icons of main, follow and shattered (#321)
+
+## [v1.59.5](https://github.com/wanderer-industries/wanderer/compare/v1.59.4...v1.59.5) (2025-04-12)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: avoid signatures delete on wrong buffer
+
+## [v1.59.4](https://github.com/wanderer-industries/wanderer/compare/v1.59.3...v1.59.4) (2025-04-10)
+
+
+
+
+## [v1.59.3](https://github.com/wanderer-industries/wanderer/compare/v1.59.2...v1.59.3) (2025-04-10)
+
+
+
+
+## [v1.59.2](https://github.com/wanderer-industries/wanderer/compare/v1.59.1...v1.59.2) (2025-04-10)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed connection validation
+
 ## [v1.59.1](https://github.com/wanderer-industries/wanderer/compare/v1.59.0...v1.59.1) (2025-03-26)
 
 

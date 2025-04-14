@@ -16,7 +16,6 @@ const stopEventPropagationPlugin = ViewPlugin.fromClass(
 
       // @ts-ignore
       this.pasteHandler = (event: Event) => {
-        console.log('Paste done in editor, stopping global listeners.');
         event.stopPropagation();
       };
 

@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
-import useRefState from 'react-usestateref';
 import { useMapEventListener } from '@/hooks/Mapper/events';
+import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, ExtendedSystemSignature, SignatureKind } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { parseSignatures } from '@/hooks/Mapper/helpers';
+import { useCallback, useEffect, useState } from 'react';
+import useRefState from 'react-usestateref';
 
-import { getActualSigs } from '../helpers';
-import { useSignatureFetching } from './useSignatureFetching';
-import { usePendingDeletions } from './usePendingDeletions';
-import { UseSystemSignaturesDataProps } from './types';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { SETTINGS_KEYS } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { getActualSigs } from '../helpers';
+import { UseSystemSignaturesDataProps } from './types';
+import { usePendingDeletions } from './usePendingDeletions';
+import { useSignatureFetching } from './useSignatureFetching';
 
 export const useSystemSignaturesData = ({
   systemId,
@@ -46,6 +46,10 @@ export const useSystemSignaturesData = ({
         clipboardString,
         Object.keys(settings).filter(skey => skey in SignatureKind),
       ) as ExtendedSystemSignature[];
+
+      if (incomingSignatures.length === 0) {
+        return;
+      }
 
       const currentNonPending = lazyDeleteValue
         ? signaturesRef.current.filter(sig => !sig.pendingDeletion)

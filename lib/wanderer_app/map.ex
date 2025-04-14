@@ -148,18 +148,23 @@ defmodule WandererApp.Map do
   def add_character(
         map_id,
         %{
-          id: character_id,
-          alliance_id: alliance_id,
-          corporation_id: corporation_id,
-          solar_system_id: solar_system_id,
-          ship: ship_type_id,
-          ship_name: ship_name
+          id: character_id
         } = _character
       ) do
     characters = map_id |> get_map!() |> Map.get(:characters, [])
 
     case not (characters |> Enum.member?(character_id)) do
       true ->
+        {:ok, %{
+          alliance_id: alliance_id,
+          corporation_id: corporation_id,
+          solar_system_id: solar_system_id,
+          structure_id: structure_id,
+          station_id: station_id,
+          ship: ship_type_id,
+          ship_name: ship_name
+        }} = WandererApp.Character.get_character(character_id)
+
         map_id
         |> update_map(%{characters: [character_id | characters]})
 
@@ -176,6 +181,16 @@ defmodule WandererApp.Map do
         WandererApp.Cache.insert(
           "map:#{map_id}:character:#{character_id}:solar_system_id",
           solar_system_id
+        )
+
+        WandererApp.Cache.insert(
+          "map:#{map_id}:character:#{character_id}:structure_id",
+          structure_id
+        )
+
+        WandererApp.Cache.insert(
+          "map:#{map_id}:character:#{character_id}:station_id",
+          station_id
         )
 
         WandererApp.Cache.insert(

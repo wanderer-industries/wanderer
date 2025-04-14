@@ -1,0 +1,18 @@
+.Docked {
+  content: " ";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 1px;
+
+  background-image: url(/images/citadelLarge.png);
+  left: 10px;
+  top: 10px;
+  transform: rotateZ(0deg);
+}

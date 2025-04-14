@@ -3,6 +3,7 @@ import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormhol
 import { useMemo } from 'react';
 import { getSystemById, sortWHClasses } from '@/hooks/Mapper/helpers';
 import { InfoDrawer, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 interface SystemInfoContentProps {
   systemId: string;
@@ -14,9 +15,9 @@ export const SystemInfoContent = ({ systemId }: SystemInfoContentProps) => {
   } = useMapRootState();
 
   const sys = getSystemById(systems, systemId)! || {};
+  const systemStaticInfo = getSystemStaticInfo(systemId)!;
   const { description } = sys;
-  const { system_class, region_name, constellation_name, statics, effect_name, effect_power } =
-    sys.system_static_info || {};
+  const { system_class, region_name, constellation_name, statics, effect_name, effect_power } = systemStaticInfo || {};
   const isWH = isWormholeSpace(system_class);
   const sortedStatics = useMemo(() => sortWHClasses(wormholesData, statics), [wormholesData, statics]);
 
