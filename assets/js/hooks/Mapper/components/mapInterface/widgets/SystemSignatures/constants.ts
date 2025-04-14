@@ -81,7 +81,7 @@ export const MAPPING_TYPE_TO_ENG = {
 export const getGroupIdByRawGroup = (val: string) => MAPPING_GROUP_TO_ENG[val as SignatureGroup];
 
 export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
-export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_5';
+export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_6';
 
 export enum SETTINGS_KEYS {
   SHOW_DESCRIPTION_COLUMN = 'show_description_column',
@@ -92,6 +92,7 @@ export enum SETTINGS_KEYS {
   DELETION_TIMING = 'deletion_timing',
   COLOR_BY_TYPE = 'color_by_type',
   SHOW_CHARACTER_PORTRAIT = 'show_character_portrait',
+  SHOW_TEMP_NAME = 'show_temp_name',
 
   // From SignatureKind
   COSMIC_ANOMALY = SignatureKind.CosmicAnomaly,
@@ -154,6 +155,7 @@ export const SIGNATURE_SETTINGS = {
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_UPDATED_COLUMN, name: 'Show Updated Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN, name: 'Show Description Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_CHARACTER_COLUMN, name: 'Show Character Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_TEMP_NAME, name: 'Show Temporary Names (if enabled)' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
     {
@@ -181,6 +183,7 @@ export const SETTINGS_VALUES: SignatureSettingsType = {
   [SETTINGS_KEYS.SHOW_UPDATED_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_CHARACTER_COLUMN]: true,
+  [SETTINGS_KEYS.SHOW_TEMP_NAME]: false,
   [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: true,
   [SETTINGS_KEYS.KEEP_LAZY_DELETE]: false,
   [SETTINGS_KEYS.DELETION_TIMING]: SIGNATURES_DELETION_TIMING.DEFAULT,

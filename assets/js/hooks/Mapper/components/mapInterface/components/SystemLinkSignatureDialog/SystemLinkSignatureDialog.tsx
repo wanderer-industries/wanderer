@@ -155,6 +155,16 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         });
       }
 
+      if (signature.temp_name) {
+        outCommand({
+          type: OutCommand.updateSystemTemporaryName,
+          data: {
+            system_id: data.solar_system_target,
+            value: signature.temp_name,
+          },
+        });
+      }
+
       setVisible(false);
     },
     [data, setVisible, wormholes],

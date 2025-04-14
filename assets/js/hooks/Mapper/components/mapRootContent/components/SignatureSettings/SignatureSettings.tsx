@@ -76,6 +76,16 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                 });
               }
             }
+
+            if (values.temp_name) {
+              outCommand({
+                type: OutCommand.updateSystemTemporaryName,
+                data: {
+                  system_id: values.linked_system,
+                  value: values.temp_name,
+                },
+              });
+            }
           }
 
           out = {
@@ -106,6 +116,10 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
       if (values.description != null) {
         out = { ...out, description: values.description };
+      }
+
+      if (values.temp_name != null) {
+        out = { ...out, temp_name: values.temp_name };
       }
 
       // Note: when type of signature changed from WH to other type - we should drop name

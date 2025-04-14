@@ -46,6 +46,7 @@ export type SystemSignature = {
   linked_system?: SolarSystemStaticInfoRaw;
   inserted_at?: string;
   updated_at?: string;
+  temp_name?: string;
 };
 
 export interface ExtendedSystemSignature extends SystemSignature {

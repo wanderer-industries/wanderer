@@ -54,7 +54,7 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
       content={
         <div className="flex flex-col gap-1">
           <InfoDrawer title={<b className="text-slate-50">{signature.eve_id}</b>}>
-            {renderInfoColumn(signature)}
+            {renderInfoColumn(signature, false)}
           </InfoDrawer>
         </div>
       }
