@@ -548,21 +548,12 @@ defmodule WandererApp.Character.Tracker do
          solar_system_id,
          structure_id,
          station_id
-       )
-       do
-         IO.inspect("is_location_updated")
-         IO.inspect(solar_system_id)
-         IO.inspect(new_solar_system_id)
-         IO.inspect(structure_id)
-         IO.inspect(new_structure_id)
-         IO.inspect(station_id)
-         IO.inspect(new_station_id)
-
-       solar_system_id != new_solar_system_id ||
+       ),
+       do:
+         solar_system_id != new_solar_system_id ||
          solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
            station_id != new_station_id
-       end
 
   defp maybe_update_corporation(
          state,
