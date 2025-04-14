@@ -66,7 +66,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             if (values.type) {
               const whShipSize = getWhSize(wormholes, values.type);
               if (whShipSize) {
-                outCommand({
+                await outCommand({
                   type: OutCommand.updateConnectionShipSizeType,
                   data: {
                     source: systemId,
@@ -78,7 +78,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             }
 
             if (values.temp_name) {
-              outCommand({
+              await outCommand({
                 type: OutCommand.updateSystemTemporaryName,
                 data: {
                   system_id: values.linked_system,
