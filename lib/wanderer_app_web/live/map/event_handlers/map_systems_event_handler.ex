@@ -208,7 +208,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         } =
           socket
       ) do
-    {:ok, map} = map_id |> get_map()
+    {:ok, map} = map_id |> WandererApp.Map.get_map()
     hubs_limit = map |> Map.get(:hubs_limit, 20)
 
     {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
