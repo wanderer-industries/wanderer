@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.7](https://github.com/wanderer-industries/wanderer/compare/v1.59.6...v1.59.7) (2025-04-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed auto-select splashed systems
+
 ## [v1.59.6](https://github.com/wanderer-industries/wanderer/compare/v1.59.5...v1.59.6) (2025-04-13)
 
 
