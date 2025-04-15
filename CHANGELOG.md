@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.8](https://github.com/wanderer-industries/wanderer/compare/v1.59.7...v1.59.8) (2025-04-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed issues with main character & tracking
+
 ## [v1.59.7](https://github.com/wanderer-industries/wanderer/compare/v1.59.6...v1.59.7) (2025-04-14)
 
 
