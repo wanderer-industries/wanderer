@@ -32,6 +32,7 @@ defmodule WandererApp.Map.Server do
         map_id
 
       nil ->
+        WandererApp.Cache.insert("map_#{map_id}:started", false)
         throw("Map server not started")
     end
   end

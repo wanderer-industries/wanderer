@@ -173,27 +173,9 @@ defmodule WandererAppWeb.MapEventHandler do
       when event_name in @map_signatures_events,
       do: MapSignaturesEventHandler.handle_server_event(event, socket)
 
-  def handle_event(
-        %{
-          assigns: %{
-            is_subscription_active?: true
-          }
-        } = socket,
-        %{event: event_name} = event
-      )
+  def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_kills_events,
       do: MapKillsEventHandler.handle_server_event(event, socket)
-
-  def handle_event(
-        %{
-          assigns: %{
-            is_subscription_active?: false
-          }
-        } = socket,
-        %{event: event_name} = _event
-      )
-      when event_name in @map_kills_events,
-      do: socket
 
   def handle_event(socket, {ref, result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
@@ -202,12 +184,6 @@ defmodule WandererAppWeb.MapEventHandler do
       {:map_error, map_error} ->
         Process.send_after(self(), map_error, 100)
         socket
-
-      {:activity_data, activity_data} ->
-        MapActivityEventHandler.handle_server_event(
-          %{event: :character_activity_data, payload: activity_data},
-          socket
-        )
 
       {event, payload} ->
         Process.send_after(
@@ -227,11 +203,6 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, {:DOWN, ref, :process, _pid, reason}) when is_reference(ref) do
     # Task failed, log the error and update the client
     Logger.error("Task failed: #{inspect(reason)}")
-
-    MapActivityEventHandler.handle_server_event(
-      %{event: :character_activity_data, payload: []},
-      socket
-    )
   end
 
   def handle_event(socket, event),

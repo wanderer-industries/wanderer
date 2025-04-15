@@ -86,6 +86,25 @@ defmodule WandererApp.Map.Server.AclsImpl do
     end
   end
 
+  def handle_acl_deleted(map_id, acl_id) do
+    {:ok, map} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
+
+    WandererApp.Map.update_map(map_id, %{acls: map.acls})
+
+    character_ids =
+      map_id
+      |> WandererApp.Map.get_map!()
+      |> Map.get(:characters, [])
+
+    WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
+  end
+
   def track_acls([]), do: :ok
 
   def track_acls([acl_id | rest]) do

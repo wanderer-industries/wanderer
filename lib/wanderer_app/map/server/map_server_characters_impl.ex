@@ -64,6 +64,16 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         map_tracked_character_ids
         |> Enum.filter(fn character -> character in tracked_characters end)
 
+      {:ok, old_map_tracked_characters} = WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
+      characters_to_remove = old_map_tracked_characters -- map_active_tracked_characters
+
+      {:ok, invalidate_character_ids} =
+        WandererApp.Cache.lookup(
+          "map_#{map_id}:invalidate_character_ids",
+          []
+        )
+
+      WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", (invalidate_character_ids ++ characters_to_remove) |> Enum.uniq())
       WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
 
       :ok
@@ -98,6 +108,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         character_id
         |> WandererApp.Character.get_character()
         |> case do
+          {:ok, %{user_id: nil}} ->
+            {:remove_character, character_id}
+
           {:ok, character} ->
             [character_permissions] =
               WandererApp.Permissions.check_characters_access([character], acls)

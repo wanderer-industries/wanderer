@@ -64,9 +64,22 @@ defmodule WandererAppWeb.CharactersLive do
 
   @impl true
   def handle_event("delete", %{"character_id" => character_id}, socket) do
-    socket.assigns.characters
-    |> Enum.find(&(&1.id == character_id))
-    |> WandererApp.Api.Character.mark_as_deleted!()
+    WandererApp.Character.TrackerManager.stop_tracking(character_id)
+
+    {:ok, map_user_settings} = WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
+
+    map_user_settings
+    |> Enum.each(fn settings ->
+      settings
+      |> WandererApp.Api.MapCharacterSettings.untrack()
+    end)
+
+    {:ok, updated_character} =
+      socket.assigns.characters
+      |> Enum.find(&(&1.id == character_id))
+      |> WandererApp.Api.Character.mark_as_deleted()
+
+    WandererApp.Character.update_character(character_id, updated_character)
 
     {:ok, characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: socket.assigns.user_id})

@@ -70,7 +70,7 @@ defmodule WandererApp.Map.Audit do
   def track_acl_event(
         event_type,
         %{user_id: user_id, acl_id: acl_id} = metadata
-      ),
+      ) when not is_nil(user_id) and not is_nil(acl_id),
       do:
         WandererApp.Api.UserActivity.new(%{
           user_id: user_id,
@@ -85,7 +85,7 @@ defmodule WandererApp.Map.Audit do
   def track_map_event(
         event_type,
         %{character_id: character_id, user_id: user_id, map_id: map_id} = metadata
-      ),
+      ) when not is_nil(character_id) and not is_nil(user_id) and not is_nil(map_id),
       do:
         WandererApp.Api.UserActivity.new(%{
           character_id: character_id,

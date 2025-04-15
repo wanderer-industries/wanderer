@@ -79,7 +79,7 @@
       </div>
     </.link>
     <div
-      :for={character <- @characters}
+      :for={character <- @characters |> Enum.sort_by(& &1.name, :asc)}
       class="card rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
     >
       <figure class="avatar">
