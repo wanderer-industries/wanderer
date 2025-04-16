@@ -5,7 +5,7 @@
     "src": ["c1", "c2", "c3", "c4", "c5", "c6", "thera", "c13", "ns"],
     "static": false,
     "max_mass_per_jump": 5000000,
-    "lifetime": "16",
+    "lifetime": "4.5",
     "total_mass": 500000000,
     "name": "A009",
     "respawn": ["wandering"]
