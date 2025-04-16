@@ -8,10 +8,15 @@ interface CharacterActivityProps {
 
 export const CharacterActivity = ({ visible, onHide }: CharacterActivityProps) => {
   return (
-    <Dialog header="Character Activity" visible={visible} className="w-[550px]" onHide={onHide} dismissableMask>
-      <div className="w-full h-[500px] flex flex-col overflow-hidden p-0 m-0">
-        <CharacterActivityContent />
-      </div>
+    <Dialog
+      header="Character Activity"
+      visible={visible}
+      className="w-[550px] max-h-[90vh]"
+      onHide={onHide}
+      dismissableMask
+      contentClassName="p-0 h-full flex flex-col"
+    >
+      <CharacterActivityContent />
     </Dialog>
   );
 };
