@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.59.11](https://github.com/wanderer-industries/wanderer/compare/v1.59.10...v1.59.11) (2025-04-16)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed lifetime for A009 from 16h to 4.5h. Fixed problem with no appearing icon of shattered for Drifter wormholes. Fixed wanderings for Drifter wormholes. For system J011355 added static K346. For system J011824 added static K346. (#329)
+
 ## [v1.59.10](https://github.com/wanderer-industries/wanderer/compare/v1.59.9...v1.59.10) (2025-04-15)
 
 
