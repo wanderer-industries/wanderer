@@ -10,7 +10,7 @@ import { renderName } from './renderName.tsx';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
 
-export const renderInfoColumn = (row: SystemSignature) => {
+export const renderInfoColumn = (row: SystemSignature, showTempName: boolean) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
     const customInfo = parseSignatureCustomInfo(row.custom_info);
 
@@ -54,6 +54,13 @@ export const renderInfoColumn = (row: SystemSignature) => {
             </span>
           </>
         )}
+
+        {row.temp_name && showTempName && (
+          <span className="select-none text-gray-400" title={row.temp_name}>
+            {row.temp_name}
+          </span>
+        )}
+
         {row.description && (
           <WdTooltipWrapper content={row.description}>
             <span className={clsx(PrimeIcons.EXCLAMATION_CIRCLE, 'text-[12px]')}></span>

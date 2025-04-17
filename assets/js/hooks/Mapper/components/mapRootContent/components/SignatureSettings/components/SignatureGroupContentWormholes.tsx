@@ -4,10 +4,13 @@ import { SignatureWormholeTypeSelect } from '@/hooks/Mapper/components/mapRootCo
 import { SignatureK162TypeSelect } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
 import { SignatureLeadsToSelect } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureLeadsToSelect';
 import { SignatureEOLCheckbox } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureEOLCheckbox';
+import { SignatureTempNameInput } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureTempNameInput';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api/useMapGetOption';
 
 export const SignatureGroupContentWormholes = () => {
   const { watch } = useFormContext<SystemSignature>();
   const type = watch('type');
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
 
   return (
     <>
@@ -32,6 +35,13 @@ export const SignatureGroupContentWormholes = () => {
         <span>EOL:</span>
         <SignatureEOLCheckbox name="isEOL" />
       </label>
+
+      {isTempSystemNameEnabled && (
+        <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center text-[14px]">
+          <span>Temporary Name:</span>
+          <SignatureTempNameInput name={'temp_name'} />
+        </label>
+      )}
     </>
   );
 };

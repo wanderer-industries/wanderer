@@ -137,7 +137,8 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
           group: group,
           type: Map.get(signature, "type"),
           custom_info: Map.get(signature, "custom_info"),
-          character_eve_id: character_eve_id
+          character_eve_id: character_eve_id,
+          temp_name: Map.get(signature, "temp_name")
         }
       end)
 end
