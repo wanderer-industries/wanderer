@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.60.0](https://github.com/wanderer-industries/wanderer/compare/v1.59.11...v1.60.0) (2025-04-17)
+
+
+
+
+### Features:
+
+* api: api showing character by user and main character (#334)
+
+* Core: force map page reload after 30 mins of user inactivity (switched browser/tab)
+
+* update character activity to use main character (#333)
+
 ## [v1.59.11](https://github.com/wanderer-industries/wanderer/compare/v1.59.10...v1.59.11) (2025-04-16)
 
 
