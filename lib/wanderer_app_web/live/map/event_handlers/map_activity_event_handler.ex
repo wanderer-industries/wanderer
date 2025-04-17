@@ -74,12 +74,12 @@ defmodule WandererAppWeb.MapActivityEventHandler do
             }
           end)
 
-        {:activity_data, summarized_result}
+        {:character_activity_data, summarized_result}
       rescue
         e ->
           Logger.error("Error processing character activity: #{inspect(e)}")
           Logger.error("#{Exception.format_stacktrace()}")
-          {:activity_data, []}
+          {:character_activity_data, []}
       end
     end)
 

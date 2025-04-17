@@ -31,41 +31,49 @@ export const CharacterActivityContent = () => {
   }
 
   return (
-    <DataTable
-      value={activity}
-      scrollable
-      className="w-full"
-      tableClassName="w-full border-0"
-      emptyMessage="No character activity data available"
-      sortField="passages"
-      sortOrder={-1}
-      size="small"
-      rowClassName={getRowClassName}
-      rowHover
-    >
-      <Column field="character_name" header="Character" body={renderCharacterTemplate} sortable className="!py-[6px]" />
+    <div className="w-full h-full overflow-auto custom-scrollbar">
+      <DataTable
+        value={activity}
+        scrollable
+        className="w-full"
+        tableClassName="w-full border-0"
+        emptyMessage="No character activity data available"
+        sortField="passages"
+        sortOrder={-1}
+        size="small"
+        rowClassName={getRowClassName}
+        rowHover
+      >
+        <Column
+          field="character_name"
+          header="Character"
+          body={renderCharacterTemplate}
+          sortable
+          className="!py-[6px]"
+        />
 
-      <Column
-        field="passages"
-        header="Passages"
-        headerClassName="[&_.p-column-header-content]:justify-center"
-        body={rowData => renderValueTemplate(rowData, 'passages')}
-        sortable
-      />
-      <Column
-        field="connections"
-        header="Connections"
-        headerClassName="[&_.p-column-header-content]:justify-center"
-        body={rowData => renderValueTemplate(rowData, 'connections')}
-        sortable
-      />
-      <Column
-        field="signatures"
-        header="Signatures"
-        headerClassName="[&_.p-column-header-content]:justify-center"
-        body={rowData => renderValueTemplate(rowData, 'signatures')}
-        sortable
-      />
-    </DataTable>
+        <Column
+          field="passages"
+          header="Passages"
+          headerClassName="[&_.p-column-header-content]:justify-center"
+          body={rowData => renderValueTemplate(rowData, 'passages')}
+          sortable
+        />
+        <Column
+          field="connections"
+          header="Connections"
+          headerClassName="[&_.p-column-header-content]:justify-center"
+          body={rowData => renderValueTemplate(rowData, 'connections')}
+          sortable
+        />
+        <Column
+          field="signatures"
+          header="Signatures"
+          headerClassName="[&_.p-column-header-content]:justify-center"
+          body={rowData => renderValueTemplate(rowData, 'signatures')}
+          sortable
+        />
+      </DataTable>
+    </div>
   );
 };

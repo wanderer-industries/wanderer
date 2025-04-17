@@ -35,14 +35,15 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             current_user: current_user,
+            tracked_characters: tracked_characters,
             map_id: map_id,
             map_user_settings: map_user_settings
           }
         } = socket
       ) do
     character =
-      current_user.characters
-      |> Enum.find(& &1.id)
+      tracked_characters
+      |> Enum.find(fn tracked_character -> tracked_character.id == character_id end)
 
     is_user_character =
       not is_nil(character)

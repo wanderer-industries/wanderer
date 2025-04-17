@@ -175,10 +175,6 @@ defmodule WandererApp.Zkb.KillsPreloader do
         reduce_task_result(pass_type, task_result, acc_state, acc_map)
       end)
 
-    if map_size(kills_map) > 0 do
-      broadcast_all_kills(kills_map, pass_type)
-    end
-
     final_state
   end
 
@@ -275,22 +271,6 @@ defmodule WandererApp.Zkb.KillsPreloader do
 
   defp log_failed_task(:expanded, reason),
     do: Logger.error("[KillsPreloader] Expanded fetch task failed => #{inspect(reason)}")
-
-  defp broadcast_all_kills(kills_map, pass_type) do
-    Logger.info(
-      "[KillsPreloader] Broadcasting kills => #{map_size(kills_map)} systems (#{pass_type})"
-    )
-
-    Phoenix.PubSub.broadcast!(
-      WandererApp.PubSub,
-      "zkb_preload",
-      %{
-        event: :detailed_kills_updated,
-        payload: kills_map,
-        fetch_type: pass_type
-      }
-    )
-  end
 
   defp merge_calls_count(%{calls_count: c1} = st1, %{calls_count: c2}),
     do: %{st1 | calls_count: c1 + c2}

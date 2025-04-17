@@ -5,35 +5,6 @@ defmodule WandererApp.Character.Activity do
   require Logger
 
   @doc """
-  Finds a followed character ID from a list of character settings and activities.
-
-  ## Parameters
-  - `character_settings`: List of character settings with `followed` and `character_id` fields
-  - `activities_by_character`: Map of activities grouped by character_id
-  - `is_current_user`: Boolean indicating if this is for the current user
-
-  ## Returns
-  - Character ID of the followed character if found, nil otherwise
-  """
-  def find_followed_character(character_settings, activities_by_character, is_current_user) do
-    if is_current_user do
-      followed_chars =
-        character_settings
-        |> Enum.filter(& &1.followed)
-        |> Enum.map(& &1.character_id)
-
-      # Find if any of user's characters is followed
-      user_char_ids = Map.keys(activities_by_character)
-
-      Enum.find(followed_chars, fn followed_id ->
-        followed_id in user_char_ids
-      end)
-    else
-      nil
-    end
-  end
-
-  @doc """
   Finds the character with the most activity from a map of activities grouped by character_id.
 
   ## Parameters
@@ -71,20 +42,39 @@ defmodule WandererApp.Character.Activity do
 
   ## Parameters
   - `map_id`: ID of the map
-  - `current_user`: Current user struct
+  - `current_user`: Current user struct (used only to get user settings)
 
   ## Returns
   - List of processed activity data
   """
   def process_character_activity(map_id, current_user) do
-    with {:ok, character_settings} <- get_map_character_settings(map_id),
+    with {:ok, map_user_settings} <- get_map_user_settings(map_id, current_user.id),
          raw_activity <- WandererApp.Map.get_character_activity(map_id),
-         {:ok, user_characters} <-
-           WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
-      process_activity_data(raw_activity, character_settings, user_characters, current_user)
+         {:ok, user_characters} <- WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
+
+      result = process_activity_data(raw_activity, map_user_settings, user_characters)
+      result
     end
   end
 
+  def get_map_user_settings(map_id, user_id) do
+    case WandererApp.MapUserSettingsRepo.get(map_id, user_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        {:ok, settings}
+      _ ->
+        {:ok, %{main_character_eve_id: nil}}
+    end
+  end
+
+  @doc """
+  Gets character settings for a map.
+
+  ## Parameters
+  - `map_id`: ID of the map
+
+  ## Returns
+  - `{:ok, settings}` with list of settings or empty list
+  """
   def get_map_character_settings(map_id) do
     case WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id) do
       {:ok, settings} -> {:ok, settings}
@@ -92,74 +82,60 @@ defmodule WandererApp.Character.Activity do
     end
   end
 
-  defp process_activity_data([], _character_settings, _user_characters, _current_user), do: []
+  # Handle empty activity list
+  defp process_activity_data([], _map_user_settings, _all_characters), do: []
 
-  # Simplify the pre-processed data handling - just pass it through
-  defp process_activity_data([%{character: _} | _] = activity_data, _, _, _), do: activity_data
+  # Process activity data
+  defp process_activity_data(all_activity, map_user_settings, all_characters) do
+    # Group activities by user ID
+    activities_by_user = Enum.group_by(all_activity, &Map.get(&1, :user_id, "unknown"))
 
-  defp process_activity_data(all_activity, character_settings, user_characters, current_user) do
-    all_activity
-    |> group_by_user_id()
-    |> process_users_activity(character_settings, user_characters, current_user)
+    # Process each user's activities
+    activities_by_user
+    |> Enum.flat_map(fn {user_id, user_activities} ->
+      process_user_activity(user_id, user_activities, map_user_settings, all_characters)
+    end)
     |> sort_by_timestamp()
   end
 
-  defp group_by_user_id(activities) do
-    Enum.group_by(activities, &Map.get(&1, :user_id, "unknown"))
-  end
-
-  defp process_users_activity(
-         activity_by_user_id,
-         character_settings,
-         user_characters,
-         current_user
-       ) do
-    Enum.flat_map(activity_by_user_id, fn {user_id, user_activities} ->
-      process_single_user_activity(
-        user_id,
-        user_activities,
-        character_settings,
-        user_characters,
-        current_user
-      )
-    end)
-  end
-
-  defp process_single_user_activity(
-         user_id,
-         user_activities,
-         character_settings,
-         user_characters,
-         current_user
-       ) do
-    # Determine if this is the current user's activity
-    is_current_user = user_id == current_user.id
-
+  defp process_user_activity(user_id, user_activities, %{user_id: user_id, main_character_eve_id: main_id} = _map_user_settings, all_characters)
+       when not is_nil(main_id) do
     # Group activities by character
     activities_by_character = group_activities_by_character(user_activities)
 
-    # Find the character to show (followed or most active)
-    char_id_to_show =
-      select_character_to_show(activities_by_character, character_settings, is_current_user)
+    main_id_str = to_string(main_id)
 
-    # Create activity entry for the selected character
-    case char_id_to_show do
-      nil ->
-        []
-
-      id ->
-        create_character_activity_entry(
-          id,
-          activities_by_character,
-          user_characters,
-          is_current_user
-        )
+    display_character = case Enum.find(all_characters, &(to_string(&1.eve_id) == main_id_str)) do
+      nil -> find_most_active_character_details(activities_by_character) # Fall back to most active
+      main_char -> main_char
     end
+
+    build_activity_entry_if_valid(display_character, activities_by_character, user_id)
   end
 
+  defp process_user_activity(user_id, user_activities, _map_user_settings, _all_characters) do
+    # Group activities by character
+    activities_by_character = group_activities_by_character(user_activities)
+
+    # Find the most active character
+    display_character = find_most_active_character_details(activities_by_character)
+
+    build_activity_entry_if_valid(display_character, activities_by_character, user_id)
+  end
+
+  # Helper function to build activity entry only if display character is valid
+  defp build_activity_entry_if_valid(nil, _activities_by_character, user_id) do
+    Logger.warning("No suitable character found for user #{user_id}")
+    []
+  end
+
+  defp build_activity_entry_if_valid(display_character, activities_by_character, _user_id) do
+    build_activity_entry(display_character, activities_by_character)
+  end
+
+  # Group activities by character ID
   defp group_activities_by_character(activities) do
     Enum.group_by(activities, fn activity ->
-      # Character info is now in a nested 'character' field
       cond do
         character = Map.get(activity, :character) -> Map.get(character, :id)
         id = Map.get(activity, :character_id) -> id
@@ -169,57 +145,54 @@ defmodule WandererApp.Character.Activity do
     end)
   end
 
-  defp select_character_to_show(activities_by_character, character_settings, is_current_user) do
-    followed_char_id =
-      find_followed_character(character_settings, activities_by_character, is_current_user)
-
-    followed_char_id || find_most_active_character(activities_by_character)
-  end
-
-  defp create_character_activity_entry(
-         char_id,
-         activities_by_character,
-         user_characters,
-         is_current_user
-       ) do
-    char_activities = Map.get(activities_by_character, char_id, [])
-
-    case get_character_details(char_id, char_activities, user_characters, is_current_user) do
-      nil -> []
-      char_details -> [build_activity_entry(char_details, char_activities)]
+  # Find the details of the most active character
+  defp find_most_active_character_details(activities_by_character) do
+    with most_active_id when not is_nil(most_active_id) <- find_most_active_character(activities_by_character),
+         most_active_activities <- Map.get(activities_by_character, most_active_id, []),
+         [first_activity | _] <- most_active_activities,
+         character when not is_nil(character) <- Map.get(first_activity, :character) do
+      character
+    else
+      _ ->
+        Logger.warning("Could not find most active character")
+        nil
     end
   end
 
-  defp get_character_details(_char_id, [activity | _], _user_characters, false) do
-    # Return the raw character data without mapping
-    Map.get(activity, :character)
+  # Build activity entry with the provided character and sum all activities
+  defp build_activity_entry(character, activities_by_character) do
+    # Sum up all activities
+    all_passages = sum_all_activities(activities_by_character, :passages)
+    all_connections = sum_all_activities(activities_by_character, :connections)
+    all_signatures = sum_all_activities(activities_by_character, :signatures)
+
+    # Only create entry if there's at least some activity
+    if all_passages + all_connections + all_signatures > 0 do
+      [%{
+        character: character,
+        passages: all_passages,
+        connections: all_connections,
+        signatures: all_signatures,
+        timestamp: get_latest_timestamp(activities_by_character)
+      }]
+    else
+      Logger.warning("Character has no activity, not creating entry")
+      []
+    end
   end
 
-  defp get_character_details(char_id, _char_activities, user_characters, true) do
-    # Find the character in user_characters and return it without mapping
-    Enum.find(user_characters, fn char ->
-      char.id == char_id || to_string(char.eve_id) == char_id
-    end)
+  # Sum up activities of a specific type across all characters
+  defp sum_all_activities(activities_by_character, key) do
+    activities_by_character
+    |> Enum.flat_map(fn {_, char_activities} -> char_activities end)
+    |> Enum.map(&Map.get(&1, key, 0))
+    |> Enum.sum()
   end
 
-  defp build_activity_entry(
-         char_details,
-         char_activities
-       ) do
-    %{
-      character: char_details,
-      passages: sum_activity(char_activities, :passages),
-      connections: sum_activity(char_activities, :connections),
-      signatures: sum_activity(char_activities, :signatures),
-      timestamp: get_most_recent_timestamp(char_activities)
-    }
-  end
-
-  defp sum_activity(activities, key),
-    do: activities |> Enum.map(&Map.get(&1, key, 0)) |> Enum.sum()
-
-  defp get_most_recent_timestamp(activities) do
-    activities
+  # Get the most recent timestamp across all characters
+  defp get_latest_timestamp(activities_by_character) do
+    activities_by_character
+    |> Enum.flat_map(fn {_, char_activities} -> char_activities end)
     |> Enum.map(&Map.get(&1, :timestamp, DateTime.utc_now()))
     |> Enum.sort_by(& &1, {:desc, DateTime})
     |> List.first() || DateTime.utc_now()

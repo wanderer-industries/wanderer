@@ -335,12 +335,20 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           only_tracked_characters
         )
 
-      {:ok, main_character} =
+
+      {main_character_id, main_character_eve_id} =
         WandererApp.Character.TrackingUtils.get_main_character(
           map_user_settings,
           current_user_characters,
           available_map_characters
         )
+        |> case do
+          {:ok, main_character} when not is_nil(main_character) ->
+            {main_character.id, main_character.eve_id}
+
+          _ ->
+            {nil, nil}
+        end
 
       following_character_eve_id = case map_user_settings do
         nil -> nil
@@ -351,8 +359,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
        %{
          user_permissions: user_permissions,
          map_user_settings: map_user_settings,
-         main_character_id: main_character.id,
-         main_character_eve_id: main_character.eve_id,
+         main_character_id: main_character_id,
+         main_character_eve_id: main_character_eve_id,
          following_character_eve_id: following_character_eve_id,
          tracked_characters: tracked_data.tracked_characters,
          all_character_tracked?: tracked_data.all_tracked?,
