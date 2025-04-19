@@ -88,6 +88,7 @@ export const SignatureWormholeTypeSelect = ({ name, defaultValue = '' }: Signatu
   const system = useSystemInfo({ systemId });
 
   const possibleWormholesOptions = useMemo(() => {
+    // debugger;
     const possibleWormholes = getPossibleWormholes(system.staticInfo, wormholes);
 
     return [

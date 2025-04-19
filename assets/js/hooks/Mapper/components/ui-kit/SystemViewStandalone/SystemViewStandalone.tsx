@@ -4,7 +4,12 @@ import classes from './SystemViewStandalone.module.scss';
 import clsx from 'clsx';
 import { WithClassName } from '@/hooks/Mapper/types/common.ts';
 import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
-import { HTMLProps, MouseEvent, useCallback } from 'react';
+import { HTMLProps, MouseEvent, useCallback, useMemo } from 'react';
+import {
+  SOLAR_SYSTEM_CLASS_GROUPS,
+  SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
+  WORMHOLES_ADDITIONAL_INFO_BY_CLASS_ID,
+} from '@/hooks/Mapper/components/map/constants.ts';
 
 export type SystemViewStandaloneStatic = Pick<
   SolarSystemStaticInfoRaw,
@@ -37,8 +42,20 @@ export const SystemViewStandalone = ({
   ...props
 }: SystemViewStandaloneProps) => {
   const classTitleColor = getSystemClassStyles({ systemClass: system_class, security });
-
   const isWH = isWormholeSpace(system_class);
+  1;
+
+  const systemPreparedName = useMemo(() => {
+    const { id: whType, shortTitle } = WORMHOLES_ADDITIONAL_INFO_BY_CLASS_ID[system_class];
+
+    // @ts-ignore
+    const spawnClassGroup = SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS[whType];
+    if (spawnClassGroup === SOLAR_SYSTEM_CLASS_GROUPS.drifter) {
+      return shortTitle;
+    }
+
+    return solar_system_name;
+  }, [system_class, solar_system_name]);
 
   const handleClick = useCallback(
     (e: MouseEvent) => {
@@ -62,7 +79,7 @@ export const SystemViewStandalone = ({
           [classes.CompactName]: compact,
         })}
       >
-        {customName ?? solar_system_name}
+        {customName ?? systemPreparedName}
       </span>
       {!hideRegion && !isWH && <span className="whitespace-nowrap">{region_name}</span>}
     </div>
