@@ -59,6 +59,10 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
     data: { systemSignatures: mapSystemSignatures },
   } = useMapRootState();
 
+  const systemStaticInfo = useMemo(() => {
+    return getSystemStaticInfo(solar_system_id)!;
+  }, [solar_system_id]);
+
   const {
     system_class,
     security,
@@ -69,9 +73,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
     region_id,
     is_shattered,
     solar_system_name,
-  } = useMemo(() => {
-    return getSystemStaticInfo(parseInt(solar_system_id))!;
-  }, [solar_system_id]);
+  } = systemStaticInfo;
 
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
@@ -130,7 +132,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   const dbClick = useDoubleClick(() => {
     outCommand({
       type: OutCommand.openSettings,
-      data: { system_id: solar_system_id.toString() },
+      data: { system_id: solar_system_id },
     });
   });
 
@@ -142,10 +144,10 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   const { systemName, computedTemporaryName, customName } = useSystemName({
     isTempSystemNameEnabled,
     temporary_name,
-    solar_system_name: solar_system_name || '',
     isShowLinkedSigIdTempName,
     linkedSigPrefix,
     name,
+    systemStaticInfo,
   });
 
   const { unsplashedLeft, unsplashedRight } = useUnsplashedSignatures(systemSigs, isShowUnsplashedSignatures);

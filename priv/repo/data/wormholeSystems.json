@@ -2664,7 +2664,7 @@
 		"statics": [
 			"D382"
 		],
-		"systemName": "J174618",
+		"systemName": "Redoubt",
 		"effectName": "Wolf-Rayet Star"
 	},
 	{
@@ -5713,7 +5713,7 @@
 		"statics": [
 			"D382"
 		],
-		"systemName": "J200727",
+		"systemName": "Conflux",
 		"effectName": "Pulsar"
 	},
 	{
@@ -8625,7 +8625,7 @@
 		"statics": [
 			"D382"
 		],
-		"systemName": "J110145",
+		"systemName": "Barbican",
 		"effectName": "Cataclysmic Variable"
 	},
 	{
@@ -33264,7 +33264,7 @@
 		"statics": [
 			"D382"
 		],
-		"systemName": "J164710",
+		"systemName": "Vidette",
 		"effectName": "Magnetar"
 	},
 	{
@@ -35836,7 +35836,7 @@
 		"statics": [
 			"D382"
 		],
-		"systemName": "J055520",
+		"systemName": "Sentinel",
 		"effectName": "Red Giant"
 	},
 	{

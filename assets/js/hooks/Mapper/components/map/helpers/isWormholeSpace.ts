@@ -10,7 +10,7 @@ export const isWormholeSpace = (wormholeClassID: number) => {
     case SOLAR_SYSTEM_CLASS_IDS.c6:
     case SOLAR_SYSTEM_CLASS_IDS.c13:
     case SOLAR_SYSTEM_CLASS_IDS.thera:
-    case SOLAR_SYSTEM_CLASS_IDS.baribican:
+    case SOLAR_SYSTEM_CLASS_IDS.barbican:
     case SOLAR_SYSTEM_CLASS_IDS.vidette:
     case SOLAR_SYSTEM_CLASS_IDS.conflux:
     case SOLAR_SYSTEM_CLASS_IDS.redoubt:
