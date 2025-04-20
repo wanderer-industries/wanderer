@@ -217,7 +217,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 14,
     effectPower: 2,
     title: 'Class 14 (Sentinel Drifter)',
-    shortTitle: 'Sentinel',
+    shortTitle: 'Sentinel MZ',
   },
   {
     id: 'barbican',
@@ -225,7 +225,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 15,
     effectPower: 2,
     title: 'Class 15 (Barbican Drifter)',
-    shortTitle: 'Barbican',
+    shortTitle: 'Liberated Barbican',
   },
   {
     id: 'vidette',
@@ -233,7 +233,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 16,
     effectPower: 2,
     title: 'Class 16 (Vidette Drifter)',
-    shortTitle: 'Vidette',
+    shortTitle: 'Sanctified Vidette',
   },
   {
     id: 'conflux',
@@ -241,7 +241,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 17,
     effectPower: 2,
     title: 'Class 17 (Conflux Drifter)',
-    shortTitle: 'Conflux',
+    shortTitle: 'Conflux Eyrie',
   },
   {
     id: 'redoubt',
@@ -249,7 +249,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 18,
     effectPower: 2,
     title: 'Class 18 (Redoubt Drifter)',
-    shortTitle: 'Redoubt',
+    shortTitle: 'Azdaja Redoubt',
   },
   {
     id: 'a1',

@@ -110,7 +110,7 @@
     "wormholeClassID": 14,
     "effectPower": 2,
     "title": "Class 14 (Sentinel Drifter)",
-    "shortTitle": "Sentinel"
+    "shortTitle": "Sentinel MZ"
   },
   {
     "id": "barbican",
@@ -118,7 +118,7 @@
     "wormholeClassID": 15,
     "effectPower": 2,
     "title": "Class 15 (Barbican Drifter)",
-    "shortTitle": "Barbican"
+    "shortTitle": "Lib. Barbican"
   },
   {
     "id": "vidette",
@@ -126,7 +126,7 @@
     "wormholeClassID": 16,
     "effectPower": 2,
     "title": "Class 16 (Vidette Drifter)",
-    "shortTitle": "Vidette"
+    "shortTitle": "Sanct. Vidette"
   },
   {
     "id": "conflux",
@@ -134,7 +134,7 @@
     "wormholeClassID": 17,
     "effectPower": 2,
     "title": "Class 17 (Conflux Drifter)",
-    "shortTitle": "Conflux"
+    "shortTitle": "Conflux Eyrie"
   },
   {
     "id": "redoubt",
@@ -142,7 +142,7 @@
     "wormholeClassID": 18,
     "effectPower": 2,
     "title": "Class 18 (Redoubt Drifter)",
-    "shortTitle": "Redoubt"
+    "shortTitle": "Azdaja Redoubt"
   },
   {
     "id": "a1",
