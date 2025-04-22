@@ -335,7 +335,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           only_tracked_characters
         )
 
-
       {main_character_id, main_character_eve_id} =
         WandererApp.Character.TrackingUtils.get_main_character(
           map_user_settings,
@@ -350,10 +349,11 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             {nil, nil}
         end
 
-      following_character_eve_id = case map_user_settings do
-        nil -> nil
-        %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
-      end
+      following_character_eve_id =
+        case map_user_settings do
+          nil -> nil
+          %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
+        end
 
       {:ok,
        %{
@@ -473,8 +473,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             |> WandererApp.Character.get_character_eve_ids!(),
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
           system_static_infos: nil,
-          wormhole_types: nil,
+          wormholes: nil,
           effects: nil,
+          classes: nil,
           reset: false
         }
 
@@ -553,6 +554,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           user_permissions: user_permissions,
           characters: map_characters,
           options: options,
+          classes: WandererApp.CachedInfo.get_wormhole_classes!(),
           wormholes: WandererApp.CachedInfo.get_wormhole_types!(),
           effects: WandererApp.CachedInfo.get_effects!(),
           reset: true

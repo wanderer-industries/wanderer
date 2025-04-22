@@ -91,6 +91,7 @@ defmodule WandererApp.EveDataService do
       %{
         id: row["id"],
         short_name: row["shortName"],
+        short_title: row["shortTitle"],
         title: row["title"],
         effect_power: row |> Map.get("effectPower", 0),
         wormhole_class_id: row["wormholeClassID"]
@@ -228,6 +229,7 @@ defmodule WandererApp.EveDataService do
         solar_system_id = row["solarSystemID"] |> Integer.parse() |> elem(0)
         region_id = row["regionID"] |> Integer.parse() |> elem(0)
         constellation_id = row["constellationID"] |> Integer.parse() |> elem(0)
+        solar_system_name = row["solarSystemName"]
 
         {:ok, wormhole_class_id} =
           get_wormhole_class_id(
@@ -254,6 +256,14 @@ defmodule WandererApp.EveDataService do
             wormhole_class
           )
 
+        {:ok, solar_system_name} =
+          get_system_name(
+            wormhole_classes_info,
+            wormhole_class_id,
+            solar_system_name,
+            wormhole_class
+          )
+
         is_shattered =
           case Map.get(shattered_constellations, constellation_id |> Integer.to_string()) do
             nil -> false
@@ -269,8 +279,8 @@ defmodule WandererApp.EveDataService do
           constellation_id: constellation_id,
           region_id: region_id,
           solar_system_id: solar_system_id,
-          solar_system_name: row["solarSystemName"],
-          solar_system_name_lc: row["solarSystemName"] |> String.downcase(),
+          solar_system_name: solar_system_name,
+          solar_system_name_lc: solar_system_name |> String.downcase(),
           sun_type_id: get_sun_type_id(row["sunTypeID"]),
           constellation_name: constellation_name,
           region_name: region_name,
@@ -356,6 +366,9 @@ defmodule WandererApp.EveDataService do
     end
   end
 
+  defp get_solar_system_name(solar_system_name, wormhole_class) do
+  end
+
   defp get_triglavian_data(default_data, triglavian_systems, solar_system_id) do
     case Enum.find(triglavian_systems, fn system -> system.solar_system_id == solar_system_id end) do
       nil ->
@@ -391,6 +404,27 @@ defmodule WandererApp.EveDataService do
       floor_value
     else
       Float.ceil(truncated_value, 1)
+    end
+  end
+
+  defp get_system_name(
+         wormhole_classes_info,
+         wormhole_class_id,
+         solar_system_name,
+         wormhole_class
+       ) do
+    case wormhole_class_id in [
+           wormhole_classes_info.names["sentinel"],
+           wormhole_classes_info.names["barbican"],
+           wormhole_classes_info.names["vidette"],
+           wormhole_classes_info.names["conflux"],
+           wormhole_classes_info.names["redoubt"]
+         ] do
+      true ->
+        {:ok, wormhole_class.short_title}
+
+      _ ->
+        {:ok, solar_system_name}
     end
   end
 

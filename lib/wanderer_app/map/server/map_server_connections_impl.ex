@@ -20,7 +20,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @thera 12
   @c13 13
   @sentinel 14
-  @baribican 15
+  @barbican 15
   @vidette 16
   @conflux 17
   @redoubt 18
@@ -45,7 +45,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     @c13,
     @thera,
     @sentinel,
-    @baribican,
+    @barbican,
     @vidette,
     @conflux,
     @redoubt
