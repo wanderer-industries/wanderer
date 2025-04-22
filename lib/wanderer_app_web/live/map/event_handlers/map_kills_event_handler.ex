@@ -45,12 +45,20 @@ defmodule WandererAppWeb.MapKillsEventHandler do
     )
   end
 
-  def handle_server_event(%{event: :detailed_kills_updated, payload: payload}, socket) do
-    socket
-    |> MapEventHandler.push_map_event(
-      "detailed_kills_updated",
-      payload
-    )
+  def handle_server_event(%{event: :detailed_kills_updated, payload: payload}, %{
+      assigns: %{
+        map_id: map_id
+      }
+    } = socket) do
+    case WandererApp.Map.is_subscription_active?(map_id) do
+      {:ok, true} ->
+        socket
+        |> MapEventHandler.push_map_event(
+          "detailed_kills_updated",
+          payload
+        )
+      _ -> socket
+    end
   end
 
   def handle_server_event(

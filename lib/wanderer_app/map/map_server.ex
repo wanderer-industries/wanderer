@@ -32,6 +32,7 @@ defmodule WandererApp.Map.Server do
         map_id
 
       nil ->
+        WandererApp.Cache.insert("map_#{map_id}:started", false)
         throw("Map server not started")
     end
   end
@@ -263,9 +264,6 @@ defmodule WandererApp.Map.Server do
   def handle_continue(:start_map, state), do: {:noreply, state |> Impl.start_map()}
 
   @impl true
-  def handle_call(:stop, _from, state), do: {:stop, :normal, :ok, state |> Impl.stop_map()}
-
-  @impl true
   def handle_call(
         {impl_function, args},
         _from,
@@ -273,6 +271,9 @@ defmodule WandererApp.Map.Server do
       )
       when is_function(impl_function),
       do: WandererApp.GenImpl.apply_call(impl_function, state, args)
+
+  @impl true
+  def handle_cast(:stop, state), do: {:stop, :normal, state |> Impl.stop_map()}
 
   @impl true
   def handle_cast({impl_function, args}, state)

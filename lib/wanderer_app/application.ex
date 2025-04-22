@@ -34,18 +34,18 @@ defmodule WandererApp.Application do
         Supervisor.child_spec({Cachex, name: :character_cache},           id: :character_cache_worker),
         Supervisor.child_spec({Cachex, name: :map_cache},                 id: :map_cache_worker),
         Supervisor.child_spec({Cachex, name: :character_state_cache},     id: :character_state_cache_worker),
-
+        Supervisor.child_spec({Cachex, name: :tracked_characters},
+          id: :tracked_characters_cache_worker
+        ),
         WandererApp.Scheduler,
-
         {Registry, keys: :unique, name: WandererApp.MapRegistry},
         {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
-
         {PartitionSupervisor, child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
         {PartitionSupervisor, child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
-
         WandererApp.Zkb.Supervisor,
         WandererApp.Server.ServerStatusTracker,
         WandererApp.Server.TheraDataFetcher,
+        {WandererApp.Character.TrackerPoolSupervisor, []},
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
         WandererApp.Map.ZkbDataFetcher,

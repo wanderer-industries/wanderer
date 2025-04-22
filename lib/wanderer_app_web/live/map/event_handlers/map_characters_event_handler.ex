@@ -240,12 +240,19 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         {:ok, tracking_data} =
           WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
-        {:ok, main_character_id} =
+        {main_character_id, main_character_eve_id} =
           WandererApp.Character.TrackingUtils.get_main_character(
             map_user_settings,
             current_user_characters,
             current_user_characters
           )
+          |> case do
+            {:ok, main_character} when not is_nil(main_character) ->
+              {main_character.id, main_character.eve_id}
+
+            _ ->
+              {nil, nil}
+          end
 
         Process.send_after(self(), %{event: :refresh_user_characters}, 50)
 
@@ -254,7 +261,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         |> assign(
           map_user_settings: map_user_settings,
           main_character_id: main_character_id,
-          main_character_eve_id: character_eve_id
+          main_character_eve_id: main_character_eve_id
         )}
   end
 

@@ -2652,12 +2652,19 @@
 		"effectName": null
 	},
 	{
-		"wanderers": [],
+		"wanderers": [
+      "R474",
+      "N062",
+      "D382",
+      "Y683",
+      "O477",
+      "Z647"
+    ],
 		"solarSystemID": 31000006,
 		"statics": [
 			"D382"
 		],
-		"systemName": "J174618",
+		"systemName": "Redoubt",
 		"effectName": "Wolf-Rayet Star"
 	},
 	{
@@ -5694,12 +5701,19 @@
 		"effectName": "Cataclysmic Variable"
 	},
 	{
-		"wanderers": [],
+		"wanderers": [
+      "R474",
+      "N062",
+      "D382",
+      "Y683",
+      "O477",
+      "Z647"
+    ],
 		"solarSystemID": 31000004,
 		"statics": [
 			"D382"
 		],
-		"systemName": "J200727",
+		"systemName": "Conflux",
 		"effectName": "Pulsar"
 	},
 	{
@@ -7907,7 +7921,8 @@
 		"solarSystemID": 31002553,
 		"statics": [
 			"C247",
-			"X877"
+			"X877",
+			"K346"
 		],
 		"systemName": "J011355",
 		"effectName": null
@@ -8598,12 +8613,19 @@
 		"effectName": null
 	},
 	{
-		"wanderers": [],
+		"wanderers": [
+      "R474",
+      "N062",
+      "D382",
+      "Y683",
+      "O477",
+      "Z647"
+    ],
 		"solarSystemID": 31000002,
 		"statics": [
 			"D382"
 		],
-		"systemName": "J110145",
+		"systemName": "Barbican",
 		"effectName": "Cataclysmic Variable"
 	},
 	{
@@ -33230,12 +33252,19 @@
 		"effectName": null
 	},
 	{
-		"wanderers": [],
+		"wanderers": [
+      "R474",
+      "N062",
+      "D382",
+      "Y683",
+      "O477",
+      "Z647"
+    ],
 		"solarSystemID": 31000003,
 		"statics": [
 			"D382"
 		],
-		"systemName": "J164710",
+		"systemName": "Vidette",
 		"effectName": "Magnetar"
 	},
 	{
@@ -34228,7 +34257,7 @@
 		"solarSystemID": 31002540,
 		"statics": [
 			"C247",
-			"U210",
+			"K346",
 			"X877"
 		],
 		"systemName": "J011824",
@@ -35795,12 +35824,19 @@
 		"effectName": null
 	},
 	{
-		"wanderers": [],
+		"wanderers": [
+      "R474",
+      "N062",
+      "D382",
+      "Y683",
+      "O477",
+      "Z647"
+    ],
 		"solarSystemID": 31000001,
 		"statics": [
 			"D382"
 		],
-		"systemName": "J055520",
+		"systemName": "Sentinel",
 		"effectName": "Red Giant"
 	},
 	{

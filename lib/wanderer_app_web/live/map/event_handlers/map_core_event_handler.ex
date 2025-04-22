@@ -335,24 +335,32 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           only_tracked_characters
         )
 
-      {:ok, main_character} =
+      {main_character_id, main_character_eve_id} =
         WandererApp.Character.TrackingUtils.get_main_character(
           map_user_settings,
           current_user_characters,
           available_map_characters
         )
+        |> case do
+          {:ok, main_character} when not is_nil(main_character) ->
+            {main_character.id, main_character.eve_id}
 
-      following_character_eve_id = case map_user_settings do
-        nil -> nil
-        %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
-      end
+          _ ->
+            {nil, nil}
+        end
+
+      following_character_eve_id =
+        case map_user_settings do
+          nil -> nil
+          %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
+        end
 
       {:ok,
        %{
          user_permissions: user_permissions,
          map_user_settings: map_user_settings,
-         main_character_id: main_character.id,
-         main_character_eve_id: main_character.eve_id,
+         main_character_id: main_character_id,
+         main_character_eve_id: main_character_eve_id,
          following_character_eve_id: following_character_eve_id,
          tracked_characters: tracked_data.tracked_characters,
          all_character_tracked?: tracked_data.all_tracked?,
@@ -465,8 +473,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             |> WandererApp.Character.get_character_eve_ids!(),
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
           system_static_infos: nil,
-          wormhole_types: nil,
+          wormholes: nil,
           effects: nil,
+          classes: nil,
           reset: false
         }
 
@@ -545,6 +554,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           user_permissions: user_permissions,
           characters: map_characters,
           options: options,
+          classes: WandererApp.CachedInfo.get_wormhole_classes!(),
           wormholes: WandererApp.CachedInfo.get_wormhole_types!(),
           effects: WandererApp.CachedInfo.get_effects!(),
           reset: true

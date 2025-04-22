@@ -233,6 +233,36 @@ defmodule WandererAppWeb.MapAPIController do
     required: ["data"]
   }
 
+  # For operation :user_characters
+  @user_character_schema %OpenApiSpex.Schema{
+    type: :object,
+    description: "Character group information with main character identification",
+    properties: %{
+      characters: %OpenApiSpex.Schema{
+        type: :array,
+        items: @character_schema,
+        description: "List of characters belonging to a user"
+      },
+      main_character_eve_id: %OpenApiSpex.Schema{
+        type: :string,
+        description: "EVE ID of the main character for this user on this map",
+        nullable: true
+      }
+    },
+    required: ["characters"]
+  }
+
+  @user_characters_response_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      data: %OpenApiSpex.Schema{
+        type: :array,
+        items: @user_character_schema
+      }
+    },
+    required: ["data"]
+  }
+
   # -----------------------------------------------------------------
   # MAP endpoints
   # -----------------------------------------------------------------
@@ -856,6 +886,140 @@ end
         |> json(%{error: "Could not fetch character activity: #{inspect(reason)}"})
     end
   end
+
+  @doc """
+  GET /api/map/user_characters
+
+  Returns characters grouped by user for a specific map,
+  indicating which one is set as the "main" character for each user.
+  Does not expose user IDs.
+
+  Requires either `?map_id=<UUID>` or `?slug=<map-slug>`.
+
+  Example:
+      GET /api/map/user_characters?map_id=<uuid>
+      GET /api/map/user_characters?slug=<map-slug>
+  """
+  @spec user_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :user_characters,
+    summary: "Get User Characters",
+    description: "Returns characters grouped by user for a specific map, indicating which one is set as the main character for each user. Does not expose user IDs. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: ""
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: "map-name"
+      ]
+    ],
+    responses: [
+      ok: {
+        "User characters with main character indication",
+        "application/json",
+        @user_characters_response_schema
+      },
+      bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          error: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["error"],
+        example: %{
+          "error" => "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        }
+      }}
+    ]
+  def user_characters(conn, params) do
+    with {:ok, map_id} <- Util.fetch_map_id(params) do
+      # Get all character settings for this map (tracked characters)
+      case MapCharacterSettingsRepo.get_all_by_map(map_id) do
+        {:ok, map_character_settings} when map_character_settings != [] ->
+          # Extract character IDs from settings
+          character_ids = Enum.map(map_character_settings, &(&1.character_id))
+
+          # Get all characters based on these IDs
+          characters_query =
+            WandererApp.Api.Character
+            |> Ash.Query.new()
+            |> Ash.Query.filter(id in ^character_ids)
+
+          case WandererApp.Api.read(characters_query) do
+            {:ok, characters} when characters != [] ->
+              # Group characters by user_id
+              characters_by_user =
+                characters
+                |> Enum.filter(fn char -> not is_nil(char.user_id) end)
+                |> Enum.group_by(&(&1.user_id))
+
+              # Get user settings for this map (for main character info)
+              settings_query =
+                WandererApp.Api.MapUserSettings
+                |> Ash.Query.new()
+                |> Ash.Query.filter(map_id == ^map_id)
+
+              # Create a map of user_id to main_character_eve_id
+              main_characters_by_user =
+                case WandererApp.Api.read(settings_query) do
+                  {:ok, map_user_settings} ->
+                    Map.new(map_user_settings, fn settings ->
+                      {settings.user_id, settings.main_character_eve_id}
+                    end)
+                  _ -> %{}
+                end
+
+              # Build the response grouped by user
+              character_groups =
+                Enum.map(characters_by_user, fn {user_id, user_characters} ->
+                  %{
+                    characters: Enum.map(user_characters, &character_to_json/1),
+                    main_character_eve_id: Map.get(main_characters_by_user, user_id)
+                  }
+                end)
+
+              json(conn, %{data: character_groups})
+
+            {:ok, []} ->
+              # No characters found for the IDs in settings
+              json(conn, %{data: []})
+
+            {:error, reason} ->
+              conn
+              |> put_status(:internal_server_error)
+              |> json(%{error: "Failed to fetch characters: #{inspect(reason)}"})
+          end
+
+        {:ok, []} ->
+          # No character settings for this map
+          json(conn, %{data: []})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: "Failed to fetch map character settings: #{inspect(reason)}"})
+      end
+    else
+      {:error, msg} when is_binary(msg) ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Could not fetch user characters: #{inspect(reason)}"})
+    end
+  end
+
+  defp map_is_empty?(map) when is_map(map), do: map == %{}
+  defp map_is_empty?(_), do: true
 
   # Parse days parameter, return nil if not provided to show all activity
   defp parse_days(nil), do: {:ok, nil}

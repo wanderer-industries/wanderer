@@ -261,6 +261,12 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
+  def handle_event({:acl_deleted, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
+    AclsImpl.handle_acl_updated(map_id, acl_id)
+
+    state
+  end
+
   def handle_event(:cleanup_connections, state) do
     Process.send_after(self(), :cleanup_connections, @connections_cleanup_timeout)
 
@@ -299,7 +305,7 @@ defmodule WandererApp.Map.Server.Impl do
     %{state | map_opts: map_options(options)}
   end
 
-  def handle_event({ref, _result}, %{map_id: _map_id} = state) do
+  def handle_event({ref, _result}, %{map_id: _map_id} = state) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
     state

@@ -20,7 +20,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @thera 12
   @c13 13
   @sentinel 14
-  @baribican 15
+  @barbican 15
   @vidette 16
   @conflux 17
   @redoubt 18
@@ -45,7 +45,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     @c13,
     @thera,
     @sentinel,
-    @baribican,
+    @barbican,
     @vidette,
     @conflux,
     @redoubt
@@ -377,12 +377,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         Impl.broadcast!(map_id, :add_connection, connection)
 
         {:ok, character} = WandererApp.Character.get_character(character_id)
-        {:ok, character_with_user} = character |> Ash.load(:user)
 
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
             character_id: character_id,
-            user_id: character_with_user.user_id,
+            user_id: character.user_id,
             map_id: map_id,
             solar_system_source_id: old_location.solar_system_id,
             solar_system_target_id: location.solar_system_id
