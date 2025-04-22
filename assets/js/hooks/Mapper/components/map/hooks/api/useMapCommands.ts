@@ -1,6 +1,6 @@
 import { MapData, useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
-import { useCallback, useRef } from 'react';
 import { CommandKillsUpdated, CommandMapUpdated } from '@/hooks/Mapper/types';
+import { useCallback, useRef } from 'react';
 
 export const useMapCommands = () => {
   const { update } = useMapState();
@@ -8,11 +8,15 @@ export const useMapCommands = () => {
   const ref = useRef({ update });
   ref.current = { update };
 
-  const mapUpdated = useCallback(({ hubs }: CommandMapUpdated) => {
+  const mapUpdated = useCallback(({ hubs, system_signatures }: CommandMapUpdated) => {
     const out: Partial<MapData> = {};
 
     if (hubs) {
       out.hubs = hubs;
+    }
+
+    if (system_signatures) {
+      out.systemSignatures = system_signatures;
     }
 
     ref.current.update(out);

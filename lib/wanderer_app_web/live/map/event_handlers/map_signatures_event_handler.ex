@@ -95,7 +95,12 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         acc |> Map.put(solar_system_id, signatures)
       end)
 
-    {:noreply, socket |> MapEventHandler.push_map_event("init", %{system_signatures: system_signatures})}
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event(
+       "map_updated",
+       %{system_signatures: system_signatures}
+     )}
   end
 
   def handle_ui_event(

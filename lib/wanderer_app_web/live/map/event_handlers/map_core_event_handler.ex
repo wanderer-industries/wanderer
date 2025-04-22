@@ -535,7 +535,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     map_data =
       map_id
-      |> get_map_data()
+      |> get_map_data(is_subscription_active)
 
     socket =
       socket
@@ -566,6 +566,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       })
 
     Process.send_after(self(), %{event: :init_kills}, 100)
+    Process.send_after(self(), %{event: :init_user_hubs}, 150)
 
     if needs_tracking_setup do
       Process.send_after(self(), %{event: :show_tracking}, 10)
@@ -576,10 +577,17 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
-  defp get_map_data(map_id) do
+  defp get_map_data(map_id, is_subscription_active) do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
+
+    {:ok, user_hubs} =
+      if is_subscription_active do
+        WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+      else
+        {:ok, []}
+      end
 
     system_static_infos =
       systems
@@ -592,6 +600,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       system_static_infos:
         system_static_infos |> Enum.map(&MapEventHandler.map_ui_system_static_info/1),
       hubs: hubs,
+      user_hubs: user_hubs,
       connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1)
     }
   end
