@@ -505,6 +505,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   defp map_start(
          %{
            assigns: %{
+             current_user: current_user,
              needs_tracking_setup: needs_tracking_setup,
              main_character_eve_id: main_character_eve_id,
              following_character_eve_id: following_character_eve_id
@@ -535,7 +536,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     map_data =
       map_id
-      |> get_map_data(is_subscription_active)
+      |> get_map_data(current_user.id, is_subscription_active)
 
     socket =
       socket
@@ -577,14 +578,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
-  defp get_map_data(map_id, is_subscription_active) do
+  defp get_map_data(map_id, current_user_id, is_subscription_active) do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
 
     {:ok, user_hubs} =
       if is_subscription_active do
-        WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+        WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user_id)
       else
         {:ok, []}
       end
