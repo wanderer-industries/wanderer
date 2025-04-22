@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.60.1](https://github.com/wanderer-industries/wanderer/compare/v1.60.0...v1.60.1) (2025-04-22)
+
+
+
+
+### Bug Fixes:
+
+* Map: Removed unnecessary code onFE part
+
+* Map: Removed unnecessary debugger
+
+* Map: Changed name for drifters systems. Fixed static info for Barbican.
+
 ## [v1.60.0](https://github.com/wanderer-industries/wanderer/compare/v1.59.11...v1.60.0) (2025-04-17)
 
 
