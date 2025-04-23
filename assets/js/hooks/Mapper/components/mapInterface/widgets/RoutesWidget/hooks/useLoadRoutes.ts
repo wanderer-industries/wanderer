@@ -17,12 +17,13 @@ function usePrevious<T>(value: T): T | undefined {
 }
 
 export const useLoadRoutes = () => {
+  // TODO ??
   const [loading, setLoading] = useState(false);
   const { data: routesSettings } = useRouteProvider();
 
   const {
     outCommand,
-    data: { selectedSystems, hubs, systems, connections },
+    data: { selectedSystems, hubs, systems, connections, routes },
   } = useMapRootState();
 
   const prevSys = usePrevious(systems);
@@ -38,9 +39,14 @@ export const useLoadRoutes = () => {
           routes_settings: routesSettings,
         },
       });
+      setLoading(true);
     },
     [outCommand],
   );
+
+  useEffect(() => {
+    setLoading(false);
+  }, [routes]);
 
   useEffect(() => {
     if (selectedSystems.length !== 1) {

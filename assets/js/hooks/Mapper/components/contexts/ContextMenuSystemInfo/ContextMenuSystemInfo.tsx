@@ -73,6 +73,11 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
         icon: PrimeIcons.MAP_MARKER,
         command: onHubToggle,
       },
+      {
+        label: !hubs.includes(systemId) ? 'Add in Routes' : 'Remove from Routes',
+        icon: PrimeIcons.MAP_MARKER,
+        command: onHubToggle,
+      },
       ...(!systemOnMap
         ? [
             {

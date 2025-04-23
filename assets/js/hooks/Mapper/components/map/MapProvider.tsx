@@ -38,6 +38,8 @@ const INITIAL_DATA: MapData = {
   systemSignatures: {} as Record<string, SystemSignature[]>,
   options: {} as Record<string, string | boolean>,
   isSubscriptionActive: false,
+  mainCharacterEveId: null,
+  followingCharacterEveId: null,
 };
 
 export interface MapContextProps {

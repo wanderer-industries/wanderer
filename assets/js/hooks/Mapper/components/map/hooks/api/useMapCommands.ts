@@ -8,7 +8,7 @@ export const useMapCommands = () => {
   const ref = useRef({ update });
   ref.current = { update };
 
-  const mapUpdated = useCallback(({ hubs, system_signatures }: CommandMapUpdated) => {
+  const mapUpdated = useCallback(({ hubs, system_signatures, kills }: CommandMapUpdated) => {
     const out: Partial<MapData> = {};
 
     if (hubs) {
@@ -17,6 +17,10 @@ export const useMapCommands = () => {
 
     if (system_signatures) {
       out.systemSignatures = system_signatures;
+    }
+
+    if (kills) {
+      out.kills = kills.reduce((acc, x) => ({ ...acc, [x.solar_system_id]: x.kills }), {});
     }
 
     ref.current.update(out);
