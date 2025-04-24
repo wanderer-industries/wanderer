@@ -1,0 +1,96 @@
+defmodule WandererApp.Api.MapPing do
+  @moduledoc false
+
+  use Ash.Resource,
+    domain: WandererApp.Api,
+    data_layer: AshPostgres.DataLayer
+
+  postgres do
+    repo(WandererApp.Repo)
+    table("map_pings_v1")
+  end
+
+  code_interface do
+    define(:new, action: :new)
+    define(:destroy, action: :destroy)
+
+    define(:read_by_map,
+      action: :read_by_map
+    )
+  end
+
+  actions do
+    default_accept [
+      :type,
+      :message
+    ]
+
+    defaults [:read, :update, :destroy]
+
+    create :new do
+      accept [
+        :map_id,
+        :system_id,
+        :character_id,
+        :type,
+        :message
+      ]
+
+      primary?(true)
+
+      argument :map_id, :uuid, allow_nil?: false
+      argument :system_id, :uuid, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
+    end
+
+    read :read_by_map do
+      argument(:map_id, :string, allow_nil?: false)
+      filter(expr(map_id == ^arg(:map_id)))
+    end
+  end
+
+  attributes do
+    uuid_primary_key :id
+
+    # ping: 0
+    # rally_point: 1
+    attribute :type, :integer do
+      default 0
+
+      allow_nil? true
+    end
+
+    attribute :message, :string do
+      allow_nil? true
+    end
+
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
+  end
+
+  relationships do
+    belongs_to :map, WandererApp.Api.Map do
+      attribute_writable? true
+    end
+
+    belongs_to :system, WandererApp.Api.MapSystem do
+      attribute_writable? true
+    end
+
+    belongs_to :character, WandererApp.Api.Character do
+      attribute_writable? true
+    end
+  end
+
+  postgres do
+    references do
+      reference :map, on_delete: :delete
+      reference :system, on_delete: :delete
+      reference :character, on_delete: :delete
+    end
+  end
+end
