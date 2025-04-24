@@ -16,3 +16,4 @@ export * from './WdResponsiveCheckBox';
 export * from './WdRadioButton';
 export * from './CharacterPortrait';
 export * from './WdTransition';
+export * from './LoadingWrapper';

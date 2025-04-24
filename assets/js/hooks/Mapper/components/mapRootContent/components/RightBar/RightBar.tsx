@@ -15,7 +15,9 @@ interface RightBarProps {
 }
 
 export const RightBar = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: RightBarProps) => {
-  const { interfaceSettings, setInterfaceSettings } = useMapRootState();
+  const {
+    storedSettings: { interfaceSettings, setInterfaceSettings },
+  } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 

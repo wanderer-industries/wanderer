@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OutCommand } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import {
-  RoutesType,
-  useRouteProvider,
-} from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
+import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
+import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T>();
@@ -19,7 +16,7 @@ function usePrevious<T>(value: T): T | undefined {
 export const useLoadRoutes = () => {
   // TODO ??
   const [loading, setLoading] = useState(false);
-  const { data: routesSettings } = useRouteProvider();
+  const { data: routesSettings, loadRoutesCommand } = useRouteProvider();
 
   const {
     outCommand,
@@ -32,13 +29,7 @@ export const useLoadRoutes = () => {
 
   const loadRoutes = useCallback(
     (systemId: string, routesSettings: RoutesType) => {
-      outCommand({
-        type: OutCommand.getRoutes,
-        data: {
-          system_id: systemId,
-          routes_settings: routesSettings,
-        },
-      });
+      loadRoutesCommand(systemId, routesSettings);
       setLoading(true);
     },
     [outCommand],

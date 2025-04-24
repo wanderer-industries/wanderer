@@ -2,6 +2,7 @@ import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import {
   LayoutEventBlocker,
+  LoadingWrapper,
   SystemViewStandalone,
   TooltipPosition,
   WdCheckbox,
@@ -25,7 +26,7 @@ import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { RoutesWidgetProps } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
 
 const sortByDist = (a: Route, b: Route) => {
   const distA = a.has_connection ? a.systems?.length || 0 : Infinity;
@@ -36,19 +37,16 @@ const sortByDist = (a: Route, b: Route) => {
 
 export const RoutesWidgetContent = () => {
   const {
-    data: { selectedSystems, hubs = [], systems, routes },
-    outCommand,
+    data: { selectedSystems, systems },
   } = useMapRootState();
+  const { hubs = [], routesList } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
   const { loading } = useLoadRoutes();
 
   const { systems: systemStatics, loadSystems, lastUpdateKey } = useLoadSystemStatic({ systems: hubs ?? [] });
-  const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers({
-    outCommand,
-    hubs,
-  });
+  const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers();
 
   const preparedHubs = useMemo(() => {
     return hubs.map(x => {
@@ -61,20 +59,20 @@ export const RoutesWidgetContent = () => {
 
   const preparedRoutes: Route[] = useMemo(() => {
     return (
-      routes?.routes
+      routesList?.routes
         .sort(sortByDist)
-        .filter(x => x.destination.toString() !== systemId)
+        // .filter(x => x.destination.toString() !== systemId)
         .map(route => ({
           ...route,
           mapped_systems:
             route.systems?.map(solar_system_id =>
-              routes?.systems_static_data.find(
+              routesList?.systems_static_data.find(
                 system_static_data => system_static_data.solar_system_id === solar_system_id,
               ),
             ) ?? [],
         })) ?? []
     );
-  }, [routes?.routes, routes?.systems_static_data, systemId]);
+  }, [routesList?.routes, routesList?.systems_static_data, systemId]);
 
   const refData = useRef({ open, loadSystems, preparedRoutes });
   refData.current = { open, loadSystems, preparedRoutes };
@@ -97,12 +95,6 @@ export const RoutesWidgetContent = () => {
     [handleClick],
   );
 
-  if (loading) {
-    return (
-      <div className="w-full h-full flex justify-center items-center select-none text-center">Loading routes...</div>
-    );
-  }
-
   if (!systemId) {
     return (
       <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
@@ -117,7 +109,7 @@ export const RoutesWidgetContent = () => {
 
   return (
     <>
-      {systemId !== undefined && routes && (
+      <LoadingWrapper loading={loading}>
         <div className={clsx(classes.RoutesGrid, 'px-2 py-2')}>
           {preparedRoutes.map(route => {
             const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
@@ -132,7 +124,11 @@ export const RoutesWidgetContent = () => {
                   <WdImgButton
                     className={clsx(PrimeIcons.BARS, classes.RemoveBtn)}
                     onClick={e => handleClick(e, route.destination.toString())}
-                    tooltip={{ content: 'Click here to open system menu', position: TooltipPosition.top, offset: 10 }}
+                    tooltip={{
+                      content: 'Click here to open system menu',
+                      position: TooltipPosition.top,
+                      offset: 10,
+                    }}
                   />
 
                   <SystemViewStandalone
@@ -151,7 +147,7 @@ export const RoutesWidgetContent = () => {
             );
           })}
         </div>
-      )}
+      </LoadingWrapper>
 
       <ContextMenuSystemInfo
         hubs={hubs}
@@ -167,13 +163,7 @@ export const RoutesWidgetContent = () => {
 
 export const RoutesWidgetComp = () => {
   const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
-  const { data, update } = useRouteProvider();
-  const {
-    data: { hubs = [] },
-    outCommand,
-  } = useMapRootState();
-
-  const preparedHubs = useMemo(() => hubs.map(x => parseInt(x)), [hubs]);
+  const { data, update, addHubCommand } = useRouteProvider();
 
   const isSecure = data.path_type === 'secure';
   const handleSecureChange = useCallback(() => {
@@ -190,17 +180,8 @@ export const RoutesWidgetComp = () => {
   const onAddSystem = useCallback(() => setOpenAddSystem(true), []);
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
-    async item => {
-      if (preparedHubs.includes(item.value)) {
-        return;
-      }
-
-      await outCommand({
-        type: OutCommand.addHub,
-        data: { system_id: item.value },
-      });
-    },
-    [hubs, outCommand],
+    async item => addHubCommand(item.value.toString()),
+    [addHubCommand],
   );
 
   return (
@@ -231,6 +212,7 @@ export const RoutesWidgetComp = () => {
               className={PrimeIcons.SLIDERS_H}
               onClick={() => setRouteSettingsVisible(true)}
               tooltip={{
+                position: TooltipPosition.top,
                 content: 'Click here to open Routes settings',
               }}
             />
@@ -251,9 +233,9 @@ export const RoutesWidgetComp = () => {
   );
 };
 
-export const RoutesWidget = () => {
+export const RoutesWidget = (props: RoutesWidgetProps) => {
   return (
-    <RoutesProvider>
+    <RoutesProvider {...props}>
       <RoutesWidgetComp />
     </RoutesProvider>
   );
