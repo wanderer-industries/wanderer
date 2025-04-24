@@ -43,12 +43,14 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             main_character_eve_id: main_character_eve_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     with {:ok, system} <- get_map_system(map_id, solar_system_id) do
       Logger.debug(fn ->
         "[handle_ui_event:update_structures] loaded map_system =>\n" <>

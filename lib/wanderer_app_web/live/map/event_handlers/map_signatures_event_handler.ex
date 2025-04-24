@@ -95,7 +95,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         acc |> Map.put(solar_system_id, signatures)
       end)
 
-    {:noreply, socket |> MapEventHandler.push_map_event("init", %{system_signatures: system_signatures})}
+    {:noreply,
+     socket |> MapEventHandler.push_map_event("init", %{system_signatures: system_signatures})}
   end
 
   def handle_ui_event(
@@ -115,7 +116,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     delete_connection_with_sigs =
       map_user_settings
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
@@ -166,11 +168,13 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     solar_system_source = get_integer(solar_system_source)
     solar_system_target = get_integer(solar_system_target)
 
@@ -224,11 +228,13 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     solar_system_source = get_integer(solar_system_source)
 
     case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{

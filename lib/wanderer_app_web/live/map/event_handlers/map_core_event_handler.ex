@@ -506,6 +506,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          %{
            assigns: %{
              needs_tracking_setup: needs_tracking_setup,
+             main_character_id: main_character_id,
              main_character_eve_id: main_character_eve_id,
              following_character_eve_id: following_character_eve_id
            }
@@ -565,7 +566,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         attr: "data-loaded"
       })
 
-    Process.send_after(self(), %{event: :init_kills}, 100)
+    if is_nil(main_character_id) do
+      Process.send_after(self(), :no_main_character_set, 100)
+    end
 
     if needs_tracking_setup do
       Process.send_after(self(), %{event: :show_tracking}, 10)

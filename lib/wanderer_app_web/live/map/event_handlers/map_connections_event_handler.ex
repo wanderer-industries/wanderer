@@ -50,7 +50,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.add_connection(%{
       solar_system_source_id: solar_system_source_id |> String.to_integer(),
@@ -83,7 +84,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.delete_connection(%{
       solar_system_source_id: solar_system_source_id |> String.to_integer(),
@@ -119,7 +121,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     method_atom =
       case param do
         "time_status" -> :update_connection_time_status

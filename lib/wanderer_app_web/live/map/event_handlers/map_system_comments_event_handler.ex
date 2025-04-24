@@ -50,7 +50,8 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     system =
       WandererApp.Map.find_system_by_location(map_id, %{
         solar_system_id: solar_system_id |> String.to_integer()
@@ -132,7 +133,8 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.remove_system_comment(
       comment_id,
