@@ -437,6 +437,7 @@ defmodule WandererAppWeb.MapsLive do
         "show_linked_signature_id",
         "show_linked_signature_id_temp_name",
         "show_temp_system_name",
+        "sync_sig_temp_name",
         "restrict_offline_showing"
       ])
 

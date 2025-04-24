@@ -10,6 +10,7 @@ import { InputText } from 'primereact/inputtext';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { Button } from 'primereact/button';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & { linked_system: string };
@@ -27,8 +28,10 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     data: { wormholes },
   } = useMapRootState();
 
-  const handleShow = async () => {};
+  const handleShow = async () => { };
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+  const isSyncSignatureTempNameEnabled = useMapGetOption('sync_sig_temp_name') === 'true';
 
   const handleSave = useCallback(
     // TODO: need fix
@@ -79,7 +82,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
               }
             }
 
-            if (values.temp_name) {
+            if (values.temp_name && isTempSystemNameEnabled && isSyncSignatureTempNameEnabled) {
               await outCommand({
                 type: OutCommand.updateSystemTemporaryName,
                 data: {

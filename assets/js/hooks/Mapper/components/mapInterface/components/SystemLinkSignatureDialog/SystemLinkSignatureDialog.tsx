@@ -4,6 +4,7 @@ import { Dialog } from 'primereact/dialog';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
@@ -44,6 +45,9 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     outCommand,
     data: { wormholes },
   } = useMapRootState();
+
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+  const isSyncSignatureTempNameEnabled = useMapGetOption('sync_sig_temp_name') === 'true';
 
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
@@ -155,7 +159,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         });
       }
 
-      if (signature.temp_name) {
+      if (signature.temp_name && isTempSystemNameEnabled && isSyncSignatureTempNameEnabled) {
         outCommand({
           type: OutCommand.updateSystemTemporaryName,
           data: {

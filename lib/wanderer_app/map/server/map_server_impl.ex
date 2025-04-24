@@ -350,6 +350,8 @@ defmodule WandererApp.Map.Server.Impl do
         |> String.to_existing_atom(),
       show_temp_system_name:
         options |> Map.get("show_temp_system_name", "false") |> String.to_existing_atom(),
+      sync_sig_temp_name:
+        options |> Map.get("sync_sig_temp_name", "false") |> String.to_existing_atom(),
       restrict_offline_showing:
         options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom()
     ]
