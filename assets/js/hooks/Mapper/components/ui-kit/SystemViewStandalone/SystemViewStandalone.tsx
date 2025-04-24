@@ -37,8 +37,8 @@ export const SystemViewStandalone = ({
   ...props
 }: SystemViewStandaloneProps) => {
   const classTitleColor = getSystemClassStyles({ systemClass: system_class, security });
-
   const isWH = isWormholeSpace(system_class);
+  1;
 
   const handleClick = useCallback(
     (e: MouseEvent) => {

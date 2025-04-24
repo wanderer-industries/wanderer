@@ -212,6 +212,7 @@ defmodule WandererAppWeb.Router do
     get "/characters", MapAPIController, :tracked_characters_with_info
     get "/structure-timers", MapAPIController, :show_structure_timers
     get "/character-activity", MapAPIController, :character_activity
+    get "/user_characters", MapAPIController, :user_characters
     get "/acls", MapAccessListAPIController, :index
     post "/acls", MapAccessListAPIController, :create
   end

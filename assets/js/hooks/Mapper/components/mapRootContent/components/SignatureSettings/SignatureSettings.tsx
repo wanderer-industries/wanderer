@@ -31,6 +31,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
 
   const handleSave = useCallback(
+    // TODO: need fix
     async (e: any) => {
       e?.preventDefault();
       if (!signatureData) {
@@ -52,6 +53,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
               },
             });
 
+            // TODO: need fix
             if (values.isEOL) {
               await outCommand({
                 type: OutCommand.updateConnectionTimeStatus,
@@ -91,7 +93,9 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           out = {
             ...out,
             custom_info: JSON.stringify({
+              // TODO: need fix
               k162Type: values.k162Type,
+              // TODO: need fix
               isEOL: values.isEOL,
             }),
           };
@@ -159,7 +163,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureForm, onHide, outCommand, signatureData, systemId],
+    [signatureData, signatureForm, outCommand, systemId, onHide, wormholes],
   );
 
   useEffect(() => {
@@ -180,6 +184,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
+      // TODO: need fix
       k162Type: k162Type,
       isEOL: isEOL,
       ...rest,
