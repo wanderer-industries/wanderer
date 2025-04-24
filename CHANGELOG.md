@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.61.0](https://github.com/wanderer-industries/wanderer/compare/v1.60.1...v1.61.0) (2025-04-24)
+
+
+
+
+### Features:
+
+* Core: force checking main character set for all map activity
+
 ## [v1.60.1](https://github.com/wanderer-industries/wanderer/compare/v1.60.0...v1.60.1) (2025-04-22)
 
 
