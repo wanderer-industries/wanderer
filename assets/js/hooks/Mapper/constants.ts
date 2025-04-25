@@ -7,6 +7,8 @@ export enum SESSION_KEY {
 
 export const GRADIENT_MENU_ACTIVE_CLASSES = 'bg-gradient-to-br from-transparent/10 to-fuchsia-300/10';
 
+export const MAX_TEMP_NAME_LENGTH = 10;
+
 export enum Regions {
   Derelik = 10000001,
   TheForge = 10000002,
