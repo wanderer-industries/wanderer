@@ -64,7 +64,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :kind,
         :group,
         :type,
-        :custom_info
+        :custom_info,
+        :temp_name
       ]
 
       argument :system_id, :uuid, allow_nil?: false
