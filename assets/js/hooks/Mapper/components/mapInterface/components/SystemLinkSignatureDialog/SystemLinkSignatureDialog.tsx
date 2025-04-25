@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
+import useLocalStorageState from 'use-local-storage-state';
 
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
@@ -17,6 +18,8 @@ import {
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import {
   SETTINGS_KEYS,
+  SETTINGS_VALUES,
+  SIGNATURE_SETTING_STORE_KEY,
   SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
@@ -48,6 +51,10 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
   const isSyncSignatureTempNameEnabled = useMapGetOption('sync_sig_temp_name') === 'true';
+  const [signaturesSettings] = useLocalStorageState(SIGNATURE_SETTING_STORE_KEY, {
+    defaultValue: SETTINGS_VALUES,
+  });
+  const showSignatureTempName = signaturesSettings[SETTINGS_KEYS.SHOW_TEMP_NAME] as boolean;
 
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
@@ -186,7 +193,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       <SystemSignaturesContent
         systemId={`${data.solar_system_source}`}
         hideLinkedSignatures
-        settings={LINK_SIGNTATURE_SETTINGS}
+        settings={{ ...LINK_SIGNTATURE_SETTINGS, [SETTINGS_KEYS.SHOW_TEMP_NAME]: showSignatureTempName }}
         onSelect={handleSelect}
         selectable={true}
         filterSignature={filterSignature}
