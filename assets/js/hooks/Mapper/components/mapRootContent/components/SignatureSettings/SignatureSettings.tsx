@@ -70,7 +70,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
             if (values.type) {
               const whShipSize = getWhSize(wormholes, values.type);
-              if (whShipSize) {
+              if (whShipSize !== undefined && whShipSize !== null) {
                 await outCommand({
                   type: OutCommand.updateConnectionShipSizeType,
                   data: {

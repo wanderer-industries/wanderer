@@ -155,7 +155,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       }
 
       const whShipSize = getWhSize(wormholes, signature.type);
-      if (whShipSize) {
+      if (whShipSize !== undefined && whShipSize !== null) {
         await outCommand({
           type: OutCommand.updateConnectionShipSizeType,
           data: {
