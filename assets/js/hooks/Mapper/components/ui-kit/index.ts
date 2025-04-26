@@ -14,6 +14,6 @@ export * from './TimeAgo';
 export * from './WdTooltipWrapper';
 export * from './WdResponsiveCheckBox';
 export * from './WdRadioButton';
-export * from './CharacterPortrait';
+export * from './WdEveEntityPortrait';
 export * from './WdTransition';
 export * from './LoadingWrapper';

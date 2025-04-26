@@ -22,7 +22,7 @@ export const LocalCharactersItemTemplate = ({ showShipName, ...options }: LocalC
       )}
       style={{ height: `${options.props.itemSize}px` }}
     >
-      <CharacterCard showShipName={showShipName} {...options} />
+      <CharacterCard showShipName={showShipName} showTicker {...options} />
     </div>
   );
 };

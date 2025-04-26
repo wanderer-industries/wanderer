@@ -17,13 +17,13 @@ import { KillsCounter } from './SolarSystemKillsCounter';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 
-let render = 0;
+// let render = 0;
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
   const localKillsCount = useNodeKillsCount(nodeVars.solarSystemId, nodeVars.killsCount);
 
-  console.log('JOipP', `render ${nodeVars.id}`, render++);
+  // console.log('JOipP', `render ${nodeVars.id}`, render++);
 
   return (
     <>
