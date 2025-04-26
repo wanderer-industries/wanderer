@@ -118,7 +118,8 @@ defmodule WandererApp.MixProject do
       {:error_tracker, "~> 0.2"},
       {:ddrt, "~> 0.2.1"},
       {:live_view_events, "~> 0.1.0"},
-      {:ash_pagify, "~> 1.4.1"}
+      {:ash_pagify, "~> 1.4.1"},
+      {:timex, "~> 3.0"}
     ]
   end
 
