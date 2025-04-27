@@ -567,7 +567,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       })
 
     Process.send_after(self(), %{event: :init_kills}, 100)
-    Process.send_after(self(), %{event: :init_user_hubs}, 150)
 
     if needs_tracking_setup do
       Process.send_after(self(), %{event: :show_tracking}, 10)
