@@ -9,7 +9,7 @@ import {
   WdImgButton,
 } from '@/hooks/Mapper/components/ui-kit';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSystemById } from '@/hooks/Mapper/helpers/getSystemById.ts';
 import classes from './RoutesWidget.module.scss';
 import { useLoadRoutes } from './hooks';
@@ -37,9 +37,9 @@ const sortByDist = (a: Route, b: Route) => {
 
 export const RoutesWidgetContent = () => {
   const {
-    data: { selectedSystems, systems },
+    data: { selectedSystems, systems, isSubscriptionActive },
   } = useMapRootState();
-  const { hubs = [], routesList } = useRouteProvider();
+  const { hubs = [], routesList, isRestricted } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
@@ -94,6 +94,16 @@ export const RoutesWidgetContent = () => {
     },
     [handleClick],
   );
+
+  if (isRestricted && !isSubscriptionActive) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">
+          User Routes available with &#39;Active&#39; map subscription only (contact map administrators)
+        </span>
+      </div>
+    );
+  }
 
   if (!systemId) {
     return (
@@ -161,7 +171,11 @@ export const RoutesWidgetContent = () => {
   );
 };
 
-export const RoutesWidgetComp = () => {
+type RoutesWidgetCompProps = {
+  title: ReactNode | string;
+};
+
+export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
   const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
   const { data, update, addHubCommand } = useRouteProvider();
 
@@ -188,7 +202,7 @@ export const RoutesWidgetComp = () => {
     <Widget
       label={
         <div className="flex justify-between items-center text-xs w-full" ref={ref}>
-          <span className="select-none">Routes</span>
+          <span className="select-none">{title}</span>
           <LayoutEventBlocker className="flex items-center gap-2">
             <WdImgButton
               className={PrimeIcons.PLUS_CIRCLE}
@@ -233,10 +247,10 @@ export const RoutesWidgetComp = () => {
   );
 };
 
-export const RoutesWidget = (props: RoutesWidgetProps) => {
+export const RoutesWidget = ({ title, ...props }: RoutesWidgetProps & RoutesWidgetCompProps) => {
   return (
     <RoutesProvider {...props}>
-      <RoutesWidgetComp />
+      <RoutesWidgetComp title={title} />
     </RoutesProvider>
   );
 };

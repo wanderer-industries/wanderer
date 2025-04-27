@@ -1,13 +1,14 @@
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
 import {
+  CommentsWidget,
   LocalCharacters,
   SystemInfo,
   SystemSignatures,
   SystemStructures,
+  WRoutesPublic,
+  WRoutesUser,
   WSystemKills,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
-import { CommentsWidget } from '@/hooks/Mapper/components/mapInterface/widgets/CommentsWidget';
-import { WRoutesPublic } from '@/hooks/Mapper/components/mapInterface/widgets/WRoutesPublic';
 
 export const CURRENT_WINDOWS_VERSION = 9;
 export const WINDOWS_LOCAL_STORE_KEY = 'windows:settings:v2';
@@ -59,13 +60,13 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     zIndex: 0,
     content: () => <WRoutesPublic />,
   },
-  // {
-  //   id: WidgetsIds.userRoutes,
-  //   position: { x: 10, y: 530 },
-  //   size: { width: 510, height: 200 },
-  //   zIndex: 0,
-  //   content: () => <RoutesWidget />,
-  // },
+  {
+    id: WidgetsIds.userRoutes,
+    position: { x: 10, y: 530 },
+    size: { width: 510, height: 200 },
+    zIndex: 0,
+    content: () => <WRoutesUser />,
+  },
   {
     id: WidgetsIds.structures,
     position: { x: 10, y: 730 },
@@ -110,6 +111,10 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
   {
     id: WidgetsIds.routes,
     label: 'Routes',
+  },
+  {
+    id: WidgetsIds.userRoutes,
+    label: 'User Routes',
   },
   {
     id: WidgetsIds.structures,

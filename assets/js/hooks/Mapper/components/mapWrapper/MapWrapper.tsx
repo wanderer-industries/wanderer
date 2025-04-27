@@ -34,7 +34,7 @@ export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, systems, linkSignatureToSystem, systemSignatures },
+    data: { selectedConnections, selectedSystems, hubs, userHubs, systems, linkSignatureToSystem, systemSignatures },
     storedSettings: { interfaceSettings },
   } = useMapRootState();
 
@@ -54,7 +54,7 @@ export const MapWrapper = () => {
   const { getNodes } = useReactFlow();
 
   const { updateLinkSignatureToSystem } = useCommandsSystems();
-  const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
+  const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, userHubs, outCommand });
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
@@ -221,6 +221,7 @@ export const MapWrapper = () => {
       <ContextMenuSystem
         systems={systems}
         hubs={hubs}
+        userHubs={userHubs}
         {...systemContextProps}
         onOpenSettings={() => {
           systemContextProps.systemId && setOpenSettings(systemContextProps.systemId);

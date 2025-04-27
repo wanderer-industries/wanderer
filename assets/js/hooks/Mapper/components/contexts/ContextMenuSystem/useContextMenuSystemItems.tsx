@@ -10,11 +10,13 @@ import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { MapAddIcon, MapDeleteIcon, MapUserAddIcon, MapUserDeleteIcon } from '@/hooks/Mapper/icons';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
   onLockToggle,
   onHubToggle,
+  onUserHubToggle,
   onSystemTag,
   onSystemStatus,
   onSystemLabels,
@@ -23,6 +25,7 @@ export const useContextMenuSystemItems = ({
   onWaypointSet,
   systemId,
   hubs,
+  userHubs,
   systems,
 }: Omit<ContextMenuSystemProps, 'contextMenuRef'>) => {
   const getTags = useTagMenu(systems, systemId, onSystemTag);
@@ -61,9 +64,22 @@ export const useContextMenuSystemItems = ({
       ...getLabels(),
       ...getWaypointMenu(systemId, systemStaticInfo.system_class),
       {
-        label: !hubs.includes(systemId) ? 'Add in Routes' : 'Remove from Routes',
-        icon: PrimeIcons.MAP_MARKER,
+        label: !hubs.includes(systemId) ? 'Add Route' : 'Remove Route',
+        icon: !hubs.includes(systemId) ? (
+          <MapAddIcon className="mr-1 relative left-[-2px]" />
+        ) : (
+          <MapDeleteIcon className="mr-1 relative left-[-2px]" />
+        ),
         command: onHubToggle,
+      },
+      {
+        label: !userHubs.includes(systemId) ? 'Add User Route' : 'Remove User Route',
+        icon: !userHubs.includes(systemId) ? (
+          <MapUserAddIcon className="mr-1 relative left-[-2px]" />
+        ) : (
+          <MapUserDeleteIcon className="mr-1 relative left-[-2px]" />
+        ),
+        command: onUserHubToggle,
       },
       ...(system.locked
         ? canLockSystem

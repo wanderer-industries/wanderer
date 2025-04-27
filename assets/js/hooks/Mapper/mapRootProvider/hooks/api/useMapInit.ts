@@ -26,6 +26,7 @@ export const useMapInit = () => {
         is_subscription_active,
         main_character_eve_id,
         following_character_eve_id,
+        user_hubs,
       } = props;
 
       const updateData: Partial<MapRootData> = {};
@@ -69,6 +70,10 @@ export const useMapInit = () => {
 
       if (hubs) {
         updateData.hubs = hubs;
+      }
+
+      if (user_hubs) {
+        updateData.userHubs = user_hubs;
       }
 
       if (options) {

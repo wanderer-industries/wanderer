@@ -24,6 +24,7 @@ export enum Commands {
   killsUpdated = 'kills_updated',
   detailedKillsUpdated = 'detailed_kills_updated',
   routes = 'routes',
+  userRoutes = 'user_routes',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
   linkSignatureToSystem = 'link_signature_to_system',
@@ -55,6 +56,7 @@ export type Command =
   | Commands.killsUpdated
   | Commands.detailedKillsUpdated
   | Commands.routes
+  | Commands.userRoutes
   | Commands.selectSystem
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
@@ -82,6 +84,7 @@ export type CommandInit = {
   user_characters: string[];
   user_permissions: UserPermissions;
   hubs: string[];
+  user_hubs: string[];
   routes: RoutesList;
   options: Record<string, string | boolean>;
   reset?: boolean;
@@ -104,6 +107,7 @@ export type CommandUpdateConnection = SolarSystemConnection;
 export type CommandSignaturesUpdated = string;
 export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
+export type CommandUserRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandDetailedKillsUpdated = Record<string, DetailedKill[]>;
 export type CommandSelectSystem = string | undefined;
@@ -170,6 +174,7 @@ export interface CommandData {
   [Commands.updateConnection]: CommandUpdateConnection;
   [Commands.mapUpdated]: CommandMapUpdated;
   [Commands.routes]: CommandRoutes;
+  [Commands.userRoutes]: CommandUserRoutes;
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.detailedKillsUpdated]: CommandDetailedKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
@@ -194,7 +199,10 @@ export interface MapHandlers {
 export enum OutCommand {
   addHub = 'add_hub',
   deleteHub = 'delete_hub',
+  addUserHub = 'add_user_hub',
+  deleteUserHub = 'delete_user_hub',
   getRoutes = 'get_routes',
+  getUserRoutes = 'get_user_routes',
   getCharacterJumps = 'get_character_jumps',
   getStructures = 'get_structures',
   getSignatures = 'get_signatures',

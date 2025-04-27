@@ -14,4 +14,5 @@ export type RoutesWidgetProps = {
   loadRoutesCommand: LoadRoutesCommand;
   addHubCommand: AddHubCommand;
   toggleHubCommand: ToggleHubCommand;
+  isRestricted?: boolean;
 };

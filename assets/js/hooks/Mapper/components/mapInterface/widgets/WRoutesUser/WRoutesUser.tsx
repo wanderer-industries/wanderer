@@ -4,17 +4,17 @@ import { AddHubCommand, LoadRoutesCommand } from '@/hooks/Mapper/components/mapI
 import { useCallback } from 'react';
 import { RoutesWidget } from '@/hooks/Mapper/components/mapInterface/widgets';
 
-export const WRoutesPublic = () => {
+export const WRoutesUser = () => {
   const {
     outCommand,
     storedSettings: { settingsRoutes, settingsRoutesUpdate },
-    data: { hubs, routes },
+    data: { userHubs, userRoutes },
   } = useMapRootState();
 
   const loadRoutesCommand: LoadRoutesCommand = useCallback(
     async (systemId, routesSettings) => {
       outCommand({
-        type: OutCommand.getRoutes,
+        type: OutCommand.getUserRoutes,
         data: {
           system_id: systemId,
           routes_settings: routesSettings,
@@ -26,16 +26,16 @@ export const WRoutesPublic = () => {
 
   const addHubCommand: AddHubCommand = useCallback(
     async systemId => {
-      if (hubs.includes(systemId)) {
+      if (userHubs.includes(systemId)) {
         return;
       }
 
       await outCommand({
-        type: OutCommand.addHub,
+        type: OutCommand.addUserHub,
         data: { system_id: systemId },
       });
     },
-    [hubs, outCommand],
+    [userHubs, outCommand],
   );
 
   const toggleHubCommand: AddHubCommand = useCallback(
@@ -45,26 +45,26 @@ export const WRoutesPublic = () => {
       }
 
       outCommand({
-        type: !hubs.includes(systemId) ? OutCommand.addHub : OutCommand.deleteHub,
+        type: !userHubs.includes(systemId) ? OutCommand.addUserHub : OutCommand.deleteUserHub,
         data: {
           system_id: systemId,
         },
       });
     },
-    [hubs, outCommand],
+    [userHubs, outCommand],
   );
 
   return (
     <RoutesWidget
-      title="Routes"
+      title="User Routes"
       data={settingsRoutes}
       update={settingsRoutesUpdate}
-      isRestricted
-      hubs={hubs}
-      routesList={routes}
+      hubs={userHubs}
+      routesList={userRoutes}
       loadRoutesCommand={loadRoutesCommand}
       addHubCommand={addHubCommand}
       toggleHubCommand={toggleHubCommand}
+      isRestricted
     />
   );
 };

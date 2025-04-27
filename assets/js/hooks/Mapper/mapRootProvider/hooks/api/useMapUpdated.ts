@@ -17,6 +17,10 @@ export const useMapUpdated = () => {
       out.hubs = props.hubs;
     }
 
+    if ('user_hubs' in props) {
+      out.userHubs = props.user_hubs;
+    }
+
     if ('system_signatures' in props) {
       out.systemSignatures = props.system_signatures;
     }
