@@ -229,11 +229,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
   def handle_ui_event("noop", _, socket), do: {:noreply, socket}
 
-  def handle_ui_event(event, body, socket) do
-    Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
-    {:noreply, socket}
-  end
-
   def handle_ui_event(
         _event,
         _body,
@@ -248,6 +243,23 @@ defmodule WandererAppWeb.MapCoreEventHandler do
        :error,
        "You should enable tracking for at least one character!"
      )}
+  end
+
+  def handle_ui_event(
+        event,
+        body,
+        %{assigns: %{main_character_id: main_character_id}} =
+          socket
+      )
+      when is_nil(main_character_id) do
+    Process.send_after(self(), :no_main_character_set, 100)
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(event, body, socket) do
+    Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
+    {:noreply, socket}
   end
 
   defp maybe_start_map(map_id) do

@@ -65,7 +65,7 @@ defmodule WandererAppWeb.MapLive do
       {:noreply,
        socket
        |> put_flash(
-         :info,
+         :warning,
          "You don't have main character set, please update it in tracking settings (top right icon)."
        )}
 
