@@ -13,7 +13,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
   use OpenApiSpex.ControllerSpecs
 
   alias WandererApp.Api.{AccessList, Character}
-  alias WandererAppWeb.UtilAPIController, as: Util
+  alias WandererAppWeb.APIUtils
   import Ash.Query
   require Logger
 
@@ -245,7 +245,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
       }}
     ]
   def index(conn, params) do
-    case Util.fetch_map_id(params) do
+    case APIUtils.fetch_map_id(params) do
       {:ok, map_identifier} ->
         with {:ok, map} <- get_map(map_identifier),
              {:ok, loaded_map} <- Ash.load(map, acls: [:owner]) do
@@ -320,7 +320,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
       }}
     ]
   def create(conn, params) do
-    with {:ok, map_identifier} <- Util.fetch_map_id(params),
+    with {:ok, map_identifier} <- APIUtils.fetch_map_id(params),
          {:ok, map} <- get_map(map_identifier),
          %{"acl" => acl_params} <- params,
          owner_eve_id when not is_nil(owner_eve_id) <- Map.get(acl_params, "owner_eve_id"),

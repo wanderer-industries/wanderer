@@ -12,7 +12,7 @@ defmodule WandererAppWeb.MapAuditAPIController do
 
   alias WandererApp.Zkb.KillsProvider.KillsCache
 
-  alias WandererAppWeb.UtilAPIController, as: Util
+  alias WandererAppWeb.APIUtils
 
   # -----------------------------------------------------------------
   # Inline Schemas
@@ -117,8 +117,8 @@ defmodule WandererAppWeb.MapAuditAPIController do
   )
 
   def index(conn, params) do
-    with {:ok, map_id} <- Util.fetch_map_id(params),
-         {:ok, period} <- Util.require_param(params, "period"),
+    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
+         {:ok, period} <- APIUtils.require_param(params, "period"),
          query <- WandererApp.Map.Audit.get_activity_query(map_id, period, "all"),
          {:ok, data} <-
            Api.read(query) do

@@ -206,17 +206,42 @@ defmodule WandererAppWeb.Router do
   scope "/api/map", WandererAppWeb do
     pipe_through [:api, :api_map]
     get "/audit", MapAuditAPIController, :index
-    get "/systems", MapAPIController, :list_systems
-    get "/system", MapAPIController, :show_system
-    get "/connections", MapAPIController, :list_connections
-    get "/characters", MapAPIController, :tracked_characters_with_info
+    # Deprecated routes - use /api/maps/:map_identifier/systems instead
+    get "/systems", MapSystemAPIController, :list_systems
+    get "/system", MapSystemAPIController, :show_system
+    get "/connections", MapConnectionAPIController, :list_all_connections
+    get "/characters", MapAPIController, :list_tracked_characters
     get "/structure-timers", MapAPIController, :show_structure_timers
     get "/character-activity", MapAPIController, :character_activity
     get "/user_characters", MapAPIController, :user_characters
+
     get "/acls", MapAccessListAPIController, :index
     post "/acls", MapAccessListAPIController, :create
   end
 
+  #
+  # Unified RESTful routes for systems & connections by slug or ID
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api, :api_map]
+
+    resources "/systems", MapSystemAPIController, except: [:new, :edit] do
+      # nested connection CRUD stays here
+      resources "/connections", MapConnectionAPIController,
+        only: [:index, :show, :create, :delete]
+    end
+    patch "/systems/:system_id/connections/:id", MapConnectionAPIController, :update
+
+    # now at the systems-collection level:
+    post "/systems/batch_upsert", MapSystemAPIController, :systems_and_connections, as: :batch_upsert
+    post "/systems/batch_delete", MapSystemAPIController, :batch_delete,           as: :batch_delete
+  end
+
+
+
+  #
+  # Other API routes
+  #
   scope "/api/characters", WandererAppWeb do
     pipe_through [:api, :api_character]
     get "/", CharactersAPIController, :index
