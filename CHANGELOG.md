@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.61.1](https://github.com/wanderer-industries/wanderer/compare/v1.61.0...v1.61.1) (2025-04-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed additional price calc for map sub updates
+
 ## [v1.61.0](https://github.com/wanderer-industries/wanderer/compare/v1.60.1...v1.61.0) (2025-04-24)
 
 
