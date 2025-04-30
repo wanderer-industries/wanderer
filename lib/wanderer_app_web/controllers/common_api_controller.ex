@@ -3,7 +3,7 @@ defmodule WandererAppWeb.CommonAPIController do
   use OpenApiSpex.ControllerSpecs
 
   alias WandererApp.CachedInfo
-  alias WandererAppWeb.UtilAPIController, as: Util
+  alias WandererAppWeb.Helpers.APIUtils
   alias WandererApp.EveDataService
 
   @system_static_response_schema %OpenApiSpex.Schema{
@@ -87,8 +87,8 @@ defmodule WandererAppWeb.CommonAPIController do
       }
     ]
   def show_system_static(conn, params) do
-    with {:ok, solar_system_str} <- Util.require_param(params, "id"),
-         {:ok, solar_system_id} <- Util.parse_int(solar_system_str) do
+    with {:ok, solar_system_str} <- APIUtils.require_param(params, "id"),
+         {:ok, solar_system_id} <- APIUtils.parse_int(solar_system_str) do
       case CachedInfo.get_system_static_info(solar_system_id) do
         {:ok, system} ->
           # Get basic system data

@@ -206,17 +206,37 @@ defmodule WandererAppWeb.Router do
   scope "/api/map", WandererAppWeb do
     pipe_through [:api, :api_map]
     get "/audit", MapAuditAPIController, :index
-    get "/systems", MapAPIController, :list_systems
-    get "/system", MapAPIController, :show_system
-    get "/connections", MapAPIController, :list_connections
-    get "/characters", MapAPIController, :tracked_characters_with_info
+    # Deprecated routes - use /api/maps/:map_identifier/systems instead
+    get "/systems", MapSystemAPIController, :list_systems
+    get "/system", MapSystemAPIController, :show_system
+    get "/connections", MapSystemAPIController, :list_all_connections
+    get "/characters", MapAPIController, :list_tracked_characters
     get "/structure-timers", MapAPIController, :show_structure_timers
     get "/character-activity", MapAPIController, :character_activity
     get "/user_characters", MapAPIController, :user_characters
+
     get "/acls", MapAccessListAPIController, :index
     post "/acls", MapAccessListAPIController, :create
   end
 
+  #
+  # Unified RESTful routes for systems & connections by slug or ID
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api, :api_map]
+
+    patch "/connections", MapConnectionAPIController, :update
+    delete "/connections", MapConnectionAPIController, :delete
+    delete "/systems", MapSystemAPIController, :delete
+    resources "/systems", MapSystemAPIController, only: [:index, :show, :create, :update, :delete]
+    resources "/connections", MapConnectionAPIController, only: [:index, :show, :create, :update, :delete], param: "id"
+  end
+
+
+
+  #
+  # Other API routes
+  #
   scope "/api/characters", WandererAppWeb do
     pipe_through [:api, :api_character]
     get "/", CharactersAPIController, :index
