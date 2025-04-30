@@ -16,3 +16,12 @@ export type RoutesWidgetProps = {
   toggleHubCommand: ToggleHubCommand;
   isRestricted?: boolean;
 };
+
+export type RoutesProviderInnerProps = RoutesWidgetProps & {
+  loading: boolean;
+  setLoading(loading: boolean): void;
+};
+
+export type RoutesImperativeHandle = {
+  stopLoading: () => void;
+};

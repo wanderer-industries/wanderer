@@ -29,6 +29,9 @@ export const useMapInit = () => {
         user_hubs,
       } = props;
 
+      // eslint-disable-next-line no-console
+      console.log('JOipP', `user_hubs`, user_hubs);
+
       const updateData: Partial<MapRootData> = {};
 
       if (wormholes) {

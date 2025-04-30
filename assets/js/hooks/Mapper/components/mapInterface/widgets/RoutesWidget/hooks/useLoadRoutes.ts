@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
@@ -14,13 +14,10 @@ function usePrevious<T>(value: T): T | undefined {
 }
 
 export const useLoadRoutes = () => {
-  // TODO ??
-  const [loading, setLoading] = useState(false);
-  const { data: routesSettings, loadRoutesCommand } = useRouteProvider();
+  const { data: routesSettings, loadRoutesCommand, hubs, routesList, loading, setLoading } = useRouteProvider();
 
   const {
-    outCommand,
-    data: { selectedSystems, hubs, systems, connections, routes },
+    data: { selectedSystems, systems, connections },
   } = useMapRootState();
 
   const prevSys = usePrevious(systems);
@@ -32,12 +29,12 @@ export const useLoadRoutes = () => {
       loadRoutesCommand(systemId, routesSettings);
       setLoading(true);
     },
-    [outCommand],
+    [loadRoutesCommand],
   );
 
   useEffect(() => {
     setLoading(false);
-  }, [routes]);
+  }, [routesList]);
 
   useEffect(() => {
     if (selectedSystems.length !== 1) {

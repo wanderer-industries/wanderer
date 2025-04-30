@@ -9,7 +9,7 @@ import {
   WdImgButton,
 } from '@/hooks/Mapper/components/ui-kit';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
-import { MouseEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, MouseEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSystemById } from '@/hooks/Mapper/helpers/getSystemById.ts';
 import classes from './RoutesWidget.module.scss';
 import { useLoadRoutes } from './hooks';
@@ -26,7 +26,10 @@ import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
-import { RoutesWidgetProps } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
+import {
+  RoutesImperativeHandle,
+  RoutesWidgetProps,
+} from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
 
 const sortByDist = (a: Route, b: Route) => {
   const distA = a.has_connection ? a.systems?.length || 0 : Infinity;
@@ -247,10 +250,13 @@ export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
   );
 };
 
-export const RoutesWidget = ({ title, ...props }: RoutesWidgetProps & RoutesWidgetCompProps) => {
-  return (
-    <RoutesProvider {...props}>
-      <RoutesWidgetComp title={title} />
-    </RoutesProvider>
-  );
-};
+export const RoutesWidget = forwardRef<RoutesImperativeHandle, RoutesWidgetProps & RoutesWidgetCompProps>(
+  ({ title, ...props }, ref) => {
+    return (
+      <RoutesProvider {...props} ref={ref}>
+        <RoutesWidgetComp title={title} />
+      </RoutesProvider>
+    );
+  },
+);
+RoutesWidget.displayName = 'RoutesWidget';
