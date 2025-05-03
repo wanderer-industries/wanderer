@@ -2,6 +2,33 @@
 
 <!-- changelog -->
 
+## [v1.61.2](https://github.com/wanderer-industries/wanderer/compare/v1.61.1...v1.61.2) (2025-04-29)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed main character checking & manual systems delete logic
+
+## [v1.61.1](https://github.com/wanderer-industries/wanderer/compare/v1.61.0...v1.61.1) (2025-04-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed additional price calc for map sub updates
+
+## [v1.61.0](https://github.com/wanderer-industries/wanderer/compare/v1.60.1...v1.61.0) (2025-04-24)
+
+
+
+
+### Features:
+
+* Core: force checking main character set for all map activity
+
 ## [v1.60.1](https://github.com/wanderer-industries/wanderer/compare/v1.60.0...v1.60.1) (2025-04-22)
 
 

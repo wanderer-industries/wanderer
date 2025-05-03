@@ -75,12 +75,19 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
       "auto_renew?" => selected_subscription.auto_renew?
     }
 
+    {:ok, additional_price, discount} =
+      WandererApp.Map.SubscriptionManager.calc_additional_price(
+        subscription_form,
+        selected_subscription
+      )
+
     {:noreply,
      socket
      |> assign(
        is_adding_subscription?: true,
        selected_subscription: selected_subscription,
-       additional_price: calc_additional_price(subscription_form, selected_subscription),
+       additional_price: additional_price,
+       discount: discount,
        subscription_form: subscription_form |> to_form()
      )}
   end
@@ -144,7 +151,13 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           |> assign(estimated_price: estimated_price, discount: discount)
 
         _ ->
-          socket |> assign(additional_price: calc_additional_price(params, selected_subscription))
+          {:ok, additional_price, discount} =
+            WandererApp.Map.SubscriptionManager.calc_additional_price(
+              params,
+              selected_subscription
+            )
+
+          socket |> assign(additional_price: additional_price, discount: discount)
       end
 
     {:noreply, assign(socket, subscription_form: params)}
@@ -252,16 +265,21 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           }
         } = socket
       ) do
-    additional_price = calc_additional_price(subscription_form, selected_subscription)
+    {:ok, additional_price, discount} =
+      WandererApp.Map.SubscriptionManager.calc_additional_price(
+        subscription_form,
+        selected_subscription
+      )
+
     {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
 
-    case map_balance >= additional_price do
+    case map_balance >= additional_price - discount do
       true ->
         {:ok, _t} =
           WandererApp.Api.MapTransaction.create(%{
             map_id: map_id,
             user_id: current_user.id,
-            amount: additional_price,
+            amount: additional_price - discount,
             type: :out
           })
 
@@ -286,7 +304,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
         :telemetry.execute([:wanderer_app, :map, :subscription, :update], %{count: 1}, %{
           map_id: map_id,
-          amount: additional_price
+          amount: additional_price - discount
         })
 
         # Check if a license exists, if not create one, otherwise update its expiration
@@ -386,44 +404,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
         {:error, reason}
     end
-  end
-
-  defp calc_additional_price(
-         %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit},
-         selected_subscription
-       ) do
-    %{
-      extra_characters_100: extra_characters_100,
-      extra_hubs_10: extra_hubs_10
-    } = WandererApp.Env.subscription_settings()
-
-    additional_price = 0
-
-    characters_limit = characters_limit |> String.to_integer()
-    hubs_limit = hubs_limit |> String.to_integer()
-    sub_characters_limit = selected_subscription.characters_limit
-    sub_hubs_limit = selected_subscription.hubs_limit
-
-    additional_price =
-      case characters_limit > sub_characters_limit do
-        true ->
-          additional_price +
-            (characters_limit - sub_characters_limit) / 100 * extra_characters_100
-
-        _ ->
-          additional_price
-      end
-
-    additional_price =
-      case hubs_limit > sub_hubs_limit do
-        true ->
-          additional_price + (hubs_limit - sub_hubs_limit) / 10 * extra_hubs_10
-
-        _ ->
-          additional_price
-      end
-
-    additional_price
   end
 
   @impl true
@@ -597,12 +577,23 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
                   Update
                 </.button>
               </div>
-              <div class="stat-title">Additional price (mounthly)</div>
-              <div class="stat-value text-white">
-                ISK {@additional_price
-                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+              <div class="flex gap-8">
+                <div>
+                  <div class="stat-title">Additional price</div>
+                  <div class="stat-value text-white">
+                    ISK {(@additional_price - @discount)
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+                  </div>
+                </div>
+                <div :if={@discount > 0}>
+                  <div class="stat-title">Discount</div>
+                  <div class="stat-value text-white relative">
+                    ISK {@discount
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+                    <span class="absolute top-0 right-0 text-xs text-white discount" />
+                  </div>
+                </div>
               </div>
-              <div class="stat-actions text-end"></div>
             </div>
           </div>
         </.form>

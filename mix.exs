@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.60.1"
+  @version "1.61.2"
 
   def project do
     [
@@ -118,7 +118,8 @@ defmodule WandererApp.MixProject do
       {:error_tracker, "~> 0.2"},
       {:ddrt, "~> 0.2.1"},
       {:live_view_events, "~> 0.1.0"},
-      {:ash_pagify, "~> 1.4.1"}
+      {:ash_pagify, "~> 1.4.1"},
+      {:timex, "~> 3.0"}
     ]
   end
 

@@ -107,7 +107,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     WandererApp.Map.Server.add_system(
       map_id,
       %{
@@ -134,7 +135,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.add_hub(%{
       solar_system_id: solar_system_id
@@ -164,7 +166,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.remove_hub(%{
       solar_system_id: solar_system_id
@@ -278,11 +281,13 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> update_system_position(position)
 
@@ -295,11 +300,13 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> update_system_positions(positions)
 
@@ -319,7 +326,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     method_atom =
       case param do
         "name" -> :update_system_name
@@ -412,7 +420,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.delete_systems(
       solar_system_ids |> Enum.map(&String.to_integer/1),
