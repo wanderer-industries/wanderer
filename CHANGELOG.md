@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.61.2](https://github.com/wanderer-industries/wanderer/compare/v1.61.1...v1.61.2) (2025-04-29)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed main character checking & manual systems delete logic
+
 ## [v1.61.1](https://github.com/wanderer-industries/wanderer/compare/v1.61.0...v1.61.1) (2025-04-26)
 
 
