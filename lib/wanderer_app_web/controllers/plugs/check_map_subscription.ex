@@ -5,11 +5,13 @@ defmodule WandererAppWeb.Plugs.CheckMapSubscription do
   """
 
   import Plug.Conn
+  require Logger
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    case fetch_map_id(conn.query_params) do
+    # First check if map_id is already in conn.assigns (from CheckMapApiKey)
+    case get_map_id_from_assigns_or_params(conn) do
       {:ok, map_id} ->
         {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
 
@@ -25,6 +27,17 @@ defmodule WandererAppWeb.Plugs.CheckMapSubscription do
         conn
         |> send_resp(400, msg)
         |> halt()
+    end
+  end
+
+  # First try to get map_id from conn.assigns
+  defp get_map_id_from_assigns_or_params(conn) do
+    if Map.has_key?(conn.assigns, :map_id) do
+      Logger.debug("Found map_id in conn.assigns: #{conn.assigns.map_id}")
+      {:ok, conn.assigns.map_id}
+    else
+      # Fall back to query params if not in assigns
+      fetch_map_id(conn.query_params)
     end
   end
 
