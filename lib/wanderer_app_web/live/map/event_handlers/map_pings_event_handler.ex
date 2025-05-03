@@ -1,0 +1,99 @@
+defmodule WandererAppWeb.MapPingsEventHandler do
+  use WandererAppWeb, :live_component
+  use Phoenix.Component
+  require Logger
+
+  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+
+  def handle_server_event(%{event: :ping_added, payload: ping_info}, socket),
+    do:
+      socket
+      |> MapEventHandler.push_map_event("ping_added", [
+        map_ping(ping_info)
+      ])
+
+  def handle_server_event(%{event: :ping_cancelled, payload: ping_info}, socket),
+    do:
+      socket
+      |> MapEventHandler.push_map_event("ping_cancelled", %{
+        solar_system_id: ping_info.solar_system_id,
+        type: ping_info.type
+      })
+
+  def handle_server_event(event, socket),
+    do: MapCoreEventHandler.handle_server_event(event, socket)
+
+  def handle_ui_event(
+        "add_ping",
+        %{"solar_system_id" => solar_system_id, "message" => message, "type" => type} = _event,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user,
+            main_character_id: main_character_id,
+            has_tracked_characters?: true,
+            user_permissions: %{manage_map: true}
+          }
+        } =
+          socket
+      )
+      when not is_nil(main_character_id) do
+    map_id
+    |> WandererApp.Map.Server.add_ping(%{
+      solar_system_id: solar_system_id,
+      message: message,
+      type: type,
+      character_id: main_character_id,
+      user_id: current_user.id
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
+        "cancel_ping",
+        %{"solar_system_id" => solar_system_id, "type" => type} = _event,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user,
+            main_character_id: main_character_id,
+            has_tracked_characters?: true,
+            user_permissions: %{manage_map: true}
+          }
+        } =
+          socket
+      )
+      when not is_nil(main_character_id) do
+    map_id
+    |> WandererApp.Map.Server.cancel_ping(%{
+      solar_system_id: solar_system_id,
+      type: type,
+      character_id: main_character_id,
+      user_id: current_user.id
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(event, body, socket),
+    do: MapCoreEventHandler.handle_ui_event(event, body, socket)
+
+  def map_ping(
+        %{
+          inserted_at: inserted_at,
+          character_eve_id: character_eve_id,
+          solar_system_id: solar_system_id,
+          message: message,
+          type: type
+        } = _ping
+      ) do
+    %{
+      inserted_at: inserted_at,
+      character_eve_id: character_eve_id,
+      solar_system_id: solar_system_id,
+      message: message,
+      type: type
+    }
+  end
+end
