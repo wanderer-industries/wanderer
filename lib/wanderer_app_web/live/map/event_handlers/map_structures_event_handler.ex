@@ -18,7 +18,7 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   def handle_ui_event(
         "get_structures",
         %{"system_id" => solar_system_id},
-        %{assigns: %{map_id: map_id}} = socket
+        %{assigns: %{map_id: map_id, map_loaded?: true}} = socket
       ) do
     case MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
@@ -33,6 +33,14 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   end
 
   def handle_ui_event(
+        "get_structures",
+        _event,
+        socket
+      ) do
+    {:reply, %{structures: []}, socket}
+  end
+
+  def handle_ui_event(
         "update_structures",
         %{
           "system_id" => solar_system_id,
@@ -43,12 +51,14 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             main_character_eve_id: main_character_eve_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     with {:ok, system} <- get_map_system(map_id, solar_system_id) do
       Logger.debug(fn ->
         "[handle_ui_event:update_structures] loaded map_system =>\n" <>

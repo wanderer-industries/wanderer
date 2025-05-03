@@ -68,15 +68,22 @@ defmodule WandererApp.Character.TrackingUtils do
       {:ok, main_character} =
         get_main_character(user_settings, characters_with_access, characters_with_access)
 
-      following_character_eve_id = case user_settings do
-        nil -> nil
-        %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
-      end
+      following_character_eve_id =
+        case user_settings do
+          nil -> nil
+          %{following_character_eve_id: following_character_eve_id} -> following_character_eve_id
+        end
+
+      main_character_eve_id =
+        case main_character do
+          nil -> nil
+          %{eve_id: eve_id} -> eve_id
+        end
 
       {:ok,
        %{
          characters: characters_data,
-         main: main_character.eve_id,
+         main: main_character_eve_id,
          following: following_character_eve_id
        }}
     else

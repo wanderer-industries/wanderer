@@ -60,6 +60,15 @@ defmodule WandererAppWeb.MapLive do
          "One of your characters has expired token. Please refresh it on characters page."
        )}
 
+  def handle_info(:no_main_character_set, socket),
+    do:
+      {:noreply,
+       socket
+       |> put_flash(
+         :warning,
+         "You don't have main character set, please update it in tracking settings (top right icon)."
+       )}
+
   def handle_info(:no_access, socket),
     do:
       {:noreply,

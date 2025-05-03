@@ -119,6 +119,12 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     end
   end
 
+  def update_signatures(
+        state,
+        _signatures_update
+      ),
+      do: state
+
   defp parse_signatures(signatures, character_eve_id, system_id),
     do:
       signatures
