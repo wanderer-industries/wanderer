@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { LayoutEventBlocker, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
-import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons.ts';
+import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
 
 import classes from './FastSystemActions.module.scss';
 import clsx from 'clsx';

@@ -1,7 +1,8 @@
-import { AvailableThemes, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const useTheme = (): AvailableThemes => {
-  const { interfaceSettings } = useMapRootState();
+  const { storedSettings } = useMapRootState();
 
-  return interfaceSettings.theme;
+  return storedSettings.interfaceSettings.theme;
 };

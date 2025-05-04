@@ -28,8 +28,8 @@ export type CharacterTypeRaw = {
   ship: ShipTypeRaw | null;
 
   alliance_id: number | null;
-  alliance_name: number | null;
-  alliance_ticker: number | null;
+  alliance_name: string | null;
+  alliance_ticker: string | null;
   corporation_id: number;
   corporation_name: string;
   corporation_ticker: string;

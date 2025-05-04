@@ -108,7 +108,14 @@ defmodule WandererApp.Map do
     hubs = map |> Map.get(:hubs, [])
     hubs_limit = map |> Map.get(:hubs_limit, 20)
 
-    {:ok, hubs |> _maybe_limit_list(hubs_limit)}
+    {:ok, hubs |> maybe_limit_list(hubs_limit)}
+  end
+
+  def list_hubs(map_id, hubs) do
+    {:ok, map} = map_id |> get_map()
+    hubs_limit = map |> Map.get(:hubs_limit, 20)
+
+    {:ok, hubs |> maybe_limit_list(hubs_limit)}
   end
 
   def list_connections(map_id),
@@ -536,8 +543,8 @@ defmodule WandererApp.Map do
     end
   end
 
-  defp _maybe_limit_list(list, nil), do: list
-  defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
+  defp maybe_limit_list(list, nil), do: list
+  defp maybe_limit_list(list, limit), do: Enum.take(list, limit)
 
   @doc """
   Returns the raw activity data that can be processed by WandererApp.Character.Activity.
@@ -549,7 +556,8 @@ defmodule WandererApp.Map do
     _map_with_acls = Ash.load!(map, :acls)
 
     # Calculate cutoff date if days is provided
-    cutoff_date = if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
+    cutoff_date =
+      if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
 
     # Get activity data
     passages_activity = get_passages_activity(map_id, cutoff_date)

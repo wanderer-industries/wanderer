@@ -13,28 +13,26 @@ interface MapEvent {
   payload?: Kill[];
 }
 
-export function useNodeKillsCount(
-  systemId: number | string,
-  initialKillsCount: number | null
-): number | null {
+export function useNodeKillsCount(systemId: number | string, initialKillsCount: number | null): number | null {
   const [killsCount, setKillsCount] = useState<number | null>(initialKillsCount);
 
   useEffect(() => {
     setKillsCount(initialKillsCount);
   }, [initialKillsCount]);
 
-  const handleEvent = useCallback((event: MapEvent): boolean => {
-    if (event.name === Commands.killsUpdated && Array.isArray(event.payload)) {
-      const killForSystem = event.payload.find(
-        kill => kill.solar_system_id.toString() === systemId.toString()
-      );
-      if (killForSystem && typeof killForSystem.kills === 'number') {
-        setKillsCount(killForSystem.kills);
+  const handleEvent = useCallback(
+    (event: MapEvent): boolean => {
+      if (event.name === Commands.killsUpdated && Array.isArray(event.payload)) {
+        const killForSystem = event.payload.find(kill => kill.solar_system_id.toString() === systemId.toString());
+        if (killForSystem && typeof killForSystem.kills === 'number') {
+          setKillsCount(killForSystem.kills);
+        }
+        return true;
       }
-      return true;
-    }
-    return false;
-  }, [systemId]);
+      return false;
+    },
+    [systemId],
+  );
 
   useMapEventListener(handleEvent);
 

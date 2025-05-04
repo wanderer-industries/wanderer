@@ -55,7 +55,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
   } = data;
 
   const {
-    interfaceSettings,
+    storedSettings: { interfaceSettings },
     data: { systemSignatures: mapSystemSignatures },
   } = useMapRootState();
 
