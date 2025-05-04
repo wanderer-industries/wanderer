@@ -1,138 +1,136 @@
 <div class="grid grid-flow-row gap-2 p-3 h-full w-full pl-20">
   <main class="w-full rounded-lg shadow col-span-2 lg:col-span-1 overflow-auto p-3">
-    <%= if @maps != [] do %>
-      <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-3 ">
+    <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-3 ">
+      <.link
+        :if={not @restrict_maps_creation?}
+        class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
+        patch={~p"/maps/new"}
+      >
+        <div class="card-body justify-center items-center">
+          <.icon name="hero-plus-solid" class="w-20 h-20" />
+          <h3 class="card-title text-center text-md">Create Map</h3>
+        </div>
+      </.link>
+      <.async_result :if={assigns[:maps]} :let={maps} assign={@maps}>
+        <:loading>
+          <div class="skeleton card rounded"></div>
+          <div class="skeleton card rounded"></div>
+          <div class="skeleton card rounded"></div>
+          <div class="skeleton card rounded"></div>
+        </:loading>
+        <:failed :let={reason}><%= reason %></:failed>
         <.link
-          :if={not @restrict_maps_creation?}
-          class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
-          patch={~p"/maps/new"}
+          :for={map <- maps}
+          navigate={~p"/#{map.slug}"}
+          class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white"
         >
-          <div class="card-body justify-center items-center">
-            <.icon name="hero-plus-solid" class="w-20 h-20" />
-            <h3 class="card-title text-center text-md">Create Map</h3>
-          </div>
-        </.link>
-        <.async_result :let={maps} assign={@maps}>
-          <:loading>
-            <div class="skeleton card rounded"></div>
-            <div class="skeleton card rounded"></div>
-            <div class="skeleton card rounded"></div>
-            <div class="skeleton card rounded"></div>
-          </:loading>
-          <:failed :let={reason}><%= reason %></:failed>
-          <.link
-            :for={map <- maps}
-            navigate={~p"/#{map.slug}"}
-            class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white"
-          >
-            <figure class="absolute z-10 h-200 avatar w-full h-full">
-              <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
-              <img
-                :if={map.scope === :wormholes}
-                class="absolute h-200"
-                src="/images/wh_back.jpg"
-              />
-              <img
-                :if={map.scope === :stargates}
-                class="absolute h-200"
-                src="/images/stargates_back.webp"
-              />
-            </figure>
+          <figure class="absolute z-10 h-200 avatar w-full h-full">
+            <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
+            <img
+              :if={map.scope === :wormholes}
+              class="absolute h-200"
+              src="/images/wh_back.jpg"
+            />
+            <img
+              :if={map.scope === :stargates}
+              class="absolute h-200"
+              src="/images/stargates_back.webp"
+            />
+          </figure>
 
-            <div class="absolute z-50 left-0 top-0 w-full h-full p-6 flex flex-col justify-between bg-opacity-70 bg-neutral-900 hover:bg-opacity-30 transform transition duration-500">
-              <div>
-                <h2 class="card-title text-sm">
-                  <%= map.name %>
-                </h2>
-                <p title={map.description} class="text-sm mt-4 line-clamp-2">
-                  <%= map.description %>
-                </p>
-                <div
-                  :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
-                  class="w-full flex gap-2 mt-2 text-xs"
+          <div class="absolute z-50 left-0 top-0 w-full h-full p-6 flex flex-col justify-between bg-opacity-70 bg-neutral-900 hover:bg-opacity-30 transform transition duration-500">
+            <div>
+              <h2 class="card-title text-sm">
+                <%= map.name %>
+              </h2>
+              <p title={map.description} class="text-sm mt-4 line-clamp-2">
+                <%= map.description %>
+              </p>
+              <div
+                :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
+                class="w-full flex gap-2 mt-2 text-xs"
+              >
+                <button
+                  :for={acl <- map.acls}
+                  class="p-tag p-component rounded-none hover:text-white"
+                  id={"map-acl-#{acl.id}"}
+                  type="button"
+                  phx-hook="MapAction"
+                  data-event="open_acl"
+                  data-data={acl.id}
                 >
-                  <button
-                    :for={acl <- map.acls}
-                    class="p-tag p-component rounded-none hover:text-white"
-                    id={"map-acl-#{acl.id}"}
-                    type="button"
-                    phx-hook="MapAction"
-                    data-event="open_acl"
-                    data-data={acl.id}
-                  >
-                    <div class="p-tag-value">
-                      <%= acl.name %>
-                    </div>
-                  </button>
-                </div>
-              </div>
-              <div>
-                <h2 class="w-full flex justify-between mb-4 text-sm">
-                  Tracked Characters:
-                  <span class="font-bold">
-                    <%= map.characters_count %>
-                  </span>
-                </h2>
-                <div class="flex gap-2 justify-end">
-                  <button
-                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                    id={"map-characters-#{map.slug}"}
-                    phx-hook="MapAction"
-                    data-event="open_characters"
-                    data-data={map.slug}
-                    class="h-8 w-8 hover:text-white"
-                  >
-                    <.icon name="hero-user-group-solid" class="w-6 h-6" />
-                  </button>
-                  <button
-                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                    id={"map-audit-#{map.slug}"}
-                    phx-hook="MapAction"
-                    data-event="open_audit"
-                    data-data={map.slug}
-                    class="h-8 w-8 hover:text-white"
-                  >
-                    <.icon name="hero-key-solid" class="w-6 h-6" />
-                  </button>
-                  <button
-                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                    id={"map-settings-#{map.slug}"}
-                    phx-hook="MapAction"
-                    data-event="open_settings"
-                    data-data={map.slug}
-                    class="h-8 w-8 hover:text-white"
-                  >
-                    <.icon name="hero-cog-6-tooth-solid" class="w-6 h-6" />
-                  </button>
-                  <button
-                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                    id={"edit-map-#{map.slug}"}
-                    class="h-8 w-8 hover:text-white"
-                    type="button"
-                    phx-hook="MapAction"
-                    data-event="edit_map"
-                    data-data={map.slug}
-                  >
-                    <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
-                  </button>
-                  <button
-                    :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                    id={"delete-map-#{map.slug}"}
-                    class="h-8 w-8 hover:text-white"
-                    phx-hook="MapAction"
-                    data-event="delete"
-                    data-data={map.slug}
-                    data-confirm="Please confirm to delete map!"
-                  >
-                    <.icon name="hero-trash-solid" class="w-6 h-6" />
-                  </button>
-                </div>
+                  <div class="p-tag-value">
+                    <%= acl.name %>
+                  </div>
+                </button>
               </div>
             </div>
-          </.link>
-        </.async_result>
-      </div>
-    <% end %>
+            <div>
+              <h2 class="w-full flex justify-between mb-4 text-sm">
+                Tracked Characters:
+                <span class="font-bold">
+                  <%= map.characters_count %>
+                </span>
+              </h2>
+              <div class="flex gap-2 justify-end">
+                <button
+                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                  id={"map-characters-#{map.slug}"}
+                  phx-hook="MapAction"
+                  data-event="open_characters"
+                  data-data={map.slug}
+                  class="h-8 w-8 hover:text-white"
+                >
+                  <.icon name="hero-user-group-solid" class="w-6 h-6" />
+                </button>
+                <button
+                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                  id={"map-audit-#{map.slug}"}
+                  phx-hook="MapAction"
+                  data-event="open_audit"
+                  data-data={map.slug}
+                  class="h-8 w-8 hover:text-white"
+                >
+                  <.icon name="hero-key-solid" class="w-6 h-6" />
+                </button>
+                <button
+                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                  id={"map-settings-#{map.slug}"}
+                  phx-hook="MapAction"
+                  data-event="open_settings"
+                  data-data={map.slug}
+                  class="h-8 w-8 hover:text-white"
+                >
+                  <.icon name="hero-cog-6-tooth-solid" class="w-6 h-6" />
+                </button>
+                <button
+                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                  id={"edit-map-#{map.slug}"}
+                  class="h-8 w-8 hover:text-white"
+                  type="button"
+                  phx-hook="MapAction"
+                  data-event="edit_map"
+                  data-data={map.slug}
+                >
+                  <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
+                </button>
+                <button
+                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
+                  id={"delete-map-#{map.slug}"}
+                  class="h-8 w-8 hover:text-white"
+                  phx-hook="MapAction"
+                  data-event="delete"
+                  data-data={map.slug}
+                  data-confirm="Please confirm to delete map!"
+                >
+                  <.icon name="hero-trash-solid" class="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </.link>
+      </.async_result>
+    </div>
   </main>
 </div>
 

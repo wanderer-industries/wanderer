@@ -266,31 +266,32 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       |> Enum.filter(fn system -> not is_nil(system) && not system.locked end)
       |> Enum.map(&{&1.solar_system_id, &1.id})
 
-    solar_system_ids_to_remove =
-      filtered_ids
-      |> Enum.map(fn {solar_system_id, _} -> solar_system_id end)
-
-    system_ids_to_remove =
-      filtered_ids
-      |> Enum.map(fn {_, system_id} -> system_id end)
-
-    connections_to_remove =
-      solar_system_ids_to_remove
-      |> Enum.map(fn solar_system_id ->
-        WandererApp.Map.find_connections(map_id, solar_system_id)
-      end)
-      |> List.flatten()
-      |> Enum.uniq_by(& &1.id)
-
-    :ok = WandererApp.Map.remove_connections(map_id, connections_to_remove)
-    :ok = WandererApp.Map.remove_systems(map_id, solar_system_ids_to_remove)
-
-    solar_system_ids_to_remove
-    |> Enum.each(fn solar_system_id ->
+    filtered_ids
+    |> Enum.each(fn {solar_system_id, system_id} ->
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
         {:ok, _} ->
+          :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
+          @ddrt.delete([solar_system_id], rtree_name)
+          Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
+          track_systems_removed(map_id, user_id, character_id, [solar_system_id])
+          remove_system_connections(map_id, [solar_system_id])
+
+          try do
+            cleanup_linked_signatures(map_id, [solar_system_id])
+          rescue
+            e ->
+              Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
+          end
+
+          try do
+            cleanup_linked_system_sig_eve_ids(state, [system_id])
+          rescue
+            e ->
+              Logger.error("Failed to cleanup system linked sig eve ids: #{inspect(e)}")
+          end
+
           :ok
 
         {:error, error} ->
@@ -299,25 +300,68 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       end
     end)
 
+    state
+  end
+
+  defp track_systems_removed(map_id, user_id, character_id, removed_solar_system_ids)
+       when not is_nil(user_id) and not is_nil(character_id) do
+    WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
+      character_id: character_id,
+      user_id: user_id,
+      map_id: map_id,
+      solar_system_ids: removed_solar_system_ids
+    })
+    |> case do
+      {:ok, _} -> :ok
+      error -> Logger.error("Failed to track systems removed: #{inspect(error)}")
+    end
+  end
+
+  defp track_systems_removed(_map_id, _user_id, _character_id, _removed_solar_system_ids), do: :ok
+
+  defp remove_system_connections(map_id, solar_system_ids_to_remove) do
+    connections_to_remove =
+      solar_system_ids_to_remove
+      |> Enum.map(fn solar_system_id ->
+        WandererApp.Map.find_connections(map_id, solar_system_id)
+      end)
+      |> List.flatten()
+      |> Enum.uniq_by(& &1.id)
+
     connections_to_remove
     |> Enum.each(fn connection ->
-      Logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
-      WandererApp.MapConnectionRepo.destroy(map_id, connection)
+      try do
+        Logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
+        :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
+        :ok = WandererApp.Map.remove_connection(map_id, connection)
+        Impl.broadcast!(map_id, :remove_connections, [connection])
+      rescue
+        e ->
+          Logger.error("Failed to remove connection: #{inspect(e)}")
+      end
     end)
+  end
 
-    solar_system_ids_to_remove
+  defp cleanup_linked_signatures(map_id, removed_solar_system_ids) do
+    removed_solar_system_ids
     |> Enum.map(fn solar_system_id ->
       WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
     end)
     |> List.flatten()
     |> Enum.uniq_by(& &1.system_id)
     |> Enum.each(fn s ->
-      {:ok, %{system: system}} = s |> Ash.load([:system])
-      Ash.destroy!(s)
-
-      Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+      try do
+        {:ok, %{system: system}} = s |> Ash.load([:system])
+        :ok = Ash.destroy!(s)
+        Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+      rescue
+        e ->
+          Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
+      end
     end)
+  end
 
+  defp cleanup_linked_system_sig_eve_ids(state, system_ids_to_remove) do
     linked_system_ids =
       system_ids_to_remove
       |> Enum.map(fn system_id ->
@@ -335,34 +379,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         linked_sig_eve_id: nil
       })
     end)
-
-    @ddrt.delete(solar_system_ids_to_remove, rtree_name)
-
-    Impl.broadcast!(map_id, :remove_connections, connections_to_remove)
-    Impl.broadcast!(map_id, :systems_removed, solar_system_ids_to_remove)
-
-    case not is_nil(user_id) do
-      true ->
-        {:ok, _} =
-          WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
-            character_id: character_id,
-            user_id: user_id,
-            map_id: map_id,
-            solar_system_ids: solar_system_ids_to_remove
-          })
-
-        :telemetry.execute(
-          [:wanderer_app, :map, :systems, :remove],
-          %{count: solar_system_ids_to_remove |> Enum.count()}
-        )
-
-        :ok
-
-      _ ->
-        :ok
-    end
-
-    state
   end
 
   def maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
