@@ -16,6 +16,7 @@ import { LocalCounter } from './SolarSystemLocalCounter';
 import { KillsCounter } from './SolarSystemKillsCounter';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { Tag } from 'primereact/tag';
 
 // let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
@@ -89,7 +90,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               </div>
 
               {nodeVars.tag != null && nodeVars.tag !== '' && (
-                <div className={clsx(classes.TagTitle, 'text-sky-400 font-medium')}>{nodeVars.tag}</div>
+                <Tag
+                  value={nodeVars.tag}
+                  severity="warning"
+                  className="py-0 px-[2px] text-[9px] [&_.p-tag-value]:leading-[1.3]"
+                ></Tag>
               )}
 
               <div
