@@ -594,6 +594,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
   defp get_map_data(map_id, current_user_id, is_subscription_active) do
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
+    {:ok, hubs_limit} = map_id |> WandererApp.Map.get_hubs_limit()
     {:ok, connections} = map_id |> WandererApp.Map.list_connections()
     {:ok, systems} = map_id |> WandererApp.Map.list_systems()
 
@@ -615,6 +616,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       system_static_infos:
         system_static_infos |> Enum.map(&MapEventHandler.map_ui_system_static_info/1),
       hubs: hubs,
+      hubs_limit: hubs_limit,
       user_hubs: user_hubs,
       connections: connections |> Enum.map(&MapEventHandler.map_ui_connection/1)
     }
