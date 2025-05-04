@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
+import useLocalStorageState from 'use-local-storage-state';
 
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
@@ -16,6 +18,8 @@ import {
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import {
   SETTINGS_KEYS,
+  SETTINGS_VALUES,
+  SIGNATURE_SETTING_STORE_KEY,
   SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
@@ -44,6 +48,13 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     outCommand,
     data: { wormholes },
   } = useMapRootState();
+
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
+  const isSyncSignatureTempNameEnabled = useMapGetOption('sync_sig_temp_name') === 'true';
+  const [signaturesSettings] = useLocalStorageState(SIGNATURE_SETTING_STORE_KEY, {
+    defaultValue: SETTINGS_VALUES,
+  });
+  const showSignatureTempName = signaturesSettings[SETTINGS_KEYS.SHOW_TEMP_NAME] as boolean;
 
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
@@ -144,13 +155,23 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       }
 
       const whShipSize = getWhSize(wormholes, signature.type);
-      if (whShipSize) {
+      if (whShipSize !== undefined && whShipSize !== null) {
         await outCommand({
           type: OutCommand.updateConnectionShipSizeType,
           data: {
             source: data.solar_system_source,
             target: data.solar_system_target,
             value: whShipSize,
+          },
+        });
+      }
+
+      if (signature.temp_name && isTempSystemNameEnabled && isSyncSignatureTempNameEnabled) {
+        outCommand({
+          type: OutCommand.updateSystemTemporaryName,
+          data: {
+            system_id: data.solar_system_target,
+            value: signature.temp_name,
           },
         });
       }
@@ -172,7 +193,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       <SystemSignaturesContent
         systemId={`${data.solar_system_source}`}
         hideLinkedSignatures
-        settings={LINK_SIGNTATURE_SETTINGS}
+        settings={{ ...LINK_SIGNTATURE_SETTINGS, [SETTINGS_KEYS.SHOW_TEMP_NAME]: showSignatureTempName }}
         onSelect={handleSelect}
         selectable={true}
         filterSignature={filterSignature}

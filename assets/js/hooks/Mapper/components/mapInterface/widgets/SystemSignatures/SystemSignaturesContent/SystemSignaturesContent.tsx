@@ -36,6 +36,7 @@ import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
+import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
@@ -81,6 +82,7 @@ export const SystemSignaturesContent = ({
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const [hoveredSignature, setHoveredSignature] = useState<SystemSignature | null>(null);
+  const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
 
   const tableRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<WdTooltipHandlers>(null);
@@ -158,15 +160,17 @@ export const SystemSignaturesContent = ({
     [selectable],
   );
 
-  const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(
-    () => ({
-      showDescriptionColumn: settings[SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN] as boolean,
-      showUpdatedColumn: settings[SETTINGS_KEYS.SHOW_UPDATED_COLUMN] as boolean,
-      showCharacterColumn: settings[SETTINGS_KEYS.SHOW_CHARACTER_COLUMN] as boolean,
-      showCharacterPortrait: settings[SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT] as boolean,
-    }),
-    [settings],
-  );
+  const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait, showTempName } =
+    useMemo(
+      () => ({
+        showDescriptionColumn: settings[SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN] as boolean,
+        showUpdatedColumn: settings[SETTINGS_KEYS.SHOW_UPDATED_COLUMN] as boolean,
+        showCharacterColumn: settings[SETTINGS_KEYS.SHOW_CHARACTER_COLUMN] as boolean,
+        showCharacterPortrait: settings[SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT] as boolean,
+        showTempName: settings[SETTINGS_KEYS.SHOW_TEMP_NAME] as boolean,
+      }),
+      [settings],
+    );
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
     return signatures.filter(sig => {
@@ -286,7 +290,7 @@ export const SystemSignaturesContent = ({
             bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
             style={{ maxWidth: nameColumnWidth }}
             hidden={isCompact || isMedium}
-            body={renderInfoColumn}
+            body={x => renderInfoColumn(x, isTempSystemNameEnabled && showTempName)}
           />
           {showDescriptionColumn && (
             <Column

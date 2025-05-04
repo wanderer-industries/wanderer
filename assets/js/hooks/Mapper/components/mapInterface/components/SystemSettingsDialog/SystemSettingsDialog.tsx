@@ -11,6 +11,7 @@ import { IconField } from 'primereact/iconfield';
 import { TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { MAX_TEMP_NAME_LENGTH } from '@/hooks/Mapper/constants.ts';
 
 interface SystemSettingsDialog {
   systemId: string;
@@ -206,7 +207,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                     aria-describedby="temporaryName"
                     autoComplete="off"
                     value={temporaryName}
-                    maxLength={10}
+                    maxLength={MAX_TEMP_NAME_LENGTH}
                     onChange={e => setTemporaryName(e.target.value)}
                   />
                 </IconField>

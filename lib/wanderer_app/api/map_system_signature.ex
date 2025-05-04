@@ -64,7 +64,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :kind,
         :group,
         :type,
-        :custom_info
+        :custom_info,
+        :temp_name
       ]
 
       argument :system_id, :uuid, allow_nil?: false
@@ -83,7 +84,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :group,
         :type,
         :custom_info,
-        :updated
+        :updated,
+        :temp_name
       ]
 
       primary? true
@@ -150,6 +152,10 @@ defmodule WandererApp.Api.MapSystemSignature do
     end
 
     attribute :updated, :integer
+
+    attribute :temp_name, :string do
+      allow_nil? true
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
