@@ -1,15 +1,17 @@
 import classes from './OnTheMap.module.scss';
 import { Sidebar } from 'primereact/sidebar';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { sortCharacters } from '@/hooks/Mapper/components/mapInterface/helpers/sortCharacters.ts';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import clsx from 'clsx';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
-import { CharacterCard, WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
+import { CharacterCard, TooltipPosition, WdCheckbox, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import useLocalStorageState from 'use-local-storage-state';
 import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+import { InputText } from 'primereact/inputtext';
+import { IconField } from 'primereact/iconfield';
 
 type WindowLocalSettingsType = {
   compact: boolean;
@@ -33,7 +35,7 @@ const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: Virt
       })}
       style={{ height: options.props.itemSize + 'px' }}
     >
-      <CharacterCard showSystem {...item} />
+      <CharacterCard showCorporationLogo showAllyLogo showSystem showTicker {...item} />
     </div>
   );
 };
@@ -48,6 +50,8 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
     data: { characters, userCharacters },
   } = useMapRootState();
 
+  const [searchVal, setSearchVal] = useState('');
+
   const [settings, setSettings] = useLocalStorageState<WindowLocalSettingsType>('window:onTheMap:settings', {
     defaultValue: STORED_DEFAULT_VALUES,
   });
@@ -61,13 +65,54 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
   );
 
   const sorted = useMemo(() => {
-    const out = characters.map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id) })).sort(sortCharacters);
+    let out = characters.map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id) })).sort(sortCharacters);
+
+    if (searchVal !== '') {
+      out = out.filter(x => {
+        const normalized = searchVal.toLowerCase();
+
+        if (x.name.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.corporation_name.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.alliance_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.corporation_ticker.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.alliance_ticker?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_type_info.name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_type_info.group_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        return false;
+      });
+    }
+
     if (showOffline && !settings.hideOffline) {
       return out;
     }
 
     return out.filter(x => x.online);
-  }, [showOffline, characters, settings.hideOffline, userCharacters]);
+  }, [showOffline, searchVal, characters, settings.hideOffline, userCharacters]);
 
   return (
     <Sidebar
@@ -79,7 +124,30 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
       icons={<></>}
     >
       <div className={clsx(classes.SidebarContent, '')}>
-        <div className={'flex justify-end items-center gap-2 px-3'}>
+        <div className={'flex justify-between items-center gap-2 px-2 pt-1'}>
+          <IconField>
+            {searchVal.length > 0 && (
+              <WdImgButton
+                className="pi pi-trash"
+                textSize={WdImageSize.large}
+                tooltip={{
+                  content: 'Clear',
+                  className: 'pi p-input-icon',
+                  position: TooltipPosition.top,
+                }}
+                onClick={() => setSearchVal('')}
+              />
+            )}
+            <InputText
+              id="label"
+              aria-describedby="label"
+              autoComplete="off"
+              value={searchVal}
+              placeholder="Type to search"
+              onChange={e => setSearchVal(e.target.value)}
+            />
+          </IconField>
+
           {showOffline && (
             <WdCheckbox
               size="m"

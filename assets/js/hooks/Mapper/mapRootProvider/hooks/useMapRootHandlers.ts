@@ -33,6 +33,7 @@ import {
   useMapInit,
   useMapUpdated,
   useRoutes,
+  useUserRoutes,
 } from './api';
 
 import { useCommandsActivity } from './api/useCommandsActivity';
@@ -54,6 +55,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
     useCommandsCharacters();
   const mapUpdated = useMapUpdated();
   const mapRoutes = useRoutes();
+  const mapUserRoutes = useUserRoutes();
   const { addComment, removeComment } = useCommandComments();
   const { characterActivityData, trackingCharactersData, userSettingsUpdated } = useCommandsActivity();
 
@@ -104,6 +106,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
               break;
             case Commands.routes:
               mapRoutes(data as CommandRoutes);
+              break;
+            case Commands.userRoutes:
+              mapUserRoutes(data as CommandRoutes);
               break;
 
             case Commands.signaturesUpdated: // USED

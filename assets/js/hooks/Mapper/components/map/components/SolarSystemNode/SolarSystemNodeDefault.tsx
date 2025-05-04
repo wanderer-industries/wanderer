@@ -17,21 +17,18 @@ import { KillsCounter } from './SolarSystemKillsCounter';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 
+// let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
   const localKillsCount = useNodeKillsCount(nodeVars.solarSystemId, nodeVars.killsCount);
 
+  // console.log('JOipP', `render ${nodeVars.id}`, render++);
+
   return (
     <>
       {nodeVars.visible && (
         <div className={classes.Bookmarks}>
-          {nodeVars.labelCustom !== '' && (
-            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
-              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{nodeVars.labelCustom}</span>
-            </div>
-          )}
-
           {nodeVars.isShattered && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered, '!pr-[2px]')}>
               <WdTooltipWrapper content="Shattered" position={TooltipPosition.top}>
@@ -53,6 +50,12 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
                 <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
               </div>
             </KillsCounter>
+          )}
+
+          {nodeVars.labelCustom !== '' && (
+            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
+              <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{nodeVars.labelCustom}</span>
+            </div>
           )}
 
           {nodeVars.labelsInfo.map(x => (

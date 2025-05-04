@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import type { ActivitySummary } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity/CharacterActivity';
+import { ActivitySummary } from '@/hooks/Mapper/types';
 
 /**
  * Hook for character activity related handlers
