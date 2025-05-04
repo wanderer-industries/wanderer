@@ -73,7 +73,6 @@ export const WRoutesPublic = () => {
       title="Routes"
       data={settingsRoutes}
       update={settingsRoutesUpdate}
-      isRestricted
       hubs={hubs}
       routesList={routes}
       loadRoutesCommand={loadRoutesCommand}
