@@ -99,6 +99,11 @@
 .p-dropdown-item {
   padding: 0.25rem 0.5rem;
   font-size: 14px;
+  width: 100%;
+
+  .p-dropdown-item-label {
+    width: 100%;
+  }
 }
 
 .p-dropdown-item-group {

@@ -44,7 +44,7 @@ export const TrackingCharactersList = () => {
         bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
         headerClassName="[&_div]:ml-2"
         body={row => {
-          return <CharacterCard showShipName={false} showSystem={false} isOwn {...row.character} />;
+          return <CharacterCard showCorporationLogo showTicker isOwn {...row.character} />;
         }}
       />
     </DataTable>

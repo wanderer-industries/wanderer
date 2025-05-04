@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler, MapSystemsEventHandler}
 
   def handle_server_event(
         %{
@@ -16,6 +16,25 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         socket
         |> MapEventHandler.push_map_event(
           "routes",
+          %{
+            solar_system_id: solar_system_id,
+            loading: false,
+            routes: routes,
+            systems_static_data: systems_static_data
+          }
+        )
+
+  def handle_server_event(
+        %{
+          event: :user_routes,
+          payload: {solar_system_id, %{routes: routes, systems_static_data: systems_static_data}}
+        },
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event(
+          "user_routes",
           %{
             solar_system_id: solar_system_id,
             loading: false,
@@ -44,6 +63,28 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         )
 
       {:routes, {solar_system_id, routes}}
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
+        "get_user_routes",
+        %{"system_id" => solar_system_id, "routes_settings" => routes_settings} = _event,
+        %{assigns: %{map_id: map_id, map_loaded?: true, current_user: current_user}} = socket
+      ) do
+    Task.async(fn ->
+      {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+
+      {:ok, routes} =
+        WandererApp.Maps.find_routes(
+          map_id,
+          hubs,
+          solar_system_id,
+          get_routes_settings(routes_settings)
+        )
+
+      {:user_routes, {solar_system_id, routes}}
     end)
 
     {:noreply, socket}

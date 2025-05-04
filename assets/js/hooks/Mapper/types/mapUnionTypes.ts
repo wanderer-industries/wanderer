@@ -15,9 +15,11 @@ export type MapUnionTypes = {
   userCharacters: string[];
   presentCharacters: string[];
   hubs: string[];
+  userHubs: string[];
   systems: SolarSystemRawType[];
   systemSignatures: Record<string, SystemSignature[]>;
   routes?: RoutesList;
+  userRoutes?: RoutesList;
   kills: Record<number, number>;
   connections: SolarSystemConnection[];
   userPermissions: Partial<UserPermissions>;

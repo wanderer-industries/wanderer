@@ -96,7 +96,11 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
       end)
 
     {:noreply,
-     socket |> MapEventHandler.push_map_event("init", %{system_signatures: system_signatures})}
+     socket
+     |> MapEventHandler.push_map_event(
+       "map_updated",
+       %{system_signatures: system_signatures}
+     )}
   end
 
   def handle_ui_event(

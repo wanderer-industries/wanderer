@@ -8,13 +8,33 @@ export const useMapUpdated = () => {
   const ref = useRef({ update });
   ref.current = { update };
 
-  return useCallback(({ hubs }: CommandMapUpdated) => {
+  return useCallback((props: CommandMapUpdated) => {
     const { update } = ref.current;
 
     const out: Partial<MapRootData> = {};
 
-    if (hubs) {
-      out.hubs = hubs;
+    if ('hubs' in props) {
+      out.hubs = props.hubs;
+    }
+
+    if ('user_hubs' in props) {
+      out.userHubs = props.user_hubs;
+    }
+
+    if ('system_signatures' in props) {
+      out.systemSignatures = props.system_signatures;
+    }
+
+    if ('following_character_eve_id' in props) {
+      out.userCharacters = props.user_characters;
+    }
+
+    if ('following_character_eve_id' in props) {
+      out.followingCharacterEveId = props.following_character_eve_id;
+    }
+
+    if ('main_character_eve_id' in props) {
+      out.mainCharacterEveId = props.main_character_eve_id;
     }
 
     update(out);
