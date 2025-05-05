@@ -1,6 +1,6 @@
+import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMemo } from 'react';
-import { getSystemById } from '@/hooks/Mapper/helpers';
 import { getSystemStaticInfo } from '../../mapRootProvider/hooks/useLoadSystemStatic';
 
 interface UseSystemInfoProps {
@@ -17,7 +17,7 @@ export const useSystemInfo = ({ systemId }: UseSystemInfoProps) => {
     const dynamicInfo = getSystemById(systems, systemId);
 
     if (!staticInfo || !dynamicInfo) {
-      throw new Error(`Error on getting system ${systemId}`);
+      return { dynamicInfo, staticInfo, leadsTo: [] };
     }
 
     const leadsTo = connections

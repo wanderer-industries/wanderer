@@ -2,6 +2,42 @@
 
 <!-- changelog -->
 
+## [v1.62.1](https://github.com/wanderer-industries/wanderer/compare/v1.62.0...v1.62.1) (2025-05-05)
+
+
+
+
+## [v1.62.0](https://github.com/wanderer-industries/wanderer/compare/v1.61.2...v1.62.0) (2025-05-05)
+
+
+
+
+### Features:
+
+* Core: added user routes support
+
+### Bug Fixes:
+
+* Map: Fixed link signature modal crash afrer destination system removed
+
+* Map: Change design for tags (#358)
+
+* Map: Removed paywall restriction from public routes
+
+* Core: Fixed issues with structures loading
+
+* Map: Removed unnecessary logs
+
+* Map: Add support user routes
+
+* Map: Add support for User Routes on FE side.
+
+* Map: Refactor Local - show ship name, change placement of ship name. Refactor On the Map - show corp and ally logo. Fixed problem with ellipsis at long character and ship names.
+
+* Map: Refactored routes widget. Add loader for routes. Prepared for custom hubs
+
+* Map: Refactor init and update of mapper
+
 ## [v1.61.2](https://github.com/wanderer-industries/wanderer/compare/v1.61.1...v1.61.2) (2025-04-29)
 
 

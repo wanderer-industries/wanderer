@@ -71,20 +71,31 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
   def handle_ui_event(
         "get_user_routes",
         %{"system_id" => solar_system_id, "routes_settings" => routes_settings} = _event,
-        %{assigns: %{map_id: map_id, map_loaded?: true, current_user: current_user}} = socket
+        %{
+          assigns: %{
+            map_id: map_id,
+            map_loaded?: true,
+            current_user: current_user,
+            is_subscription_active?: is_subscription_active?
+          }
+        } = socket
       ) do
     Task.async(fn ->
-      {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+      if is_subscription_active? do
+        {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
 
-      {:ok, routes} =
-        WandererApp.Maps.find_routes(
-          map_id,
-          hubs,
-          solar_system_id,
-          get_routes_settings(routes_settings)
-        )
+        {:ok, routes} =
+          WandererApp.Maps.find_routes(
+            map_id,
+            hubs,
+            solar_system_id,
+            get_routes_settings(routes_settings)
+          )
 
-      {:user_routes, {solar_system_id, routes}}
+        {:user_routes, {solar_system_id, routes}}
+      else
+        {:user_routes, {solar_system_id, %{routes: [], systems_static_data: []}}}
+      end
     end)
 
     {:noreply, socket}

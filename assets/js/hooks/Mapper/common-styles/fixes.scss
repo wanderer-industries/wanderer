@@ -185,3 +185,16 @@
 .p-datatable .p-datatable-tbody > tr.p-highlight {
   background: initial;
 }
+
+.suppress-menu-behaviour {
+  pointer-events: none;
+
+  .p-menuitem-content {
+    pointer-events: initial;
+    background-color: initial !important;
+  }
+  .p-menuitem-content:hover {
+    background-color: initial !important;
+  }
+}
+

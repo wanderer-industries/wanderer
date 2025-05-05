@@ -1,1 +1,1 @@
-export * from './useTagMenu.ts';
+export * from './useTagMenu.tsx';

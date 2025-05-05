@@ -1,8 +1,8 @@
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { RefObject, useCallback } from 'react';
 
-// Force reload the page after 30 minutes of inactivity
-const FORCE_PAGE_RELOAD_TIMEOUT = 1000 * 60 * 30;
+// Force reload the page after 5 minutes of inactivity
+const FORCE_PAGE_RELOAD_TIMEOUT = 1000 * 60 * 5;
 
 export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRef: RefObject<any>) => {
   const handleCommand = useCallback(
