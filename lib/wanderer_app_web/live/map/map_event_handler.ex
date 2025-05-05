@@ -291,6 +291,8 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def push_map_event(socket, _type, _body), do: socket
 
+  def map_ui_character_stat(nil), do: nil
+
   def map_ui_character_stat(character),
     do:
       character
