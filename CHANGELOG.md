@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.62.2](https://github.com/wanderer-industries/wanderer/compare/v1.62.1...v1.62.2) (2025-05-05)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed audit export API
+
 ## [v1.62.1](https://github.com/wanderer-industries/wanderer/compare/v1.62.0...v1.62.1) (2025-05-05)
 
 
