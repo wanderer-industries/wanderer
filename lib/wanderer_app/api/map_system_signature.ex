@@ -164,4 +164,23 @@ defmodule WandererApp.Api.MapSystemSignature do
   identities do
     identity :uniq_system_eve_id, [:system_id, :eve_id]
   end
+
+  @derive {Jason.Encoder,
+    only: [
+      :id,
+      :system_id,
+      :eve_id,
+      :character_eve_id,
+      :name,
+      :description,
+      :type,
+      :linked_system_id,
+      :kind,
+      :group,
+      :custom_info,
+      :updated,
+      :inserted_at,
+      :updated_at
+    ]
+  }
 end

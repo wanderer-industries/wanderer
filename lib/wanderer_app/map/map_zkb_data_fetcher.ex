@@ -196,7 +196,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
     end
   end
 
-  defp with_started_map(map_id, label \\ "operation", fun) when is_function(fun, 0) do
+  defp with_started_map(map_id, label, fun) when is_function(fun, 0) do
     if WandererApp.Cache.lookup!("map_#{map_id}:started", false) do
       fun.()
     else

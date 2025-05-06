@@ -169,6 +169,7 @@ defmodule WandererAppWeb.Router do
   pipeline :api_map do
     plug WandererAppWeb.Plugs.CheckMapApiKey
     plug WandererAppWeb.Plugs.CheckMapSubscription
+    plug WandererAppWeb.Plugs.AssignMapOwner
   end
 
   pipeline :api_kills do
@@ -209,9 +210,9 @@ defmodule WandererAppWeb.Router do
     # Deprecated routes - use /api/maps/:map_identifier/systems instead
     get "/systems", MapSystemAPIController, :list_systems
     get "/system", MapSystemAPIController, :show_system
-    get "/connections", MapSystemAPIController, :list_all_connections
+    get "/connections", MapConnectionAPIController, :list_all_connections
     get "/characters", MapAPIController, :list_tracked_characters
-    get "/structure-timers", MapAPIController, :show_structure_timers
+    get "/structure-timers", MapSystemStructureAPIController, :structure_timers
     get "/character-activity", MapAPIController, :character_activity
     get "/user_characters", MapAPIController, :user_characters
 
@@ -230,6 +231,9 @@ defmodule WandererAppWeb.Router do
     delete "/systems", MapSystemAPIController, :delete
     resources "/systems", MapSystemAPIController, only: [:index, :show, :create, :update, :delete]
     resources "/connections", MapConnectionAPIController, only: [:index, :show, :create, :update, :delete], param: "id"
+    resources "/structures", MapSystemStructureAPIController, except: [:new, :edit]
+    get "/structure-timers", MapSystemStructureAPIController, :structure_timers
+    resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
   end
 
 
