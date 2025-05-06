@@ -174,8 +174,8 @@ defmodule WandererApp.Character.TrackingUtils do
         %{
           id: character_id,
           eve_id: eve_id,
-          corporation_id: corporation_id,
-          alliance_id: alliance_id
+          corporation_id: _corporation_id,
+          alliance_id: _alliance_id
         },
         map_id,
         caller_pid

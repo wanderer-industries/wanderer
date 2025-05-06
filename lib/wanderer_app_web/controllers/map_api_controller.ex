@@ -19,7 +19,6 @@ defmodule WandererAppWeb.MapAPIController do
 
   # Basic entity schemas
   @character_schema ApiSchemas.character_schema()
-  @solar_system_schema ApiSchemas.solar_system_basic_schema()
 
   # Character tracking schemas
   @character_tracking_schema %OpenApiSpex.Schema{

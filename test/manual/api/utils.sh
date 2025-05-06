@@ -164,4 +164,4 @@ cleanup_map_systems() {
     done
   fi
 }
-trap cleanup_map_systems EXIT
+#trap cleanup_map_systems EXIT

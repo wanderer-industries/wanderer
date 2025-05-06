@@ -340,7 +340,7 @@ defmodule WandererApp.Map.SubscriptionManager do
                   end)
 
                 {:error, :no_active_subscription} ->
-                  Logger.warn(
+                  Logger.warning(
                     "Cannot create license for map #{map.id}: No active subscription found"
                   )
 
