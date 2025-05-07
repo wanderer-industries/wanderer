@@ -11,7 +11,6 @@ defmodule WandererApp.Zkb.KillsProvider.Websocket do
   use Retry
 
   @heartbeat_interval 1_000
-  @max_esi_retries 3
 
   # Called by `KillsProvider.handle_connect`
   def handle_connect(_status, _headers, %{connected: _} = state) do
