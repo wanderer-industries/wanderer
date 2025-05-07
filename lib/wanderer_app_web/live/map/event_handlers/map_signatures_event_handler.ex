@@ -269,6 +269,39 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     end
   end
 
+  def handle_ui_event(
+        "undo_delete_signatures",
+        %{"system_id" => solar_system_id, "eve_ids" => eve_ids} = payload,
+        %{
+          assigns: %{
+            map_id: map_id,
+            main_character_id: main_character_id,
+            user_permissions: %{update_system: true}
+          }
+        } = socket
+      )
+      when not is_nil(main_character_id) do
+    case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+           map_id: map_id,
+           solar_system_id: get_integer(solar_system_id)
+         }) do
+      {:ok, system} ->
+        restored =
+          WandererApp.Api.MapSystemSignature.by_system_id_all!(system.id)
+          |> Enum.filter(fn s -> s.eve_id in eve_ids end)
+          |> Enum.map(fn s ->
+            s |> WandererApp.Api.MapSystemSignature.update!(%{deleted: false})
+          end)
+        Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
+          event: :signatures_updated,
+          payload: system.solar_system_id
+        })
+        {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 

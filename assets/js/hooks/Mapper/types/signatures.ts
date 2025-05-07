@@ -30,6 +30,7 @@ export type GroupType = {
 export type SignatureCustomInfo = {
   k162Type?: string;
   isEOL?: boolean;
+  isCrit?: boolean;
 };
 
 export type SystemSignature = {
@@ -46,6 +47,7 @@ export type SystemSignature = {
   linked_system?: SolarSystemStaticInfoRaw;
   inserted_at?: string;
   updated_at?: string;
+  deleted?: boolean;
 };
 
 export interface ExtendedSystemSignature extends SystemSignature {
@@ -53,6 +55,7 @@ export interface ExtendedSystemSignature extends SystemSignature {
   pendingAddition?: boolean;
   pendingUntil?: number;
   finalTimeoutId?: number;
+  deleted?: boolean;
 }
 
 export enum SignatureKindENG {
