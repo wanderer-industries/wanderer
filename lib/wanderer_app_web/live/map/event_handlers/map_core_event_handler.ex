@@ -57,7 +57,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         case track_character do
           false ->
             :ok =
-              WandererApp.Character.TrackingUtils.untrack_characters(
+              WandererApp.Character.TrackingUtils.untrack(
                 map_characters,
                 map_id,
                 self()
@@ -67,7 +67,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
           _ ->
             :ok =
-              WandererApp.Character.TrackingUtils.track_characters(
+              WandererApp.Character.TrackingUtils.track(
                 map_characters,
                 map_id,
                 true,

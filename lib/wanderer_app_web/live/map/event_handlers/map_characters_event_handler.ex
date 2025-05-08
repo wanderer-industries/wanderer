@@ -335,7 +335,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   defp handle_tracking_event({:track_characters, map_characters, track_character}, socket, map_id) do
     :ok =
-      WandererApp.Character.TrackingUtils.track_characters(
+      WandererApp.Character.TrackingUtils.track(
         map_characters,
         map_id,
         track_character,

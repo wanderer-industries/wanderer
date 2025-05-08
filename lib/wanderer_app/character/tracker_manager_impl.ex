@@ -118,7 +118,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       )
 
       {:ok, character_state} =
-        WandererApp.Character.Tracker.update_track_settings(character_id, track_settings)
+        WandererApp.Character.Tracker.update_settings(character_id, track_settings)
 
       WandererApp.Character.update_character_state(character_id, character_state)
     else
@@ -213,15 +213,17 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     WandererApp.Cache.get_and_remove!("character_untrack_queue", [])
     |> Task.async_stream(
       fn {map_id, character_id} ->
-        WandererApp.Cache.delete("map_#{map_id}:character_#{character_id}:tracked")
+        if not character_is_present(map_id, character_id) do
+          WandererApp.Cache.delete("map_#{map_id}:character_#{character_id}:tracked")
 
-        {:ok, character_state} =
-          WandererApp.Character.Tracker.update_track_settings(character_id, %{
-            map_id: map_id,
-            track: false
-          })
+          {:ok, character_state} =
+            WandererApp.Character.Tracker.update_settings(character_id, %{
+              map_id: map_id,
+              track: false
+            })
 
-        WandererApp.Character.update_character_state(character_id, character_state)
+          WandererApp.Character.update_character_state(character_id, character_state)
+        end
       end,
       max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
@@ -250,4 +252,11 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   def handle_info(_event, state),
     do: state
+
+  defp character_is_present(map_id, character_id) do
+    {:ok, presence_character_ids} =
+      WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
+
+    Enum.member?(presence_character_ids, character_id)
+  end
 end

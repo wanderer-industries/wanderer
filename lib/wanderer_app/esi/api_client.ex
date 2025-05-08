@@ -32,7 +32,7 @@ defmodule WandererApp.Esi.ApiClient do
   }
 
   @cache_opts [cache: true]
-  @retry_opts [max_retries: 1, retry_log_level: :warning]
+  @retry_opts [max_retries: 0, retry_log_level: :warning]
   @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.seconds(30)]
   @api_retry_count 1
 
@@ -490,7 +490,11 @@ defmodule WandererApp.Esi.ApiClient do
     try do
       case Req.get(
              "#{@base_url}#{path}",
-             api_opts |> with_user_agent_opts() |> with_cache_opts() |> Keyword.merge(@retry_opts) |> Keyword.merge(@timeout_opts)
+             api_opts
+             |> with_user_agent_opts()
+             |> with_cache_opts()
+             |> Keyword.merge(@retry_opts)
+             |> Keyword.merge(@timeout_opts)
            ) do
         {:ok, %{status: 200, body: body}} ->
           {:ok, body}
