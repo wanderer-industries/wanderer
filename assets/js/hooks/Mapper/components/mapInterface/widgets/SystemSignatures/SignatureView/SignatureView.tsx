@@ -10,7 +10,7 @@ export interface SignatureViewProps {
 export const SignatureView = ({ signature, showCharacterPortrait = false }: SignatureViewProps) => {
   const isWormhole = signature?.group === SignatureGroup.Wormhole;
   const hasCharacterInfo = showCharacterPortrait && signature.character_eve_id;
-  const groupDisplay = isWormhole ? SignatureGroup.Wormhole : (signature?.group ?? SignatureGroup.CosmicSignature);
+  const groupDisplay = isWormhole ? SignatureGroup.Wormhole : signature?.group ?? SignatureGroup.CosmicSignature;
   const characterName = signature.character_name || 'Unknown character';
 
   return (

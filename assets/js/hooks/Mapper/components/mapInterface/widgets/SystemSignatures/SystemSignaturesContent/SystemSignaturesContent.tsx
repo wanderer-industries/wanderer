@@ -57,12 +57,8 @@ interface SystemSignaturesContentProps {
   onSelect?: (signature: SystemSignature) => void;
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
-  onPendingChange?: (
-    pending: React.MutableRefObject<Record<string, ExtendedSystemSignature>>,
-    undo: () => void,
-  ) => void;
-  deletionTiming?: number;
   filterSignature?: (signature: SystemSignature) => boolean;
+  onSignatureDeleted?: (deletedIds: string[]) => void;
 }
 
 export const SystemSignaturesContent = ({
@@ -73,9 +69,8 @@ export const SystemSignaturesContent = ({
   onSelect,
   onLazyDeleteChange,
   onCountChange,
-  onPendingChange,
-  deletionTiming,
   filterSignature,
+  onSignatureDeleted,
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -100,9 +95,8 @@ export const SystemSignaturesContent = ({
       systemId,
       settings,
       onCountChange,
-      onPendingChange,
       onLazyDeleteChange,
-      deletionTiming,
+      onSignatureDeleted,
     });
 
   useEffect(() => {
@@ -125,6 +119,10 @@ export const SystemSignaturesContent = ({
 
     event.preventDefault();
     event.stopPropagation();
+    if (onSignatureDeleted && selectedSignatures.length > 0) {
+      const deletedIds = selectedSignatures.map(s => s.eve_id);
+      onSignatureDeleted(deletedIds);
+    }
     handleDeleteSelected();
   });
 
@@ -155,7 +153,7 @@ export const SystemSignaturesContent = ({
     (e: { value: SystemSignature[] }) => {
       selectable ? onSelect?.(e.value[0]) : setSelectedSignatures(e.value as ExtendedSystemSignature[]);
     },
-    [selectable],
+    [onSelect, selectable, setSelectedSignatures],
   );
 
   const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(

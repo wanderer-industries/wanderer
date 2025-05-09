@@ -18,8 +18,8 @@ export const useSystemSignaturesData = ({
   onCountChange,
   onPendingChange,
   onLazyDeleteChange,
-  deletionTiming,
-}: UseSystemSignaturesDataProps) => {
+  onSignatureDeleted,
+}: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & { onSignatureDeleted?: (deletedIds: string[]) => void }) => {
   const { outCommand } = useMapRootState();
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
@@ -27,7 +27,6 @@ export const useSystemSignaturesData = ({
   const { pendingDeletionMapRef, processRemovedSignatures, clearPendingDeletions } = usePendingDeletions({
     systemId,
     setSignatures,
-    deletionTiming,
     onPendingChange,
   });
 
@@ -59,6 +58,10 @@ export const useSystemSignaturesData = ({
 
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);
+        if (onSignatureDeleted) {
+          const deletedIds = removed.map(sig => sig.eve_id);
+          onSignatureDeleted(deletedIds);
+        }
       }
 
       if (updated.length !== 0 || added.length !== 0) {
@@ -78,17 +81,16 @@ export const useSystemSignaturesData = ({
         onLazyDeleteChange?.(false);
       }
     },
-    [settings, signaturesRef, processRemovedSignatures, outCommand, systemId, onLazyDeleteChange],
+    [settings, signaturesRef, processRemovedSignatures, outCommand, systemId, onLazyDeleteChange, onSignatureDeleted],
   );
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
     const selectedIds = selectedSignatures.map(s => s.eve_id);
     const finalList = signatures.filter(s => !selectedIds.includes(s.eve_id));
-
     await handleUpdateSignatures(finalList, false, true);
     setSelectedSignatures([]);
-  }, [selectedSignatures, signatures]);
+  }, [handleUpdateSignatures, selectedSignatures, signatures]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
@@ -119,7 +121,7 @@ export const useSystemSignaturesData = ({
   }, [signatures]);
 
   return {
-    signatures,
+    signatures: signatures.filter(sig => !sig.deleted),
     selectedSignatures,
     setSelectedSignatures,
     handleDeleteSelected,

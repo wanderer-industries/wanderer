@@ -24,7 +24,10 @@ defmodule WandererApp.Api.MapSystemSignature do
     )
 
     define(:by_system_id, action: :by_system_id, args: [:system_id])
+    define(:by_system_id_all, action: :by_system_id_all, args: [:system_id])
+    define(:by_system_id_and_eve_ids, action: :by_system_id_and_eve_ids, args: [:system_id, :eve_ids])
     define(:by_linked_system_id, action: :by_linked_system_id, args: [:linked_system_id])
+    define(:by_deleted_and_updated_before!, action: :by_deleted_and_updated_before, args: [:deleted, :updated_before])
   end
 
   actions do
@@ -36,7 +39,8 @@ defmodule WandererApp.Api.MapSystemSignature do
       :description,
       :kind,
       :group,
-      :type
+      :type,
+      :deleted
     ]
 
     defaults [:read, :destroy]
@@ -64,7 +68,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :kind,
         :group,
         :type,
-        :custom_info
+        :custom_info,
+        :deleted
       ]
 
       argument :system_id, :uuid, allow_nil?: false
@@ -83,7 +88,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :group,
         :type,
         :custom_info,
-        :updated
+        :deleted
       ]
 
       primary? true
@@ -105,13 +110,31 @@ defmodule WandererApp.Api.MapSystemSignature do
     read :by_system_id do
       argument(:system_id, :string, allow_nil?: false)
 
+      filter(expr(system_id == ^arg(:system_id) and deleted == false))
+    end
+
+    read :by_system_id_all do
+      argument(:system_id, :string, allow_nil?: false)
       filter(expr(system_id == ^arg(:system_id)))
+    end
+
+    read :by_system_id_and_eve_ids do
+      argument(:system_id, :string, allow_nil?: false)
+      argument(:eve_ids, {:array, :string}, allow_nil?: false)
+      filter(expr(system_id == ^arg(:system_id) and eve_id in ^arg(:eve_ids)))
     end
 
     read :by_linked_system_id do
       argument(:linked_system_id, :integer, allow_nil?: false)
 
       filter(expr(linked_system_id == ^arg(:linked_system_id)))
+    end
+
+    read :by_deleted_and_updated_before do
+      argument(:deleted, :boolean, allow_nil?: false)
+      argument(:updated_before, :utc_datetime, allow_nil?: false)
+
+      filter(expr(deleted == ^arg(:deleted) and updated_at < ^arg(:updated_before)))
     end
   end
 
@@ -149,7 +172,10 @@ defmodule WandererApp.Api.MapSystemSignature do
       allow_nil? true
     end
 
-    attribute :updated, :integer
+    attribute :deleted, :boolean do
+      allow_nil? false
+      default false
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
