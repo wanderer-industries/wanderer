@@ -1,5 +1,5 @@
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
-import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext, useEffect } from 'react';
+import { createContext, Dispatch, ForwardedRef, forwardRef, SetStateAction, useContext } from 'react';
 import {
   ActivitySummary,
   CommandLinkSignatureToSystem,
@@ -12,7 +12,6 @@ import {
 } from '@/hooks/Mapper/types';
 import { useCharactersCache, useComments, useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
-import useLocalStorageState from 'use-local-storage-state';
 import {
   ToggleWidgetVisibility,
   useStoreWidgets,
@@ -20,6 +19,9 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
+import { InterfaceStoredSettings, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { DEFAULT_ROUTES_SETTINGS, STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { useMapUserSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useMapUserSettings.ts';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -50,7 +52,9 @@ const INITIAL_DATA: MapRootData = {
   systems: [],
   systemSignatures: {},
   hubs: [],
+  userHubs: [],
   routes: undefined,
+  userRoutes: undefined,
   kills: [],
   connections: [],
   detailedKills: {},
@@ -64,11 +68,6 @@ const INITIAL_DATA: MapRootData = {
   followingCharacterEveId: null,
 };
 
-export enum AvailableThemes {
-  default = 'default',
-  pathfinder = 'pathfinder',
-}
-
 export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
   isShowMinimap = 'isShowMinimap',
@@ -80,40 +79,28 @@ export enum InterfaceStoredSettingsProps {
   theme = 'theme',
 }
 
-export type InterfaceStoredSettings = {
-  isShowMenu: boolean;
-  isShowMinimap: boolean;
-  isShowKSpace: boolean;
-  isThickConnections: boolean;
-  isShowUnsplashedSignatures: boolean;
-  isShowBackgroundPattern: boolean;
-  isSoftBackground: boolean;
-  theme: AvailableThemes;
-};
-
-export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
-  isShowMenu: false,
-  isShowMinimap: true,
-  isShowKSpace: false,
-  isThickConnections: false,
-  isShowUnsplashedSignatures: false,
-  isShowBackgroundPattern: true,
-  isSoftBackground: false,
-  theme: AvailableThemes.default,
-};
-
 export interface MapRootContextProps {
   update: ContextStoreDataUpdate<MapRootData>;
   data: MapRootData;
   outCommand: OutCommandHandler;
-  interfaceSettings: InterfaceStoredSettings;
-  setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
   windowsSettings: WindowStoreInfo;
   toggleWidgetVisibility: ToggleWidgetVisibility;
   updateWidgetSettings: WindowsManagerOnChange;
   resetWidgets: () => void;
   comments: UseCommentsData;
   charactersCache: UseCharactersCacheData;
+
+  /**
+   * !!!
+   * DO NOT PASS THIS PROP INTO COMPONENT
+   * !!!
+   * */
+  storedSettings: {
+    interfaceSettings: InterfaceStoredSettings;
+    setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
+    settingsRoutes: RoutesType;
+    settingsRoutesUpdate: Dispatch<SetStateAction<RoutesType>>;
+  };
 }
 
 const MapRootContext = createContext<MapRootContextProps>({
@@ -121,8 +108,6 @@ const MapRootContext = createContext<MapRootContextProps>({
   data: { ...INITIAL_DATA },
   // @ts-ignore
   outCommand: async () => void 0,
-  interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
-  setInterfaceSettings: () => null,
   comments: {
     loadComments: async () => {},
     comments: new Map(),
@@ -140,6 +125,12 @@ const MapRootContext = createContext<MapRootContextProps>({
     },
     characters: new Map(),
     lastUpdateKey: 0,
+  },
+  storedSettings: {
+    interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
+    setInterfaceSettings: () => null,
+    settingsRoutes: DEFAULT_ROUTES_SETTINGS,
+    settingsRoutesUpdate: () => null,
   },
 });
 
@@ -159,34 +150,11 @@ const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: Forwarde
 export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProviderProps) => {
   const { update, ref } = useContextStore<MapRootData>({ ...INITIAL_DATA });
 
-  const [interfaceSettings, setInterfaceSettings] = useLocalStorageState<InterfaceStoredSettings>(
-    'window:interface:settings',
-    {
-      defaultValue: STORED_INTERFACE_DEFAULT_VALUES,
-    },
-  );
+  const storedSettings = useMapUserSettings();
+
   const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } = useStoreWidgets();
   const comments = useComments({ outCommand });
   const charactersCache = useCharactersCache({ outCommand });
-
-  useEffect(() => {
-    let foundNew = false;
-    const newVals = Object.keys(STORED_INTERFACE_DEFAULT_VALUES).reduce((acc, x) => {
-      if (Object.keys(acc).includes(x)) {
-        return acc;
-      }
-
-      foundNew = true;
-
-      // @ts-ignore
-      return { ...acc, [x]: STORED_INTERFACE_DEFAULT_VALUES[x] };
-    }, interfaceSettings);
-
-    if (foundNew) {
-      setInterfaceSettings(newVals);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <MapRootContext.Provider
@@ -194,14 +162,13 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         update,
         data: ref,
         outCommand,
-        setInterfaceSettings,
-        interfaceSettings,
         windowsSettings,
         updateWidgetSettings,
         toggleWidgetVisibility,
         resetWidgets,
         comments,
         charactersCache,
+        storedSettings,
       }}
     >
       <MapRootHandlers ref={fwdRef}>{children}</MapRootHandlers>

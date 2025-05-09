@@ -18,7 +18,10 @@ export interface MapRootContentProps {}
 
 // eslint-disable-next-line no-empty-pattern
 export const MapRootContent = ({}: MapRootContentProps) => {
-  const { interfaceSettings, data } = useMapRootState();
+  const {
+    storedSettings: { interfaceSettings },
+    data,
+  } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
   const { showCharacterActivity } = data;
   const { handleHideCharacterActivity } = useCharacterActivityHandlers();

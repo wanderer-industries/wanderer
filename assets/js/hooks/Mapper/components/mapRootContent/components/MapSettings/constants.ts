@@ -1,5 +1,6 @@
 import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
-import { AvailableThemes, InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
+import { InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
+import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,

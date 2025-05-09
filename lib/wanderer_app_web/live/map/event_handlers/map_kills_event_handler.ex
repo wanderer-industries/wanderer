@@ -22,13 +22,12 @@ defmodule WandererAppWeb.MapKillsEventHandler do
 
     socket
     |> MapEventHandler.push_map_event(
-      "init",
+      "map_updated",
       %{
         kills:
           kills
           |> Enum.filter(fn {_, kills} -> kills > 0 end)
-          |> Enum.map(&map_ui_kill/1),
-        reset: false
+          |> Enum.map(&map_ui_kill/1)
       }
     )
   end
@@ -45,11 +44,14 @@ defmodule WandererAppWeb.MapKillsEventHandler do
     )
   end
 
-  def handle_server_event(%{event: :detailed_kills_updated, payload: payload}, %{
-      assigns: %{
-        map_id: map_id
-      }
-    } = socket) do
+  def handle_server_event(
+        %{event: :detailed_kills_updated, payload: payload},
+        %{
+          assigns: %{
+            map_id: map_id
+          }
+        } = socket
+      ) do
     case WandererApp.Map.is_subscription_active?(map_id) do
       {:ok, true} ->
         socket
@@ -57,7 +59,9 @@ defmodule WandererAppWeb.MapKillsEventHandler do
           "detailed_kills_updated",
           payload
         )
-      _ -> socket
+
+      _ ->
+        socket
     end
   end
 

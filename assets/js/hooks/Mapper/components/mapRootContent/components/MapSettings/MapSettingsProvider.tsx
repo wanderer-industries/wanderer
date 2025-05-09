@@ -31,13 +31,16 @@ type MapSettingsContextType = {
 const MapSettingsContext = createContext<MapSettingsContextType | undefined>(undefined);
 
 export const MapSettingsProvider = ({ children }: { children: ReactNode }) => {
-  const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+  const {
+    outCommand,
+    storedSettings: { interfaceSettings, setInterfaceSettings },
+  } = useMapRootState();
 
   const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
     ...DEFAULT_REMOTE_SETTINGS,
   });
 
-  const mergedSettings = useMemo(() => {
+  const mergedSettings: UserSettings = useMemo(() => {
     return {
       ...userRemoteSettings,
       ...interfaceSettings,
@@ -75,7 +78,7 @@ export const MapSettingsProvider = ({ children }: { children: ReactNode }) => {
       if (item.type === 'checkbox') {
         return (
           <PrettySwitchbox
-            key={item.prop}
+            key={item.prop.toString()}
             label={item.label}
             checked={!!currentValue}
             setChecked={checked => handleSettingChange(item.prop, checked)}
@@ -85,7 +88,7 @@ export const MapSettingsProvider = ({ children }: { children: ReactNode }) => {
 
       if (item.type === 'dropdown' && item.options) {
         return (
-          <div key={item.prop} className="flex items-center gap-2 mt-2">
+          <div key={item.prop.toString()} className="flex items-center gap-2 mt-2">
             <label className="text-sm">{item.label}:</label>
             <Dropdown
               className="text-sm"

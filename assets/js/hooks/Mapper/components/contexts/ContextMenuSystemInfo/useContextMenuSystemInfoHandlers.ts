@@ -1,25 +1,25 @@
 import * as React from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
-import { Commands, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 import { emitMapEvent } from '@/hooks/Mapper/events';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 
-interface UseContextMenuSystemHandlersProps {
-  hubs: string[];
-  outCommand: OutCommandHandler;
-}
+export const useContextMenuSystemInfoHandlers = () => {
+  const { outCommand } = useMapRootState();
+  const { hubs = [], toggleHubCommand } = useRouteProvider();
 
-export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand }: UseContextMenuSystemHandlersProps) => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
 
   const [system, setSystem] = useState<string>();
   const routeRef = useRef<(SolarSystemStaticInfoRaw | undefined)[]>([]);
 
-  const ref = useRef({ hubs, system, outCommand });
-  ref.current = { hubs, system, outCommand };
+  const ref = useRef({ hubs, system, outCommand, toggleHubCommand });
+  ref.current = { hubs, system, outCommand, toggleHubCommand };
 
   const open = useCallback(
     (ev: React.SyntheticEvent, systemId: string, route: (SolarSystemStaticInfoRaw | undefined)[]) => {
@@ -33,17 +33,12 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand }: UseContex
   );
 
   const onHubToggle = useCallback(() => {
-    const { hubs, system, outCommand } = ref.current;
+    const { system } = ref.current;
     if (!system) {
       return;
     }
 
-    outCommand({
-      type: !hubs.includes(system) ? OutCommand.addHub : OutCommand.deleteHub,
-      data: {
-        system_id: system,
-      },
-    });
+    ref.current.toggleHubCommand(system);
     setSystem(undefined);
   }, []);
 
@@ -59,6 +54,8 @@ export const useContextMenuSystemInfoHandlers = ({ hubs, outCommand }: UseContex
         system_id: solarSystemId,
       },
     });
+
+    // TODO add it to some queue
     setTimeout(() => {
       emitMapEvent({
         name: Commands.centerSystem,

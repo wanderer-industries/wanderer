@@ -6,6 +6,7 @@ import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/ty
 
 export interface ContextMenuSystemProps {
   hubs: string[];
+  userHubs: string[];
   contextMenuRef: RefObject<ContextMenu>;
   systemId: string | undefined;
   systems: SolarSystemRawType[];
@@ -13,6 +14,7 @@ export interface ContextMenuSystemProps {
   onLockToggle(): void;
   onOpenSettings(): void;
   onHubToggle(): void;
+  onUserHubToggle(): void;
   onSystemTag(val?: string): void;
   onSystemStatus(val: number): void;
   onSystemLabels(val: string): void;
@@ -25,7 +27,7 @@ export const ContextMenuSystem: React.FC<ContextMenuSystemProps> = ({ contextMen
 
   return (
     <>
-      <ContextMenu model={items} ref={contextMenuRef} breakpoint="767px" />
+      <ContextMenu className="min-w-[200px]" model={items} ref={contextMenuRef} breakpoint="767px" />
     </>
   );
 };

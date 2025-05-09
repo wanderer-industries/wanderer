@@ -99,6 +99,11 @@
 .p-dropdown-item {
   padding: 0.25rem 0.5rem;
   font-size: 14px;
+  width: 100%;
+
+  .p-dropdown-item-label {
+    width: 100%;
+  }
 }
 
 .p-dropdown-item-group {
@@ -180,3 +185,16 @@
 .p-datatable .p-datatable-tbody > tr.p-highlight {
   background: initial;
 }
+
+.suppress-menu-behaviour {
+  pointer-events: none;
+
+  .p-menuitem-content {
+    pointer-events: initial;
+    background-color: initial !important;
+  }
+  .p-menuitem-content:hover {
+    background-color: initial !important;
+  }
+}
+

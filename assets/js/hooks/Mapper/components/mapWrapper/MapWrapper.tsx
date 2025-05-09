@@ -20,7 +20,6 @@ import { Node, useReactFlow, XYPosition } from 'reactflow';
 import { useCommandsSystems } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
 
-import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/MapRootProvider';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 import { useCommonMapEventProcessor } from '@/hooks/Mapper/components/mapWrapper/hooks/useCommonMapEventProcessor.ts';
 import {
@@ -28,30 +27,34 @@ import {
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 import { useHotkey } from '../../hooks/useHotkey';
+import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, systems, linkSignatureToSystem, systemSignatures },
-    interfaceSettings: {
-      isShowMenu,
-      isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
-      isShowKSpace,
-      isThickConnections,
-      isShowBackgroundPattern,
-      isShowUnsplashedSignatures,
-      isSoftBackground,
-      theme,
-    },
+    data: { selectedConnections, selectedSystems, hubs, userHubs, systems, linkSignatureToSystem, systemSignatures },
+    storedSettings: { interfaceSettings },
   } = useMapRootState();
+
+  const {
+    isShowMenu,
+    isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
+    isShowKSpace,
+    isThickConnections,
+    isShowBackgroundPattern,
+    isShowUnsplashedSignatures,
+    isSoftBackground,
+    theme,
+  } = interfaceSettings;
+
   const { deleteSystems } = useDeleteSystems();
   const { mapRef, runCommand } = useCommonMapEventProcessor();
   const { getNodes } = useReactFlow();
 
   const { updateLinkSignatureToSystem } = useCommandsSystems();
-  const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, outCommand });
+  const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, userHubs, outCommand });
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
@@ -107,17 +110,20 @@ export const MapWrapper = () => {
     [outCommand],
   );
 
-  const handleSystemContextMenu = useCallback((ev: any, systemId: string) => {
-    const { selectedSystems, systems } = ref.current;
-    if (selectedSystems.length > 1) {
-      const systemsInfo: Node[] = selectedSystems.map(x => ({ data: getSystemById(systems, x), id: x }) as Node);
+  const handleSystemContextMenu = useCallback(
+    (ev: any, systemId: string) => {
+      const { selectedSystems, systems } = ref.current;
+      if (selectedSystems.length > 1) {
+        const systemsInfo: Node[] = selectedSystems.map(x => ({ data: getSystemById(systems, x), id: x }) as Node);
 
-      handleSystemMultipleContext(ev, systemsInfo);
-      return;
-    }
+        handleSystemMultipleContext(ev, systemsInfo);
+        return;
+      }
 
-    open(ev, systemId);
-  }, []);
+      open(ev, systemId);
+    },
+    [handleSystemMultipleContext, open],
+  );
 
   const handleConnectionDbClick = useCallback((e: SolarSystemConnection) => setSelectedConnection(e), []);
 
@@ -215,6 +221,7 @@ export const MapWrapper = () => {
       <ContextMenuSystem
         systems={systems}
         hubs={hubs}
+        userHubs={userHubs}
         {...systemContextProps}
         onOpenSettings={() => {
           systemContextProps.systemId && setOpenSettings(systemContextProps.systemId);

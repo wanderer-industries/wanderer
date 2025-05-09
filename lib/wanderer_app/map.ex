@@ -72,6 +72,9 @@ defmodule WandererApp.Map do
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 50)}
 
+  def get_hubs_limit(map_id),
+    do: {:ok, map_id |> get_map!() |> Map.get(:hubs_limit, 20)}
+
   def is_subscription_active?(map_id),
     do: is_subscription_active?(map_id, WandererApp.Env.map_subscriptions_enabled?())
 
@@ -105,10 +108,14 @@ defmodule WandererApp.Map do
 
   def list_hubs(map_id) do
     {:ok, map} = map_id |> get_map()
-    hubs = map |> Map.get(:hubs, [])
-    hubs_limit = map |> Map.get(:hubs_limit, 20)
 
-    {:ok, hubs |> _maybe_limit_list(hubs_limit)}
+    {:ok, map |> Map.get(:hubs, [])}
+  end
+
+  def list_hubs(map_id, hubs) do
+    {:ok, map} = map_id |> get_map()
+
+    {:ok, hubs}
   end
 
   def list_connections(map_id),
@@ -148,15 +155,16 @@ defmodule WandererApp.Map do
 
     case not (characters |> Enum.member?(character_id)) do
       true ->
-        {:ok, %{
-          alliance_id: alliance_id,
-          corporation_id: corporation_id,
-          solar_system_id: solar_system_id,
-          structure_id: structure_id,
-          station_id: station_id,
-          ship: ship_type_id,
-          ship_name: ship_name
-        }} = WandererApp.Character.get_character(character_id)
+        {:ok,
+         %{
+           alliance_id: alliance_id,
+           corporation_id: corporation_id,
+           solar_system_id: solar_system_id,
+           structure_id: structure_id,
+           station_id: station_id,
+           ship: ship_type_id,
+           ship_name: ship_name
+         }} = WandererApp.Character.get_character(character_id)
 
         map_id
         |> update_map(%{characters: [character_id | characters]})
@@ -536,9 +544,6 @@ defmodule WandererApp.Map do
     end
   end
 
-  defp _maybe_limit_list(list, nil), do: list
-  defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
-
   @doc """
   Returns the raw activity data that can be processed by WandererApp.Character.Activity.
   Only includes characters that are on the map's ACL.
@@ -549,7 +554,8 @@ defmodule WandererApp.Map do
     _map_with_acls = Ash.load!(map, :acls)
 
     # Calculate cutoff date if days is provided
-    cutoff_date = if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
+    cutoff_date =
+      if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
 
     # Get activity data
     passages_activity = get_passages_activity(map_id, cutoff_date)

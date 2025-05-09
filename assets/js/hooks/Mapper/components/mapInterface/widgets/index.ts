@@ -4,3 +4,6 @@ export * from './RoutesWidget';
 export * from './SystemSignatures';
 export * from './SystemStructures';
 export * from './WSystemKills';
+export * from './WRoutesUser';
+export * from './WRoutesPublic';
+export * from './CommentsWidget';
