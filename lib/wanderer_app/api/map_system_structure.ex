@@ -4,6 +4,27 @@ defmodule WandererApp.Api.MapSystemStructure do
 
   """
 
+  @derive {Jason.Encoder,
+    only: [
+      :id,
+      :system_id,
+      :solar_system_id,
+      :solar_system_name,
+      :structure_type_id,
+      :structure_type,
+      :character_eve_id,
+      :name,
+      :notes,
+      :owner_name,
+      :owner_ticker,
+      :owner_id,
+      :status,
+      :end_time,
+      :inserted_at,
+      :updated_at
+    ]
+  }
+
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer

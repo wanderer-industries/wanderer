@@ -6,8 +6,8 @@ import { CharItemProps, LocalCharactersList } from '../../../mapInterface/widget
 import { useLocalCharactersItemTemplate } from '../../../mapInterface/widgets/LocalCharacters/hooks/useLocalCharacters';
 import { useLocalCharacterWidgetSettings } from '../../../mapInterface/widgets/LocalCharacters/hooks/useLocalWidgetSettings';
 import classes from './SolarSystemLocalCounter.module.scss';
-import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider';
 import { useTheme } from '@/hooks/Mapper/hooks/useTheme.ts';
+import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 interface LocalCounterProps {
   localCounterCharacters: Array<CharItemProps>;

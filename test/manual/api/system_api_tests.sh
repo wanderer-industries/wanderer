@@ -220,9 +220,7 @@ create_connections() {
         time_status: 0,
         ship_size_type: 1,
         wormhole_type: "K162",
-        count_of_passage: 0,
-        locked: false,
-        custom_info: "Test connection"
+        count_of_passage: 0
       }')
     
     # Send create request to dedicated endpoint
@@ -244,7 +242,7 @@ create_connections() {
   echo "Total connections created via dedicated endpoint: $connection_count/$total_connections"
   save_connections
 
-  # Validate actual state after dedicated connection creation
+  # Always validate actual state after connection creation
   echo "Validating connections after dedicated creation:"
   list_systems_and_connections
 
@@ -307,6 +305,17 @@ create_connections() {
 
   echo "[SCRIPT] Batch upsert response: $response"
   
+  # Debug: List all connections after batch upsert
+  echo "[SCRIPT] Listing all connections after batch upsert:"
+  local list_raw=$(make_request GET "$API_BASE_URL/api/maps/$MAP_SLUG/systems")
+  local list_status=$(parse_status "$list_raw")
+  if [[ "$list_status" =~ ^2[0-9][0-9]$ ]]; then
+    local list_response=$(parse_response "$list_raw")
+    echo "$list_response" | jq -c '.data.connections[] | {id: .id, source: .solar_system_source, target: .solar_system_target, mass_status: .mass_status, ship_size_type: .ship_size_type, type: .type}'
+  else
+    echo "[SCRIPT] Failed to list connections after batch upsert. Status: $list_status"
+  fi
+
   # Add batch system IDs to CREATED_SYSTEM_IDS
   for i in $(seq 0 $((num_batch_systems-1))); do
     IFS=':' read -r system_id _ <<< "${BATCH_EVE_SYSTEMS[$i]}"
@@ -419,9 +428,7 @@ update_connections() {
       --argjson ship "$ship" \
       '{
         mass_status: $mass,
-        ship_size_type: $ship,
-        locked: false,
-        custom_info: "Updated via PATCH"
+        ship_size_type: $ship
       }')
     
     # Try source/target update
@@ -465,8 +472,7 @@ update_connections() {
         solar_system_source: $source,
         solar_system_target: $target,
         mass_status: $mass,
-        ship_size_type: $ship,
-        custom_info: "Batch updated"
+        ship_size_type: $ship
       }')
   done
   batch_connections+="]"

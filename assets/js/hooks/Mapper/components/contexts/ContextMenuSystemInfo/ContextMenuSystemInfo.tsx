@@ -11,6 +11,7 @@ import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components
 import { useJumpPlannerMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
+import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 
 export interface ContextMenuSystemInfoProps {
   systemStatics: Map<number, SolarSystemStaticInfoRaw>;
@@ -69,8 +70,12 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
       ...getJumpPlannerMenu(system, routes),
       ...getWaypointMenu(systemId, system.system_class),
       {
-        label: !hubs.includes(systemId) ? 'Add in Routes' : 'Remove from Routes',
-        icon: PrimeIcons.MAP_MARKER,
+        label: !hubs.includes(systemId) ? 'Add Route' : 'Remove Route',
+        icon: !hubs.includes(systemId) ? (
+          <MapAddIcon className="mr-1 relative left-[-2px]" />
+        ) : (
+          <MapDeleteIcon className="mr-1 relative left-[-2px]" />
+        ),
         command: onHubToggle,
       },
       ...(!systemOnMap

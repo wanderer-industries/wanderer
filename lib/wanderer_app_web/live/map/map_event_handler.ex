@@ -56,7 +56,10 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_locked",
     "update_system_tag",
     "update_system_temporary_name",
-    "update_system_status"
+    "update_system_status",
+    "get_user_hubs",
+    "add_user_hub",
+    "delete_user_hub"
   ]
 
   @map_system_comments_events [
@@ -98,11 +101,13 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_routes_events [
-    :routes
+    :routes,
+    :user_routes
   ]
 
   @map_routes_ui_events [
     "get_routes",
+    "get_user_routes",
     "set_autopilot_waypoint"
   ]
 
@@ -286,6 +291,8 @@ defmodule WandererAppWeb.MapEventHandler do
   end
 
   def push_map_event(socket, _type, _body), do: socket
+
+  def map_ui_character_stat(nil), do: nil
 
   def map_ui_character_stat(character),
     do:

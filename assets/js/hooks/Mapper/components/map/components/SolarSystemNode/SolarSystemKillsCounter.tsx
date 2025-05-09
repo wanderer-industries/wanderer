@@ -26,11 +26,7 @@ export const KillsCounter = ({
   children,
   size = TooltipSize.xs,
 }: KillsBookmarkTooltipProps) => {
-  const {
-    isLoading,
-    kills: detailedKills,
-    systemNameMap,
-  } = useKillsCounter({
+  const { isLoading, kills: detailedKills } = useKillsCounter({
     realSystemId: systemId,
   });
 

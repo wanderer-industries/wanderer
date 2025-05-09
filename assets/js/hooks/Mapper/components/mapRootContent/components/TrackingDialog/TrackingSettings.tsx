@@ -10,8 +10,8 @@ const renderValCharacterTemplate = (row: TrackingCharacter | undefined) => {
   }
 
   return (
-    <div className="py-1">
-      <CharacterCard compact showShipName={false} showSystem={false} isOwn {...row.character} />
+    <div className="py-1 w-full">
+      <CharacterCard compact isOwn {...row.character} />
     </div>
   );
 };
@@ -21,7 +21,11 @@ const renderCharacterTemplate = (row: TrackingCharacter | undefined) => {
     return <div className="h-[33px] flex items-center">Character is not selected</div>;
   }
 
-  return <CharacterCard showShipName={false} showSystem={false} isOwn {...row.character} />;
+  return (
+    <div className="w-full">
+      <CharacterCard isOwn {...row.character} />
+    </div>
+  );
 };
 
 export const TrackingSettings = () => {

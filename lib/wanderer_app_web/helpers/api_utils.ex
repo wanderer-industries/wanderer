@@ -172,7 +172,14 @@ defmodule WandererAppWeb.Helpers.APIUtils do
       mass_status = normalized_params["mass_status"] || 0
       time_status = normalized_params["time_status"] || 0
       ship_size_type = normalized_params["ship_size_type"] || 0
-      locked = normalized_params["locked"] || false
+      # Coerce to boolean; accept "true"/"false", 1/0, etc.
+      locked =
+        case normalized_params["locked"] do
+          val when val in [true, "true", 1, "1"]   -> true
+          val when val in [false, "false", 0, "0"] -> false
+          nil                                         -> false
+          other                                       -> other  # keep unknowns for caller-side validation
+        end
       custom_info = normalized_params["custom_info"]
       wormhole_type = normalized_params["wormhole_type"]
 

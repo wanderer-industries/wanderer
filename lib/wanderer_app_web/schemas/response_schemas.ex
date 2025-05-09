@@ -6,7 +6,6 @@ defmodule WandererAppWeb.Schemas.ResponseSchemas do
   HTTP response schemas for OpenAPI documentation.
   """
 
-  alias OpenApiSpex.Schema
   alias WandererAppWeb.Schemas.ApiSchemas
 
   # Standard response status codes

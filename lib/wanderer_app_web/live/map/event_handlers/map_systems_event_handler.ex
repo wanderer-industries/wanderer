@@ -185,6 +185,97 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "get_user_hubs",
+        _event,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user
+          }
+        } =
+          socket
+      ) do
+    {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+
+    {:reply, %{hubs: hubs}, socket}
+  end
+
+  def handle_ui_event(
+        "add_user_hub",
+        %{"system_id" => solar_system_id} = _event,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user
+          }
+        } =
+          socket
+      ) do
+    {:ok, map} = map_id |> WandererApp.Map.get_map()
+    hubs_limit = map |> Map.get(:hubs_limit, 20)
+
+    {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+
+    if hubs |> Enum.count() < hubs_limit do
+      hubs = hubs ++ ["#{solar_system_id}"]
+
+      {:ok, _} =
+        WandererApp.MapUserSettingsRepo.update_hubs(
+          map_id,
+          current_user.id,
+          hubs
+        )
+
+      {:noreply, socket |> MapEventHandler.push_map_event(
+        "map_updated",
+        %{user_hubs: hubs}
+      )}
+    else
+
+      {:noreply, socket |> MapEventHandler.push_map_event(
+        "map_updated",
+        %{user_hubs: hubs}
+      )}
+    end
+  end
+
+  def handle_ui_event(
+        "delete_user_hub",
+        %{"system_id" => solar_system_id} = _event,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user
+          }
+        } =
+          socket
+      ) do
+    {:ok, hubs} = WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_user.id)
+
+    case hubs |> Enum.member?("#{solar_system_id}") do
+      true ->
+        hubs = hubs |> Enum.reject(fn hub -> hub == "#{solar_system_id}" end)
+
+        {:ok, _} =
+          WandererApp.MapUserSettingsRepo.update_hubs(
+            map_id,
+            current_user.id,
+            hubs
+          )
+
+        {:noreply, socket |> MapEventHandler.push_map_event(
+          "map_updated",
+          %{user_hubs: hubs}
+        )}
+      _ ->
+        {:noreply, socket |> MapEventHandler.push_map_event(
+          "map_updated",
+          %{user_hubs: hubs}
+        )}
+    end
+  end
+
+  def handle_ui_event(
         "update_system_position",
         position,
         %{

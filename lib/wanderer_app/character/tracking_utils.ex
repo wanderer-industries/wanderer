@@ -120,7 +120,7 @@ defmodule WandererApp.Character.TrackingUtils do
           {:ok, updated_settings} =
             WandererApp.MapCharacterSettingsRepo.untrack(existing_settings)
 
-          :ok = untrack_characters([character], map_id, caller_pid)
+          :ok = untrack([character], map_id, caller_pid)
           :ok = remove_characters([character], map_id)
           {:ok, updated_settings}
         else
@@ -131,7 +131,7 @@ defmodule WandererApp.Character.TrackingUtils do
       {:ok, %{tracked: false} = existing_settings} ->
         if track do
           {:ok, updated_settings} = WandererApp.MapCharacterSettingsRepo.track(existing_settings)
-          :ok = track_characters([character], map_id, true, caller_pid)
+          :ok = track([character], map_id, true, caller_pid)
           :ok = add_characters([character], map_id, true)
           {:ok, updated_settings}
         else
@@ -148,7 +148,7 @@ defmodule WandererApp.Character.TrackingUtils do
               tracked: true
             })
 
-          :ok = track_characters([character], map_id, true, caller_pid)
+          :ok = track([character], map_id, true, caller_pid)
           :ok = add_characters([character], map_id, true)
           {:ok, settings}
         else
@@ -161,25 +161,23 @@ defmodule WandererApp.Character.TrackingUtils do
   end
 
   # Helper functions for character tracking
-  def track_characters(_, _, false, _), do: :ok
-  def track_characters([], _map_id, _is_track_character?, _), do: :ok
+  def track(_, _, false, _), do: :ok
+  def track([], _map_id, _is_track_character?, _), do: :ok
 
-  def track_characters([character | characters], map_id, true, caller_pid) do
+  def track([character | characters], map_id, true, caller_pid) do
     with :ok <- track_character(character, map_id, caller_pid) do
-      track_characters(characters, map_id, true, caller_pid)
+      track(characters, map_id, true, caller_pid)
     end
   end
 
-  def track_character(
-        %{
-          id: character_id,
-          eve_id: eve_id,
-          corporation_id: corporation_id,
-          alliance_id: alliance_id
-        },
-        map_id,
-        caller_pid
-      ) do
+  defp track_character(
+         %{
+           id: character_id,
+           eve_id: eve_id
+         },
+         map_id,
+         caller_pid
+       ) do
     with false <- is_nil(caller_pid) do
       WandererAppWeb.Presence.track(caller_pid, map_id, character_id, %{})
 
@@ -202,7 +200,7 @@ defmodule WandererApp.Character.TrackingUtils do
     end
   end
 
-  def untrack_characters(characters, map_id, caller_pid) do
+  def untrack(characters, map_id, caller_pid) do
     with false <- is_nil(caller_pid) do
       characters
       |> Enum.each(fn character ->

@@ -7,7 +7,8 @@ defmodule WandererApp.Structure do
   alias WandererApp.Api.MapSystemStructure
   alias WandererApp.Character
 
-  def update_structures(system, added, updated, removed, main_character_eve_id) do
+  def update_structures(system, added, updated, removed, main_character_eve_id, user_id \\ nil) do
+    Logger.info("[Structure] update_structures called by user_id=#{inspect(user_id)}")
     added_structs =
       parse_structures(added, main_character_eve_id, system)
       |> Enum.map(&Map.delete(&1, :id))
@@ -105,7 +106,28 @@ defmodule WandererApp.Structure do
           # remove PK so Ash doesn't treat it as a new record
           updated_data = Map.delete(updated_data, :id)
 
-          new_record = MapSystemStructure.update(existing, updated_data)
+          # Merge update data with existing record to avoid nil required fields
+          merged_data = Map.merge(Map.from_struct(existing), updated_data, fn _k, v1, v2 -> if is_nil(v2), do: v1, else: v2 end)
+          # Only keep fields accepted by Ash update action
+          allowed_keys = [
+            :system_id,
+            :solar_system_name,
+            :solar_system_id,
+            :structure_type_id,
+            :structure_type,
+            :character_eve_id,
+            :name,
+            :notes,
+            :owner_name,
+            :owner_ticker,
+            :owner_id,
+            :status,
+            :end_time
+          ]
+          filtered_data = Map.take(merged_data, allowed_keys)
+          Logger.info("[Structure] update_structures_in_db: calling update for id=#{existing.id} with: #{inspect(filtered_data)}")
+          new_record = MapSystemStructure.update(existing, filtered_data)
+          Logger.info("[Structure] update_structures_in_db: update result for id=#{existing.id}: #{inspect(new_record)}")
 
           Logger.debug(fn ->
             "[Structure] updated record =>\n" <> inspect(new_record, pretty: true)

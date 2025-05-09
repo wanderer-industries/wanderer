@@ -479,6 +479,420 @@ This script demonstrates a practical application of the batch operations endpoin
 
 ---
 
+## Structures Endpoints
+
+### 1. List Structures
+
+```bash
+GET /api/maps/:map_identifier/structures
+```
+
+- **Description:** Retrieves all structures for the specified map.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+
+#### Example Request
+
+```bash
+curl -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/structures"
+```
+
+#### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": "<STRUCTURE_UUID>",
+      "system_id": "<SYSTEM_UUID>",
+      "solar_system_id": 30000142,
+      "solar_system_name": "Jita",
+      "structure_type_id": "35832",
+      "structure_type": "Astrahus",
+      "character_eve_id": "123456789",
+      "name": "Jita Trade Hub",
+      "notes": "Main market structure",
+      "owner_name": "Wanderer Corp",
+      "owner_ticker": "WANDR",
+      "owner_id": "corp-uuid-1",
+      "status": "anchoring",
+      "end_time": "2025-05-01T12:00:00Z",
+      "inserted_at": "2025-04-30T10:00:00Z",
+      "updated_at": "2025-04-30T10:00:00Z"
+    }
+  ]
+}
+```
+
+### 2. Show Structure
+
+```bash
+GET /api/maps/:map_identifier/structures/:id
+```
+
+- **Description:** Retrieves details for a specific structure.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the structure's UUID.
+
+#### Example Request
+
+```bash
+curl -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/structures/<STRUCTURE_UUID>"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<STRUCTURE_UUID>",
+    "system_id": "<SYSTEM_UUID>",
+    "solar_system_id": 30000142,
+    "solar_system_name": "Jita",
+    "structure_type_id": "35832",
+    "structure_type": "Astrahus",
+    "character_eve_id": "123456789",
+    "name": "Jita Trade Hub",
+    "notes": "Main market structure",
+    "owner_name": "Wanderer Corp",
+    "owner_ticker": "WANDR",
+    "owner_id": "corp-uuid-1",
+    "status": "anchoring",
+    "end_time": "2025-05-01T12:00:00Z",
+    "inserted_at": "2025-04-30T10:00:00Z",
+    "updated_at": "2025-04-30T10:00:00Z"
+  }
+}
+```
+
+### 3. Create Structure
+
+```bash
+POST /api/maps/:map_identifier/structures
+```
+
+- **Description:** Creates a new structure.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+
+#### Example Request
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "solar_system_id": 30000142,
+       "solar_system_name": "Jita",
+       "structure_type_id": "35832",
+       "structure_type": "Astrahus",
+       "character_eve_id": "123456789",
+       "name": "Jita Trade Hub",
+       "notes": "Main market structure",
+       "owner_name": "Wanderer Corp",
+       "owner_ticker": "WANDR",
+       "owner_id": "corp-uuid-1",
+       "status": "anchoring",
+       "end_time": "2025-05-01T12:00:00Z"
+     }' \
+     "https://wanderer.example.com/api/maps/your-map-slug/structures"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<STRUCTURE_UUID>",
+    "system_id": "<SYSTEM_UUID>",
+    "solar_system_id": 30000142,
+    "solar_system_name": "Jita",
+    "structure_type_id": "35832",
+    "structure_type": "Astrahus",
+    "character_eve_id": "123456789",
+    "name": "Jita Trade Hub",
+    "notes": "Main market structure",
+    "owner_name": "Wanderer Corp",
+    "owner_ticker": "WANDR",
+    "owner_id": "corp-uuid-1",
+    "status": "anchoring",
+    "end_time": "2025-05-01T12:00:00Z",
+    "inserted_at": "2025-04-30T10:00:00Z",
+    "updated_at": "2025-04-30T10:00:00Z"
+  }
+}
+```
+
+### 4. Update Structure
+
+```bash
+PUT /api/maps/:map_identifier/structures/:id
+```
+
+- **Description:** Updates an existing structure.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the structure's UUID.
+
+#### Example Request
+
+```bash
+curl -X PUT \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "status": "anchored",
+       "notes": "Updated via API"
+     }' \
+     "https://wanderer.example.com/api/maps/your-map-slug/structures/<STRUCTURE_UUID>"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<STRUCTURE_UUID>",
+    "status": "anchored",
+    "notes": "Updated via API"
+    // ... other fields ...
+  }
+}
+```
+
+### 5. Delete Structure
+
+```bash
+DELETE /api/maps/:map_identifier/structures/:id
+```
+
+- **Description:** Deletes a specific structure.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the structure's UUID.
+
+#### Example Request
+
+```bash
+curl -X DELETE \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/structures/<STRUCTURE_UUID>"
+```
+
+---
+
+## Signatures Endpoints
+
+### 1. List Signatures
+
+```bash
+GET /api/maps/:map_identifier/signatures
+```
+
+- **Description:** Retrieves all signatures for the specified map.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+
+#### Example Request
+
+```bash
+curl -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/signatures"
+```
+
+#### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": "<SIGNATURE_UUID>",
+      "system_id": "<SYSTEM_UUID>",
+      "eve_id": "ABC-123",
+      "name": "Wormhole K162",
+      "description": "Leads to unknown space",
+      "type": "Wormhole",
+      "linked_system_id": 30000144,
+      "kind": "cosmic_signature",
+      "group": "wormhole",
+      "custom_info": "Fresh",
+      "solar_system_id": 31001394,
+      "solar_system_name": "J214811",
+      "character_eve_id": "123456789",
+      "inserted_at": "2025-04-30T10:00:00Z",
+      "updated_at": "2025-04-30T10:00:00Z"
+    }
+  ]
+}
+```
+
+### 2. Show Signature
+
+```bash
+GET /api/maps/:map_identifier/signatures/:id
+```
+
+- **Description:** Retrieves details for a specific signature.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the signature's UUID.
+
+#### Example Request
+
+```bash
+curl -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/signatures/<SIGNATURE_UUID>"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<SIGNATURE_UUID>",
+    "system_id": "<SYSTEM_UUID>",
+    "eve_id": "ABC-123",
+    "name": "Wormhole K162",
+    "description": "Leads to unknown space",
+    "type": "Wormhole",
+    "linked_system_id": 30000144,
+    "kind": "cosmic_signature",
+    "group": "wormhole",
+    "custom_info": "Fresh",
+    "solar_system_id": 31001394,
+    "solar_system_name": "J214811",
+    "character_eve_id": "123456789",
+    "inserted_at": "2025-04-30T10:00:00Z",
+    "updated_at": "2025-04-30T10:00:00Z"
+  }
+}
+```
+
+### 3. Create Signature
+
+```bash
+POST /api/maps/:map_identifier/signatures
+```
+
+- **Description:** Creates a new signature.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+
+#### Example Request
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "eve_id": "ABC-123",
+       "name": "Wormhole K162",
+       "description": "Leads to unknown space",
+       "type": "Wormhole",
+       "linked_system_id": 30000144,
+       "kind": "cosmic_signature",
+       "group": "wormhole",
+       "custom_info": "Fresh",
+       "solar_system_id": 31001394,
+       "solar_system_name": "J214811"
+     }' \
+     "https://wanderer.example.com/api/maps/your-map-slug/signatures"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<SIGNATURE_UUID>",
+    "eve_id": "ABC-123",
+    "name": "Wormhole K162",
+    "description": "Leads to unknown space",
+    "type": "Wormhole",
+    "linked_system_id": 30000144,
+    "kind": "cosmic_signature",
+    "group": "wormhole",
+    "custom_info": "Fresh",
+    "solar_system_id": 31001394,
+    "solar_system_name": "J214811",
+    "character_eve_id": "123456789",
+    "inserted_at": "2025-04-30T10:00:00Z",
+    "updated_at": "2025-04-30T10:00:00Z"
+  }
+}
+```
+
+### 4. Update Signature
+
+```bash
+PUT /api/maps/:map_identifier/signatures/:id
+```
+
+- **Description:** Updates an existing signature.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the signature's UUID.
+
+#### Example Request
+
+```bash
+curl -X PUT \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "description": "Updated via API",
+       "custom_info": "Updated info"
+     }' \
+     "https://wanderer.example.com/api/maps/your-map-slug/signatures/<SIGNATURE_UUID>"
+```
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "id": "<SIGNATURE_UUID>",
+    "description": "Updated via API",
+    "custom_info": "Updated info"
+    // ... other fields ...
+  }
+}
+```
+
+### 5. Delete Signature
+
+```bash
+DELETE /api/maps/:map_identifier/signatures/:id
+```
+
+- **Description:** Deletes a specific signature.
+- **Authentication:** Requires Map API Token.
+- **Parameters:**
+  - `map_identifier` (required) — the map's slug or UUID.
+  - `id` (required) — the signature's UUID.
+
+#### Example Request
+
+```bash
+curl -X DELETE \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     "https://wanderer.example.com/api/maps/your-map-slug/signatures/<SIGNATURE_UUID>"
+```
+
+---
+
 ## Conclusion
 
 These endpoints provide powerful tools for managing your map's systems and connections programmatically. Key features include:

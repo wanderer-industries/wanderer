@@ -8,19 +8,25 @@ import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
+  userHubs: string[];
   systems: SolarSystemRawType[];
   outCommand: OutCommandHandler;
 }
 
-export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseContextMenuSystemHandlersProps) => {
+export const useContextMenuSystemHandlers = ({
+  systems,
+  hubs,
+  userHubs,
+  outCommand,
+}: UseContextMenuSystemHandlersProps) => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
 
   const [system, setSystem] = useState<string>();
 
   const { deleteSystems } = useDeleteSystems();
 
-  const ref = useRef({ hubs, system, systems, outCommand, deleteSystems });
-  ref.current = { hubs, system, systems, outCommand, deleteSystems };
+  const ref = useRef({ hubs, userHubs, system, systems, outCommand, deleteSystems });
+  ref.current = { hubs, userHubs, system, systems, outCommand, deleteSystems };
 
   const open = useCallback((ev: any, systemId: string) => {
     setSystem(systemId);
@@ -72,6 +78,21 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     setSystem(undefined);
   }, []);
 
+  const onUserHubToggle = useCallback(() => {
+    const { userHubs, system, outCommand } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    outCommand({
+      type: !userHubs.includes(system) ? OutCommand.addUserHub : OutCommand.deleteUserHub,
+      data: {
+        system_id: system,
+      },
+    });
+    setSystem(undefined);
+  }, []);
+
   const onSystemTag = useCallback((tag?: string) => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -103,7 +124,6 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     });
     setSystem(undefined);
   }, []);
-
 
   const onSystemStatus = useCallback((status: number) => {
     const { system, outCommand } = ref.current;
@@ -177,6 +197,7 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     onDeleteSystem,
     onLockToggle,
     onHubToggle,
+    onUserHubToggle,
     onSystemTag,
     onSystemTemporaryName,
     onSystemStatus,

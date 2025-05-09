@@ -23,7 +23,9 @@ defmodule WandererApp.Zkb.Supervisor do
           },
           opts: [
             name: {:local, :zkb_kills_provider},
-            mint_upgrade_opts: [Mint.WebSocket.PerMessageDeflate]
+            reconnect: true,
+            reconnect_after: 5_000,
+            max_reconnects: :infinity
           ]
         },
         preloader_child
