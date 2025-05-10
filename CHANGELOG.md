@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.62.4](https://github.com/wanderer-industries/wanderer/compare/v1.62.3...v1.62.4) (2025-05-10)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map characters got untracked
+
 ## [v1.62.3](https://github.com/wanderer-industries/wanderer/compare/v1.62.2...v1.62.3) (2025-05-08)
 
 
