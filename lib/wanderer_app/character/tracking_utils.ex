@@ -173,9 +173,7 @@ defmodule WandererApp.Character.TrackingUtils do
   defp track_character(
          %{
            id: character_id,
-           eve_id: eve_id,
-           corporation_id: corporation_id,
-           alliance_id: alliance_id
+           eve_id: eve_id
          },
          map_id,
          caller_pid
@@ -204,17 +202,14 @@ defmodule WandererApp.Character.TrackingUtils do
 
   def untrack(characters, map_id, caller_pid) do
     with false <- is_nil(caller_pid) do
+      character_ids = characters |> Enum.map(& &1.id)
+
       characters
       |> Enum.each(fn character ->
         WandererAppWeb.Presence.untrack(caller_pid, map_id, character.id)
-
-        WandererApp.Cache.put(
-          "#{inspect(caller_pid)}_map_#{map_id}:character_#{character.id}:tracked",
-          false
-        )
-
-        :ok = Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "character:#{character.eve_id}")
       end)
+
+      WandererApp.Map.Server.untrack_characters(map_id, character_ids)
 
       :ok
     else

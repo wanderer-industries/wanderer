@@ -167,9 +167,17 @@ defmodule WandererApp.Character.TrackerPool do
 
   def handle_info(
         :update_online,
-        state
+        %{
+          characters: characters
+        } =
+          state
       ) do
     Process.send_after(self(), :update_online, @update_online_interval)
+
+    characters
+    |> Enum.each(fn character_id ->
+      WandererApp.Character.update_character(character_id, %{online: false})
+    end)
 
     {:noreply, state}
   end
