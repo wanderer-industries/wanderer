@@ -5,6 +5,8 @@ defmodule WandererAppWeb.MapCharactersLive do
 
   alias WandererAppWeb.MapCharacters
 
+  @refresh_interval :timer.seconds(30)
+
   def mount(
         %{"slug" => map_slug} = _params,
         _session,
@@ -42,6 +44,15 @@ defmodule WandererAppWeb.MapCharactersLive do
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_info(
+        :refresh_tracking_data,
+        socket
+      ) do
+    Process.send_after(self(), :refresh_tracking_data, @refresh_interval)
+    {:noreply, socket |> load_characters()}
   end
 
   @impl true
@@ -101,17 +112,35 @@ defmodule WandererAppWeb.MapCharactersLive do
   end
 
   defp apply_action(socket, :index, _params) do
+    Process.send_after(self(), :refresh_tracking_data, @refresh_interval)
+
     socket
     |> assign(:active_page, :map_characters)
     |> assign(:page_title, "Map - Characters")
     |> load_characters()
   end
 
+  defp get_all_characters(map_id) do
+    {:ok, present_characters} =
+      WandererApp.Cache.lookup(
+        "map_#{map_id}:presence_data",
+        []
+      )
+
+    present_characters =
+      present_characters
+      |> Enum.map(fn character ->
+        character |> Map.merge(WandererApp.Character.get_character!(character.character_id))
+      end)
+
+    present_characters
+  end
+
   defp load_characters(%{assigns: %{map_id: map_id}} = socket) do
     map_characters =
       map_id
-      |> WandererApp.Map.list_characters()
-      |> Enum.map(&map_ui_character/1)
+      |> get_all_characters()
+      |> Enum.map(fn character -> map_ui_character(map_id, character) end)
 
     groups =
       map_characters
@@ -132,20 +161,22 @@ defmodule WandererAppWeb.MapCharactersLive do
     |> assign(:groups, groups)
   end
 
-  defp map_ui_character(character),
-    do:
-      character
-      |> Map.take([
-        :id,
-        :user_id,
-        :eve_id,
-        :name,
-        :online,
-        :corporation_id,
-        :corporation_name,
-        :corporation_ticker,
-        :alliance_id,
-        :alliance_name,
-        :alliance_ticker
-      ])
+  defp map_ui_character(map_id, character) do
+    character
+    |> Map.take([
+      :id,
+      :user_id,
+      :eve_id,
+      :name,
+      :online,
+      :corporation_id,
+      :corporation_name,
+      :corporation_ticker,
+      :alliance_id,
+      :alliance_name,
+      :alliance_ticker,
+      :from,
+      :tracked
+    ])
+  end
 end

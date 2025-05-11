@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.63.0](https://github.com/wanderer-industries/wanderer/compare/v1.62.4...v1.63.0) (2025-05-11)
+
+
+
+
+### Features:
+
+* Core: Updated map active characters page
+
+## [v1.62.4](https://github.com/wanderer-industries/wanderer/compare/v1.62.3...v1.62.4) (2025-05-10)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map characters got untracked
+
 ## [v1.62.3](https://github.com/wanderer-industries/wanderer/compare/v1.62.2...v1.62.3) (2025-05-08)
 
 
