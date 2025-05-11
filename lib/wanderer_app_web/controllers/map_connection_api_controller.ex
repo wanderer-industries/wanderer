@@ -135,7 +135,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "map-slug or map UUID"
       ],
       solar_system_source: [in: :query, type: :integer, required: false],
       solar_system_target: [in: :query, type: :integer, required: false]
@@ -190,7 +190,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: false],
       solar_system_source: [in: :query, type: :integer, required: false],
@@ -221,7 +221,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "map-slug or map UUID"
       ],
       system_id: [in: :path, type: :string, required: false]
     ],
@@ -259,7 +259,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: false],
       solar_system_source: [in: :query, type: :integer, required: false],
@@ -347,7 +347,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: false],
       solar_system_source: [in: :query, type: :integer, required: false],
