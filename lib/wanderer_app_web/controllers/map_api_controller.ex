@@ -185,9 +185,48 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
+  defp normalize_map_identifier(params) do
+    case Map.get(params, "map_identifier") do
+      nil -> params
+      id ->
+        if Ecto.UUID.cast(id) == :error,
+          do: Map.put(params, "slug", id),
+          else: Map.put(params, "map_id", id)
+    end
+  end
+
   defp find_tracked_characters_by_map(map_id) do
-    case WandererApp.Api.MapCharacterSettings.tracked_by_map_all(%{map_id: map_id}) do
-      {:ok, settings} -> {:ok, settings}
+    # Create a query to select tracked characters for the map and preload the character relationship
+    query =
+      WandererApp.Api.MapCharacterSettings
+      |> Ash.Query.filter(map_id == ^map_id and tracked == true)
+      |> Ash.Query.load(:character)
+
+    case WandererApp.Api.read(query) do
+      {:ok, settings} ->
+        # Format the settings to include character data
+        formatted_settings = Enum.map(settings, fn setting ->
+          character_data =
+            if Ash.Resource.loaded?(setting, :character) do
+              WandererAppWeb.MapEventHandler.map_ui_character_stat(setting.character)
+            else
+              nil
+            end
+
+          # Extract only the fields we need for JSON serialization
+          %{
+            id: setting.id,
+            map_id: setting.map_id,
+            character_id: setting.character_id,
+            tracked: setting.tracked,
+            followed: setting.followed,
+            inserted_at: setting.inserted_at,
+            updated_at: setting.updated_at,
+            character: character_data
+          }
+        end)
+
+        {:ok, formatted_settings}
       {:error, error} -> {:error, "Could not fetch tracked characters: #{inspect(error)}"}
     end
   end
@@ -208,22 +247,27 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map slug",
         type: :string,
         example: "my-map",
-        required: true
+        required: false
+      ],
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID)",
+        type: :string,
+        required: false
       ]
     ],
     responses: [
       ok: ResponseSchemas.ok(@tracked_characters_response_schema, "Tracked characters"),
-      bad_request: ResponseSchemas.bad_request(),
+      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
   def list_tracked_characters(conn, params) do
-    with {:ok, slug} <- APIUtils.require_param(params, "slug"),
-         {:ok, map_id} <- get_map_id_by_slug(slug) do
+    with {:ok, map_id} <- APIUtils.fetch_map_id(params) do
       # Find tracked characters for this map
       case find_tracked_characters_by_map(map_id) do
-        {:ok, settings} ->
-          # Return the list of tracked characters
-          json(conn, %{data: settings})
+        {:ok, formatted_settings} ->
+          # Return the formatted tracked characters
+          json(conn, %{data: formatted_settings})
 
         {:error, reason} ->
           Logger.error("Error listing tracked characters: #{APIUtils.format_error(reason)}")
@@ -236,6 +280,41 @@ defmodule WandererAppWeb.MapAPIController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: APIUtils.format_error(msg)})
+    end
+  end
+
+  @doc """
+  GET /api/maps/{map_identifier}/tracked-characters
+  """
+  operation :show_tracked_characters,
+    summary: "Show Tracked Characters for a Map",
+    description: "Lists all characters that are tracked on a specified map.",
+    parameters: [
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        type: :string,
+        required: true,
+        example: "map-slug or map UUID"
+      ]
+    ],
+    responses: [
+      ok: ResponseSchemas.ok(@tracked_characters_response_schema, "Tracked characters"),
+      bad_request: ResponseSchemas.bad_request("Map identifier is required"),
+      internal_server_error: ResponseSchemas.internal_server_error()
+    ]
+  def show_tracked_characters(%{assigns: %{map_id: map_id}} = conn, _params) do
+    # Find tracked characters for this map
+    case find_tracked_characters_by_map(map_id) do
+      {:ok, formatted_settings} ->
+        # Return the formatted tracked characters
+        json(conn, %{data: formatted_settings})
+
+      {:error, reason} ->
+        Logger.error("Error listing tracked characters: #{APIUtils.format_error(reason)}")
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: APIUtils.format_error(reason)})
     end
   end
 
@@ -487,51 +566,7 @@ defmodule WandererAppWeb.MapAPIController do
     ]
   def user_characters(conn, params) do
     with {:ok, map_id} <- APIUtils.fetch_map_id(params) do
-      case MapCharacterSettingsRepo.get_all_by_map(map_id) do
-        {:ok, map_character_settings} when map_character_settings != [] ->
-          character_ids = Enum.map(map_character_settings, &(&1.character_id))
-
-          case WandererApp.Api.read(Character |> filter(id in ^character_ids)) do
-            {:ok, characters} when characters != [] ->
-              characters_by_user =
-                characters
-                |> Enum.filter(fn char -> not is_nil(char.user_id) end)
-                |> Enum.group_by(&(&1.user_id))
-
-              settings_query =
-                WandererApp.Api.MapUserSettings
-                |> Ash.Query.new()
-                |> Ash.Query.filter(map_id == ^map_id)
-
-              main_characters_by_user =
-                case WandererApp.Api.read(settings_query) do
-                  {:ok, map_user_settings} ->
-                    Map.new(map_user_settings, fn settings -> {settings.user_id, settings.main_character_eve_id} end)
-                  _ -> %{}
-                end
-
-              character_groups =
-                Enum.map(characters_by_user, fn {user_id, user_characters} ->
-                  %{
-                    characters: Enum.map(user_characters, &character_to_json/1),
-                    main_character_eve_id: Map.get(main_characters_by_user, user_id)
-                  }
-                end)
-
-              json(conn, %{data: character_groups})
-
-            {:ok, []} -> json(conn, %{data: []})
-            {:error, reason} ->
-              conn
-              |> put_status(:internal_server_error)
-              |> json(%{error: "Failed to fetch characters: #{inspect(reason)}"})
-          end
-        {:ok, []} -> json(conn, %{data: []})
-        {:error, reason} ->
-          conn
-          |> put_status(:internal_server_error)
-          |> json(%{error: "Failed to fetch map character settings: #{inspect(reason)}"})
-      end
+      fetch_and_format_user_characters(conn, map_id)
     else
       {:error, msg} when is_binary(msg) ->
         conn
@@ -546,50 +581,80 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   @doc """
-  GET /api/map/connections
-
-  Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
+  GET /api/maps/{map_identifier}/user-characters
   """
-  @spec list_connections(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :list_connections,
-    summary: "List Map Connections",
-    description: "Lists all connections for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+  @spec show_user_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :show_user_characters,
+    summary: "Show User Characters for a Map",
+    description: "Returns characters grouped by user for a specific map.",
     parameters: [
-      map_id: [
-        in: :query,
-        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
-        required: false,
-        example: ""
-      ],
-      slug: [
-        in: :query,
-        description: "Map slug - Either map_id or slug must be provided",
-        type: :string,
-        required: false,
-        example: "map-name"
+        required: true,
+        example: "map-slug or map UUID"
       ]
     ],
     responses: [
-      ok: ResponseSchemas.ok(@map_connections_response_schema, "List of map connections"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG"),
-      not_found: ResponseSchemas.not_found("Could not fetch connections")
+      ok: ResponseSchemas.ok(@user_characters_response_schema, "User characters with main character indication"),
+      internal_server_error: ResponseSchemas.internal_server_error()
     ]
-  def list_connections(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
-          {:ok, connections} <- MapConnectionRepo.get_by_map(map_id) do
-      data = Enum.map(connections, &APIUtils.connection_to_json/1)
-      json(conn, %{data: data})
-    else
-      {:error, msg} when is_binary(msg) ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: msg})
+  def show_user_characters(%{assigns: %{map_id: map_id}} = conn, _params) do
+    fetch_and_format_user_characters(conn, map_id)
+  end
 
+  # Helper function to fetch and format user characters for a map
+  defp fetch_and_format_user_characters(conn, map_id) do
+    # Create a query to get all MapCharacterSettings for this map and preload characters
+    settings_query =
+      WandererApp.Api.MapCharacterSettings
+      |> Ash.Query.filter(map_id == ^map_id)
+      |> Ash.Query.load(:character)
+
+    case WandererApp.Api.read(settings_query) do
+      {:ok, map_character_settings} when map_character_settings != [] ->
+        # Extract characters and filter out those without a user_id
+        characters =
+          map_character_settings
+          |> Enum.map(& &1.character)
+          |> Enum.filter(fn char -> char != nil && not is_nil(char.user_id) end)
+
+        if characters != [] do
+          # Group characters by user_id
+          characters_by_user = Enum.group_by(characters, & &1.user_id)
+
+          # Get main character settings
+          user_settings_query =
+            WandererApp.Api.MapUserSettings
+            |> Ash.Query.new()
+            |> Ash.Query.filter(map_id == ^map_id)
+
+          main_characters_by_user =
+            case WandererApp.Api.read(user_settings_query) do
+              {:ok, map_user_settings} ->
+                Map.new(map_user_settings, fn settings -> {settings.user_id, settings.main_character_eve_id} end)
+              _ -> %{}
+            end
+
+          # Format the characters by user
+          character_groups =
+            Enum.map(characters_by_user, fn {user_id, user_characters} ->
+              %{
+                characters: Enum.map(user_characters, &character_to_json/1),
+                main_character_eve_id: Map.get(main_characters_by_user, user_id)
+              }
+            end)
+
+          json(conn, %{data: character_groups})
+        else
+          json(conn, %{data: []})
+        end
+      {:ok, []} -> json(conn, %{data: []})
       {:error, reason} ->
         conn
-        |> put_status(:not_found)
-        |> json(%{error: "Could not fetch connections: #{APIUtils.format_error(reason)}"})
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to fetch map character settings: #{inspect(reason)}"})
     end
   end
 
@@ -700,5 +765,53 @@ defmodule WandererAppWeb.MapAPIController do
   # --- JSON Formatting Helpers ---
   defp character_to_json(ch) do
     WandererAppWeb.MapEventHandler.map_ui_character_stat(ch)
+  end
+
+  @doc """
+  GET /api/map/connections
+
+  Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
+  """
+  @spec list_connections(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation :list_connections,
+    summary: "List Map Connections",
+    description: "Lists all connections for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: ""
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided",
+        type: :string,
+        required: false,
+        example: "map-name"
+      ]
+    ],
+    responses: [
+      ok: ResponseSchemas.ok(@map_connections_response_schema, "List of map connections"),
+      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG"),
+      not_found: ResponseSchemas.not_found("Could not fetch connections")
+    ]
+  def list_connections(conn, params) do
+    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
+          {:ok, connections} <- MapConnectionRepo.get_by_map(map_id) do
+      data = Enum.map(connections, &APIUtils.connection_to_json/1)
+      json(conn, %{data: data})
+    else
+      {:error, msg} when is_binary(msg) ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: msg})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Could not fetch connections: #{APIUtils.format_error(reason)}"})
+    end
   end
 end
