@@ -293,7 +293,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ]
     ],
     responses: [
@@ -317,7 +317,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: true]
     ],
@@ -337,7 +337,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ]
     ],
     request_body: {"Systems+Connections upsert", "application/json", @batch_request_schema},
@@ -361,7 +361,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: true]
     ],
@@ -384,7 +384,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ]
     ],
     request_body: {"Batch delete", "application/json", @batch_delete_schema},
@@ -431,7 +431,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "00000000-0000-0000-0000-000000000000 or my-map-slug"
+        example: "my-map-slug or map UUID"
       ],
       id: [in: :path, type: :string, required: true]
     ],

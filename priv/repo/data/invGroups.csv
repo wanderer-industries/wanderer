@@ -340,7 +340,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 471,23,Corporate Hangar Array,0,1,0,1,0,1
 472,7,System Scanner,0,0,0,0,0,1
 473,23,Tracking Array,0,1,0,1,0,1
-474,17,Acceleration Gate Keys,0,0,0,0,0,1
+474,17,Acceleration Gate Keys,0,1,0,0,0,1
 475,7,Microwarpdrive,96,0,0,0,0,0
 476,8,XL Torpedo,1349,0,0,0,1,1
 477,9,Mining Barge Blueprint,0,1,0,0,0,1
@@ -1010,7 +1010,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 1405,65,Laboratory,None,0,0,0,0,0
 1406,65,Refinery,None,0,1,0,0,1
 1407,65,Observatory Array,None,0,0,0,0,0
-1408,65,Upwell Jump Gate,None,0,1,0,0,1
+1408,65,Upwell Jump Bridge,None,0,1,0,0,1
 1409,65,Administration Hub,None,0,0,0,0,0
 1410,65,Advertisement Center,None,0,0,0,0,0
 1411,11,Amarr Navy Roaming Cruiser,None,0,0,0,0,0
@@ -1295,7 +1295,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 1924,65,♦ Stronghold,None,0,0,0,0,0
 1925,11,Irregular Industrial Command Ship,None,0,0,0,0,0
 1926,11,Irregular Freighter,None,0,0,0,0,0
-1927,11,Irregular Structure,None,0,0,0,0,0
+1927,11,Irregular Structure,None,0,1,0,0,0
 1928,11,Irregular Container,None,0,0,0,0,0
 1929,11,Irregular - Unidentified,None,0,0,0,0,0
 1933,66,Structure Composite Reactor Rig M - TE,None,0,0,0,0,1
@@ -1531,6 +1531,10 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4821,17,Atavum,None,1,0,0,0,1
 4824,17,Infomorph Systems,None,1,0,0,0,1
 4825,2,Local Beacon,None,0,1,0,0,0
+4827,17,EDENCOM Data,None,1,0,0,0,1
+4828,2,Pirate Spawners,None,0,0,0,0,0
+4843,17,Limited Rarities,None,1,0,0,0,1
+4857,25,Tyranite,15,0,1,0,0,1
 350858,350001,Infantry Weapons,None,1,0,0,0,0
 351064,350001,Infantry Dropsuits,None,1,0,0,0,0
 351121,350001,Infantry Modules,None,1,0,0,0,0
