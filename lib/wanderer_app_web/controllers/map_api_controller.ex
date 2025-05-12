@@ -207,7 +207,7 @@ defmodule WandererAppWeb.MapAPIController do
         # Format the settings to include character data
         formatted_settings = Enum.map(settings, fn setting ->
           character_data =
-            if Ash.Resource.loaded?(setting, :character) do
+            if Ash.Resource.loaded?(setting, :character) and not is_nil(setting.character) do
               WandererAppWeb.MapEventHandler.map_ui_character_stat(setting.character)
             else
               nil
@@ -295,7 +295,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "map-slug or map UUID"
+        example: "my-map-slug"
       ]
     ],
     responses: [
@@ -493,7 +493,10 @@ defmodule WandererAppWeb.MapAPIController do
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
   def character_activity(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
+    # Normalize params to make sure we handle both map_id and slug variations
+    normalized_params = normalize_map_identifier(params)
+
+    with {:ok, map_id} <- APIUtils.fetch_map_id(normalized_params),
          {:ok, days} <- parse_days(params["days"]) do
       raw_activity = WandererApp.Map.get_character_activity(map_id, days)
 
@@ -593,7 +596,7 @@ defmodule WandererAppWeb.MapAPIController do
         description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
         type: :string,
         required: true,
-        example: "map-slug or map UUID"
+        example: "my-map-slug"
       ]
     ],
     responses: [
@@ -640,8 +643,12 @@ defmodule WandererAppWeb.MapAPIController do
           # Format the characters by user
           character_groups =
             Enum.map(characters_by_user, fn {user_id, user_characters} ->
+              formatted_characters = Enum.map(user_characters, fn char ->
+                character_to_json(char)
+              end)
+
               %{
-                characters: Enum.map(user_characters, &character_to_json/1),
+                characters: formatted_characters,
                 main_character_eve_id: Map.get(main_characters_by_user, user_id)
               }
             end)
@@ -652,6 +659,7 @@ defmodule WandererAppWeb.MapAPIController do
         end
       {:ok, []} -> json(conn, %{data: []})
       {:error, reason} ->
+        Logger.error("Failed to fetch map character settings: #{inspect(reason)}")
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to fetch map character settings: #{inspect(reason)}"})
@@ -763,6 +771,7 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   # --- JSON Formatting Helpers ---
+  defp character_to_json(nil), do: nil
   defp character_to_json(ch) do
     WandererAppWeb.MapEventHandler.map_ui_character_stat(ch)
   end
