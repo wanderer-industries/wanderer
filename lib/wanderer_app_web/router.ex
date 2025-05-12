@@ -234,6 +234,8 @@ defmodule WandererAppWeb.Router do
     resources "/structures", MapSystemStructureAPIController, except: [:new, :edit]
     get "/structure-timers", MapSystemStructureAPIController, :structure_timers
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
+    get "/user-characters", MapAPIController, :show_user_characters
+    get "/tracked-characters", MapAPIController, :show_tracked_characters
   end
 
 

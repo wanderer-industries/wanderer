@@ -5,6 +5,16 @@ defmodule WandererApp.Api.MapCharacterSettings do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
+  @derive {Jason.Encoder, only: [
+    :id,
+    :map_id,
+    :character_id,
+    :tracked,
+    :followed,
+    :inserted_at,
+    :updated_at
+  ]}
+
   postgres do
     repo(WandererApp.Repo)
     table("map_character_settings_v1")
