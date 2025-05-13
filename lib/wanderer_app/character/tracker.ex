@@ -103,7 +103,9 @@ defmodule WandererApp.Character.Tracker do
     |> update_ship()
   end
 
-  def update_ship(%{character_id: character_id, track_ship: true} = character_state) do
+  def update_ship(
+        %{character_id: character_id, track_ship: true, is_online: true} = character_state
+      ) do
     character_id
     |> WandererApp.Character.get_character()
     |> case do
@@ -154,7 +156,9 @@ defmodule WandererApp.Character.Tracker do
     |> update_location()
   end
 
-  def update_location(%{track_location: true, character_id: character_id} = character_state) do
+  def update_location(
+        %{track_location: true, is_online: true, character_id: character_id} = character_state
+      ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
         WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden")
