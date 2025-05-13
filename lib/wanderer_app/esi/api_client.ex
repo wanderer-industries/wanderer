@@ -31,6 +31,9 @@ defmodule WandererApp.Esi.ApiClient do
     avoid: []
   }
 
+  @zarzakh_system 30_100_000
+  @default_avoid_systems [@zarzakh_system]
+
   @cache_opts [cache: true]
   @retry_opts [max_retries: 0, retry_log_level: :warning]
   @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.seconds(30)]
@@ -170,7 +173,10 @@ defmodule WandererApp.Esi.ApiClient do
           avoidance_list
       end
 
-    avoidance_list = [routes_settings.avoid | avoidance_list] |> List.flatten() |> Enum.uniq()
+    avoidance_list =
+      (@default_avoid_systems ++ [routes_settings.avoid | avoidance_list])
+      |> List.flatten()
+      |> Enum.uniq()
 
     params =
       %{
