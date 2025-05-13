@@ -305,14 +305,12 @@ defmodule WandererApp.Character.Tracker do
           WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
           WandererApp.Cache.delete("character:#{character_id}:online_error_time")
           WandererApp.Character.update_character(character_id, %{online: false})
-          WandererApp.Cache.delete("character:#{character_id}:location_started")
-          WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
+          # WandererApp.Cache.delete("character:#{character_id}:location_started")
+          # WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
 
           WandererApp.Character.update_character_state(character_id, %{
             character_state
-            | is_online: false,
-              track_ship: false,
-              track_location: false
+            | is_online: false
           })
 
           :ok
