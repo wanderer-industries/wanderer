@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.1](https://github.com/wanderer-industries/wanderer/compare/v1.64.0...v1.64.1) (2025-05-13)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed tracking stopped due to server errors
+
 ## [v1.64.0](https://github.com/wanderer-industries/wanderer/compare/v1.63.0...v1.64.0) (2025-05-13)
 
 
