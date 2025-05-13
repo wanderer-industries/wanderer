@@ -95,4 +95,12 @@ defmodule WandererApp.MapConnectionRepo do
     do:
       connection
       |> WandererApp.Api.MapConnection.update_custom_info(update)
+
+  def get_by_id(map_id, id) do
+    case WandererApp.Api.MapConnection.by_id(id) do
+      {:ok, conn} when conn.map_id == map_id -> {:ok, conn}
+      {:ok, _} -> {:error, :not_found}
+      {:error, _} -> {:error, :not_found}
+    end
+  end
 end
