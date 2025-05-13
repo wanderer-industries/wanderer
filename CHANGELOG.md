@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.2](https://github.com/wanderer-industries/wanderer/compare/v1.64.1...v1.64.2) (2025-05-13)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed tracking of ship & location for offline characters
+
 ## [v1.64.1](https://github.com/wanderer-industries/wanderer/compare/v1.64.0...v1.64.1) (2025-05-13)
 
 
