@@ -162,7 +162,7 @@ defmodule WandererApp.Zkb.KillsPreloader do
       "[KillsPreloader] Starting #{pass_type} pass => #{length(unique_systems)} systems"
     )
 
-    {final_state, kills_map} =
+    {final_state, _kills_map} =
       unique_systems
       |> Task.async_stream(
         fn {_map_id, system_id} ->

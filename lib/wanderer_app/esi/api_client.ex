@@ -588,63 +588,72 @@ defmodule WandererApp.Esi.ApiClient do
     {:ok, %{expires_at: expires_at, refresh_token: refresh_token, scopes: scopes} = character} =
       WandererApp.Character.get_character(character_id)
 
-    case WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
-           with_wallet: WandererApp.Character.can_track_wallet?(character),
-           is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
-           token: %OAuth2.AccessToken{refresh_token: refresh_token}
-         ) do
-      {:ok, %OAuth2.AccessToken{} = token} ->
-        {:ok, _character} =
-          character
-          |> WandererApp.Api.Character.update(%{
-            access_token: token.access_token,
-            expires_at: token.expires_at,
-            scopes: scopes
-          })
+    refresh_token_result = WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
+      with_wallet: WandererApp.Character.can_track_wallet?(character),
+      is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
+      token: %OAuth2.AccessToken{refresh_token: refresh_token}
+    )
 
-        WandererApp.Character.update_character(character_id, %{
-          access_token: token.access_token,
-          expires_at: token.expires_at
-        })
+    handle_refresh_token_result(refresh_token_result, character, character_id, expires_at, scopes)
+  end
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "character:#{character_id}",
-          :token_updated
-        )
+  defp handle_refresh_token_result({:ok, %OAuth2.AccessToken{} = token}, character, character_id, _expires_at, scopes) do
+    {:ok, _character} =
+      character
+      |> WandererApp.Api.Character.update(%{
+        access_token: token.access_token,
+        expires_at: token.expires_at,
+        scopes: scopes
+      })
 
-        {:ok, token}
+    WandererApp.Character.update_character(character_id, %{
+      access_token: token.access_token,
+      expires_at: token.expires_at
+    })
 
-      {:error, {"invalid_grant", error_message}} ->
-        {:ok, _character} =
-          character
-          |> WandererApp.Api.Character.update(%{
-            access_token: nil,
-            refresh_token: nil,
-            expires_at: expires_at,
-            scopes: scopes
-          })
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "character:#{character_id}",
+      :token_updated
+    )
 
-        WandererApp.Character.update_character(character_id, %{
-          access_token: nil,
-          refresh_token: nil,
-          expires_at: expires_at,
-          scopes: scopes
-        })
+    {:ok, token}
+  end
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "character:#{character_id}",
-          :character_token_invalid
-        )
+  defp handle_refresh_token_result({:error, {"invalid_grant", error_message}}, character, character_id, expires_at, scopes) do
+    invalidate_character_tokens(character, character_id, expires_at, scopes)
+    Logger.warning("Failed to refresh token for #{character_id}: #{error_message}")
+    {:error, :invalid_grant}
+  end
 
-        Logger.warning("Failed to refresh token for #{character_id}: #{error_message}")
-        {:error, :invalid_grant}
+  defp handle_refresh_token_result({:error, %OAuth2.Error{} = error}, character, character_id, expires_at, scopes) do
+    invalidate_character_tokens(character, character_id, expires_at, scopes)
+    Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
+    {:error, :invalid_grant}
+  end
 
+  defp handle_refresh_token_result(error, character, character_id, expires_at, scopes) do
+    Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
+    invalidate_character_tokens(character, character_id, expires_at, scopes)
+    {:error, :failed}
+  end
+
+  defp invalidate_character_tokens(character, character_id, expires_at, scopes) do
+    attrs = %{access_token: nil, refresh_token: nil, expires_at: expires_at, scopes: scopes}
+
+    with {:ok, _} <- WandererApp.Api.Character.update(character, attrs),
+         {:ok, _} <- WandererApp.Character.update_character(character_id, attrs) do
+      :ok
+    else
       error ->
-        Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
-        {:error, :failed}
+        Logger.error("Failed to clear tokens for #{character_id}: #{inspect(error)}")
     end
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "character:#{character_id}",
+      :character_token_invalid
+    )
   end
 
   defp map_route_info(

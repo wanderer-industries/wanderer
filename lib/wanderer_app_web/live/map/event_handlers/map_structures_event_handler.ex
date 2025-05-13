@@ -6,7 +6,7 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   alias WandererApp.Api.MapSystem
   alias WandererApp.Structure
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb. MapCoreEventHandler
 
   def handle_server_event(%{event: :structures_updated, payload: _solar_system_id}, socket) do
     socket
