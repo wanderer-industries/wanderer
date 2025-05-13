@@ -493,6 +493,16 @@ defmodule WandererApp.Esi.ApiClient do
       )
 
   defp get(path, api_opts \\ [], opts \\ []) do
+    case Cachex.get(:api_cache, path) do
+      {:ok, cached_data} when not is_nil(cached_data) ->
+        {:ok, cached_data}
+
+      _ ->
+        do_get_request(path, api_opts, opts)
+    end
+  end
+
+  defp do_get_request(path, api_opts \\ [], opts \\ []) do
     try do
       case Req.get(
              "#{@base_url}#{path}",
@@ -502,7 +512,9 @@ defmodule WandererApp.Esi.ApiClient do
              |> Keyword.merge(@retry_opts)
              |> Keyword.merge(@timeout_opts)
            ) do
-        {:ok, %{status: 200, body: body}} ->
+        {:ok, %{status: 200, body: body, headers: headers}} ->
+          maybe_cache_response(path, body, headers)
+
           {:ok, body}
 
         {:ok, %{status: 504}} ->
@@ -518,9 +530,11 @@ defmodule WandererApp.Esi.ApiClient do
           get_retry(path, api_opts, opts, :error_limited)
 
         {:ok, %{status: status}} ->
+          IO.inspect(status)
           {:error, "Unexpected status: #{status}"}
 
         {:error, _reason} ->
+          IO.inspect(_reason)
           {:error, "Request failed"}
       end
     rescue
@@ -530,6 +544,28 @@ defmodule WandererApp.Esi.ApiClient do
         {:error, "Request failed"}
     end
   end
+
+  defp maybe_cache_response(path, body, %{"expires" => [expires]})
+       when is_binary(path) and not is_nil(expires) do
+    try do
+      cached_ttl =
+        DateTime.diff(Timex.parse!(expires, "{RFC1123}"), DateTime.utc_now(), :millisecond)
+
+      Cachex.put(
+        :api_cache,
+        path,
+        body,
+        ttl: cached_ttl
+      )
+    rescue
+      e ->
+        @logger.error(Exception.message(e))
+
+        :ok
+    end
+  end
+
+  defp maybe_cache_response(_path, _body, _headers), do: :ok
 
   defp post(url, opts) do
     try do
@@ -588,16 +624,23 @@ defmodule WandererApp.Esi.ApiClient do
     {:ok, %{expires_at: expires_at, refresh_token: refresh_token, scopes: scopes} = character} =
       WandererApp.Character.get_character(character_id)
 
-    refresh_token_result = WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
-      with_wallet: WandererApp.Character.can_track_wallet?(character),
-      is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
-      token: %OAuth2.AccessToken{refresh_token: refresh_token}
-    )
+    refresh_token_result =
+      WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
+        with_wallet: WandererApp.Character.can_track_wallet?(character),
+        is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
+        token: %OAuth2.AccessToken{refresh_token: refresh_token}
+      )
 
     handle_refresh_token_result(refresh_token_result, character, character_id, expires_at, scopes)
   end
 
-  defp handle_refresh_token_result({:ok, %OAuth2.AccessToken{} = token}, character, character_id, _expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:ok, %OAuth2.AccessToken{} = token},
+         character,
+         character_id,
+         _expires_at,
+         scopes
+       ) do
     {:ok, _character} =
       character
       |> WandererApp.Api.Character.update(%{
@@ -620,13 +663,25 @@ defmodule WandererApp.Esi.ApiClient do
     {:ok, token}
   end
 
-  defp handle_refresh_token_result({:error, {"invalid_grant", error_message}}, character, character_id, expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:error, {"invalid_grant", error_message}},
+         character,
+         character_id,
+         expires_at,
+         scopes
+       ) do
     invalidate_character_tokens(character, character_id, expires_at, scopes)
     Logger.warning("Failed to refresh token for #{character_id}: #{error_message}")
     {:error, :invalid_grant}
   end
 
-  defp handle_refresh_token_result({:error, %OAuth2.Error{} = error}, character, character_id, expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:error, %OAuth2.Error{} = error},
+         character,
+         character_id,
+         expires_at,
+         scopes
+       ) do
     invalidate_character_tokens(character, character_id, expires_at, scopes)
     Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
     {:error, :invalid_grant}

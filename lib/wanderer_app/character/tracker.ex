@@ -33,7 +33,7 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @online_error_timeout :timer.minutes(5)
+  @online_error_timeout :timer.minutes(3)
   @forbidden_ttl :timer.minutes(1)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
