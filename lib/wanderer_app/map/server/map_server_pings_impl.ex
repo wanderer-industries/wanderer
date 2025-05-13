@@ -13,13 +13,15 @@ defmodule WandererApp.Map.Server.PingsImpl do
           solar_system_id: solar_system_id,
           type: type,
           message: message,
-          character_id: character_eve_id,
+          character_id: character_id,
           user_id: user_id
         } = ping_info
       ) do
+    {:ok, character} = WandererApp.Character.get_character(character_id)
+
     Impl.broadcast!(map_id, :ping_added, %{
       inserted_at: DateTime.utc_now(),
-      character_eve_id: character_eve_id,
+      character_eve_id: character.eve_id,
       solar_system_id: solar_system_id,
       message: message,
       type: type
