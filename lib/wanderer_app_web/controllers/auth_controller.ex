@@ -25,6 +25,7 @@ defmodule WandererAppWeb.AuthController do
       case WandererApp.Api.Character.by_eve_id(character_data.eve_id) do
         {:ok, character} ->
           character_update = %{
+            name: auth.info.name,
             access_token: auth.credentials.token,
             refresh_token: auth.credentials.refresh_token,
             expires_at: auth.credentials.expires_at,
