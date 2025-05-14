@@ -34,6 +34,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   def start(state) do
     {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
+    WandererApp.Cache.insert("tracked_characters", [])
 
     tracked_characters
     |> Enum.each(fn character_id ->
@@ -50,6 +51,12 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
       tracked_characters = [character_id | characters] |> Enum.uniq()
       WandererApp.Cache.insert("tracked_characters", tracked_characters)
+
+      WandererApp.Character.update_character(character_id, %{online: false})
+
+      WandererApp.Character.update_character_state(character_id, %{
+        is_online: false
+      })
 
       WandererApp.Character.TrackerPoolDynamicSupervisor.start_tracking(character_id)
 

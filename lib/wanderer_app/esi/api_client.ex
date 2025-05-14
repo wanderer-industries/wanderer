@@ -31,6 +31,9 @@ defmodule WandererApp.Esi.ApiClient do
     avoid: []
   }
 
+  @zarzakh_system 30_100_000
+  @default_avoid_systems [@zarzakh_system]
+
   @cache_opts [cache: true]
   @retry_opts [max_retries: 0, retry_log_level: :warning]
   @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.seconds(30)]
@@ -99,7 +102,7 @@ defmodule WandererApp.Esi.ApiClient do
                 {:ok, []}
             end
 
-          chains = _remove_intersection([map_chains | thera_chains] |> List.flatten())
+          chains = remove_intersection([map_chains | thera_chains] |> List.flatten())
 
           chains =
             case routes_settings.include_cruise do
@@ -170,7 +173,10 @@ defmodule WandererApp.Esi.ApiClient do
           avoidance_list
       end
 
-    avoidance_list = [routes_settings.avoid | avoidance_list] |> List.flatten() |> Enum.uniq()
+    avoidance_list =
+      (@default_avoid_systems ++ [routes_settings.avoid | avoidance_list])
+      |> List.flatten()
+      |> Enum.uniq()
 
     params =
       %{
@@ -296,7 +302,7 @@ defmodule WandererApp.Esi.ApiClient do
               opts: [ttl: @ttl]
             )
   def get_killmail(killmail_id, killmail_hash, opts \\ []) do
-    get("/killmails/#{killmail_id}/#{killmail_hash}/", opts)
+    get("/killmails/#{killmail_id}/#{killmail_hash}/", opts, @cache_opts)
   end
 
   @decorate cacheable(
@@ -319,7 +325,8 @@ defmodule WandererApp.Esi.ApiClient do
   def get_character_info(eve_id, opts \\ []) do
     case get(
            "/characters/#{eve_id}/",
-           opts
+           opts,
+           @cache_opts
          ) do
       {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
@@ -333,25 +340,35 @@ defmodule WandererApp.Esi.ApiClient do
   def get_custom_route_base_url, do: WandererApp.Env.custom_route_base_url()
 
   def get_character_wallet(character_eve_id, opts \\ []),
-    do: _get_character_auth_data(character_eve_id, "wallet", opts)
+    do: get_character_auth_data(character_eve_id, "wallet", opts ++ @cache_opts)
 
   def get_corporation_wallets(corporation_id, opts \\ []),
-    do: _get_corporation_auth_data(corporation_id, "wallets", opts)
+    do: get_corporation_auth_data(corporation_id, "wallets", opts)
 
   def get_corporation_wallet_journal(corporation_id, division, opts \\ []),
-    do: _get_corporation_auth_data(corporation_id, "wallets/#{division}/journal", opts)
+    do:
+      get_corporation_auth_data(
+        corporation_id,
+        "wallets/#{division}/journal",
+        opts
+      )
 
   def get_corporation_wallet_transactions(corporation_id, division, opts \\ []),
-    do: _get_corporation_auth_data(corporation_id, "wallets/#{division}/transactions", opts)
+    do:
+      get_corporation_auth_data(
+        corporation_id,
+        "wallets/#{division}/transactions",
+        opts
+      )
 
   def get_character_location(character_eve_id, opts \\ []),
-    do: _get_character_auth_data(character_eve_id, "location", opts)
+    do: get_character_auth_data(character_eve_id, "location", opts ++ @cache_opts)
 
   def get_character_online(character_eve_id, opts \\ []),
-    do: _get_character_auth_data(character_eve_id, "online", opts)
+    do: get_character_auth_data(character_eve_id, "online", opts ++ @cache_opts)
 
   def get_character_ship(character_eve_id, opts \\ []),
-    do: _get_character_auth_data(character_eve_id, "ship", opts)
+    do: get_character_auth_data(character_eve_id, "ship", opts ++ @cache_opts)
 
   def search(character_eve_id, opts \\ []) do
     search_val = to_string(opts[:params][:search] || "")
@@ -366,7 +383,7 @@ defmodule WandererApp.Esi.ApiClient do
     ]
 
     merged_opts = Keyword.put(opts, :params, query_params)
-    _search(character_eve_id, search_val, categories_val, merged_opts)
+    get_search(character_eve_id, search_val, categories_val, merged_opts)
   end
 
   @decorate cacheable(
@@ -374,11 +391,11 @@ defmodule WandererApp.Esi.ApiClient do
               key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
               opts: [ttl: @ttl]
             )
-  defp _search(character_eve_id, search_val, categories_val, merged_opts) do
-    _get_character_auth_data(character_eve_id, "search", merged_opts)
+  defp get_search(character_eve_id, search_val, categories_val, merged_opts) do
+    get_character_auth_data(character_eve_id, "search", merged_opts)
   end
 
-  defp _remove_intersection(pairs_arr) do
+  defp remove_intersection(pairs_arr) do
     tuples = pairs_arr |> Enum.map(fn x -> {x.first, x.second} end)
 
     tuples
@@ -399,9 +416,9 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp _get_routes(origin, destination, params, opts),
-    do: _get_routes_eve(origin, destination, params, opts)
+    do: get_routes_eve(origin, destination, params, opts)
 
-  defp _get_routes_eve(origin, destination, params, opts) do
+  defp get_routes_eve(origin, destination, params, opts) do
     esi_params =
       Map.merge(params, %{
         connections: params.connections |> Enum.join(","),
@@ -410,7 +427,8 @@ defmodule WandererApp.Esi.ApiClient do
 
     get(
       "/route/#{origin}/#{destination}/?#{esi_params |> Plug.Conn.Query.encode()}",
-      opts
+      opts,
+      @cache_opts
     )
   end
 
@@ -420,17 +438,19 @@ defmodule WandererApp.Esi.ApiClient do
     do:
       get(
         "/alliances/#{alliance_eve_id}/#{info_path}",
-        opts
+        opts,
+        @cache_opts
       )
 
   defp _get_corporation_info(corporation_eve_id, info_path, opts),
     do:
       get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
-        opts
+        opts,
+        @cache_opts
       )
 
-  defp _get_character_auth_data(character_eve_id, info_path, opts) do
+  defp get_character_auth_data(character_eve_id, info_path, opts) do
     path = "/characters/#{character_eve_id}/#{info_path}"
 
     auth_opts =
@@ -439,7 +459,7 @@ defmodule WandererApp.Esi.ApiClient do
 
     character_id = opts |> Keyword.get(:character_id, nil)
 
-    if not _is_access_token_expired?(character_id) do
+    if not is_access_token_expired?(character_id) do
       get(
         path,
         auth_opts,
@@ -450,7 +470,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp _is_access_token_expired?(character_id) do
+  defp is_access_token_expired?(character_id) do
     {:ok, %{expires_at: expires_at} = _character} =
       WandererApp.Character.get_character(character_id)
 
@@ -459,13 +479,13 @@ defmodule WandererApp.Esi.ApiClient do
     expires_at - now <= 0
   end
 
-  defp _get_corporation_auth_data(corporation_eve_id, info_path, opts),
+  defp get_corporation_auth_data(corporation_eve_id, info_path, opts),
     do:
       get(
         "/corporations/#{corporation_eve_id}/#{info_path}",
         [params: opts[:params] || []] ++
           (opts |> get_auth_opts()),
-        opts
+        opts ++ @cache_opts
       )
 
   defp with_user_agent_opts(opts) do
@@ -487,6 +507,16 @@ defmodule WandererApp.Esi.ApiClient do
       )
 
   defp get(path, api_opts \\ [], opts \\ []) do
+    case Cachex.get(:api_cache, path) do
+      {:ok, cached_data} when not is_nil(cached_data) ->
+        {:ok, cached_data}
+
+      _ ->
+        do_get_request(path, api_opts, opts)
+    end
+  end
+
+  defp do_get_request(path, api_opts \\ [], opts \\ []) do
     try do
       case Req.get(
              "#{@base_url}#{path}",
@@ -496,7 +526,9 @@ defmodule WandererApp.Esi.ApiClient do
              |> Keyword.merge(@retry_opts)
              |> Keyword.merge(@timeout_opts)
            ) do
-        {:ok, %{status: 200, body: body}} ->
+        {:ok, %{status: 200, body: body, headers: headers}} ->
+          maybe_cache_response(path, body, headers, opts)
+
           {:ok, body}
 
         {:ok, %{status: 504}} ->
@@ -524,6 +556,30 @@ defmodule WandererApp.Esi.ApiClient do
         {:error, "Request failed"}
     end
   end
+
+  defp maybe_cache_response(path, body, %{"expires" => [expires]}, opts)
+       when is_binary(path) and not is_nil(expires) do
+    try do
+      if opts |> Keyword.get(:cache, false) do
+        cached_ttl =
+          DateTime.diff(Timex.parse!(expires, "{RFC1123}"), DateTime.utc_now(), :millisecond)
+
+        Cachex.put(
+          :api_cache,
+          path,
+          body,
+          ttl: cached_ttl
+        )
+      end
+    rescue
+      e ->
+        @logger.error(Exception.message(e))
+
+        :ok
+    end
+  end
+
+  defp maybe_cache_response(_path, _body, _headers), do: :ok
 
   defp post(url, opts) do
     try do
@@ -582,16 +638,23 @@ defmodule WandererApp.Esi.ApiClient do
     {:ok, %{expires_at: expires_at, refresh_token: refresh_token, scopes: scopes} = character} =
       WandererApp.Character.get_character(character_id)
 
-    refresh_token_result = WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
-      with_wallet: WandererApp.Character.can_track_wallet?(character),
-      is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
-      token: %OAuth2.AccessToken{refresh_token: refresh_token}
-    )
+    refresh_token_result =
+      WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
+        with_wallet: WandererApp.Character.can_track_wallet?(character),
+        is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
+        token: %OAuth2.AccessToken{refresh_token: refresh_token}
+      )
 
     handle_refresh_token_result(refresh_token_result, character, character_id, expires_at, scopes)
   end
 
-  defp handle_refresh_token_result({:ok, %OAuth2.AccessToken{} = token}, character, character_id, _expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:ok, %OAuth2.AccessToken{} = token},
+         character,
+         character_id,
+         _expires_at,
+         scopes
+       ) do
     {:ok, _character} =
       character
       |> WandererApp.Api.Character.update(%{
@@ -614,13 +677,25 @@ defmodule WandererApp.Esi.ApiClient do
     {:ok, token}
   end
 
-  defp handle_refresh_token_result({:error, {"invalid_grant", error_message}}, character, character_id, expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:error, {"invalid_grant", error_message}},
+         character,
+         character_id,
+         expires_at,
+         scopes
+       ) do
     invalidate_character_tokens(character, character_id, expires_at, scopes)
     Logger.warning("Failed to refresh token for #{character_id}: #{error_message}")
     {:error, :invalid_grant}
   end
 
-  defp handle_refresh_token_result({:error, %OAuth2.Error{} = error}, character, character_id, expires_at, scopes) do
+  defp handle_refresh_token_result(
+         {:error, %OAuth2.Error{} = error},
+         character,
+         character_id,
+         expires_at,
+         scopes
+       ) do
     invalidate_character_tokens(character, character_id, expires_at, scopes)
     Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
     {:error, :invalid_grant}

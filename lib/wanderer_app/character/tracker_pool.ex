@@ -17,11 +17,11 @@ defmodule WandererApp.Character.TrackerPool do
   @unique_registry :unique_tracker_pool_registry
 
   @update_location_interval :timer.seconds(2)
-  @update_online_interval :timer.seconds(10)
+  @update_online_interval :timer.seconds(5)
   @check_online_errors_interval :timer.seconds(30)
-  @update_ship_interval :timer.seconds(5)
+  @update_ship_interval :timer.seconds(2)
   @update_info_interval :timer.minutes(1)
-  @update_wallet_interval :timer.minutes(5)
+  @update_wallet_interval :timer.minutes(1)
   @inactive_character_timeout :timer.minutes(5)
 
   @logger Application.compile_env(:wanderer_app, :logger)
@@ -177,6 +177,10 @@ defmodule WandererApp.Character.TrackerPool do
     characters
     |> Enum.each(fn character_id ->
       WandererApp.Character.update_character(character_id, %{online: false})
+
+      WandererApp.Character.update_character_state(character_id, %{
+        is_online: false
+      })
     end)
 
     {:noreply, state}

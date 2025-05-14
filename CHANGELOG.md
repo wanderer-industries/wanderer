@@ -2,6 +2,60 @@
 
 <!-- changelog -->
 
+## [v1.64.3](https://github.com/wanderer-industries/wanderer/compare/v1.64.2...v1.64.3) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character tracking initialization logic & removed search caching
+
+## [v1.64.2](https://github.com/wanderer-industries/wanderer/compare/v1.64.1...v1.64.2) (2025-05-13)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed tracking of ship & location for offline characters
+
+## [v1.64.1](https://github.com/wanderer-industries/wanderer/compare/v1.64.0...v1.64.1) (2025-05-13)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed tracking stopped due to server errors
+
+## [v1.64.0](https://github.com/wanderer-industries/wanderer/compare/v1.63.0...v1.64.0) (2025-05-13)
+
+
+
+
+### Features:
+
+* api: add additional structure/signature methods (#365)
+
+* api: add additional system/connections methods (#351)
+
+### Bug Fixes:
+
+* Core: Fixed EOL connections cleanup
+
+* Core: Avoid Zarzakh system in routes widget
+
+* remove repeat errors for token refresh (#375)
+
+* updated openapi spec for character activity (#374)
+
+* removed error from characters endpoint, and updated routes (#372)
+
+* cleanup examples for system and connections (#370)
+
+* remove error on websocket reconnect (#367)
+
 ## [v1.63.0](https://github.com/wanderer-industries/wanderer/compare/v1.62.4...v1.63.0) (2025-05-11)
 
 
