@@ -19,7 +19,7 @@ export type HeaderProps = {
   lazyDeleteValue: boolean;
   onLazyDeleteChange: (checked: boolean) => void;
   pendingCount: number;
-  pendingTimeRemaining?: number; // Time remaining in ms
+  undoCountdown?: number;
   onUndoClick: () => void;
   onSettingsClick: () => void;
 };
@@ -29,7 +29,7 @@ export const SystemSignaturesHeader = ({
   lazyDeleteValue,
   onLazyDeleteChange,
   pendingCount,
-  pendingTimeRemaining,
+  undoCountdown,
   onUndoClick,
   onSettingsClick,
 }: HeaderProps) => {
@@ -42,13 +42,6 @@ export const SystemSignaturesHeader = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isCompact = useMaxWidth(containerRef, COMPACT_MAX_WIDTH);
-
-  // Format time remaining as seconds
-  const formatTimeRemaining = () => {
-    if (!pendingTimeRemaining) return '';
-    const seconds = Math.ceil(pendingTimeRemaining / 1000);
-    return ` (${seconds}s remaining)`;
-  };
 
   return (
     <div ref={containerRef} className="w-full">
@@ -78,7 +71,9 @@ export const SystemSignaturesHeader = ({
             <WdImgButton
               className={PrimeIcons.UNDO}
               style={{ color: 'red' }}
-              tooltip={{ content: `Undo pending changes (${pendingCount})${formatTimeRemaining()}` }}
+              tooltip={{
+                content: `Undo pending deletions (${pendingCount})${undoCountdown && undoCountdown > 0 ? ` — ${undoCountdown}s left` : ''}`,
+              }}
               onClick={onUndoClick}
             />
           )}

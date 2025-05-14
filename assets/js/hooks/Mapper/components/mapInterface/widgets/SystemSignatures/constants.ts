@@ -1,10 +1,14 @@
 import {
   GroupType,
   SignatureGroup,
+  SignatureGroupDE,
   SignatureGroupENG,
+  SignatureGroupFR,
   SignatureGroupRU,
   SignatureKind,
+  SignatureKindDE,
   SignatureKindENG,
+  SignatureKindFR,
   SignatureKindRU,
 } from '@/hooks/Mapper/types';
 
@@ -40,45 +44,57 @@ export const GROUPS: Record<SignatureGroup, GroupType> = {
   [SignatureGroup.CosmicSignature]: { id: SignatureGroup.CosmicSignature, icon: '/icons/x_close14.png', w: 9, h: 9 },
 };
 
-export const MAPPING_GROUP_TO_ENG = {
-  // ENGLISH
-  [SignatureGroupENG.GasSite]: SignatureGroup.GasSite,
-  [SignatureGroupENG.RelicSite]: SignatureGroup.RelicSite,
-  [SignatureGroupENG.DataSite]: SignatureGroup.DataSite,
-  [SignatureGroupENG.OreSite]: SignatureGroup.OreSite,
-  [SignatureGroupENG.CombatSite]: SignatureGroup.CombatSite,
-  [SignatureGroupENG.Wormhole]: SignatureGroup.Wormhole,
-  [SignatureGroupENG.CosmicSignature]: SignatureGroup.CosmicSignature,
-
-  // RUSSIAN
-  [SignatureGroupRU.GasSite]: SignatureGroup.GasSite,
-  [SignatureGroupRU.RelicSite]: SignatureGroup.RelicSite,
-  [SignatureGroupRU.DataSite]: SignatureGroup.DataSite,
-  [SignatureGroupRU.OreSite]: SignatureGroup.OreSite,
-  [SignatureGroupRU.CombatSite]: SignatureGroup.CombatSite,
-  [SignatureGroupRU.Wormhole]: SignatureGroup.Wormhole,
-  [SignatureGroupRU.CosmicSignature]: SignatureGroup.CosmicSignature,
+export const LANGUAGE_GROUP_MAPPINGS = {
+  EN: {
+    [SignatureGroupENG.GasSite]: SignatureGroup.GasSite,
+    [SignatureGroupENG.RelicSite]: SignatureGroup.RelicSite,
+    [SignatureGroupENG.DataSite]: SignatureGroup.DataSite,
+    [SignatureGroupENG.OreSite]: SignatureGroup.OreSite,
+    [SignatureGroupENG.CombatSite]: SignatureGroup.CombatSite,
+    [SignatureGroupENG.Wormhole]: SignatureGroup.Wormhole,
+    [SignatureGroupENG.CosmicSignature]: SignatureGroup.CosmicSignature,
+  },
+  RU: {
+    [SignatureGroupRU.GasSite]: SignatureGroup.GasSite,
+    [SignatureGroupRU.RelicSite]: SignatureGroup.RelicSite,
+    [SignatureGroupRU.DataSite]: SignatureGroup.DataSite,
+    [SignatureGroupRU.OreSite]: SignatureGroup.OreSite,
+    [SignatureGroupRU.CombatSite]: SignatureGroup.CombatSite,
+    [SignatureGroupRU.Wormhole]: SignatureGroup.Wormhole,
+    [SignatureGroupRU.CosmicSignature]: SignatureGroup.CosmicSignature,
+  },
+  FR: {
+    [SignatureGroupFR.GasSite]: SignatureGroup.GasSite,
+    [SignatureGroupFR.RelicSite]: SignatureGroup.RelicSite,
+    [SignatureGroupFR.DataSite]: SignatureGroup.DataSite,
+    [SignatureGroupFR.OreSite]: SignatureGroup.OreSite,
+    [SignatureGroupFR.CombatSite]: SignatureGroup.CombatSite,
+    [SignatureGroupFR.Wormhole]: SignatureGroup.Wormhole,
+    [SignatureGroupFR.CosmicSignature]: SignatureGroup.CosmicSignature,
+  },
+  DE: {
+    [SignatureGroupDE.GasSite]: SignatureGroup.GasSite,
+    [SignatureGroupDE.RelicSite]: SignatureGroup.RelicSite,
+    [SignatureGroupDE.DataSite]: SignatureGroup.DataSite,
+    [SignatureGroupDE.OreSite]: SignatureGroup.OreSite,
+    [SignatureGroupDE.CombatSite]: SignatureGroup.CombatSite,
+    [SignatureGroupDE.Wormhole]: SignatureGroup.Wormhole,
+    [SignatureGroupDE.CosmicSignature]: SignatureGroup.CosmicSignature,
+  },
 };
 
-export const MAPPING_TYPE_TO_ENG = {
-  // ENGLISH
-  [SignatureKindENG.CosmicSignature]: SignatureKind.CosmicSignature,
-  [SignatureKindENG.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
-  [SignatureKindENG.Structure]: SignatureKind.Structure,
-  [SignatureKindENG.Ship]: SignatureKind.Ship,
-  [SignatureKindENG.Deployable]: SignatureKind.Deployable,
-  [SignatureKindENG.Drone]: SignatureKind.Drone,
+// Flatten the structure for backward compatibility
+export const MAPPING_GROUP_TO_ENG: Record<string, SignatureGroup> = (() => {
+  const flattened: Record<string, SignatureGroup> = {};
+  for (const [, mappings] of Object.entries(LANGUAGE_GROUP_MAPPINGS)) {
+    Object.assign(flattened, mappings);
+  }
+  return flattened;
+})();
 
-  // RUSSIAN
-  [SignatureKindRU.CosmicSignature]: SignatureKind.CosmicSignature,
-  [SignatureKindRU.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
-  [SignatureKindRU.Structure]: SignatureKind.Structure,
-  [SignatureKindRU.Ship]: SignatureKind.Ship,
-  [SignatureKindRU.Deployable]: SignatureKind.Deployable,
-  [SignatureKindRU.Drone]: SignatureKind.Drone,
+export const getGroupIdByRawGroup = (val: string): SignatureGroup | undefined => {
+  return MAPPING_GROUP_TO_ENG[val] || undefined;
 };
-
-export const getGroupIdByRawGroup = (val: string) => MAPPING_GROUP_TO_ENG[val as SignatureGroup];
 
 export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
 export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_5';
@@ -123,7 +139,7 @@ export type Setting = {
   name: string;
   type: SettingsTypes;
   isSeparator?: boolean;
-  options?: { label: string; value: any }[];
+  options?: { label: string; value: number | string | boolean }[];
 };
 
 export enum SIGNATURES_DELETION_TIMING {
@@ -208,3 +224,52 @@ export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
   [SIGNATURES_DELETION_TIMING.IMMEDIATE]: 0,
   [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
+
+// Replace the flat structure with a nested structure by language
+export const LANGUAGE_TYPE_MAPPINGS = {
+  EN: {
+    [SignatureKindENG.CosmicSignature]: SignatureKind.CosmicSignature,
+    [SignatureKindENG.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
+    [SignatureKindENG.Structure]: SignatureKind.Structure,
+    [SignatureKindENG.Ship]: SignatureKind.Ship,
+    [SignatureKindENG.Deployable]: SignatureKind.Deployable,
+    [SignatureKindENG.Drone]: SignatureKind.Drone,
+    [SignatureKindENG.Starbase]: SignatureKind.Starbase,
+  },
+  RU: {
+    [SignatureKindRU.CosmicSignature]: SignatureKind.CosmicSignature,
+    [SignatureKindRU.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
+    [SignatureKindRU.Structure]: SignatureKind.Structure,
+    [SignatureKindRU.Ship]: SignatureKind.Ship,
+    [SignatureKindRU.Deployable]: SignatureKind.Deployable,
+    [SignatureKindRU.Drone]: SignatureKind.Drone,
+    [SignatureKindRU.Starbase]: SignatureKind.Starbase,
+  },
+  FR: {
+    [SignatureKindFR.CosmicSignature]: SignatureKind.CosmicSignature,
+    [SignatureKindFR.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
+    [SignatureKindFR.Structure]: SignatureKind.Structure,
+    [SignatureKindFR.Ship]: SignatureKind.Ship,
+    [SignatureKindFR.Deployable]: SignatureKind.Deployable,
+    [SignatureKindFR.Drone]: SignatureKind.Drone,
+    [SignatureKindFR.Starbase]: SignatureKind.Starbase,
+  },
+  DE: {
+    [SignatureKindDE.CosmicSignature]: SignatureKind.CosmicSignature,
+    [SignatureKindDE.CosmicAnomaly]: SignatureKind.CosmicAnomaly,
+    [SignatureKindDE.Structure]: SignatureKind.Structure,
+    [SignatureKindDE.Ship]: SignatureKind.Ship,
+    [SignatureKindDE.Deployable]: SignatureKind.Deployable,
+    [SignatureKindDE.Drone]: SignatureKind.Drone,
+    [SignatureKindDE.Starbase]: SignatureKind.Starbase,
+  },
+};
+
+// Flatten the structure for backward compatibility
+export const MAPPING_TYPE_TO_ENG: Record<string, SignatureKind> = (() => {
+  const flattened: Record<string, SignatureKind> = {};
+  for (const [, mappings] of Object.entries(LANGUAGE_TYPE_MAPPINGS)) {
+    Object.assign(flattened, mappings);
+  }
+  return flattened;
+})();
