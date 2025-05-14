@@ -177,6 +177,10 @@ defmodule WandererApp.Character.TrackerPool do
     characters
     |> Enum.each(fn character_id ->
       WandererApp.Character.update_character(character_id, %{online: false})
+
+      WandererApp.Character.update_character_state(character_id, %{
+        is_online: false
+      })
     end)
 
     {:noreply, state}
