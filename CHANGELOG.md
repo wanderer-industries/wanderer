@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.4](https://github.com/wanderer-industries/wanderer/compare/v1.64.3...v1.64.4) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added 1 min timeout for ship and location updates on ESI API errors
+
 ## [v1.64.3](https://github.com/wanderer-industries/wanderer/compare/v1.64.2...v1.64.3) (2025-05-14)
 
 
