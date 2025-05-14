@@ -78,6 +78,26 @@ export enum SignatureKindRU {
   Starbase = 'Starbase',
 }
 
+export enum SignatureKindFR {
+  CosmicSignature = 'Signature cosmique (type)',
+  CosmicAnomaly = 'Anomalie cosmique',
+  Structure = 'Structure',
+  Ship = 'Vaisseau',
+  Deployable = 'Déployable',
+  Drone = 'Drone',
+  Starbase = 'Base stellaire',
+}
+
+export enum SignatureKindDE {
+  CosmicSignature = 'Kosmische Signatur (typ)',
+  CosmicAnomaly = 'Kosmische Anomalie',
+  Structure = 'Struktur',
+  Ship = 'Schiff',
+  Deployable = 'Mobile Struktur',
+  Drone = 'Drohne',
+  Starbase = 'Sternenbasis',
+}
+
 export enum SignatureGroupENG {
   CosmicSignature = 'Cosmic Signature',
   Wormhole = 'Wormhole',
@@ -96,4 +116,24 @@ export enum SignatureGroupRU {
   DataSite = 'Информационный район',
   OreSite = 'Астероидный район',
   CombatSite = 'Боевой район',
+}
+
+export enum SignatureGroupFR {
+  CosmicSignature = 'Signature cosmique (groupe)',
+  Wormhole = 'Trou de ver',
+  GasSite = 'Site de gaz',
+  RelicSite = 'Site de reliques',
+  DataSite = 'Site de données',
+  OreSite = 'Site de minerai',
+  CombatSite = 'Site de combat',
+}
+
+export enum SignatureGroupDE {
+  CosmicSignature = 'Kosmische Signatur (gruppe)',
+  Wormhole = 'Wurmloch',
+  GasSite = 'Gasgebiet',
+  RelicSite = 'Reliktgebiet',
+  DataSite = 'Datengebiet',
+  OreSite = 'Mineraliengebiet',
+  CombatSite = 'Kampfgebiet',
 }

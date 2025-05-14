@@ -19,10 +19,13 @@ export const useSystemSignaturesData = ({
   onPendingChange,
   onLazyDeleteChange,
   onSignatureDeleted,
-}: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & { onSignatureDeleted?: (deletedIds: string[]) => void }) => {
+}: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & {
+  onSignatureDeleted?: (deletedIds: string[]) => void;
+}) => {
   const { outCommand } = useMapRootState();
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
+  const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
   const { pendingDeletionMapRef, processRemovedSignatures, clearPendingDeletions } = usePendingDeletions({
     systemId,
@@ -41,6 +44,7 @@ export const useSystemSignaturesData = ({
     async (clipboardString: string) => {
       const lazyDeleteValue = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
 
+      // Parse the incoming signatures
       const incomingSignatures = parseSignatures(
         clipboardString,
         Object.keys(settings).filter(skey => skey in SignatureKind),
@@ -48,6 +52,18 @@ export const useSystemSignaturesData = ({
 
       if (incomingSignatures.length === 0) {
         return;
+      }
+
+      // Check if any signatures might be using unsupported languages
+      // This is a basic heuristic: if we have signatures where the original group wasn't mapped
+      const clipboardRows = clipboardString.split('\n').filter(row => row.trim() !== '');
+      const detectedSignatureCount = clipboardRows.filter(row => row.match(/^[A-Z]{3}-\d{3}/)).length;
+
+      // If we detected valid IDs but got fewer parsed signatures, we might have language issues
+      if (detectedSignatureCount > 0 && incomingSignatures.length < detectedSignatureCount) {
+        setHasUnsupportedLanguage(true);
+      } else {
+        setHasUnsupportedLanguage(false);
       }
 
       const currentNonPending = lazyDeleteValue
@@ -127,5 +143,6 @@ export const useSystemSignaturesData = ({
     handleDeleteSelected,
     handleSelectAll,
     handlePaste,
+    hasUnsupportedLanguage,
   };
 };

@@ -97,7 +97,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         %MapSystemSignature{deleted: true} = deleted_sig ->
           MapSystemSignature.update!(
             deleted_sig,
-            %{sig | deleted: false}
+            Map.take(sig, [:name, :description, :kind, :group, :type, :custom_info, :deleted])
           )
 
         _ ->
@@ -152,7 +152,11 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
   defp apply_update_signature(%MapSystemSignature{} = existing, update_params)
        when not is_nil(update_params) do
-    MapSystemSignature.update(existing, update_params)
+    case MapSystemSignature.update(existing, update_params) do
+      {:ok, _} -> :ok
+      {:error, reason} ->
+        Logger.error("Failed to update signature #{existing.id}: #{inspect(reason)}")
+    end
   end
 
   defp track_activity(event, map_id, solar_system_id, user_id, character_id, signatures) do

@@ -204,7 +204,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       :kind,
       :group,
       :custom_info,
-      :updated,
+      :deleted,
       :inserted_at,
       :updated_at
     ]

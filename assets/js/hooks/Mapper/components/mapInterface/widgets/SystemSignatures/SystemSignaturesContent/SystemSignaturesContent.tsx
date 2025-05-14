@@ -90,14 +90,21 @@ export const SystemSignaturesContent = ({
     { defaultValue: SORT_DEFAULT_VALUES },
   );
 
-  const { signatures, selectedSignatures, setSelectedSignatures, handleDeleteSelected, handleSelectAll, handlePaste } =
-    useSystemSignaturesData({
-      systemId,
-      settings,
-      onCountChange,
-      onLazyDeleteChange,
-      onSignatureDeleted,
-    });
+  const {
+    signatures,
+    selectedSignatures,
+    setSelectedSignatures,
+    handleDeleteSelected,
+    handleSelectAll,
+    handlePaste,
+    hasUnsupportedLanguage,
+  } = useSystemSignaturesData({
+    systemId,
+    settings,
+    onCountChange,
+    onLazyDeleteChange,
+    onSignatureDeleted,
+  });
 
   useEffect(() => {
     if (selectable) return;
@@ -186,7 +193,11 @@ export const SystemSignaturesContent = ({
             x => GROUPS_LIST.includes(x as SignatureGroup) && settings[x as SETTINGS_KEYS],
           );
 
-          return enabledGroups.includes(getGroupIdByRawGroup(sig.group));
+          const mappedGroup = getGroupIdByRawGroup(sig.group);
+          if (!mappedGroup) {
+            return true; // If we can't determine the group, still show it
+          }
+          return enabledGroups.includes(mappedGroup);
         }
 
         return true;
@@ -234,113 +245,121 @@ export const SystemSignaturesContent = ({
           No signatures
         </div>
       ) : (
-        <DataTable
-          value={filteredSignatures}
-          size="small"
-          selectionMode="multiple"
-          selection={selectedSignatures}
-          metaKeySelection
-          onSelectionChange={handleSelectSignatures}
-          dataKey="eve_id"
-          className="w-full select-none"
-          resizableColumns={false}
-          rowHover
-          selectAll
-          onRowDoubleClick={handleRowClick}
-          sortField={sortSettings.sortField}
-          sortOrder={sortSettings.sortOrder}
-          onSort={handleSortSettings}
-          onRowMouseEnter={onRowMouseEnter}
-          onRowMouseLeave={onRowMouseLeave}
-          // @ts-ignore
-          rowClassName={getRowClassName}
-        >
-          <Column
-            field="icon"
-            header=""
-            body={renderColIcon}
-            bodyClassName="p-0 px-1"
-            style={{ maxWidth: 26, minWidth: 26, width: 26 }}
-          />
-          <Column
-            field="eve_id"
-            header="Id"
-            bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-            style={{ maxWidth: 72, minWidth: 72, width: 72 }}
-            sortable
-          />
-          <Column
-            field="group"
-            header="Group"
-            bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-            style={{ maxWidth: 110, minWidth: 110, width: 110 }}
-            body={sig => sig.group ?? ''}
-            hidden={isCompact}
-            sortable
-          />
-          <Column
-            field="info"
-            header="Info"
-            bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-            style={{ maxWidth: nameColumnWidth }}
-            hidden={isCompact || isMedium}
-            body={renderInfoColumn}
-          />
-          {showDescriptionColumn && (
-            <Column
-              field="description"
-              header="Description"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              hidden={isCompact}
-              body={renderDescription}
-              sortable
-            />
+        <>
+          {hasUnsupportedLanguage && (
+            <div className="w-full flex justify-center items-center text-amber-500 text-xs p-1 bg-amber-950/20 border-b border-amber-800/30">
+              <i className={PrimeIcons.EXCLAMATION_TRIANGLE + ' mr-1'} />
+              Non-English signatures detected. Some signatures may not display correctly. Double-click to edit signature details.
+            </div>
           )}
-          <Column
-            field="inserted_at"
-            header="Added"
-            dataType="date"
-            body={renderAddedTimeLeft}
-            style={{ minWidth: 70, maxWidth: 80 }}
-            bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
-            sortable
-          />
-          {showUpdatedColumn && (
+          <DataTable
+            value={filteredSignatures}
+            size="small"
+            selectionMode="multiple"
+            selection={selectedSignatures}
+            metaKeySelection
+            onSelectionChange={handleSelectSignatures}
+            dataKey="eve_id"
+            className="w-full select-none"
+            resizableColumns={false}
+            rowHover
+            selectAll
+            onRowDoubleClick={handleRowClick}
+            sortField={sortSettings.sortField}
+            sortOrder={sortSettings.sortOrder}
+            onSort={handleSortSettings}
+            onRowMouseEnter={onRowMouseEnter}
+            onRowMouseLeave={onRowMouseLeave}
+            // @ts-ignore
+            rowClassName={getRowClassName}
+          >
             <Column
-              field="updated_at"
-              header="Updated"
-              dataType="date"
-              body={renderUpdatedTimeLeft}
-              style={{ minWidth: 70, maxWidth: 80 }}
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              sortable
-            />
-          )}
-
-          {showCharacterColumn && (
-            <Column
-              field="character_name"
-              header="Character"
-              bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
-              sortable
-            ></Column>
-          )}
-
-          {!selectable && (
-            <Column
+              field="icon"
               header=""
-              body={() => (
-                <div className="flex justify-end items-center gap-2 mr-[4px]">
-                  <WdTooltipWrapper content="Double-click a row to edit signature">
-                    <span className={PrimeIcons.PENCIL + ' text-[10px]'} />
-                  </WdTooltipWrapper>
-                </div>
-              )}
+              body={renderColIcon}
+              bodyClassName="p-0 px-1"
               style={{ maxWidth: 26, minWidth: 26, width: 26 }}
-              bodyClassName="p-0 pl-1 pr-2"
             />
-          )}
-        </DataTable>
+            <Column
+              field="eve_id"
+              header="Id"
+              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+              style={{ maxWidth: 72, minWidth: 72, width: 72 }}
+              sortable
+            />
+            <Column
+              field="group"
+              header="Group"
+              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+              style={{ maxWidth: 110, minWidth: 110, width: 110 }}
+              body={sig => sig.group ?? ''}
+              hidden={isCompact}
+              sortable
+            />
+            <Column
+              field="info"
+              header="Info"
+              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+              style={{ maxWidth: nameColumnWidth }}
+              hidden={isCompact || isMedium}
+              body={renderInfoColumn}
+            />
+            {showDescriptionColumn && (
+              <Column
+                field="description"
+                header="Description"
+                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                hidden={isCompact}
+                body={renderDescription}
+                sortable
+              />
+            )}
+            <Column
+              field="inserted_at"
+              header="Added"
+              dataType="date"
+              body={renderAddedTimeLeft}
+              style={{ minWidth: 70, maxWidth: 80 }}
+              bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
+              sortable
+            />
+            {showUpdatedColumn && (
+              <Column
+                field="updated_at"
+                header="Updated"
+                dataType="date"
+                body={renderUpdatedTimeLeft}
+                style={{ minWidth: 70, maxWidth: 80 }}
+                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                sortable
+              />
+            )}
+
+            {showCharacterColumn && (
+              <Column
+                field="character_name"
+                header="Character"
+                bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
+                sortable
+              ></Column>
+            )}
+
+            {!selectable && (
+              <Column
+                header=""
+                body={() => (
+                  <div className="flex justify-end items-center gap-2 mr-[4px]">
+                    <WdTooltipWrapper content="Double-click a row to edit signature">
+                      <span className={PrimeIcons.PENCIL + ' text-[10px]'} />
+                    </WdTooltipWrapper>
+                  </div>
+                )}
+                style={{ maxWidth: 26, minWidth: 26, width: 26 }}
+                bodyClassName="p-0 pl-1 pr-2"
+              />
+            )}
+          </DataTable>
+        </>
       )}
 
       <WdTooltip

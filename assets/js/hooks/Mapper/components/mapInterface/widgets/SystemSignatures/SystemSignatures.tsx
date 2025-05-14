@@ -25,12 +25,16 @@ function useSignatureUndo(
   settings: SignatureSettingsType,
   outCommand: OutCommandHandler,
 ) {
-  const [pendingIds, setPendingIds] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(0);
+  const [countdown, setCountdown] = useState<number>(0);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const intervalRef = useRef<number | null>(null);
 
   const addDeleted = useCallback((ids: string[]) => {
-    setPendingIds(prev => [...prev, ...ids]);
+    setPendingIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.add(id));
+      return next;
+    });
   }, []);
 
   // kick off or clear countdown whenever pendingIds changes
@@ -41,7 +45,7 @@ function useSignatureUndo(
       intervalRef.current = null;
     }
 
-    if (pendingIds.length === 0) {
+    if (pendingIds.size === 0) {
       setCountdown(0);
       return;
     }
@@ -58,7 +62,7 @@ function useSignatureUndo(
         if (prev <= 1) {
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
-          setPendingIds([]);
+          setPendingIds(new Set());
           return 0;
         }
         return prev - 1;
@@ -71,16 +75,16 @@ function useSignatureUndo(
         intervalRef.current = null;
       }
     };
-  }, [pendingIds, settings]);
+  }, [pendingIds, settings[SETTINGS_KEYS.DELETION_TIMING]]);
 
   // undo handler
   const handleUndo = useCallback(async () => {
-    if (!systemId || pendingIds.length === 0) return;
+    if (!systemId || pendingIds.size === 0) return;
     await outCommand({
       type: OutCommand.undoDeleteSignatures,
-      data: { system_id: systemId, eve_ids: pendingIds },
+      data: { system_id: systemId, eve_ids: Array.from(pendingIds) },
     });
-    setPendingIds([]);
+    setPendingIds(new Set());
     setCountdown(0);
     if (intervalRef.current != null) {
       clearInterval(intervalRef.current);
@@ -117,7 +121,7 @@ export const SystemSignatures = () => {
   const { pendingIds, countdown, addDeleted, handleUndo } = useSignatureUndo(systemId, currentSettings, outCommand);
 
   useHotkey(true, ['z', 'Z'], (event: KeyboardEvent) => {
-    if (pendingIds.length > 0 && countdown > 0) {
+    if (pendingIds.size > 0 && countdown > 0) {
       event.preventDefault();
       event.stopPropagation();
       handleUndo();
@@ -154,7 +158,7 @@ export const SystemSignatures = () => {
         <SystemSignaturesHeader
           sigCount={sigCount}
           lazyDeleteValue={currentSettings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
-          pendingCount={pendingIds.length}
+          pendingCount={pendingIds.size}
           undoCountdown={countdown}
           onLazyDeleteChange={handleLazyDeleteToggle}
           onUndoClick={handleUndo}
