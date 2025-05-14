@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.3](https://github.com/wanderer-industries/wanderer/compare/v1.64.2...v1.64.3) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character tracking initialization logic & removed search caching
+
 ## [v1.64.2](https://github.com/wanderer-industries/wanderer/compare/v1.64.1...v1.64.2) (2025-05-13)
 
 
