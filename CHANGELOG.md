@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.7](https://github.com/wanderer-industries/wanderer/compare/v1.64.6...v1.64.7) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed connection EOL time refreshed every 2 minutes
+
 ## [v1.64.6](https://github.com/wanderer-industries/wanderer/compare/v1.64.5...v1.64.6) (2025-05-15)
 
 
