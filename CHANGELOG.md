@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.6](https://github.com/wanderer-industries/wanderer/compare/v1.64.5...v1.64.6) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added map hubs limits checking & a proper warning message shown
+
 ## [v1.64.5](https://github.com/wanderer-industries/wanderer/compare/v1.64.4...v1.64.5) (2025-05-14)
 
 
