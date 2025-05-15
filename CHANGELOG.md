@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.64.5](https://github.com/wanderer-industries/wanderer/compare/v1.64.4...v1.64.5) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added character name update on re-auth
+
 ## [v1.64.4](https://github.com/wanderer-industries/wanderer/compare/v1.64.3...v1.64.4) (2025-05-14)
 
 
