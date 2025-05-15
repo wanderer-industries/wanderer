@@ -173,10 +173,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           %{time_status: old_time_status}, %{id: connection_id, time_status: time_status} ->
             case time_status == @connection_time_status_eol do
               true ->
-                WandererApp.Cache.put(
-                  "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
-                  DateTime.utc_now()
-                )
+                if old_time_status != @connection_time_status_eol do
+                  WandererApp.Cache.put(
+                    "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
+                    DateTime.utc_now()
+                  )
+                end
 
               _ ->
                 if old_time_status == @connection_time_status_eol do
