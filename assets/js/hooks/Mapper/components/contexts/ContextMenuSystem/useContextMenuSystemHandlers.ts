@@ -5,6 +5,7 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
+// import { PingType } from '@/hooks/Mapper/types/ping.ts';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
@@ -92,6 +93,22 @@ export const useContextMenuSystemHandlers = ({
     });
     setSystem(undefined);
   }, []);
+
+  // const onTogglePingRally = useCallback(() => {
+  //   const { userHubs, system, outCommand } = ref.current;
+  //   if (!system) {
+  //     return;
+  //   }
+  //
+  //   outCommand({
+  //     type: OutCommand.openPing,
+  //     data: {
+  //       solar_system_id: system,
+  //       type: PingType.Rally,
+  //     },
+  //   });
+  //   setSystem(undefined);
+  // }, []);
 
   const onSystemTag = useCallback((tag?: string) => {
     const { system, outCommand } = ref.current;
@@ -198,6 +215,7 @@ export const useContextMenuSystemHandlers = ({
     onLockToggle,
     onHubToggle,
     onUserHubToggle,
+    // onTogglePingRally,
     onSystemTag,
     onSystemTemporaryName,
     onSystemStatus,

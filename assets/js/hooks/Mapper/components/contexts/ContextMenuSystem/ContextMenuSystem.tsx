@@ -1,6 +1,6 @@
 import React, { RefObject } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
-import { SolarSystemRawType } from '@/hooks/Mapper/types';
+import { PingType, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { useContextMenuSystemItems } from '@/hooks/Mapper/components/contexts/ContextMenuSystem/useContextMenuSystemItems.tsx';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 
@@ -19,6 +19,7 @@ export interface ContextMenuSystemProps {
   onSystemStatus(val: number): void;
   onSystemLabels(val: string): void;
   onCustomLabelDialog(): void;
+  onTogglePing(type: PingType, solar_system_id: string, hasPing: boolean): void;
   onWaypointSet: WaypointSetContextHandler;
 }
 

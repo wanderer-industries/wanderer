@@ -28,7 +28,7 @@ import {
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
-import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
+import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import clsx from 'clsx';
@@ -95,6 +95,7 @@ interface MapCompProps {
   isShowBackgroundPattern?: boolean;
   isSoftBackground?: boolean;
   theme?: string;
+  pings: PingData[];
 }
 
 const MapComp = ({
@@ -112,6 +113,7 @@ const MapComp = ({
   isSoftBackground,
   theme,
   onAddSystem,
+  pings,
 }: MapCompProps) => {
   const { getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -206,8 +208,9 @@ const MapComp = ({
       ...x,
       showKSpaceBG: showKSpaceBG,
       isThickConnections: isThickConnections,
+      pings,
     }));
-  }, [showKSpaceBG, isThickConnections, update]);
+  }, [showKSpaceBG, isThickConnections, pings, update]);
 
   return (
     <>

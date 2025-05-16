@@ -28,13 +28,24 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 import { useHotkey } from '../../hooks/useHotkey';
 import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { PingType } from '@/hooks/Mapper/types/ping.ts';
+import { SystemPingDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemPingDialog';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, userHubs, systems, linkSignatureToSystem, systemSignatures },
+    data: {
+      pings,
+      selectedConnections,
+      selectedSystems,
+      hubs,
+      userHubs,
+      systems,
+      linkSignatureToSystem,
+      systemSignatures,
+    },
     storedSettings: { interfaceSettings },
   } = useMapRootState();
 
@@ -58,6 +69,7 @@ export const MapWrapper = () => {
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
+  const [openPing, setOpenPing] = useState<{ type: PingType; solar_system_id: string } | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
   const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
@@ -111,6 +123,7 @@ export const MapWrapper = () => {
   );
 
   const handleSystemContextMenu = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ev: any, systemId: string) => {
       const { selectedSystems, systems } = ref.current;
       if (selectedSystems.length > 1) {
@@ -158,6 +171,27 @@ export const MapWrapper = () => {
     [openAddSystem, outCommand],
   );
 
+  const handleOpenSettings = useCallback(() => {
+    ref.current.systemContextProps.systemId && setOpenSettings(ref.current.systemContextProps.systemId);
+  }, []);
+
+  const handleTogglePing = useCallback(async (type: PingType, solar_system_id: string, hasPing: boolean) => {
+    if (hasPing) {
+      await outCommand({
+        type: OutCommand.cancelPing,
+        data: { type, solar_system_id: solar_system_id },
+      });
+      return;
+    }
+
+    setOpenPing({ type, solar_system_id });
+  }, []);
+
+  const handleCustomLabelDialog = useCallback(() => {
+    const { systemContextProps } = ref.current;
+    systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
+  }, []);
+
   useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
 
@@ -195,11 +229,20 @@ export const MapWrapper = () => {
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
         theme={theme}
+        pings={pings}
         onAddSystem={onAddSystem}
       />
 
       {openSettings != null && (
         <SystemSettingsDialog systemId={openSettings} visible setVisible={() => setOpenSettings(null)} />
+      )}
+      {openPing != null && (
+        <SystemPingDialog
+          systemId={openPing.solar_system_id}
+          type={openPing.type}
+          visible
+          setVisible={() => setOpenPing(null)}
+        />
       )}
 
       {openCustomLabel != null && (
@@ -223,13 +266,9 @@ export const MapWrapper = () => {
         hubs={hubs}
         userHubs={userHubs}
         {...systemContextProps}
-        onOpenSettings={() => {
-          systemContextProps.systemId && setOpenSettings(systemContextProps.systemId);
-        }}
-        onCustomLabelDialog={() => {
-          const { systemContextProps } = ref.current;
-          systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
-        }}
+        onOpenSettings={handleOpenSettings}
+        onTogglePing={handleTogglePing}
+        onCustomLabelDialog={handleCustomLabelDialog}
       />
 
       <ContextMenuSystemMultiple {...systemMultipleCtxProps} />

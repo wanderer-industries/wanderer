@@ -1,4 +1,5 @@
 export * from './CharacterCard';
+export * from './CharacterCardById';
 export * from './InfoDrawer';
 export * from './FixedTooltip';
 export * from './LayoutEventBlocker';

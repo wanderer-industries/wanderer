@@ -1,10 +1,20 @@
 @import '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 $pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
+$pastel-pink: rgb(30, 161, 255);
 $dark-bg: #2d2d2d;
 $text-color: #ffffff;
 $tooltip-bg: #202020;
+
+@keyframes move-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 30px 0;
+  }
+}
+
 
 .RootCustomNode {
   display: flex;
@@ -86,6 +96,48 @@ $tooltip-bg: #202020;
   &.selected {
     border-color: $pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
+  }
+
+  $neon-color-1: rgb(27, 132, 236);
+  $neon-color-2: rgba(154, 149, 131, 0.15);
+  $neon-color-3: rgba(27, 132, 236, 0.30);
+
+  $neon-shadow-1:
+    0 0 8px $neon-color-1,
+    0 0 16px $neon-color-1;
+
+  $neon-shadow-2:
+    0 0 8px $neon-color-2,
+    0 0 16px $neon-color-2;
+
+  @keyframes neon-glow {
+    0% {
+      //border-color: $neon-color-1;
+      box-shadow: $neon-shadow-1;
+    }
+    50% {
+      //border-color: $neon-color-2;
+      box-shadow: $neon-shadow-2;
+    }
+    100% {
+      //border-color: $neon-color-1;
+      box-shadow: $neon-shadow-1;
+    }
+  }
+
+  &.rally {
+    border-color: $neon-color-1;
+    //animation: neon-glow 3.5s infinite ease-in-out;
+
+    background: repeating-linear-gradient(
+        45deg,
+        $neon-color-3 0px,
+        $neon-color-3 8px,
+        transparent 8px,
+        transparent 21px
+    );
+    background-size: 30px 30px;
+    animation: move-stripes 3s linear infinite/*, neon-glow 3.5s infinite ease-in-out*/;
   }
 
   &.eve-system-status-home {

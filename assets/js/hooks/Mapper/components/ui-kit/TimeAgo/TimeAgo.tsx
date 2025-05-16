@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
+import { WithClassName } from '@/hooks/Mapper/types/common.ts';
 
 interface TimeAgoProps {
   timestamp: string; // Теперь тип string, так как приходит ISO 8601 строка
 }
 
-export const TimeAgo = ({ timestamp }: TimeAgoProps) => {
+export const TimeAgo = ({ timestamp, className }: TimeAgoProps & WithClassName) => {
   const [timeAgo, setTimeAgo] = useState<string>('');
   const timeoutIdRef = useRef<number | null>(null);
 
@@ -64,5 +65,5 @@ export const TimeAgo = ({ timestamp }: TimeAgoProps) => {
     return `${days} days ago`;
   };
 
-  return <span>{timeAgo}</span>;
+  return <span className={className}>{timeAgo}</span>;
 };

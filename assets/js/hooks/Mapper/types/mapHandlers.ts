@@ -4,7 +4,7 @@ import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { CommentType, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
+import { CommentType, PingData, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
 
 export enum Commands {
   init = 'init',
@@ -37,6 +37,8 @@ export enum Commands {
   updateTracking = 'update_tracking',
   userSettingsUpdated = 'user_settings_updated',
   showTracking = 'show_tracking',
+  pingAdded = 'ping_added',
+  pingCancelled = 'ping_cancelled',
 }
 
 export type Command =
@@ -69,7 +71,9 @@ export type Command =
   | Commands.userSettingsUpdated
   | Commands.updateActivity
   | Commands.updateTracking
-  | Commands.showTracking;
+  | Commands.showTracking
+  | Commands.pingAdded
+  | Commands.pingCancelled;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -78,6 +82,8 @@ export type CommandInit = {
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
   wormholes: WormholeDataRaw[];
+
+  // TODO WHY HERE ANY?!!?!?
   effects: any[];
   characters: CharacterTypeRaw[];
   present_characters: string[];
@@ -143,6 +149,8 @@ export type CommandUpdateTracking = {
   track: boolean;
   follow: boolean;
 };
+export type CommandPingAdded = PingData[];
+export type CommandPingCancelled = Pick<PingData, 'type' | 'solar_system_id'>;
 
 export interface UserSettings {
   primaryCharacterId?: string;
@@ -190,6 +198,8 @@ export interface CommandData {
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
   [Commands.systemCommentsUpdated]: unknown;
   [Commands.showTracking]: CommandShowTracking;
+  [Commands.pingAdded]: CommandPingAdded;
+  [Commands.pingCancelled]: CommandPingCancelled;
 }
 
 export interface MapHandlers {
@@ -249,6 +259,8 @@ export enum OutCommand {
   updateCharacterTracking = 'updateCharacterTracking',
   updateFollowingCharacter = 'updateFollowingCharacter',
   updateMainCharacter = 'updateMainCharacter',
+  addPing = 'add_ping',
+  cancelPing = 'cancel_ping',
 
   // Only UI commands
   openSettings = 'open_settings',

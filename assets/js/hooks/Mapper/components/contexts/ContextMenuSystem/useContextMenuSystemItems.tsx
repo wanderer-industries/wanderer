@@ -11,12 +11,16 @@ import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { MapAddIcon, MapDeleteIcon, MapUserAddIcon, MapUserDeleteIcon } from '@/hooks/Mapper/icons';
+import { PingType } from '@/hooks/Mapper/types';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import clsx from 'clsx';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
   onLockToggle,
   onHubToggle,
   onUserHubToggle,
+  onTogglePing,
   onSystemTag,
   onSystemStatus,
   onSystemLabels,
@@ -33,10 +37,19 @@ export const useContextMenuSystemItems = ({
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
+  const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
+
+  const {
+    data: { pings },
+  } = useMapRootState();
+
+  const ping = useMemo(() => (pings.length === 1 ? pings[0] : undefined), [pings]);
 
   return useMemo(() => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
     const systemStaticInfo = getSystemStaticInfo(systemId)!;
+
+    const hasPing = ping?.solar_system_id === systemId;
 
     if (!system || !systemId) {
       return [];
@@ -81,46 +94,54 @@ export const useContextMenuSystemItems = ({
         ),
         command: onUserHubToggle,
       },
-      ...(system.locked
-        ? canLockSystem
-          ? [
-              {
-                label: 'Unlock',
-                icon: PrimeIcons.LOCK_OPEN,
-                command: onLockToggle,
-              },
-            ]
-          : []
-        : [
-            ...(canLockSystem
-              ? [
-                  {
-                    label: 'Lock',
-                    icon: PrimeIcons.LOCK,
-                    command: onLockToggle,
-                  },
-                ]
-              : []),
+
+      { separator: true },
+      {
+        label: !hasPing ? 'Ping: RALLY' : 'Cancel: RALLY',
+        icon: clsx({
+          'pi text-cyan-400 hero-signal': !hasPing,
+          'pi text-red-400 hero-signal-slash': hasPing,
+        }),
+        command: () => onTogglePing(PingType.Rally, systemId, hasPing),
+      },
+      ...(canLockSystem
+        ? [
+            {
+              label: system.locked ? 'Unlock' : 'Lock',
+              icon: system.locked ? PrimeIcons.LOCK_OPEN : PrimeIcons.LOCK,
+              command: onLockToggle,
+            },
+          ]
+        : []),
+
+      ...(canDeleteSystem && !system.locked
+        ? [
             { separator: true },
             {
               label: 'Delete',
-              icon: PrimeIcons.TRASH,
+              icon: `text-red-400 ${PrimeIcons.TRASH}`,
               command: onDeleteSystem,
             },
-          ]),
+          ]
+        : []),
     ];
   }, [
-    canLockSystem,
-    systems,
     systemId,
+    systems,
     getTags,
     getStatus,
     getLabels,
     getWaypointMenu,
     hubs,
     onHubToggle,
-    onOpenSettings,
+    userHubs,
+    onUserHubToggle,
+    canLockSystem,
     onLockToggle,
+    canDeleteSystem,
     onDeleteSystem,
+    onOpenSettings,
+    onTogglePing,
+    ping,
   ]);
 };

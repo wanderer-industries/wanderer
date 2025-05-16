@@ -1,6 +1,6 @@
 import classes from './RightBar.module.scss';
 import clsx from 'clsx';
-import { useCallback } from 'react';
+import { ReactNode, useCallback } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
@@ -12,9 +12,15 @@ interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
+  additionalContent?: ReactNode;
 }
 
-export const RightBar = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: RightBarProps) => {
+export const RightBar = ({
+  onShowOnTheMap,
+  onShowMapSettings,
+  onShowTrackingDialog,
+  additionalContent,
+}: RightBarProps) => {
   const {
     storedSettings: { interfaceSettings, setInterfaceSettings },
   } = useMapRootState();
@@ -78,6 +84,7 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDial
             </WdTooltipWrapper>
           </>
         )}
+        {additionalContent}
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">

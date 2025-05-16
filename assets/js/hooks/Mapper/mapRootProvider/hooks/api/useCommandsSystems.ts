@@ -80,7 +80,7 @@ export const useCommandsSystems = () => {
     [outCommand],
   );
 
-  const updateLinkSignatureToSystem = useCallback(async (command: CommandLinkSignatureToSystem) => {
+  const updateLinkSignatureToSystem = useCallback(async (command: CommandLinkSignatureToSystem | null) => {
     const { update } = ref.current;
     update({ linkSignatureToSystem: command }, true);
   }, []);

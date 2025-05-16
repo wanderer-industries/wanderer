@@ -13,6 +13,7 @@ import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandle
 import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types';
+import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components/PingsInterface/PingsInterface.tsx';
 
 export interface MapRootContentProps {}
 
@@ -62,17 +63,21 @@ export const MapRootContent = ({}: MapRootContentProps) => {
                 onShowOnTheMap={handleShowOnTheMap}
                 onShowMapSettings={handleShowMapSettings}
                 onShowTrackingDialog={handleShowTrackingDialog}
+                additionalContent={<PingsInterface hasLeftOffset />}
               />
             </div>
           </div>
         ) : (
           <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
             <Topbar>
-              <MapContextMenu
-                onShowOnTheMap={handleShowOnTheMap}
-                onShowMapSettings={handleShowMapSettings}
-                onShowTrackingDialog={handleShowTrackingDialog}
-              />
+              <div className="flex items-center ml-1">
+                <PingsInterface />
+                <MapContextMenu
+                  onShowOnTheMap={handleShowOnTheMap}
+                  onShowMapSettings={handleShowMapSettings}
+                  onShowTrackingDialog={handleShowTrackingDialog}
+                />
+              </div>
             </Topbar>
             {mapInterface}
           </div>

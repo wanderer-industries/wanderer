@@ -9,7 +9,7 @@ import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
-import { CharacterTypeRaw, OutCommand, SystemSignature } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, OutCommand, PingType, SystemSignature } from '@/hooks/Mapper/types';
 import { useUnsplashedSignatures } from './useUnsplashedSignatures';
 import { useSystemName } from './useSystemName';
 import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
@@ -19,6 +19,45 @@ function getActivityType(count: number): string {
   if (count <= 5) return 'activityNormal';
   if (count <= 30) return 'activityWarn';
   return 'activityDanger';
+}
+
+export interface SolarSystemNodeVars {
+  id: string;
+  selected: boolean;
+  visible: boolean;
+  isWormhole: boolean;
+  classTitleColor: string | null;
+  killsCount: number | null;
+  killsActivityType: string | null;
+  hasUserCharacters: boolean;
+  showHandlers: boolean;
+  regionClass: string | null;
+  systemName: string;
+  customName?: string | null;
+  labelCustom: string | null;
+  isShattered: boolean;
+  tag?: string | null;
+  status?: number;
+  labelsInfo: LabelInfo[];
+  dbClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+  sortedStatics: Array<string | number>;
+  effectName: string | null;
+  regionName: string | null;
+  solarSystemId: string;
+  solarSystemName: string | null;
+  locked: boolean;
+  hubs: string[];
+  name: string | null;
+  isConnecting: boolean;
+  hoverNodeId: string | null;
+  charactersInSystem: Array<CharacterTypeRaw>;
+  userCharacters: string[];
+  unsplashedLeft: Array<SystemSignature>;
+  unsplashedRight: Array<SystemSignature>;
+  isThickConnections: boolean;
+  isRally: boolean;
+  classTitle: string | null;
+  temporaryName?: string | null;
 }
 
 const SpaceToClass: Record<string, string> = {
@@ -41,7 +80,7 @@ export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
   return { localCounterCharacters };
 }
 
-export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars {
+export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars => {
   const { id, data, selected } = props;
   const {
     id: solar_system_id,
@@ -92,6 +131,7 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
       visibleNodes,
       showKSpaceBG,
       isThickConnections,
+      pings,
     },
     outCommand,
   } = useMapState();
@@ -154,6 +194,11 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
 
   const hubsAsStrings = useMemo(() => hubs.map(item => item.toString()), [hubs]);
 
+  const isRally = useMemo(
+    () => pings.find(x => x.solar_system_id === solar_system_id && x.type === PingType.Rally),
+    [pings, solar_system_id],
+  );
+
   const nodeVars: SolarSystemNodeVars = {
     id,
     selected,
@@ -190,45 +235,8 @@ export function useSolarSystemNode(props: NodeProps<MapSolarSystemType>): SolarS
     temporaryName: computedTemporaryName,
     regionName: region_name,
     solarSystemName: solar_system_name,
+    isRally,
   };
 
   return nodeVars;
-}
-
-export interface SolarSystemNodeVars {
-  id: string;
-  selected: boolean;
-  visible: boolean;
-  isWormhole: boolean;
-  classTitleColor: string | null;
-  killsCount: number | null;
-  killsActivityType: string | null;
-  hasUserCharacters: boolean;
-  showHandlers: boolean;
-  regionClass: string | null;
-  systemName: string;
-  customName?: string | null;
-  labelCustom: string | null;
-  isShattered: boolean;
-  tag?: string | null;
-  status?: number;
-  labelsInfo: LabelInfo[];
-  dbClick: (event: React.MouseEvent<HTMLDivElement>) => void;
-  sortedStatics: Array<string | number>;
-  effectName: string | null;
-  regionName: string | null;
-  solarSystemId: string;
-  solarSystemName: string | null;
-  locked: boolean;
-  hubs: string[];
-  name: string | null;
-  isConnecting: boolean;
-  hoverNodeId: string | null;
-  charactersInSystem: Array<CharacterTypeRaw>;
-  userCharacters: string[];
-  unsplashedLeft: Array<SystemSignature>;
-  unsplashedRight: Array<SystemSignature>;
-  isThickConnections: boolean;
-  classTitle: string | null;
-  temporaryName?: string | null;
-}
+};

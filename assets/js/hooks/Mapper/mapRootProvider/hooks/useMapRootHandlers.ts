@@ -23,10 +23,13 @@ import {
   Commands,
   MapHandlers,
   CommandCommentRemoved,
+  CommandPingAdded,
+  CommandPingCancelled,
 } from '@/hooks/Mapper/types/mapHandlers.ts';
 
 import {
   useCommandComments,
+  useCommandPings,
   useCommandsCharacters,
   useCommandsConnections,
   useCommandsSystems,
@@ -57,6 +60,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapRoutes = useRoutes();
   const mapUserRoutes = useUserRoutes();
   const { addComment, removeComment } = useCommandComments();
+  const { pingAdded, pingCancelled } = useCommandPings();
   const { characterActivityData, trackingCharactersData, userSettingsUpdated } = useCommandsActivity();
 
   useImperativeHandle(
@@ -161,6 +165,14 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
 
             case Commands.systemCommentRemoved:
               removeComment(data as CommandCommentRemoved);
+              break;
+
+            case Commands.pingAdded:
+              pingAdded(data as CommandPingAdded);
+              break;
+
+            case Commands.pingCancelled:
+              pingCancelled(data as CommandPingCancelled);
               break;
 
             default:

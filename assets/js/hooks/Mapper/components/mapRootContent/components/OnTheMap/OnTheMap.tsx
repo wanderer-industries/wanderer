@@ -35,7 +35,7 @@ const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: Virt
       })}
       style={{ height: options.props.itemSize + 'px' }}
     >
-      <CharacterCard showCorporationLogo showAllyLogo showSystem showTicker {...item} />
+      <CharacterCard showCorporationLogo showAllyLogo showSystem showTicker showShip {...item} />
     </div>
   );
 };

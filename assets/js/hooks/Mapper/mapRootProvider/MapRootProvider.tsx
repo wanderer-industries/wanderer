@@ -66,6 +66,7 @@ const INITIAL_DATA: MapRootData = {
   linkSignatureToSystem: null,
   mainCharacterEveId: null,
   followingCharacterEveId: null,
+  pings: [],
 };
 
 export enum InterfaceStoredSettingsProps {
