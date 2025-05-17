@@ -66,7 +66,7 @@ export const useStoreWidgets = () => {
           ...x,
           windows: windows.map(wnd => {
             if (wnd.id === widgetId) {
-              return { ...wnd, position: { x: SNAP_GAP, y: SNAP_GAP }, zIndex: maxZIndex + 1 };
+              return { ...wnd, /*position: { x: SNAP_GAP, y: SNAP_GAP },*/ zIndex: maxZIndex + 1 };
             }
 
             return wnd;
@@ -111,6 +111,9 @@ export const useStoreWidgets = () => {
   }, []);
 
   const resetWidgets = useCallback(() => ref.current.setWindowsSettings(getDefaultWidgetProps()), []);
+
+  // eslint-disable-next-line no-console
+  console.log('JOipP', `windowsSettings`, windowsSettings);
 
   return {
     windowsSettings,

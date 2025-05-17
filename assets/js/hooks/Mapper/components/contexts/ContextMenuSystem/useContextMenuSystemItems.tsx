@@ -1,4 +1,9 @@
-import { useLabelsMenu, useStatusMenu, useTagMenu } from '@/hooks/Mapper/components/contexts/ContextMenuSystem/hooks';
+import {
+  useLabelsMenu,
+  useStatusMenu,
+  useTagMenu,
+  useUserRoute,
+} from '@/hooks/Mapper/components/contexts/ContextMenuSystem/hooks';
 import { useMemo } from 'react';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import classes from './ContextMenuSystem.module.scss';
@@ -10,7 +15,7 @@ import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
-import { MapAddIcon, MapDeleteIcon, MapUserAddIcon, MapUserDeleteIcon } from '@/hooks/Mapper/icons';
+import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { PingType } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import clsx from 'clsx';
@@ -38,6 +43,7 @@ export const useContextMenuSystemItems = ({
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
   const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
+  const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
 
   const {
     data: { pings },
@@ -85,15 +91,7 @@ export const useContextMenuSystemItems = ({
         ),
         command: onHubToggle,
       },
-      {
-        label: !userHubs.includes(systemId) ? 'Add User Route' : 'Remove User Route',
-        icon: !userHubs.includes(systemId) ? (
-          <MapUserAddIcon className="mr-1 relative left-[-2px]" />
-        ) : (
-          <MapUserDeleteIcon className="mr-1 relative left-[-2px]" />
-        ),
-        command: onUserHubToggle,
-      },
+      ...getUserRoutes(),
 
       { separator: true },
       {
@@ -132,6 +130,7 @@ export const useContextMenuSystemItems = ({
     getStatus,
     getLabels,
     getWaypointMenu,
+    getUserRoutes,
     hubs,
     onHubToggle,
     userHubs,

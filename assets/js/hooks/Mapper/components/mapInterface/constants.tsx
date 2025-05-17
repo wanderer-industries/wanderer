@@ -62,7 +62,7 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
   },
   {
     id: WidgetsIds.userRoutes,
-    position: { x: 10, y: 530 },
+    position: { x: 10, y: 10 },
     size: { width: 510, height: 200 },
     zIndex: 0,
     content: () => <WRoutesUser />,

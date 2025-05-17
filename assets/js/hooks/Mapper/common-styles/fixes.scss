@@ -198,3 +198,17 @@
   }
 }
 
+
+.p-autocomplete .p-autocomplete-multiple-container:not(.p-disabled).p-focus {
+  box-shadow: 0 0 0 1px #335c7e;
+  border-color: #335c7e;
+}
+
+.p-inputtext:enabled:focus {
+  box-shadow: 0 0 0 1px #335c7e;
+  border-color: #335c7e;
+}
+
+.p-inputtext:enabled:hover {
+  border-color: #335c7e;
+}
