@@ -41,7 +41,7 @@ export type SystemSignature = {
   // SignatureCustomInfo
   custom_info?: string;
   description?: string;
-  group: SignatureGroup;
+  group: SignatureGroup | SignatureGroupRU;
   type: string;
   linked_system?: SolarSystemStaticInfoRaw;
   inserted_at?: string;

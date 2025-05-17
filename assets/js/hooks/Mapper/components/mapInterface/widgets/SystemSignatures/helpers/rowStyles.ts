@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ExtendedSystemSignature, SignatureGroup } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SignatureGroup, SignatureGroupRU } from '@/hooks/Mapper/types';
 import { getRowBackgroundColor } from './getRowBackgroundColor';
 import classes from './rowStyles.module.scss';
 
@@ -28,14 +28,21 @@ export function getSignatureRowClass(
   if (colorByType) {
     switch (row.group) {
       case SignatureGroup.CosmicSignature:
+      case SignatureGroupRU.CosmicSignature:
         return clsx([...baseCls, '[&_td:nth-child(-n+3)]:text-rose-400 [&_td:nth-child(-n+3)]:hover:text-rose-300']);
       case SignatureGroup.Wormhole:
+      case SignatureGroupRU.Wormhole:
         return clsx([...baseCls, '[&_td:nth-child(-n+3)]:text-sky-300 [&_td:nth-child(-n+3)]:hover:text-sky-200']);
       case SignatureGroup.CombatSite:
       case SignatureGroup.RelicSite:
       case SignatureGroup.DataSite:
       case SignatureGroup.GasSite:
       case SignatureGroup.OreSite:
+      case SignatureGroupRU.CombatSite:
+      case SignatureGroupRU.RelicSite:
+      case SignatureGroupRU.DataSite:
+      case SignatureGroupRU.GasSite:
+      case SignatureGroupRU.OreSite:
         return clsx([...baseCls, '[&_td:nth-child(-n+4)]:text-lime-400 [&_td:nth-child(-n+4)]:hover:text-lime-300']);
     }
 
