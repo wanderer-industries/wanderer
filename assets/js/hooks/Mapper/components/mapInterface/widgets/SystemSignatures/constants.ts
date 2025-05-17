@@ -81,7 +81,7 @@ export const MAPPING_TYPE_TO_ENG = {
 export const getGroupIdByRawGroup = (val: string) => MAPPING_GROUP_TO_ENG[val as SignatureGroup];
 
 export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
-export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_5';
+export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_6';
 
 export enum SETTINGS_KEYS {
   SHOW_DESCRIPTION_COLUMN = 'show_description_column',
@@ -109,6 +109,14 @@ export enum SETTINGS_KEYS {
   ORE_SITE = SignatureGroup.OreSite,
   GAS_SITE = SignatureGroup.GasSite,
   COMBAT_SITE = SignatureGroup.CombatSite,
+
+  // From RU Signature group
+  WORMHOLE_RU = SignatureGroupRU.Wormhole,
+  RELIC_SITE_RU = SignatureGroupRU.RelicSite,
+  DATA_SITE_RU = SignatureGroupRU.DataSite,
+  ORE_SITE_RU = SignatureGroupRU.OreSite,
+  GAS_SITE_RU = SignatureGroupRU.GasSite,
+  COMBAT_SITE_RU = SignatureGroupRU.CombatSite,
 }
 
 export enum SettingsTypes {
@@ -201,6 +209,14 @@ export const SETTINGS_VALUES: SignatureSettingsType = {
   [SETTINGS_KEYS.ORE_SITE]: true,
   [SETTINGS_KEYS.GAS_SITE]: true,
   [SETTINGS_KEYS.COMBAT_SITE]: true,
+
+  // Localization titles
+  [SETTINGS_KEYS.WORMHOLE_RU]: true,
+  [SETTINGS_KEYS.RELIC_SITE_RU]: true,
+  [SETTINGS_KEYS.DATA_SITE_RU]: true,
+  [SETTINGS_KEYS.ORE_SITE_RU]: true,
+  [SETTINGS_KEYS.GAS_SITE_RU]: true,
+  [SETTINGS_KEYS.COMBAT_SITE_RU]: true,
 };
 
 export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
