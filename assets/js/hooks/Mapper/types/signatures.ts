@@ -94,3 +94,5 @@ export enum SignatureGroupRU {
   OreSite = 'Астероидный район',
   CombatSite = 'Боевой район',
 }
+
+export type SignatureGroupLocalized = SignatureGroupRU | SignatureGroupENG

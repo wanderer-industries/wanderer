@@ -68,6 +68,7 @@ export const MAPPING_TYPE_TO_ENG = {
   [SignatureKindENG.Ship]: SignatureKind.Ship,
   [SignatureKindENG.Deployable]: SignatureKind.Deployable,
   [SignatureKindENG.Drone]: SignatureKind.Drone,
+  [SignatureKindENG.Starbase]: SignatureKind.Starbase,
 
   // RUSSIAN
   [SignatureKindRU.CosmicSignature]: SignatureKind.CosmicSignature,
