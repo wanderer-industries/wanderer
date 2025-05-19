@@ -12,7 +12,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   Public entrypoint for updating signatures on a map system.
   """
   def update_signatures(
-        state = %{map_id: map_id},
+        %{map_id: map_id} = state,
         %{
           solar_system_id: system_solar_id,
           character_id: char_id,
