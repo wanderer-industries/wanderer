@@ -16,6 +16,9 @@ defmodule WandererApp.Map.Manager do
   @garbage_collection_interval :timer.hours(1)
   @check_maps_queue_interval :timer.seconds(1)
 
+  @pings_cleanup_interval :timer.minutes(10)
+  @pings_expire_minutes 60
+
   def start_map(map_id) when is_binary(map_id),
     do: WandererApp.Queue.push_uniq(@maps_queue, map_id)
 
@@ -44,6 +47,9 @@ defmodule WandererApp.Map.Manager do
     {:ok, garbage_collector_timer} =
       :timer.send_interval(@garbage_collection_interval, :garbage_collect)
 
+    {:ok, pings_cleanup_timer} =
+      :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
+
     try do
       Task.async(fn ->
         start_last_active_maps()
@@ -56,7 +62,8 @@ defmodule WandererApp.Map.Manager do
     {:ok,
      %{
        garbage_collector_timer: garbage_collector_timer,
-       check_maps_queue_timer: check_maps_queue_timer
+       check_maps_queue_timer: check_maps_queue_timer,
+       pings_cleanup_timer: pings_cleanup_timer
      }}
   end
 
@@ -115,6 +122,42 @@ defmodule WandererApp.Map.Manager do
         Logger.error(Exception.message(e))
 
         {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info(:cleanup_pings, state) do
+    try do
+      cleanup_expired_pings()
+      {:noreply, state}
+    rescue
+      e ->
+        Logger.error("Failed to cleanup pings: #{inspect(e)}")
+        {:noreply, state}
+    end
+  end
+
+  def cleanup_expired_pings() do
+    delete_after_date = DateTime.utc_now() |> DateTime.add(-1 * @pings_expire_minutes, :minute)
+
+    case WandererApp.MapPingsRepo.get_by_inserted_before(delete_after_date) do
+      {:ok, pings} ->
+        Enum.each(pings, fn %{map_id: map_id, type: type} = ping ->
+          {:ok, %{system: system}} = ping |> Ash.load([:system])
+
+          WandererApp.Map.Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+            solar_system_id: system.solar_system_id,
+            type: type
+          })
+
+          Ash.destroy!(ping)
+        end)
+
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to fetch expired pings: #{inspect(error)}")
+        {:error, error}
     end
   end
 

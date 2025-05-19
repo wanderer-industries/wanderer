@@ -72,14 +72,25 @@ defmodule WandererAppWeb.MapPingsEventHandler do
           socket
       )
       when not is_nil(main_character_id) do
-    map_id
-    |> WandererApp.Map.Server.add_ping(%{
-      solar_system_id: solar_system_id,
-      message: message,
-      type: type,
-      character_id: main_character_id,
-      user_id: current_user.id
-    })
+    {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
+
+    no_exisiting_pings =
+      pings
+      |> Enum.filter(fn %{type: type} ->
+        type == 1
+      end)
+      |> Enum.empty?()
+
+    if no_exisiting_pings do
+      map_id
+      |> WandererApp.Map.Server.add_ping(%{
+        solar_system_id: solar_system_id,
+        message: message,
+        type: type,
+        character_id: main_character_id,
+        user_id: current_user.id
+      })
+    end
 
     {:noreply, socket}
   end

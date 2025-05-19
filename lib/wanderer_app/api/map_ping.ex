@@ -21,6 +21,8 @@ defmodule WandererApp.Api.MapPing do
     define(:by_map_and_system,
       action: :by_map_and_system
     )
+
+    define(:by_inserted_before, action: :by_inserted_before, args: [:inserted_before])
   end
 
   actions do
@@ -64,6 +66,12 @@ defmodule WandererApp.Api.MapPing do
       get?(true)
 
       filter(expr(map_id == ^arg(:map_id) and system_id == ^arg(:system_id)))
+    end
+
+    read :by_inserted_before do
+      argument(:inserted_before, :utc_datetime, allow_nil?: false)
+
+      filter(expr(inserted_at <= ^arg(:inserted_before)))
     end
   end
 
