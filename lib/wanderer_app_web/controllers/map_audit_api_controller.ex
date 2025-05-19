@@ -158,15 +158,4 @@ defmodule WandererAppWeb.MapAuditAPIController do
       )
     )
   end
-
-  defp get_original_system_name(solar_system_id) do
-    # Fetch the original system name from the MapSolarSystem resource
-    case WandererApp.Api.MapSolarSystem.by_solar_system_id(solar_system_id) do
-      {:ok, system} ->
-        system.solar_system_name
-
-      _error ->
-        "Unknown System"
-    end
-  end
 end

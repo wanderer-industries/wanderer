@@ -14,8 +14,12 @@ defmodule WandererApp.Api.MapPing do
     define(:new, action: :new)
     define(:destroy, action: :destroy)
 
-    define(:by_map_id,
-      action: :by_map_id
+    define(:by_map,
+      action: :by_map
+    )
+
+    define(:by_map_and_system,
+      action: :by_map_and_system
     )
   end
 
@@ -47,9 +51,19 @@ defmodule WandererApp.Api.MapPing do
       change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
-    read :by_map_id do
+    read :by_map do
       argument(:map_id, :string, allow_nil?: false)
+
       filter(expr(map_id == ^arg(:map_id)))
+    end
+
+    read :by_map_and_system do
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:system_id, :string, allow_nil?: false)
+
+      get?(true)
+
+      filter(expr(map_id == ^arg(:map_id) and system_id == ^arg(:system_id)))
     end
   end
 

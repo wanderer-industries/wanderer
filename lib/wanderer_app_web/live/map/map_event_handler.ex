@@ -148,6 +148,7 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_pings_events [
+    :load_map_pings,
     :ping_added,
     :ping_cancelled
   ]

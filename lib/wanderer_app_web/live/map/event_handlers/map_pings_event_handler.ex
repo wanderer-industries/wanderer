@@ -5,11 +5,44 @@ defmodule WandererAppWeb.MapPingsEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
+  def handle_server_event(
+        %{event: :load_map_pings},
+        %{
+          assigns: %{
+            map_id: map_id,
+            user_permissions: %{update_system: true}
+          }
+        } = socket
+      ) do
+    {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
+
+    pings
+    |> Enum.reduce(socket, fn %{
+                                type: type,
+                                message: message,
+                                system: system,
+                                character: character,
+                                inserted_at: inserted_at
+                              } = _ping,
+                              socket ->
+      socket
+      |> MapEventHandler.push_map_event("ping_added", [
+        map_ui_ping(%{
+          inserted_at: inserted_at,
+          character_eve_id: character.eve_id,
+          solar_system_id: "#{system.solar_system_id}",
+          message: message,
+          type: type
+        })
+      ])
+    end)
+  end
+
   def handle_server_event(%{event: :ping_added, payload: ping_info}, socket),
     do:
       socket
       |> MapEventHandler.push_map_event("ping_added", [
-        map_ping(ping_info)
+        map_ui_ping(ping_info)
       ])
 
   def handle_server_event(%{event: :ping_cancelled, payload: ping_info}, socket),
@@ -32,7 +65,8 @@ defmodule WandererAppWeb.MapPingsEventHandler do
             current_user: current_user,
             main_character_id: main_character_id,
             has_tracked_characters?: true,
-            user_permissions: %{manage_map: true}
+            is_subscription_active?: true,
+            user_permissions: %{update_system: true}
           }
         } =
           socket
@@ -59,7 +93,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
             current_user: current_user,
             main_character_id: main_character_id,
             has_tracked_characters?: true,
-            user_permissions: %{manage_map: true}
+            user_permissions: %{update_system: true}
           }
         } =
           socket
@@ -79,7 +113,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  def map_ping(
+  def map_ui_ping(
         %{
           inserted_at: inserted_at,
           character_eve_id: character_eve_id,
