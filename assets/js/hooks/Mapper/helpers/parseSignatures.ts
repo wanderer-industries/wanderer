@@ -1,5 +1,8 @@
 import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
-import { MAPPING_TYPE_TO_ENG } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import {
+  MAPPING_GROUP_TO_ENG,
+  MAPPING_TYPE_TO_ENG,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 
 export const parseSignatures = (value: string, availableKeys: string[]): SystemSignature[] => {
   const outArr: SystemSignature[] = [];
@@ -14,13 +17,37 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
       continue;
     }
 
-    const kind = MAPPING_TYPE_TO_ENG[sigArrInfo[1] as SignatureKind];
+    // Extract the signature ID and check if it's valid (XXX-XXX format)
+    const sigId = sigArrInfo[0];
+    if (!sigId || !sigId.match(/^[A-Z]{3}-\d{3}$/)) {
+      continue;
+    }
+
+    // Try to map the kind, or fall back to CosmicSignature if unknown
+    const typeString = sigArrInfo[1];
+    let kind = SignatureKind.CosmicSignature;
+
+    // Try to map the kind using the flattened mapping
+    const mappedKind = MAPPING_TYPE_TO_ENG[typeString];
+    if (mappedKind && availableKeys.includes(mappedKind)) {
+      kind = mappedKind;
+    }
+
+    // Try to map the group, or fall back to CosmicSignature if unknown
+    const rawGroup = sigArrInfo[2];
+    let group = SignatureGroup.CosmicSignature;
+
+    // Try to map the group using the flattened mapping
+    const mappedGroup = MAPPING_GROUP_TO_ENG[rawGroup];
+    if (mappedGroup) {
+      group = mappedGroup;
+    }
 
     const signature: SystemSignature = {
-      eve_id: sigArrInfo[0],
-      kind: availableKeys.includes(kind) ? kind : SignatureKind.CosmicSignature,
-      group: sigArrInfo[2] as SignatureGroup,
-      name: sigArrInfo[3],
+      eve_id: sigId,
+      kind,
+      group,
+      name: sigArrInfo[3] || 'Unknown',
       type: '',
     };
 

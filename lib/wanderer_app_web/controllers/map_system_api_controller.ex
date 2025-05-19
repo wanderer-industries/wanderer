@@ -290,10 +290,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     responses: [
@@ -314,12 +314,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
@@ -334,10 +339,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     request_body: {"Systems+Connections upsert", "application/json", @batch_request_schema},
@@ -358,12 +363,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     request_body: {"System update request", "application/json", @system_update_schema},
     responses: ResponseSchemas.update_responses(@detail_response_schema)
@@ -381,10 +391,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     request_body: {"Batch delete", "application/json", @batch_delete_schema},
@@ -428,12 +438,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     responses: ResponseSchemas.standard_responses(@delete_response_schema)
   def delete_single(conn, %{"id" => id}) do
@@ -462,7 +477,20 @@ defmodule WandererAppWeb.MapSystemAPIController do
     summary: "List Map Systems (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems instead",
-    parameters: [map_id: [in: :query]],
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ]
+    ],
     responses: ResponseSchemas.standard_responses(@list_response_schema)
   defdelegate list_systems(conn, params), to: __MODULE__, as: :index
 
@@ -470,7 +498,26 @@ defmodule WandererAppWeb.MapSystemAPIController do
     summary: "Show Map System (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems/:id instead",
-    parameters: [map_id: [in: :query], id: [in: :query]],
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      id: [
+        in: :query,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
+    ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
   defdelegate show_system(conn, params), to: __MODULE__, as: :show
 

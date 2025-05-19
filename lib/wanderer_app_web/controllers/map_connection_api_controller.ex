@@ -129,23 +129,46 @@ defmodule WandererAppWeb.MapConnectionAPIController do
 
   operation :index,
     summary: "List Map Connections",
+    description: "Lists all connections for a map.",
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
         example: "map-slug or map UUID"
       ],
-      solar_system_source: [in: :query, type: :integer, required: false],
-      solar_system_target: [in: :query, type: :integer, required: false]
+      solar_system_source: [
+        in: :query,
+        description: "Filter connections by source system ID",
+        type: :integer,
+        required: false,
+        example: 30000142
+      ],
+      solar_system_target: [
+        in: :query,
+        description: "Filter connections by target system ID",
+        type: :integer,
+        required: false,
+        example: 30000144
+      ]
     ],
     responses: [
       ok: {
-        "List Map Connections",
+        "List of Map Connections",
         "application/json",
         @list_response_schema
-      }
+      },
+      not_found: {"Error", "application/json", %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          error: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["error"],
+        example: %{
+          "error" => "Map not found"
+        }
+      }}
     ]
   def index(%{assigns: %{map_id: map_id}} = conn, params) do
     with {:ok, src_filter} <- parse_optional(params, "solar_system_source"),
@@ -187,7 +210,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
         example: "map-slug or map UUID"
@@ -218,12 +241,11 @@ defmodule WandererAppWeb.MapConnectionAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
         example: "map-slug or map UUID"
-      ],
-      system_id: [in: :path, type: :string, required: false]
+      ]
     ],
     request_body: {"Connection create", "application/json", @connection_request_schema},
     responses: ResponseSchemas.create_responses(@detail_response_schema)
@@ -256,7 +278,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
         example: "map-slug or map UUID"
@@ -344,7 +366,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
         example: "map-slug or map UUID"
@@ -442,9 +464,49 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   @deprecated "Use GET /api/maps/:map_identifier/systems instead"
   operation :list_all_connections,
     summary: "List All Connections (Legacy)",
+    description: "Legacy endpoint for listing connections. Use GET /api/maps/:map_identifier/connections instead. Requires exactly one of map_id or slug as a query parameter. If both are provided, a 400 Bad Request will be returned.",
     deprecated: true,
-    parameters: [map_id: [in: :query]],
-    responses: ResponseSchemas.standard_responses(@list_response_schema)
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Exactly one of map_id or slug must be provided",
+        type: :string,
+        required: false
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Exactly one of map_id or slug must be provided",
+        type: :string,
+        required: false
+      ]
+    ],
+    responses: [
+      ok: {
+        "List of Map Connections",
+        "application/json",
+        @list_response_schema
+      },
+      bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          error: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["error"],
+        example: %{
+          "error" => "Must provide exactly one of map_id or slug as a query parameter"
+        }
+      }},
+      not_found: {"Error", "application/json", %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          error: %OpenApiSpex.Schema{type: :string}
+        },
+        required: ["error"],
+        example: %{
+          "error" => "Map not found. Please provide a valid map_id or slug as a query parameter."
+        }
+      }}
+    ]
   def list_all_connections(%{assigns: %{map_id: map_id}} = conn, _params) do
     connections = Operations.list_connections(map_id)
     data = Enum.map(connections, &APIUtils.connection_to_json/1)
