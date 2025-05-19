@@ -3,7 +3,7 @@
     <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
       <%= @map_name %>
     </.link>
-    - Characters [<%= @characters_count %>]
+    - Active Characters [<%= @characters_count %>]
   </span>
 </nav>
 <main
@@ -24,7 +24,6 @@
       id="map-characters"
       notify_to={self()}
       groups={@groups}
-      character_settings={@character_settings}
       event_name="character_event"
     />
   </div>

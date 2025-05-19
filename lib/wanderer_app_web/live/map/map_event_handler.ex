@@ -43,8 +43,6 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_system_ui_events [
-    "add_hub",
-    "delete_hub",
     "delete_systems",
     "get_system_static_infos",
     "manual_add_system",
@@ -57,10 +55,7 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_locked",
     "update_system_tag",
     "update_system_temporary_name",
-    "update_system_status",
-    "get_user_hubs",
-    "add_user_hub",
-    "delete_user_hub"
+    "update_system_status"
   ]
 
   @map_system_comments_events [
@@ -109,7 +104,12 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_routes_ui_events [
     "get_routes",
     "get_user_routes",
-    "set_autopilot_waypoint"
+    "set_autopilot_waypoint",
+    "add_hub",
+    "delete_hub",
+    "get_user_hubs",
+    "add_user_hub",
+    "delete_user_hub"
   ]
 
   @map_signatures_events [

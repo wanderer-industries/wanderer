@@ -56,18 +56,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
         case track_character do
           false ->
-            :ok =
-              WandererApp.Character.TrackingUtils.untrack_characters(
-                map_characters,
-                map_id,
-                self()
-              )
-
+            :ok = WandererApp.Character.TrackingUtils.untrack(map_characters, map_id, self())
             :ok = WandererApp.Character.TrackingUtils.remove_characters(map_characters, map_id)
 
           _ ->
             :ok =
-              WandererApp.Character.TrackingUtils.track_characters(
+              WandererApp.Character.TrackingUtils.track(
                 map_characters,
                 map_id,
                 true,
@@ -232,7 +226,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   def handle_ui_event(
         _event,
         _body,
-        %{assigns: %{has_tracked_characters?: false}} =
+        %{assigns: %{has_tracked_characters?: false, can_track?: true}} =
           socket
       ) do
     Process.send_after(self(), %{event: :show_tracking}, 10)
@@ -248,7 +242,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   def handle_ui_event(
         event,
         body,
-        %{assigns: %{main_character_id: main_character_id}} =
+        %{assigns: %{main_character_id: main_character_id, can_track?: true}} =
           socket
       )
       when is_nil(main_character_id) do
@@ -266,7 +260,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:ok, map_server_started} = WandererApp.Cache.lookup("map_#{map_id}:started", false)
 
     if map_server_started do
-      Process.send_after(self(), %{event: :map_server_started}, 10)
+      Process.send_after(self(), %{event: :map_server_started}, 50)
     else
       WandererApp.Map.Manager.start_map(map_id)
     end
@@ -439,6 +433,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
            assigns: %{
              current_user: current_user,
              map_id: map_id,
+             main_character_id: main_character_id,
              tracked_characters: tracked_characters,
              has_tracked_characters?: has_tracked_characters?,
              user_permissions:
@@ -460,7 +455,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         end
 
       events =
-        case not has_tracked_characters? do
+        case track_character && not has_tracked_characters? do
           true ->
             events ++ [:empty_tracked_characters]
 
@@ -468,13 +463,28 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             events
         end
 
+      character_limit_reached? = present_character_ids |> Enum.count() >= characters_limit
+
       events =
-        case present_character_ids |> Enum.count() < characters_limit do
-          true ->
+        cond do
+          # in case user has not tracked any character track his main character as viewer
+          track_character && not has_tracked_characters? ->
+            main_character = Enum.find(current_user.characters, &(&1.id == main_character_id))
+            events ++ [{:track_characters, [main_character], false}]
+
+          track_character && not character_limit_reached? ->
             events ++ [{:track_characters, tracked_characters, track_character}]
 
-          _ ->
+          track_character && character_limit_reached? ->
             events ++ [:map_character_limit]
+
+          # in case user has view only permissions track his main character as viewer
+          not track_character ->
+            main_character = Enum.find(current_user.characters, &(&1.id == main_character_id))
+            events ++ [{:track_characters, [main_character], track_character}]
+
+          true ->
+            events
         end
 
       initial_data =

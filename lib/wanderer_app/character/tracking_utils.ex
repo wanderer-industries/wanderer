@@ -120,7 +120,7 @@ defmodule WandererApp.Character.TrackingUtils do
           {:ok, updated_settings} =
             WandererApp.MapCharacterSettingsRepo.untrack(existing_settings)
 
-          :ok = untrack_characters([character], map_id, caller_pid)
+          :ok = untrack([character], map_id, caller_pid)
           :ok = remove_characters([character], map_id)
           {:ok, updated_settings}
         else
@@ -131,7 +131,7 @@ defmodule WandererApp.Character.TrackingUtils do
       {:ok, %{tracked: false} = existing_settings} ->
         if track do
           {:ok, updated_settings} = WandererApp.MapCharacterSettingsRepo.track(existing_settings)
-          :ok = track_characters([character], map_id, true, caller_pid)
+          :ok = track([character], map_id, true, caller_pid)
           :ok = add_characters([character], map_id, true)
           {:ok, updated_settings}
         else
@@ -148,7 +148,7 @@ defmodule WandererApp.Character.TrackingUtils do
               tracked: true
             })
 
-          :ok = track_characters([character], map_id, true, caller_pid)
+          :ok = track([character], map_id, true, caller_pid)
           :ok = add_characters([character], map_id, true)
           {:ok, settings}
         else
@@ -161,60 +161,85 @@ defmodule WandererApp.Character.TrackingUtils do
   end
 
   # Helper functions for character tracking
-  def track_characters(_, _, false, _), do: :ok
-  def track_characters([], _map_id, _is_track_character?, _), do: :ok
 
-  def track_characters([character | characters], map_id, true, caller_pid) do
-    with :ok <- track_character(character, map_id, caller_pid) do
-      track_characters(characters, map_id, true, caller_pid)
+  def track([], _map_id, _is_track_character?, _), do: :ok
+
+  def track([character | characters], map_id, is_track_allowed, caller_pid) do
+    with :ok <- track_character(character, map_id, is_track_allowed, caller_pid) do
+      track(characters, map_id, is_track_allowed, caller_pid)
     end
   end
 
-  def track_character(
-        %{
-          id: character_id,
-          eve_id: eve_id,
-          corporation_id: corporation_id,
-          alliance_id: alliance_id
-        },
-        map_id,
-        caller_pid
-      ) do
-    with false <- is_nil(caller_pid) do
-      WandererAppWeb.Presence.track(caller_pid, map_id, character_id, %{})
+  defp track_character(
+         %{
+           id: character_id,
+           eve_id: eve_id
+         },
+         map_id,
+         is_track_allowed,
+         caller_pid
+       )
+       when not is_nil(caller_pid) do
+    WandererAppWeb.Presence.update(caller_pid, map_id, character_id, %{
+      tracked: is_track_allowed,
+      from: DateTime.utc_now()
+    })
+    |> case do
+      {:ok, _} ->
+        :ok
 
-      cache_key = "#{inspect(caller_pid)}_map_#{map_id}:character_#{character_id}:tracked"
+      {:error, :nopresence} ->
+        WandererAppWeb.Presence.track(caller_pid, map_id, character_id, %{
+          tracked: is_track_allowed,
+          from: DateTime.utc_now()
+        })
 
-      case WandererApp.Cache.lookup!(cache_key, false) do
-        true ->
-          :ok
+      error ->
+        Logger.error("Failed to update presence: #{inspect(error)}")
+        {:error, "Failed to update presence"}
+    end
 
-        _ ->
-          :ok = Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{eve_id}")
-          :ok = WandererApp.Cache.put(cache_key, true)
-      end
+    cache_key = "#{inspect(caller_pid)}_map_#{map_id}:character_#{character_id}:tracked"
 
-      :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
-    else
+    case WandererApp.Cache.lookup!(cache_key, false) do
       true ->
-        Logger.error("caller_pid is required for tracking characters")
-        {:error, "caller_pid is required"}
+        :ok
+
+      _ ->
+        :ok = Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{eve_id}")
+        :ok = WandererApp.Cache.put(cache_key, true)
     end
+
+    if is_track_allowed do
+      :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
+    end
+
+    :ok
   end
 
-  def untrack_characters(characters, map_id, caller_pid) do
+  defp track_character(
+         _character,
+         _map_id,
+         _is_track_allowed,
+         _caller_pid
+       ) do
+    Logger.error("caller_pid is required for tracking characters")
+    {:error, "caller_pid is required"}
+  end
+
+  def untrack(characters, map_id, caller_pid) do
     with false <- is_nil(caller_pid) do
+      character_ids = characters |> Enum.map(& &1.id)
+
       characters
       |> Enum.each(fn character ->
-        WandererAppWeb.Presence.untrack(caller_pid, map_id, character.id)
-
-        WandererApp.Cache.put(
-          "#{inspect(caller_pid)}_map_#{map_id}:character_#{character.id}:tracked",
-          false
-        )
-
-        :ok = Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "character:#{character.eve_id}")
+        WandererAppWeb.Presence.update(caller_pid, map_id, character.id, %{
+          tracked: false,
+          from: DateTime.utc_now()
+        })
       end)
+
+      WandererApp.Map.Server.untrack_characters(map_id, character_ids)
 
       :ok
     else

@@ -33,7 +33,7 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @online_error_timeout :timer.minutes(2)
+  @online_error_timeout :timer.minutes(3)
   @forbidden_ttl :timer.minutes(1)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
@@ -49,7 +49,7 @@ defmodule WandererApp.Character.Tracker do
     |> new()
   end
 
-  def update_track_settings(character_id, track_settings) do
+  def update_settings(character_id, track_settings) do
     {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
 
     {:ok,
@@ -103,7 +103,9 @@ defmodule WandererApp.Character.Tracker do
     |> update_ship()
   end
 
-  def update_ship(%{character_id: character_id, track_ship: true} = character_state) do
+  def update_ship(
+        %{character_id: character_id, track_ship: true, is_online: true} = character_state
+      ) do
     character_id
     |> WandererApp.Character.get_character()
     |> case do
@@ -137,6 +139,13 @@ defmodule WandererApp.Character.Tracker do
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_ship: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:ship_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
+
                 {:error, error}
             end
         end
@@ -154,7 +163,9 @@ defmodule WandererApp.Character.Tracker do
     |> update_location()
   end
 
-  def update_location(%{track_location: true, character_id: character_id} = character_state) do
+  def update_location(
+        %{track_location: true, is_online: true, character_id: character_id} = character_state
+      ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
         WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden")
@@ -187,6 +198,13 @@ defmodule WandererApp.Character.Tracker do
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:location_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
+
                 {:error, error}
             end
 
@@ -305,14 +323,9 @@ defmodule WandererApp.Character.Tracker do
           WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
           WandererApp.Cache.delete("character:#{character_id}:online_error_time")
           WandererApp.Character.update_character(character_id, %{online: false})
-          WandererApp.Cache.delete("character:#{character_id}:location_started")
-          WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
 
           WandererApp.Character.update_character_state(character_id, %{
-            character_state
-            | is_online: false,
-              track_ship: false,
-              track_location: false
+            is_online: false
           })
 
           :ok
@@ -494,7 +507,7 @@ defmodule WandererApp.Character.Tracker do
            state,
          location
        ) do
-         location = get_location(location)
+    location = get_location(location)
 
     if not is_location_started?(character_id) do
       WandererApp.Cache.lookup!("character:#{character_id}:start_solar_system_id", nil)
@@ -544,14 +557,18 @@ defmodule WandererApp.Character.Tracker do
       )
 
   defp is_location_updated?(
-         %{solar_system_id: new_solar_system_id, station_id: new_station_id, structure_id: new_structure_id} = _location,
+         %{
+           solar_system_id: new_solar_system_id,
+           station_id: new_station_id,
+           structure_id: new_structure_id
+         } = _location,
          solar_system_id,
          structure_id,
          station_id
        ),
        do:
          solar_system_id != new_solar_system_id ||
-         solar_system_id != new_solar_system_id ||
+           solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
            station_id != new_station_id
 
@@ -724,14 +741,7 @@ defmodule WandererApp.Character.Tracker do
       )
     end
 
-    WandererApp.Character.update_character(character_id, %{online: false})
-
-    %{
-      state
-      | track_ship: false,
-        track_online: false,
-        track_location: false
-    }
+    state
   end
 
   defp maybe_stop_tracking(

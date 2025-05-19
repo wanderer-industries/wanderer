@@ -17,7 +17,7 @@ defmodule WandererApp.Maps do
     :is_shattered
   ]
 
-  def find_routes(map_id, hubs, origin, routes_settings) do
+  def find_routes(map_id, hubs, origin, routes_settings, false) do
     {:ok, routes} =
       WandererApp.Esi.find_routes(
         map_id,
@@ -46,6 +46,19 @@ defmodule WandererApp.Maps do
       |> Enum.map(fn {:ok, val} -> val end)
 
     {:ok, %{routes: routes, systems_static_data: systems_static_data}}
+  end
+
+  def find_routes(map_id, hubs, origin, routes_settings, true) do
+    origin = origin |> String.to_integer()
+    hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))
+
+    routes =
+      hubs
+      |> Enum.map(fn hub ->
+        %{origin: origin, destination: hub, success: false, systems: [], has_connection: false}
+      end)
+
+    {:ok, %{routes: routes, systems_static_data: []}}
   end
 
   def get_available_maps() do
