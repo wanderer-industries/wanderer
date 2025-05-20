@@ -56,13 +56,21 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
 
+    {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
+
+    ping_system_ids =
+      pings
+      |> Enum.map(fn %{system: %{solar_system_id: solar_system_id}} -> "#{solar_system_id}" end)
+
+    route_hubs = (ping_system_ids ++ hubs) |> Enum.uniq()
+
     is_hubs_limit_reached = hubs |> Enum.count() > hubs_limit
 
     Task.async(fn ->
       {:ok, routes} =
         WandererApp.Maps.find_routes(
           map_id,
-          hubs,
+          route_hubs,
           solar_system_id,
           get_routes_settings(routes_settings),
           is_hubs_limit_reached
