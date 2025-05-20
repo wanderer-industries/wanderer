@@ -85,7 +85,7 @@ defmodule WandererApp.Api.Character do
 
     update :update do
       require_atomic? false
-      accept([:access_token, :refresh_token, :expires_at, :scopes])
+      accept([:name, :access_token, :refresh_token, :expires_at, :scopes])
 
       change(set_attribute(:deleted, false))
     end

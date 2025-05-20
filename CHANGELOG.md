@@ -2,6 +2,42 @@
 
 <!-- changelog -->
 
+## [v1.64.7](https://github.com/wanderer-industries/wanderer/compare/v1.64.6...v1.64.7) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed connection EOL time refreshed every 2 minutes
+
+## [v1.64.6](https://github.com/wanderer-industries/wanderer/compare/v1.64.5...v1.64.6) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added map hubs limits checking & a proper warning message shown
+
+## [v1.64.5](https://github.com/wanderer-industries/wanderer/compare/v1.64.4...v1.64.5) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added character name update on re-auth
+
+## [v1.64.4](https://github.com/wanderer-industries/wanderer/compare/v1.64.3...v1.64.4) (2025-05-14)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added 1 min timeout for ship and location updates on ESI API errors
+
 ## [v1.64.3](https://github.com/wanderer-industries/wanderer/compare/v1.64.2...v1.64.3) (2025-05-14)
 
 

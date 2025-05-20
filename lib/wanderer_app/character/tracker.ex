@@ -139,6 +139,13 @@ defmodule WandererApp.Character.Tracker do
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_ship: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:ship_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
+
                 {:error, error}
             end
         end
@@ -191,6 +198,13 @@ defmodule WandererApp.Character.Tracker do
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:location_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
+
                 {:error, error}
             end
 
