@@ -118,7 +118,10 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         |> Enum.map(&elem(&1, 0))
 
       if changed_systems == [] do
-        Logger.debug(fn -> "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}" end)
+        Logger.debug(fn ->
+          "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}"
+        end)
+
         :ok
       else
         # Build new details for each changed system
@@ -153,10 +156,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
         changed_data = Map.take(updated_details_map, changed_systems)
 
-        @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
-          event: :detailed_kills_updated,
-          payload: changed_data
-        })
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :detailed_kills_updated, changed_data)
 
         :ok
       end
@@ -173,6 +173,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       Enum.filter(all_system_ids, fn system_id ->
         new_kills_count = Map.get(new_kills_map, system_id, 0)
         old_kills_count = Map.get(old_kills_map, system_id, 0)
+
         new_kills_count != old_kills_count and
           (new_kills_count > 0 or (old_kills_count > 0 and new_kills_count == 0))
       end)
@@ -187,10 +188,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
       payload = Map.take(new_kills_map, changed_system_ids)
 
-      @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
-        event: :kills_updated,
-        payload: payload
-      })
+      WandererApp.Map.Server.Impl.broadcast!(map_id, :kills_updated, payload)
 
       :ok
     end

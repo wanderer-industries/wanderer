@@ -319,7 +319,11 @@ defmodule WandererApp.Map.Server.Impl do
 
   def broadcast!(map_id, event, payload \\ nil) do
     if can_broadcast?(map_id) do
-      @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{event: event, payload: payload})
+      @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
+        event: event,
+        payload: payload,
+        timestamp: DateTime.utc_now()
+      })
     end
 
     :ok
