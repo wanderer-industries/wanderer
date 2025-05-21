@@ -24,15 +24,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
       region_name: %Schema{type: :string, description: "EVE region name"},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate"},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate"},
-      status: %Schema{type: :string, description: "System status"},
+      position_x: %Schema{type: :integer, description: "X coordinate"},
+      position_y: %Schema{type: :integer, description: "Y coordinate"},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag"},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     required: ~w(id map_id solar_system_id)a
   }
@@ -42,23 +45,27 @@ defmodule WandererAppWeb.MapSystemAPIController do
     properties: %{
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate"},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate"},
-      status: %Schema{type: :string, description: "System status"},
+      position_x: %Schema{type: :integer, description: "X coordinate"},
+      position_y: %Schema{type: :integer, description: "Y coordinate"},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag"},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     required: ~w(solar_system_id)a,
     example: %{
       solar_system_id: 30_000_142,
       solar_system_name: "Jita",
-      position_x: 100.5,
-      position_y: 200.3,
-      visible: true
+      position_x: 100,
+      position_y: 200,
+      visible: true,
+      labels: "market,hub"
     }
   }
 
@@ -66,24 +73,29 @@ defmodule WandererAppWeb.MapSystemAPIController do
     type: :object,
     properties: %{
       solar_system_name: %Schema{type: :string, description: "EVE solar system name", nullable: true},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate", nullable: true},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate", nullable: true},
-      status: %Schema{type: :string, description: "System status", nullable: true},
+      position_x: %Schema{type: :integer, description: "X coordinate", nullable: true},
+      position_y: %Schema{type: :integer, description: "Y coordinate", nullable: true},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)",
+        nullable: true
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag", nullable: true},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag", nullable: true},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     example: %{
       solar_system_name: "Jita",
-      position_x: 101.0,
-      position_y: 202.0,
+      position_x: 101,
+      position_y: 202,
       visible: false,
-      status: "active",
+      status: 0,
       tag: "HQ",
-      locked: true
+      locked: true,
+      labels: "market,hub"
     }
   }
 

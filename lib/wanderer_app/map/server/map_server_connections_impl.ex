@@ -358,11 +358,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
         {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
 
-        # Set ship size type to medium if either system is C1
-        ship_size_type = if source_system_info.system_class == @c1 or target_system_info.system_class == @c1 do
+        # Set ship size type to medium only for wormhole connections involving C1 systems
+        ship_size_type = if connection_type == @connection_type_wormhole and
+                             (source_system_info.system_class == @c1 or
+                              target_system_info.system_class == @c1) do
           @medium_ship_size
         else
-          2  # Default to large
+          2  # Default to large for non-wormhole or non-C1 connections
         end
 
         {:ok, connection} =
@@ -510,7 +512,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           known_jumps |> Enum.empty?()
 
       :stargates ->
-        not is_prohibited_system_class?(from_system_static_info.system_class) and
+        # For stargates, we need to check:
+        # 1. Both systems are in known space (HS, LS, NS)
+        # 2. There is a known jump between them
+        # 3. Neither system is prohibited
+        from_system_static_info.system_class in @known_space and
+          to_system_static_info.system_class in @known_space and
+          not is_prohibited_system_class?(from_system_static_info.system_class) and
           not is_prohibited_system_class?(to_system_static_info.system_class) and
           not (known_jumps |> Enum.empty?())
     end
