@@ -69,6 +69,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @connection_time_status_eol 1
   @connection_type_wormhole 0
   @connection_type_stargate 1
+  @medium_ship_size 1
 
   def get_connection_auto_expire_hours(), do: WandererApp.Env.map_connection_auto_expire_hours()
 
@@ -353,12 +354,24 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
               @connection_type_wormhole
           end
 
+        # Check if either system is C1 before creating the connection
+        {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
+        {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
+
+        # Set ship size type to medium if either system is C1
+        ship_size_type = if source_system_info.system_class == @c1 or target_system_info.system_class == @c1 do
+          @medium_ship_size
+        else
+          2  # Default to large
+        end
+
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
             map_id: map_id,
             solar_system_source: old_location.solar_system_id,
             solar_system_target: location.solar_system_id,
-            type: connection_type
+            type: connection_type,
+            ship_size_type: ship_size_type
           })
 
         if connection_type == @connection_type_wormhole do
