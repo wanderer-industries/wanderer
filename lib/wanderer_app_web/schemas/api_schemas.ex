@@ -38,14 +38,23 @@ defmodule WandererAppWeb.Schemas.ApiSchemas do
     %Schema{
       type: :object,
       properties: %{
-        eve_id: %Schema{type: :string},
-        name: %Schema{type: :string},
-        corporation_id: %Schema{type: :string},
-        corporation_ticker: %Schema{type: :string},
-        alliance_id: %Schema{type: :string},
-        alliance_ticker: %Schema{type: :string}
+        id: %Schema{type: :string, description: "Character UUID"},
+        eve_id: %Schema{type: :string, description: "EVE Online character ID"},
+        name: %Schema{type: :string, description: "Character name"},
+        online: %Schema{type: :boolean, description: "Online status"},
+        corporation_id: %Schema{type: :integer, description: "Corporation ID"},
+        corporation_name: %Schema{type: :string, description: "Corporation name"},
+        corporation_ticker: %Schema{type: :string, description: "Corporation ticker"},
+        alliance_id: %Schema{type: :integer, description: "Alliance ID"},
+        alliance_name: %Schema{type: :string, description: "Alliance name"},
+        alliance_ticker: %Schema{type: :string, description: "Alliance ticker"},
+        solar_system_id: %Schema{type: :integer, description: "Current solar system ID"},
+        ship: %Schema{type: :integer, description: "Current ship type ID"},
+        ship_name: %Schema{type: :string, description: "Current ship name"},
+        inserted_at: %Schema{type: :string, format: :date_time, description: "Creation timestamp"},
+        updated_at: %Schema{type: :string, format: :date_time, description: "Last update timestamp"}
       },
-      required: ["eve_id", "name"]
+      required: ~w(id eve_id name)a
     }
   end
 
