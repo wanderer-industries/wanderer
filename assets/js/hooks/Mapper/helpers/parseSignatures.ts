@@ -1,8 +1,10 @@
-import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import {
   MAPPING_GROUP_TO_ENG,
   MAPPING_TYPE_TO_ENG,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+
+export const UNKNOWN_SIGNATURE_NAME = 'Unknown';
 
 export const parseSignatures = (value: string, availableKeys: string[]): SystemSignature[] => {
   const outArr: SystemSignature[] = [];
@@ -19,6 +21,7 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
 
     // Extract the signature ID and check if it's valid (XXX-XXX format)
     const sigId = sigArrInfo[0];
+
     if (!sigId || !sigId.match(/^[A-Z]{3}-\d{3}$/)) {
       continue;
     }
@@ -29,6 +32,7 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
 
     // Try to map the kind using the flattened mapping
     const mappedKind = MAPPING_TYPE_TO_ENG[typeString];
+
     if (mappedKind && availableKeys.includes(mappedKind)) {
       kind = mappedKind;
     }
@@ -47,7 +51,7 @@ export const parseSignatures = (value: string, availableKeys: string[]): SystemS
       eve_id: sigId,
       kind,
       group,
-      name: sigArrInfo[3] || 'Unknown',
+      name: sigArrInfo[3] || UNKNOWN_SIGNATURE_NAME,
       type: '',
     };
 
