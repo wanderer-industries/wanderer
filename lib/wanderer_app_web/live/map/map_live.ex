@@ -4,6 +4,8 @@ defmodule WandererAppWeb.MapLive do
 
   require Logger
 
+  @server_event_unsync_timeout :timer.minutes(5)
+
   @impl true
   def mount(%{"slug" => map_slug} = _params, _session, socket) when is_connected?(socket) do
     Process.send_after(self(), %{event: :load_map}, Enum.random(10..800))
@@ -92,6 +94,19 @@ defmodule WandererAppWeb.MapLive do
          "You should enable tracking for all characters that have access to this map first!"
        )
        |> push_navigate(to: ~p"/tracking/#{map_slug}")}
+
+  @impl true
+  def handle_info(%{timestamp: timestamp} = info, %{assigns: %{map_slug: map_slug}} = socket) do
+    duration = DateTime.diff(DateTime.utc_now(), timestamp, :millisecond)
+
+    if duration > @server_event_unsync_timeout do
+      {:noreply, socket |> push_navigate(to: ~p"/#{map_slug}")}
+    else
+      {:noreply,
+       socket
+       |> WandererAppWeb.MapEventHandler.handle_event(info)}
+    end
+  end
 
   @impl true
   def handle_info(info, socket),

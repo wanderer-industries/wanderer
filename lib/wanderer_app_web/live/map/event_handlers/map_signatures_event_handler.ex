@@ -211,10 +211,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           })
         end
 
-        Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
-          event: :signatures_updated,
-          payload: solar_system_source
-        })
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_source)
 
         {:noreply, socket}
 
@@ -261,10 +258,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           })
         end)
 
-        Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
-          event: :signatures_updated,
-          payload: solar_system_source
-        })
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_source)
 
         {:noreply, socket}
 
