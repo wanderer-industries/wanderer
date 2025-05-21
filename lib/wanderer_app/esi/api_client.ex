@@ -579,7 +579,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp maybe_cache_response(_path, _body, _headers), do: :ok
+  defp maybe_cache_response(_path, _body, _headers, _opts), do: :ok
 
   defp post(url, opts) do
     try do

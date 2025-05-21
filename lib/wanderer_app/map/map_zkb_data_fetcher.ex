@@ -11,7 +11,6 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   @interval :timer.seconds(15)
   @store_map_kills_timeout :timer.hours(1)
   @logger Application.compile_env(:wanderer_app, :logger)
-  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   # This means 120 “ticks” of 15s each → ~30 minutes
   @preload_cycle_ticks 120

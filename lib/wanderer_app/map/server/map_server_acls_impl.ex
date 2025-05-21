@@ -3,8 +3,6 @@ defmodule WandererApp.Map.Server.AclsImpl do
 
   require Logger
 
-  alias WandererApp.Map.Server.Impl
-
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def handle_map_acl_updated(%{map_id: map_id, map: old_map} = state, added_acls, removed_acls) do
@@ -86,7 +84,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
     end
   end
 
-  def handle_acl_deleted(map_id, acl_id) do
+  def handle_acl_deleted(map_id, _acl_id) do
     {:ok, map} =
       WandererApp.MapRepo.get(map_id,
         acls: [

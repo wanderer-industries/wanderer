@@ -246,7 +246,6 @@ defmodule WandererAppWeb.MapAPIController do
         in: :query,
         description: "Map slug",
         type: :string,
-        example: "my-map",
         required: false
       ],
       map_id: [
@@ -319,7 +318,7 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   @doc """
-  GET /api/map/structure_timers
+  GET /api/map/structure-timers
 
   Returns structure timers for visible systems on the map or for a specific system.
   """
@@ -327,6 +326,7 @@ defmodule WandererAppWeb.MapAPIController do
   operation :show_structure_timers,
     summary: "Show Structure Timers",
     description: "Retrieves structure timers for a map.",
+    deprecated: true,
     parameters: [
       map_id: [
         in: :query,
@@ -342,7 +342,7 @@ defmodule WandererAppWeb.MapAPIController do
       ],
       system_id: [
         in: :query,
-        description: "System ID",
+        description: "Optional: System ID to filter timers for a specific system",
         type: :string,
         required: false
       ]
@@ -790,15 +790,13 @@ defmodule WandererAppWeb.MapAPIController do
         in: :query,
         description: "Map identifier (UUID) - Either map_id or slug must be provided",
         type: :string,
-        required: false,
-        example: ""
+        required: false
       ],
       slug: [
         in: :query,
         description: "Map slug - Either map_id or slug must be provided",
         type: :string,
-        required: false,
-        example: "map-name"
+        required: false
       ]
     ],
     responses: [

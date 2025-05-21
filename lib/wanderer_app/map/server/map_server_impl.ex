@@ -93,6 +93,7 @@ defmodule WandererApp.Map.Server.Impl do
       Process.send_after(self(), :cleanup_connections, 5_000)
       Process.send_after(self(), :cleanup_systems, 10_000)
       Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
+      Process.send_after(self(), :cleanup_signatures, :timer.minutes(30))
       Process.send_after(self(), :backup_state, @backup_state_timeout)
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
@@ -309,6 +310,11 @@ defmodule WandererApp.Map.Server.Impl do
     Process.demonitor(ref, [:flush])
 
     state
+  end
+
+  def handle_event(:cleanup_signatures, state) do
+    Process.send_after(self(), :cleanup_signatures, :timer.minutes(30))
+    state |> SignaturesImpl.cleanup_signatures()
   end
 
   def handle_event(msg, state) do

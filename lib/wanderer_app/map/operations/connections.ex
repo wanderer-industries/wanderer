@@ -8,6 +8,9 @@ defmodule WandererApp.Map.Operations.Connections do
   alias WandererApp.Map.Server
   require Logger
 
+  @c1_system_class 1
+  @medium_ship_size 1
+
   @spec list_connections(String.t()) :: [map()] | {:error, atom()}
   def list_connections(map_id) do
     with {:ok, conns} <- MapConnectionRepo.get_by_map(map_id) do
@@ -50,11 +53,23 @@ defmodule WandererApp.Map.Operations.Connections do
   defp do_create(attrs, map_id, char_id) do
     with {:ok, source} <- parse_int(attrs["solar_system_source"], "solar_system_source"),
          {:ok, target} <- parse_int(attrs["solar_system_target"], "solar_system_target") do
+      # Check if either system is C1 before creating the connection
+      {:ok, source_system_info} = WandererApp.Map.Server.ConnectionsImpl.get_system_static_info(source)
+      {:ok, target_system_info} = WandererApp.Map.Server.ConnectionsImpl.get_system_static_info(target)
+
+      # Set ship size type to medium if either system is C1
+      ship_size_type = if source_system_info.system_class == @c1_system_class or target_system_info.system_class == @c1_system_class do
+        @medium_ship_size
+      else
+        Map.get(attrs, "ship_size_type", 2) |> parse_type()
+      end
+
       info = %{
         solar_system_source_id: source,
         solar_system_target_id: target,
         character_id: char_id,
-        type: parse_type(attrs["type"])
+        type: parse_type(attrs["type"]),
+        ship_size_type: ship_size_type
       }
       add_result = Server.add_connection(map_id, info)
       case add_result do

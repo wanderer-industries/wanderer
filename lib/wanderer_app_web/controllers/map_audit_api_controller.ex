@@ -2,15 +2,9 @@ defmodule WandererAppWeb.MapAuditAPIController do
   use WandererAppWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import Ash.Query, only: [filter: 2]
   require Logger
 
   alias WandererApp.Api
-  alias WandererApp.Api.Character
-  alias WandererApp.MapSystemRepo
-  alias WandererApp.MapCharacterSettingsRepo
-
-  alias WandererApp.Zkb.KillsProvider.KillsCache
 
   alias WandererAppWeb.Helpers.APIUtils
 
@@ -157,16 +151,5 @@ defmodule WandererAppWeb.MapAuditAPIController do
         Jason.decode!(event_data) |> Map.drop(["character_id"])
       )
     )
-  end
-
-  defp get_original_system_name(solar_system_id) do
-    # Fetch the original system name from the MapSolarSystem resource
-    case WandererApp.Api.MapSolarSystem.by_solar_system_id(solar_system_id) do
-      {:ok, system} ->
-        system.solar_system_name
-
-      _error ->
-        "Unknown System"
-    end
   end
 end
