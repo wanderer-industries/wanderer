@@ -54,7 +54,7 @@ defmodule WandererAppWeb.Schemas.ApiSchemas do
         inserted_at: %Schema{type: :string, format: :date_time, description: "Creation timestamp"},
         updated_at: %Schema{type: :string, format: :date_time, description: "Last update timestamp"}
       },
-      required: ~w(id eve_id name)a
+      required: ~w(eve_id name)a
     }
   end
 
