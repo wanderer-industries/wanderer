@@ -39,40 +39,49 @@ defmodule WandererApp.CachedInfo do
   def get_system_static_info(solar_system_id) do
     case Cachex.get(:system_static_info_cache, solar_system_id) do
       {:ok, nil} ->
-        {:ok, systems} = WandererApp.Api.MapSolarSystem.read()
+        case WandererApp.Api.MapSolarSystem.read() do
+          {:ok, systems} ->
+            systems
+            |> Enum.each(fn system ->
+              Cachex.put(
+                :system_static_info_cache,
+                system.solar_system_id,
+                Map.take(system, [
+                  :solar_system_id,
+                  :region_id,
+                  :constellation_id,
+                  :solar_system_name,
+                  :solar_system_name_lc,
+                  :constellation_name,
+                  :region_name,
+                  :system_class,
+                  :security,
+                  :type_description,
+                  :class_title,
+                  :is_shattered,
+                  :effect_name,
+                  :effect_power,
+                  :statics,
+                  :wandering,
+                  :triglavian_invasion_status,
+                  :sun_type_id
+                ])
+              )
+            end)
 
-        systems
-        |> Enum.each(fn system ->
-          Cachex.put(
-            :system_static_info_cache,
-            system.solar_system_id,
-            Map.take(system, [
-              :solar_system_id,
-              :region_id,
-              :constellation_id,
-              :solar_system_name,
-              :solar_system_name_lc,
-              :constellation_name,
-              :region_name,
-              :system_class,
-              :security,
-              :type_description,
-              :class_title,
-              :is_shattered,
-              :effect_name,
-              :effect_power,
-              :statics,
-              :wandering,
-              :triglavian_invasion_status,
-              :sun_type_id
-            ])
-          )
-        end)
+            Cachex.get(:system_static_info_cache, solar_system_id)
 
-        Cachex.get(:system_static_info_cache, solar_system_id)
+          {:error, reason} ->
+            Logger.error("Failed to read solar systems from API: #{inspect(reason)}")
+            {:error, :api_error}
+        end
 
       {:ok, system_static_info} ->
         {:ok, system_static_info}
+
+      {:error, reason} ->
+        Logger.error("Failed to get system static info from cache: #{inspect(reason)}")
+        {:error, :cache_error}
     end
   end
 

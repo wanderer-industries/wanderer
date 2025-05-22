@@ -319,7 +319,6 @@ defmodule WandererApp.Character.Tracker do
         duration = DateTime.diff(DateTime.utc_now(), error_time, :second)
 
         if duration >= @online_error_timeout do
-          {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
           WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
           WandererApp.Cache.delete("character:#{character_id}:online_error_time")
           WandererApp.Character.update_character(character_id, %{online: false})

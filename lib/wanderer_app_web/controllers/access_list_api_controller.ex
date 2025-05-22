@@ -200,48 +200,28 @@ defmodule WandererAppWeb.MapAccessListAPIController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   operation :index,
     summary: "List ACLs for a Map",
-    description: "Lists the ACLs for a given map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    description: "Lists the ACLs for a given map. Provide only one of map_id or slug as a query parameter. If both are provided, the request will fail.",
     parameters: [
       map_id: [
         in: :query,
-        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+        description: "Map identifier (UUID) - Provide only one of map_id or slug.",
         type: :string,
-        required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        required: false
       ],
       slug: [
         in: :query,
-        description: "Map slug - Either map_id or slug must be provided",
+        description: "Map slug - Provide only one of map_id or slug.",
         type: :string,
-        required: false,
-        example: "map-name"
+        required: false
       ]
     ],
     responses: [
-      ok: {
-        "List of ACLs",
-        "application/json",
-        @acl_index_response_schema
-      },
+      ok: {"List of ACLs", "application/json", @acl_index_response_schema},
       bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
         type: :object,
-        properties: %{
-          error: %OpenApiSpex.Schema{type: :string}
-        },
+        properties: %{error: %OpenApiSpex.Schema{type: :string}},
         required: ["error"],
-        example: %{
-          "error" => "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
-        }
-      }},
-      not_found: {"Error", "application/json", %OpenApiSpex.Schema{
-        type: :object,
-        properties: %{
-          error: %OpenApiSpex.Schema{type: :string}
-        },
-        required: ["error"],
-        example: %{
-          "error" => "Map not found. Please provide a valid map_id or slug as a query parameter."
-        }
+        example: %{"error" => "Must provide only one of map_id or slug as a query parameter"}
       }}
     ]
   def index(conn, params) do
@@ -277,46 +257,30 @@ defmodule WandererAppWeb.MapAccessListAPIController do
   """
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   operation :create,
-    summary: "Create a new ACL",
-    description: "Creates a new ACL for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    summary: "Create ACL for a Map",
+    description: "Creates a new ACL for a given map. Provide only one of map_id or slug as a query parameter. If both are provided, the request will fail.",
     parameters: [
       map_id: [
         in: :query,
-        description: "Map identifier (UUID) - Either map_id or slug must be provided",
+        description: "Map identifier (UUID) - Provide only one of map_id or slug.",
         type: :string,
-        required: false,
-        example: "00000000-0000-0000-0000-000000000000"
+        required: false
       ],
       slug: [
         in: :query,
-        description: "Map slug - Either map_id or slug must be provided",
+        description: "Map slug - Provide only one of map_id or slug.",
         type: :string,
-        required: false,
-        example: "map-name"
+        required: false
       ]
     ],
-    request_body: {"Access List parameters", "application/json", @acl_create_request_schema},
+    request_body: {"ACL parameters", "application/json", @acl_create_request_schema},
     responses: [
-      ok: {"Access List", "application/json", @acl_create_response_schema},
+      created: {"Created ACL", "application/json", @acl_create_response_schema},
       bad_request: {"Error", "application/json", %OpenApiSpex.Schema{
         type: :object,
-        properties: %{
-          error: %OpenApiSpex.Schema{type: :string}
-        },
+        properties: %{error: %OpenApiSpex.Schema{type: :string}},
         required: ["error"],
-        example: %{
-          "error" => "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
-        }
-      }},
-      not_found: {"Error", "application/json", %OpenApiSpex.Schema{
-        type: :object,
-        properties: %{
-          error: %OpenApiSpex.Schema{type: :string}
-        },
-        required: ["error"],
-        example: %{
-          "error" => "Map not found. Please provide a valid map_id or slug as a query parameter."
-        }
+        example: %{"error" => "Must provide only one of map_id or slug as a query parameter"}
       }}
     ]
   def create(conn, params) do

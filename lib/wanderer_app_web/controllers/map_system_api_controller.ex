@@ -24,15 +24,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
       region_name: %Schema{type: :string, description: "EVE region name"},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate"},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate"},
-      status: %Schema{type: :string, description: "System status"},
+      position_x: %Schema{type: :integer, description: "X coordinate"},
+      position_y: %Schema{type: :integer, description: "Y coordinate"},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag"},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     required: ~w(id map_id solar_system_id)a
   }
@@ -42,23 +45,27 @@ defmodule WandererAppWeb.MapSystemAPIController do
     properties: %{
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate"},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate"},
-      status: %Schema{type: :string, description: "System status"},
+      position_x: %Schema{type: :integer, description: "X coordinate"},
+      position_y: %Schema{type: :integer, description: "Y coordinate"},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag"},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     required: ~w(solar_system_id)a,
     example: %{
       solar_system_id: 30_000_142,
       solar_system_name: "Jita",
-      position_x: 100.5,
-      position_y: 200.3,
-      visible: true
+      position_x: 100,
+      position_y: 200,
+      visible: true,
+      labels: "market,hub"
     }
   }
 
@@ -66,24 +73,29 @@ defmodule WandererAppWeb.MapSystemAPIController do
     type: :object,
     properties: %{
       solar_system_name: %Schema{type: :string, description: "EVE solar system name", nullable: true},
-      position_x: %Schema{type: :number, format: :float, description: "X coordinate", nullable: true},
-      position_y: %Schema{type: :number, format: :float, description: "Y coordinate", nullable: true},
-      status: %Schema{type: :string, description: "System status", nullable: true},
+      position_x: %Schema{type: :integer, description: "X coordinate", nullable: true},
+      position_y: %Schema{type: :integer, description: "Y coordinate", nullable: true},
+      status: %Schema{
+        type: :integer,
+        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)",
+        nullable: true
+      },
       visible: %Schema{type: :boolean, description: "Visibility flag", nullable: true},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag", nullable: true},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :array, items: %Schema{type: :string}, nullable: true, description: "Labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
     },
     example: %{
       solar_system_name: "Jita",
-      position_x: 101.0,
-      position_y: 202.0,
+      position_x: 101,
+      position_y: 202,
       visible: false,
-      status: "active",
+      status: 0,
       tag: "HQ",
-      locked: true
+      locked: true,
+      labels: "market,hub"
     }
   }
 
@@ -290,10 +302,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     responses: [
@@ -314,12 +326,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
@@ -334,10 +351,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     request_body: {"Systems+Connections upsert", "application/json", @batch_request_schema},
@@ -358,12 +375,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     request_body: {"System update request", "application/json", @system_update_schema},
     responses: ResponseSchemas.update_responses(@detail_response_schema)
@@ -381,10 +403,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ]
     ],
     request_body: {"Batch delete", "application/json", @batch_delete_schema},
@@ -428,12 +450,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
     parameters: [
       map_identifier: [
         in: :path,
-        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        description: "Map identifier (UUID or slug)",
         type: :string,
         required: true,
-        example: "my-map-slug or map UUID"
+        example: "map-slug or map UUID"
       ],
-      id: [in: :path, type: :string, required: true]
+      id: [
+        in: :path,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
     ],
     responses: ResponseSchemas.standard_responses(@delete_response_schema)
   def delete_single(conn, %{"id" => id}) do
@@ -462,7 +489,20 @@ defmodule WandererAppWeb.MapSystemAPIController do
     summary: "List Map Systems (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems instead",
-    parameters: [map_id: [in: :query]],
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ]
+    ],
     responses: ResponseSchemas.standard_responses(@list_response_schema)
   defdelegate list_systems(conn, params), to: __MODULE__, as: :index
 
@@ -470,7 +510,26 @@ defmodule WandererAppWeb.MapSystemAPIController do
     summary: "Show Map System (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems/:id instead",
-    parameters: [map_id: [in: :query], id: [in: :query]],
+    parameters: [
+      map_id: [
+        in: :query,
+        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      slug: [
+        in: :query,
+        description: "Map slug - Either map_id or slug must be provided, but not both",
+        type: :string,
+        required: false,
+      ],
+      id: [
+        in: :query,
+        description: "System ID",
+        type: :string,
+        required: true
+      ]
+    ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
   defdelegate show_system(conn, params), to: __MODULE__, as: :show
 

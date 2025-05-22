@@ -8,7 +8,6 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
 
   @moduledoc """
   API controller for managing map system structures.
-  Includes legacy structure-timers endpoint (deprecated).
   """
 
   # Inlined OpenAPI schema for a map system structure
@@ -174,16 +173,25 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
   end
 
   @doc """
-  @deprecated "Use /structures instead. This endpoint will be removed in a future release."
-  Legacy: Get structure timers for a map.
+  Get structure timers for a map.
   """
   operation :structure_timers,
-    summary: "Get structure timers for a map (Legacy)",
-    deprecated: true,
+    summary: "Get structure timers for a map",
     parameters: [
       map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true]
     ],
-    responses: [ok: {"Structure timers", "application/json", %Schema{type: :array, items: %Schema{type: :object}}}]
+    responses: [ok: {"Structure timers", "application/json", %Schema{
+      type: :object,
+      properties: %{
+        data: %Schema{
+          type: :array,
+          items: @structure_schema
+        }
+      },
+      example: %{
+        data: [@structure_schema.example]
+      }
+    }}]
   def structure_timers(conn, _params) do
     map_id = conn.assigns.map_id
     structures = MapOperations.list_structures(map_id)

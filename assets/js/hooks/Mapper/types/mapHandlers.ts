@@ -252,7 +252,6 @@ export enum OutCommand {
   addSystemComment = 'addSystemComment',
   deleteSystemComment = 'deleteSystemComment',
   getSystemComments = 'getSystemComments',
-  // toggleTrack = 'toggle_track',
   toggleFollow = 'toggle_follow',
   getCharacterInfo = 'getCharacterInfo',
   getCharactersTrackingInfo = 'getCharactersTrackingInfo',
@@ -270,7 +269,7 @@ export enum OutCommand {
   updateUserSettings = 'update_user_settings',
   unlinkSignature = 'unlink_signature',
   searchSystems = 'search_systems',
+  undoDeleteSignatures = 'undo_delete_signatures',
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;
+export type OutCommandHandler = <T = unknown>(event: { type: OutCommand; data: unknown }) => Promise<T>;
