@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.1](https://github.com/wanderer-industries/wanderer/compare/v1.65.0...v1.65.1) (2025-05-22)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added unsync map events timeout handling (force page refresh if outdated map events found)
+
 ## [v1.65.0](https://github.com/wanderer-industries/wanderer/compare/v1.64.8...v1.65.0) (2025-05-22)
 
 
