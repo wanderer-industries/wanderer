@@ -63,8 +63,6 @@ defmodule WandererApp.Api.MapPing do
       argument(:map_id, :string, allow_nil?: false)
       argument(:system_id, :string, allow_nil?: false)
 
-      get?(true)
-
       filter(expr(map_id == ^arg(:map_id) and system_id == ^arg(:system_id)))
     end
 
