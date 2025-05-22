@@ -2,6 +2,31 @@
 
 <!-- changelog -->
 
+## [v1.65.0](https://github.com/wanderer-industries/wanderer/compare/v1.64.8...v1.65.0) (2025-05-22)
+
+
+
+
+### Features:
+
+* default connections from c1 holes to medium size
+
+* support german and french signatures
+
+* improve signature undo process
+
+### Bug Fixes:
+
+* remove required id field from character schema
+
+* update openapi spec response types
+
+* fix issue with connection generation between k-space
+
+* Signature: Fixed signatures updates
+
+* update openapi spec for other apis
+
 ## [v1.64.8](https://github.com/wanderer-industries/wanderer/compare/v1.64.7...v1.64.8) (2025-05-20)
 
 
