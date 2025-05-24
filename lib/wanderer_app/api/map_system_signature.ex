@@ -25,9 +25,18 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     define(:by_system_id, action: :by_system_id, args: [:system_id])
     define(:by_system_id_all, action: :by_system_id_all, args: [:system_id])
-    define(:by_system_id_and_eve_ids, action: :by_system_id_and_eve_ids, args: [:system_id, :eve_ids])
+
+    define(:by_system_id_and_eve_ids,
+      action: :by_system_id_and_eve_ids,
+      args: [:system_id, :eve_ids]
+    )
+
     define(:by_linked_system_id, action: :by_linked_system_id, args: [:linked_system_id])
-    define(:by_deleted_and_updated_before!, action: :by_deleted_and_updated_before, args: [:deleted, :updated_before])
+
+    define(:by_deleted_and_updated_before!,
+      action: :by_deleted_and_updated_before,
+      args: [:deleted, :updated_before]
+    )
   end
 
   actions do
@@ -88,7 +97,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :group,
         :type,
         :custom_info,
-        :deleted
+        :deleted,
+        :update_forced_at
       ]
 
       primary? true
@@ -177,6 +187,10 @@ defmodule WandererApp.Api.MapSystemSignature do
       default false
     end
 
+    attribute :update_forced_at, :utc_datetime do
+      allow_nil? true
+    end
+
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
@@ -192,21 +206,20 @@ defmodule WandererApp.Api.MapSystemSignature do
   end
 
   @derive {Jason.Encoder,
-    only: [
-      :id,
-      :system_id,
-      :eve_id,
-      :character_eve_id,
-      :name,
-      :description,
-      :type,
-      :linked_system_id,
-      :kind,
-      :group,
-      :custom_info,
-      :deleted,
-      :inserted_at,
-      :updated_at
-    ]
-  }
+           only: [
+             :id,
+             :system_id,
+             :eve_id,
+             :character_eve_id,
+             :name,
+             :description,
+             :type,
+             :linked_system_id,
+             :kind,
+             :group,
+             :custom_info,
+             :deleted,
+             :inserted_at,
+             :updated_at
+           ]}
 end
