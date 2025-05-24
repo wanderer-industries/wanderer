@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.3](https://github.com/wanderer-industries/wanderer/compare/v1.65.2...v1.65.3) (2025-05-23)
+
+
+
+
+### Bug Fixes:
+
+* Signature: Fixed signature clenup
+
 ## [v1.65.2](https://github.com/wanderer-industries/wanderer/compare/v1.65.1...v1.65.2) (2025-05-23)
 
 
