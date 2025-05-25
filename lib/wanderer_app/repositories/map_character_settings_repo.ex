@@ -1,8 +1,9 @@
 defmodule WandererApp.MapCharacterSettingsRepo do
   use WandererApp, :repository
 
-  def create(settings),
-    do: WandererApp.Api.MapCharacterSettings.create(settings)
+  def create(settings) do
+    WandererApp.Api.MapCharacterSettings.create(settings)
+  end
 
   def get_tracked_by_map_filtered(map_id, character_ids),
     do:

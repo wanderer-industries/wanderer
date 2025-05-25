@@ -5,15 +5,16 @@ defmodule WandererApp.Api.MapCharacterSettings do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
-  @derive {Jason.Encoder, only: [
-    :id,
-    :map_id,
-    :character_id,
-    :tracked,
-    :followed,
-    :inserted_at,
-    :updated_at
-  ]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :map_id,
+             :character_id,
+             :tracked,
+             :followed,
+             :inserted_at,
+             :updated_at
+           ]}
 
   postgres do
     repo(WandererApp.Repo)
@@ -44,7 +45,31 @@ defmodule WandererApp.Api.MapCharacterSettings do
       :tracked
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read, :update, :destroy]
+
+    create :create do
+      primary? true
+      upsert? true
+      upsert_identity :uniq_map_character
+
+      upsert_fields [
+        :map_id,
+        :character_id
+      ]
+
+      accept [
+        :map_id,
+        :character_id,
+        :tracked,
+        :followed
+      ]
+
+      argument :map_id, :uuid, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
+    end
 
     read :by_map_filtered do
       argument(:map_id, :string, allow_nil?: false)

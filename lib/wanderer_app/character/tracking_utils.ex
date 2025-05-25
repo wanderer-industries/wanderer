@@ -121,7 +121,6 @@ defmodule WandererApp.Character.TrackingUtils do
             WandererApp.MapCharacterSettingsRepo.untrack(existing_settings)
 
           :ok = untrack([character], map_id, caller_pid)
-          :ok = remove_characters([character], map_id)
           {:ok, updated_settings}
         else
           {:ok, existing_settings}
@@ -132,7 +131,6 @@ defmodule WandererApp.Character.TrackingUtils do
         if track do
           {:ok, updated_settings} = WandererApp.MapCharacterSettingsRepo.track(existing_settings)
           :ok = track([character], map_id, true, caller_pid)
-          :ok = add_characters([character], map_id, true)
           {:ok, updated_settings}
         else
           {:ok, existing_settings}
@@ -149,7 +147,6 @@ defmodule WandererApp.Character.TrackingUtils do
             })
 
           :ok = track([character], map_id, true, caller_pid)
-          :ok = add_characters([character], map_id, true)
           {:ok, settings}
         else
           {:error, "Character settings not found"}
@@ -231,15 +228,15 @@ defmodule WandererApp.Character.TrackingUtils do
     with false <- is_nil(caller_pid) do
       character_ids = characters |> Enum.map(& &1.id)
 
-      characters
-      |> Enum.each(fn character ->
-        WandererAppWeb.Presence.update(caller_pid, map_id, character.id, %{
+      character_ids
+      |> Enum.each(fn character_id ->
+        WandererAppWeb.Presence.update(caller_pid, map_id, character_id, %{
           tracked: false,
           from: DateTime.utc_now()
         })
       end)
 
-      WandererApp.Map.Server.untrack_characters(map_id, character_ids)
+      # WandererApp.Map.Server.untrack_characters(map_id, character_ids)
 
       :ok
     else
@@ -249,19 +246,19 @@ defmodule WandererApp.Character.TrackingUtils do
     end
   end
 
-  def add_characters([], _map_id, _track_character), do: :ok
+  # def add_characters([], _map_id, _track_character), do: :ok
 
-  def add_characters([character | characters], map_id, track_character) do
-    :ok = WandererApp.Map.Server.add_character(map_id, character, track_character)
-    add_characters(characters, map_id, track_character)
-  end
+  # def add_characters([character | characters], map_id, track_character) do
+  #   :ok = WandererApp.Map.Server.add_character(map_id, character, track_character)
+  #   add_characters(characters, map_id, track_character)
+  # end
 
-  def remove_characters([], _map_id), do: :ok
+  # def remove_characters([], _map_id), do: :ok
 
-  def remove_characters([character | characters], map_id) do
-    :ok = WandererApp.Map.Server.remove_character(map_id, character.id)
-    remove_characters(characters, map_id)
-  end
+  # def remove_characters([character | characters], map_id) do
+  #   :ok = WandererApp.Map.Server.remove_character(map_id, character.id)
+  #   remove_characters(characters, map_id)
+  # end
 
   def get_main_character(
         nil,

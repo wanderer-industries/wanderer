@@ -451,14 +451,6 @@ defmodule WandererApp.Map.Server.Impl do
       |> WandererApp.Map.update_subscription_settings!(subscription_settings)
       |> WandererApp.Map.add_systems!(systems)
       |> WandererApp.Map.add_connections!(connections)
-      |> WandererApp.Map.add_characters!(characters)
-
-    character_ids =
-      map_id
-      |> WandererApp.Map.get_map!()
-      |> Map.get(:characters, [])
-
-    WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
     %{state | map: map, map_opts: map_options(options)}
   end

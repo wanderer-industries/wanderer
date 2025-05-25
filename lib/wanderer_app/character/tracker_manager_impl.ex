@@ -13,7 +13,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         }
 
   @garbage_collection_interval :timer.minutes(15)
-  @untrack_characters_interval :timer.minutes(5)
+  @untrack_characters_interval :timer.minutes(1)
   @inactive_character_timeout :timer.minutes(5)
 
   @logger Application.compile_env(:wanderer_app, :logger)
