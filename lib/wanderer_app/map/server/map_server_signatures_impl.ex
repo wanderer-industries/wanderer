@@ -108,6 +108,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
               :kind,
               :group,
               :type,
+              :character_eve_id,
               :custom_info,
               :deleted,
               :update_forced_at
