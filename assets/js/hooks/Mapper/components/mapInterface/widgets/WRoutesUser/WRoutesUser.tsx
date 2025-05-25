@@ -8,6 +8,7 @@ import {
 import { useCallback, useRef } from 'react';
 import { RoutesWidget } from '@/hooks/Mapper/components/mapInterface/widgets';
 import { useMapEventListener } from '@/hooks/Mapper/events';
+import { useLoadRoutes } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/hooks';
 
 export const WRoutesUser = () => {
   const {
@@ -61,9 +62,17 @@ export const WRoutesUser = () => {
     [userHubs, outCommand],
   );
 
+  // INFO: User routes loading only if open widget with user routes
+  const { loading, setLoading } = useLoadRoutes({
+    data: settingsRoutes,
+    hubs: userHubs,
+    loadRoutesCommand,
+    routesList: userRoutes,
+  });
+
   useMapEventListener(event => {
     if (event.name === Commands.userRoutes) {
-      ref.current?.stopLoading();
+      setLoading(false);
     }
     return true;
   });
@@ -76,7 +85,7 @@ export const WRoutesUser = () => {
       update={settingsRoutesUpdate}
       hubs={userHubs}
       routesList={userRoutes}
-      loadRoutesCommand={loadRoutesCommand}
+      loading={loading}
       addHubCommand={addHubCommand}
       toggleHubCommand={toggleHubCommand}
       isRestricted

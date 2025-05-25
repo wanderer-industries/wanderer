@@ -1,5 +1,5 @@
 import { Map, MAP_ROOT_ID } from '@/hooks/Mapper/components/map/Map.tsx';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
@@ -10,7 +10,6 @@ import {
   SystemLinkSignatureDialog,
   SystemSettingsDialog,
 } from '@/hooks/Mapper/components/mapInterface/components';
-import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
@@ -27,9 +26,12 @@ import {
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 import { useHotkey } from '../../hooks/useHotkey';
-import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { PingType } from '@/hooks/Mapper/types/ping.ts';
 import { SystemPingDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemPingDialog';
+import { MiniMapPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { MINIMAP_PLACEMENT_MAP } from '@/hooks/Mapper/constants.ts';
+import type { PanelPosition } from '@reactflow/core';
+import { MINI_MAP_PLACEMENT_OFFSETS } from './constants.ts';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
@@ -51,13 +53,13 @@ export const MapWrapper = () => {
 
   const {
     isShowMenu,
-    isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
     isShowKSpace,
     isThickConnections,
     isShowBackgroundPattern,
     isShowUnsplashedSignatures,
     isSoftBackground,
     theme,
+    minimapPlacement,
   } = interfaceSettings;
 
   const { deleteSystems } = useDeleteSystems();
@@ -111,6 +113,8 @@ export const MapWrapper = () => {
     event => {
       switch (event.type) {
         case OutCommand.openSettings:
+          // TODO - need fix it
+          // @ts-ignore
           setOpenSettings(event.data.system_id);
           break;
         default:
@@ -143,11 +147,13 @@ export const MapWrapper = () => {
   const handleDeleteSelected = useCallback(() => {
     const restDel = getNodes()
       .filter(x => x.selected && !x.data.locked)
+      .filter(x => !pings.some(p => x.data.id === p.solar_system_id))
       .map(x => x.data.id);
+
     if (restDel.length > 0) {
       ref.current.deleteSystems(restDel);
     }
-  }, [getNodes]);
+  }, [getNodes, pings]);
 
   const onAddSystem: OnMapAddSystemCallback = useCallback(({ coordinates }) => {
     setOpenAddSystem(coordinates);
@@ -213,6 +219,22 @@ export const MapWrapper = () => {
     outCommand({ type: OutCommand.loadSignatures, data: {} });
   }, [isShowUnsplashedSignatures, systems]);
 
+  const { showMinimap, minimapPosition, minimapClasses } = useMemo(() => {
+    const rawPlacement = minimapPlacement == null ? MiniMapPlacement.rightBottom : minimapPlacement;
+
+    if (rawPlacement === MiniMapPlacement.hide) {
+      return { minimapPosition: undefined, showMinimap: false, minimapClasses: '' };
+    }
+
+    const mmClasses = MINI_MAP_PLACEMENT_OFFSETS[rawPlacement];
+
+    return {
+      minimapPosition: MINIMAP_PLACEMENT_MAP[rawPlacement] as PanelPosition,
+      showMinimap: true,
+      minimapClasses: isShowMenu ? mmClasses.default : mmClasses.withLeftMenu,
+    };
+  }, [minimapPlacement, isShowMenu]);
+
   return (
     <>
       <Map
@@ -222,8 +244,8 @@ export const MapWrapper = () => {
         onConnectionInfoClick={handleConnectionDbClick}
         onSystemContextMenu={handleSystemContextMenu}
         onSelectionContextMenu={handleSystemMultipleContext}
-        minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
-        isShowMinimap={isShowMinimap}
+        minimapClasses={minimapClasses}
+        isShowMinimap={showMinimap}
         showKSpaceBG={isShowKSpace}
         isThickConnections={isThickConnections}
         isShowBackgroundPattern={isShowBackgroundPattern}
@@ -231,6 +253,7 @@ export const MapWrapper = () => {
         theme={theme}
         pings={pings}
         onAddSystem={onAddSystem}
+        minimapPlacement={minimapPosition}
       />
 
       {openSettings != null && (

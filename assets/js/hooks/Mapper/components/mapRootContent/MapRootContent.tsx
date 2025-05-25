@@ -13,7 +13,7 @@ import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandle
 import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types';
-import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components/PingsInterface/PingsInterface.tsx';
+import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
 
 export interface MapRootContentProps {}
 

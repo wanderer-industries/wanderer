@@ -19,6 +19,8 @@ import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { PingType } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import clsx from 'clsx';
+import { MenuItem } from 'primereact/menuitem';
+import { MenuItemWithInfo, WdMenuItem } from '@/hooks/Mapper/components/ui-kit';
 
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
@@ -46,12 +48,23 @@ export const useContextMenuSystemItems = ({
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
 
   const {
-    data: { pings },
+    data: { pings, isSubscriptionActive },
   } = useMapRootState();
 
   const ping = useMemo(() => (pings.length === 1 ? pings[0] : undefined), [pings]);
+  const isShowPingBtn = useMemo(() => {
+    if (!isSubscriptionActive) {
+      return false;
+    }
 
-  return useMemo(() => {
+    if (pings.length === 0) {
+      return true;
+    }
+
+    return pings[0].solar_system_id === systemId;
+  }, [isSubscriptionActive, pings, systemId]);
+
+  return useMemo((): MenuItem[] => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
     const systemStaticInfo = getSystemStaticInfo(systemId)!;
 
@@ -95,12 +108,29 @@ export const useContextMenuSystemItems = ({
 
       { separator: true },
       {
-        label: !hasPing ? 'Ping: RALLY' : 'Cancel: RALLY',
-        icon: clsx({
-          'pi text-cyan-400 hero-signal': !hasPing,
-          'pi text-red-400 hero-signal-slash': hasPing,
-        }),
         command: () => onTogglePing(PingType.Rally, systemId, hasPing),
+        disabled: !isShowPingBtn,
+        template: () => {
+          const iconClasses = clsx({
+            'pi text-cyan-400 hero-signal': !hasPing,
+            'pi text-red-400 hero-signal-slash': hasPing,
+          });
+
+          if (isShowPingBtn) {
+            return <WdMenuItem icon={iconClasses}>{!hasPing ? 'Ping: RALLY' : 'Cancel: RALLY'}</WdMenuItem>;
+          }
+
+          return (
+            <MenuItemWithInfo
+              infoTitle="Locked. Ping can be set only for one system."
+              infoClass="pi-lock text-stone-500 mr-[12px]"
+            >
+              <WdMenuItem disabled icon={iconClasses}>
+                {!hasPing ? 'Ping: RALLY' : 'Cancel: RALLY'}
+              </WdMenuItem>
+            </MenuItemWithInfo>
+          );
+        },
       },
       ...(canLockSystem
         ? [
@@ -116,9 +146,24 @@ export const useContextMenuSystemItems = ({
         ? [
             { separator: true },
             {
-              label: 'Delete',
-              icon: `text-red-400 ${PrimeIcons.TRASH}`,
               command: onDeleteSystem,
+              disabled: hasPing,
+              template: () => {
+                if (!hasPing) {
+                  return <WdMenuItem icon="text-red-400 pi pi-trash">Delete</WdMenuItem>;
+                }
+
+                return (
+                  <MenuItemWithInfo
+                    infoTitle="Locked. System can not be deleted until ping set."
+                    infoClass="pi-lock text-stone-500 mr-[12px]"
+                  >
+                    <WdMenuItem disabled icon="text-red-400 pi pi-trash">
+                      Delete
+                    </WdMenuItem>
+                  </MenuItemWithInfo>
+                );
+              },
             },
           ]
         : []),
@@ -133,8 +178,6 @@ export const useContextMenuSystemItems = ({
     getUserRoutes,
     hubs,
     onHubToggle,
-    userHubs,
-    onUserHubToggle,
     canLockSystem,
     onLockToggle,
     canDeleteSystem,
@@ -142,5 +185,6 @@ export const useContextMenuSystemItems = ({
     onOpenSettings,
     onTogglePing,
     ping,
+    isShowPingBtn,
   ]);
 };

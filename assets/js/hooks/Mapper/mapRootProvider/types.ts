@@ -3,15 +3,31 @@ export enum AvailableThemes {
   pathfinder = 'pathfinder',
 }
 
+export enum MiniMapPlacement {
+  rightTop = 'rightTop',
+  rightBottom = 'rightBottom',
+  leftTop = 'leftTop',
+  leftBottom = 'leftBottom',
+  hide = 'hide',
+}
+
+export enum PingsPlacement {
+  rightTop = 'rightTop',
+  rightBottom = 'rightBottom',
+  leftTop = 'leftTop',
+  leftBottom = 'leftBottom',
+}
+
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
-  isShowMinimap: boolean;
   isShowKSpace: boolean;
   isThickConnections: boolean;
   isShowUnsplashedSignatures: boolean;
   isShowBackgroundPattern: boolean;
   isSoftBackground: boolean;
   theme: AvailableThemes;
+  minimapPlacement: MiniMapPlacement;
+  pingsPlacement: PingsPlacement;
 };
 
 export type RoutesType = {

@@ -1,6 +1,6 @@
 import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
 import { InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
-import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { AvailableThemes, MiniMapPlacement, PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
@@ -14,13 +14,13 @@ export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.delete_connection_with_sigs,
 ];
 
-export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
-  {
-    prop: InterfaceStoredSettingsProps.isShowMinimap,
-    label: 'Show Minimap',
-    type: 'checkbox',
-  },
-];
+// export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
+//   // {
+//   //   prop: InterfaceStoredSettingsProps.isShowMinimap,
+//   //   label: 'Show Minimap',
+//   //   type: 'checkbox',
+//   // },
+// ];
 
 export const SYSTEMS_CHECKBOXES_PROPS: SettingsListItem[] = [
   {
@@ -89,4 +89,33 @@ export const THEME_SETTING: SettingsListItem = {
   label: 'Theme',
   type: 'dropdown',
   options: THEME_OPTIONS,
+};
+
+export const MINI_MAP_PLACEMENT_OPTIONS = [
+  { label: 'Right Bottom', value: MiniMapPlacement.rightBottom },
+  { label: 'Right Top', value: MiniMapPlacement.rightTop },
+  { label: 'Left Top', value: MiniMapPlacement.leftTop },
+  { label: 'Left Bottom', value: MiniMapPlacement.leftBottom },
+  { label: 'Hide', value: MiniMapPlacement.hide },
+];
+
+export const MINI_MAP_PLACEMENT: SettingsListItem = {
+  prop: 'minimapPlacement',
+  label: 'Minimap Placement',
+  type: 'dropdown',
+  options: MINI_MAP_PLACEMENT_OPTIONS,
+};
+
+export const PINGS_PLACEMENT_OPTIONS = [
+  { label: 'Right Top', value: PingsPlacement.rightTop },
+  { label: 'Left Top', value: PingsPlacement.leftTop },
+  { label: 'Left Bottom', value: PingsPlacement.leftBottom },
+  { label: 'Right Bottom', value: PingsPlacement.rightBottom },
+];
+
+export const PINGS_PLACEMENT: SettingsListItem = {
+  prop: 'pingsPlacement',
+  label: 'Pings Placement',
+  type: 'dropdown',
+  options: PINGS_PLACEMENT_OPTIONS,
 };

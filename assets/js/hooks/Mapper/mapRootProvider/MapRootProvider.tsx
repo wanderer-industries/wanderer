@@ -22,6 +22,7 @@ import { DetailedKill } from '../types/kills';
 import { InterfaceStoredSettings, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { DEFAULT_ROUTES_SETTINGS, STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { useMapUserSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useMapUserSettings.ts';
+import { useGlobalHooks } from '@/hooks/Mapper/mapRootProvider/hooks/useGlobalHooks.ts';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -34,6 +35,7 @@ export type MapRootData = MapUnionTypes & {
     loading?: boolean;
   };
   trackingCharactersData: TrackingCharacter[];
+  loadingPublicRoutes: boolean;
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -67,11 +69,11 @@ const INITIAL_DATA: MapRootData = {
   mainCharacterEveId: null,
   followingCharacterEveId: null,
   pings: [],
+  loadingPublicRoutes: false,
 };
 
 export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
-  isShowMinimap = 'isShowMinimap',
   isShowKSpace = 'isShowKSpace',
   isThickConnections = 'isThickConnections',
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
@@ -144,6 +146,7 @@ type MapRootProviderProps = {
 // eslint-disable-next-line react/display-name
 const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: ForwardedRef<any>) => {
   useMapRootHandlers(fwdRef);
+  useGlobalHooks();
   return <>{children}</>;
 });
 

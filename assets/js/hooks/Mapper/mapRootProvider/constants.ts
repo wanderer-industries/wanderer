@@ -1,14 +1,21 @@
-import { AvailableThemes, InterfaceStoredSettings, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import {
+  AvailableThemes,
+  InterfaceStoredSettings,
+  MiniMapPlacement,
+  PingsPlacement,
+  RoutesType,
+} from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
-  isShowMinimap: true,
   isShowKSpace: false,
   isThickConnections: false,
   isShowUnsplashedSignatures: false,
   isShowBackgroundPattern: true,
   isSoftBackground: false,
   theme: AvailableThemes.default,
+  pingsPlacement: PingsPlacement.rightTop,
+  minimapPlacement: MiniMapPlacement.rightBottom,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {

@@ -1,9 +1,12 @@
 import classes from './MarkdownComment.module.scss';
 import clsx from 'clsx';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { InfoDrawer, TimeAgo, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
-import remarkBreaks from 'remark-breaks';
+import {
+  InfoDrawer,
+  MarkdownTextViewer,
+  TimeAgo,
+  TooltipPosition,
+  WdImgButton,
+} from '@/hooks/Mapper/components/ui-kit';
 import { useGetCacheCharacter } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useCallback, useRef, useState } from 'react';
 import { WdTransition } from '@/hooks/Mapper/components/ui-kit/WdTransition/WdTransition.tsx';
@@ -13,7 +16,6 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 
 const TOOLTIP_PROPS = { content: 'Remove comment', position: TooltipPosition.top };
-const REMARK_PLUGINS = [remarkGfm, remarkBreaks];
 
 export interface MarkdownCommentProps {
   text: string;
@@ -79,7 +81,7 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
           </div>
         }
       >
-        <Markdown remarkPlugins={REMARK_PLUGINS}>{text}</Markdown>
+        <MarkdownTextViewer>{text}</MarkdownTextViewer>
       </InfoDrawer>
 
       <ConfirmPopup

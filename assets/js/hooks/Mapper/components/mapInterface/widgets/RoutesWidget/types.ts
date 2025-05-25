@@ -10,17 +10,14 @@ export type RoutesWidgetProps = {
   update: (d: RoutesType) => void;
   hubs: string[];
   routesList: RoutesList | undefined;
+  loading: boolean;
 
-  loadRoutesCommand: LoadRoutesCommand;
   addHubCommand: AddHubCommand;
   toggleHubCommand: ToggleHubCommand;
   isRestricted?: boolean;
 };
 
-export type RoutesProviderInnerProps = RoutesWidgetProps & {
-  loading: boolean;
-  setLoading(loading: boolean): void;
-};
+export type RoutesProviderInnerProps = RoutesWidgetProps;
 
 export type RoutesImperativeHandle = {
   stopLoading: () => void;

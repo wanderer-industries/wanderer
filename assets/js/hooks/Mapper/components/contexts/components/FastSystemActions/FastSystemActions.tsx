@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { LayoutEventBlocker, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { LayoutEventBlocker, TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
 
 import classes from './FastSystemActions.module.scss';
@@ -59,9 +59,21 @@ export const FastSystemActions = ({
   return (
     <LayoutEventBlocker className={clsx('flex px-2 gap-2 justify-between items-center h-full')}>
       <div className={clsx('flex gap-2 items-center h-full', classes.Links)}>
-        <WdImgButton tooltip={{ content: 'Open zkillboard' }} source={ZKB_ICON} onClick={handleOpenZKB} />
-        <WdImgButton tooltip={{ content: 'Open Anoikis' }} source={ANOIK_ICON} onClick={handleOpenAnoikis} />
-        <WdImgButton tooltip={{ content: 'Open Dotlan' }} source={DOTLAN_ICON} onClick={handleOpenDotlan} />
+        <WdImgButton
+          tooltip={{ position: TooltipPosition.top, content: 'Open zkillboard' }}
+          source={ZKB_ICON}
+          onClick={handleOpenZKB}
+        />
+        <WdImgButton
+          tooltip={{ position: TooltipPosition.top, content: 'Open Anoikis' }}
+          source={ANOIK_ICON}
+          onClick={handleOpenAnoikis}
+        />
+        <WdImgButton
+          tooltip={{ position: TooltipPosition.top, content: 'Open Dotlan' }}
+          source={DOTLAN_ICON}
+          onClick={handleOpenDotlan}
+        />
       </div>
 
       <div className="flex gap-2 items-center pl-1">
@@ -69,14 +81,14 @@ export const FastSystemActions = ({
           textSize={WdImageSize.off}
           className={PrimeIcons.COPY}
           onClick={copySystemNameToClipboard}
-          tooltip={{ content: 'Copy system name' }}
+          tooltip={{ position: TooltipPosition.top, content: 'Copy system name' }}
         />
         {showEdit && (
           <WdImgButton
             textSize={WdImageSize.off}
             className="pi pi-pen-to-square text-base"
             onClick={onOpenSettings}
-            tooltip={{ content: 'Edit system name and description' }}
+            tooltip={{ position: TooltipPosition.top, content: 'Edit system name and description' }}
           />
         )}
       </div>

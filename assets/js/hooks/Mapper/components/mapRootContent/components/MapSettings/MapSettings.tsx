@@ -4,13 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
-import {
-  CONNECTIONS_CHECKBOXES_PROPS,
-  SIGNATURES_CHECKBOXES_PROPS,
-  SYSTEMS_CHECKBOXES_PROPS,
-  THEME_SETTING,
-  UI_CHECKBOXES_PROPS,
-} from './constants.ts';
+import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
 import {
   MapSettingsProvider,
   useMapSettings,
@@ -34,6 +28,8 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   refVars.current = { outCommand, onHide, visible };
 
   const handleShow = useCallback(async () => {
+    // TODO: need fix it - add type?
+    // @ts-ignore
     const { user_settings } = await refVars.current.outCommand({
       type: OutCommand.getUserSettings,
       data: null,
@@ -88,16 +84,8 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
               {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
             </TabPanel>
 
-            <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
-              {renderSettingsList(UI_CHECKBOXES_PROPS)}
-            </TabPanel>
-
             <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>
               <WidgetsSettings />
-            </TabPanel>
-
-            <TabPanel header="Theme" headerClassName={styles.verticalTabHeader}>
-              {renderSettingItem(THEME_SETTING)}
             </TabPanel>
           </TabView>
         </div>

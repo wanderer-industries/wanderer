@@ -71,7 +71,10 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
           classes.RootCustomNode,
           nodeVars.regionClass && classes[nodeVars.regionClass],
           nodeVars.status !== undefined ? classes[STATUS_CLASSES[nodeVars.status]] : '',
-          { [classes.selected]: nodeVars.selected },
+          {
+            [classes.selected]: nodeVars.selected,
+            [classes.rally]: nodeVars.isRally,
+          },
         )}
         onMouseDownCapture={e => nodeVars.dbClick(e)}
       >

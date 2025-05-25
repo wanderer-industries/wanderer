@@ -27,15 +27,6 @@ export const RightBar = ({
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 
-  const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
-
-  const toggleMinimap = useCallback(() => {
-    setInterfaceSettings(x => ({
-      ...x,
-      isShowMinimap: !x.isShowMinimap,
-    }));
-  }, [setInterfaceSettings]);
-
   const toggleKSpace = useCallback(() => {
     setInterfaceSettings(x => ({
       ...x,
@@ -110,16 +101,6 @@ export const RightBar = ({
             onClick={toggleKSpace}
           >
             <i className={interfaceSettings.isShowKSpace ? 'hero-cloud-solid' : 'hero-cloud'}></i>
-          </button>
-        </WdTooltipWrapper>
-
-        <WdTooltipWrapper content={isShowMinimap ? 'Hide minimap' : 'Show minimap'} position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={toggleMinimap}
-          >
-            <i className={isShowMinimap ? 'pi pi-eye' : 'pi pi-eye-slash'}></i>
           </button>
         </WdTooltipWrapper>
 
