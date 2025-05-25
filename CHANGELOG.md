@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.4](https://github.com/wanderer-industries/wanderer/compare/v1.65.3...v1.65.4) (2025-05-24)
+
+
+
+
+### Bug Fixes:
+
+* Signature: Force signature update even if there are no any changes
+
 ## [v1.65.3](https://github.com/wanderer-industries/wanderer/compare/v1.65.2...v1.65.3) (2025-05-23)
 
 
