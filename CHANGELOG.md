@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.65.5](https://github.com/wanderer-industries/wanderer/compare/v1.65.4...v1.65.5) (2025-05-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map character tracking issues
+
+* Signature: Update restored signature character
+
 ## [v1.65.4](https://github.com/wanderer-industries/wanderer/compare/v1.65.3...v1.65.4) (2025-05-24)
 
 
