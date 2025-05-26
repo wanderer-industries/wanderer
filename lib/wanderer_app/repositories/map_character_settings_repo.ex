@@ -6,11 +6,15 @@ defmodule WandererApp.MapCharacterSettingsRepo do
            map_id: map_id,
            character_id: character_id
          }) do
-      {:ok, settings} ->
+      {:ok, settings} when not is_nil(settings) ->
         {:ok, settings}
 
-      {:error, reason} ->
-        {:ok, nil}
+      _ ->
+        WandererApp.Api.MapCharacterSettings.create(%{
+          character_id: character_id,
+          map_id: map_id,
+          tracked: false
+        })
     end
   end
 
@@ -24,7 +28,7 @@ defmodule WandererApp.MapCharacterSettingsRepo do
         settings
         |> WandererApp.Api.MapCharacterSettings.update(updated_settings)
 
-      {:error, reason} ->
+      _ ->
         {:ok, nil}
     end
   end
