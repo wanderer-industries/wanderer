@@ -7,6 +7,15 @@ defmodule WandererApp.Character do
   @read_character_wallet_scope "esi-wallet.read_character_wallet.v1"
   @read_corp_wallet_scope "esi-wallet.read_corporation_wallets.v1"
 
+  @default_character_tracking_data %{
+    solar_system_id: nil,
+    structure_id: nil,
+    station_id: nil,
+    ship: nil,
+    ship_name: nil,
+    ship_item_id: nil
+  }
+
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "characters-#{character_eve_id}"
@@ -41,6 +50,32 @@ defmodule WandererApp.Character do
 
       _ ->
         Logger.error("Failed to get character #{character_id}")
+        nil
+    end
+  end
+
+  def get_map_character(map_id, character_id) do
+    case get_character(character_id) do
+      {:ok, character} ->
+        {:ok,
+         character
+         |> maybe_merge_map_character_settings(
+           map_id,
+           WandererApp.Character.TrackerManager.Impl.character_is_present(map_id, character_id)
+         )}
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  def get_map_character!(map_id, character_id) do
+    case get_map_character(map_id, character_id) do
+      {:ok, character} ->
+        character
+
+      _ ->
+        Logger.error("Failed to get map character #{map_id} #{character_id}")
         nil
     end
   end
@@ -146,7 +181,7 @@ defmodule WandererApp.Character do
            params: opts[:params]
          ) do
       {:ok, result} ->
-        {:ok, result |> _prepare_search_results()}
+        {:ok, result |> prepare_search_results()}
 
       {:error, error} ->
         Logger.warning("#{__MODULE__} failed search: #{inspect(error)}")
@@ -208,7 +243,28 @@ defmodule WandererApp.Character do
     end
   end
 
-  defp _prepare_search_results(result) do
+  defp maybe_merge_map_character_settings(character, map_id, true), do: character
+
+  defp maybe_merge_map_character_settings(
+         %{id: character_id} = character,
+         map_id,
+         _character_is_present
+       ) do
+    WandererApp.MapCharacterSettingsRepo.get(map_id, character_id)
+    |> case do
+      {:ok, settings} when not is_nil(settings) ->
+        character
+        |> Map.put(:online, false)
+        |> Map.merge(settings)
+
+      _ ->
+        character
+        |> Map.put(:online, false)
+        |> Map.merge(@default_character_tracking_data)
+    end
+  end
+
+  defp prepare_search_results(result) do
     {:ok, characters} =
       _load_eve_info(Map.get(result, "character"), :get_character_info, &_map_character_info/1)
 

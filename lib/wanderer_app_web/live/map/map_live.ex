@@ -4,7 +4,7 @@ defmodule WandererAppWeb.MapLive do
 
   require Logger
 
-  @server_event_unsync_timeout :timer.minutes(5)
+  @server_event_unsync_timeout :timer.minutes(2)
 
   @impl true
   def mount(%{"slug" => map_slug} = _params, _session, socket) when is_connected?(socket) do

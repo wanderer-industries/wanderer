@@ -2,6 +2,87 @@
 
 <!-- changelog -->
 
+## [v1.65.6](https://github.com/wanderer-industries/wanderer/compare/v1.65.5...v1.65.6) (2025-05-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map character tracking issues
+
+## [v1.65.5](https://github.com/wanderer-industries/wanderer/compare/v1.65.4...v1.65.5) (2025-05-26)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map character tracking issues
+
+* Signature: Update restored signature character
+
+## [v1.65.4](https://github.com/wanderer-industries/wanderer/compare/v1.65.3...v1.65.4) (2025-05-24)
+
+
+
+
+### Bug Fixes:
+
+* Signature: Force signature update even if there are no any changes
+
+## [v1.65.3](https://github.com/wanderer-industries/wanderer/compare/v1.65.2...v1.65.3) (2025-05-23)
+
+
+
+
+### Bug Fixes:
+
+* Signature: Fixed signature clenup
+
+## [v1.65.2](https://github.com/wanderer-industries/wanderer/compare/v1.65.1...v1.65.2) (2025-05-23)
+
+
+
+
+### Bug Fixes:
+
+* Signature: Fixed signature updates
+
+## [v1.65.1](https://github.com/wanderer-industries/wanderer/compare/v1.65.0...v1.65.1) (2025-05-22)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added unsync map events timeout handling (force page refresh if outdated map events found)
+
+## [v1.65.0](https://github.com/wanderer-industries/wanderer/compare/v1.64.8...v1.65.0) (2025-05-22)
+
+
+
+
+### Features:
+
+* default connections from c1 holes to medium size
+
+* support german and french signatures
+
+* improve signature undo process
+
+### Bug Fixes:
+
+* remove required id field from character schema
+
+* update openapi spec response types
+
+* fix issue with connection generation between k-space
+
+* Signature: Fixed signatures updates
+
+* update openapi spec for other apis
+
 ## [v1.64.8](https://github.com/wanderer-industries/wanderer/compare/v1.64.7...v1.64.8) (2025-05-20)
 
 

@@ -11,19 +11,19 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
     Task.start_link(fn ->
       with :ok <- map_id |> WandererApp.Map.add_character(character),
-           {:ok, _} <-
+           {:ok, _settings} <-
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
                tracked: track_character
              }),
-           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_added, character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
         _error ->
-          {:ok, character} = WandererApp.Character.get_character(character_id)
+          {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
           Impl.broadcast!(map_id, :character_added, character)
           :ok
       end
@@ -35,7 +35,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def remove_character(map_id, character_id) do
     Task.start_link(fn ->
       with :ok <- WandererApp.Map.remove_character(map_id, character_id),
-           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_removed, character)
 
         :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
@@ -64,7 +64,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         map_tracked_character_ids
         |> Enum.filter(fn character -> character in tracked_characters end)
 
-      {:ok, old_map_tracked_characters} = WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
+      {:ok, old_map_tracked_characters} =
+        WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
+
       characters_to_remove = old_map_tracked_characters -- map_active_tracked_characters
 
       {:ok, invalidate_character_ids} =
@@ -73,7 +75,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           []
         )
 
-      WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", (invalidate_character_ids ++ characters_to_remove) |> Enum.uniq())
+      WandererApp.Cache.insert(
+        "map_#{map_id}:invalidate_character_ids",
+        (invalidate_character_ids ++ characters_to_remove) |> Enum.uniq()
+      )
+
       WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
 
       :ok
@@ -84,11 +90,25 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     do:
       character_ids
       |> Enum.each(fn character_id ->
-        WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-          map_id: map_id,
-          track: false
-        })
+        if is_character_map_active?(map_id, character_id) do
+          WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+            map_id: map_id,
+            track: false
+          })
+
+          Impl.broadcast!(map_id, :untrack_character, character_id)
+        end
       end)
+
+  def is_character_map_active?(map_id, character_id) do
+    case WandererApp.Character.get_character_state(character_id) do
+      {:ok, %{active_maps: active_maps}} ->
+        map_id in active_maps
+
+      _ ->
+        false
+    end
+  end
 
   def cleanup_characters(map_id, owner_id) do
     {:ok, invalidate_character_ids} =
@@ -265,7 +285,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp update_character(map_id, character_id) do
-    {:ok, character} = WandererApp.Character.get_character(character_id)
+    {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
     Impl.broadcast!(map_id, :character_updated, character)
   end
 
@@ -315,15 +335,18 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     is_nil(structure_id) and is_nil(station_id)
   end
 
-  defp track_character(map_id, character_id),
-    do:
-      WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-        map_id: map_id,
-        track: true,
-        track_online: true,
-        track_location: true,
-        track_ship: true
-      })
+  defp track_character(map_id, character_id) do
+    {:ok, character} = WandererApp.Character.get_character(character_id)
+    add_character(%{map_id: map_id}, character, true)
+
+    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+      map_id: map_id,
+      track: true,
+      track_online: true,
+      track_location: true,
+      track_ship: true
+    })
+  end
 
   defp maybe_update_online(map_id, character_id) do
     with {:ok, old_online} <-
@@ -394,8 +417,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     {:ok, old_structure_id} =
       WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:structure_id")
 
-    {:ok,
-      %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
+    {:ok, %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
       WandererApp.Character.get_character(character_id)
 
     WandererApp.Cache.insert(
@@ -413,14 +435,15 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       structure_id
     )
 
-    if solar_system_id != old_solar_system_id || structure_id != old_structure_id || station_id != old_station_id do
+    if solar_system_id != old_solar_system_id || structure_id != old_structure_id ||
+         station_id != old_station_id do
       [
         {:character_location,
-          %{
-            solar_system_id: solar_system_id,
-            structure_id: structure_id,
-            station_id: station_id
-          }, %{solar_system_id: old_solar_system_id}}
+         %{
+           solar_system_id: solar_system_id,
+           structure_id: structure_id,
+           station_id: station_id
+         }, %{solar_system_id: old_solar_system_id}}
       ]
     else
       [:skip]

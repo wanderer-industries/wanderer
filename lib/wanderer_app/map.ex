@@ -96,7 +96,7 @@ defmodule WandererApp.Map do
       map_id
       |> get_map!()
       |> Map.get(:characters, [])
-      |> Enum.map(&WandererApp.Character.get_character!(&1))
+      |> Enum.map(fn character_id -> WandererApp.Character.get_map_character!(map_id, character_id) end)
 
   def list_systems(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:systems, Map.new()) |> Map.values()}

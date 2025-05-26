@@ -25,7 +25,10 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       )
       when not is_nil(char_id) do
     with {:ok, system} <-
-           MapSystem.read_by_map_and_solar_system(%{map_id: map_id, solar_system_id: system_solar_id}),
+           MapSystem.read_by_map_and_solar_system(%{
+             map_id: map_id,
+             solar_system_id: system_solar_id
+           }),
          {:ok, %{eve_id: char_eve_id}} <- Character.get_character(char_id) do
       do_update_signatures(
         state,
@@ -84,9 +87,11 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     # 3. Additions & restorations
     added_eve_ids = Enum.map(added_sigs, & &1.eve_id)
-    existing_index = MapSystemSignature.by_system_id_all!(system.id)
-    |> Enum.filter(&(&1.eve_id in added_eve_ids))
-    |> Map.new(&{&1.eve_id, &1})
+
+    existing_index =
+      MapSystemSignature.by_system_id_all!(system.id)
+      |> Enum.filter(&(&1.eve_id in added_eve_ids))
+      |> Map.new(&{&1.eve_id, &1})
 
     added_sigs
     |> Enum.each(fn sig ->
@@ -97,7 +102,17 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         %MapSystemSignature{deleted: true} = deleted_sig ->
           MapSystemSignature.update!(
             deleted_sig,
-            Map.take(sig, [:name, :description, :kind, :group, :type, :custom_info, :deleted])
+            Map.take(sig, [
+              :name,
+              :description,
+              :kind,
+              :group,
+              :type,
+              :character_eve_id,
+              :custom_info,
+              :deleted,
+              :update_forced_at
+            ])
           )
 
         _ ->
@@ -107,7 +122,12 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     # 4. Activity tracking
     if added_ids != [] do
-      track_activity(:signatures_added, state.map_id, system.solar_system_id, user_id, character_eve_id,
+      track_activity(
+        :signatures_added,
+        state.map_id,
+        system.solar_system_id,
+        user_id,
+        character_eve_id,
         added_ids
       )
     end
@@ -152,8 +172,13 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
   defp apply_update_signature(%MapSystemSignature{} = existing, update_params)
        when not is_nil(update_params) do
-    case MapSystemSignature.update(existing, update_params) do
-      {:ok, _} -> :ok
+    case MapSystemSignature.update(
+           existing,
+           update_params |> Map.put(:update_forced_at, DateTime.utc_now())
+         ) do
+      {:ok, _updated} ->
+        :ok
+
       {:error, reason} ->
         Logger.error("Failed to update signature #{existing.id}: #{inspect(reason)}")
     end
