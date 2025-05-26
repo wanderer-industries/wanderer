@@ -618,7 +618,7 @@ defmodule WandererApp.Esi.ApiClient do
     if not refresh_token? or is_nil(character_id) or retry_count >= @api_retry_count do
       {:error, status}
     else
-      case _refresh_token(character_id) do
+      case refresh_token(character_id) do
         {:ok, token} ->
           auth_opts = [access_token: token.access_token] |> get_auth_opts()
 
@@ -634,7 +634,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp _refresh_token(character_id) do
+  defp refresh_token(character_id) do
     {:ok, %{expires_at: expires_at, refresh_token: refresh_token, scopes: scopes} = character} =
       WandererApp.Character.get_character(character_id)
 
@@ -690,6 +690,17 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp handle_refresh_token_result(
+         {:error, %OAuth2.Error{reason: :econnrefused} = error},
+         character,
+         character_id,
+         expires_at,
+         scopes
+       ) do
+    Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
+    {:error, :econnrefused}
+  end
+
+  defp handle_refresh_token_result(
          {:error, %OAuth2.Error{} = error},
          character,
          character_id,
@@ -710,8 +721,8 @@ defmodule WandererApp.Esi.ApiClient do
   defp invalidate_character_tokens(character, character_id, expires_at, scopes) do
     attrs = %{access_token: nil, refresh_token: nil, expires_at: expires_at, scopes: scopes}
 
-    with {:ok, _} <- WandererApp.Api.Character.update(character, attrs),
-         {:ok, _} <- WandererApp.Character.update_character(character_id, attrs) do
+    with {:ok, _} <- WandererApp.Api.Character.update(character, attrs) do
+      WandererApp.Character.update_character(character_id, attrs)
       :ok
     else
       error ->
