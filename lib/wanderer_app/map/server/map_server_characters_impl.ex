@@ -5,9 +5,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   alias WandererApp.Map.Server.{Impl, ConnectionsImpl, SystemsImpl}
 
-  def get_characters(%{map_id: map_id} = _state),
-    do: {:ok, map_id |> WandererApp.Map.list_characters()}
-
   def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
     Task.start_link(fn ->
       with :ok <- map_id |> WandererApp.Map.add_character(character),
