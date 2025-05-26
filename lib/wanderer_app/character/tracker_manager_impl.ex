@@ -220,6 +220,18 @@ defmodule WandererApp.Character.TrackerManager.Impl do
               track: false
             })
 
+          {:ok, character} = WandererApp.Character.get_character(character_id)
+
+          {:ok, _updated} =
+            WandererApp.MapCharacterSettingsRepo.update(map_id, character_id, %{
+              ship: character.ship,
+              ship_name: character.ship_name,
+              ship_item_id: character.ship_item_id,
+              solar_system_id: character.solar_system_id,
+              structure_id: character.structure_id,
+              station_id: character.station_id
+            })
+
           WandererApp.Character.update_character_state(character_id, character_state)
         end
       end,
@@ -246,7 +258,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def handle_info(_event, state),
     do: state
 
-  defp character_is_present(map_id, character_id) do
+  def character_is_present(map_id, character_id) do
     {:ok, presence_character_ids} =
       WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 

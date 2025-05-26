@@ -1,8 +1,32 @@
 defmodule WandererApp.MapCharacterSettingsRepo do
   use WandererApp, :repository
 
+  def get(map_id, character_id) do
+    case WandererApp.Api.MapCharacterSettings.read_by_map_and_character(%{
+           map_id: map_id,
+           character_id: character_id
+         }) do
+      {:ok, settings} ->
+        {:ok, settings}
+
+      {:error, reason} ->
+        {:ok, nil}
+    end
+  end
+
   def create(settings) do
     WandererApp.Api.MapCharacterSettings.create(settings)
+  end
+
+  def update(map_id, character_id, updated_settings) do
+    case get(map_id, character_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        settings
+        |> WandererApp.Api.MapCharacterSettings.update(updated_settings)
+
+      {:error, reason} ->
+        {:ok, nil}
+    end
   end
 
   def get_tracked_by_map_filtered(map_id, character_ids),

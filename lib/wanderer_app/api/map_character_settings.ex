@@ -3,7 +3,8 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshCloak]
 
   @derive {Jason.Encoder,
            only: [
@@ -24,8 +25,10 @@ defmodule WandererApp.Api.MapCharacterSettings do
   code_interface do
     define(:create, action: :create)
     define(:destroy, action: :destroy)
+    define(:update, action: :update)
 
     define(:read_by_map, action: :read_by_map)
+    define(:read_by_map_and_character, action: :read_by_map_and_character)
     define(:by_map_filtered, action: :by_map_filtered)
     define(:tracked_by_map_filtered, action: :tracked_by_map_filtered)
     define(:tracked_by_character, action: :tracked_by_character)
@@ -45,7 +48,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
       :tracked
     ]
 
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
 
     create :create do
       primary? true
@@ -92,6 +95,15 @@ defmodule WandererApp.Api.MapCharacterSettings do
       filter(expr(map_id == ^arg(:map_id)))
     end
 
+    read :read_by_map_and_character do
+      get? true
+
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:character_id, :uuid, allow_nil?: false)
+
+      filter(expr(map_id == ^arg(:map_id) and character_id == ^arg(:character_id)))
+    end
+
     read :tracked_by_map_all do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id) and tracked == true))
@@ -100,6 +112,20 @@ defmodule WandererApp.Api.MapCharacterSettings do
     read :tracked_by_character do
       argument(:character_id, :uuid, allow_nil?: false)
       filter(expr(character_id == ^arg(:character_id) and tracked == true))
+    end
+
+    update :update do
+      primary? true
+      require_atomic? false
+
+      accept([
+        :ship,
+        :ship_name,
+        :ship_item_id,
+        :solar_system_id,
+        :structure_id,
+        :station_id
+      ])
     end
 
     update :track do
@@ -159,6 +185,28 @@ defmodule WandererApp.Api.MapCharacterSettings do
     end
   end
 
+  cloak do
+    vault(WandererApp.Vault)
+
+    attributes([
+      :ship,
+      :ship_name,
+      :ship_item_id,
+      :solar_system_id,
+      :structure_id,
+      :station_id
+    ])
+
+    decrypt_by_default([
+      :ship,
+      :ship_name,
+      :ship_item_id,
+      :solar_system_id,
+      :structure_id,
+      :station_id
+    ])
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -171,6 +219,13 @@ defmodule WandererApp.Api.MapCharacterSettings do
       default false
       allow_nil? true
     end
+
+    attribute :solar_system_id, :integer
+    attribute :structure_id, :integer
+    attribute :station_id, :integer
+    attribute :ship, :integer
+    attribute :ship_name, :string
+    attribute :ship_item_id, :integer
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

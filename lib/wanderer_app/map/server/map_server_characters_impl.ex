@@ -17,13 +17,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                map_id: map_id,
                tracked: track_character
              }),
-           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_added, character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
         _error ->
-          {:ok, character} = WandererApp.Character.get_character(character_id)
+          {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
           Impl.broadcast!(map_id, :character_added, character)
           :ok
       end
@@ -35,7 +35,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def remove_character(map_id, character_id) do
     Task.start_link(fn ->
       with :ok <- WandererApp.Map.remove_character(map_id, character_id),
-           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_removed, character)
 
         :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
@@ -90,16 +90,25 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     do:
       character_ids
       |> Enum.each(fn character_id ->
-        # TODO consider storing character data in MapCharacterSettings
-        # remove_character(map_id, character_id)
+        if is_character_map_active?(map_id, character_id) do
+          WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+            map_id: map_id,
+            track: false
+          })
 
-        WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-          map_id: map_id,
-          track: false
-        })
-
-        Impl.broadcast!(map_id, :untrack_character, character_id)
+          Impl.broadcast!(map_id, :untrack_character, character_id)
+        end
       end)
+
+  def is_character_map_active?(map_id, character_id) do
+    case WandererApp.Character.get_character_state(character_id) do
+      {:ok, %{active_maps: active_maps}} ->
+        map_id in active_maps
+
+      _ ->
+        false
+    end
+  end
 
   def cleanup_characters(map_id, owner_id) do
     {:ok, invalidate_character_ids} =
@@ -276,7 +285,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp update_character(map_id, character_id) do
-    {:ok, character} = WandererApp.Character.get_character(character_id)
+    {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
     Impl.broadcast!(map_id, :character_updated, character)
   end
 
