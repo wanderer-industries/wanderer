@@ -1,5 +1,5 @@
 import { Map, MAP_ROOT_ID } from '@/hooks/Mapper/components/map/Map.tsx';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
@@ -10,7 +10,6 @@ import {
   SystemLinkSignatureDialog,
   SystemSettingsDialog,
 } from '@/hooks/Mapper/components/mapInterface/components';
-import classes from './MapWrapper.module.scss';
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
@@ -27,26 +26,40 @@ import {
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 import { useHotkey } from '../../hooks/useHotkey';
-import { STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { PingType } from '@/hooks/Mapper/types/ping.ts';
+import { SystemPingDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemPingDialog';
+import { MiniMapPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { MINIMAP_PLACEMENT_MAP } from '@/hooks/Mapper/constants.ts';
+import type { PanelPosition } from '@reactflow/core';
+import { MINI_MAP_PLACEMENT_OFFSETS } from './constants.ts';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
   const {
     update,
     outCommand,
-    data: { selectedConnections, selectedSystems, hubs, userHubs, systems, linkSignatureToSystem, systemSignatures },
+    data: {
+      pings,
+      selectedConnections,
+      selectedSystems,
+      hubs,
+      userHubs,
+      systems,
+      linkSignatureToSystem,
+      systemSignatures,
+    },
     storedSettings: { interfaceSettings },
   } = useMapRootState();
 
   const {
     isShowMenu,
-    isShowMinimap = STORED_INTERFACE_DEFAULT_VALUES.isShowMinimap,
     isShowKSpace,
     isThickConnections,
     isShowBackgroundPattern,
     isShowUnsplashedSignatures,
     isSoftBackground,
     theme,
+    minimapPlacement,
   } = interfaceSettings;
 
   const { deleteSystems } = useDeleteSystems();
@@ -58,6 +71,7 @@ export const MapWrapper = () => {
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
   const [openSettings, setOpenSettings] = useState<string | null>(null);
+  const [openPing, setOpenPing] = useState<{ type: PingType; solar_system_id: string } | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
   const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
@@ -99,6 +113,8 @@ export const MapWrapper = () => {
     event => {
       switch (event.type) {
         case OutCommand.openSettings:
+          // TODO - need fix it
+          // @ts-ignore
           setOpenSettings(event.data.system_id);
           break;
         default:
@@ -111,6 +127,7 @@ export const MapWrapper = () => {
   );
 
   const handleSystemContextMenu = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ev: any, systemId: string) => {
       const { selectedSystems, systems } = ref.current;
       if (selectedSystems.length > 1) {
@@ -130,11 +147,13 @@ export const MapWrapper = () => {
   const handleDeleteSelected = useCallback(() => {
     const restDel = getNodes()
       .filter(x => x.selected && !x.data.locked)
+      .filter(x => !pings.some(p => x.data.id === p.solar_system_id))
       .map(x => x.data.id);
+
     if (restDel.length > 0) {
       ref.current.deleteSystems(restDel);
     }
-  }, [getNodes]);
+  }, [getNodes, pings]);
 
   const onAddSystem: OnMapAddSystemCallback = useCallback(({ coordinates }) => {
     setOpenAddSystem(coordinates);
@@ -158,6 +177,27 @@ export const MapWrapper = () => {
     [openAddSystem, outCommand],
   );
 
+  const handleOpenSettings = useCallback(() => {
+    ref.current.systemContextProps.systemId && setOpenSettings(ref.current.systemContextProps.systemId);
+  }, []);
+
+  const handleTogglePing = useCallback(async (type: PingType, solar_system_id: string, hasPing: boolean) => {
+    if (hasPing) {
+      await outCommand({
+        type: OutCommand.cancelPing,
+        data: { type, solar_system_id: solar_system_id },
+      });
+      return;
+    }
+
+    setOpenPing({ type, solar_system_id });
+  }, []);
+
+  const handleCustomLabelDialog = useCallback(() => {
+    const { systemContextProps } = ref.current;
+    systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
+  }, []);
+
   useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
 
@@ -179,6 +219,22 @@ export const MapWrapper = () => {
     outCommand({ type: OutCommand.loadSignatures, data: {} });
   }, [isShowUnsplashedSignatures, systems]);
 
+  const { showMinimap, minimapPosition, minimapClasses } = useMemo(() => {
+    const rawPlacement = minimapPlacement == null ? MiniMapPlacement.rightBottom : minimapPlacement;
+
+    if (rawPlacement === MiniMapPlacement.hide) {
+      return { minimapPosition: undefined, showMinimap: false, minimapClasses: '' };
+    }
+
+    const mmClasses = MINI_MAP_PLACEMENT_OFFSETS[rawPlacement];
+
+    return {
+      minimapPosition: MINIMAP_PLACEMENT_MAP[rawPlacement] as PanelPosition,
+      showMinimap: true,
+      minimapClasses: isShowMenu ? mmClasses.default : mmClasses.withLeftMenu,
+    };
+  }, [minimapPlacement, isShowMenu]);
+
   return (
     <>
       <Map
@@ -188,18 +244,28 @@ export const MapWrapper = () => {
         onConnectionInfoClick={handleConnectionDbClick}
         onSystemContextMenu={handleSystemContextMenu}
         onSelectionContextMenu={handleSystemMultipleContext}
-        minimapClasses={!isShowMenu ? classes.MiniMap : undefined}
-        isShowMinimap={isShowMinimap}
+        minimapClasses={minimapClasses}
+        isShowMinimap={showMinimap}
         showKSpaceBG={isShowKSpace}
         isThickConnections={isThickConnections}
         isShowBackgroundPattern={isShowBackgroundPattern}
         isSoftBackground={isSoftBackground}
         theme={theme}
+        pings={pings}
         onAddSystem={onAddSystem}
+        minimapPlacement={minimapPosition}
       />
 
       {openSettings != null && (
         <SystemSettingsDialog systemId={openSettings} visible setVisible={() => setOpenSettings(null)} />
+      )}
+      {openPing != null && (
+        <SystemPingDialog
+          systemId={openPing.solar_system_id}
+          type={openPing.type}
+          visible
+          setVisible={() => setOpenPing(null)}
+        />
       )}
 
       {openCustomLabel != null && (
@@ -223,13 +289,9 @@ export const MapWrapper = () => {
         hubs={hubs}
         userHubs={userHubs}
         {...systemContextProps}
-        onOpenSettings={() => {
-          systemContextProps.systemId && setOpenSettings(systemContextProps.systemId);
-        }}
-        onCustomLabelDialog={() => {
-          const { systemContextProps } = ref.current;
-          systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
-        }}
+        onOpenSettings={handleOpenSettings}
+        onTogglePing={handleTogglePing}
+        onCustomLabelDialog={handleCustomLabelDialog}
       />
 
       <ContextMenuSystemMultiple {...systemMultipleCtxProps} />

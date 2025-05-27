@@ -8,7 +8,7 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
 import { useCallback, useEffect, useRef } from 'react';
-import { SNAP_GAP, WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
+import { /*SNAP_GAP,*/ WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 
 export type StoredWindowProps = Omit<WindowProps, 'content'>;
 export type WindowStoreInfo = {
@@ -17,7 +17,7 @@ export type WindowStoreInfo = {
   visible: WidgetsIds[];
   viewPort?: { w: number; h: number } | undefined;
 };
-export type UpdateWidgetSettingsFunc = (widgets: WindowProps[]) => void;
+// export type UpdateWidgetSettingsFunc = (widgets: WindowProps[]) => void;
 export type ToggleWidgetVisibility = (widgetId: WidgetsIds) => void;
 
 export const getDefaultWidgetProps = () => ({
@@ -66,7 +66,7 @@ export const useStoreWidgets = () => {
           ...x,
           windows: windows.map(wnd => {
             if (wnd.id === widgetId) {
-              return { ...wnd, position: { x: SNAP_GAP, y: SNAP_GAP }, zIndex: maxZIndex + 1 };
+              return { ...wnd, /*position: { x: SNAP_GAP, y: SNAP_GAP },*/ zIndex: maxZIndex + 1 };
             }
 
             return wnd;

@@ -71,8 +71,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
         className={clsx(
           classes.RootCustomNode,
           nodeVars.regionClass && classes[nodeVars.regionClass],
-          nodeVars.status !== undefined ? classes[STATUS_CLASSES[nodeVars.status]] : '',
-          { [classes.selected]: nodeVars.selected },
+          nodeVars.status !== undefined && classes[STATUS_CLASSES[nodeVars.status]],
+          {
+            [classes.selected]: nodeVars.selected,
+            [classes.rally]: nodeVars.isRally,
+          },
         )}
         onMouseDownCapture={e => nodeVars.dbClick(e)}
       >

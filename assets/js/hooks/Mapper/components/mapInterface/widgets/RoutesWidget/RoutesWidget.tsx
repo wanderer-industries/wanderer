@@ -3,16 +3,15 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import {
   LayoutEventBlocker,
   LoadingWrapper,
-  SystemViewStandalone,
+  SystemView,
   TooltipPosition,
   WdCheckbox,
   WdImgButton,
 } from '@/hooks/Mapper/components/ui-kit';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
+
 import { forwardRef, MouseEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getSystemById } from '@/hooks/Mapper/helpers/getSystemById.ts';
 import classes from './RoutesWidget.module.scss';
-import { useLoadRoutes } from './hooks';
 import { RoutesList } from './RoutesList';
 import clsx from 'clsx';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
@@ -42,23 +41,12 @@ export const RoutesWidgetContent = () => {
   const {
     data: { selectedSystems, systems, isSubscriptionActive },
   } = useMapRootState();
-  const { hubs = [], routesList, isRestricted } = useRouteProvider();
+  const { hubs = [], routesList, isRestricted, loading } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
-  const { loading } = useLoadRoutes();
-
-  const { systems: systemStatics, loadSystems, lastUpdateKey } = useLoadSystemStatic({ systems: hubs ?? [] });
+  const { systems: systemStatics, loadSystems } = useLoadSystemStatic({ systems: hubs ?? [] });
   const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers();
-
-  const preparedHubs = useMemo(() => {
-    return hubs.map(x => {
-      const sys = getSystemById(systems, x.toString());
-
-      return { ...systemStatics.get(parseInt(x))!, ...(sys && { customName: sys.name ?? '' }) };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hubs, systems, systemStatics, lastUpdateKey]);
 
   const preparedRoutes: Route[] = useMemo(() => {
     return (
@@ -125,9 +113,7 @@ export const RoutesWidgetContent = () => {
       <LoadingWrapper loading={loading}>
         <div className={clsx(classes.RoutesGrid, 'px-2 py-2')}>
           {preparedRoutes.map(route => {
-            const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
-
-            // TODO do not delte this console log
+            // TODO do not delete this console log
             // eslint-disable-next-line no-console
             // console.log('JOipP', `Check sys [${route.destination}]:`, sys);
 
@@ -144,12 +130,12 @@ export const RoutesWidgetContent = () => {
                     }}
                   />
 
-                  <SystemViewStandalone
-                    key={route.destination}
+                  <SystemView
+                    systemId={route.destination.toString()}
                     className={clsx('select-none text-center cursor-context-menu')}
                     hideRegion
                     compact
-                    {...sys}
+                    showCustomName
                   />
                 </div>
                 <div className="text-right pl-1">{route.has_connection ? route.systems?.length ?? 2 : ''}</div>

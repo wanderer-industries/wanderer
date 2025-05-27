@@ -1,4 +1,4 @@
-import { InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider';
+import { InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',

@@ -4,10 +4,11 @@ import { useMemo } from 'react';
 import clsx from 'clsx';
 import { sortOnlineFunc } from '@/hooks/Mapper/components/hooks/useGetOwnOnlineCharacters.ts';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
+import { Button } from 'primereact/button';
 
 const Topbar = ({ children }: WithChildren) => {
   const {
-    data: { characters, userCharacters },
+    data: { characters, userCharacters, pings },
   } = useMapRootState();
 
   const charsToShow = useMemo(() => {
@@ -24,7 +25,10 @@ const Topbar = ({ children }: WithChildren) => {
     >
       <span className="flex-1"></span>
       <span className="mr-2"></span>
-      <Characters data={charsToShow} />
+      <div className="flex gap-1 items-center">
+        <Characters data={charsToShow} />
+      </div>
+
       {children}
     </nav>
   );

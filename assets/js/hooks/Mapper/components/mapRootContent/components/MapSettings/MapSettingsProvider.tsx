@@ -88,8 +88,9 @@ export const MapSettingsProvider = ({ children }: { children: ReactNode }) => {
 
       if (item.type === 'dropdown' && item.options) {
         return (
-          <div key={item.prop.toString()} className="flex items-center gap-2 mt-2">
-            <label className="text-sm">{item.label}:</label>
+          <div key={item.prop.toString()} className="grid grid-cols-[auto_1fr_auto] items-center">
+            <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}:</label>
+            <div className="border-b-2 border-dotted border-[#3f3f3f] h-px mx-3" />
             <Dropdown
               className="text-sm"
               value={currentValue}

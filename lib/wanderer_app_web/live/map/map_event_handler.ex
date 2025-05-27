@@ -13,7 +13,8 @@ defmodule WandererAppWeb.MapEventHandler do
     MapSystemsEventHandler,
     MapSystemCommentsEventHandler,
     MapStructuresEventHandler,
-    MapKillsEventHandler
+    MapKillsEventHandler,
+    MapPingsEventHandler
   }
 
   @map_characters_events [
@@ -148,6 +149,17 @@ defmodule WandererAppWeb.MapEventHandler do
     "get_systems_kills"
   ]
 
+  @map_pings_events [
+    :load_map_pings,
+    :ping_added,
+    :ping_cancelled
+  ]
+
+  @map_pings_ui_events [
+    "add_ping",
+    "cancel_ping"
+  ]
+
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_characters_events,
       do: MapCharactersEventHandler.handle_server_event(event, socket)
@@ -183,6 +195,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_kills_events,
       do: MapKillsEventHandler.handle_server_event(event, socket)
+
+  def handle_event(socket, %{event: event_name} = event)
+      when event_name in @map_pings_events,
+      do: MapPingsEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, {ref, result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
@@ -246,6 +262,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_ui_event(event, body, socket)
       when event in @map_activity_ui_events,
       do: MapActivityEventHandler.handle_ui_event(event, body, socket)
+
+  def handle_ui_event(event, body, socket)
+      when event in @map_pings_ui_events,
+      do: MapPingsEventHandler.handle_ui_event(event, body, socket)
 
   def handle_ui_event(
         event,

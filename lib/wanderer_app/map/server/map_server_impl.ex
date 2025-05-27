@@ -9,7 +9,8 @@ defmodule WandererApp.Map.Server.Impl do
     CharactersImpl,
     ConnectionsImpl,
     SystemsImpl,
-    SignaturesImpl
+    SignaturesImpl,
+    PingsImpl
   }
 
   @enforce_keys [
@@ -173,6 +174,10 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate add_hub(state, hub_info), to: SystemsImpl
 
   defdelegate remove_hub(state, hub_info), to: SystemsImpl
+
+  defdelegate add_ping(state, ping_info), to: PingsImpl
+
+  defdelegate cancel_ping(state, ping_info), to: PingsImpl
 
   defdelegate add_connection(state, connection_info), to: ConnectionsImpl
 

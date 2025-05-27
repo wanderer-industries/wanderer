@@ -9,6 +9,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export interface CommentsEditorProps {}
 
+// eslint-disable-next-line no-empty-pattern
 export const CommentsEditor = ({}: CommentsEditorProps) => {
   const [textVal, setTextVal] = useState('');
 

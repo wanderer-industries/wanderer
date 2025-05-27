@@ -134,7 +134,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           no_active_characters? =
             map_id |> WandererApp.Map.get_system_characters(solar_system_id) |> Enum.empty?()
 
-          no_active_connections? and no_active_characters?
+          no_active_pings? =
+            map_id |> WandererApp.MapPingsRepo.get_by_map_and_system!(system_id) |> Enum.empty?()
+
+          no_active_connections? and no_active_characters? and no_active_pings?
         else
           false
         end

@@ -121,6 +121,8 @@ defmodule WandererAppWeb.UserActivity do
   def get_event_name(:systems_removed), do: "System(s) Removed"
   def get_event_name(:signatures_added), do: "Signatures Added"
   def get_event_name(:signatures_removed), do: "Signatures Removed"
+  def get_event_name(:map_rally_added), do: "Rally Point Added"
+  def get_event_name(:map_rally_cancelled), do: "Rally Point Cancelled"
   def get_event_name(name), do: name
 
   def get_event_data(:map_acl_added, %{"acl_id" => acl_id}) do
@@ -228,7 +230,20 @@ defmodule WandererAppWeb.UserActivity do
     "[#{source_system_name}:#{target_system_name}] #{key} - #{inspect(value)}"
   end
 
+  def get_event_data(:map_rally_added, %{
+        "solar_system_id" => solar_system_id
+      }),
+      do: get_system_name(solar_system_id)
+
+  def get_event_data(:map_rally_cancelled, %{
+        "solar_system_id" => solar_system_id
+      }),
+      do: get_system_name(solar_system_id)
+
   def get_event_data(_name, data), do: Jason.encode!(data)
+
+  defp get_system_name(solar_system_id) when is_binary(solar_system_id),
+    do: get_system_name(String.to_integer(solar_system_id))
 
   defp get_system_name(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
