@@ -2,6 +2,25 @@
 
 <!-- changelog -->
 
+## [v1.65.10](https://github.com/wanderer-industries/wanderer/compare/v1.65.9...v1.65.10) (2025-05-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed sorting for characters in Local
+
+* Map: Rally: fixed conflict style of status and rally
+
+* Core: Fixed character token refresh
+
+* Map: Add Rally point. Change placement of settings in Map User Settings. Add ability to placement minimap.
+
+* Map: Routes - hide user routes btn from context if subscriptions is not active or widget is closed. Also now hidden widget will show again in place where it was on moment of hide (except cases when screen size has changed.
+
+* Map: PINGS - Rally point first prototype
+
 ## [v1.65.9](https://github.com/wanderer-industries/wanderer/compare/v1.65.8...v1.65.9) (2025-05-26)
 
 
