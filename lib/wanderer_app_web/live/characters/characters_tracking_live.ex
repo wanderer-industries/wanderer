@@ -91,6 +91,8 @@ defmodule WandererAppWeb.CharactersTrackingLive do
             character_setting
             |> WandererApp.MapCharacterSettingsRepo.untrack!()
 
+            WandererApp.Map.Server.untrack_characters(selected_map.id, [character_setting.character_id])
+
           _ ->
             character_setting
             |> WandererApp.MapCharacterSettingsRepo.track!()

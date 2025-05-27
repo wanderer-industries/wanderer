@@ -70,7 +70,7 @@ export const useSystemSignaturesData = ({
         ? signaturesRef.current.filter(sig => !sig.pendingDeletion)
         : signaturesRef.current.filter(sig => !sig.pendingDeletion || !sig.pendingAddition);
 
-      const { added, updated, removed } = getActualSigs(currentNonPending, incomingSignatures, !lazyDeleteValue, true);
+      const { added, updated, removed } = getActualSigs(currentNonPending, incomingSignatures, !lazyDeleteValue, false);
 
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);

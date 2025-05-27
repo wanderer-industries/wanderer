@@ -32,6 +32,16 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     )
   end
 
+  def handle_server_event(%{event: :untrack_character, payload: character_id}, %{
+    assigns: %{
+      map_id: map_id
+    }
+  } = socket) do
+    :ok = WandererApp.Character.TrackingUtils.untrack([%{id: character_id}], map_id, self())
+    socket
+  end
+
+
   def handle_server_event(
         %{event: :characters_updated},
         %{
@@ -341,9 +351,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         track_character,
         self()
       )
-
-    :ok =
-      WandererApp.Character.TrackingUtils.add_characters(map_characters, map_id, track_character)
 
     socket
   end
