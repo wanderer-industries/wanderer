@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.12](https://github.com/wanderer-industries/wanderer/compare/v1.65.11...v1.65.12) (2025-05-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed showing character ship
+
 ## [v1.65.11](https://github.com/wanderer-industries/wanderer/compare/v1.65.10...v1.65.11) (2025-05-27)
 
 
