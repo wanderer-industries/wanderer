@@ -1,9 +1,3 @@
-import { useCallback } from 'react';
-import clsx from 'clsx';
-import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
-import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
-import { Commands } from '@/hooks/Mapper/types/mapHandlers';
-import { emitMapEvent } from '@/hooks/Mapper/events';
 import {
   TooltipPosition,
   WdEveEntityPortrait,
@@ -11,9 +5,15 @@ import {
   WdEveEntityPortraitType,
   WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
+import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 import { isDocked } from '@/hooks/Mapper/helpers/isDocked.ts';
-import classes from './CharacterCard.module.scss';
+import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { WithClassName } from '@/hooks/Mapper/types/common.ts';
+import { Commands } from '@/hooks/Mapper/types/mapHandlers';
+import clsx from 'clsx';
+import { useCallback } from 'react';
+import classes from './CharacterCard.module.scss';
 
 export type CharacterCardProps = {
   compact?: boolean;
@@ -75,7 +75,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.corporation}
-                eveId={char.corporation_id.toString()}
+                eveId={char.corporation_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -85,7 +85,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.alliance}
-                eveId={char.alliance_id.toString()}
+                eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -120,7 +120,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.corporation}
-                eveId={char.corporation_id.toString()}
+                eveId={char.corporation_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -130,7 +130,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.alliance}
-                eveId={char.alliance_id.toString()}
+                eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -177,10 +177,10 @@ export const CharacterCard = ({
                 </div>
               )}
               {char.ship && (
-                <WdTooltipWrapper position={TooltipPosition.top} content={char.ship.ship_type_info.name}>
+                <WdTooltipWrapper position={TooltipPosition.top} content={char.ship.ship_type_info?.name}>
                   <WdEveEntityPortrait
                     type={WdEveEntityPortraitType.ship}
-                    eveId={char.ship.ship_type_id.toString()}
+                    eveId={char.ship.ship_type_id?.toString()}
                     size={WdEveEntityPortraitSize.w18}
                   />
                 </WdTooltipWrapper>
@@ -202,7 +202,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.corporation}
-                eveId={char.corporation_id.toString()}
+                eveId={char.corporation_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             </WdTooltipWrapper>
@@ -212,7 +212,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.alliance}
-                eveId={char.alliance_id.toString()}
+                eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             </WdTooltipWrapper>
@@ -266,7 +266,7 @@ export const CharacterCard = ({
             {char.ship && (
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.ship}
-                eveId={char.ship.ship_type_id.toString()}
+                eveId={char.ship.ship_type_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             )}
