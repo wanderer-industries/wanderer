@@ -306,8 +306,7 @@ defmodule WandererAppWeb.MapEventHandler do
     socket
     |> Phoenix.LiveView.Utils.push_event("map_event", %{
       type: type,
-      body: body,
-      timestamp: DateTime.utc_now()
+      body: body
     })
   end
 
