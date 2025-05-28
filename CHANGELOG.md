@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.13](https://github.com/wanderer-industries/wanderer/compare/v1.65.12...v1.65.13) (2025-05-28)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: small wh size is now passed from signature to connection
+
 ## [v1.65.12](https://github.com/wanderer-industries/wanderer/compare/v1.65.11...v1.65.12) (2025-05-27)
 
 
