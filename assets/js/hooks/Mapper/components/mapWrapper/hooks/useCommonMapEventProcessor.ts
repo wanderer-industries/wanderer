@@ -1,7 +1,8 @@
-import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
-import { Command, Commands, MapHandlers } from '@/hooks/Mapper/types';
 import { MapEvent } from '@/hooks/Mapper/events';
+import { useThrottle } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { Command, Commands, MapHandlers } from '@/hooks/Mapper/types';
+import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 export const useCommonMapEventProcessor = () => {
   const mapRef = useRef<MapHandlers>() as MutableRefObject<MapHandlers>;
@@ -26,9 +27,16 @@ export const useCommonMapEventProcessor = () => {
     mapRef.current?.command(name, data);
   }, []);
 
-  useEffect(() => {
-    refQueue.current.forEach(x => mapRef.current?.command(x.name, x.data));
+  const processQueue = useCallback(() => {
+    const commands = [...refQueue.current];
     refQueue.current = [];
+    commands.forEach(x => mapRef.current?.command(x.name, x.data));
+  }, []);
+
+  const throttledProcessQueue = useThrottle(processQueue, 200);
+
+  useEffect(() => {
+    throttledProcessQueue();
   }, [systems]);
 
   return {
