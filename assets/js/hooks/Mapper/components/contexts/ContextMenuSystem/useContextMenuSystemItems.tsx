@@ -44,6 +44,7 @@ export const useContextMenuSystemItems = ({
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
+  const canManageSystem = useMapCheckPermissions([UserPermission.UPDATE_SYSTEM]);
   const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
 
@@ -132,11 +133,20 @@ export const useContextMenuSystemItems = ({
           );
         },
       },
-      ...(canLockSystem
+      ...(system.locked && canLockSystem
         ? [
             {
-              label: system.locked ? 'Unlock' : 'Lock',
-              icon: system.locked ? PrimeIcons.LOCK_OPEN : PrimeIcons.LOCK,
+              label: 'Unlock',
+              icon: PrimeIcons.LOCK_OPEN,
+              command: onLockToggle,
+            },
+          ]
+        : []),
+      ...(!system.locked && canManageSystem
+        ? [
+            {
+              label: 'Lock',
+              icon: PrimeIcons.LOCK,
               command: onLockToggle,
             },
           ]
