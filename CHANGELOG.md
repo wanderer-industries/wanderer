@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.16](https://github.com/wanderer-industries/wanderer/compare/v1.65.15...v1.65.16) (2025-05-29)
+
+
+
+
+### Bug Fixes:
+
+* Map: Allow lock systems for members
+
 ## [v1.65.15](https://github.com/wanderer-industries/wanderer/compare/v1.65.14...v1.65.15) (2025-05-28)
 
 
