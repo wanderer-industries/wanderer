@@ -7,18 +7,19 @@ import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
 export const useCommonMapEventProcessor = () => {
   const mapRef = useRef<MapHandlers>() as MutableRefObject<MapHandlers>;
   const {
-    data: { systems },
+    data: { systems, connections },
   } = useMapRootState();
 
   const refQueue = useRef<MapEvent<Command>[]>([]);
 
-  // const ref = useRef({})
-
   const runCommand = useCallback(({ name, data }: MapEvent<Command>) => {
     switch (name) {
       case Commands.addSystems:
+      case Commands.updateSystems:
       case Commands.removeSystems:
-        // case Commands.addConnections:
+      case Commands.addConnections:
+      case Commands.removeConnections:
+      case Commands.updateConnection:
         refQueue.current.push({ name, data });
         return;
     }
@@ -37,7 +38,7 @@ export const useCommonMapEventProcessor = () => {
 
   useEffect(() => {
     throttledProcessQueue();
-  }, [systems]);
+  }, [systems, connections]);
 
   return {
     mapRef,
