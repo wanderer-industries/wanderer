@@ -1,5 +1,5 @@
 import { MapEvent } from '@/hooks/Mapper/events';
-import { useThrottle } from '@/hooks/Mapper/hooks';
+// import { useThrottle } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { Command, Commands, MapHandlers } from '@/hooks/Mapper/types';
 import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
@@ -7,7 +7,7 @@ import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
 export const useCommonMapEventProcessor = () => {
   const mapRef = useRef<MapHandlers>() as MutableRefObject<MapHandlers>;
   const {
-    data: { systems, connections },
+    data: { systems },
   } = useMapRootState();
 
   const refQueue = useRef<MapEvent<Command>[]>([]);
@@ -15,11 +15,11 @@ export const useCommonMapEventProcessor = () => {
   const runCommand = useCallback(({ name, data }: MapEvent<Command>) => {
     switch (name) {
       case Commands.addSystems:
-      case Commands.updateSystems:
       case Commands.removeSystems:
-      case Commands.addConnections:
-      case Commands.removeConnections:
-      case Commands.updateConnection:
+        // case Commands.updateSystems:
+        // case Commands.addConnections:
+        // case Commands.removeConnections:
+        // case Commands.updateConnection:
         refQueue.current.push({ name, data });
         return;
     }
@@ -34,11 +34,12 @@ export const useCommonMapEventProcessor = () => {
     commands.forEach(x => mapRef.current?.command(x.name, x.data));
   }, []);
 
-  const throttledProcessQueue = useThrottle(processQueue, 200);
+  // const throttledProcessQueue = useThrottle(processQueue, 200);
 
   useEffect(() => {
-    throttledProcessQueue();
-  }, [systems, connections]);
+    // throttledProcessQueue();
+    processQueue();
+  }, [systems]);
 
   return {
     mapRef,
