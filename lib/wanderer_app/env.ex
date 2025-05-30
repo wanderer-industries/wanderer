@@ -25,6 +25,7 @@ defmodule WandererApp.Env do
   def corp_wallet, do: get_key(:corp_wallet, "")
   def corp_eve_id, do: get_key(:corp_id, -1)
   def subscription_settings, do: get_key(:subscription_settings)
+  def endpoint_secret_key_base, do: Application.get_env(@app, WandererAppWeb.Endpoint)[:secret_key_base]
 
   @decorate cacheable(
               cache: WandererApp.Cache,

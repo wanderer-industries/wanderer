@@ -146,43 +146,15 @@ defmodule WandererApp.License.LicenseManager do
     end
   end
 
-  @doc """
-  Checks if a license is expired.
-  """
-  defp expired?(license) do
-    case license.expire_at do
-      nil -> false
-      expire_at -> DateTime.compare(expire_at, DateTime.utc_now()) == :lt
-    end
-  end
-
-  @doc """
-  Generates a random string of specified length.
-  """
-  defp generate_random_string(length) do
-    :crypto.strong_rand_bytes(length)
-    |> Base.encode16(case: :upper)
-    |> binary_part(0, length)
-  end
-
-  @doc """
-  Formats a datetime as YYYY-MM-DD.
-  """
   defp format_date(datetime) do
     Calendar.strftime(datetime, "%Y-%m-%d")
   end
 
-  @doc """
-  Generates a link to the map.
-  """
   defp generate_map_link(map_slug) do
     base_url = Application.get_env(:wanderer_app, :web_app_url)
     "#{base_url}/#{map_slug}"
   end
 
-  @doc """
-  Gets the map owner's data.
-  """
   defp get_map_owner_email(map) do
     {:ok, %{owner: owner}} = map |> Ash.load([:owner])
     "#{owner.name}(#{owner.eve_id})"

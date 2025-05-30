@@ -102,8 +102,8 @@ defmodule WandererAppWeb.LicenseApiController do
   }
   ```
   """
-  def update_validity(conn, %{"id" => license_id, "is_valid" => is_valid}) do
-    with {:ok, license} <- License.by_id(license_id),
+  def update_validity(conn, %{"id" => license_id, "is_valid" => _is_valid}) do
+    with {:ok, _license} <- License.by_id(license_id),
          {:ok, updated_license} <- LicenseManager.invalidate_license(license_id) do
       conn
       |> json(format_license(updated_license))

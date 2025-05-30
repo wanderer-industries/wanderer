@@ -1,5 +1,4 @@
 defmodule WandererAppWeb.AccessListsLive do
-  alias Pathex.Builder.Viewer
   use WandererAppWeb, :live_view
 
   require Logger

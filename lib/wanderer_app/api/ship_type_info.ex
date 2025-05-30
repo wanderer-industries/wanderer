@@ -5,6 +5,8 @@ defmodule WandererApp.Api.ShipTypeInfo do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
+  @derive {Jason.Encoder, only: [:type_id, :group_id, :group_name, :name, :description, :mass, :capacity, :volume]}
+
   postgres do
     repo(WandererApp.Repo)
     table("ship_type_infos_v1")

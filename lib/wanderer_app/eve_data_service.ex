@@ -366,9 +366,6 @@ defmodule WandererApp.EveDataService do
     end
   end
 
-  defp get_solar_system_name(solar_system_name, wormhole_class) do
-  end
-
   defp get_triglavian_data(default_data, triglavian_systems, solar_system_id) do
     case Enum.find(triglavian_systems, fn system -> system.solar_system_id == solar_system_id end) do
       nil ->

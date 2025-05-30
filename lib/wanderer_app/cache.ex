@@ -24,8 +24,9 @@ defmodule WandererApp.Cache do
     do: lookup!("#{id}:#{key}", default)
 
   def lookup!(key, default) when is_binary(key) or is_atom(key) do
-    {:ok, result} = lookup(key, default)
-    result
+    case lookup(key, default) do
+      {:ok, result} -> result
+    end
   end
 
   def get_and_remove(key, default) when is_binary(key) or is_atom(key) do
@@ -45,7 +46,7 @@ defmodule WandererApp.Cache do
   def insert({id, key}, value, opts) when is_binary(id) and (is_binary(key) or is_atom(key)),
     do: insert("#{id}:#{key}", value, opts)
 
-  def insert(key, nil, opts) when is_binary(key) or is_atom(key), do: delete(key)
+  def insert(key, nil, _opts) when is_binary(key) or is_atom(key), do: delete(key)
   def insert(key, value, opts) when is_binary(key) or is_atom(key), do: put(key, value, opts)
 
   def insert_or_update(key, value, update_fn, opts \\ [])
@@ -55,13 +56,11 @@ defmodule WandererApp.Cache do
       do: insert_or_update("#{id}:#{key}", value, update_fn, opts)
 
   def insert_or_update(key, value, update_fn, opts) when is_binary(key) or is_atom(key) do
-    case lookup(key) do
-      {:ok, nil} ->
-        insert(key, value, opts)
-
-      {:ok, data} ->
-        insert(key, update_fn.(data), opts)
-    end
+    # Use Nebulex's update/3 for atomic operations
+    update(key, value, fn
+      nil -> value  # If key doesn't exist, use initial value
+      existing -> update_fn.(existing)  # If key exists, apply update function
+    end, opts)
   end
 
   def find_by_attrs(type, attrs, match \\ :any) do
