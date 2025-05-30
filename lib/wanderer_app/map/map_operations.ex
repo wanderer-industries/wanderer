@@ -56,25 +56,25 @@ defmodule WandererApp.Map.Operations do
 
   @doc "List all connections"
   @spec list_connections(String.t()) :: [map()]
-  defdelegate list_connections(map_id), to: Connections, as: :get_connections
+  defdelegate list_connections(map_id), to: Connections
 
   @doc "List connections for a specific system"
   @spec list_connections(String.t(), integer()) :: [map()]
-  defdelegate list_connections(map_id, system_id), to: Connections, as: :get_connections_for_system
+  defdelegate list_connections(map_id, system_id), to: Connections
 
   @doc "Get a connection"
   @spec get_connection(String.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
-  defdelegate get_connection(map_id, connection_id), to: Connections, as: :get_connection_by_id
+  defdelegate get_connection(map_id, connection_id), to: Connections
 
   @doc "Create a connection"
   @spec create_connection(Plug.Conn.t(), map()) ::
           {:ok, map()} | {:skip, :exists} | {:error, String.t()}
-  defdelegate create_connection(conn, attrs), to: Connections, as: :create
+  defdelegate create_connection(conn, attrs), to: Connections
 
   @doc "Force-create a connection with explicit character ID"
   @spec create_connection(String.t(), map(), integer()) ::
           {:ok, map()} | {:skip, :exists} | {:error, String.t()}
-  defdelegate create_connection(map_id, attrs, char_id), to: Connections, as: :create
+  defdelegate create_connection(map_id, attrs, char_id), to: Connections
 
   @doc "Update a connection"
   @spec update_connection(String.t(), String.t(), map()) ::

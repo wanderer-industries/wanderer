@@ -230,7 +230,7 @@ defmodule WandererApp.Zkb.Provider.Parser.Enricher do
     |> Map.put(ticker_key, ticker)
     |> Map.put(name_key, corp_name)
   end
-  defp handle_corp_result(:skip, km, corp_id, _ticker_key, _name_key) do
+  defp handle_corp_result(:skip, km, _corp_id, _ticker_key, _name_key) do
     km
   end
   defp handle_corp_result({:error, reason}, km, corp_id, _ticker_key, _name_key) do
@@ -300,7 +300,7 @@ defmodule WandererApp.Zkb.Provider.Parser.Enricher do
     |> Map.put(ticker_key, alliance_ticker)
     |> Map.put(name_key, alliance_name)
   end
-  defp handle_alliance_result(:skip, km, alliance_id, _ticker_key, _name_key) do
+  defp handle_alliance_result(:skip, km, _alliance_id, _ticker_key, _name_key) do
     km
   end
   defp handle_alliance_result({:error, reason}, km, alliance_id, _ticker_key, _name_key) do

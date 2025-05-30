@@ -168,7 +168,7 @@ defmodule WandererApp.Zkb.Preloader do
   Loads system IDs from active maps with active subscriptions.
   """
   @spec load_system_ids() :: {:ok, [integer()]} | {:error, term()}
-  defp load_system_ids do
+  def load_system_ids do
     cutoff =
       DateTime.utc_now()
       |> DateTime.add(-@last_active_cutoff_minutes * 60, :second)

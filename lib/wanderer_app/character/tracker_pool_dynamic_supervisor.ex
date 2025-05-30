@@ -57,7 +57,7 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
 
   defp get_available_pool([]), do: nil
 
-  defp get_available_pool([{pid, uuid} | pools]) do
+  defp get_available_pool([{_pid, uuid} | pools]) do
     case Registry.lookup(@unique_registry, Module.concat(WandererApp.Character.TrackerPool, uuid)) do
       [] ->
         nil
@@ -94,7 +94,7 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
     end
   end
 
-  defp stop_child(uuid) do
+  defp _stop_child(uuid) do
     case Registry.lookup(@registry, uuid) do
       [{pid, _}] ->
         GenServer.cast(pid, :stop)

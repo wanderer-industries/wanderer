@@ -24,28 +24,6 @@ defmodule WandererApp.Zkb.Provider.Parser do
   @retriable_http_codes [502, 503, 504]
 
   @doc """
-  Determines if an error is retriable based on its type and content.
-  Returns true for:
-  - :timeout
-  - :network_error
-  - :bad_gateway
-  - :service_unavailable
-  - :gateway_timeout
-  - {:http_error, code} where code is 502, 503, or 504
-  """
-  defp is_retriable_error?(reason) do
-    case reason do
-      :timeout -> true
-      :network_error -> true
-      :bad_gateway -> true
-      :service_unavailable -> true
-      :gateway_timeout -> true
-      {:http_error, code} when code in @retriable_http_codes -> true
-      _ -> false
-    end
-  end
-
-  @doc """
   Entry-point for handling any killmail payload.
   Calculates a cutoff timestamp (UTC now minus cutoff seconds) and parses.
   """
@@ -146,5 +124,18 @@ defmodule WandererApp.Zkb.Provider.Parser do
         Logger.error("[ZkbParser] update_kill_count #{inspect(other)} for #{id}")
         {:ok, stored}
     end
+  end
+
+  # Check if an error should be retried - combines HttpUtil's network errors with ESI-specific errors
+  defp is_retriable_error?(reason) do
+    HttpUtil.retriable_error?(reason) ||
+      case reason do
+        :network_error -> true
+        :bad_gateway -> true
+        :service_unavailable -> true
+        :gateway_timeout -> true
+        {:http_error, code} when code in @retriable_http_codes -> true
+        _ -> false
+      end
   end
 end

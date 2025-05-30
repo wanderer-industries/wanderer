@@ -3,9 +3,6 @@ defmodule WandererAppWeb.MapsLive do
 
   require Logger
 
-  alias BetterNumber, as: Number
-  alias WandererAppWeb.Maps.LicenseComponent
-
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   @impl true

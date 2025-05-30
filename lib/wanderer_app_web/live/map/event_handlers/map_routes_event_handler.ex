@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler, MapSystemsEventHandler}
+  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(
         %{

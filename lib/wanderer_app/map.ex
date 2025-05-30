@@ -113,7 +113,7 @@ defmodule WandererApp.Map do
   end
 
   def list_hubs(map_id, hubs) do
-    {:ok, map} = map_id |> get_map()
+    {:ok, _map} = map_id |> get_map()
 
     {:ok, hubs}
   end

@@ -124,7 +124,7 @@ defmodule WandererApp.Vault do
     end)
   end
 
-  defp find_fallback_module_to_decrypt(config, ciphertext) do
+  defp find_fallback_module_to_decrypt(config, _ciphertext) do
     Enum.find(config[:ciphers], fn {label, _} ->
       label == :fallback
     end)

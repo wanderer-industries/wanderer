@@ -48,7 +48,7 @@ defmodule WandererApp.Maps do
     {:ok, %{routes: routes, systems_static_data: systems_static_data}}
   end
 
-  def find_routes(map_id, hubs, origin, routes_settings, true) do
+  def find_routes(_map_id, hubs, origin, _routes_settings, true) do
     origin = origin |> String.to_integer()
     hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))
 

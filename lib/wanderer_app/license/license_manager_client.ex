@@ -135,7 +135,7 @@ defmodule WandererApp.License.LicenseManagerClient do
     Application.get_env(:wanderer_app, :license_manager)[:auth_key]
   end
 
-  defp parse_error_response(status, %{"error" => error_message}) do
+  defp parse_error_response(_status, %{"error" => error_message}) do
     {:error, error_message}
   end
 

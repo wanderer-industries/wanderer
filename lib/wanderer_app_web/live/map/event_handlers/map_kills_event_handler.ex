@@ -75,24 +75,18 @@ defmodule WandererAppWeb.MapKillsEventHandler do
     with {:ok, system_id}   <- parse_id(sid),
          {:ok, since_hours} <- parse_id(sh) do
 
-      Logger.info("[MapKillsEventHandler] get_system_kills: system_id=#{system_id}, since_hours=#{since_hours}")
-
       cached_kills = case Cache.get_killmails_for_system(system_id) do
         {:ok, kills} ->
-          Logger.info("[MapKillsEventHandler] Found #{length(kills)} cached kills for system #{system_id}")
           kills
-        {:error, reason} ->
-          Logger.warning("[MapKillsEventHandler] Cache error for system #{system_id}: #{inspect(reason)}")
+        {:error, _reason} ->
           []
       end
 
       reply = %{kills: cached_kills}
-      Logger.info("[MapKillsEventHandler] Replying with #{length(cached_kills)} kills for system #{system_id}")
 
       case Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
         case Fetcher.fetch_killmails_for_system(system_id, since_hours: since_hours) do
           {:ok, fresh} ->
-            Logger.info("[MapKillsEventHandler] Fresh fetch completed: #{length(fresh)} kills for system #{system_id}")
             {:detailed_kills_updated, %{system_id => fresh}}
 
           {:error, reason} ->

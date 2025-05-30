@@ -691,10 +691,10 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp handle_refresh_token_result(
          {:error, %OAuth2.Error{reason: :econnrefused} = error},
-         character,
+         _character,
          character_id,
-         expires_at,
-         scopes
+         _expires_at,
+         _scopes
        ) do
     Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
     {:error, :econnrefused}
