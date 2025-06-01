@@ -329,15 +329,20 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         %{assigns: %{current_user: current_user, has_tracked_characters?: true}} = socket
       ) do
     character_eve_ids
-    |> Task.async_stream(fn character_eve_id ->
-      set_autopilot_waypoint(
-        current_user,
-        character_eve_id,
-        add_to_beginning,
-        clear_other_waypoints,
-        destination_id
-      )
-    end)
+    |> Task.async_stream(
+      fn character_eve_id ->
+        set_autopilot_waypoint(
+          current_user,
+          character_eve_id,
+          add_to_beginning,
+          clear_other_waypoints,
+          destination_id
+        )
+      end,
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task,
+      timeout: :timer.minutes(1)
+    )
     |> Enum.map(fn _result -> :skip end)
 
     {:noreply, socket}

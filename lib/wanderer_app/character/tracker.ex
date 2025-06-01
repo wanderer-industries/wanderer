@@ -79,8 +79,8 @@ defmodule WandererApp.Character.Tracker do
 
             :ok
 
-          {:error, :forbidden} ->
-            Logger.warning("#{__MODULE__} failed to get_character_info: forbidden")
+          {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+            Logger.warning("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
 
             WandererApp.Cache.put(
               "character:#{character_id}:info_forbidden",
@@ -88,7 +88,7 @@ defmodule WandererApp.Character.Tracker do
               ttl: @forbidden_ttl
             )
 
-            {:error, :forbidden}
+            {:error, error}
 
           {:error, error} ->
             Logger.error("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
@@ -126,8 +126,8 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_ship: forbidden")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_ship: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:ship_forbidden",
@@ -135,7 +135,7 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
-                {:error, :forbidden}
+                {:error, error}
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_ship: #{inspect(error)}")
@@ -185,8 +185,8 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_location: forbidden")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:location_forbidden",
@@ -194,7 +194,7 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
-                {:error, :forbidden}
+                {:error, error}
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
@@ -263,33 +263,8 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_online: forbidden")
-
-                if not WandererApp.Cache.lookup!(
-                     "character:#{character_id}:online_forbidden",
-                     false
-                   ) do
-                  WandererApp.Cache.put(
-                    "character:#{character_id}:online_forbidden",
-                    true,
-                    ttl: @forbidden_ttl
-                  )
-
-                  if is_nil(
-                       WandererApp.Cache.lookup("character:#{character_id}:online_error_time")
-                     ) do
-                    WandererApp.Cache.insert(
-                      "character:#{character_id}:online_error_time",
-                      DateTime.utc_now()
-                    )
-                  end
-                end
-
-                :ok
-
-              {:error, :error_limited} ->
-                Logger.warning("#{__MODULE__} failed to update_online: :error_limited")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_online: #{inspect(error)}")
 
                 if not WandererApp.Cache.lookup!(
                      "character:#{character_id}:online_forbidden",
@@ -387,8 +362,9 @@ defmodule WandererApp.Character.Tracker do
 
                     :ok
 
-                  {:error, :forbidden} ->
-                    Logger.warning("#{__MODULE__} failed to _update_wallet: forbidden")
+                  {:error, error}
+                  when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                    Logger.warning("#{__MODULE__} failed to update_wallet: #{inspect(error)}")
 
                     WandererApp.Cache.put(
                       "character:#{character_id}:wallet_forbidden",
@@ -396,7 +372,7 @@ defmodule WandererApp.Character.Tracker do
                       ttl: @forbidden_ttl
                     )
 
-                    {:error, :forbidden}
+                    {:error, error}
 
                   {:error, error} ->
                     Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")

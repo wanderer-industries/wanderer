@@ -218,8 +218,6 @@ defmodule WandererApp.Esi.ApiClient do
             {:ok, result}
 
           {:error, _error} ->
-            @logger.error("Error getting custom routes for #{inspect(origin)}: #{inspect(hubs)}")
-
             @logger.error(
               "Error getting custom routes for #{inspect(origin)}: #{inspect(params)}"
             )
@@ -536,6 +534,9 @@ defmodule WandererApp.Esi.ApiClient do
 
         {:ok, %{status: 404}} ->
           {:error, :not_found}
+
+        {:ok, %{status: 401} = _error} ->
+          get_retry(path, api_opts, opts)
 
         {:ok, %{status: 403} = _error} ->
           get_retry(path, api_opts, opts)
