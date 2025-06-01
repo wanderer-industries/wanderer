@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.20](https://github.com/wanderer-industries/wanderer/compare/v1.65.19...v1.65.20) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix waypoint set timeout errors
+
 ## [v1.65.19](https://github.com/wanderer-industries/wanderer/compare/v1.65.18...v1.65.19) (2025-06-01)
 
 
