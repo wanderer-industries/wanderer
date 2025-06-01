@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.21](https://github.com/wanderer-industries/wanderer/compare/v1.65.20...v1.65.21) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix connection pool errors
+
 ## [v1.65.20](https://github.com/wanderer-industries/wanderer/compare/v1.65.19...v1.65.20) (2025-06-01)
 
 
