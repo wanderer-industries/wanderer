@@ -288,6 +288,31 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
+              {:error, :error_limited} ->
+                Logger.warning("#{__MODULE__} failed to update_online: :error_limited")
+
+                if not WandererApp.Cache.lookup!(
+                     "character:#{character_id}:online_forbidden",
+                     false
+                   ) do
+                  WandererApp.Cache.put(
+                    "character:#{character_id}:online_forbidden",
+                    true,
+                    ttl: @forbidden_ttl
+                  )
+
+                  if is_nil(
+                       WandererApp.Cache.lookup("character:#{character_id}:online_error_time")
+                     ) do
+                    WandererApp.Cache.insert(
+                      "character:#{character_id}:online_error_time",
+                      DateTime.utc_now()
+                    )
+                  end
+                end
+
+                :ok
+
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_online: #{inspect(error)}")
 

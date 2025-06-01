@@ -326,8 +326,7 @@ defmodule WandererApp.Map.Server.Impl do
     if can_broadcast?(map_id) do
       @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
         event: event,
-        payload: payload,
-        timestamp: DateTime.utc_now()
+        payload: payload
       })
     end
 
