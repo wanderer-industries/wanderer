@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.19](https://github.com/wanderer-industries/wanderer/compare/v1.65.18...v1.65.19) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix updating character online
+
 ## [v1.65.18](https://github.com/wanderer-industries/wanderer/compare/v1.65.17...v1.65.18) (2025-05-30)
 
 
