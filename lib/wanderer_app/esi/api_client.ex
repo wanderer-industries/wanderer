@@ -11,6 +11,8 @@ defmodule WandererApp.Esi.ApiClient do
   @base_url "https://esi.evetech.net/latest"
   @wanderrer_user_agent "(wanderer-industries@proton.me; +https://github.com/wanderer-industries/wanderer)"
 
+  @req_esi Req.new(base_url: @base_url, finch: WandererApp.Finch)
+
   @get_link_pairs_advanced_params [
     :include_mass_crit,
     :include_eol,
@@ -47,7 +49,7 @@ defmodule WandererApp.Esi.ApiClient do
     do:
       post_esi(
         "/ui/autopilot/waypoint",
-        opts
+        get_auth_opts(opts)
         |> Keyword.merge(
           params: %{
             add_to_beginning: add_to_beginning,
@@ -60,8 +62,8 @@ defmodule WandererApp.Esi.ApiClient do
   def post_characters_affiliation(character_eve_ids, _opts)
       when is_list(character_eve_ids),
       do:
-        post(
-          "#{@base_url}/characters/affiliation/",
+        post_esi(
+          "/characters/affiliation/",
           json: character_eve_ids,
           params: %{
             datasource: "tranquility"
@@ -497,13 +499,6 @@ defmodule WandererApp.Esi.ApiClient do
     opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
   end
 
-  defp post_esi(path, opts),
-    do:
-      post(
-        "#{@base_url}#{path}",
-        [params: opts[:params] || []] ++ (opts |> get_auth_opts())
-      )
-
   defp get(path, api_opts \\ [], opts \\ []) do
     case Cachex.get(:api_cache, path) do
       {:ok, cached_data} when not is_nil(cached_data) ->
@@ -517,8 +512,9 @@ defmodule WandererApp.Esi.ApiClient do
   defp do_get_request(path, api_opts \\ [], opts \\ []) do
     try do
       case Req.get(
-             "#{@base_url}#{path}",
+             @req_esi,
              api_opts
+             |> Keyword.merge(url: path)
              |> with_user_agent_opts()
              |> with_cache_opts()
              |> Keyword.merge(@retry_opts)
@@ -535,10 +531,7 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: 404}} ->
           {:error, :not_found}
 
-        {:ok, %{status: 401} = _error} ->
-          get_retry(path, api_opts, opts)
-
-        {:ok, %{status: 403} = _error} ->
+        {:ok, %{status: status} = _error} when status in [401, 403] ->
           get_retry(path, api_opts, opts)
 
         {:ok, %{status: 420} = _error} ->
@@ -585,6 +578,45 @@ defmodule WandererApp.Esi.ApiClient do
   defp post(url, opts) do
     try do
       case Req.post("#{url}", opts |> with_user_agent_opts()) do
+        {:ok, %{status: status, body: body}} when status in [200, 201] ->
+          {:ok, body}
+
+        {:ok, %{status: 504}} ->
+          {:error, :timeout}
+
+        {:ok, %{status: 403}} ->
+          {:error, :forbidden}
+
+        {:ok, %{status: 420}} ->
+          {:error, :error_limited}
+
+        {:ok, %{status: status}} ->
+          {:error, "Unexpected status: #{status}"}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    rescue
+      e ->
+        @logger.error(Exception.message(e))
+
+        {:error, "Request failed"}
+    end
+  end
+
+  defp post_esi(url, opts) do
+    try do
+      req_opts =
+        (opts
+         |> with_user_agent_opts()) ++
+          [params: opts[:params] || []]
+
+      Req.new(
+        [base_url: @base_url, finch: WandererApp.Finch] ++
+          req_opts
+      )
+      |> Req.post(url: url)
+      |> case do
         {:ok, %{status: status, body: body}} when status in [200, 201] ->
           {:ok, body}
 
