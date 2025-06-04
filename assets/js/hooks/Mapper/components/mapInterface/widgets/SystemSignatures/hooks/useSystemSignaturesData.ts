@@ -20,7 +20,7 @@ export const useSystemSignaturesData = ({
   onLazyDeleteChange,
   onSignatureDeleted,
 }: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & {
-  onSignatureDeleted?: (deletedIds: string[]) => void;
+  onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
 }) => {
   const { outCommand } = useMapRootState();
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
@@ -75,8 +75,7 @@ export const useSystemSignaturesData = ({
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);
         if (onSignatureDeleted) {
-          const deletedIds = removed.map(sig => sig.eve_id);
-          onSignatureDeleted(deletedIds);
+          onSignatureDeleted(removed);
         }
       }
 
@@ -102,11 +101,23 @@ export const useSystemSignaturesData = ({
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
+
+    // Call onSignatureDeleted with the full signature objects for visual feedback
+    if (onSignatureDeleted) {
+      onSignatureDeleted(selectedSignatures);
+    }
+
     const selectedIds = selectedSignatures.map(s => s.eve_id);
     const finalList = signatures.filter(s => !selectedIds.includes(s.eve_id));
+
+    // IMPORTANT: Send deletion to server BEFORE updating local state
+    // Otherwise signaturesRef.current will be updated and getActualSigs won't detect removals
     await handleUpdateSignatures(finalList, false, true);
+
+    // Update local state after server call
+    setSignatures(finalList);
     setSelectedSignatures([]);
-  }, [handleUpdateSignatures, selectedSignatures, signatures]);
+  }, [handleUpdateSignatures, selectedSignatures, signatures, onSignatureDeleted, setSignatures]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
