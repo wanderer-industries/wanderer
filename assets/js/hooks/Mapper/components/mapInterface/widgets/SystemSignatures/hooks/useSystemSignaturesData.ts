@@ -141,11 +141,11 @@ export const useSystemSignaturesData = ({
       return;
     }
     handleGetSignatures();
-  }, [handleGetSignatures, setSignatures, systemId, undoPending]);
+  }, [systemId]);
 
   useEffect(() => {
     onCountChange?.(signatures.length);
-  }, [onCountChange, signatures]);
+  }, [signatures]);
 
   return {
     signatures: signatures.filter(sig => !sig.deleted),
