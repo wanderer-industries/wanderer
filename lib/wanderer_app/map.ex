@@ -96,7 +96,9 @@ defmodule WandererApp.Map do
       map_id
       |> get_map!()
       |> Map.get(:characters, [])
-      |> Enum.map(fn character_id -> WandererApp.Character.get_map_character!(map_id, character_id) end)
+      |> Enum.map(fn character_id ->
+        WandererApp.Character.get_map_character!(map_id, character_id)
+      end)
 
   def list_systems(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:systems, Map.new()) |> Map.values()}
@@ -155,56 +157,61 @@ defmodule WandererApp.Map do
 
     case not (characters |> Enum.member?(character_id)) do
       true ->
-        {:ok,
-         %{
-           alliance_id: alliance_id,
-           corporation_id: corporation_id,
-           solar_system_id: solar_system_id,
-           structure_id: structure_id,
-           station_id: station_id,
-           ship: ship_type_id,
-           ship_name: ship_name
-         }} = WandererApp.Character.get_character(character_id)
+        WandererApp.Character.get_map_character(map_id, character_id)
+        |> case do
+          {:ok,
+           %{
+             alliance_id: alliance_id,
+             corporation_id: corporation_id,
+             solar_system_id: solar_system_id,
+             structure_id: structure_id,
+             station_id: station_id,
+             ship: ship_type_id,
+             ship_name: ship_name
+           }} ->
+            map_id
+            |> update_map(%{characters: [character_id | characters]})
 
-        map_id
-        |> update_map(%{characters: [character_id | characters]})
+            WandererApp.Cache.insert(
+              "map:#{map_id}:character:#{character_id}:alliance_id",
+              alliance_id
+            )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:alliance_id",
-          alliance_id
-        )
+            WandererApp.Cache.insert(
+              "map:#{map_id}:character:#{character_id}:corporation_id",
+              corporation_id
+            )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:corporation_id",
-          corporation_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:solar_system_id",
+            #   solar_system_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:structure_id",
+            #   structure_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:structure_id",
-          structure_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:station_id",
+            #   station_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:station_id",
-          station_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:ship_type_id",
+            #   ship_type_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:ship_type_id",
-          ship_type_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:ship_name",
+            #   ship_name
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:ship_name",
-          ship_name
-        )
+            :ok
 
-        :ok
+          error ->
+            error
+        end
 
       _ ->
         {:error, :already_exists}

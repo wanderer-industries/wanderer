@@ -49,7 +49,9 @@ defmodule WandererApp.Character.TrackerPool do
     # end)
 
     tracked_ids
-    |> Enum.each(fn id -> Cachex.put(@cache, id, uuid) end)
+    |> Enum.each(fn id ->
+      Cachex.put(@cache, id, uuid)
+    end)
 
     state =
       %{
@@ -78,7 +80,6 @@ defmodule WandererApp.Character.TrackerPool do
     # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
     #   {:commit, ids ++ [tracked_id]}
     # end)
-
     Cachex.put(@cache, tracked_id, uuid)
 
     {:noreply, %{state | characters: [tracked_id | characters]}}
@@ -96,7 +97,7 @@ defmodule WandererApp.Character.TrackerPool do
     # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
     #   {:commit, ids |> Enum.reject(fn id -> id == tracked_id end)}
     # end)
-
+    #
     Cachex.del(@cache, tracked_id)
 
     {:noreply, %{state | characters: characters |> Enum.reject(fn id -> id == tracked_id end)}}
@@ -155,12 +156,20 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_online, @update_online_interval)
 
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
-        character_id
-      ])
-    end)
+    try do
+      characters
+      |> Enum.map(fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
+          character_id
+        ])
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_online => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -174,14 +183,22 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_online, @update_online_interval)
 
-    characters
-    |> Enum.each(fn character_id ->
-      WandererApp.Character.update_character(character_id, %{online: false})
+    try do
+      characters
+      |> Enum.each(fn character_id ->
+        WandererApp.Character.update_character(character_id, %{online: false})
 
-      WandererApp.Character.update_character_state(character_id, %{
-        is_online: false
-      })
-    end)
+        WandererApp.Character.update_character_state(character_id, %{
+          is_online: false
+        })
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_online => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -195,21 +212,33 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :check_online_errors, @check_online_errors_interval)
 
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :check_online_errors, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in check_online_errors: #{inspect(reason)}")
-    end)
+    try do
+      characters
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.TaskWrapper.start_link(
+            WandererApp.Character.Tracker,
+            :check_online_errors,
+            [
+              character_id
+            ]
+          )
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> @logger.error("Error in check_online_errors: #{inspect(reason)}")
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] check_online_errors => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -224,12 +253,20 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_location, @update_location_interval)
 
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
-        character_id
-      ])
-    end)
+    try do
+      characters
+      |> Enum.map(fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
+          character_id
+        ])
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_location => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -253,12 +290,20 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_ship, @update_ship_interval)
 
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
-        character_id
-      ])
-    end)
+    try do
+      characters
+      |> Enum.map(fn character_id ->
+        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
+          character_id
+        ])
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_ship => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -282,21 +327,29 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_info, @update_info_interval)
 
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_info, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in update_info: #{inspect(reason)}")
-    end)
+    try do
+      characters
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_info, [
+            character_id
+          ])
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> Logger.error("Error in update_info: #{inspect(reason)}")
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_info => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end
@@ -320,21 +373,29 @@ defmodule WandererApp.Character.TrackerPool do
       ) do
     Process.send_after(self(), :update_wallet, @update_wallet_interval)
 
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_wallet, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in update_wallet: #{inspect(reason)}")
-    end)
+    try do
+      characters
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_wallet, [
+            character_id
+          ])
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> Logger.error("Error in update_wallet: #{inspect(reason)}")
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] update_wallet => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
 
     {:noreply, state}
   end

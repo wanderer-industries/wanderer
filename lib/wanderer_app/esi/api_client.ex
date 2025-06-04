@@ -38,7 +38,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @cache_opts [cache: true]
   @retry_opts [max_retries: 0, retry_log_level: :warning]
-  @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.seconds(30)]
+  @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.minutes(1)]
   @api_retry_count 1
 
   @logger Application.compile_env(:wanderer_app, :logger)
@@ -535,7 +535,7 @@ defmodule WandererApp.Esi.ApiClient do
           get_retry(path, api_opts, opts)
 
         {:ok, %{status: 420} = _error} ->
-          get_retry(path, api_opts, opts, :error_limited)
+          {:error, :error_limited}
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
@@ -545,7 +545,7 @@ defmodule WandererApp.Esi.ApiClient do
       end
     rescue
       e ->
-        @logger.error(Exception.message(e))
+        Logger.error(Exception.message(e))
 
         {:error, "Request failed"}
     end
