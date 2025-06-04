@@ -58,7 +58,8 @@ interface SystemSignaturesContentProps {
   onLazyDeleteChange?: (value: boolean) => void;
   onCountChange?: (count: number) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
-  onSignatureDeleted?: (deletedIds: string[]) => void;
+  onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
+  deletedSignatures?: ExtendedSystemSignature[];
 }
 
 export const SystemSignaturesContent = ({
@@ -71,6 +72,7 @@ export const SystemSignaturesContent = ({
   onCountChange,
   filterSignature,
   onSignatureDeleted,
+  deletedSignatures = [],
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -127,8 +129,7 @@ export const SystemSignaturesContent = ({
     event.preventDefault();
     event.stopPropagation();
     if (onSignatureDeleted && selectedSignatures.length > 0) {
-      const deletedIds = selectedSignatures.map(s => s.eve_id);
-      onSignatureDeleted(deletedIds);
+      onSignatureDeleted(selectedSignatures);
     }
     handleDeleteSelected();
   });
@@ -158,9 +159,16 @@ export const SystemSignaturesContent = ({
 
   const handleSelectSignatures = useCallback(
     (e: { value: SystemSignature[] }) => {
-      selectable ? onSelect?.(e.value[0]) : setSelectedSignatures(e.value as ExtendedSystemSignature[]);
+      // Filter out deleted signatures from selection
+      const selectableSignatures = e.value.filter(
+        sig => !deletedSignatures.some(deleted => deleted.eve_id === sig.eve_id),
+      );
+
+      selectable
+        ? onSelect?.(selectableSignatures[0])
+        : setSelectedSignatures(selectableSignatures as ExtendedSystemSignature[]);
     },
-    [onSelect, selectable, setSelectedSignatures],
+    [onSelect, selectable, setSelectedSignatures, deletedSignatures],
   );
 
   const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(
@@ -174,7 +182,11 @@ export const SystemSignaturesContent = ({
   );
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
-    return signatures.filter(sig => {
+    // Get the set of deleted signature IDs for quick lookup
+    const deletedIds = new Set(deletedSignatures.map(sig => sig.eve_id));
+
+    // Common filter function
+    const shouldShowSignature = (sig: ExtendedSystemSignature): boolean => {
       if (filterSignature && !filterSignature(sig)) {
         return false;
       }
@@ -203,9 +215,27 @@ export const SystemSignaturesContent = ({
         return true;
       }
 
-      return settings[sig.kind];
+      return settings[sig.kind] as boolean;
+    };
+
+    // Filter active signatures, excluding any that are in the deleted list
+    const activeSignatures = signatures.filter(sig => {
+      // Skip if this signature is in the deleted list
+      if (deletedIds.has(sig.eve_id)) {
+        return false;
+      }
+
+      return shouldShowSignature(sig);
     });
-  }, [signatures, hideLinkedSignatures, settings, filterSignature]);
+
+    // Add deleted signatures with pending deletion flag, applying the same filters
+    const deletedWithPendingFlag = deletedSignatures.filter(shouldShowSignature).map(sig => ({
+      ...sig,
+      pendingDeletion: true,
+    }));
+
+    return [...activeSignatures, ...deletedWithPendingFlag];
+  }, [signatures, hideLinkedSignatures, settings, filterSignature, deletedSignatures]);
 
   const onRowMouseEnter = useCallback((e: DataTableRowMouseEvent) => {
     setHoveredSignature(e.data as SystemSignature);
@@ -249,7 +279,8 @@ export const SystemSignaturesContent = ({
           {hasUnsupportedLanguage && (
             <div className="w-full flex justify-center items-center text-amber-500 text-xs p-1 bg-amber-950/20 border-b border-amber-800/30">
               <i className={PrimeIcons.EXCLAMATION_TRIANGLE + ' mr-1'} />
-              Non-English signatures detected. Some signatures may not display correctly. Double-click to edit signature details.
+              Non-English signatures detected. Some signatures may not display correctly. Double-click to edit signature
+              details.
             </div>
           )}
           <DataTable

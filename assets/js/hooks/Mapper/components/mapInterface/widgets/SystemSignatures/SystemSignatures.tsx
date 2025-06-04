@@ -16,6 +16,7 @@ import {
   SIGNATURE_DELETION_TIMEOUTS,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers';
+import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
 
 /**
  * Custom hook for managing pending signature deletions and undo countdown.
@@ -27,15 +28,31 @@ function useSignatureUndo(
 ) {
   const [countdown, setCountdown] = useState<number>(0);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [deletedSignatures, setDeletedSignatures] = useState<ExtendedSystemSignature[]>([]);
   const intervalRef = useRef<number | null>(null);
 
-  const addDeleted = useCallback((ids: string[]) => {
+  const addDeleted = useCallback((signatures: ExtendedSystemSignature[]) => {
+    const newIds = signatures.map(sig => sig.eve_id);
     setPendingIds(prev => {
       const next = new Set(prev);
-      ids.forEach(id => next.add(id));
+      newIds.forEach(id => next.add(id));
       return next;
     });
+    setDeletedSignatures(prev => [...prev, ...signatures]);
   }, []);
+
+  // Clear deleted signatures when system changes
+  useEffect(() => {
+    if (systemId) {
+      setDeletedSignatures([]);
+      setPendingIds(new Set());
+      setCountdown(0);
+      if (intervalRef.current != null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+  }, [systemId]);
 
   // kick off or clear countdown whenever pendingIds changes
   useEffect(() => {
@@ -47,6 +64,7 @@ function useSignatureUndo(
 
     if (pendingIds.size === 0) {
       setCountdown(0);
+      setDeletedSignatures([]);
       return;
     }
 
@@ -63,6 +81,7 @@ function useSignatureUndo(
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
           setPendingIds(new Set());
+          setDeletedSignatures([]);
           return 0;
         }
         return prev - 1;
@@ -85,6 +104,7 @@ function useSignatureUndo(
       data: { system_id: systemId, eve_ids: Array.from(pendingIds) },
     });
     setPendingIds(new Set());
+    setDeletedSignatures([]);
     setCountdown(0);
     if (intervalRef.current != null) {
       clearInterval(intervalRef.current);
@@ -95,6 +115,7 @@ function useSignatureUndo(
   return {
     pendingIds,
     countdown,
+    deletedSignatures,
     addDeleted,
     handleUndo,
   };
@@ -118,7 +139,11 @@ export const SystemSignatures = () => {
 
   const [systemId] = selectedSystems;
   const isSystemSelected = useMemo(() => selectedSystems.length === 1, [selectedSystems.length]);
-  const { pendingIds, countdown, addDeleted, handleUndo } = useSignatureUndo(systemId, currentSettings, outCommand);
+  const { pendingIds, countdown, deletedSignatures, addDeleted, handleUndo } = useSignatureUndo(
+    systemId,
+    currentSettings,
+    outCommand,
+  );
 
   useHotkey(true, ['z', 'Z'], (event: KeyboardEvent) => {
     if (pendingIds.size > 0 && countdown > 0) {
@@ -175,6 +200,7 @@ export const SystemSignatures = () => {
         <SystemSignaturesContent
           systemId={systemId}
           settings={currentSettings}
+          deletedSignatures={deletedSignatures}
           onLazyDeleteChange={handleLazyDeleteToggle}
           onCountChange={handleCountChange}
           onSignatureDeleted={addDeleted}
