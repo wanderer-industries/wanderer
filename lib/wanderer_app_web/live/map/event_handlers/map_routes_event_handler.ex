@@ -56,13 +56,21 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
     {:ok, hubs} = map_id |> WandererApp.Map.list_hubs()
 
+    {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
+
+    ping_system_ids =
+      pings
+      |> Enum.map(fn %{system: %{solar_system_id: solar_system_id}} -> "#{solar_system_id}" end)
+
+    route_hubs = (ping_system_ids ++ hubs) |> Enum.uniq()
+
     is_hubs_limit_reached = hubs |> Enum.count() > hubs_limit
 
     Task.async(fn ->
       {:ok, routes} =
         WandererApp.Maps.find_routes(
           map_id,
-          hubs,
+          route_hubs,
           solar_system_id,
           get_routes_settings(routes_settings),
           is_hubs_limit_reached
@@ -321,15 +329,20 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         %{assigns: %{current_user: current_user, has_tracked_characters?: true}} = socket
       ) do
     character_eve_ids
-    |> Task.async_stream(fn character_eve_id ->
-      set_autopilot_waypoint(
-        current_user,
-        character_eve_id,
-        add_to_beginning,
-        clear_other_waypoints,
-        destination_id
-      )
-    end)
+    |> Task.async_stream(
+      fn character_eve_id ->
+        set_autopilot_waypoint(
+          current_user,
+          character_eve_id,
+          add_to_beginning,
+          clear_other_waypoints,
+          destination_id
+        )
+      end,
+      max_concurrency: System.schedulers_online(),
+      on_timeout: :kill_task,
+      timeout: :timer.minutes(1)
+    )
     |> Enum.map(fn _result -> :skip end)
 
     {:noreply, socket}

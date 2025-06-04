@@ -15,7 +15,10 @@ export interface MapContextMenuProps {
 }
 
 export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: MapContextMenuProps) => {
-  const { outCommand, setInterfaceSettings } = useMapRootState();
+  const {
+    outCommand,
+    storedSettings: { setInterfaceSettings },
+  } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
 

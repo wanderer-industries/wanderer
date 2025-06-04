@@ -9,7 +9,8 @@ defmodule WandererApp.Map.Server.Impl do
     CharactersImpl,
     ConnectionsImpl,
     SystemsImpl,
-    SignaturesImpl
+    SignaturesImpl,
+    PingsImpl
   }
 
   @enforce_keys [
@@ -174,6 +175,10 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate remove_hub(state, hub_info), to: SystemsImpl
 
+  defdelegate add_ping(state, ping_info), to: PingsImpl
+
+  defdelegate cancel_ping(state, ping_info), to: PingsImpl
+
   defdelegate add_connection(state, connection_info), to: ConnectionsImpl
 
   defdelegate delete_connection(state, connection_info), to: ConnectionsImpl
@@ -321,8 +326,7 @@ defmodule WandererApp.Map.Server.Impl do
     if can_broadcast?(map_id) do
       @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
         event: event,
-        payload: payload,
-        timestamp: DateTime.utc_now()
+        payload: payload
       })
     end
 

@@ -40,6 +40,8 @@ const INITIAL_DATA: MapData = {
   isSubscriptionActive: false,
   mainCharacterEveId: null,
   followingCharacterEveId: null,
+  userHubs: [],
+  pings: [],
 };
 
 export interface MapContextProps {

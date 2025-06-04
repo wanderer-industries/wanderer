@@ -1,3 +1,5 @@
+import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+
 export enum SESSION_KEY {
   viewPort = 'viewPort',
   windows = 'windows',
@@ -139,3 +141,10 @@ export const K162_TYPES_MAP: { [key: string]: K162Type } = K162_TYPES.reduce(
   (acc, x) => ({ ...acc, [x.value]: x }),
   {},
 );
+
+export const MINIMAP_PLACEMENT_MAP = {
+  [PingsPlacement.rightTop]: 'top-right',
+  [PingsPlacement.leftTop]: 'top-left',
+  [PingsPlacement.rightBottom]: 'bottom-right',
+  [PingsPlacement.leftBottom]: 'bottom-left',
+};

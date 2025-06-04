@@ -77,8 +77,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
 
       WandererApp.Cache.delete("character:#{character_id}:last_active_time")
-      WandererApp.Cache.delete("character:#{character_id}:location_started")
-      WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
       WandererApp.Character.delete_character_state(character_id)
 
       tracked_characters =
@@ -189,7 +187,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       end,
       max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
-      timeout: :timer.seconds(15)
+      timeout: :timer.seconds(60)
     )
     |> Enum.map(fn result ->
       case result do
@@ -214,6 +212,10 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     |> Task.async_stream(
       fn {map_id, character_id} ->
         if not character_is_present(map_id, character_id) do
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+
           {:ok, character_state} =
             WandererApp.Character.Tracker.update_settings(character_id, %{
               map_id: map_id,

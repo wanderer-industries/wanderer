@@ -1,4 +1,4 @@
-import React, { createContext, forwardRef, useContext, useImperativeHandle, useState } from 'react';
+import React, { createContext, forwardRef, useContext } from 'react';
 import {
   RoutesImperativeHandle,
   RoutesProviderInnerProps,
@@ -15,17 +15,14 @@ const RoutesContext = createContext<RoutesProviderInnerProps>({
   data: {},
 });
 
-export const RoutesProvider = forwardRef<RoutesImperativeHandle, MapProviderProps>(({ children, ...props }, ref) => {
-  const [loading, setLoading] = useState(false);
+// INFO: this component have imperative handler but now it not using.
+export const RoutesProvider = forwardRef<RoutesImperativeHandle, MapProviderProps>(
+  ({ children, ...props } /*, ref*/) => {
+    // useImperativeHandle(ref, () => ({}));
 
-  useImperativeHandle(ref, () => ({
-    stopLoading() {
-      setLoading(false);
-    },
-  }));
-
-  return <RoutesContext.Provider value={{ ...props, loading, setLoading }}>{children}</RoutesContext.Provider>;
-});
+    return <RoutesContext.Provider value={{ ...props /*, loading, setLoading*/ }}>{children}</RoutesContext.Provider>;
+  },
+);
 RoutesProvider.displayName = 'RoutesProvider';
 
 export const useRouteProvider = () => {

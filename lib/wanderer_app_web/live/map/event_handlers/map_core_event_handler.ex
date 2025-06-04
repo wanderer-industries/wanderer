@@ -585,6 +585,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       Process.send_after(self(), :no_main_character_set, 100)
     end
 
+    Process.send_after(self(), %{event: :load_map_pings}, 200)
+
     if needs_tracking_setup do
       Process.send_after(self(), %{event: :show_tracking}, 10)
 

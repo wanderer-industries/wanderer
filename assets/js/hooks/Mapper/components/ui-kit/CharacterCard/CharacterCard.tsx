@@ -1,9 +1,3 @@
-import { useCallback } from 'react';
-import clsx from 'clsx';
-import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
-import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
-import { Commands } from '@/hooks/Mapper/types/mapHandlers';
-import { emitMapEvent } from '@/hooks/Mapper/events';
 import {
   TooltipPosition,
   WdEveEntityPortrait,
@@ -11,19 +5,30 @@ import {
   WdEveEntityPortraitType,
   WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
+import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
+import { emitMapEvent } from '@/hooks/Mapper/events';
 import { isDocked } from '@/hooks/Mapper/helpers/isDocked.ts';
+import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
+import { WithClassName } from '@/hooks/Mapper/types/common.ts';
+import { Commands } from '@/hooks/Mapper/types/mapHandlers';
+import clsx from 'clsx';
+import { useCallback } from 'react';
 import classes from './CharacterCard.module.scss';
 
-type CharacterCardProps = {
+export type CharacterCardProps = {
   compact?: boolean;
   showSystem?: boolean;
   showTicker?: boolean;
+  showShip?: boolean;
   showShipName?: boolean;
   useSystemsCache?: boolean;
   showCorporationLogo?: boolean;
   showAllyLogo?: boolean;
-} & CharacterTypeRaw &
-  WithIsOwnCharacter;
+  simpleMode?: boolean;
+} & WithIsOwnCharacter &
+  WithClassName;
+
+type CharacterCardInnerProps = CharacterCardProps & CharacterTypeRaw;
 
 const SHIP_NAME_RX = /u'|'/g;
 export const getShipName = (name: string) => {
@@ -34,16 +39,19 @@ export const getShipName = (name: string) => {
 };
 
 export const CharacterCard = ({
+  simpleMode,
   compact = false,
   isOwn,
   showSystem,
+  showShip,
   showShipName,
   showCorporationLogo,
   showAllyLogo,
   showTicker,
   useSystemsCache,
+  className,
   ...char
-}: CharacterCardProps) => {
+}: CharacterCardInnerProps) => {
   const handleSelect = useCallback(() => {
     emitMapEvent({
       name: Commands.centerSystem,
@@ -56,9 +64,55 @@ export const CharacterCard = ({
   const shipType = char.ship?.ship_type_info?.name;
   const locationShown = showSystem && char.location?.solar_system_id;
 
+  // INFO: Simple mode show only name and icon of ally/corp. By default it compact view
+  if (simpleMode) {
+    return (
+      <div className={clsx('text-xs box-border', className)} onClick={handleSelect}>
+        <div className="flex items-center gap-1 relative">
+          <WdEveEntityPortrait eveId={char.eve_id} size={WdEveEntityPortraitSize.w18} />
+
+          {!char.alliance_id && (
+            <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
+              <WdEveEntityPortrait
+                type={WdEveEntityPortraitType.corporation}
+                eveId={char.corporation_id?.toString()}
+                size={WdEveEntityPortraitSize.w18}
+              />
+            </WdTooltipWrapper>
+          )}
+
+          {char.alliance_id && (
+            <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
+              <WdEveEntityPortrait
+                type={WdEveEntityPortraitType.alliance}
+                eveId={char.alliance_id?.toString()}
+                size={WdEveEntityPortraitSize.w18}
+              />
+            </WdTooltipWrapper>
+          )}
+
+          <div className="flex overflow-hidden text-left">
+            <div className="flex">
+              <span
+                className={clsx(
+                  'overflow-hidden text-ellipsis whitespace-nowrap',
+                  isOwn ? 'text-orange-400' : 'text-gray-200',
+                )}
+                title={char.name}
+              >
+                {char.name}
+              </span>
+              {showTicker && <span className="flex-shrink-0 text-gray-400 ml-1">[{tickerText}]</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (compact) {
     return (
-      <div className="text-xs box-border w-full" onClick={handleSelect}>
+      <div className={clsx('text-xs box-border w-full', className)} onClick={handleSelect}>
         <div className="w-full flex items-center gap-1 relative">
           <WdEveEntityPortrait eveId={char.eve_id} size={WdEveEntityPortraitSize.w18} />
 
@@ -66,7 +120,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.corporation}
-                eveId={char.corporation_id.toString()}
+                eveId={char.corporation_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -76,7 +130,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.alliance}
-                eveId={char.alliance_id.toString()}
+                eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w18}
               />
             </WdTooltipWrapper>
@@ -98,7 +152,7 @@ export const CharacterCard = ({
             </div>
           </div>
 
-          {shipType && (
+          {showShip && shipType && (
             <>
               {!showShipName && (
                 <div
@@ -123,10 +177,10 @@ export const CharacterCard = ({
                 </div>
               )}
               {char.ship && (
-                <WdTooltipWrapper position={TooltipPosition.top} content={char.ship.ship_type_info.name}>
+                <WdTooltipWrapper position={TooltipPosition.top} content={char.ship.ship_type_info?.name}>
                   <WdEveEntityPortrait
                     type={WdEveEntityPortraitType.ship}
-                    eveId={char.ship.ship_type_id.toString()}
+                    eveId={char.ship.ship_type_id?.toString()}
                     size={WdEveEntityPortraitSize.w18}
                   />
                 </WdTooltipWrapper>
@@ -148,7 +202,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.corporation}
-                eveId={char.corporation_id.toString()}
+                eveId={char.corporation_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             </WdTooltipWrapper>
@@ -158,7 +212,7 @@ export const CharacterCard = ({
             <WdTooltipWrapper position={TooltipPosition.top} content={char.alliance_name}>
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.alliance}
-                eveId={char.alliance_id.toString()}
+                eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             </WdTooltipWrapper>
@@ -192,7 +246,7 @@ export const CharacterCard = ({
             )
           )}
         </div>
-        {shipType && (
+        {showShip && shipType && (
           <>
             <div className="flex flex-col flex-shrink-0 items-end self-start">
               <div
@@ -212,7 +266,7 @@ export const CharacterCard = ({
             {char.ship && (
               <WdEveEntityPortrait
                 type={WdEveEntityPortraitType.ship}
-                eveId={char.ship.ship_type_id.toString()}
+                eveId={char.ship.ship_type_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
               />
             )}

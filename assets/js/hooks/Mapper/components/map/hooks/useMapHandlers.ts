@@ -115,35 +115,18 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               }, 500);
               break;
 
+            case Commands.pingAdded:
+            case Commands.pingCancelled:
             case Commands.routes:
-              // do nothing here
-              break;
-
             case Commands.signaturesUpdated:
-              // do nothing here
-              break;
-
             case Commands.linkSignatureToSystem:
-              // do nothing here
-              break;
-
             case Commands.detailedKillsUpdated:
-              // do nothing here
-              break;
-
             case Commands.characterActivityData:
-              break;
-
             case Commands.trackingCharactersData:
-              break;
-
             case Commands.updateActivity:
-              break;
-
             case Commands.updateTracking:
-              break;
-
             case Commands.userSettingsUpdated:
+              // do nothing
               break;
 
             default:

@@ -9,3 +9,4 @@ export * from './useCommandsCharacters';
 export * from './useCommandComments';
 export * from './useGetCacheCharacter';
 export * from './useCommandsActivity';
+export * from './useCommandPings';

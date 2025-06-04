@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { LoadRoutesCommand } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
+import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 
 function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T>();
@@ -13,8 +14,22 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
-export const useLoadRoutes = () => {
-  const { data: routesSettings, loadRoutesCommand, hubs, routesList, loading, setLoading } = useRouteProvider();
+type UseLoadRoutesProps = {
+  loadRoutesCommand: LoadRoutesCommand;
+  hubs: string[];
+  routesList: RoutesList | undefined;
+  data: RoutesType;
+  deps?: unknown[];
+};
+
+export const useLoadRoutes = ({
+  data: routesSettings,
+  loadRoutesCommand,
+  hubs,
+  routesList,
+  deps = [],
+}: UseLoadRoutesProps) => {
+  const [loading, setLoading] = useState(false);
 
   const {
     data: { selectedSystems, systems, connections },
@@ -55,7 +70,8 @@ export const useLoadRoutes = () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       .map(x => routesSettings[x]),
+    ...deps,
   ]);
 
-  return { loading, loadRoutes };
+  return { loading, loadRoutes, setLoading };
 };

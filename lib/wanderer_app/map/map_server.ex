@@ -178,6 +178,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.remove_hub/2, [hub_info]})
 
+  def add_ping(map_id, ping_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.add_ping/2, [ping_info]})
+
+  def cancel_ping(map_id, ping_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.cancel_ping/2, [ping_info]})
+
   def delete_systems(map_id, solar_system_ids, user_id, character_id) when is_binary(map_id),
     do:
       map_id

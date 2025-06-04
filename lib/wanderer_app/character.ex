@@ -54,18 +54,26 @@ defmodule WandererApp.Character do
     end
   end
 
-  def get_map_character(map_id, character_id) do
+  def get_map_character(map_id, character_id, opts \\ []) do
     case get_character(character_id) do
       {:ok, character} ->
+        # If we are forcing the character to not be present, we merge the character state with map settings
+        character_is_present =
+          if opts |> Keyword.get(:not_present, false) do
+            false
+          else
+            WandererApp.Character.TrackerManager.Impl.character_is_present(map_id, character_id)
+          end
+
         {:ok,
          character
          |> maybe_merge_map_character_settings(
            map_id,
-           WandererApp.Character.TrackerManager.Impl.character_is_present(map_id, character_id)
+           character_is_present
          )}
 
-      _ ->
-        {:ok, nil}
+      error ->
+        error
     end
   end
 

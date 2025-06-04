@@ -20,9 +20,9 @@ defmodule WandererApp.Application do
           pools: %{
             default: [
               # number of connections per pool
-              size: 25,
+              size: 50,
               # number of pools (so total 50 connections)
-              count: 2
+              count: 4
             ]
           }
         },

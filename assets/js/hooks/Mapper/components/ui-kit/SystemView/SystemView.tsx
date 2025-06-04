@@ -1,5 +1,4 @@
-import { WithClassName } from '@/hooks/Mapper/types/common.ts';
-import { SystemViewStandalone } from '@/hooks/Mapper/components/ui-kit';
+import { SystemViewStandalone, SystemViewStandaloneProps } from '@/hooks/Mapper/components/ui-kit';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
 import { useMemo } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
@@ -8,18 +7,11 @@ import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 export type SystemViewProps = {
   systemId: string;
   systemInfo?: SolarSystemStaticInfoRaw;
-  hideRegion?: boolean;
   useSystemsCache?: boolean;
   showCustomName?: boolean;
-} & WithClassName;
+} & Pick<SystemViewStandaloneProps, 'className' | 'compact' | 'hideRegion'>;
 
-export const SystemView = ({
-  systemId,
-  systemInfo: customSystemInfo,
-  hideRegion,
-  className,
-  showCustomName,
-}: SystemViewProps) => {
+export const SystemView = ({ systemId, systemInfo: customSystemInfo, showCustomName, ...rest }: SystemViewProps) => {
   const memSystems = useMemo(() => [systemId], [systemId]);
   const { systems, loading } = useLoadSystemStatic({ systems: memSystems });
 
@@ -47,13 +39,8 @@ export const SystemView = ({
   }
 
   if (!mapSystemInfo) {
-    return <SystemViewStandalone hideRegion={hideRegion} className={className} {...systemInfo} />;
+    return <SystemViewStandalone {...rest} {...systemInfo} />;
   }
 
-  return (
-    <div>
-      <SystemViewStandalone hideRegion={hideRegion} className={className} {...systemInfo} />
-      <span>{systemInfo.solar_system_name}</span>
-    </div>
-  );
+  return <SystemViewStandalone customName={mapSystemInfo.name ?? undefined} {...rest} {...systemInfo} />;
 };

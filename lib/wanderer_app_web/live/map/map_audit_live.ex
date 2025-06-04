@@ -135,6 +135,8 @@ defmodule WandererAppWeb.MapAuditLive do
       {"Connection Added", :map_connection_added},
       {"Connection Updated", :map_connection_updated},
       {"Connection Removed", :map_connection_removed},
+      {"Rally Point Added", :map_rally_added},
+      {"Rally Point Cancelled", :map_rally_cancelled},
       {"Signatures Added", :signatures_added},
       {"Signatures Removed", :signatures_removed}
     ])

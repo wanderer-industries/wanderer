@@ -1,9 +1,6 @@
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { RefObject, useCallback } from 'react';
 
-// Force reload the page after 5 minutes of inactivity
-const FORCE_PAGE_RELOAD_TIMEOUT = 1000 * 60 * 5;
-
 export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRef: RefObject<any>) => {
   const handleCommand = useCallback(
     async ({ type, data }) => {
@@ -16,13 +13,7 @@ export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRe
     [hooksRef.current],
   );
 
-  const handleMapEvent = useCallback(({ type, body, timestamp }) => {
-    const timeDiff = Date.now() - Date.parse(timestamp);
-    // If the event is older than the timeout, force reload the page
-    if (timeDiff > FORCE_PAGE_RELOAD_TIMEOUT) {
-      window.location.reload();
-      return;
-    }
+  const handleMapEvent = useCallback(({ type, body }) => {
     handlerRefs.forEach(ref => {
       if (!ref.current) {
         return;

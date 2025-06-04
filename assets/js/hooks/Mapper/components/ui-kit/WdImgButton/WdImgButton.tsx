@@ -11,12 +11,14 @@ export enum WdImageSize {
   large = 'large',
 }
 
+export type WdImgButtonTooltip = Pick<WdTooltipWrapperProps, 'content' | 'position' | 'offset' | 'className'>;
+
 export type WdImgButtonProps = {
   onClick?(e: MouseEvent): void;
   source?: string;
   width?: number;
   height?: number;
-  tooltip?: Pick<WdTooltipWrapperProps, 'content' | 'position' | 'offset' | 'className'>;
+  tooltip?: WdImgButtonTooltip;
   textSize?: WdImageSize;
 } & WithClassName &
   HTMLProps<HTMLDivElement>;

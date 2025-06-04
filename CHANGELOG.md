@@ -2,6 +2,141 @@
 
 <!-- changelog -->
 
+## [v1.65.23](https://github.com/wanderer-industries/wanderer/compare/v1.65.22...v1.65.23) (2025-06-04)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added back arm docker image build
+
+## [v1.65.22](https://github.com/wanderer-industries/wanderer/compare/v1.65.21...v1.65.22) (2025-06-04)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix character tracking issues
+
+## [v1.65.21](https://github.com/wanderer-industries/wanderer/compare/v1.65.20...v1.65.21) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fix connection pool errors
+
+## [v1.65.20](https://github.com/wanderer-industries/wanderer/compare/v1.65.19...v1.65.20) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix waypoint set timeout errors
+
+## [v1.65.19](https://github.com/wanderer-industries/wanderer/compare/v1.65.18...v1.65.19) (2025-06-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix updating character online
+
+## [v1.65.18](https://github.com/wanderer-industries/wanderer/compare/v1.65.17...v1.65.18) (2025-05-30)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix updating systems and connections
+
+## [v1.65.17](https://github.com/wanderer-industries/wanderer/compare/v1.65.16...v1.65.17) (2025-05-29)
+
+
+
+
+### Bug Fixes:
+
+* Core: fix updating systems and connections
+
+* Comments: fix error loading comments
+
+## [v1.65.16](https://github.com/wanderer-industries/wanderer/compare/v1.65.15...v1.65.16) (2025-05-29)
+
+
+
+
+### Bug Fixes:
+
+* Map: Allow lock systems for members
+
+## [v1.65.15](https://github.com/wanderer-industries/wanderer/compare/v1.65.14...v1.65.15) (2025-05-28)
+
+
+
+
+## [v1.65.14](https://github.com/wanderer-industries/wanderer/compare/v1.65.13...v1.65.14) (2025-05-28)
+
+
+
+
+## [v1.65.13](https://github.com/wanderer-industries/wanderer/compare/v1.65.12...v1.65.13) (2025-05-28)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: small wh size is now passed from signature to connection
+
+## [v1.65.12](https://github.com/wanderer-industries/wanderer/compare/v1.65.11...v1.65.12) (2025-05-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed showing character ship
+
+## [v1.65.11](https://github.com/wanderer-industries/wanderer/compare/v1.65.10...v1.65.11) (2025-05-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed showing character ship
+
+## [v1.65.10](https://github.com/wanderer-industries/wanderer/compare/v1.65.9...v1.65.10) (2025-05-27)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed sorting for characters in Local
+
+* Map: Rally: fixed conflict style of status and rally
+
+* Core: Fixed character token refresh
+
+* Map: Add Rally point. Change placement of settings in Map User Settings. Add ability to placement minimap.
+
+* Map: Routes - hide user routes btn from context if subscriptions is not active or widget is closed. Also now hidden widget will show again in place where it was on moment of hide (except cases when screen size has changed.
+
+* Map: PINGS - Rally point first prototype
+
+## [v1.65.9](https://github.com/wanderer-industries/wanderer/compare/v1.65.8...v1.65.9) (2025-05-26)
+
+
+
+
 ## [v1.65.8](https://github.com/wanderer-industries/wanderer/compare/v1.65.7...v1.65.8) (2025-05-26)
 
 

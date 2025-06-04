@@ -112,6 +112,8 @@ defmodule WandererApp.Api.UserActivity do
           :map_connection_added,
           :map_connection_updated,
           :map_connection_removed,
+          :map_rally_added,
+          :map_rally_cancelled,
           :signatures_added,
           :signatures_removed
         ]

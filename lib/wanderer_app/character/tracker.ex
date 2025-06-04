@@ -79,8 +79,8 @@ defmodule WandererApp.Character.Tracker do
 
             :ok
 
-          {:error, :forbidden} ->
-            Logger.warning("#{__MODULE__} failed to get_character_info: forbidden")
+          {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+            Logger.warning("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
 
             WandererApp.Cache.put(
               "character:#{character_id}:info_forbidden",
@@ -88,7 +88,7 @@ defmodule WandererApp.Character.Tracker do
               ttl: @forbidden_ttl
             )
 
-            {:error, :forbidden}
+            {:error, error}
 
           {:error, error} ->
             Logger.error("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
@@ -121,13 +121,13 @@ defmodule WandererApp.Character.Tracker do
                    character_id: character_id,
                    refresh_token?: true
                  ) do
-              {:ok, ship} ->
+              {:ok, ship} when is_non_struct_map(ship) ->
                 character_state |> maybe_update_ship(ship)
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_ship: forbidden")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_ship: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:ship_forbidden",
@@ -135,7 +135,7 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
-                {:error, :forbidden}
+                {:error, error}
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_ship: #{inspect(error)}")
@@ -147,6 +147,11 @@ defmodule WandererApp.Character.Tracker do
                 )
 
                 {:error, error}
+
+              _ ->
+                Logger.error("#{__MODULE__} failed to update_ship: wrong response")
+
+                {:error, :skipped}
             end
         end
 
@@ -179,14 +184,14 @@ defmodule WandererApp.Character.Tracker do
                    character_id: character_id,
                    refresh_token?: true
                  ) do
-              {:ok, location} ->
+              {:ok, location} when is_non_struct_map(location) ->
                 character_state
                 |> maybe_update_location(location)
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_location: forbidden")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:location_forbidden",
@@ -194,7 +199,7 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
-                {:error, :forbidden}
+                {:error, error}
 
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
@@ -206,6 +211,11 @@ defmodule WandererApp.Character.Tracker do
                 )
 
                 {:error, error}
+
+              _ ->
+                Logger.error("#{__MODULE__} failed to update_location: wrong response")
+
+                {:error, :skipped}
             end
 
           _ ->
@@ -247,11 +257,6 @@ defmodule WandererApp.Character.Tracker do
                 WandererApp.Cache.delete("character:#{character_id}:online_error_time")
                 WandererApp.Character.update_character(character_id, online)
 
-                if not online.online do
-                  WandererApp.Cache.delete("character:#{character_id}:location_started")
-                  WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
-                end
-
                 update = %{
                   character_state
                   | is_online: online.online,
@@ -263,8 +268,8 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, :forbidden} ->
-                Logger.warning("#{__MODULE__} failed to update_online: forbidden")
+              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_online: #{inspect(error)}")
 
                 if not WandererApp.Cache.lookup!(
                      "character:#{character_id}:online_forbidden",
@@ -362,8 +367,9 @@ defmodule WandererApp.Character.Tracker do
 
                     :ok
 
-                  {:error, :forbidden} ->
-                    Logger.warning("#{__MODULE__} failed to _update_wallet: forbidden")
+                  {:error, error}
+                  when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                    Logger.warning("#{__MODULE__} failed to update_wallet: #{inspect(error)}")
 
                     WandererApp.Cache.put(
                       "character:#{character_id}:wallet_forbidden",
@@ -371,7 +377,7 @@ defmodule WandererApp.Character.Tracker do
                       ttl: @forbidden_ttl
                     )
 
-                    {:error, :forbidden}
+                    {:error, error}
 
                   {:error, error} ->
                     Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")
@@ -475,7 +481,8 @@ defmodule WandererApp.Character.Tracker do
          } =
            state,
          ship
-       ) do
+       )
+       when is_non_struct_map(ship) do
     ship_type_id = Map.get(ship, "ship_type_id")
     ship_name = Map.get(ship, "ship_name")
 
@@ -499,6 +506,12 @@ defmodule WandererApp.Character.Tracker do
     state
   end
 
+  defp maybe_update_ship(
+         state,
+         _ship
+       ),
+       do: state
+
   defp maybe_update_location(
          %{
            character_id: character_id
@@ -508,32 +521,12 @@ defmodule WandererApp.Character.Tracker do
        ) do
     location = get_location(location)
 
-    if not is_location_started?(character_id) do
-      WandererApp.Cache.lookup!("character:#{character_id}:start_solar_system_id", nil)
-      |> case do
-        nil ->
-          WandererApp.Cache.put(
-            "character:#{character_id}:start_solar_system_id",
-            location.solar_system_id
-          )
-
-        start_solar_system_id ->
-          if location.solar_system_id != start_solar_system_id do
-            WandererApp.Cache.put(
-              "character:#{character_id}:location_started",
-              true
-            )
-          end
-      end
-    end
-
     {:ok,
      %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
        character} =
       WandererApp.Character.get_character(character_id)
 
-    (not is_location_started?(character_id) ||
-       is_location_updated?(location, solar_system_id, structure_id, station_id))
+    is_location_updated?(location, solar_system_id, structure_id, station_id)
     |> case do
       true ->
         {:ok, _character} = WandererApp.Api.Character.update_location(character, location)
@@ -548,12 +541,12 @@ defmodule WandererApp.Character.Tracker do
     state
   end
 
-  defp is_location_started?(character_id),
-    do:
-      WandererApp.Cache.lookup!(
-        "character:#{character_id}:location_started",
-        false
-      )
+  # defp is_location_started?(character_id),
+  #   do:
+  #     WandererApp.Cache.lookup!(
+  #       "character:#{character_id}:location_started",
+  #       false
+  #     )
 
   defp is_location_updated?(
          %{
@@ -692,16 +685,31 @@ defmodule WandererApp.Character.Tracker do
   defp maybe_update_active_maps(
          %{character_id: character_id, active_maps: active_maps} =
            state,
-         %{map_id: map_id, track: true} = _track_settings
+         %{map_id: map_id, track: true} = track_settings
        ) do
-    WandererApp.Cache.put(
-      "character:#{character_id}:map:#{map_id}:tracking_start_time",
-      DateTime.utc_now()
-    )
+    if not Enum.member?(active_maps, map_id) do
+      WandererApp.Cache.put(
+        "character:#{character_id}:map:#{map_id}:tracking_start_time",
+        DateTime.utc_now()
+      )
 
-    WandererApp.Cache.take("character:#{character_id}:last_active_time")
+      WandererApp.Cache.put(
+        "map:#{map_id}:character:#{character_id}:start_solar_system_id",
+        track_settings |> Map.get(:solar_system_id)
+      )
 
-    %{state | active_maps: [map_id | active_maps] |> Enum.uniq()}
+      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+
+      WandererApp.Cache.take("character:#{character_id}:last_active_time")
+
+      %{state | active_maps: [map_id | active_maps]}
+    else
+      WandererApp.Cache.take("character:#{character_id}:last_active_time")
+
+      state
+    end
   end
 
   defp maybe_update_active_maps(

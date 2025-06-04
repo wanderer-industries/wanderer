@@ -70,6 +70,9 @@ export const useCommandsSystems = () => {
   const updateSystemSignatures = useCallback(
     async (systemId: string) => {
       const { update, systemSignatures } = ref.current;
+
+      // TODO need to fix it
+      // @ts-ignore
       const { signatures } = await outCommand({
         type: OutCommand.getSignatures,
         data: { system_id: `${systemId}` },
@@ -80,7 +83,7 @@ export const useCommandsSystems = () => {
     [outCommand],
   );
 
-  const updateLinkSignatureToSystem = useCallback(async (command: CommandLinkSignatureToSystem) => {
+  const updateLinkSignatureToSystem = useCallback(async (command: CommandLinkSignatureToSystem | null) => {
     const { update } = ref.current;
     update({ linkSignatureToSystem: command }, true);
   }, []);

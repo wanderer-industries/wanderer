@@ -105,19 +105,23 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
         } =
           socket
       ) do
-    system =
-      WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id |> String.to_integer()
-      })
+    WandererApp.Map.find_system_by_location(map_id, %{
+      solar_system_id: solar_system_id |> String.to_integer()
+    })
+    |> case do
+      %{id: system_id} when not is_nil(system_id) ->
+        {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system_id)
 
-    {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system.id)
+        comments =
+          comments
+          |> Enum.map(fn c -> c |> Ash.load!([:character, :system]) end)
+          |> Enum.map(&map_system_comment/1)
 
-    comments =
-      comments
-      |> Enum.map(fn c -> c |> Ash.load!([:character, :system]) end)
-      |> Enum.map(&map_system_comment/1)
+        {:reply, %{comments: comments}, socket}
 
-    {:reply, %{comments: comments}, socket}
+      _ ->
+        {:reply, %{comments: []}, socket}
+    end
   end
 
   def handle_ui_event(

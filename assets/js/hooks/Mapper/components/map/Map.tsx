@@ -28,11 +28,12 @@ import {
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
-import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
+import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import clsx from 'clsx';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
+import type { PanelPosition } from '@reactflow/core';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -95,6 +96,8 @@ interface MapCompProps {
   isShowBackgroundPattern?: boolean;
   isSoftBackground?: boolean;
   theme?: string;
+  pings: PingData[];
+  minimapPlacement?: PanelPosition;
 }
 
 const MapComp = ({
@@ -112,6 +115,8 @@ const MapComp = ({
   isSoftBackground,
   theme,
   onAddSystem,
+  pings,
+  minimapPlacement = 'bottom-right',
 }: MapCompProps) => {
   const { getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -206,8 +211,9 @@ const MapComp = ({
       ...x,
       showKSpaceBG: showKSpaceBG,
       isThickConnections: isThickConnections,
+      pings,
     }));
-  }, [showKSpaceBG, isThickConnections, update]);
+  }, [showKSpaceBG, isThickConnections, pings, update]);
 
   return (
     <>
@@ -270,7 +276,9 @@ const MapComp = ({
           // onlyRenderVisibleElements
           selectionMode={SelectionMode.Partial}
         >
-          {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
+          {isShowMinimap && (
+            <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} position={minimapPlacement} />
+          )}
           {isShowBackgroundPattern && <Background variant={variant} gap={gap} size={size} color={color} />}
         </ReactFlow>
         {/* <button className="z-auto btn btn-primary absolute top-20 right-20" onClick={handleGetPassages}>

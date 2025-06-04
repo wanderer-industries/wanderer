@@ -14,13 +14,16 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                map_id: map_id,
                tracked: track_character
              }),
-           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
+           {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
+        {:error, :not_found} ->
+          :ok
+
         _error ->
-          {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
+          {:ok, character} = WandererApp.Character.get_character(character_id)
           Impl.broadcast!(map_id, :character_added, character)
           :ok
       end
@@ -207,7 +210,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   def update_characters(%{map_id: map_id} = state) do
+    {:ok, presence_character_ids} =
+      WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
+
     WandererApp.Cache.lookup!("maps:#{map_id}:tracked_characters", [])
+    |> Enum.filter(fn character_id -> character_id in presence_character_ids end)
     |> Enum.map(fn character_id ->
       Task.start_link(fn ->
         character_updates =
@@ -292,38 +299,47 @@ defmodule WandererApp.Map.Server.CharactersImpl do
          old_location,
          %{map: map, map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = _state
        ) do
+    start_solar_system_id =
+      WandererApp.Cache.take("map:#{map_id}:character:#{character_id}:start_solar_system_id")
+
     case is_nil(old_location.solar_system_id) and
+           is_nil(start_solar_system_id) and
            ConnectionsImpl.can_add_location(map.scope, location.solar_system_id) do
       true ->
         :ok = SystemsImpl.maybe_add_system(map_id, location, nil, rtree_name, map_opts)
 
       _ ->
-        ConnectionsImpl.is_connection_valid(
-          map.scope,
-          old_location.solar_system_id,
-          location.solar_system_id
-        )
-        |> case do
-          true ->
-            :ok =
-              SystemsImpl.maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
-
-            :ok =
-              SystemsImpl.maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
-
-            if is_character_in_space?(location) do
+        if is_nil(start_solar_system_id) || start_solar_system_id == old_location.solar_system_id do
+          ConnectionsImpl.is_connection_valid(
+            map.scope,
+            old_location.solar_system_id,
+            location.solar_system_id
+          )
+          |> case do
+            true ->
               :ok =
-                ConnectionsImpl.maybe_add_connection(
-                  map_id,
-                  location,
-                  old_location,
-                  character_id,
-                  false
-                )
-            end
+                SystemsImpl.maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
 
-          _ ->
-            :ok
+              :ok =
+                SystemsImpl.maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
+
+              if is_character_in_space?(location) do
+                :ok =
+                  ConnectionsImpl.maybe_add_connection(
+                    map_id,
+                    location,
+                    old_location,
+                    character_id,
+                    false
+                  )
+              end
+
+            _ ->
+              :ok
+          end
+        else
+          # skip adding connection or system if character just started tracking on the map
+          :ok
         end
     end
   end
@@ -333,7 +349,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp track_character(map_id, character_id) do
-    {:ok, character} = WandererApp.Character.get_character(character_id)
+    {:ok, character} =
+      WandererApp.Character.get_map_character(map_id, character_id, not_present: true)
+
     add_character(%{map_id: map_id}, character, true)
 
     WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
@@ -341,7 +359,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       track: true,
       track_online: true,
       track_location: true,
-      track_ship: true
+      track_ship: true,
+      solar_system_id: character.solar_system_id
     })
   end
 
