@@ -148,7 +148,8 @@ export enum SIGNATURES_DELETION_TIMING {
   EXTENDED,
 }
 
-export type SignatureDeletionTimingType = { [key in SIGNATURES_DELETION_TIMING]?: unknown };
+// Now use a stricter type: every timing key maps to a number
+export type SignatureDeletionTimingType = Record<SIGNATURES_DELETION_TIMING, number>;
 
 export const SIGNATURE_SETTINGS = {
   filterFlags: [
@@ -219,11 +220,27 @@ export const SETTINGS_VALUES: SignatureSettingsType = {
   [SETTINGS_KEYS.COMBAT_SITE]: true,
 };
 
+// Now this map is strongly typed as “number” for each timing enum
 export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
-  [SIGNATURES_DELETION_TIMING.DEFAULT]: 10_000,
   [SIGNATURES_DELETION_TIMING.IMMEDIATE]: 0,
+  [SIGNATURES_DELETION_TIMING.DEFAULT]: 10_000,
   [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
+
+/**
+ * Helper function to extract the deletion timeout in milliseconds from settings
+ */
+export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
+  const raw = settings[SETTINGS_KEYS.DELETION_TIMING];
+  const timing =
+    raw && typeof raw === 'object' && 'value' in raw
+      ? (raw as { value: SIGNATURES_DELETION_TIMING }).value
+      : (raw as SIGNATURES_DELETION_TIMING | undefined);
+
+  const validTiming = typeof timing === 'number' ? timing : SIGNATURES_DELETION_TIMING.DEFAULT;
+
+  return SIGNATURE_DELETION_TIMEOUTS[validTiming];
+}
 
 // Replace the flat structure with a nested structure by language
 export const LANGUAGE_TYPE_MAPPINGS = {

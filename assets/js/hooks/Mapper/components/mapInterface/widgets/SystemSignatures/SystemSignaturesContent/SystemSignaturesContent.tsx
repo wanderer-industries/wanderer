@@ -128,9 +128,8 @@ export const SystemSignaturesContent = ({
 
     event.preventDefault();
     event.stopPropagation();
-    if (onSignatureDeleted && selectedSignatures.length > 0) {
-      onSignatureDeleted(selectedSignatures);
-    }
+
+    // Delete key should always immediately delete, never show pending deletions
     handleDeleteSelected();
   });
 
