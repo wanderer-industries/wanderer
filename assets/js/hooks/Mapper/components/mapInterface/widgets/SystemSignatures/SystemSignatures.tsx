@@ -12,8 +12,7 @@ import {
   SIGNATURE_SETTING_STORE_KEY,
   SIGNATURE_WINDOW_ID,
   SignatureSettingsType,
-  SIGNATURES_DELETION_TIMING,
-  SIGNATURE_DELETION_TIMEOUTS,
+  getDeletionTimeoutMs,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers';
 import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
@@ -69,9 +68,8 @@ function useSignatureUndo(
     }
 
     // determine timeout from settings
-    const timingKey = Number(settings[SETTINGS_KEYS.DELETION_TIMING] ?? SIGNATURES_DELETION_TIMING.DEFAULT);
-    const timeoutMs =
-      Number(SIGNATURE_DELETION_TIMEOUTS[timingKey as keyof typeof SIGNATURE_DELETION_TIMEOUTS]) || 10000;
+    const timeoutMs = getDeletionTimeoutMs(settings);
+
     setCountdown(Math.ceil(timeoutMs / 1000));
 
     // start new interval
@@ -94,7 +92,7 @@ function useSignatureUndo(
         intervalRef.current = null;
       }
     };
-  }, [pendingIds, settings[SETTINGS_KEYS.DELETION_TIMING]]);
+  }, [pendingIds, settings]);
 
   // undo handler
   const handleUndo = useCallback(async () => {

@@ -5,7 +5,10 @@ import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 
-import { SETTINGS_KEYS } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import {
+  SETTINGS_KEYS,
+  getDeletionTimeoutMs,
+} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getActualSigs } from '../helpers';
 import { UseSystemSignaturesDataProps } from './types';
@@ -74,8 +77,16 @@ export const useSystemSignaturesData = ({
 
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);
-        if (onSignatureDeleted) {
-          onSignatureDeleted(removed);
+
+        // Only show pending deletions if:
+        // 1. Lazy deletion is enabled AND
+        // 2. Deletion timing is not immediate (> 0)
+        if (onSignatureDeleted && lazyDeleteValue) {
+          const timeoutMs = getDeletionTimeoutMs(settings);
+
+          if (timeoutMs > 0) {
+            onSignatureDeleted(removed);
+          }
         }
       }
 
@@ -102,11 +113,6 @@ export const useSystemSignaturesData = ({
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
 
-    // Call onSignatureDeleted with the full signature objects for visual feedback
-    if (onSignatureDeleted) {
-      onSignatureDeleted(selectedSignatures);
-    }
-
     const selectedIds = selectedSignatures.map(s => s.eve_id);
     const finalList = signatures.filter(s => !selectedIds.includes(s.eve_id));
 
@@ -117,7 +123,7 @@ export const useSystemSignaturesData = ({
     // Update local state after server call
     setSignatures(finalList);
     setSelectedSignatures([]);
-  }, [handleUpdateSignatures, selectedSignatures, signatures, onSignatureDeleted, setSignatures]);
+  }, [handleUpdateSignatures, selectedSignatures, signatures, setSignatures]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedSignatures(signatures);
