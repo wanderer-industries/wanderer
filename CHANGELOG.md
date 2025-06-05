@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.66.0](https://github.com/wanderer-industries/wanderer/compare/v1.65.24...v1.66.0) (2025-06-05)
+
+
+
+
+### Features:
+
+* show deleted signatures during undo timer
+
+### Bug Fixes:
+
+* remove callbacks from effect dependencies
+
 ## [v1.65.24](https://github.com/wanderer-industries/wanderer/compare/v1.65.23...v1.65.24) (2025-06-04)
 
 
