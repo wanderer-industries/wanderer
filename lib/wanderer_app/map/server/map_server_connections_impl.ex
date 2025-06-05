@@ -229,7 +229,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       |> WandererApp.Map.list_connections!()
       |> Enum.filter(fn %{
                           id: connection_id,
-                          inserted_at: inserted_at,
+                          inserted_at: _inserted_at,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
                           type: type

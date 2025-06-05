@@ -148,7 +148,7 @@ defmodule WandererAppWeb.MapAuditLive do
       activity: activity,
       map_id: map_id,
       map_slug: map_slug,
-      map_subscription_active: map_subscription_active,
+      map_subscription_active: _map_subscription_active,
       period: period
     } =
       socket.assigns
@@ -166,9 +166,9 @@ defmodule WandererAppWeb.MapAuditLive do
     end
   end
 
-  defp get_valid_period(period, true), do: period
+  defp _get_valid_period(period, true), do: period
 
-  defp get_valid_period(period, _map_subscription_active) do
+  defp _get_valid_period(period, _map_subscription_active) do
     if period in @active_subscription_periods do
       "1H"
     else

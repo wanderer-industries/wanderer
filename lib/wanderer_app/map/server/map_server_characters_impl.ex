@@ -344,7 +344,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end
   end
 
-  defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = location) do
+  defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = _location) do
     is_nil(structure_id) and is_nil(station_id)
   end
 
@@ -512,5 +512,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         Logger.error("Failed to update corporation: #{inspect(error, pretty: true)}")
         [:skip]
     end
+  end
+
+  def get_characters(%{map_id: map_id} = _state) do
+    WandererApp.Map.list_characters(map_id)
   end
 end

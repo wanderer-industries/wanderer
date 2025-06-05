@@ -22,7 +22,6 @@ defmodule WandererApp.Character.TrackerPool do
   @update_ship_interval :timer.seconds(2)
   @update_info_interval :timer.minutes(1)
   @update_wallet_interval :timer.minutes(1)
-  @inactive_character_timeout :timer.minutes(5)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -128,6 +127,7 @@ defmodule WandererApp.Character.TrackerPool do
     {:noreply, state}
   end
 
+  @impl true
   def handle_info({ref, result}, state) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
@@ -407,9 +407,5 @@ defmodule WandererApp.Character.TrackerPool do
     Process.send_after(self(), :update_wallet, @update_wallet_interval)
 
     {:noreply, state}
-  end
-
-  defp via_tuple(uuid) do
-    {:via, Registry, {@unique_registry, Module.concat(__MODULE__, uuid)}}
   end
 end

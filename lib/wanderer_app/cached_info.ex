@@ -1,38 +1,100 @@
 defmodule WandererApp.CachedInfo do
   require Logger
 
+  @ship_cache  :ship_types_cache
+  @ship_fields [
+    :type_id,
+    :group_id,
+    :group_name,
+    :name,
+    :description,
+    :mass,
+    :capacity,
+    :volume
+  ]
+
   def run(_arg) do
     :ok = cache_trig_systems()
   end
 
-  def get_ship_type(type_id) do
-    case Cachex.get(:ship_types_cache, type_id) do
+  @doc """
+  Fetch a ship type by ID, backed by Cachex.
+
+  On cache miss we:
+    1. Load *all* types from the primary API,
+    2. Cache them all,
+    3. Return the requested one (if found),
+    4. Otherwise fall back to ESI for that single type.
+  """
+  @spec get_ship_type(integer()) :: {:ok, map() | nil} | {:error, term()}
+  def get_ship_type(type_id) when is_integer(type_id) do
+    with {:ok, nil} <- Cachex.get(@ship_cache, type_id),
+         {:ok, ship_types} <- WandererApp.Api.ShipTypeInfo.read(),
+         :ok <- cache_all_ship_types(ship_types) do
+      case Enum.find(ship_types, &(&1.type_id == type_id)) do
+        nil -> fetch_and_cache_single_ship_type(type_id)
+        ship -> {:ok, ship}
+      end
+    else
+      # Cache hit
+      {:ok, ship} when not is_nil(ship) ->
+        {:ok, ship}
+
+      # Missed both primary cache & primary API list
       {:ok, nil} ->
-        {:ok, ship_types} = WandererApp.Api.ShipTypeInfo.read()
+        fetch_and_cache_single_ship_type(type_id)
 
-        ship_types
-        |> Enum.each(fn ship_type ->
-          Cachex.put(
-            :ship_types_cache,
-            ship_type.type_id,
-            ship_type
-            |> Map.take([
-              :type_id,
-              :group_id,
-              :group_name,
-              :name,
-              :description,
-              :mass,
-              :capacity,
-              :volume
-            ])
-          )
-        end)
+      # Propagate errors
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
-        Cachex.get(:ship_types_cache, type_id)
+  # -- Private helpers for get_ship_type/1 -------------------------
 
-      {:ok, ship_type} ->
-        {:ok, ship_type}
+  # Cache the full list of ship_types in one go
+  defp cache_all_ship_types(ship_types) do
+    ship_types
+    |> Enum.reduce_while(:ok, fn ship, :ok ->
+      entry = Map.take(ship, @ship_fields)
+
+      case Cachex.put(@ship_cache, ship.type_id, entry) do
+        {:ok, _}       -> {:cont, :ok}
+        {:error, err}  -> {:halt, {:error, err}}
+      end
+    end)
+  end
+
+  # On lookup failure, fetch one type from ESI + cache it
+  defp fetch_and_cache_single_ship_type(type_id) do
+    with {:ok, info} <- WandererApp.Esi.ApiClient.get_type_info(type_id),
+         group_id = info["group_id"],
+         {:ok, group_name} <- WandererApp.Esi.ApiClient.get_group_name(group_id) do
+      ship = %{
+        type_id:     type_id,
+        group_id:    group_id,
+        group_name:  group_name,
+        name:        info["name"],
+        description: info["description"],
+        mass:        info["mass"],
+        capacity:    info["capacity"],
+        volume:      info["volume"]
+      }
+
+      Cachex.put(@ship_cache, type_id, ship, ttl: :timer.seconds(300))
+      {:ok, ship}
+    else
+      {:error, :not_found} ->
+        Logger.debug("[CachedInfo] Ship type #{type_id} not found in ESI")
+        {:ok, nil}  # This is expected for invalid/missing ship types
+
+      {:error, reason} = error ->
+        Logger.warning("[CachedInfo] API error fetching ship type #{type_id}: #{inspect(reason)}")
+        error  # Propagate the actual error instead of masking it
+
+      other ->
+        Logger.warning("[CachedInfo] Unexpected error fetching ship type #{type_id}: #{inspect(other)}")
+        {:error, {:unexpected_error, other}}
     end
   end
 
@@ -100,9 +162,7 @@ defmodule WandererApp.CachedInfo do
     case WandererApp.Cache.lookup(:wormhole_types) do
       {:ok, nil} ->
         wormhole_types = WandererApp.EveDataService.load_wormhole_types()
-
         cache_items(wormhole_types, :wormhole_types)
-
         {:ok, wormhole_types}
 
       {:ok, wormhole_types} ->
@@ -125,9 +185,7 @@ defmodule WandererApp.CachedInfo do
     case WandererApp.Cache.lookup(:wormhole_classes) do
       {:ok, nil} ->
         wormhole_classes = WandererApp.EveDataService.load_wormhole_classes()
-
         cache_items(wormhole_classes, :wormhole_classes)
-
         {:ok, wormhole_classes}
 
       {:ok, wormhole_classes} ->
@@ -150,9 +208,7 @@ defmodule WandererApp.CachedInfo do
     case WandererApp.Cache.lookup(:effects) do
       {:ok, nil} ->
         effects = WandererApp.EveDataService.load_effects()
-
         cache_items(effects, :effects)
-
         {:ok, effects}
 
       {:ok, effects} ->
@@ -175,11 +231,8 @@ defmodule WandererApp.CachedInfo do
     case WandererApp.Cache.lookup(:wh_class_a_systems) do
       {:ok, nil} ->
         {:ok, wh_class_a} = WandererApp.Api.MapSolarSystem.get_wh_class_a()
-
-        wh_class_a_ids = wh_class_a |> Enum.map(& &1.solar_system_id)
-
+        wh_class_a_ids = Enum.map(wh_class_a, & &1.solar_system_id)
         cache_items(wh_class_a_ids, :wh_class_a_systems)
-
         {:ok, wh_class_a_ids}
 
       {:ok, wh_class_a_ids} ->
@@ -191,9 +244,7 @@ defmodule WandererApp.CachedInfo do
     case WandererApp.Cache.lookup(:trig_systems) do
       {:ok, nil} ->
         {:ok, trig_systems} = WandererApp.Api.MapSolarSystem.get_trig_systems()
-
         cache_items(trig_systems, :trig_systems)
-
         {:ok, trig_systems}
 
       {:ok, trig_systems} ->
@@ -205,22 +256,21 @@ defmodule WandererApp.CachedInfo do
     trig_systems = WandererApp.Api.MapSolarSystem.get_trig_systems!()
 
     trig_systems
-    |> Enum.filter(fn s -> s.triglavian_invasion_status == "Final" end)
+    |> Enum.filter(&(&1.triglavian_invasion_status == "Final"))
     |> Enum.map(& &1.solar_system_id)
     |> cache_items(:pochven_solar_systems)
 
     trig_systems
-    |> Enum.filter(fn s -> s.triglavian_invasion_status == "Triglavian" end)
+    |> Enum.filter(&(&1.triglavian_invasion_status == "Triglavian"))
     |> Enum.map(& &1.solar_system_id)
     |> cache_items(:triglavian_solar_systems)
 
     trig_systems
-    |> Enum.filter(fn s -> s.triglavian_invasion_status == "Edencom" end)
+    |> Enum.filter(&(&1.triglavian_invasion_status == "Edencom"))
     |> Enum.map(& &1.solar_system_id)
     |> cache_items(:edencom_solar_systems)
   end
 
   defp cache_items([], _list_name), do: :ok
-
-  defp cache_items(items, list_name), do: WandererApp.Cache.put(list_name, items)
+  defp cache_items(items, list_name),    do: WandererApp.Cache.put(list_name, items)
 end

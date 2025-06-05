@@ -269,7 +269,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
 
   def handle_ui_event(
         "undo_delete_signatures",
-        %{"system_id" => solar_system_id, "eve_ids" => eve_ids} = payload,
+        %{"system_id" => solar_system_id, "eve_ids" => eve_ids} = _payload,
         %{
           assigns: %{
             map_id: map_id,
@@ -284,7 +284,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
            solar_system_id: get_integer(solar_system_id)
          }) do
       {:ok, system} ->
-        restored =
+        _restored =
           WandererApp.Api.MapSystemSignature.by_system_id_all!(system.id)
           |> Enum.filter(fn s -> s.eve_id in eve_ids end)
           |> Enum.map(fn s ->

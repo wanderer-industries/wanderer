@@ -62,8 +62,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         %{
           solar_system_id: solar_system_id,
           text: text
-        } = comment_info,
-        user_id,
+        } = _comment_info,
+        _user_id,
         character_id
       ) do
     system =
@@ -93,8 +93,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   def remove_system_comment(
         %{map_id: map_id} = state,
         comment_id,
-        user_id,
-        character_id
+        _user_id,
+        _character_id
       ) do
     {:ok, %{system: system} = comment} =
       WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
