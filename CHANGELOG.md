@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.65.24](https://github.com/wanderer-industries/wanderer/compare/v1.65.23...v1.65.24) (2025-06-04)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed errors duration check to reduce requests amount to ESI
+
 ## [v1.65.23](https://github.com/wanderer-industries/wanderer/compare/v1.65.22...v1.65.23) (2025-06-04)
 
 
