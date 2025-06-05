@@ -8,6 +8,20 @@ defmodule WandererApp.MapConnectionRepo do
   def get_by_map(map_id),
     do: WandererApp.Api.MapConnection.read_by_map(%{map_id: map_id})
 
+  def get_by_system(map_id, system_id) do
+    with {:ok, connections} <- get_by_map(map_id) do
+      filtered_connections =
+        connections
+        |> Enum.filter(fn conn ->
+          conn.solar_system_source == system_id or conn.solar_system_target == system_id
+        end)
+
+      {:ok, filtered_connections}
+    else
+      error -> error
+    end
+  end
+
   def get_by_locations(map_id, solar_system_source, solar_system_target) do
     WandererApp.Api.MapConnection.by_locations(%{
       map_id: map_id,

@@ -97,7 +97,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
         %{"solarSystemId" => solar_system_id} = _event,
         %{
           assigns: %{
-            current_user: current_user,
+            current_user: _current_user,
             has_tracked_characters?: true,
             map_id: map_id,
             user_permissions: %{add_system: true}

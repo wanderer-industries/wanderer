@@ -43,7 +43,8 @@ erl_crash.dump
 *.beam
 /config/*.secret.exs
 .elixir_ls/
-
+.coderabbit.yaml
+repomix.config.json
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

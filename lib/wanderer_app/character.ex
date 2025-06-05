@@ -251,7 +251,7 @@ defmodule WandererApp.Character do
     end
   end
 
-  defp maybe_merge_map_character_settings(character, map_id, true), do: character
+  defp maybe_merge_map_character_settings(character, _map_id, true), do: character
 
   defp maybe_merge_map_character_settings(
          %{id: character_id} = character,

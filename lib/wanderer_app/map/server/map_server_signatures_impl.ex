@@ -66,7 +66,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     # fetch both current & all (including deleted) signatures once
     existing_current = MapSystemSignature.by_system_id!(system.id)
-    existing_all = MapSystemSignature.by_system_id_all!(system.id)
+    _existing_all = MapSystemSignature.by_system_id_all!(system.id)
 
     removed_ids = Enum.map(removed_sigs, & &1.eve_id)
     updated_ids = Enum.map(updated_sigs, & &1.eve_id)

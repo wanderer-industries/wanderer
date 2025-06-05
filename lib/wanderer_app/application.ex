@@ -47,6 +47,7 @@ defmodule WandererApp.Application do
          child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
         {PartitionSupervisor,
          child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
+        {Task.Supervisor, name: WandererApp.TaskSupervisor},
         WandererApp.Zkb.Supervisor,
         WandererApp.Server.ServerStatusTracker,
         WandererApp.Server.TheraDataFetcher,

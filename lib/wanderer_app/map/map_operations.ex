@@ -67,9 +67,9 @@ defmodule WandererApp.Map.Operations do
   defdelegate get_connection(map_id, connection_id), to: Connections
 
   @doc "Create a connection"
-  @spec create_connection(String.t(), map()) ::
+  @spec create_connection(Plug.Conn.t(), map()) ::
           {:ok, map()} | {:skip, :exists} | {:error, String.t()}
-  defdelegate create_connection(map_id, attrs), to: Connections
+  defdelegate create_connection(conn, attrs), to: Connections
 
   @doc "Force-create a connection with explicit character ID"
   @spec create_connection(String.t(), map(), integer()) ::

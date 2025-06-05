@@ -157,7 +157,7 @@ defmodule WandererAppWeb.MapCharactersLive do
     |> assign(:groups, groups)
   end
 
-  defp map_ui_character(map_id, character) do
+  defp map_ui_character(_map_id, character) do
     character
     |> Map.take([
       :id,

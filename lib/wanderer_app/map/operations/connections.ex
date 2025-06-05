@@ -5,19 +5,17 @@ defmodule WandererApp.Map.Operations.Connections do
   """
 
   require Logger
-  alias WandererApp.Map.Server.{ConnectionsImpl, Server}
+  alias WandererApp.Map.Server.Impl, as: Server
+  alias WandererApp.CachedInfo
   alias Ash.Error.Invalid
   alias WandererApp.MapConnectionRepo
 
   # Connection type constants
   @connection_type_wormhole 0
-  @connection_type_stargate 1
 
   # Ship size constants
-  @small_ship_size  0
   @medium_ship_size 1
   @large_ship_size  2
-  @xlarge_ship_size 3
 
   # System class constants
   @c1_system_class "C1"
@@ -34,8 +32,8 @@ defmodule WandererApp.Map.Operations.Connections do
   defp do_create(attrs, map_id, char_id) do
     with {:ok, source} <- parse_int(attrs["solar_system_source"], "solar_system_source"),
          {:ok, target} <- parse_int(attrs["solar_system_target"], "solar_system_target"),
-         {:ok, src_info} <- ConnectionsImpl.get_system_static_info(source),
-         {:ok, tgt_info} <- ConnectionsImpl.get_system_static_info(target) do
+         {:ok, src_info} <- CachedInfo.get_system_static_info(source),
+         {:ok, tgt_info} <- CachedInfo.get_system_static_info(target) do
       build_and_add_connection(attrs, map_id, char_id, src_info, tgt_info)
     else
       {:error, reason} -> handle_precondition_error(reason, attrs)

@@ -5,7 +5,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
   require Logger
 
   alias BetterNumber, as: Number
-  alias WandererApp.License.LicenseManager
 
   @impl true
   def mount(socket) do
