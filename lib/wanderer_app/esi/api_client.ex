@@ -534,7 +534,8 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: status} = _error} when status in [401, 403] ->
           get_retry(path, api_opts, opts)
 
-        {:ok, %{status: 420} = _error} ->
+        {:ok, %{status: 420, headers: headers} = _error} ->
+          Logger.warning("error_limited error: #{inspect(headers)}")
           {:error, :error_limited}
 
         {:ok, %{status: status}} ->
