@@ -125,6 +125,25 @@ export const useContextMenuConnectionHandlers = () => {
     });
   }, []);
 
+  const onToggleLoop = useCallback(() => {
+    const { edge, outCommand } = ref.current;
+
+    if (!edge || !edge.data) {
+      return;
+    }
+
+    const newType = edge.data.type === ConnectionType.loop ? ConnectionType.wormhole : ConnectionType.loop;
+
+    outCommand({
+      type: OutCommand.updateConnectionType,
+      data: {
+        source: edge.source,
+        target: edge.target,
+        value: newType,
+      },
+    });
+  }, []);
+
   const onHide = useCallback(() => {
     setEdge(undefined);
   }, []);
@@ -140,6 +159,7 @@ export const useContextMenuConnectionHandlers = () => {
     onChangeMassState,
     onChangeShipSizeStatus,
     onToggleMassSave,
+    onToggleLoop,
     onHide,
   };
 };

@@ -22,6 +22,7 @@ export interface ContextMenuConnectionProps {
   onChangeMassState(state: MassState): void;
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onToggleMassSave(isLocked: boolean): void;
+  onToggleLoop(): void;
   onHide(): void;
   edge?: Edge<SolarSystemConnection>;
 }
@@ -33,6 +34,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
   onChangeMassState,
   onChangeShipSizeStatus,
   onToggleMassSave,
+  onToggleLoop,
   onHide,
   edge,
 }) => {
@@ -42,10 +44,11 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
     }
 
     const isFrigateSize = edge.data?.ship_size_type === ShipSizeStatus.small;
-    const isWormhole = edge.data?.type !== ConnectionType.gate;
+    const isLoop = edge.data?.type === ConnectionType.loop;
+    const isWormholeType = edge.data?.type === ConnectionType.wormhole || edge.data?.type === ConnectionType.loop;
 
     return [
-      ...(isWormhole
+      ...(isWormholeType
         ? [
             {
               label: `EOL`,
@@ -54,6 +57,14 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
               }),
               icon: PrimeIcons.CLOCK,
               command: onChangeTimeState,
+            },
+            {
+              label: `Loop`,
+              className: clsx({
+                [classes.ConnectionLoop]: isLoop,
+              }),
+              icon: PrimeIcons.REPLAY,
+              command: onToggleLoop,
             },
             {
               label: `Frigate`,

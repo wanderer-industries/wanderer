@@ -12,6 +12,7 @@ defmodule WandererApp.Map.Operations.Connections do
   # Connection type constants
   @connection_type_wormhole 0
   @connection_type_stargate 1
+  @connection_type_loop 2
 
   # Ship size constants
   @small_ship_size  0
@@ -66,7 +67,7 @@ defmodule WandererApp.Map.Operations.Connections do
   defp resolve_ship_size(attrs, src_info, tgt_info) do
     type = parse_type(attrs["type"])
 
-    if type == @connection_type_wormhole and
+    if (type == @connection_type_wormhole or type == @connection_type_loop) and
        (src_info.system_class == @c1_system_class or
         tgt_info.system_class == @c1_system_class) do
       @medium_ship_size

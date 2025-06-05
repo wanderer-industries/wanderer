@@ -1,4 +1,3 @@
-
 $friendlyBase: #3bbd39;
 $friendlyAlpha: #3bbd3952;
 $friendlyDark20: darken($friendlyBase, 20%);
@@ -118,5 +117,6 @@ $homeDark30: darken($homeBase, 30%);
   --conn-time-eol: #7452c3e3;
   --conn-frigate: #325d88;
   --conn-save: rgba(155, 102, 45, 0.85);
+  --conn-loop: #4a90e2;
   --selected-item-bg: rgba(98, 98, 98, 0.33);
 }

@@ -29,6 +29,11 @@
   &.Gate {
     stroke: #9aff40;
   }
+
+  &.Loop {
+    stroke: #80a5c5;
+    stroke-dasharray: 5, 5;
+  }
 }
 
 .EdgePathFront {
@@ -50,6 +55,11 @@
 
   &.Gate {
     stroke: #1c1e15;
+  }
+
+  &.Loop {
+    stroke: #2c3844;
+    stroke-dasharray: 5, 5;
   }
 
   &.Hovered {

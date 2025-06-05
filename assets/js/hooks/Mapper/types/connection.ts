@@ -1,6 +1,7 @@
 export enum ConnectionType {
   wormhole,
   gate,
+  loop,
 }
 
 export enum MassState {
