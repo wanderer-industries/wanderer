@@ -33,8 +33,12 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @online_error_timeout :timer.minutes(3)
-  @forbidden_ttl :timer.minutes(1)
+  @pause_tracking_timeout :timer.minutes(15)
+  @online_error_timeout :timer.minutes(7)
+  @online_forbidden_ttl :timer.minutes(2)
+  @online_limit_ttl :timer.minutes(2)
+  @forbidden_ttl :timer.minutes(10)
+  @limit_ttl :timer.minutes(4)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def new(), do: __struct__()
@@ -49,6 +53,37 @@ defmodule WandererApp.Character.Tracker do
     |> new()
   end
 
+  def check_online_errors(character_id) do
+    WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+    |> case do
+      nil ->
+        :skip
+
+      error_time ->
+        duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
+
+        if duration >= @online_error_timeout do
+          WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
+          WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+          WandererApp.Character.update_character(character_id, %{online: false})
+
+          WandererApp.Character.update_character_state(character_id, %{
+            is_online: false
+          })
+
+          WandererApp.Cache.put(
+            "character:#{character_id}:tracking_paused",
+            true,
+            ttl: @pause_tracking_timeout
+          )
+
+          :ok
+        else
+          :skip
+        end
+    end
+  end
+
   def update_settings(character_id, track_settings) do
     {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
 
@@ -60,6 +95,113 @@ defmodule WandererApp.Character.Tracker do
      |> maybe_start_location_tracking(track_settings)
      |> maybe_start_ship_tracking(track_settings)}
   end
+
+  def update_online(character_id) when is_binary(character_id) do
+    character_id
+    |> WandererApp.Character.get_character_state!()
+    |> update_online()
+  end
+
+  def update_online(%{track_online: true, character_id: character_id} = character_state) do
+    case WandererApp.Character.get_character(character_id) do
+      {:ok, %{eve_id: eve_id, access_token: access_token}}
+      when not is_nil(access_token) ->
+        (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+           WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
+        |> case do
+          true ->
+            {:error, :skipped}
+
+          _ ->
+            case WandererApp.Esi.get_character_online(eve_id,
+                   access_token: access_token,
+                   character_id: character_id,
+                   refresh_token?: true
+                 ) do
+              {:ok, online} ->
+                online = get_online(online)
+
+                WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
+                WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+                WandererApp.Cache.delete("character:#{character_id}:info_forbidden")
+                WandererApp.Cache.delete("character:#{character_id}:ship_forbidden")
+                WandererApp.Cache.delete("character:#{character_id}:location_forbidden")
+                WandererApp.Cache.delete("character:#{character_id}:wallet_forbidden")
+                WandererApp.Character.update_character(character_id, online)
+
+                update = %{
+                  character_state
+                  | is_online: online.online,
+                    track_ship: online.online,
+                    track_location: online.online
+                }
+
+                WandererApp.Character.update_character_state(character_id, update)
+
+                :ok
+
+              {:error, error} when error in [:forbidden, :not_found, :timeout] ->
+                Logger.warning("#{__MODULE__} failed to update_online: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:online_forbidden",
+                  true,
+                  ttl: @online_forbidden_ttl
+                )
+
+                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:online_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
+                {:error, :skipped}
+
+              {:error, error} when error in [:error_limited] ->
+                Logger.warning("#{__MODULE__} failed to update_online: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:online_forbidden",
+                  true,
+                  ttl: @online_limit_ttl
+                )
+
+                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:online_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
+                {:error, :skipped}
+
+              {:error, error} ->
+                Logger.error("#{__MODULE__} failed to update_online: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:online_forbidden",
+                  true,
+                  ttl: @online_forbidden_ttl
+                )
+
+                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:online_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
+                {:error, :skipped}
+            end
+        end
+
+      _ ->
+        {:error, :skipped}
+    end
+  end
+
+  def update_online(_), do: {:error, :skipped}
 
   def update_info(character_id) do
     WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden")
@@ -79,7 +221,7 @@ defmodule WandererApp.Character.Tracker do
 
             :ok
 
-          {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+          {:error, error} when error in [:forbidden, :not_found, :timeout] ->
             Logger.warning("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
 
             WandererApp.Cache.put(
@@ -90,7 +232,24 @@ defmodule WandererApp.Character.Tracker do
 
             {:error, error}
 
+          {:error, error} when error in [:error_limited] ->
+            Logger.warning("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
+
+            WandererApp.Cache.put(
+              "character:#{character_id}:info_forbidden",
+              true,
+              ttl: @limit_ttl
+            )
+
+            {:error, error}
+
           {:error, error} ->
+            WandererApp.Cache.put(
+              "character:#{character_id}:info_forbidden",
+              true,
+              ttl: @forbidden_ttl
+            )
+
             Logger.error("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
             {:error, error}
         end
@@ -126,13 +285,24 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+              {:error, error} when error in [:forbidden, :not_found, :timeout] ->
                 Logger.warning("#{__MODULE__} failed to update_ship: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:ship_forbidden",
                   true,
                   ttl: @forbidden_ttl
+                )
+
+                {:error, error}
+
+              {:error, error} when error in [:error_limited] ->
+                Logger.warning("#{__MODULE__} failed to update_ship: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:ship_forbidden",
+                  true,
+                  ttl: @limit_ttl
                 )
 
                 {:error, error}
@@ -150,6 +320,12 @@ defmodule WandererApp.Character.Tracker do
 
               _ ->
                 Logger.error("#{__MODULE__} failed to update_ship: wrong response")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:ship_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
 
                 {:error, :skipped}
             end
@@ -190,13 +366,24 @@ defmodule WandererApp.Character.Tracker do
 
                 :ok
 
-              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+              {:error, error} when error in [:forbidden, :not_found, :timeout] ->
                 Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:location_forbidden",
                   true,
                   ttl: @forbidden_ttl
+                )
+
+                {:error, error}
+
+              {:error, error} when error in [:error_limited] ->
+                Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
+
+                WandererApp.Cache.put(
+                  "character:#{character_id}:location_forbidden",
+                  true,
+                  ttl: @limit_ttl
                 )
 
                 {:error, error}
@@ -215,6 +402,12 @@ defmodule WandererApp.Character.Tracker do
               _ ->
                 Logger.error("#{__MODULE__} failed to update_location: wrong response")
 
+                WandererApp.Cache.put(
+                  "character:#{character_id}:location_forbidden",
+                  true,
+                  ttl: @forbidden_ttl
+                )
+
                 {:error, :skipped}
             end
 
@@ -228,116 +421,6 @@ defmodule WandererApp.Character.Tracker do
   end
 
   def update_location(_), do: {:error, :skipped}
-
-  def update_online(character_id) when is_binary(character_id) do
-    character_id
-    |> WandererApp.Character.get_character_state!()
-    |> update_online()
-  end
-
-  def update_online(%{track_online: true, character_id: character_id} = character_state) do
-    case WandererApp.Character.get_character(character_id) do
-      {:ok, %{eve_id: eve_id, access_token: access_token}}
-      when not is_nil(access_token) ->
-        WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden")
-        |> case do
-          true ->
-            {:error, :skipped}
-
-          _ ->
-            case WandererApp.Esi.get_character_online(eve_id,
-                   access_token: access_token,
-                   character_id: character_id,
-                   refresh_token?: true
-                 ) do
-              {:ok, online} ->
-                online = get_online(online)
-
-                WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-                WandererApp.Cache.delete("character:#{character_id}:online_error_time")
-                WandererApp.Character.update_character(character_id, online)
-
-                update = %{
-                  character_state
-                  | is_online: online.online,
-                    track_ship: online.online,
-                    track_location: online.online
-                }
-
-                WandererApp.Character.update_character_state(character_id, update)
-
-                :ok
-
-              {:error, error} when error in [:forbidden, :error_limited, :not_found, :timeout] ->
-                Logger.warning("#{__MODULE__} failed to update_online: #{inspect(error)}")
-
-                if not WandererApp.Cache.lookup!(
-                     "character:#{character_id}:online_forbidden",
-                     false
-                   ) do
-                  WandererApp.Cache.put(
-                    "character:#{character_id}:online_forbidden",
-                    true,
-                    ttl: @forbidden_ttl
-                  )
-
-                  if is_nil(
-                       WandererApp.Cache.lookup("character:#{character_id}:online_error_time")
-                     ) do
-                    WandererApp.Cache.insert(
-                      "character:#{character_id}:online_error_time",
-                      DateTime.utc_now()
-                    )
-                  end
-                end
-
-                :ok
-
-              {:error, error} ->
-                Logger.error("#{__MODULE__} failed to update_online: #{inspect(error)}")
-
-                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
-                  WandererApp.Cache.insert(
-                    "character:#{character_id}:online_error_time",
-                    DateTime.utc_now()
-                  )
-                end
-
-                :ok
-            end
-        end
-
-      _ ->
-        {:error, :skipped}
-    end
-  end
-
-  def update_online(_), do: {:error, :skipped}
-
-  def check_online_errors(character_id) do
-    WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
-    |> case do
-      nil ->
-        :skip
-
-      error_time ->
-        duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
-
-        if duration >= @online_error_timeout do
-          WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-          WandererApp.Cache.delete("character:#{character_id}:online_error_time")
-          WandererApp.Character.update_character(character_id, %{online: false})
-
-          WandererApp.Character.update_character_state(character_id, %{
-            is_online: false
-          })
-
-          :ok
-        else
-          :skip
-        end
-    end
-  end
 
   def update_wallet(character_id) do
     character_id
@@ -367,8 +450,7 @@ defmodule WandererApp.Character.Tracker do
 
                     :ok
 
-                  {:error, error}
-                  when error in [:forbidden, :error_limited, :not_found, :timeout] ->
+                  {:error, error} when error in [:forbidden, :not_found, :timeout] ->
                     Logger.warning("#{__MODULE__} failed to update_wallet: #{inspect(error)}")
 
                     WandererApp.Cache.put(
@@ -379,8 +461,26 @@ defmodule WandererApp.Character.Tracker do
 
                     {:error, error}
 
+                  {:error, error} when error in [:error_limited] ->
+                    Logger.warning("#{__MODULE__} failed to update_wallet: #{inspect(error)}")
+
+                    WandererApp.Cache.put(
+                      "character:#{character_id}:wallet_forbidden",
+                      true,
+                      ttl: @limit_ttl
+                    )
+
+                    {:error, error}
+
                   {:error, error} ->
                     Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")
+
+                    WandererApp.Cache.put(
+                      "character:#{character_id}:wallet_forbidden",
+                      true,
+                      ttl: @forbidden_ttl
+                    )
+
                     {:error, error}
                 end
             end
@@ -540,13 +640,6 @@ defmodule WandererApp.Character.Tracker do
 
     state
   end
-
-  # defp is_location_started?(character_id),
-  #   do:
-  #     WandererApp.Cache.lookup!(
-  #       "character:#{character_id}:location_started",
-  #       false
-  #     )
 
   defp is_location_updated?(
          %{

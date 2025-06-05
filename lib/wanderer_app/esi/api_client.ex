@@ -37,7 +37,7 @@ defmodule WandererApp.Esi.ApiClient do
   @default_avoid_systems [@zarzakh_system]
 
   @cache_opts [cache: true]
-  @retry_opts [max_retries: 0, retry_log_level: :warning]
+  @retry_opts [retry: false, retry_log_level: :warning]
   @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.minutes(1)]
   @api_retry_count 1
 
@@ -531,12 +531,12 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: 404}} ->
           {:error, :not_found}
 
-        {:ok, %{status: status} = _error} when status in [401, 403] ->
-          get_retry(path, api_opts, opts)
-
         {:ok, %{status: 420, headers: headers} = _error} ->
           Logger.warning("error_limited error: #{inspect(headers)}")
           {:error, :error_limited}
+
+        {:ok, %{status: status} = _error} when status in [401, 403] ->
+          get_retry(path, api_opts, opts)
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
@@ -608,8 +608,7 @@ defmodule WandererApp.Esi.ApiClient do
   defp post_esi(url, opts) do
     try do
       req_opts =
-        (opts
-         |> with_user_agent_opts()) ++
+        (opts |> with_user_agent_opts() |> Keyword.merge(@retry_opts)) ++
           [params: opts[:params] || []]
 
       Req.new(
