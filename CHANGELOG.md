@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.7](https://github.com/wanderer-industries/wanderer/compare/v1.66.6...v1.66.7) (2025-06-06)
+
+
+
+
+### Bug Fixes:
+
+* fixed disable detailed kills env check
+
 ## [v1.66.6](https://github.com/wanderer-industries/wanderer/compare/v1.66.5...v1.66.6) (2025-06-06)
 
 
