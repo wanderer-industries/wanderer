@@ -33,10 +33,10 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @pause_tracking_timeout :timer.minutes(5)
+  @pause_tracking_timeout :timer.minutes(10)
   @online_error_timeout :timer.minutes(1)
   @online_forbidden_ttl :timer.seconds(7)
-  @online_limit_ttl :timer.seconds(5)
+  @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
   @limit_ttl :timer.seconds(5)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
@@ -247,7 +247,8 @@ defmodule WandererApp.Character.Tracker do
   defp get_reset_timeout(_headers), do: @limit_ttl
 
   def update_info(character_id) do
-    (WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden") ||
+    (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+       WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden") ||
        WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
       true ->
@@ -320,7 +321,8 @@ defmodule WandererApp.Character.Tracker do
     |> WandererApp.Character.get_character()
     |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        (WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden") ||
+        (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+           WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
         |> case do
           true ->
@@ -403,7 +405,8 @@ defmodule WandererApp.Character.Tracker do
       ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        (WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
+        (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+           WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
         |> case do
           true ->
@@ -491,7 +494,8 @@ defmodule WandererApp.Character.Tracker do
         |> WandererApp.Character.can_track_wallet?()
         |> case do
           true ->
-            (WandererApp.Cache.has_key?("character:#{character_id}:wallet_forbidden") ||
+            (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+               WandererApp.Cache.has_key?("character:#{character_id}:wallet_forbidden") ||
                WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
             |> case do
               true ->
@@ -570,7 +574,8 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp update_alliance(%{character_id: character_id} = state, alliance_id) do
-    WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
+    (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+       WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
       true ->
         state
@@ -609,7 +614,8 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp update_corporation(%{character_id: character_id} = state, corporation_id) do
-    WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
+    (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+       WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
       true ->
         state
