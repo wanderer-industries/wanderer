@@ -17,28 +17,37 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
   """
   def fetch_kills_for_systems(system_ids, since_hours, state, _opts \\ [])
       when is_list(system_ids) do
-    try do
-      {final_map, final_state} =
-        Enum.reduce(system_ids, {%{}, state}, fn sid, {acc_map, acc_st} ->
-          case fetch_kills_for_system(sid, since_hours, acc_st) do
-            {:ok, kills, new_st} ->
-              {Map.put(acc_map, sid, kills), new_st}
+    zkill_preload_disabled = WandererApp.Env.zkill_preload_disabled?()
 
-            {:error, reason, new_st} ->
-              Logger.debug(fn -> "[Fetcher] system=#{sid} => error=#{inspect(reason)}" end)
-              {Map.put(acc_map, sid, {:error, reason}), new_st}
-          end
+    if not zkill_preload_disabled do
+      try do
+        {final_map, final_state} =
+          Enum.reduce(system_ids, {%{}, state}, fn sid, {acc_map, acc_st} ->
+            case fetch_kills_for_system(sid, since_hours, acc_st) do
+              {:ok, kills, new_st} ->
+                {Map.put(acc_map, sid, kills), new_st}
+
+              {:error, reason, new_st} ->
+                Logger.debug(fn -> "[Fetcher] system=#{sid} => error=#{inspect(reason)}" end)
+                {Map.put(acc_map, sid, {:error, reason}), new_st}
+            end
+          end)
+
+        Logger.debug(fn ->
+          "[Fetcher] fetch_kills_for_systems => done, final_map_size=#{map_size(final_map)} calls=#{final_state.calls_count}"
         end)
 
-      Logger.debug(fn ->
-        "[Fetcher] fetch_kills_for_systems => done, final_map_size=#{map_size(final_map)} calls=#{final_state.calls_count}"
-      end)
+        {:ok, final_map}
+      rescue
+        e ->
+          Logger.error(
+            "[Fetcher] EXCEPTION in fetch_kills_for_systems => #{Exception.message(e)}"
+          )
 
-      {:ok, final_map}
-    rescue
-      e ->
-        Logger.error("[Fetcher] EXCEPTION in fetch_kills_for_systems => #{Exception.message(e)}")
-        {:error, e}
+          {:error, e}
+      end
+    else
+      {:error, :kills_disabled}
     end
   end
 
