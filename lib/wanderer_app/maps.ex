@@ -18,34 +18,38 @@ defmodule WandererApp.Maps do
   ]
 
   def find_routes(map_id, hubs, origin, routes_settings, false) do
-    {:ok, routes} =
-      WandererApp.Esi.find_routes(
-        map_id,
-        origin,
-        hubs,
-        routes_settings
-      )
+    WandererApp.Esi.find_routes(
+      map_id,
+      origin,
+      hubs,
+      routes_settings
+    )
+    |> case do
+      {:ok, routes} ->
+        systems_static_data =
+          routes
+          |> Enum.map(fn route_info -> route_info.systems end)
+          |> List.flatten()
+          |> Enum.uniq()
+          |> Task.async_stream(
+            fn system_id ->
+              case WandererApp.CachedInfo.get_system_static_info(system_id) do
+                {:ok, nil} ->
+                  nil
 
-    systems_static_data =
-      routes
-      |> Enum.map(fn route_info -> route_info.systems end)
-      |> List.flatten()
-      |> Enum.uniq()
-      |> Task.async_stream(
-        fn system_id ->
-          case WandererApp.CachedInfo.get_system_static_info(system_id) do
-            {:ok, nil} ->
-              nil
+                {:ok, system} ->
+                  system |> Map.take(@minimum_route_attrs)
+              end
+            end,
+            max_concurrency: 10
+          )
+          |> Enum.map(fn {:ok, val} -> val end)
 
-            {:ok, system} ->
-              system |> Map.take(@minimum_route_attrs)
-          end
-        end,
-        max_concurrency: 10
-      )
-      |> Enum.map(fn {:ok, val} -> val end)
+        {:ok, %{routes: routes, systems_static_data: systems_static_data}}
 
-    {:ok, %{routes: routes, systems_static_data: systems_static_data}}
+      error ->
+        {:ok, %{routes: [], systems_static_data: []}}
+    end
   end
 
   def find_routes(map_id, hubs, origin, routes_settings, true) do

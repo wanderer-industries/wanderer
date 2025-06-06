@@ -126,7 +126,9 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
         KillsCache.incr_system_kill_count(system_id)
       end
     else
-      Logger.warning("[Parser] store_killmail => build_kill_data returned nil for kill_id=#{kill_id}")
+      Logger.warning(
+        "[Parser] store_killmail => build_kill_data returned nil for kill_id=#{kill_id}"
+      )
     end
   end
 
@@ -144,7 +146,6 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
          "total_value" => total_value,
          "npc" => npc
        }) do
-
     victim_map = extract_victim_fields(victim)
     final_blow_map = extract_final_blow_fields(attackers)
 
@@ -153,17 +154,14 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
       "kill_time" => kill_time_dt,
       "solar_system_id" => sys_id,
       "zkb" => zkb,
-
       "victim_char_id" => victim_map.char_id,
       "victim_corp_id" => victim_map.corp_id,
       "victim_alliance_id" => victim_map.alliance_id,
       "victim_ship_type_id" => victim_map.ship_type_id,
-
       "final_blow_char_id" => final_blow_map.char_id,
       "final_blow_corp_id" => final_blow_map.corp_id,
       "final_blow_alliance_id" => final_blow_map.alliance_id,
       "final_blow_ship_type_id" => final_blow_map.ship_type_id,
-
       "attacker_count" => attacker_count,
       "total_value" => total_value,
       "npc" => npc
@@ -179,14 +177,14 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
          "alliance_id" => alli,
          "ship_type_id" => st_id
        }),
-    do: %{char_id: cid, corp_id: corp, alliance_id: alli, ship_type_id: st_id}
+       do: %{char_id: cid, corp_id: corp, alliance_id: alli, ship_type_id: st_id}
 
   defp extract_victim_fields(%{
          "character_id" => cid,
          "corporation_id" => corp,
          "ship_type_id" => st_id
        }),
-    do: %{char_id: cid, corp_id: corp, alliance_id: nil, ship_type_id: st_id}
+       do: %{char_id: cid, corp_id: corp, alliance_id: nil, ship_type_id: st_id}
 
   defp extract_victim_fields(_),
     do: %{char_id: nil, corp_id: nil, alliance_id: nil, ship_type_id: nil}
@@ -208,14 +206,14 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
          "alliance_id" => alli,
          "ship_type_id" => st_id
        }),
-    do: %{char_id: cid, corp_id: corp, alliance_id: alli, ship_type_id: st_id}
+       do: %{char_id: cid, corp_id: corp, alliance_id: alli, ship_type_id: st_id}
 
   defp extract_attacker_fields(%{
          "character_id" => cid,
          "corporation_id" => corp,
          "ship_type_id" => st_id
        }),
-    do: %{char_id: cid, corp_id: corp, alliance_id: nil, ship_type_id: st_id}
+       do: %{char_id: cid, corp_id: corp, alliance_id: nil, ship_type_id: st_id}
 
   defp extract_attacker_fields(%{"ship_type_id" => st_id} = attacker) do
     %{
@@ -235,52 +233,78 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
     |> enrich_final_blow()
   end
 
-
   defp enrich_victim(km) do
     km
     |> maybe_put_character_name("victim_char_id", "victim_char_name")
     |> maybe_put_corp_info("victim_corp_id", "victim_corp_ticker", "victim_corp_name")
-    |> maybe_put_alliance_info("victim_alliance_id", "victim_alliance_ticker", "victim_alliance_name")
+    |> maybe_put_alliance_info(
+      "victim_alliance_id",
+      "victim_alliance_ticker",
+      "victim_alliance_name"
+    )
     |> maybe_put_ship_name("victim_ship_type_id", "victim_ship_name")
   end
-
 
   defp enrich_final_blow(km) do
     km
     |> maybe_put_character_name("final_blow_char_id", "final_blow_char_name")
     |> maybe_put_corp_info("final_blow_corp_id", "final_blow_corp_ticker", "final_blow_corp_name")
-    |> maybe_put_alliance_info("final_blow_alliance_id", "final_blow_alliance_ticker", "final_blow_alliance_name")
+    |> maybe_put_alliance_info(
+      "final_blow_alliance_id",
+      "final_blow_alliance_ticker",
+      "final_blow_alliance_name"
+    )
     |> maybe_put_ship_name("final_blow_ship_type_id", "final_blow_ship_name")
   end
 
   defp maybe_put_character_name(km, id_key, name_key) do
     case Map.get(km, id_key) do
-      nil -> km
-      0 -> km
+      nil ->
+        km
+
+      0 ->
+        km
+
       eve_id ->
-        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
-          case WandererApp.Esi.get_character_info(eve_id) do
-            {:ok, %{"name" => char_name}} ->
-              {:ok, char_name}
+        result =
+          retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000),
+                rescue_only: [RuntimeError] do
+            case WandererApp.Esi.get_character_info(eve_id) do
+              {:ok, %{"name" => char_name}} ->
+                {:ok, char_name}
 
-            {:error, :timeout} ->
-              Logger.debug(fn -> "[Parser] Character info timeout, retrying => id=#{eve_id}" end)
-              raise "Character info timeout, will retry"
+              {:error, :timeout} ->
+                Logger.debug(fn -> "[Parser] Character info timeout, retrying => id=#{eve_id}" end)
 
-            {:error, :not_found} ->
-              Logger.debug(fn -> "[Parser] Character not found => id=#{eve_id}" end)
-              :skip
+                raise "Character info timeout, will retry"
 
-            {:error, reason} ->
-              if HttpUtil.retriable_error?(reason) do
-                Logger.debug(fn -> "[Parser] Character info retriable error => id=#{eve_id}, reason=#{inspect(reason)}" end)
-                raise "Character info error: #{inspect(reason)}, will retry"
-              else
-                Logger.debug(fn -> "[Parser] Character info failed => id=#{eve_id}, reason=#{inspect(reason)}" end)
+              {:error, :not_found} ->
+                Logger.debug(fn -> "[Parser] Character not found => id=#{eve_id}" end)
                 :skip
-              end
+
+              {:error, reason} ->
+                if HttpUtil.retriable_error?(reason) do
+                  Logger.debug(fn ->
+                    "[Parser] Character info retriable error => id=#{eve_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  raise "Character info error: #{inspect(reason)}, will retry"
+                else
+                  Logger.debug(fn ->
+                    "[Parser] Character info failed => id=#{eve_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  :skip
+                end
+
+              error ->
+                Logger.debug(fn ->
+                  "[Parser] Character info failed => id=#{eve_id}, reason=#{inspect(error)}"
+                end)
+
+                :skip
+            end
           end
-        end
 
         case result do
           {:ok, char_name} -> Map.put(km, name_key, char_name)
@@ -291,109 +315,180 @@ defmodule WandererApp.Zkb.KillsProvider.Parser do
 
   defp maybe_put_corp_info(km, id_key, ticker_key, name_key) do
     case Map.get(km, id_key) do
-      nil -> km
-      0 -> km
+      nil ->
+        km
+
+      0 ->
+        km
+
       corp_id ->
-        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
-          case WandererApp.Esi.get_corporation_info(corp_id) do
-            {:ok, %{"ticker" => ticker, "name" => corp_name}} ->
-              {:ok, {ticker, corp_name}}
+        result =
+          retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000),
+                rescue_only: [RuntimeError] do
+            case WandererApp.Esi.get_corporation_info(corp_id) do
+              {:ok, %{"ticker" => ticker, "name" => corp_name}} ->
+                {:ok, {ticker, corp_name}}
 
-            {:error, :timeout} ->
-              Logger.debug(fn -> "[Parser] Corporation info timeout, retrying => id=#{corp_id}" end)
-              raise "Corporation info timeout, will retry"
+              {:error, :timeout} ->
+                Logger.debug(fn ->
+                  "[Parser] Corporation info timeout, retrying => id=#{corp_id}"
+                end)
 
-            {:error, :not_found} ->
-              Logger.debug(fn -> "[Parser] Corporation not found => id=#{corp_id}" end)
-              :skip
+                raise "Corporation info timeout, will retry"
 
-            {:error, reason} ->
-              if HttpUtil.retriable_error?(reason) do
-                Logger.debug(fn -> "[Parser] Corporation info retriable error => id=#{corp_id}, reason=#{inspect(reason)}" end)
-                raise "Corporation info error: #{inspect(reason)}, will retry"
-              else
-                Logger.warning("[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}")
+              {:error, :not_found} ->
+                Logger.debug(fn -> "[Parser] Corporation not found => id=#{corp_id}" end)
                 :skip
-              end
+
+              {:error, reason} ->
+                if HttpUtil.retriable_error?(reason) do
+                  Logger.debug(fn ->
+                    "[Parser] Corporation info retriable error => id=#{corp_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  raise "Corporation info error: #{inspect(reason)}, will retry"
+                else
+                  Logger.warning(
+                    "[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(reason)}"
+                  )
+
+                  :skip
+                end
+
+              error ->
+                Logger.warning(
+                  "[Parser] Failed to fetch corp info: ID=#{corp_id}, reason=#{inspect(error)}"
+                )
+
+                :skip
+            end
           end
-        end
 
         case result do
           {:ok, {ticker, corp_name}} ->
             km
             |> Map.put(ticker_key, ticker)
             |> Map.put(name_key, corp_name)
-          _ -> km
+
+          _ ->
+            km
         end
     end
   end
 
   defp maybe_put_alliance_info(km, id_key, ticker_key, name_key) do
     case Map.get(km, id_key) do
-      nil -> km
-      0 -> km
+      nil ->
+        km
+
+      0 ->
+        km
+
       alliance_id ->
-        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
-          case WandererApp.Esi.get_alliance_info(alliance_id) do
-            {:ok, %{"ticker" => alliance_ticker, "name" => alliance_name}} ->
-              {:ok, {alliance_ticker, alliance_name}}
+        result =
+          retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000),
+                rescue_only: [RuntimeError] do
+            case WandererApp.Esi.get_alliance_info(alliance_id) do
+              {:ok, %{"ticker" => alliance_ticker, "name" => alliance_name}} ->
+                {:ok, {alliance_ticker, alliance_name}}
 
-            {:error, :timeout} ->
-              Logger.debug(fn -> "[Parser] Alliance info timeout, retrying => id=#{alliance_id}" end)
-              raise "Alliance info timeout, will retry"
+              {:error, :timeout} ->
+                Logger.debug(fn ->
+                  "[Parser] Alliance info timeout, retrying => id=#{alliance_id}"
+                end)
 
-            {:error, :not_found} ->
-              Logger.debug(fn -> "[Parser] Alliance not found => id=#{alliance_id}" end)
-              :skip
+                raise "Alliance info timeout, will retry"
 
-            {:error, reason} ->
-              if HttpUtil.retriable_error?(reason) do
-                Logger.debug(fn -> "[Parser] Alliance info retriable error => id=#{alliance_id}, reason=#{inspect(reason)}" end)
-                raise "Alliance info error: #{inspect(reason)}, will retry"
-              else
-                Logger.debug(fn -> "[Parser] Alliance info failed => id=#{alliance_id}, reason=#{inspect(reason)}" end)
+              {:error, :not_found} ->
+                Logger.debug(fn -> "[Parser] Alliance not found => id=#{alliance_id}" end)
                 :skip
-              end
+
+              {:error, reason} ->
+                if HttpUtil.retriable_error?(reason) do
+                  Logger.debug(fn ->
+                    "[Parser] Alliance info retriable error => id=#{alliance_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  raise "Alliance info error: #{inspect(reason)}, will retry"
+                else
+                  Logger.debug(fn ->
+                    "[Parser] Alliance info failed => id=#{alliance_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  :skip
+                end
+
+              error ->
+                Logger.debug(fn ->
+                  "[Parser] Alliance info failed => id=#{alliance_id}, reason=#{inspect(error)}"
+                end)
+
+                :skip
+            end
           end
-        end
 
         case result do
           {:ok, {alliance_ticker, alliance_name}} ->
             km
             |> Map.put(ticker_key, alliance_ticker)
             |> Map.put(name_key, alliance_name)
-          _ -> km
+
+          _ ->
+            km
         end
     end
   end
 
   defp maybe_put_ship_name(km, id_key, name_key) do
     case Map.get(km, id_key) do
-      nil -> km
-      0 -> km
+      nil ->
+        km
+
+      0 ->
+        km
+
       type_id ->
-        result = retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000), rescue_only: [RuntimeError] do
-          case WandererApp.CachedInfo.get_ship_type(type_id) do
-            {:ok, nil} -> :skip
-            {:ok, %{name: ship_name}} -> {:ok, ship_name}
-            {:error, :timeout} ->
-              Logger.debug(fn -> "[Parser] Ship type timeout, retrying => id=#{type_id}" end)
-              raise "Ship type timeout, will retry"
-
-            {:error, :not_found} ->
-              Logger.debug(fn -> "[Parser] Ship type not found => id=#{type_id}" end)
-              :skip
-
-            {:error, reason} ->
-              if HttpUtil.retriable_error?(reason) do
-                Logger.debug(fn -> "[Parser] Ship type retriable error => id=#{type_id}, reason=#{inspect(reason)}" end)
-                raise "Ship type error: #{inspect(reason)}, will retry"
-              else
-                Logger.warning("[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(reason)}")
+        result =
+          retry with: exponential_backoff(200) |> randomize() |> cap(2_000) |> expiry(10_000),
+                rescue_only: [RuntimeError] do
+            case WandererApp.CachedInfo.get_ship_type(type_id) do
+              {:ok, nil} ->
                 :skip
-              end
+
+              {:ok, %{name: ship_name}} ->
+                {:ok, ship_name}
+
+              {:error, :timeout} ->
+                Logger.debug(fn -> "[Parser] Ship type timeout, retrying => id=#{type_id}" end)
+                raise "Ship type timeout, will retry"
+
+              {:error, :not_found} ->
+                Logger.debug(fn -> "[Parser] Ship type not found => id=#{type_id}" end)
+                :skip
+
+              {:error, reason} ->
+                if HttpUtil.retriable_error?(reason) do
+                  Logger.debug(fn ->
+                    "[Parser] Ship type retriable error => id=#{type_id}, reason=#{inspect(reason)}"
+                  end)
+
+                  raise "Ship type error: #{inspect(reason)}, will retry"
+                else
+                  Logger.warning(
+                    "[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(reason)}"
+                  )
+
+                  :skip
+                end
+
+              error ->
+                Logger.warning(
+                  "[Parser] Failed to fetch ship type: ID=#{type_id}, reason=#{inspect(error)}"
+                )
+
+                :skip
+            end
           end
-        end
 
         case result do
           {:ok, ship_name} -> Map.put(km, name_key, ship_name)

@@ -104,7 +104,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   Creates a new ACL member.
   """
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :create,
+  operation(:create,
     summary: "Create ACL Member",
     description: "Creates a new ACL member for a given ACL.",
     parameters: [
@@ -127,6 +127,8 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         @acl_member_create_response_schema
       }
     ]
+  )
+
   def create(conn, %{"acl_id" => acl_id, "member" => member_params}) do
     chosen =
       cond do
@@ -160,8 +162,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         conn
         |> put_status(:bad_request)
         |> json(%{
-          error:
-            "#{String.capitalize(type)} members cannot have an admin or manager role"
+          error: "#{String.capitalize(type)} members cannot have an admin or manager role"
         })
       else
         info_fetcher =
@@ -191,7 +192,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
               |> json(%{error: "Creation failed: #{inspect(error)}"})
           end
         else
-          {:error, error} ->
+          error ->
             conn
             |> put_status(:bad_request)
             |> json(%{error: "Entity lookup failed: #{inspect(error)}"})
@@ -206,7 +207,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   Updates the role of an ACL member.
   """
   @spec update_role(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :update_role,
+  operation(:update_role,
     summary: "Update ACL Member Role",
     description: "Updates the role of an ACL member identified by ACL ID and member external ID.",
     parameters: [
@@ -235,6 +236,8 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         @acl_member_update_response_schema
       }
     ]
+  )
+
   def update_role(conn, %{
         "acl_id" => acl_id,
         "member_id" => external_id,
@@ -301,7 +304,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   Deletes an ACL member.
   """
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :delete,
+  operation(:delete,
     summary: "Delete ACL Member",
     description: "Deletes an ACL member identified by ACL ID and member external ID.",
     parameters: [
@@ -325,6 +328,8 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         @acl_member_delete_response_schema
       }
     ]
+  )
+
   def delete(conn, %{"acl_id" => acl_id, "member_id" => external_id}) do
     external_id_str = to_string(external_id)
 

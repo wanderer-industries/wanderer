@@ -28,8 +28,6 @@ defmodule WandererApp.Server.ServerStatusTracker do
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
-  def get_status(), do: GenServer.call(@name, :get_status)
-
   def start_link(opts \\ []), do: GenServer.start(__MODULE__, opts, name: @name)
 
   @impl true
@@ -41,9 +39,6 @@ defmodule WandererApp.Server.ServerStatusTracker do
 
   @impl true
   def terminate(_reason, _state), do: :ok
-
-  @impl true
-  def handle_call(:get_status, _from, state), do: {:reply, {:ok, state}, state}
 
   @impl true
   def handle_call(:stop, _, state), do: {:stop, :normal, :ok, state}
@@ -66,7 +61,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
         } = state
       ) do
     Process.send_after(self(), :refresh_status, @refresh_interval)
-    Task.async(fn -> _get_server_status(retries) end)
+    Task.async(fn -> get_server_status(retries) end)
 
     {:noreply, state}
   end
@@ -104,7 +99,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
   def handle_info(_action, state),
     do: {:noreply, state}
 
-  defp _get_server_status(retries) do
+  defp get_server_status(retries) do
     case WandererApp.Esi.get_server_status() do
       {:ok, result} ->
         {:status, _get_status(result)}
@@ -113,7 +108,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
         if retries > 0 do
           :retry
         else
-          @logger.warning("#{__MODULE__} failed to refresh server status: :timeout")
+          Logger.warning("#{__MODULE__} failed to refresh server status: :timeout")
           {:status, @initial_state}
         end
 
@@ -121,9 +116,12 @@ defmodule WandererApp.Server.ServerStatusTracker do
         if retries > 0 do
           :retry
         else
-          @logger.warning("#{__MODULE__} failed to refresh server status: #{inspect(error)}")
+          Logger.warning("#{__MODULE__} failed to refresh server status: #{inspect(error)}")
           {:status, @initial_state}
         end
+
+      _ ->
+        {:error, :unknown}
     end
   end
 

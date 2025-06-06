@@ -197,6 +197,9 @@ defmodule WandererApp.Character.Tracker do
                 end
 
                 {:error, :skipped}
+
+              _ ->
+                {:error, :skipped}
             end
         end
 
@@ -266,6 +269,9 @@ defmodule WandererApp.Character.Tracker do
 
             Logger.error("#{__MODULE__} failed to get_character_info: #{inspect(error)}")
             {:error, error}
+
+          _ ->
+            {:error, :skipped}
         end
     end
   end
@@ -506,6 +512,17 @@ defmodule WandererApp.Character.Tracker do
                     )
 
                     {:error, error}
+
+                  error ->
+                    Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")
+
+                    WandererApp.Cache.put(
+                      "character:#{character_id}:wallet_forbidden",
+                      true,
+                      ttl: @forbidden_ttl
+                    )
+
+                    {:error, :skipped}
                 end
             end
 

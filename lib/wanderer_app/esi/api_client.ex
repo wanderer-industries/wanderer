@@ -275,10 +275,7 @@ defmodule WandererApp.Esi.ApiClient do
           "success" => true
         }
 
-      {:error, :not_found} ->
-        %{"origin" => origin, "destination" => destination, "systems" => [], "success" => false}
-
-      {:error, error} ->
+      error ->
         Logger.warning("Error getting routes: #{inspect(error)}")
         %{"origin" => origin, "destination" => destination, "systems" => [], "success" => false}
     end

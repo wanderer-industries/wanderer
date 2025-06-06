@@ -11,9 +11,7 @@ defmodule WandererAppWeb.ServerStatusLive do
         "server_status"
       )
 
-    {:ok, status} = WandererApp.Server.ServerStatusTracker.get_status()
-
-    {:ok, socket |> assign(server_online: not status.vip)}
+    {:ok, socket |> assign(server_online: false)}
   end
 
   @impl true
