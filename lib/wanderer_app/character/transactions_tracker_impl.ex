@@ -145,13 +145,15 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   end
 
   defp get_wallet_journal(
-         %{corporation_id: corporation_id, access_token: access_token} = _character,
+         %{id: character_id, corporation_id: corporation_id, access_token: access_token} =
+           _character,
          division
        )
        when not is_nil(access_token) do
     case WandererApp.Esi.get_corporation_wallet_journal(corporation_id, division,
            params: %{datasource: "tranquility"},
-           access_token: access_token
+           access_token: access_token,
+           character_id: character_id
          ) do
       {:ok, result} ->
         {:corporation_wallet_journal, result}
@@ -173,12 +175,14 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   defp get_wallet_journal(_character, _division), do: {:error, :skipped}
 
   defp update_corp_wallets(
-         %{corporation_id: corporation_id, access_token: access_token} = _character
+         %{id: character_id, corporation_id: corporation_id, access_token: access_token} =
+           _character
        )
        when not is_nil(access_token) do
     case WandererApp.Esi.get_corporation_wallets(corporation_id,
            params: %{datasource: "tranquility"},
-           access_token: access_token
+           access_token: access_token,
+           character_id: character_id
          ) do
       {:ok, result} ->
         {:corporation_wallets, result}

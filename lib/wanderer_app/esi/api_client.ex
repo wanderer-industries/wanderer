@@ -463,10 +463,10 @@ defmodule WandererApp.Esi.ApiClient do
       get(
         path,
         auth_opts,
-        opts
+        opts |> with_refresh_token()
       )
     else
-      get_retry(path, auth_opts, opts)
+      get_retry(path, auth_opts, opts |> with_refresh_token())
     end
   end
 
@@ -485,7 +485,7 @@ defmodule WandererApp.Esi.ApiClient do
         "/corporations/#{corporation_eve_id}/#{info_path}",
         [params: opts[:params] || []] ++
           (opts |> get_auth_opts()),
-        opts ++ @cache_opts
+        (opts |> with_refresh_token()) ++ @cache_opts
       )
 
   defp with_user_agent_opts(opts) do
@@ -493,6 +493,10 @@ defmodule WandererApp.Esi.ApiClient do
     |> Keyword.merge(
       headers: [{:user_agent, "Wanderer/#{WandererApp.Env.vsn()} #{@wanderrer_user_agent}"}]
     )
+  end
+
+  defp with_refresh_token(opts) do
+    opts |> Keyword.merge(refresh_token?: true)
   end
 
   defp with_cache_opts(opts) do

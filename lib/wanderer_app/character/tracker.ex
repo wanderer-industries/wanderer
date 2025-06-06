@@ -129,8 +129,7 @@ defmodule WandererApp.Character.Tracker do
           _ ->
             case WandererApp.Esi.get_character_online(eve_id,
                    access_token: access_token,
-                   character_id: character_id,
-                   refresh_token?: true
+                   character_id: character_id
                  ) do
               {:ok, online} ->
                 online = get_online(online)
@@ -331,8 +330,7 @@ defmodule WandererApp.Character.Tracker do
           _ ->
             case WandererApp.Esi.get_character_ship(eve_id,
                    access_token: access_token,
-                   character_id: character_id,
-                   refresh_token?: true
+                   character_id: character_id
                  ) do
               {:ok, ship} when is_non_struct_map(ship) ->
                 character_state |> maybe_update_ship(ship)
@@ -415,8 +413,7 @@ defmodule WandererApp.Character.Tracker do
           _ ->
             case WandererApp.Esi.get_character_location(eve_id,
                    access_token: access_token,
-                   character_id: character_id,
-                   refresh_token?: true
+                   character_id: character_id
                  ) do
               {:ok, location} when is_non_struct_map(location) ->
                 character_state
@@ -505,8 +502,7 @@ defmodule WandererApp.Character.Tracker do
                 case WandererApp.Esi.get_character_wallet(eve_id,
                        params: %{datasource: "tranquility"},
                        access_token: access_token,
-                       character_id: character_id,
-                       refresh_token?: true
+                       character_id: character_id
                      ) do
                   {:ok, result} ->
                     {:ok, state} = WandererApp.Character.get_character_state(character_id)
