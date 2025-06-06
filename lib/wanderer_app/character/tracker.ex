@@ -77,6 +77,20 @@ defmodule WandererApp.Character.Tracker do
             ttl: @pause_tracking_timeout
           )
 
+          {:ok, %{solar_system_id: solar_system_id}} =
+            WandererApp.Character.get_character(character_id)
+
+          {:ok, %{active_maps: active_maps}} =
+            WandererApp.Character.get_character_state(character_id)
+
+          active_maps
+          |> Enum.each(fn map_id ->
+            WandererApp.Cache.put(
+              "map:#{map_id}:character:#{character_id}:start_solar_system_id",
+              solar_system_id
+            )
+          end)
+
           :ok
         else
           :skip
@@ -96,11 +110,11 @@ defmodule WandererApp.Character.Tracker do
      |> maybe_start_ship_tracking(track_settings)}
   end
 
-  def update_online(character_id) when is_binary(character_id) do
-    character_id
-    |> WandererApp.Character.get_character_state!()
-    |> update_online()
-  end
+  def update_online(character_id) when is_binary(character_id),
+    do:
+      character_id
+      |> WandererApp.Character.get_character_state!()
+      |> update_online()
 
   def update_online(%{track_online: true, character_id: character_id} = character_state) do
     case WandererApp.Character.get_character(character_id) do
@@ -122,7 +136,17 @@ defmodule WandererApp.Character.Tracker do
                 online = get_online(online)
 
                 WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-                WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+                   ) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:online_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
+                # WandererApp.Cache.delete("character:#{character_id}:online_error_time")
                 WandererApp.Cache.delete("character:#{character_id}:info_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:ship_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:location_forbidden")
@@ -149,7 +173,9 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @online_forbidden_ttl
                 )
 
-                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+                   ) do
                   WandererApp.Cache.insert(
                     "character:#{character_id}:online_error_time",
                     DateTime.utc_now()
@@ -171,7 +197,9 @@ defmodule WandererApp.Character.Tracker do
                   ttl: reset_timeout
                 )
 
-                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+                   ) do
                   WandererApp.Cache.insert(
                     "character:#{character_id}:online_error_time",
                     DateTime.utc_now()
@@ -189,7 +217,9 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @online_forbidden_ttl
                 )
 
-                if is_nil(WandererApp.Cache.lookup("character:#{character_id}:online_error_time")) do
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+                   ) do
                   WandererApp.Cache.insert(
                     "character:#{character_id}:online_error_time",
                     DateTime.utc_now()
@@ -217,7 +247,8 @@ defmodule WandererApp.Character.Tracker do
   defp get_reset_timeout(_headers), do: @limit_ttl
 
   def update_info(character_id) do
-    WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden")
+    (WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden") ||
+       WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
       true ->
         {:error, :skipped}
@@ -276,11 +307,11 @@ defmodule WandererApp.Character.Tracker do
     end
   end
 
-  def update_ship(character_id) when is_binary(character_id) do
-    character_id
-    |> WandererApp.Character.get_character_state!()
-    |> update_ship()
-  end
+  def update_ship(character_id) when is_binary(character_id),
+    do:
+      character_id
+      |> WandererApp.Character.get_character_state!()
+      |> update_ship()
 
   def update_ship(
         %{character_id: character_id, track_ship: true, is_online: true} = character_state
@@ -289,7 +320,8 @@ defmodule WandererApp.Character.Tracker do
     |> WandererApp.Character.get_character()
     |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden")
+        (WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden") ||
+           WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
         |> case do
           true ->
             {:error, :skipped}
@@ -360,18 +392,19 @@ defmodule WandererApp.Character.Tracker do
 
   def update_ship(_), do: {:error, :skipped}
 
-  def update_location(character_id) when is_binary(character_id) do
-    character_id
-    |> WandererApp.Character.get_character_state!()
-    |> update_location()
-  end
+  def update_location(character_id) when is_binary(character_id),
+    do:
+      character_id
+      |> WandererApp.Character.get_character_state!()
+      |> update_location()
 
   def update_location(
         %{track_location: true, is_online: true, character_id: character_id} = character_state
       ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden")
+        (WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
+           WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
         |> case do
           true ->
             {:error, :skipped}
@@ -458,7 +491,8 @@ defmodule WandererApp.Character.Tracker do
         |> WandererApp.Character.can_track_wallet?()
         |> case do
           true ->
-            WandererApp.Cache.has_key?("character:#{character_id}:wallet_forbidden")
+            (WandererApp.Cache.has_key?("character:#{character_id}:wallet_forbidden") ||
+               WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
             |> case do
               true ->
                 {:error, :skipped}
@@ -485,7 +519,7 @@ defmodule WandererApp.Character.Tracker do
                       ttl: @forbidden_ttl
                     )
 
-                    {:error, error}
+                    {:error, :skipped}
 
                   {:error, :error_limited, headers} ->
                     reset_timeout = get_reset_timeout(headers)
@@ -500,7 +534,7 @@ defmodule WandererApp.Character.Tracker do
                       ttl: reset_timeout
                     )
 
-                    {:error, :error_limited}
+                    {:error, :skipped}
 
                   {:error, error} ->
                     Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")
@@ -511,7 +545,7 @@ defmodule WandererApp.Character.Tracker do
                       ttl: @forbidden_ttl
                     )
 
-                    {:error, error}
+                    {:error, :skipped}
 
                   error ->
                     Logger.error("#{__MODULE__} failed to _update_wallet: #{inspect(error)}")
@@ -536,83 +570,97 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp update_alliance(%{character_id: character_id} = state, alliance_id) do
-    alliance_id
-    |> WandererApp.Esi.get_alliance_info()
+    WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
     |> case do
-      {:ok, %{"name" => alliance_name, "ticker" => alliance_ticker}} ->
-        {:ok, character} = WandererApp.Character.get_character(character_id)
-
-        character_update = %{
-          alliance_id: alliance_id,
-          alliance_name: alliance_name,
-          alliance_ticker: alliance_ticker
-        }
-
-        {:ok, _character} =
-          WandererApp.Api.Character.update_alliance(character, character_update)
-
-        WandererApp.Character.update_character(character_id, character_update)
-
-        @pubsub_client.broadcast(
-          WandererApp.PubSub,
-          "character:#{character_id}:alliance",
-          {:character_alliance, {character_id, character_update}}
-        )
-
+      true ->
         state
 
-      _error ->
-        Logger.error("Failed to get alliance info for #{alliance_id}")
-        state
+      _ ->
+        alliance_id
+        |> WandererApp.Esi.get_alliance_info()
+        |> case do
+          {:ok, %{"name" => alliance_name, "ticker" => alliance_ticker}} ->
+            {:ok, character} = WandererApp.Character.get_character(character_id)
+
+            character_update = %{
+              alliance_id: alliance_id,
+              alliance_name: alliance_name,
+              alliance_ticker: alliance_ticker
+            }
+
+            {:ok, _character} =
+              WandererApp.Api.Character.update_alliance(character, character_update)
+
+            WandererApp.Character.update_character(character_id, character_update)
+
+            @pubsub_client.broadcast(
+              WandererApp.PubSub,
+              "character:#{character_id}:alliance",
+              {:character_alliance, {character_id, character_update}}
+            )
+
+            state
+
+          _error ->
+            Logger.error("Failed to get alliance info for #{alliance_id}")
+            state
+        end
     end
   end
 
   defp update_corporation(%{character_id: character_id} = state, corporation_id) do
-    corporation_id
-    |> WandererApp.Esi.get_corporation_info()
+    WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
     |> case do
-      {:ok, %{"name" => corporation_name, "ticker" => corporation_ticker} = corporation_info} ->
-        alliance_id = Map.get(corporation_info, "alliance_id")
+      true ->
+        state
 
-        {:ok, character} =
-          WandererApp.Character.get_character(character_id)
+      _ ->
+        corporation_id
+        |> WandererApp.Esi.get_corporation_info()
+        |> case do
+          {:ok, %{"name" => corporation_name, "ticker" => corporation_ticker} = corporation_info} ->
+            alliance_id = Map.get(corporation_info, "alliance_id")
 
-        character_update = %{
-          corporation_id: corporation_id,
-          corporation_name: corporation_name,
-          corporation_ticker: corporation_ticker,
-          alliance_id: alliance_id
-        }
+            {:ok, character} =
+              WandererApp.Character.get_character(character_id)
 
-        {:ok, _character} =
-          WandererApp.Api.Character.update_corporation(character, character_update)
-
-        WandererApp.Character.update_character(character_id, character_update)
-
-        @pubsub_client.broadcast(
-          WandererApp.PubSub,
-          "character:#{character_id}:corporation",
-          {:character_corporation,
-           {character_id,
-            %{
+            character_update = %{
               corporation_id: corporation_id,
               corporation_name: corporation_name,
-              corporation_ticker: corporation_ticker
-            }}}
-        )
+              corporation_ticker: corporation_ticker,
+              alliance_id: alliance_id
+            }
 
-        state
-        |> Map.merge(%{alliance_id: alliance_id, corporation_id: corporation_id})
-        |> maybe_update_alliance()
+            {:ok, _character} =
+              WandererApp.Api.Character.update_corporation(character, character_update)
 
-      error ->
-        Logger.warning(
-          "Failed to get corporation info for character #{character_id}: #{inspect(error)}",
-          character_id: character_id,
-          corporation_id: corporation_id
-        )
+            WandererApp.Character.update_character(character_id, character_update)
 
-        state
+            @pubsub_client.broadcast(
+              WandererApp.PubSub,
+              "character:#{character_id}:corporation",
+              {:character_corporation,
+               {character_id,
+                %{
+                  corporation_id: corporation_id,
+                  corporation_name: corporation_name,
+                  corporation_ticker: corporation_ticker
+                }}}
+            )
+
+            state
+            |> Map.merge(%{alliance_id: alliance_id, corporation_id: corporation_id})
+            |> maybe_update_alliance()
+
+          error ->
+            Logger.warning(
+              "Failed to get corporation info for character #{character_id}: #{inspect(error)}",
+              character_id: character_id,
+              corporation_id: corporation_id
+            )
+
+            state
+        end
     end
   end
 
