@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.11](https://github.com/wanderer-industries/wanderer/compare/v1.66.10...v1.66.11) (2025-06-06)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed refresh character tokens
+
 ## [v1.66.10](https://github.com/wanderer-industries/wanderer/compare/v1.66.9...v1.66.10) (2025-06-06)
 
 
