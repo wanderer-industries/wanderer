@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.4](https://github.com/wanderer-industries/wanderer/compare/v1.66.3...v1.66.4) (2025-06-06)
+
+
+
+
+### Bug Fixes:
+
+* respect error limits for ESI APIs
+
 ## [v1.66.3](https://github.com/wanderer-industries/wanderer/compare/v1.66.2...v1.66.3) (2025-06-05)
 
 
