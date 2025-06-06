@@ -293,6 +293,7 @@ defmodule WandererApp.Esi.ApiClient do
     case _get_alliance_info(eve_id, "", opts) do
       {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
+      error -> error
     end
   end
 
@@ -314,6 +315,7 @@ defmodule WandererApp.Esi.ApiClient do
     case _get_corporation_info(eve_id, "", opts) do
       {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
+      error -> error
     end
   end
 
@@ -330,6 +332,7 @@ defmodule WandererApp.Esi.ApiClient do
          ) do
       {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
+      error -> error
     end
   end
 
@@ -532,8 +535,8 @@ defmodule WandererApp.Esi.ApiClient do
           {:error, :not_found}
 
         {:ok, %{status: 420, headers: headers} = _error} ->
-          Logger.warning("error_limited error: #{inspect(headers)}")
-          {:error, :error_limited}
+          Logger.warning("#{path} error_limited error: #{inspect(headers)}")
+          {:error, :error_limited, headers}
 
         {:ok, %{status: status} = _error} when status in [401, 403] ->
           get_retry(path, api_opts, opts)
@@ -588,8 +591,9 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: 403}} ->
           {:error, :forbidden}
 
-        {:ok, %{status: 420}} ->
-          {:error, :error_limited}
+        {:ok, %{status: 420, headers: headers} = _error} ->
+          Logger.warning("#{url} error_limited error: #{inspect(headers)}")
+          {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
@@ -626,8 +630,9 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: 403}} ->
           {:error, :forbidden}
 
-        {:ok, %{status: 420}} ->
-          {:error, :error_limited}
+        {:ok, %{status: 420, headers: headers} = _error} ->
+          Logger.warning("#{url} error_limited error: #{inspect(headers)}")
+          {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
