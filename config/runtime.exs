@@ -53,16 +53,6 @@ public_api_disabled =
   |> get_var_from_path_or_env("WANDERER_PUBLIC_API_DISABLED", "false")
   |> String.to_existing_atom()
 
-character_api_disabled =
-  config_dir
-  |> get_var_from_path_or_env("WANDERER_CHARACTER_API_DISABLED", "true")
-  |> String.to_existing_atom()
-
-zkill_preload_disabled =
-  config_dir
-  |> get_var_from_path_or_env("WANDERER_ZKILL_PRELOAD_DISABLED", "false")
-  |> String.to_existing_atom()
-
 map_subscriptions_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
@@ -128,8 +118,10 @@ config :wanderer_app,
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
   public_api_disabled: public_api_disabled,
-  character_api_disabled: character_api_disabled,
-  zkill_preload_disabled: zkill_preload_disabled,
+  character_api_disabled:
+    System.get_env("WANDERER_CHARACTER_API_DISABLED", "true") |> String.to_existing_atom(),
+  zkill_preload_disabled:
+    System.get_env("WANDERER_ZKILL_PRELOAD_DISABLED", "false") |> String.to_existing_atom(),
   map_subscriptions_enabled: map_subscriptions_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
