@@ -33,8 +33,8 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @pause_tracking_timeout :timer.minutes(15)
-  @online_error_timeout :timer.minutes(1)
+  @pause_tracking_timeout :timer.minutes(60 * 10)
+  @online_error_timeout :timer.minutes(2)
   @online_forbidden_ttl :timer.seconds(7)
   @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
