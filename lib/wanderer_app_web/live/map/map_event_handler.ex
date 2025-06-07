@@ -33,7 +33,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "getCharactersTrackingInfo",
     "updateCharacterTracking",
     "updateFollowingCharacter",
-    "updateMainCharacter"
+    "updateMainCharacter",
+    "startTracking"
   ]
 
   @map_system_events [

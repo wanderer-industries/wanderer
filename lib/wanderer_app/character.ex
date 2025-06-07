@@ -251,13 +251,22 @@ defmodule WandererApp.Character do
     end
   end
 
-  defp maybe_merge_map_character_settings(character, map_id, true), do: character
+  defp maybe_merge_map_character_settings(%{id: character_id} = character, map_id, true) do
+    {:ok, tracking_paused} =
+      WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false)
+
+    character
+    |> Map.merge(%{tracking_paused: tracking_paused})
+  end
 
   defp maybe_merge_map_character_settings(
          %{id: character_id} = character,
          map_id,
          _character_is_present
        ) do
+    {:ok, tracking_paused} =
+      WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false)
+
     WandererApp.MapCharacterSettingsRepo.get(map_id, character_id)
     |> case do
       {:ok, settings} when not is_nil(settings) ->
@@ -270,6 +279,7 @@ defmodule WandererApp.Character do
         |> Map.put(:online, false)
         |> Map.merge(@default_character_tracking_data)
     end
+    |> Map.merge(%{tracking_paused: tracking_paused})
   end
 
   defp prepare_search_results(result) do

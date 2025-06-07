@@ -32,15 +32,17 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     )
   end
 
-  def handle_server_event(%{event: :untrack_character, payload: character_id}, %{
-    assigns: %{
-      map_id: map_id
-    }
-  } = socket) do
+  def handle_server_event(
+        %{event: :untrack_character, payload: character_id},
+        %{
+          assigns: %{
+            map_id: map_id
+          }
+        } = socket
+      ) do
     :ok = WandererApp.Character.TrackingUtils.untrack([%{id: character_id}], map_id, self())
     socket
   end
-
 
   def handle_server_event(
         %{event: :characters_updated},
@@ -276,6 +278,24 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
      )}
   end
 
+  def handle_ui_event(
+        "startTracking",
+        %{"character_eve_id" => character_eve_id},
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: %{id: current_user_id}
+          }
+        } = socket
+      )
+      when not is_nil(character_eve_id) do
+    {:ok, character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
+
+    WandererApp.Cache.delete("character:#{character.id}:tracking_paused")
+
+    {:noreply, socket}
+  end
+
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
@@ -295,6 +315,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put(:alliance_ticker, Map.get(character, :alliance_ticker, ""))
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
+      |> Map.put_new(:tracking_paused, character |> Map.get(:tracking_paused, false))
 
   defp get_location(character),
     do: %{
