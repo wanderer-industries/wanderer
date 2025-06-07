@@ -35,6 +35,8 @@ defmodule WandererApp.Character.Tracker do
 
   @pause_tracking_timeout :timer.minutes(60 * 10)
   @online_error_timeout :timer.minutes(2)
+  @ship_error_timeout :timer.minutes(2)
+  @location_error_timeout :timer.minutes(2)
   @online_forbidden_ttl :timer.seconds(7)
   @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
@@ -54,8 +56,17 @@ defmodule WandererApp.Character.Tracker do
     |> new()
   end
 
-  def check_online_errors(character_id) do
-    WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
+  def check_online_errors(character_id),
+    do: check_tracking_errors(character_id, "online", @online_error_timeout)
+
+  def check_ship_errors(character_id),
+    do: check_tracking_errors(character_id, "ship", @ship_error_timeout)
+
+  def check_location_errors(character_id),
+    do: check_tracking_errors(character_id, "location", @location_error_timeout)
+
+  defp check_tracking_errors(character_id, type, timeout) do
+    WandererApp.Cache.lookup!("character:#{character_id}:#{type}_error_time")
     |> case do
       nil ->
         :skip
@@ -63,40 +74,48 @@ defmodule WandererApp.Character.Tracker do
       error_time ->
         duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
 
-        if duration >= @online_error_timeout do
-          WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-          WandererApp.Cache.delete("character:#{character_id}:online_error_time")
-          WandererApp.Character.update_character(character_id, %{online: false})
-
-          WandererApp.Character.update_character_state(character_id, %{
-            is_online: false
-          })
-
-          WandererApp.Cache.put(
-            "character:#{character_id}:tracking_paused",
-            true,
-            ttl: @pause_tracking_timeout
-          )
-
-          {:ok, %{solar_system_id: solar_system_id}} =
-            WandererApp.Character.get_character(character_id)
-
-          {:ok, %{active_maps: active_maps}} =
-            WandererApp.Character.get_character_state(character_id)
-
-          active_maps
-          |> Enum.each(fn map_id ->
-            WandererApp.Cache.put(
-              "map:#{map_id}:character:#{character_id}:start_solar_system_id",
-              solar_system_id
-            )
-          end)
+        if duration >= timeout do
+          pause_tracking(character_id)
 
           :ok
         else
           :skip
         end
     end
+  end
+
+  defp pause_tracking(character_id) do
+    WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
+    WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+    WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
+    WandererApp.Cache.delete("character:#{character_id}:location_error_time")
+    WandererApp.Character.update_character(character_id, %{online: false})
+
+    WandererApp.Character.update_character_state(character_id, %{
+      is_online: false
+    })
+
+    Logger.warning("[CharacterTracker] paused for #{character_id}")
+
+    WandererApp.Cache.put(
+      "character:#{character_id}:tracking_paused",
+      true,
+      ttl: @pause_tracking_timeout
+    )
+
+    {:ok, %{solar_system_id: solar_system_id}} =
+      WandererApp.Character.get_character(character_id)
+
+    {:ok, %{active_maps: active_maps}} =
+      WandererApp.Character.get_character_state(character_id)
+
+    active_maps
+    |> Enum.each(fn map_id ->
+      WandererApp.Cache.put(
+        "map:#{map_id}:character:#{character_id}:start_solar_system_id",
+        solar_system_id
+      )
+    end)
   end
 
   def update_settings(character_id, track_settings) do
@@ -137,6 +156,8 @@ defmodule WandererApp.Character.Tracker do
 
                 WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+                WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
+                WandererApp.Cache.delete("character:#{character_id}:location_error_time")
                 WandererApp.Cache.delete("character:#{character_id}:info_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:ship_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:location_forbidden")
@@ -186,15 +207,6 @@ defmodule WandererApp.Character.Tracker do
                   true,
                   ttl: reset_timeout
                 )
-
-                if is_nil(
-                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
-                   ) do
-                  WandererApp.Cache.insert(
-                    "character:#{character_id}:online_error_time",
-                    DateTime.utc_now()
-                  )
-                end
 
                 {:error, :skipped}
 
@@ -342,6 +354,13 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
+                if is_nil(WandererApp.Cache.lookup!("character:#{character_id}:ship_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:ship_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
                 {:error, error}
 
               {:error, :error_limited, headers} ->
@@ -366,6 +385,13 @@ defmodule WandererApp.Character.Tracker do
                   ttl: @forbidden_ttl
                 )
 
+                if is_nil(WandererApp.Cache.lookup!("character:#{character_id}:ship_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:ship_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
                 {:error, error}
 
               _ ->
@@ -376,6 +402,13 @@ defmodule WandererApp.Character.Tracker do
                   true,
                   ttl: @forbidden_ttl
                 )
+
+                if is_nil(WandererApp.Cache.lookup!("character:#{character_id}:ship_error_time")) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:ship_error_time",
+                    DateTime.utc_now()
+                  )
+                end
 
                 {:error, :skipped}
             end
@@ -419,6 +452,15 @@ defmodule WandererApp.Character.Tracker do
               {:error, error} when error in [:forbidden, :not_found, :timeout] ->
                 Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:location_error_time")
+                   ) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:location_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
                 {:error, :skipped}
 
               {:error, :error_limited, headers} ->
@@ -439,10 +481,28 @@ defmodule WandererApp.Character.Tracker do
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:location_error_time")
+                   ) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:location_error_time",
+                    DateTime.utc_now()
+                  )
+                end
+
                 {:error, :skipped}
 
               _ ->
                 Logger.error("#{__MODULE__} failed to update_location: wrong response")
+
+                if is_nil(
+                     WandererApp.Cache.lookup!("character:#{character_id}:location_error_time")
+                   ) do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:location_error_time",
+                    DateTime.utc_now()
+                  )
+                end
 
                 {:error, :skipped}
             end
