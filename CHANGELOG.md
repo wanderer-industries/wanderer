@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.14](https://github.com/wanderer-industries/wanderer/compare/v1.66.13...v1.66.14) (2025-06-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed online updates
+
 ## [v1.66.13](https://github.com/wanderer-industries/wanderer/compare/v1.66.12...v1.66.13) (2025-06-07)
 
 
