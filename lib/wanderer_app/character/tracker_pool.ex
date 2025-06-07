@@ -18,6 +18,7 @@ defmodule WandererApp.Character.TrackerPool do
 
   @update_location_interval :timer.seconds(1)
   @update_online_interval :timer.seconds(5)
+  @check_offline_characters_interval :timer.minutes(2)
   @check_online_errors_interval :timer.minutes(1)
   @check_ship_errors_interval :timer.minutes(1)
   @check_location_errors_interval :timer.minutes(1)
@@ -121,6 +122,7 @@ defmodule WandererApp.Character.TrackerPool do
     Process.send_after(self(), :check_online_errors, :timer.seconds(60))
     Process.send_after(self(), :check_ship_errors, :timer.seconds(90))
     Process.send_after(self(), :check_location_errors, :timer.seconds(120))
+    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
     Process.send_after(self(), :update_location, 300)
     Process.send_after(self(), :update_ship, 500)
     Process.send_after(self(), :update_info, 1500)
@@ -200,6 +202,46 @@ defmodule WandererApp.Character.TrackerPool do
       e ->
         Logger.error("""
         [Tracker Pool] update_online => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_info(
+        :check_offline_characters,
+        %{
+          characters: characters
+        } =
+          state
+      ) do
+    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
+
+    try do
+      characters
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.TaskWrapper.start_link(
+            WandererApp.Character.Tracker,
+            :check_offline,
+            [
+              character_id
+            ]
+          )
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> @logger.error("Error in check_offline: #{inspect(reason)}")
+      end)
+    rescue
+      e ->
+        Logger.error("""
+        [Tracker Pool] check_offline => exception: #{Exception.message(e)}
         #{Exception.format_stacktrace(__STACKTRACE__)}
         """)
     end

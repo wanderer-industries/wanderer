@@ -34,6 +34,7 @@ defmodule WandererApp.Character.Tracker do
         }
 
   @pause_tracking_timeout :timer.minutes(60 * 10)
+  @offline_timeout :timer.minutes(5)
   @online_error_timeout :timer.minutes(2)
   @ship_error_timeout :timer.minutes(2)
   @location_error_timeout :timer.minutes(2)
@@ -54,6 +55,26 @@ defmodule WandererApp.Character.Tracker do
       opts: args
     }
     |> new()
+  end
+
+  def check_offline(character_id) do
+    WandererApp.Cache.lookup!("character:#{character_id}:last_online_time")
+    |> case do
+      nil ->
+        pause_tracking(character_id)
+        :ok
+
+      last_online_time ->
+        duration = DateTime.diff(DateTime.utc_now(), last_online_time, :millisecond)
+
+        if duration >= @offline_timeout do
+          pause_tracking(character_id)
+
+          :ok
+        else
+          :skip
+        end
+    end
   end
 
   def check_online_errors(character_id),
@@ -153,6 +174,15 @@ defmodule WandererApp.Character.Tracker do
                  ) do
               {:ok, online} ->
                 online = get_online(online)
+
+                if online.online == true do
+                  WandererApp.Cache.insert(
+                    "character:#{character_id}:last_online_time",
+                    DateTime.utc_now()
+                  )
+                else
+                  WandererApp.Cache.delete("character:#{character_id}:last_online_time")
+                end
 
                 WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:online_error_time")

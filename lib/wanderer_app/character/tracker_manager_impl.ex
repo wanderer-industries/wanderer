@@ -120,6 +120,12 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         WandererApp.Character.Tracker.update_settings(character_id, track_settings)
 
       WandererApp.Cache.delete("character:#{character_id}:tracking_paused")
+
+      WandererApp.Cache.insert(
+        "character:#{character_id}:last_online_time",
+        DateTime.utc_now()
+      )
+
       WandererApp.Character.update_character_state(character_id, character_state)
     else
       WandererApp.Cache.insert_or_update(
