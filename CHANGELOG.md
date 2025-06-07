@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.16](https://github.com/wanderer-industries/wanderer/compare/v1.66.15...v1.66.16) (2025-06-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Increased tracking pause timeout for offline characters up to 10 hours
+
 ## [v1.66.15](https://github.com/wanderer-industries/wanderer/compare/v1.66.14...v1.66.15) (2025-06-07)
 
 
