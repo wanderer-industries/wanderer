@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.66.21](https://github.com/wanderer-industries/wanderer/compare/v1.66.20...v1.66.21) (2025-06-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed kills fetching based on env settings
+
 ## [v1.66.20](https://github.com/wanderer-industries/wanderer/compare/v1.66.19...v1.66.20) (2025-06-07)
 
 
