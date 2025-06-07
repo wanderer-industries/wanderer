@@ -16,7 +16,7 @@ defmodule WandererApp.Character.TrackerPool do
   @registry :tracker_pool_registry
   @unique_registry :unique_tracker_pool_registry
 
-  @update_location_interval :timer.seconds(2)
+  @update_location_interval :timer.seconds(1)
   @update_online_interval :timer.seconds(5)
   @check_online_errors_interval :timer.seconds(30)
   @update_ship_interval :timer.seconds(2)

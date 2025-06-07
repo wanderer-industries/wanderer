@@ -33,12 +33,13 @@ defmodule WandererApp.Character.Tracker do
           status: binary()
         }
 
-  @pause_tracking_timeout :timer.minutes(10)
+  @pause_tracking_timeout :timer.minutes(15)
   @online_error_timeout :timer.minutes(1)
   @online_forbidden_ttl :timer.seconds(7)
   @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
   @limit_ttl :timer.seconds(5)
+  @location_limit_ttl :timer.seconds(1)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def new(), do: __struct__()
@@ -239,11 +240,16 @@ defmodule WandererApp.Character.Tracker do
 
   def update_online(_), do: {:error, :skipped}
 
-  defp get_reset_timeout(%{"x-esi-error-limit-reset" => [reset_seconds]})
+  defp get_reset_timeout(_headers, _default_timeout \\ @limit_ttl)
+
+  defp get_reset_timeout(
+         %{"x-esi-error-limit-remain" => ["0"], "x-esi-error-limit-reset" => [reset_seconds]},
+         _default_timeout
+       )
        when is_binary(reset_seconds),
        do: :timer.seconds((reset_seconds |> String.to_integer()) + 1)
 
-  defp get_reset_timeout(_headers), do: @limit_ttl
+  defp get_reset_timeout(_headers, default_timeout), do: default_timeout
 
   def update_info(character_id) do
     (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
@@ -403,8 +409,7 @@ defmodule WandererApp.Character.Tracker do
       ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
-           WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
+        (WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
         |> case do
           true ->
@@ -424,20 +429,14 @@ defmodule WandererApp.Character.Tracker do
               {:error, error} when error in [:forbidden, :not_found, :timeout] ->
                 Logger.warning("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
-                WandererApp.Cache.put(
-                  "character:#{character_id}:location_forbidden",
-                  true,
-                  ttl: @forbidden_ttl
-                )
-
-                {:error, error}
+                {:error, :skipped}
 
               {:error, :error_limited, headers} ->
-                reset_timeout = get_reset_timeout(headers)
-
                 Logger.warning(
                   "#{__MODULE__} failed to update_location: #{inspect(:error_limited)}"
                 )
+
+                reset_timeout = get_reset_timeout(headers, @location_limit_ttl)
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:location_forbidden",
@@ -450,22 +449,10 @@ defmodule WandererApp.Character.Tracker do
               {:error, error} ->
                 Logger.error("#{__MODULE__} failed to update_location: #{inspect(error)}")
 
-                WandererApp.Cache.put(
-                  "character:#{character_id}:location_forbidden",
-                  true,
-                  ttl: @forbidden_ttl
-                )
-
-                {:error, error}
+                {:error, :skipped}
 
               _ ->
                 Logger.error("#{__MODULE__} failed to update_location: wrong response")
-
-                WandererApp.Cache.put(
-                  "character:#{character_id}:location_forbidden",
-                  true,
-                  ttl: @forbidden_ttl
-                )
 
                 {:error, :skipped}
             end

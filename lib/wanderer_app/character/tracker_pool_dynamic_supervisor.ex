@@ -7,7 +7,7 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
   @cache :tracked_characters
   @registry :tracker_pool_registry
   @unique_registry :unique_tracker_pool_registry
-  @tracker_pool_limit 100
+  @tracker_pool_limit 50
 
   @name __MODULE__
 
