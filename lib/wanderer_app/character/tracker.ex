@@ -136,17 +136,7 @@ defmodule WandererApp.Character.Tracker do
                 online = get_online(online)
 
                 WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-
-                if is_nil(
-                     WandererApp.Cache.lookup!("character:#{character_id}:online_error_time")
-                   ) do
-                  WandererApp.Cache.insert(
-                    "character:#{character_id}:online_error_time",
-                    DateTime.utc_now()
-                  )
-                end
-
-                # WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+                WandererApp.Cache.delete("character:#{character_id}:online_error_time")
                 WandererApp.Cache.delete("character:#{character_id}:info_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:ship_forbidden")
                 WandererApp.Cache.delete("character:#{character_id}:location_forbidden")
