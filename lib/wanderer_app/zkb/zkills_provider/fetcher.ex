@@ -62,62 +62,68 @@ defmodule WandererApp.Zkb.KillsProvider.Fetcher do
   Returns `{:ok, kills, updated_state}` on success, or `{:error, reason, updated_state}`.
   """
   def fetch_kills_for_system(system_id, since_hours, state, opts \\ []) do
-    limit = Keyword.get(opts, :limit, nil)
-    force? = Keyword.get(opts, :force, false)
+    zkill_preload_disabled = WandererApp.Env.zkill_preload_disabled?()
 
-    log_prefix = "[Fetcher] fetch_kills_for_system => system=#{system_id}"
+    if not zkill_preload_disabled do
+      limit = Keyword.get(opts, :limit, nil)
+      force? = Keyword.get(opts, :force, false)
 
-    # Check the "recently fetched" cache if not forced
-    if not force? and KillsCache.recently_fetched?(system_id) do
-      cached_kills = KillsCache.fetch_cached_kills(system_id)
-      final = maybe_take(cached_kills, limit)
+      log_prefix = "[Fetcher] fetch_kills_for_system => system=#{system_id}"
 
-      Logger.debug(fn ->
-        "#{log_prefix}, recently_fetched?=true => returning #{length(final)} cached kills"
-      end)
+      # Check the "recently fetched" cache if not forced
+      if not force? and KillsCache.recently_fetched?(system_id) do
+        cached_kills = KillsCache.fetch_cached_kills(system_id)
+        final = maybe_take(cached_kills, limit)
 
-      {:ok, final, state}
-    else
-      Logger.debug(fn ->
-        "#{log_prefix}, hours=#{since_hours}, limit=#{inspect(limit)}, force=#{force?}"
-      end)
+        Logger.debug(fn ->
+          "#{log_prefix}, recently_fetched?=true => returning #{length(final)} cached kills"
+        end)
 
-      cutoff_dt = hours_ago(since_hours)
+        {:ok, final, state}
+      else
+        Logger.debug(fn ->
+          "#{log_prefix}, hours=#{since_hours}, limit=#{inspect(limit)}, force=#{force?}"
+        end)
 
-      result =
-        retry with:
-                exponential_backoff(300)
-                |> randomize()
-                |> cap(5_000)
-                |> expiry(120_000) do
-          case do_multi_page_fetch(system_id, cutoff_dt, 1, 0, limit, state) do
-            {:ok, new_st, total_fetched} ->
-              # Mark system as fully fetched (to prevent repeated calls).
-              KillsCache.put_full_fetched_timestamp(system_id)
-              final_kills = KillsCache.fetch_cached_kills(system_id) |> maybe_take(limit)
+        cutoff_dt = hours_ago(since_hours)
 
-              Logger.debug(fn ->
-                "#{log_prefix}, total_fetched=#{total_fetched}, final_cached=#{length(final_kills)}, calls_count=#{new_st.calls_count}"
-              end)
+        result =
+          retry with:
+                  exponential_backoff(300)
+                  |> randomize()
+                  |> cap(5_000)
+                  |> expiry(120_000) do
+            case do_multi_page_fetch(system_id, cutoff_dt, 1, 0, limit, state) do
+              {:ok, new_st, total_fetched} ->
+                # Mark system as fully fetched (to prevent repeated calls).
+                KillsCache.put_full_fetched_timestamp(system_id)
+                final_kills = KillsCache.fetch_cached_kills(system_id) |> maybe_take(limit)
 
-              {:ok, final_kills, new_st}
+                Logger.debug(fn ->
+                  "#{log_prefix}, total_fetched=#{total_fetched}, final_cached=#{length(final_kills)}, calls_count=#{new_st.calls_count}"
+                end)
 
-            {:error, :rate_limited, _new_st} ->
-              raise ":rate_limited"
+                {:ok, final_kills, new_st}
 
-            {:error, reason, _new_st} ->
-              raise "#{log_prefix}, reason=#{inspect(reason)}"
+              {:error, :rate_limited, _new_st} ->
+                raise ":rate_limited"
+
+              {:error, reason, _new_st} ->
+                raise "#{log_prefix}, reason=#{inspect(reason)}"
+            end
           end
+
+        case result do
+          {:ok, kills, new_st} ->
+            {:ok, kills, new_st}
+
+          error ->
+            Logger.error("#{log_prefix}, EXHAUSTED => error=#{inspect(error)}")
+            {:error, error, state}
         end
-
-      case result do
-        {:ok, kills, new_st} ->
-          {:ok, kills, new_st}
-
-        error ->
-          Logger.error("#{log_prefix}, EXHAUSTED => error=#{inspect(error)}")
-          {:error, error, state}
       end
+    else
+      raise ":kills_disabled"
     end
   rescue
     e ->
