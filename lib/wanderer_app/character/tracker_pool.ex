@@ -86,7 +86,7 @@ defmodule WandererApp.Character.TrackerPool do
     end)
 
     WandererApp.Cache.put(
-      "character:#{id}:tracking_paused",
+      "character:#{tracked_id}:tracking_paused",
       true,
       ttl: @pause_tracking_timeout
     )
