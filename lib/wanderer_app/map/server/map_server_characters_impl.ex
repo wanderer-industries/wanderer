@@ -397,7 +397,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     with {:ok, old_tracking_paused} <-
            WandererApp.Cache.lookup(
              "map:#{map_id}:character:#{character_id}:tracking_paused",
-             true
+             false
            ),
          {:ok, tracking_paused} <-
            WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false) do
