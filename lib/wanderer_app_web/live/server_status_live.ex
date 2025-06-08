@@ -11,7 +11,7 @@ defmodule WandererAppWeb.ServerStatusLive do
         "server_status"
       )
 
-    {:ok, socket |> assign(server_online: false)}
+    {:ok, socket |> assign(server_online: true)}
   end
 
   @impl true
