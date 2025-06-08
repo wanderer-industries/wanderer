@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.67.0](https://github.com/wanderer-industries/wanderer/compare/v1.66.25...v1.67.0) (2025-06-08)
+
+
+
+
+### Features:
+
+* Core: Added support for WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED env variable to pause inactive character trackers
+
 ## [v1.66.25](https://github.com/wanderer-industries/wanderer/compare/v1.66.24...v1.66.25) (2025-06-08)
 
 
