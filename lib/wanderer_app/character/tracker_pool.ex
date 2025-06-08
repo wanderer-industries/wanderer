@@ -52,11 +52,11 @@ defmodule WandererApp.Character.TrackerPool do
 
     tracked_ids
     |> Enum.each(fn id ->
-      WandererApp.Cache.put(
-        "character:#{id}:tracking_paused",
-        true,
-        ttl: @pause_tracking_timeout
-      )
+      # WandererApp.Cache.put(
+      #   "character:#{id}:tracking_paused",
+      #   true,
+      #   ttl: @pause_tracking_timeout
+      # )
 
       Cachex.put(@cache, id, uuid)
     end)
@@ -85,11 +85,11 @@ defmodule WandererApp.Character.TrackerPool do
       [tracked_id | r_tracked_ids]
     end)
 
-    WandererApp.Cache.put(
-      "character:#{tracked_id}:tracking_paused",
-      true,
-      ttl: @pause_tracking_timeout
-    )
+    # WandererApp.Cache.put(
+    #   "character:#{tracked_id}:tracking_paused",
+    #   true,
+    #   ttl: @pause_tracking_timeout
+    # )
 
     # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
     #   {:commit, ids ++ [tracked_id]}

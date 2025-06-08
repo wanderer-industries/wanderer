@@ -51,7 +51,7 @@ export const Characters = ({ data }: CharactersProps) => {
             ['border-lime-600/70']: character.online,
           },
         )}
-        title={character.name}
+        title={character.tracking_paused ? `${character.name} - Tracking Paused (click to resume)` : character.name}
       >
         {character.tracking_paused && (
           <>
