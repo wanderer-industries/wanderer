@@ -47,17 +47,16 @@ defmodule WandererApp.Application do
          child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
         {PartitionSupervisor,
          child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
-        WandererApp.Zkb.Supervisor,
         WandererApp.Server.ServerStatusTracker,
         WandererApp.Server.TheraDataFetcher,
         {WandererApp.Character.TrackerPoolSupervisor, []},
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
-        WandererApp.Map.ZkbDataFetcher,
         WandererAppWeb.Presence,
         WandererAppWeb.Endpoint
       ] ++
-        maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?())
+        maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
+        maybe_start_zkb(WandererApp.Env.zkill_preload_disabled?())
 
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
 
@@ -77,6 +76,12 @@ defmodule WandererApp.Application do
     WandererAppWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  defp maybe_start_zkb(false),
+    do: [WandererApp.Zkb.Supervisor, WandererApp.Map.ZkbDataFetcher]
+
+  defp maybe_start_zkb(_),
+    do: []
 
   defp maybe_start_corp_wallet_tracker(true),
     do: [
