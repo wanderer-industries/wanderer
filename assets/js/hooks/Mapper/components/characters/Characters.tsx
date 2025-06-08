@@ -57,8 +57,8 @@ export const Characters = ({ data }: CharactersProps) => {
           <>
             <span
               className={clsx(
-                'absolute top-[2px] left-[2px] w-[9px] h-[9px]',
-                'text-yellow-500 text-[9px] rounded-[1px] z-10 hover:hidden',
+                'absolute flex flex-col  p-[2px]  top-[0px] left-[0px] w-[35px] h-[35px]',
+                'text-yellow-500 text-[9px] z-10 bg-gray-800/40',
                 'pi',
                 PrimeIcons.PAUSE,
               )}
