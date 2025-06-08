@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.67.4](https://github.com/wanderer-industries/wanderer/compare/v1.67.3...v1.67.4) (2025-06-08)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed issue with system splash updates
+
 ## [v1.67.3](https://github.com/wanderer-industries/wanderer/compare/v1.67.2...v1.67.3) (2025-06-08)
 
 
