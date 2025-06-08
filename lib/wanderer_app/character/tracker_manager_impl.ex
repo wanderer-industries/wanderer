@@ -14,7 +14,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   @garbage_collection_interval :timer.minutes(15)
   @untrack_characters_interval :timer.minutes(1)
-  @inactive_character_timeout :timer.minutes(5)
+  @inactive_character_timeout :timer.minutes(10)
   @untrack_character_timeout :timer.minutes(10)
 
   @logger Application.compile_env(:wanderer_app, :logger)
@@ -23,7 +23,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def new(args), do: __struct__(args)
 
   def init(args) do
-    # Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
+    Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
     %{
@@ -112,11 +112,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
       {:ok, character_state} =
         WandererApp.Character.Tracker.update_settings(character_id, track_settings)
-
-      WandererApp.Cache.insert(
-        "character:#{character_id}:last_online_time",
-        DateTime.utc_now()
-      )
 
       WandererApp.Character.update_character_state(character_id, character_state)
     else
@@ -248,9 +243,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
             false
           end
 
-        Logger.warning(fn -> "Untrack timeout reached: #{inspect(untrack_timeout_reached)}" end)
+        Logger.debug(fn -> "Untrack timeout reached: #{inspect(untrack_timeout_reached)}" end)
 
-        if untrack_timeout_reached && not character_is_present(map_id, character_id) do
+        if untrack_timeout_reached do
           remove_from_untrack_queue(map_id, character_id)
 
           WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
@@ -274,11 +269,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
               structure_id: character.structure_id,
               station_id: character.station_id
             })
-
-          WandererApp.Cache.insert(
-            "character:#{character_id}:last_online_time",
-            DateTime.utc_now()
-          )
 
           WandererApp.Character.update_character_state(character_id, character_state)
           WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)

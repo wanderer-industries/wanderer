@@ -61,7 +61,11 @@ defmodule WandererApp.Character.Tracker do
     WandererApp.Cache.lookup!("character:#{character_id}:last_online_time")
     |> case do
       nil ->
-        pause_tracking(character_id)
+        WandererApp.Cache.insert(
+          "character:#{character_id}:last_online_time",
+          DateTime.utc_now()
+        )
+
         :ok
 
       last_online_time ->
@@ -183,8 +187,6 @@ defmodule WandererApp.Character.Tracker do
                     "character:#{character_id}:last_online_time",
                     DateTime.utc_now()
                   )
-                else
-                  WandererApp.Cache.delete("character:#{character_id}:last_online_time")
                 end
 
                 WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
@@ -231,9 +233,7 @@ defmodule WandererApp.Character.Tracker do
               {:error, :error_limited, headers} ->
                 reset_timeout = get_reset_timeout(headers)
 
-                Logger.warning(
-                  "#{__MODULE__} failed to update_online: #{inspect(:error_limited)}"
-                )
+                Logger.warning(".")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:online_forbidden",
@@ -320,9 +320,7 @@ defmodule WandererApp.Character.Tracker do
           {:error, :error_limited, headers} ->
             reset_timeout = get_reset_timeout(headers)
 
-            Logger.warning(
-              "#{__MODULE__} failed to get_character_info: #{inspect(:error_limited)}"
-            )
+            Logger.warning(".")
 
             WandererApp.Cache.put(
               "character:#{character_id}:info_forbidden",
@@ -399,7 +397,7 @@ defmodule WandererApp.Character.Tracker do
               {:error, :error_limited, headers} ->
                 reset_timeout = get_reset_timeout(headers)
 
-                Logger.warning("#{__MODULE__} failed to update_ship: #{inspect(:error_limited)}")
+                Logger.warning(".")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:ship_forbidden",
@@ -497,9 +495,7 @@ defmodule WandererApp.Character.Tracker do
                 {:error, :skipped}
 
               {:error, :error_limited, headers} ->
-                Logger.warning(
-                  "#{__MODULE__} failed to update_location: #{inspect(:error_limited)}"
-                )
+                Logger.warning(".")
 
                 reset_timeout = get_reset_timeout(headers, @location_limit_ttl)
 
@@ -594,9 +590,7 @@ defmodule WandererApp.Character.Tracker do
                   {:error, :error_limited, headers} ->
                     reset_timeout = get_reset_timeout(headers)
 
-                    Logger.warning(
-                      "#{__MODULE__} failed to update_wallet: #{inspect(:error_limited)}"
-                    )
+                    Logger.warning(".")
 
                     WandererApp.Cache.put(
                       "character:#{character_id}:wallet_forbidden",

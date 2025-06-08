@@ -163,7 +163,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:error, :forbidden}
 
       {:error, :error_limited, _headers} ->
-        Logger.warning("#{__MODULE__} failed to get_wallet_journal: error_limited")
+        Logger.warning(".")
         {:error, :error_limited}
 
       {:error, error} ->
@@ -192,7 +192,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:error, :forbidden}
 
       {:error, :error_limited, _headers} ->
-        Logger.warning("#{__MODULE__} failed to update_corp_wallets: error_limited")
+        Logger.warning(".")
         {:error, :error_limited}
 
       {:error, error} ->

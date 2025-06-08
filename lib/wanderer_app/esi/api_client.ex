@@ -536,7 +536,6 @@ defmodule WandererApp.Esi.ApiClient do
           {:error, :not_found}
 
         {:ok, %{status: 420, headers: headers} = _error} ->
-          Logger.warning("#{path} error_limited error: #{inspect(headers)}")
           {:error, :error_limited, headers}
 
         {:ok, %{status: status} = _error} when status in [401, 403] ->
@@ -593,7 +592,6 @@ defmodule WandererApp.Esi.ApiClient do
           {:error, :forbidden}
 
         {:ok, %{status: 420, headers: headers} = _error} ->
-          Logger.warning("#{url} error_limited error: #{inspect(headers)}")
           {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
@@ -632,7 +630,6 @@ defmodule WandererApp.Esi.ApiClient do
           {:error, :forbidden}
 
         {:ok, %{status: 420, headers: headers} = _error} ->
-          Logger.warning("#{url} error_limited error: #{inspect(headers)}")
           {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
