@@ -16,6 +16,7 @@ defmodule WandererApp.Env do
   def invites, do: get_key(:invites, false)
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
   def public_api_disabled?, do: get_key(:public_api_disabled, false)
+  def character_tracking_pause_disabled?, do: get_key(:character_tracking_pause_disabled, true)
   def character_api_disabled?, do: get_key(:character_api_disabled, false)
   def zkill_preload_disabled?, do: get_key(:zkill_preload_disabled, false)
   def wallet_tracking_enabled?, do: get_key(:wallet_tracking_enabled, false)

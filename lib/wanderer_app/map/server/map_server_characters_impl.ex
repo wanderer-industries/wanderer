@@ -86,19 +86,24 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end)
   end
 
-  def untrack_characters(map_id, character_ids),
-    do:
-      character_ids
-      |> Enum.each(fn character_id ->
-        if is_character_map_active?(map_id, character_id) do
-          WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-            map_id: map_id,
-            track: false
-          })
+  def untrack_characters(map_id, character_ids) do
+    character_ids
+    |> Enum.each(fn character_id ->
+      is_character_map_active?(map_id, character_id)
+      |> untrack_character(map_id, character_id)
+    end)
+  end
 
-          Impl.broadcast!(map_id, :untrack_character, character_id)
-        end
-      end)
+  def untrack_character(true, map_id, character_id) do
+    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+      map_id: map_id,
+      track: false
+    })
+  end
+
+  def untrack_character(_is_character_map_active, _map_id, character_id) do
+    :ok
+  end
 
   def is_character_map_active?(map_id, character_id) do
     case WandererApp.Character.get_character_state(character_id) do

@@ -30,7 +30,7 @@ defmodule WandererApp.Map.Server.Impl do
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
   @backup_state_timeout :timer.minutes(1)
-  @update_presence_timeout :timer.seconds(1)
+  @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
   @update_tracked_characters_timeout :timer.seconds(1)
 

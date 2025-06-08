@@ -15,6 +15,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   @garbage_collection_interval :timer.minutes(15)
   @untrack_characters_interval :timer.minutes(1)
   @inactive_character_timeout :timer.minutes(5)
+  @untrack_character_timeout :timer.minutes(10)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -22,7 +23,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def new(args), do: __struct__(args)
 
   def init(args) do
-    Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
+    # Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
     %{
@@ -107,14 +108,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         } = track_settings
       ) do
     if track do
-      WandererApp.Cache.insert_or_update(
-        "character_untrack_queue",
-        [],
-        fn untrack_queue ->
-          untrack_queue
-          |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
-        end
-      )
+      remove_from_untrack_queue(map_id, character_id)
 
       {:ok, character_state} =
         WandererApp.Character.Tracker.update_settings(character_id, track_settings)
@@ -126,16 +120,40 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
       WandererApp.Character.update_character_state(character_id, character_state)
     else
-      WandererApp.Cache.insert_or_update(
-        "character_untrack_queue",
-        [{map_id, character_id}],
-        fn untrack_queue ->
-          [{map_id, character_id} | untrack_queue] |> Enum.uniq()
-        end
-      )
+      add_to_untrack_queue(map_id, character_id)
     end
 
     state
+  end
+
+  def add_to_untrack_queue(map_id, character_id) do
+    if not WandererApp.Cache.has_key?("#{map_id}:#{character_id}:untrack_requested") do
+      WandererApp.Cache.insert(
+        "#{map_id}:#{character_id}:untrack_requested",
+        DateTime.utc_now()
+      )
+    end
+
+    WandererApp.Cache.insert_or_update(
+      "character_untrack_queue",
+      [{map_id, character_id}],
+      fn untrack_queue ->
+        [{map_id, character_id} | untrack_queue] |> Enum.uniq()
+      end
+    )
+  end
+
+  def remove_from_untrack_queue(map_id, character_id) do
+    WandererApp.Cache.delete("#{map_id}:#{character_id}:untrack_requested")
+
+    WandererApp.Cache.insert_or_update(
+      "character_untrack_queue",
+      [],
+      fn untrack_queue ->
+        untrack_queue
+        |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
+      end
+    )
   end
 
   def get_characters(
@@ -213,10 +231,28 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       ) do
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
-    WandererApp.Cache.get_and_remove!("character_untrack_queue", [])
+    WandererApp.Cache.lookup!("character_untrack_queue", [])
     |> Task.async_stream(
       fn {map_id, character_id} ->
-        if not character_is_present(map_id, character_id) do
+        untrack_timeout_reached =
+          if WandererApp.Cache.has_key?("#{map_id}:#{character_id}:untrack_requested") do
+            untrack_requested =
+              WandererApp.Cache.lookup!(
+                "#{map_id}:#{character_id}:untrack_requested",
+                DateTime.utc_now()
+              )
+
+            duration = DateTime.diff(DateTime.utc_now(), untrack_requested, :millisecond)
+            duration >= @untrack_character_timeout
+          else
+            false
+          end
+
+        Logger.warning(fn -> "Untrack timeout reached: #{inspect(untrack_timeout_reached)}" end)
+
+        if untrack_timeout_reached && not character_is_present(map_id, character_id) do
+          remove_from_untrack_queue(map_id, character_id)
+
           WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
           WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
           WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
@@ -239,7 +275,13 @@ defmodule WandererApp.Character.TrackerManager.Impl do
               station_id: character.station_id
             })
 
+          WandererApp.Cache.insert(
+            "character:#{character_id}:last_online_time",
+            DateTime.utc_now()
+          )
+
           WandererApp.Character.update_character_state(character_id, character_state)
+          WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
         end
       end,
       max_concurrency: System.schedulers_online(),

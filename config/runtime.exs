@@ -118,6 +118,9 @@ config :wanderer_app,
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
   public_api_disabled: public_api_disabled,
+  character_tracking_pause_disabled:
+    System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
+    |> String.to_existing_atom(),
   character_api_disabled:
     System.get_env("WANDERER_CHARACTER_API_DISABLED", "true") |> String.to_existing_atom(),
   zkill_preload_disabled:
