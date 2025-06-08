@@ -179,20 +179,24 @@ defmodule WandererApp.Character do
   end
 
   def search(character_id, opts \\ []) do
-    {:ok, %{access_token: access_token, eve_id: eve_id} = _character} =
-      get_character(character_id)
+    get_character(character_id)
+    |> case do
+      {:ok, %{access_token: access_token, eve_id: eve_id} = _character} ->
+        case WandererApp.Esi.search(eve_id |> String.to_integer(),
+               access_token: access_token,
+               character_id: character_id,
+               refresh_token?: true,
+               params: opts[:params]
+             ) do
+          {:ok, result} ->
+            {:ok, result |> prepare_search_results()}
 
-    case WandererApp.Esi.search(eve_id |> String.to_integer(),
-           access_token: access_token,
-           character_id: character_id,
-           refresh_token?: true,
-           params: opts[:params]
-         ) do
-      {:ok, result} ->
-        {:ok, result |> prepare_search_results()}
+          error ->
+            Logger.warning("#{__MODULE__} failed search: #{inspect(error)}")
+            {:ok, []}
+        end
 
       error ->
-        Logger.warning("#{__MODULE__} failed search: #{inspect(error)}")
         {:ok, []}
     end
   end

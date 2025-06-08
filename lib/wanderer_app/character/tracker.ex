@@ -463,8 +463,7 @@ defmodule WandererApp.Character.Tracker do
       ) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
-        (WandererApp.Cache.has_key?("character:#{character_id}:location_forbidden") ||
-           WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
+        WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
         |> case do
           true ->
             {:error, :skipped}

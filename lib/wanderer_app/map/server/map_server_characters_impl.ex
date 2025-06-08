@@ -224,12 +224,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       Task.start_link(fn ->
         character_updates =
           maybe_update_online(map_id, character_id) ++
-            maybe_update_tracking_status(map_id, character_id)
-
-        maybe_update_location(map_id, character_id) ++
-          maybe_update_ship(map_id, character_id) ++
-          maybe_update_alliance(map_id, character_id) ++
-          maybe_update_corporation(map_id, character_id)
+            maybe_update_tracking_status(map_id, character_id) ++
+            maybe_update_location(map_id, character_id) ++
+            maybe_update_ship(map_id, character_id) ++
+            maybe_update_alliance(map_id, character_id) ++
+            maybe_update_corporation(map_id, character_id)
 
         character_updates
         |> Enum.filter(fn update -> update != :skip end)
