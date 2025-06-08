@@ -27,6 +27,8 @@ defmodule WandererApp.Character.TrackerPool do
   @update_wallet_interval :timer.minutes(1)
   @inactive_character_timeout :timer.minutes(5)
 
+  @pause_tracking_timeout :timer.minutes(60 * 24)
+
   @logger Application.compile_env(:wanderer_app, :logger)
 
   def new(), do: __struct__()
@@ -53,6 +55,12 @@ defmodule WandererApp.Character.TrackerPool do
 
     tracked_ids
     |> Enum.each(fn id ->
+      # WandererApp.Cache.put(
+      #   "character:#{id}:tracking_paused",
+      #   true,
+      #   ttl: @pause_tracking_timeout
+      # )
+
       Cachex.put(@cache, id, uuid)
     end)
 
@@ -79,6 +87,12 @@ defmodule WandererApp.Character.TrackerPool do
     Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_tracked_ids ->
       [tracked_id | r_tracked_ids]
     end)
+
+    # WandererApp.Cache.put(
+    #   "character:#{tracked_id}:tracking_paused",
+    #   true,
+    #   ttl: @pause_tracking_timeout
+    # )
 
     # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
     #   {:commit, ids ++ [tracked_id]}

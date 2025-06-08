@@ -1,5 +1,4 @@
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
-import { useCallback, useRef } from 'react';
 import {
   CommandCharacterAdded,
   CommandCharacterRemoved,
@@ -7,6 +6,7 @@ import {
   CommandCharacterUpdated,
   CommandPresentCharacters,
 } from '@/hooks/Mapper/types';
+import { useCallback, useRef } from 'react';
 
 export const useCommandsCharacters = () => {
   const { update } = useMapState();

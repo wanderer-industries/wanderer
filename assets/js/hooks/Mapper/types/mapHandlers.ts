@@ -1,10 +1,10 @@
-import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
-import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
-import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
-import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
-import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
-import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
 import { CommentType, PingData, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
+import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
+import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
+import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
+import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
+import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
+import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 
 export enum Commands {
   init = 'init',
@@ -260,6 +260,7 @@ export enum OutCommand {
   updateMainCharacter = 'updateMainCharacter',
   addPing = 'add_ping',
   cancelPing = 'cancel_ping',
+  startTracking = 'startTracking',
 
   // Only UI commands
   openSettings = 'open_settings',

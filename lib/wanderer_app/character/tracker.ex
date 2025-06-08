@@ -106,37 +106,39 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp pause_tracking(character_id) do
-    WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
-    WandererApp.Cache.delete("character:#{character_id}:online_error_time")
-    WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
-    WandererApp.Cache.delete("character:#{character_id}:location_error_time")
-    WandererApp.Character.update_character(character_id, %{online: false})
+    if not WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused") do
+      WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
+      WandererApp.Cache.delete("character:#{character_id}:online_error_time")
+      WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
+      WandererApp.Cache.delete("character:#{character_id}:location_error_time")
+      WandererApp.Character.update_character(character_id, %{online: false})
 
-    WandererApp.Character.update_character_state(character_id, %{
-      is_online: false
-    })
+      WandererApp.Character.update_character_state(character_id, %{
+        is_online: false
+      })
 
-    Logger.warning("[CharacterTracker] paused for #{character_id}")
+      Logger.warning("[CharacterTracker] paused for #{character_id}")
 
-    WandererApp.Cache.put(
-      "character:#{character_id}:tracking_paused",
-      true,
-      ttl: @pause_tracking_timeout
-    )
-
-    {:ok, %{solar_system_id: solar_system_id}} =
-      WandererApp.Character.get_character(character_id)
-
-    {:ok, %{active_maps: active_maps}} =
-      WandererApp.Character.get_character_state(character_id)
-
-    active_maps
-    |> Enum.each(fn map_id ->
       WandererApp.Cache.put(
-        "map:#{map_id}:character:#{character_id}:start_solar_system_id",
-        solar_system_id
+        "character:#{character_id}:tracking_paused",
+        true,
+        ttl: @pause_tracking_timeout
       )
-    end)
+
+      {:ok, %{solar_system_id: solar_system_id}} =
+        WandererApp.Character.get_character(character_id)
+
+      {:ok, %{active_maps: active_maps}} =
+        WandererApp.Character.get_character_state(character_id)
+
+      active_maps
+      |> Enum.each(fn map_id ->
+        WandererApp.Cache.put(
+          "map:#{map_id}:character:#{character_id}:start_solar_system_id",
+          solar_system_id
+        )
+      end)
+    end
   end
 
   def update_settings(character_id, track_settings) do

@@ -1,8 +1,8 @@
-import { useReactFlow } from 'reactflow';
-import { useCallback, useRef } from 'react';
-import { CommandInit } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { convertConnection2Edge, convertSystem2Node } from '../../helpers';
 import { MapData, useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
+import { CommandInit } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { useCallback, useRef } from 'react';
+import { useReactFlow } from 'reactflow';
+import { convertConnection2Edge, convertSystem2Node } from '../../helpers';
 
 export const useMapInit = () => {
   const rf = useReactFlow();

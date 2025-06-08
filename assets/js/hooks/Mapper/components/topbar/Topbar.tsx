@@ -1,14 +1,13 @@
-import { Characters } from '../characters/Characters';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useMemo } from 'react';
-import clsx from 'clsx';
 import { sortOnlineFunc } from '@/hooks/Mapper/components/hooks/useGetOwnOnlineCharacters.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
-import { Button } from 'primereact/button';
+import clsx from 'clsx';
+import { useMemo } from 'react';
+import { Characters } from '../characters/Characters';
 
 const Topbar = ({ children }: WithChildren) => {
   const {
-    data: { characters, userCharacters, pings },
+    data: { characters, userCharacters },
   } = useMapRootState();
 
   const charsToShow = useMemo(() => {
