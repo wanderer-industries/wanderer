@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.68.1](https://github.com/wanderer-industries/wanderer/compare/v1.68.0...v1.68.1) (2025-06-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed auth from welcome page if invites disabled
+
 ## [v1.68.0](https://github.com/wanderer-industries/wanderer/compare/v1.67.5...v1.68.0) (2025-06-09)
 
 
