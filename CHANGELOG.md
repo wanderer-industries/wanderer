@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.68.2](https://github.com/wanderer-industries/wanderer/compare/v1.68.1...v1.68.2) (2025-06-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character auth with wallet (on characters page)
+
 ## [v1.68.1](https://github.com/wanderer-industries/wanderer/compare/v1.68.0...v1.68.1) (2025-06-09)
 
 
