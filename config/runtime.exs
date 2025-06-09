@@ -117,6 +117,7 @@ config :wanderer_app,
   admins: admins,
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
+  corp_wallet_eve_id: System.get_env("WANDERER_CORP_WALLET_EVE_ID", "-1") |> String.to_integer(),
   public_api_disabled: public_api_disabled,
   character_tracking_pause_disabled:
     System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")

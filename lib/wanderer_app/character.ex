@@ -207,9 +207,9 @@ defmodule WandererApp.Character do
 
   def can_track_wallet?(_), do: false
 
-  def can_track_corp_wallet?(%{scopes: scopes} = _character) when not is_nil(scopes) do
-    scopes |> String.split(" ") |> Enum.member?(@read_corp_wallet_scope)
-  end
+  def can_track_corp_wallet?(%{scopes: scopes} = _character)
+      when not is_nil(scopes),
+      do: scopes |> String.split(" ") |> Enum.member?(@read_corp_wallet_scope)
 
   def can_track_corp_wallet?(_), do: false
 

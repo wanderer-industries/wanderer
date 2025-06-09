@@ -54,7 +54,8 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
 
     {:ok, latest_transactions} = WandererApp.Api.CorpWalletTransaction.latest()
 
-    case WandererApp.Character.can_track_corp_wallet?(character) do
+    case character.eve_id == WandererApp.Env.corp_wallet_eve_id() &&
+           WandererApp.Character.can_track_corp_wallet?(character) do
       true ->
         Process.send_after(self(), :update_corp_wallets, 500)
         Process.send_after(self(), :check_wallets, 500)

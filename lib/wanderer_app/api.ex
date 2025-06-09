@@ -29,5 +29,6 @@ defmodule WandererApp.Api do
     resource WandererApp.Api.CorpWalletTransaction
     resource WandererApp.Api.License
     resource WandererApp.Api.MapPing
+    resource WandererApp.Api.MapInvite
   end
 end

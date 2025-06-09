@@ -20,17 +20,9 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
     is_admin? = Map.get(params, "admin", "false") in ~w(true 1)
     invite_token = Map.get(params, "invite", nil)
 
-    invite_token_valid =
-      case WandererApp.Env.invites() do
-        true ->
-          case invite_token do
-            nil -> false
-            token -> WandererApp.Cache.lookup!("invite_#{token}", false)
-          end
+    {invite_token_valid, invite_type} = check_invite_valid(invite_token)
 
-        _ ->
-          true
-      end
+    is_admin? = is_admin? || invite_type == :admin
 
     case invite_token_valid do
       true ->
@@ -217,5 +209,34 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
 
   defp option(conn, key) do
     Keyword.get(options(conn), key, Keyword.get(default_options(), key))
+  end
+
+  defp check_invite_valid(invite_token) do
+    case invite_token do
+      nil ->
+        {false, nil}
+
+      token ->
+        check_token_valid(token)
+    end
+  end
+
+  defp check_token_valid(token) do
+    WandererApp.Cache.lookup!("invite_#{token}", false)
+    |> case do
+      true -> {true, :user}
+      _ -> check_map_token_valid(token)
+    end
+  end
+
+  def check_map_token_valid(token) do
+    {:ok, invites} = WandererApp.Api.MapInvite.read()
+
+    invites
+    |> Enum.find(fn invite -> invite.token == token end)
+    |> case do
+      nil -> {false, nil}
+      invite -> {true, invite.type}
+    end
   end
 end

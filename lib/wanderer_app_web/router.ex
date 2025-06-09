@@ -230,15 +230,17 @@ defmodule WandererAppWeb.Router do
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete
     resources "/systems", MapSystemAPIController, only: [:index, :show, :create, :update, :delete]
-    resources "/connections", MapConnectionAPIController, only: [:index, :show, :create, :update, :delete], param: "id"
+
+    resources "/connections", MapConnectionAPIController,
+      only: [:index, :show, :create, :update, :delete],
+      param: "id"
+
     resources "/structures", MapSystemStructureAPIController, except: [:new, :edit]
     get "/structure-timers", MapSystemStructureAPIController, :structure_timers
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
   end
-
-
 
   #
   # Other API routes
@@ -359,6 +361,7 @@ defmodule WandererAppWeb.Router do
         WandererAppWeb.Nav
       ] do
       live("/", AdminLive, :index)
+      live("/invite", AdminLive, :add_invite_link)
     end
 
     error_tracker_dashboard("/errors",
