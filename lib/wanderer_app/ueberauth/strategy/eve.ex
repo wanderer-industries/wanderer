@@ -213,11 +213,11 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
 
   defp check_invite_valid(invite_token) do
     case invite_token do
-      nil ->
-        {false, nil}
-
-      token ->
+      token when not is_nil(token) and token != "" ->
         check_token_valid(token)
+
+      _ ->
+        {not WandererApp.Env.invites(), :user}
     end
   end
 
