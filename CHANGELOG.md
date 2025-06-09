@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.67.5](https://github.com/wanderer-industries/wanderer/compare/v1.67.4...v1.67.5) (2025-06-08)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added back ARM docker image build
+
 ## [v1.67.4](https://github.com/wanderer-industries/wanderer/compare/v1.67.3...v1.67.4) (2025-06-08)
 
 
