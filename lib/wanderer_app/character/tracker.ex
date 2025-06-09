@@ -110,7 +110,7 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp pause_tracking(character_id) do
-    if not WandererApp.Env.character_tracking_pause_disabled?() &&
+    if WandererApp.Character.can_pause_tracking?(character_id) &&
          not WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused") do
       WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
       WandererApp.Cache.delete("character:#{character_id}:online_error_time")

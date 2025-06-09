@@ -236,13 +236,17 @@ defmodule WandererApp.Character.TrackerPool do
       characters
       |> Task.async_stream(
         fn character_id ->
-          WandererApp.TaskWrapper.start_link(
-            WandererApp.Character.Tracker,
-            :check_offline,
-            [
-              character_id
-            ]
-          )
+          if WandererApp.Character.can_pause_tracking?(character_id) do
+            WandererApp.TaskWrapper.start_link(
+              WandererApp.Character.Tracker,
+              :check_offline,
+              [
+                character_id
+              ]
+            )
+          else
+            :ok
+          end
         end,
         timeout: :timer.seconds(15),
         max_concurrency: System.schedulers_online(),

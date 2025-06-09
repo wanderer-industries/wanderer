@@ -213,6 +213,21 @@ defmodule WandererApp.Character do
 
   def can_track_corp_wallet?(_), do: false
 
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "can_pause_tracking-#{character_id}"
+            )
+  def can_pause_tracking?(character_id) do
+    case get_character(character_id) do
+      {:ok, character} when not is_nil(character) ->
+        not WandererApp.Env.character_tracking_pause_disabled?() &&
+          not can_track_corp_wallet?(character)
+
+      _ ->
+        true
+    end
+  end
+
   def get_ship(%{ship: ship_type_id, ship_name: ship_name} = _character)
       when not is_nil(ship_type_id) and is_integer(ship_type_id) do
     ship_type_id
