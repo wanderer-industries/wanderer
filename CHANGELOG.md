@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.68.0](https://github.com/wanderer-industries/wanderer/compare/v1.67.5...v1.68.0) (2025-06-09)
+
+
+
+
+### Features:
+
+* Core: Added invites store support
+
 ## [v1.67.5](https://github.com/wanderer-industries/wanderer/compare/v1.67.4...v1.67.5) (2025-06-08)
 
 
