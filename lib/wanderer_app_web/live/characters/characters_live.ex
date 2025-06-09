@@ -66,7 +66,8 @@ defmodule WandererAppWeb.CharactersLive do
   def handle_event("delete", %{"character_id" => character_id}, socket) do
     WandererApp.Character.TrackerManager.stop_tracking(character_id)
 
-    {:ok, map_user_settings} = WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
+    {:ok, map_user_settings} =
+      WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
 
     map_user_settings
     |> Enum.each(fn settings ->
@@ -85,6 +86,15 @@ defmodule WandererAppWeb.CharactersLive do
       WandererApp.Api.Character.active_by_user(%{user_id: socket.assigns.user_id})
 
     {:noreply, socket |> assign(characters: characters |> Enum.map(&map_ui_character/1))}
+  end
+
+  @impl true
+  def handle_event(
+        "validate",
+        params,
+        socket
+      ) do
+    {:noreply, assign(socket, form: params)}
   end
 
   @impl true
@@ -148,7 +158,7 @@ defmodule WandererAppWeb.CharactersLive do
     socket
     |> assign(:active_page, :characters)
     |> assign(:page_title, "Authorize Character - Characters")
-    |> assign(:form, to_form(%{"track_wallet" => false}))
+    |> assign(:form, to_form(%{}))
   end
 
   defp map_ui_character(character) do

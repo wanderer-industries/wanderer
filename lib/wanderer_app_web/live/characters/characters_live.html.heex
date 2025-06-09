@@ -242,10 +242,13 @@
     show
     on_cancel={JS.patch(~p"/characters")}
   >
-    <.form :let={f} for={@form} phx-submit="authorize">
-      <div :if={@wallet_tracking_enabled?} class="pb-2 -mt-8">
+  <div class="flex flex-col gap-3">
+
+    <.form :let={f} for={@form} phx-submit="authorize" phx-change="validate">
+      <div :if={@wallet_tracking_enabled?} class="pb-2">
         <.input
           type="checkbox"
+
           field={f[:track_wallet]}
           label="Access to character wallet information"
         />
@@ -254,5 +257,6 @@
         <.button type="submit">AUTHORIZE</.button>
       </div>
     </.form>
+    </div>
   </.modal>
 </main>
