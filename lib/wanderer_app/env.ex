@@ -18,7 +18,7 @@ defmodule WandererApp.Env do
   def public_api_disabled?, do: get_key(:public_api_disabled, false)
   def character_tracking_pause_disabled?, do: get_key(:character_tracking_pause_disabled, true)
   def character_api_disabled?, do: get_key(:character_api_disabled, false)
-  def zkill_preload_disabled?, do: get_key(:zkill_preload_disabled, false)
+  def wanderer_kills_service_enabled?, do: get_key(:wanderer_kills_service_enabled, false)
   def wallet_tracking_enabled?, do: get_key(:wallet_tracking_enabled, false)
   def admins, do: get_key(:admins, [])
   def admin_username, do: get_key(:admin_username)
@@ -60,6 +60,7 @@ defmodule WandererApp.Env do
   made available to react
   """
   def to_client_env do
-    %{detailedKillsDisabled: zkill_preload_disabled?()}
+    %{detailedKillsDisabled: not wanderer_kills_service_enabled?()}
   end
+
 end

@@ -65,6 +65,8 @@ defmodule WandererApp.MixProject do
       {:phoenix_live_reload, "~> 1.5.3", only: :dev},
       {:phoenix_live_view, "~> 1.0.0-rc.7", override: true},
       {:phoenix_pubsub, "~> 2.1"},
+      {:phoenix_gen_socket_client, "~> 4.0"},
+      {:websocket_client, "~> 1.5"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:phoenix_ddos, "~> 1.1"},
