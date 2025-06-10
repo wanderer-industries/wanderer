@@ -294,14 +294,16 @@ defmodule WandererApp.Map do
     map_id
     |> update_map(%{characters_limit: characters_limit, hubs_limit: hubs_limit})
 
-    map
+    map_id
+    |> get_map!()
   end
 
   def update_options!(%{map_id: map_id} = map, options) do
     map_id
     |> update_map(%{options: options})
 
-    map
+    map_id
+    |> get_map!()
   end
 
   def add_systems!(map, []), do: map

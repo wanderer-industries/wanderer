@@ -212,7 +212,7 @@ defmodule WandererApp.Map.Server do
     do:
       map_id
       |> map_pid!
-      |> GenServer.call({&Impl.update_subscription_settings/2, [settings]})
+      |> GenServer.cast({&Impl.update_subscription_settings/2, [settings]})
 
   def delete_connection(map_id, connection_info) when is_binary(map_id),
     do:
