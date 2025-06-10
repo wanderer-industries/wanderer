@@ -24,7 +24,7 @@ defmodule WandererApp.Env do
   def admin_username, do: get_key(:admin_username)
   def admin_password, do: get_key(:admin_password)
   def corp_wallet, do: get_key(:corp_wallet, "")
-  def corp_wallet_eve_id, do: get_key(:corp_wallet_eve_id, -1)
+  def corp_wallet_eve_id, do: get_key(:corp_wallet_eve_id, "-1")
   def corp_eve_id, do: get_key(:corp_id, -1)
   def subscription_settings, do: get_key(:subscription_settings)
 
