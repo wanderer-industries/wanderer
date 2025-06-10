@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.68.5](https://github.com/wanderer-industries/wanderer/compare/v1.68.4...v1.68.5) (2025-06-10)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed updating map options
+
 ## [v1.68.4](https://github.com/wanderer-industries/wanderer/compare/v1.68.3...v1.68.4) (2025-06-10)
 
 
