@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.69.0](https://github.com/wanderer-industries/wanderer/compare/v1.68.6...v1.69.0) (2025-06-11)
+
+
+
+
+### Features:
+
+* Core: Added multiple tracking pools support
+
 ## [v1.68.6](https://github.com/wanderer-industries/wanderer/compare/v1.68.5...v1.68.6) (2025-06-10)
 
 
