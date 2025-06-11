@@ -5,6 +5,8 @@ defmodule WandererAppWeb.CharactersLive do
 
   alias BetterNumber, as: Number
 
+  @active_tracking_pool 1
+
   def mount(_params, %{"user_id" => user_id} = _session, socket)
       when not is_nil(user_id) do
     {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
@@ -56,10 +58,17 @@ defmodule WandererAppWeb.CharactersLive do
   @impl true
   def handle_event("authorize", form, socket) do
     track_wallet = form |> Map.get("track_wallet", false)
-    token = UUID.uuid4(:default)
-    WandererApp.Cache.put("invite_#{token}", true, ttl: :timer.minutes(30))
 
-    {:noreply, socket |> push_navigate(to: ~p"/auth/eve?invite=#{token}&w=#{track_wallet}")}
+    {:ok, esi_config} =
+      Cachex.get(
+        :esi_auth_cache,
+        "config_#{WandererApp.Env.active_tracking_pool()}"
+      )
+
+    WandererApp.Cache.put("invite_#{esi_config.uuid}", true, ttl: :timer.minutes(30))
+
+    {:noreply,
+     socket |> push_navigate(to: ~p"/auth/eve?invite=#{esi_config.uuid}&w=#{track_wallet}")}
   end
 
   @impl true
