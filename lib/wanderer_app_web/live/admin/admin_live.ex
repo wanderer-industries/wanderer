@@ -387,21 +387,27 @@ defmodule WandererAppWeb.AdminLive do
         "configs_total_count"
       )
 
-    pools =
-      1..pools_count
-      |> Enum.map(fn pool_id ->
-        pools_character_count =
-          characters
-          |> Enum.filter(
-            &(&1.tracking_pool == "#{pool_id}" and not WandererApp.Character.can_track_wallet?(&1) and
-                not WandererApp.Character.can_track_corp_wallet?(&1))
-          )
-          |> Enum.count()
+    result =
+      if not is_nil(pools_count) && pools_count != 0 do
+        pools =
+          1..pools_count
+          |> Enum.map(fn pool_id ->
+            pools_character_count =
+              characters
+              |> Enum.filter(
+                &(&1.tracking_pool == "#{pool_id}" and
+                    not WandererApp.Character.can_track_wallet?(&1) and
+                    not WandererApp.Character.can_track_corp_wallet?(&1))
+              )
+              |> Enum.count()
 
-        %{title: "Pool #{pool_id}", value: pools_character_count}
-      end)
+            %{title: "Pool #{pool_id}", value: pools_character_count}
+          end)
 
-    result = result ++ pools
+        result ++ pools
+      else
+        result
+      end
 
     {:ok, result}
   end

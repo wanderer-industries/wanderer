@@ -68,10 +68,17 @@ defmodule WandererApp.Esi.InitClientsTask do
     #   config_uuid
     # )
 
+    configs_total_count =
+      if id == "default" do
+        0
+      else
+        id
+      end
+
     Cachex.put(
       :esi_auth_cache,
       "configs_total_count",
-      id
+      configs_total_count
     )
   end
 end
