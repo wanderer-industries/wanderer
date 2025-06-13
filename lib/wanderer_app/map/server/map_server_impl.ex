@@ -97,6 +97,9 @@ defmodule WandererApp.Map.Server.Impl do
       Process.send_after(self(), :backup_state, @backup_state_timeout)
 
       WandererApp.Cache.insert("map_#{map_id}:started", true)
+      
+      # Initialize zkb cache structure to prevent timing issues
+      WandererApp.Cache.insert("map_#{map_id}:zkb_detailed_kills", %{}, ttl: :timer.hours(24))
 
       broadcast!(map_id, :map_server_started)
 
