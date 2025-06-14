@@ -266,6 +266,10 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: reason})
+      {:error, :precondition_failed, _reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid request parameters"})
       _other ->
         conn
         |> put_status(:internal_server_error)
