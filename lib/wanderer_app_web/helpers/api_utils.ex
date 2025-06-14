@@ -262,13 +262,18 @@ defmodule WandererAppWeb.Helpers.APIUtils do
 
   @spec map_system_to_json(struct()) :: map()
   def map_system_to_json(system) do
+    original = get_original_name(system.solar_system_id)
+
+    # Determine the actual custom_name: if name differs from original, use it as custom_name
+    actual_custom_name = if system.name != original and system.name not in [nil, ""], do: system.name, else: system.custom_name
+
     base =
       Map.take(system, ~w(
-        id map_id solar_system_id custom_name temporary_name description tag labels
+        id map_id solar_system_id temporary_name description tag labels
         locked visible status position_x position_y inserted_at updated_at
       )a)
+      |> Map.put(:custom_name, actual_custom_name)
 
-    original = get_original_name(system.solar_system_id)
     name = pick_name(system)
 
     base
@@ -283,11 +288,15 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     end
   end
 
-  defp pick_name(%{temporary_name: t, custom_name: c, solar_system_id: id}) do
+  defp pick_name(%{temporary_name: t, custom_name: c, name: n, solar_system_id: id} = system) do
+    original = get_original_name(id)
+
     cond do
       t not in [nil, ""] -> t
       c not in [nil, ""] -> c
-      true -> get_original_name(id)
+      # If name differs from original, it's a custom name
+      n not in [nil, ""] and n != original -> n
+      true -> original
     end
   end
 
