@@ -8,6 +8,8 @@ defmodule WandererAppWeb.AuthController do
   require Logger
 
   def callback(%{assigns: %{ueberauth_auth: auth, current_user: user} = _assigns} = conn, _params) do
+    active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
     character_data = %{
       eve_id: "#{auth.info.email}",
       name: auth.info.name,
@@ -15,7 +17,7 @@ defmodule WandererAppWeb.AuthController do
       refresh_token: auth.credentials.refresh_token,
       expires_at: auth.credentials.expires_at,
       scopes: auth.credentials.scopes,
-      tracking_pool: WandererApp.Env.active_tracking_pool()
+      tracking_pool: active_tracking_pool
     }
 
     %{
@@ -31,7 +33,7 @@ defmodule WandererAppWeb.AuthController do
             refresh_token: auth.credentials.refresh_token,
             expires_at: auth.credentials.expires_at,
             scopes: auth.credentials.scopes,
-            tracking_pool: WandererApp.Env.active_tracking_pool()
+            tracking_pool: active_tracking_pool
           }
 
           {:ok, character} =
@@ -79,6 +81,8 @@ defmodule WandererAppWeb.AuthController do
       end
 
     maybe_update_character_user_id(character, user_id)
+
+    WandererApp.Character.TrackingConfigUtils.update_active_tracking_pool()
 
     conn
     |> put_session(:user_id, user_id)

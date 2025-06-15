@@ -63,6 +63,7 @@ defmodule WandererAppWeb.AdminLive do
        user_id: user_id,
        invite_link: nil,
        tracker_stats: [],
+       active_tracking_pool: "default",
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
@@ -295,7 +296,8 @@ defmodule WandererAppWeb.AdminLive do
   defp apply_action(socket, :index, _params, uri) do
     {:ok, invites} = WandererApp.Api.MapInvite.read()
 
-    {:ok, tracker_stats} = load_tracker_stats()
+    {:ok, tracker_stats} = WandererApp.Character.TrackingConfigUtils.load_tracker_stats()
+    active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
 
     socket
     |> assign(:active_page, :admin)
@@ -312,6 +314,7 @@ defmodule WandererAppWeb.AdminLive do
     |> assign(:unlink_character_form, to_form(%{}))
     |> assign(:invites, invites)
     |> assign(:tracker_stats, tracker_stats)
+    |> assign(:active_tracking_pool, active_tracking_pool)
   end
 
   defp apply_action(socket, :add_invite_link, _params, uri) do
@@ -346,70 +349,6 @@ defmodule WandererAppWeb.AdminLive do
       |> to_form()
     )
     |> assign(:invites, [])
-  end
-
-  defp load_tracker_stats() do
-    {:ok, characters} =
-      WandererApp.Api.Character.last_active(%{
-        from:
-          DateTime.utc_now()
-          |> DateTime.add(-1 * 60 * 24 * 7, :minute)
-      })
-
-    admins_count =
-      characters |> Enum.filter(&WandererApp.Character.can_track_corp_wallet?/1) |> Enum.count()
-
-    with_wallets_count =
-      characters
-      |> Enum.filter(
-        &(WandererApp.Character.can_track_wallet?(&1) and
-            not WandererApp.Character.can_track_corp_wallet?(&1))
-      )
-      |> Enum.count()
-
-    default_count =
-      characters
-      |> Enum.filter(
-        &(is_nil(&1.tracking_pool) and not WandererApp.Character.can_track_wallet?(&1) and
-            not WandererApp.Character.can_track_corp_wallet?(&1))
-      )
-      |> Enum.count()
-
-    result = [
-      %{title: "Admins", value: admins_count},
-      %{title: "With Wallet", value: with_wallets_count},
-      %{title: "Default", value: default_count}
-    ]
-
-    {:ok, pools_count} =
-      Cachex.get(
-        :esi_auth_cache,
-        "configs_total_count"
-      )
-
-    result =
-      if not is_nil(pools_count) && pools_count != 0 do
-        pools =
-          1..pools_count
-          |> Enum.map(fn pool_id ->
-            pools_character_count =
-              characters
-              |> Enum.filter(
-                &(&1.tracking_pool == "#{pool_id}" and
-                    not WandererApp.Character.can_track_wallet?(&1) and
-                    not WandererApp.Character.can_track_corp_wallet?(&1))
-              )
-              |> Enum.count()
-
-            %{title: "Pool #{pool_id}", value: pools_character_count}
-          end)
-
-        result ++ pools
-      else
-        result
-      end
-
-    {:ok, result}
   end
 
   defp get_invite_link(uri, token) do

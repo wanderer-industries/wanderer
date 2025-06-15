@@ -129,18 +129,18 @@
               >
                 <:col :let={invite} label="Link">
                   <div class="flex items-center">
-                  <div class="w-[200px] no-wrap truncate"><%= get_invite_link(@uri, invite.token) %></div>
-                  <.button
-                    phx-hook="CopyToClipboard"
-                    id="copy-to-clipboard"
-                    class="copy-link btn btn-neutral rounded-none"
-                    data-url={get_invite_link(@uri, invite.token)}
-                  >
-                    Copy
-                    <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
-                      Link copied
-                    </div>
-                  </.button>
+                    <div class="w-[200px] no-wrap truncate"><%= get_invite_link(@uri, invite.token) %></div>
+                    <.button
+                      phx-hook="CopyToClipboard"
+                      id="copy-to-clipboard"
+                      class="copy-link btn btn-neutral rounded-none"
+                      data-url={get_invite_link(@uri, invite.token)}
+                    >
+                      Copy
+                      <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
+                        Link copied
+                      </div>
+                    </.button>
                   </div>
                 </:col>
                 <:col :let={invite} label="Type">
@@ -171,6 +171,7 @@
         <div class="card dark:bg-zinc-800 dark:border-zinc-600">
           <div class="card-body">
             <div class="col-span-6">
+
               <span class="text-gray-400 dark:text-gray-400">Tracking Pools</span>
                 <.table
                   id="tracking_pools"
@@ -179,6 +180,9 @@
                 >
                   <:col :let={stat} label="Pool">
                     <div class="w-[200px] no-wrap truncate">{stat.title}</div>
+                  </:col>
+                  <:col :let={stat} label="Active">
+                    <div :if={stat.id == @active_tracking_pool}>true</div>
                   </:col>
                   <:col :let={stat} label="Count">
                     {stat.value}

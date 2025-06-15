@@ -22,6 +22,12 @@ defmodule WandererApp.Env do
               key: "active_tracking_pool"
             )
   def active_tracking_pool, do: get_key(:active_tracking_pool, "default")
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "tracking_pool_max_size"
+            )
+  def tracking_pool_max_size, do: get_key(:tracking_pool_max_size, 300)
   def character_tracking_pause_disabled?, do: get_key(:character_tracking_pause_disabled, true)
   def character_api_disabled?, do: get_key(:character_api_disabled, false)
   def zkill_preload_disabled?, do: get_key(:zkill_preload_disabled, false)

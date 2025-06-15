@@ -120,6 +120,8 @@ config :wanderer_app,
   corp_wallet_eve_id: System.get_env("WANDERER_CORP_WALLET_EVE_ID", "-1"),
   public_api_disabled: public_api_disabled,
   active_tracking_pool: System.get_env("WANDERER_ACTIVE_TRACKING_POOL", "default"),
+  tracking_pool_max_size:
+    System.get_env("WANDERER_TRACKING_POOL_MAX_SIZE", "300") |> String.to_integer(),
   character_tracking_pause_disabled:
     System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
     |> String.to_existing_atom(),

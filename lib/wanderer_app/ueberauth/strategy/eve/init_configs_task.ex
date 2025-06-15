@@ -10,13 +10,8 @@ defmodule WandererApp.Esi.InitClientsTask do
   def run(_arg) do
     Logger.info("starting")
 
-    Cachex.put(
-      :esi_auth_cache,
-      :active_config,
-      "config_#{WandererApp.Env.active_tracking_pool()}"
-    )
-
     cache_clients()
+    WandererApp.Character.TrackingConfigUtils.update_active_tracking_pool()
   end
 
   defp cache_clients() do

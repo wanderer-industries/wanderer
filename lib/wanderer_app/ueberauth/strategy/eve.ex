@@ -192,7 +192,7 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
   end
 
   defp oauth_client_options_from_conn(conn, with_wallet, is_admin?) do
-    tracking_pool = WandererApp.Env.active_tracking_pool()
+    tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
 
     base_options = [
       redirect_uri: callback_url(conn),

@@ -138,13 +138,8 @@ defmodule WandererApp.Map do
   def add_characters!(map, []), do: map
 
   def add_characters!(%{map_id: map_id} = map, [character | rest]) do
-    case add_character(map_id, character) do
-      :ok ->
-        add_characters!(map, rest)
-
-      {:error, :already_exists} ->
-        add_characters!(map, rest)
-    end
+    add_character(map_id, character)
+    add_characters!(map, rest)
   end
 
   def add_character(
@@ -172,15 +167,15 @@ defmodule WandererApp.Map do
             map_id
             |> update_map(%{characters: [character_id | characters]})
 
-            WandererApp.Cache.insert(
-              "map:#{map_id}:character:#{character_id}:alliance_id",
-              alliance_id
-            )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:alliance_id",
+            #   alliance_id
+            # )
 
-            WandererApp.Cache.insert(
-              "map:#{map_id}:character:#{character_id}:corporation_id",
-              corporation_id
-            )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:corporation_id",
+            #   corporation_id
+            # )
 
             # WandererApp.Cache.insert(
             #   "map:#{map_id}:character:#{character_id}:solar_system_id",
