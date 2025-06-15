@@ -5,9 +5,10 @@ defmodule WandererApp.Map.Operations.Connections do
   """
 
   require Logger
-  alias WandererApp.Map.Server.{ConnectionsImpl, Server}
+  alias WandererApp.Map.Server
   alias Ash.Error.Invalid
   alias WandererApp.MapConnectionRepo
+  alias WandererApp.CachedInfo
 
   # Connection type constants
   @connection_type_wormhole 0
@@ -20,7 +21,7 @@ defmodule WandererApp.Map.Operations.Connections do
   @xlarge_ship_size 3
 
   # System class constants
-  @c1_system_class "C1"
+  @c1_system_class 1
 
   @doc """
   Creates a connection between two systems, applying special rules for C1 wormholes.
@@ -34,8 +35,8 @@ defmodule WandererApp.Map.Operations.Connections do
   defp do_create(attrs, map_id, char_id) do
     with {:ok, source} <- parse_int(attrs["solar_system_source"], "solar_system_source"),
          {:ok, target} <- parse_int(attrs["solar_system_target"], "solar_system_target"),
-         {:ok, src_info} <- ConnectionsImpl.get_system_static_info(source),
-         {:ok, tgt_info} <- ConnectionsImpl.get_system_static_info(target) do
+         {:ok, src_info} <- CachedInfo.get_system_static_info(source),
+         {:ok, tgt_info} <- CachedInfo.get_system_static_info(target) do
       build_and_add_connection(attrs, map_id, char_id, src_info, tgt_info)
     else
       {:error, reason} -> handle_precondition_error(reason, attrs)
@@ -45,21 +46,28 @@ defmodule WandererApp.Map.Operations.Connections do
   end
 
   defp build_and_add_connection(attrs, map_id, char_id, src_info, tgt_info) do
-    info = %{
-      solar_system_source_id: src_info.solar_system_id,
-      solar_system_target_id: tgt_info.solar_system_id,
-      character_id: char_id,
-      type: parse_type(attrs["type"]),
-      ship_size_type: resolve_ship_size(attrs, src_info, tgt_info)
-    }
+    Logger.debug("[Connections] build_and_add_connection called with src_info: #{inspect(src_info)}, tgt_info: #{inspect(tgt_info)}")
 
-    case Server.add_connection(map_id, info) do
-      :ok                 -> {:ok, :created}
-      {:ok, []}           -> log_warn_and(:inconsistent_state, info)
-      {:error, %Invalid{errors: errs}} = err ->
-        if Enum.any?(errs, &is_unique_constraint_error?/1), do: {:skip, :exists}, else: err
-      {:error, _} = err  -> Logger.error("[add_connection] #{inspect(err)}"); {:error, :server_error}
-      other               -> Logger.error("[add_connection] unexpected: #{inspect(other)}"); {:error, :unexpected_error}
+    # Guard against nil info
+    if is_nil(src_info) or is_nil(tgt_info) do
+      {:error, :invalid_system_info}
+    else
+      info = %{
+        solar_system_source_id: src_info.solar_system_id,
+        solar_system_target_id: tgt_info.solar_system_id,
+        character_id: char_id,
+        type: parse_type(attrs["type"]),
+        ship_size_type: resolve_ship_size(attrs, src_info, tgt_info)
+      }
+
+      case Server.add_connection(map_id, info) do
+        :ok                 -> {:ok, :created}
+        {:ok, []}           -> log_warn_and(:inconsistent_state, info)
+        {:error, %Invalid{errors: errs}} = err ->
+          if Enum.any?(errs, &is_unique_constraint_error?/1), do: {:skip, :exists}, else: err
+        {:error, _} = err  -> Logger.error("[add_connection] #{inspect(err)}"); {:error, :server_error}
+        other               -> Logger.error("[add_connection] unexpected: #{inspect(other)}"); {:error, :unexpected_error}
+      end
     end
   end
 

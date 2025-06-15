@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.70.1](https://github.com/wanderer-industries/wanderer/compare/v1.70.0...v1.70.1) (2025-06-14)
+
+
+
+
+### Bug Fixes:
+
+* resolve api issue with custom name
+
+## [v1.70.0](https://github.com/wanderer-industries/wanderer/compare/v1.69.1...v1.70.0) (2025-06-11)
+
+
+
+
+### Features:
+
+* Core: Fix admin page error
+
 ## [v1.69.1](https://github.com/wanderer-industries/wanderer/compare/v1.69.0...v1.69.1) (2025-06-11)
 
 
