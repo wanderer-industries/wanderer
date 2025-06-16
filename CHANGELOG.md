@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.70.2](https://github.com/wanderer-industries/wanderer/compare/v1.70.1...v1.70.2) (2025-06-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Invalidate character copr and ally data on map server start
+
 ## [v1.70.1](https://github.com/wanderer-industries/wanderer/compare/v1.70.0...v1.70.1) (2025-06-14)
 
 
