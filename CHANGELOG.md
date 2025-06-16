@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.70.3](https://github.com/wanderer-industries/wanderer/compare/v1.70.2...v1.70.3) (2025-06-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: Don't pause tracking for new pools
+
 ## [v1.70.2](https://github.com/wanderer-industries/wanderer/compare/v1.70.1...v1.70.2) (2025-06-15)
 
 
