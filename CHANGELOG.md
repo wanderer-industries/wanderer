@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.70.4](https://github.com/wanderer-industries/wanderer/compare/v1.70.3...v1.70.4) (2025-06-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: Distribute tracking to minimal pool first
+
 ## [v1.70.3](https://github.com/wanderer-industries/wanderer/compare/v1.70.2...v1.70.3) (2025-06-16)
 
 
