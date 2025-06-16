@@ -219,9 +219,10 @@ defmodule WandererApp.Character do
             )
   def can_pause_tracking?(character_id) do
     case get_character(character_id) do
-      {:ok, character} when not is_nil(character) ->
+      {:ok, %{tracking_pool: tracking_pool} = character} when not is_nil(character) ->
         not WandererApp.Env.character_tracking_pause_disabled?() &&
-          not can_track_corp_wallet?(character)
+          not can_track_wallet?(character) &&
+          (is_nil(tracking_pool) || tracking_pool == "default")
 
       _ ->
         true
