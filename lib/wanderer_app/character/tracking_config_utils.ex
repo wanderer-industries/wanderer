@@ -62,14 +62,14 @@ defmodule WandererApp.Character.TrackingConfigUtils do
         {:ok, characters} = get_active_characters()
         {:ok, pools} = get_pools_info(characters)
 
-        pool =
+        minimal_pool_id =
           pools
-          |> Enum.find(fn pool ->
-            pool.value < tracking_pool_max_size
-          end)
+          |> Enum.filter(&(&1.value < tracking_pool_max_size))
+          |> Enum.min_by(& &1.value)
+          |> Map.get(:id)
 
-        if not is_nil(pool) do
-          pool.id
+        if not is_nil(minimal_pool_id) do
+          minimal_pool_id
         else
           "default"
         end
