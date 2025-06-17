@@ -9,7 +9,6 @@ defmodule WandererAppWeb.MapAPIController do
   alias WandererApp.MapSystemRepo
   alias WandererApp.MapCharacterSettingsRepo
   alias WandererApp.MapConnectionRepo
-  alias WandererApp.Zkb.KillsProvider.KillsCache
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
@@ -423,7 +422,20 @@ defmodule WandererAppWeb.MapAPIController do
            || params["hour_ago"]  # legacy typo
          ) do
       solar_ids = Enum.map(systems, & &1.solar_system_id)
-      kills_map = KillsCache.fetch_cached_kills_for_systems(solar_ids)
+      # Fetch cached kills for each system from cache
+      kills_map =
+        Enum.reduce(solar_ids, %{}, fn sid, acc ->
+          kill_list_key = "zkb:kills:list:#{sid}"
+          kill_ids = WandererApp.Cache.get(kill_list_key) || []
+          kills_list =
+            kill_ids
+            |> Enum.map(fn kill_id ->
+              killmail_key = "zkb:killmail:#{kill_id}"
+              WandererApp.Cache.get(killmail_key)
+            end)
+            |> Enum.reject(&is_nil/1)
+          Map.put(acc, sid, kills_list)
+        end)
 
       data =
         Enum.map(systems, fn sys ->

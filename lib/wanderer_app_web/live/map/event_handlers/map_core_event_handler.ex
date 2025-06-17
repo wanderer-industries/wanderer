@@ -134,15 +134,16 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     is_version_valid? = to_string(version) == to_string(app_version)
 
     if is_version_valid? do
-      assigns
-      |> Map.get(:map_id)
-      |> case do
+      map_id = Map.get(assigns, :map_id)
+      
+      case map_id do
         map_id when not is_nil(map_id) ->
           maybe_start_map(map_id)
 
         _ ->
           WandererApp.Cache.insert("map_#{map_slug}:ui_loaded", true)
       end
+    else
     end
 
     {:noreply, socket |> assign(:is_version_valid?, is_version_valid?)}
@@ -479,9 +480,24 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             events
         end
 
+      # Load initial kill counts
+      kills_data = case WandererApp.Map.get_map(map_id) do
+        {:ok, %{systems: systems}} ->
+          systems
+          |> Enum.map(fn {solar_system_id, _system} ->
+            kills_count = case WandererApp.Cache.get("zkb:kills:#{solar_system_id}") do
+              count when is_integer(count) and count >= 0 -> count
+              _ -> 0
+            end
+            %{solar_system_id: solar_system_id, kills: kills_count}
+          end)
+        _ ->
+          nil
+      end
+
       initial_data =
         %{
-          kills: nil,
+          kills: kills_data,
           present_characters:
             present_character_ids
             |> WandererApp.Character.get_character_eve_ids!(),

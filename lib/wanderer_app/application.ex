@@ -27,7 +27,7 @@ defmodule WandererApp.Application do
           }
         },
         WandererApp.Cache,
-        Supervisor.child_spec({Cachex, name: :api_cache}, id: :api_cache_worker),
+        Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)}, id: :api_cache_worker),
         Supervisor.child_spec({Cachex, name: :system_static_info_cache},
           id: :system_static_info_cache_worker
         ),
@@ -56,7 +56,7 @@ defmodule WandererApp.Application do
         WandererAppWeb.Endpoint
       ] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
-        maybe_start_zkb(WandererApp.Env.zkill_preload_disabled?())
+        maybe_start_kills_services()
 
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
 
@@ -77,11 +77,6 @@ defmodule WandererApp.Application do
     :ok
   end
 
-  defp maybe_start_zkb(false),
-    do: [WandererApp.Zkb.Supervisor, WandererApp.Map.ZkbDataFetcher]
-
-  defp maybe_start_zkb(_),
-    do: []
 
   defp maybe_start_corp_wallet_tracker(true),
     do: [
@@ -90,4 +85,20 @@ defmodule WandererApp.Application do
 
   defp maybe_start_corp_wallet_tracker(_),
     do: []
+
+  defp maybe_start_kills_services do
+    wanderer_kills_enabled =
+      Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
+
+    if wanderer_kills_enabled in [true, :true, "true"] do
+      Logger.info("Starting WandererKills service integration...")
+
+      [
+        WandererApp.Kills.Supervisor,
+        WandererApp.Map.ZkbDataFetcher
+      ]
+    else
+      []
+    end
+  end
 end

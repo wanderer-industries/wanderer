@@ -33,7 +33,10 @@ export function formatISK(value: number): string {
   return Math.round(value).toString();
 }
 
-export function getAttackerSubscript(kill: DetailedKill) {
+export function getAttackerSubscript(kill: DetailedKill | undefined) {
+  if (!kill) {
+    return null;
+  }
   if (kill.npc) {
     return { label: 'npc', cssClass: 'text-purple-400' };
   }
