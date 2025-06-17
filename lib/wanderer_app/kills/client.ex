@@ -106,16 +106,14 @@ defmodule WandererApp.Kills.Client do
   def handle_info(:refresh_subscriptions, %{connected: true} = state) do
     Logger.info("[Client] Refreshing subscriptions after connection")
 
-    case MapIntegration.get_all_map_systems() do
-      systems when is_struct(systems, MapSet) ->
-        system_list = MapSet.to_list(systems)
-
+    case MapIntegration.get_tracked_system_ids() do
+      {:ok, system_list} ->
         if system_list != [] do
           subscribe_to_systems(system_list)
         end
 
-      _ ->
-        Logger.error("[Client] Failed to refresh subscriptions, scheduling retry")
+      {:error, reason} ->
+        Logger.error("[Client] Failed to refresh subscriptions: #{inspect(reason)}, scheduling retry")
         Process.send_after(self(), :refresh_subscriptions, 5000)
     end
 
@@ -159,7 +157,6 @@ defmodule WandererApp.Kills.Client do
   end
 
   def handle_info(:health_check, state) do
-    # Simple health check like character module
     case check_health(state) do
       :healthy ->
         Logger.debug("[Client] Connection healthy")
@@ -253,13 +250,13 @@ defmodule WandererApp.Kills.Client do
 
     # Get systems for initial subscription
     systems =
-      case MapIntegration.get_all_map_systems() do
-        systems when is_struct(systems, MapSet) ->
-          MapSet.to_list(systems)
+      case MapIntegration.get_tracked_system_ids() do
+        {:ok, system_list} ->
+          system_list
 
-        _ ->
+        {:error, reason} ->
           Logger.warning(
-            "[Client] Failed to get map systems for initial subscription, will retry after connection"
+            "[Client] Failed to get tracked system IDs for initial subscription: #{inspect(reason)}, will retry after connection"
           )
 
           # Return empty list but schedule immediate refresh after connection

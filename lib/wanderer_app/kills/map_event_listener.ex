@@ -23,6 +23,7 @@ defmodule WandererApp.Kills.MapEventListener do
 
     # Subscribe to existing running maps
     running_maps = WandererApp.Map.RegistryHelper.list_all_maps()
+    subscribed_maps = MapSet.new(Enum.map(running_maps, & &1.id))
 
     running_maps
     |> Enum.each(fn %{id: map_id} ->
@@ -40,7 +41,7 @@ defmodule WandererApp.Kills.MapEventListener do
     # Also schedule a re-subscription after a delay in case maps start after us
     Process.send_after(self(), :resubscribe_to_maps, 5000)
 
-    {:ok, %{last_update: nil, pending_update: nil, pending_removals: MapSet.new()}}
+    {:ok, %{last_update: nil, pending_update: nil, pending_removals: MapSet.new(), subscribed_maps: subscribed_maps}}
   end
 
   @impl true
@@ -104,23 +105,45 @@ defmodule WandererApp.Kills.MapEventListener do
   # Handle re-subscription attempt
   def handle_info(:resubscribe_to_maps, state) do
     running_maps = WandererApp.Map.RegistryHelper.list_all_maps()
+    current_running_map_ids = MapSet.new(Enum.map(running_maps, & &1.id))
 
-    running_maps
-    |> Enum.each(fn %{id: map_id} ->
+    # Unsubscribe from maps no longer running
+    maps_to_unsubscribe = MapSet.difference(state.subscribed_maps, current_running_map_ids)
+    Enum.each(maps_to_unsubscribe, fn map_id ->
+      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+    end)
+
+    # Subscribe to new running maps
+    maps_to_subscribe = MapSet.difference(current_running_map_ids, state.subscribed_maps)
+    Enum.each(maps_to_subscribe, fn map_id ->
       Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
     end)
 
-    {:noreply, state}
+    {:noreply, %{state | subscribed_maps: current_running_map_ids}}
   end
 
   # Handle map creation - subscribe to new map
   def handle_info({:map_created, map_id}, state) do
     Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-    {:noreply, schedule_subscription_update(state)}
+    updated_subscribed_maps = MapSet.put(state.subscribed_maps, map_id)
+    {:noreply, schedule_subscription_update(%{state | subscribed_maps: updated_subscribed_maps})}
   end
 
   def handle_info(_msg, state) do
     {:noreply, state}
+  end
+
+  @impl true
+  def terminate(_reason, state) do
+    # Unsubscribe from all maps
+    Enum.each(state.subscribed_maps, fn map_id ->
+      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+    end)
+    
+    # Unsubscribe from general maps channel
+    Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "maps")
+    
+    :ok
   end
 
   # Debounce delay in milliseconds
@@ -167,25 +190,33 @@ defmodule WandererApp.Kills.MapEventListener do
 
   defp apply_subscription_changes(current_systems, pending_removals) do
     current_set = MapSet.new(current_systems)
-    all_systems = MapIntegration.get_all_map_systems()
+    
+    # Use get_tracked_system_ids to get only systems from running maps
+    case MapIntegration.get_tracked_system_ids() do
+      {:ok, tracked_systems} ->
+        tracked_systems_set = MapSet.new(tracked_systems)
+        
+        # Remove pending removals from tracked_systems since DB might not be updated yet
+        tracked_systems_adjusted = MapSet.difference(tracked_systems_set, pending_removals)
 
-    # Remove pending removals from all_systems since DB might not be updated yet
-    all_systems_adjusted = MapSet.difference(all_systems, pending_removals)
+        # Use the existing MapIntegration logic to determine changes
+        {:ok, to_subscribe, to_unsubscribe} =
+          MapIntegration.handle_map_systems_updated(
+            MapSet.to_list(tracked_systems_adjusted),
+            current_set
+          )
 
-    # Use the existing MapIntegration logic to determine changes
-    {:ok, to_subscribe, to_unsubscribe} =
-      MapIntegration.handle_map_systems_updated(
-        MapSet.to_list(all_systems_adjusted),
-        current_set
-      )
+        # Apply the changes
+        if to_subscribe != [] do
+          Client.subscribe_to_systems(to_subscribe)
+        end
 
-    # Apply the changes
-    if to_subscribe != [] do
-      Client.subscribe_to_systems(to_subscribe)
-    end
+        if to_unsubscribe != [] do
+          Client.unsubscribe_from_systems(to_unsubscribe)
+        end
 
-    if to_unsubscribe != [] do
-      Client.unsubscribe_from_systems(to_unsubscribe)
+      {:error, reason} ->
+        Logger.error("[MapEventListener] Failed to get tracked system IDs: #{inspect(reason)}")
     end
   end
 end
