@@ -16,10 +16,6 @@ defmodule WandererApp.Character do
     ship_item_id: nil
   }
 
-  @decorate cacheable(
-              cache: WandererApp.Cache,
-              key: "characters-#{character_eve_id}"
-            )
   def get_by_eve_id(character_eve_id) when is_binary(character_eve_id) do
     WandererApp.Api.Character.by_eve_id(character_eve_id)
   end
@@ -201,9 +197,9 @@ defmodule WandererApp.Character do
     end
   end
 
-  def can_track_wallet?(%{scopes: scopes} = _character) when not is_nil(scopes) do
-    scopes |> String.split(" ") |> Enum.member?(@read_character_wallet_scope)
-  end
+  def can_track_wallet?(%{scopes: scopes, id: character_id} = _character)
+      when is_binary(scopes) and is_binary(character_id),
+      do: scopes |> String.split(" ") |> Enum.member?(@read_character_wallet_scope)
 
   def can_track_wallet?(_), do: false
 
@@ -213,10 +209,6 @@ defmodule WandererApp.Character do
 
   def can_track_corp_wallet?(_), do: false
 
-  @decorate cacheable(
-              cache: WandererApp.Cache,
-              key: "can_pause_tracking-#{character_id}"
-            )
   def can_pause_tracking?(character_id) do
     case get_character(character_id) do
       {:ok, %{tracking_pool: tracking_pool} = character} when not is_nil(character) ->
