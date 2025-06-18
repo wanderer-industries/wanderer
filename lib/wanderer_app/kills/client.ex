@@ -113,7 +113,10 @@ defmodule WandererApp.Kills.Client do
         end
 
       {:error, reason} ->
-        Logger.error("[Client] Failed to refresh subscriptions: #{inspect(reason)}, scheduling retry")
+        Logger.error(
+          "[Client] Failed to refresh subscriptions: #{inspect(reason)}, scheduling retry"
+        )
+
         Process.send_after(self(), :refresh_subscriptions, 5000)
     end
 
@@ -343,7 +346,7 @@ defmodule WandererApp.Kills.Client do
     def handle_connected(transport, state) do
       Logger.debug("[Client] Connected, joining channel...")
 
-      case Phoenix.Channels.GenSocketClient.join(transport, "killmails:lobby", %{
+      case GenSocketClient.join(transport, "killmails:lobby", %{
              systems: state.subscribed_systems,
              client_identifier: "wanderer_app"
            }) do
@@ -400,7 +403,21 @@ defmodule WandererApp.Kills.Client do
     def handle_reply(_topic, _ref, _payload, _transport, state), do: {:ok, state}
 
     @impl true
-    def handle_info(_msg, _transport, state), do: {:ok, state}
+    def handle_info({:subscribe_systems, system_ids}, transport, state) do
+      push_to_channel(transport, "subscribe_systems", %{"systems" => system_ids})
+      {:ok, state}
+    end
+
+    @impl true
+    def handle_info({:unsubscribe_systems, system_ids}, transport, state) do
+      push_to_channel(transport, "unsubscribe_systems", %{"systems" => system_ids})
+      {:ok, state}
+    end
+
+    @impl true
+    def handle_info(_msg, _transport, state) do
+      {:ok, state}
+    end
 
     @impl true
     def handle_call(_msg, _from, _transport, state),
@@ -413,6 +430,17 @@ defmodule WandererApp.Kills.Client do
     def handle_join_error(topic, payload, _transport, state) do
       send(state.parent, {:disconnected, {:join_error, {topic, payload}}})
       {:ok, state}
+    end
+
+    defp push_to_channel(transport, event, payload) do
+      case GenSocketClient.push(transport, "killmails:lobby", event, payload) do
+        {:ok, _ref} -> :ok
+        error -> error
+      end
+    end
+
+    defp push_to_channel(_socket, _event, _payload) do
+      {:error, :no_socket}
     end
   end
 

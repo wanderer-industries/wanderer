@@ -16,20 +16,16 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
   @spec handle_map_systems_updated([integer()], MapSet.t(integer())) ::
           {:ok, [integer()], [integer()]}
   def handle_map_systems_updated(system_ids, current_subscriptions) when is_list(system_ids) do
-    # Find all unique systems across all maps
-    all_map_systems = get_all_map_systems()
-
     # Systems to subscribe: in the update and in active maps but not currently subscribed
     new_systems =
       system_ids
-      |> Enum.filter(&(&1 in all_map_systems))
       |> Enum.reject(&MapSet.member?(current_subscriptions, &1))
 
     # Systems to unsubscribe: currently subscribed but no longer in any active map
     obsolete_systems =
       current_subscriptions
       |> MapSet.to_list()
-      |> Enum.reject(&(&1 in all_map_systems))
+      |> Enum.reject(&(&1 in system_ids))
 
     {:ok, new_systems, obsolete_systems}
   end
@@ -51,13 +47,13 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
   @spec get_all_map_systems() :: MapSet.t(integer())
   def get_all_map_systems do
     {:ok, maps} = WandererApp.Maps.get_available_maps()
-    
+
     # Get all map IDs
     map_ids = Enum.map(maps, & &1.id)
 
     # Batch query all systems for all maps at once
     all_systems = WandererApp.MapSystemRepo.get_all_by_maps(map_ids)
-    
+
     # Handle direct list return from repo
     all_systems
     |> Enum.map(& &1.solar_system_id)
@@ -87,7 +83,7 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
       system_ids =
         WandererApp.Map.RegistryHelper.list_all_maps()
         |> Enum.flat_map(fn %{id: map_id} ->
-          case WandererApp.MapSystemRepo.get_all_by_map(map_id) do
+          case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
             {:ok, systems} -> Enum.map(systems, & &1.solar_system_id)
             _ -> []
           end
@@ -220,7 +216,7 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
 
   defp get_all_active_systems_set do
     {:ok, maps} = WandererApp.Maps.get_available_maps()
-    
+
     maps
     |> Enum.flat_map(&get_map_systems_or_empty/1)
     |> MapSet.new()

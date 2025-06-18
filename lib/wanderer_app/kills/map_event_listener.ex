@@ -21,27 +21,19 @@ defmodule WandererApp.Kills.MapEventListener do
     # Subscribe to map lifecycle events
     Phoenix.PubSub.subscribe(WandererApp.PubSub, "maps")
 
-    # Subscribe to existing running maps
-    running_maps = WandererApp.Map.RegistryHelper.list_all_maps()
-    subscribed_maps = MapSet.new(Enum.map(running_maps, & &1.id))
-
-    running_maps
-    |> Enum.each(fn %{id: map_id} ->
-      try do
-        Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
-      rescue
-        e ->
-          Logger.error("[MapEventListener] Failed to subscribe to map #{map_id}: #{inspect(e)}")
-      end
-    end)
-
     # Defer subscription update to avoid blocking init
-    send(self(), :initial_subscription_update)
+    Process.send_after(self(), :initial_subscription_update, 30_000)
 
     # Also schedule a re-subscription after a delay in case maps start after us
-    Process.send_after(self(), :resubscribe_to_maps, 5000)
+    Process.send_after(self(), :resubscribe_to_maps, 60_000)
 
-    {:ok, %{last_update: nil, pending_update: nil, pending_removals: MapSet.new(), subscribed_maps: subscribed_maps}}
+    {:ok,
+     %{
+       last_update: nil,
+       pending_update: nil,
+       pending_removals: MapSet.new(),
+       subscribed_maps: MapSet.new()
+     }}
   end
 
   @impl true
@@ -55,6 +47,7 @@ defmodule WandererApp.Kills.MapEventListener do
   end
 
   def handle_info(:map_server_started, state) do
+    Process.send_after(self(), :resubscribe_to_maps, 1000)
     {:noreply, schedule_subscription_update(state)}
   end
 
@@ -99,7 +92,7 @@ defmodule WandererApp.Kills.MapEventListener do
   def handle_info(:perform_subscription_update, state) do
     # Clear pending removals after processing
     new_state = do_update_subscriptions(%{state | pending_update: nil})
-    {:noreply, %{new_state | pending_removals: MapSet.new()}}
+    {:noreply, new_state}
   end
 
   # Handle re-subscription attempt
@@ -109,12 +102,14 @@ defmodule WandererApp.Kills.MapEventListener do
 
     # Unsubscribe from maps no longer running
     maps_to_unsubscribe = MapSet.difference(state.subscribed_maps, current_running_map_ids)
+
     Enum.each(maps_to_unsubscribe, fn map_id ->
       Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
     end)
 
     # Subscribe to new running maps
     maps_to_subscribe = MapSet.difference(current_running_map_ids, state.subscribed_maps)
+
     Enum.each(maps_to_subscribe, fn map_id ->
       Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
     end)
@@ -139,15 +134,15 @@ defmodule WandererApp.Kills.MapEventListener do
     Enum.each(state.subscribed_maps, fn map_id ->
       Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
     end)
-    
+
     # Unsubscribe from general maps channel
     Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "maps")
-    
+
     :ok
   end
 
   # Debounce delay in milliseconds
-  @debounce_delay 500
+  @debounce_delay 1000
 
   defp schedule_subscription_update(state) do
     # Cancel pending update if exists
@@ -161,41 +156,50 @@ defmodule WandererApp.Kills.MapEventListener do
   end
 
   defp do_update_subscriptions(state) do
-    Task.start(fn ->
+    state =
       try do
-        perform_subscription_update(state.pending_removals)
-        # Also refresh the system->map index
-        WandererApp.Kills.Subscription.SystemMapIndex.refresh()
+        case perform_subscription_update(state.pending_removals) do
+          :ok ->
+            # Also refresh the system->map index
+            WandererApp.Kills.Subscription.SystemMapIndex.refresh()
+            %{state | pending_removals: MapSet.new()}
+
+          error ->
+            schedule_subscription_update(state)
+        end
       rescue
         e ->
           Logger.error("[MapEventListener] Error updating subscriptions: #{inspect(e)}")
+          state
       end
-    end)
 
     %{state | last_update: System.monotonic_time(:millisecond)}
   end
 
   defp perform_subscription_update(pending_removals) do
     case Client.get_status() do
-      {:ok, %{subscriptions: %{subscribed_systems: current_systems}}} ->
+      {:ok, %{connected: true, subscriptions: %{subscribed_systems: current_systems}}} ->
         apply_subscription_changes(current_systems, pending_removals)
+        :ok
 
       {:error, :not_running} ->
         Logger.debug("[MapEventListener] Kills client not running yet")
+        {:error, :not_running}
 
       error ->
         Logger.error("[MapEventListener] Failed to get client status: #{inspect(error)}")
+        {:error, :not_connected}
     end
   end
 
   defp apply_subscription_changes(current_systems, pending_removals) do
     current_set = MapSet.new(current_systems)
-    
+
     # Use get_tracked_system_ids to get only systems from running maps
     case MapIntegration.get_tracked_system_ids() do
       {:ok, tracked_systems} ->
         tracked_systems_set = MapSet.new(tracked_systems)
-        
+
         # Remove pending removals from tracked_systems since DB might not be updated yet
         tracked_systems_adjusted = MapSet.difference(tracked_systems_set, pending_removals)
 

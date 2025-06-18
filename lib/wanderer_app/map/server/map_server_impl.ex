@@ -103,6 +103,7 @@ defmodule WandererApp.Map.Server.Impl do
       WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
 
       broadcast!(map_id, :map_server_started)
+      @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
 
       :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
 

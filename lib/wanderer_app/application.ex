@@ -27,7 +27,9 @@ defmodule WandererApp.Application do
           }
         },
         WandererApp.Cache,
-        Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)}, id: :api_cache_worker),
+        Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)},
+          id: :api_cache_worker
+        ),
         Supervisor.child_spec({Cachex, name: :esi_auth_cache}, id: :esi_auth_cache_worker),
         Supervisor.child_spec({Cachex, name: :system_static_info_cache},
           id: :system_static_info_cache_worker
@@ -78,7 +80,6 @@ defmodule WandererApp.Application do
     WandererAppWeb.Endpoint.config_change(changed, removed)
     :ok
   end
-
 
   defp maybe_start_corp_wallet_tracker(true),
     do: [
