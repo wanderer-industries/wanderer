@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.70.5](https://github.com/wanderer-industries/wanderer/compare/v1.70.4...v1.70.5) (2025-06-17)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character caching issues
+
 ## [v1.70.4](https://github.com/wanderer-industries/wanderer/compare/v1.70.3...v1.70.4) (2025-06-16)
 
 
