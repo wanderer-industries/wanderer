@@ -28,6 +28,7 @@ defmodule WandererApp.Application do
         },
         WandererApp.Cache,
         Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)}, id: :api_cache_worker),
+        Supervisor.child_spec({Cachex, name: :esi_auth_cache}, id: :esi_auth_cache_worker),
         Supervisor.child_spec({Cachex, name: :system_static_info_cache},
           id: :system_static_info_cache_worker
         ),
@@ -40,6 +41,7 @@ defmodule WandererApp.Application do
         Supervisor.child_spec({Cachex, name: :tracked_characters},
           id: :tracked_characters_cache_worker
         ),
+        WandererApp.Esi.InitClientsTask,
         WandererApp.Scheduler,
         {Registry, keys: :unique, name: WandererApp.MapRegistry},
         {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},

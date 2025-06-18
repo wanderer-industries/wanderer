@@ -121,14 +121,14 @@
                   <.icon name="hero-plus-solid" class="w-6 h-6" />
                   <h3 class="card-title text-center text-md">New Invite</h3>
                 </.link>
-
-                <.table
-                  id="invites"
-                  rows={@invites}
-                  class="!max-h-[40vh] !overflow-y-auto"
-                >
-                  <:col :let={invite} label="Link">
-                    <div class="flex items-center">
+              </h4>
+              <.table
+                id="invites"
+                rows={@invites}
+                class="!max-h-[40vh] !overflow-y-auto"
+              >
+                <:col :let={invite} label="Link">
+                  <div class="flex items-center">
                     <div class="w-[200px] no-wrap truncate"><%= get_invite_link(@uri, invite.token) %></div>
                     <.button
                       phx-hook="CopyToClipboard"
@@ -141,30 +141,53 @@
                         Link copied
                       </div>
                     </.button>
-                    </div>
+                  </div>
+                </:col>
+                <:col :let={invite} label="Type">
+                  <%= invite.type %>
+                </:col>
+                <:col :let={invite} label="Valid Until">
+                  <div>
+                    <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                      <.local_time id={invite.id} at={invite.valid_until} />
+                    </p>
+                  </div>
+                </:col>
+                <:action :let={invite}>
+                  <.button
+                    phx-click="delete-invite"
+                    phx-value-id={invite.id}
+                    data={[confirm: "Please confirm to delete invite!"]}
+                    class="hover:text-white"
+                  >
+                    <.icon name="hero-trash-solid" class="w-4 h-4" />
+                  </.button>
+                </:action>
+              </.table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+
+              <span class="text-gray-400 dark:text-gray-400">Tracking Pools</span>
+                <.table
+                  id="tracking_pools"
+                  rows={@tracker_stats}
+                  class="!max-h-[40vh] !overflow-y-auto"
+                >
+                  <:col :let={stat} label="Pool">
+                    <div class="w-[200px] no-wrap truncate">{stat.title}</div>
                   </:col>
-                  <:col :let={invite} label="Type">
-                    <%= invite.type %>
+                  <:col :let={stat} label="Active">
+                    <div :if={stat.id == @active_tracking_pool}>true</div>
                   </:col>
-                  <:col :let={invite} label="Valid Until">
-                    <div>
-                      <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
-                        <.local_time id={invite.id} at={invite.valid_until} />
-                      </p>
-                    </div>
+                  <:col :let={stat} label="Count">
+                    {stat.value}
                   </:col>
-                  <:action :let={invite}>
-                    <.button
-                      phx-click="delete-invite"
-                      phx-value-id={invite.id}
-                      data={[confirm: "Please confirm to delete invite!"]}
-                      class="hover:text-white"
-                    >
-                      <.icon name="hero-trash-solid" class="w-4 h-4" />
-                    </.button>
-                  </:action>
                 </.table>
-              </h4>
             </div>
           </div>
         </div>

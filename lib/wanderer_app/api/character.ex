@@ -24,6 +24,7 @@ defmodule WandererApp.Api.Character do
     define(:update_alliance, action: :update_alliance)
     define(:update_wallet_balance, action: :update_wallet_balance)
     define(:mark_as_deleted, action: :mark_as_deleted)
+    define(:last_active, action: :last_active)
 
     define(:by_id,
       get_by: [:id],
@@ -47,7 +48,8 @@ defmodule WandererApp.Api.Character do
       :access_token,
       :refresh_token,
       :expires_at,
-      :scopes
+      :scopes,
+      :tracking_pool
     ]
 
     defaults [:create, :read, :destroy]
@@ -72,6 +74,12 @@ defmodule WandererApp.Api.Character do
       filter(expr(user_id == ^arg(:user_id) and deleted == false))
     end
 
+    read :last_active do
+      argument(:from, :utc_datetime, allow_nil?: false)
+
+      filter(expr(updated_at > ^arg(:from)))
+    end
+
     update :assign do
       accept []
       require_atomic? false
@@ -85,7 +93,7 @@ defmodule WandererApp.Api.Character do
 
     update :update do
       require_atomic? false
-      accept([:name, :access_token, :refresh_token, :expires_at, :scopes])
+      accept([:name, :access_token, :refresh_token, :expires_at, :scopes, :tracking_pool])
 
       change(set_attribute(:deleted, false))
     end
@@ -198,6 +206,7 @@ defmodule WandererApp.Api.Character do
     attribute :alliance_name, :string
     attribute :alliance_ticker, :string
     attribute :eve_wallet_balance, :float
+    attribute :tracking_pool, :string
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

@@ -2,6 +2,107 @@
 
 <!-- changelog -->
 
+## [v1.70.5](https://github.com/wanderer-industries/wanderer/compare/v1.70.4...v1.70.5) (2025-06-17)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character caching issues
+
+## [v1.70.4](https://github.com/wanderer-industries/wanderer/compare/v1.70.3...v1.70.4) (2025-06-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: Distribute tracking to minimal pool first
+
+## [v1.70.3](https://github.com/wanderer-industries/wanderer/compare/v1.70.2...v1.70.3) (2025-06-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: Don't pause tracking for new pools
+
+## [v1.70.2](https://github.com/wanderer-industries/wanderer/compare/v1.70.1...v1.70.2) (2025-06-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Invalidate character copr and ally data on map server start
+
+## [v1.70.1](https://github.com/wanderer-industries/wanderer/compare/v1.70.0...v1.70.1) (2025-06-14)
+
+
+
+
+### Bug Fixes:
+
+* resolve api issue with custom name
+
+## [v1.70.0](https://github.com/wanderer-industries/wanderer/compare/v1.69.1...v1.70.0) (2025-06-11)
+
+
+
+
+### Features:
+
+* Core: Fix admin page error
+
+## [v1.69.1](https://github.com/wanderer-industries/wanderer/compare/v1.69.0...v1.69.1) (2025-06-11)
+
+
+
+
+## [v1.69.0](https://github.com/wanderer-industries/wanderer/compare/v1.68.6...v1.69.0) (2025-06-11)
+
+
+
+
+### Features:
+
+* Core: Added multiple tracking pools support
+
+## [v1.68.6](https://github.com/wanderer-industries/wanderer/compare/v1.68.5...v1.68.6) (2025-06-10)
+
+
+
+
+## [v1.68.5](https://github.com/wanderer-industries/wanderer/compare/v1.68.4...v1.68.5) (2025-06-10)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed updating map options
+
+## [v1.68.4](https://github.com/wanderer-industries/wanderer/compare/v1.68.3...v1.68.4) (2025-06-10)
+
+
+
+
+## [v1.68.3](https://github.com/wanderer-industries/wanderer/compare/v1.68.2...v1.68.3) (2025-06-09)
+
+
+
+
+## [v1.68.2](https://github.com/wanderer-industries/wanderer/compare/v1.68.1...v1.68.2) (2025-06-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed character auth with wallet (on characters page)
+
 ## [v1.68.1](https://github.com/wanderer-industries/wanderer/compare/v1.68.0...v1.68.1) (2025-06-09)
 
 

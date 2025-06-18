@@ -110,7 +110,7 @@ defmodule WandererApp.Character.Tracker do
   end
 
   defp pause_tracking(character_id) do
-    if not WandererApp.Env.character_tracking_pause_disabled?() &&
+    if WandererApp.Character.can_pause_tracking?(character_id) &&
          not WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused") do
       WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
       WandererApp.Cache.delete("character:#{character_id}:online_error_time")
@@ -166,7 +166,7 @@ defmodule WandererApp.Character.Tracker do
 
   def update_online(%{track_online: true, character_id: character_id} = character_state) do
     case WandererApp.Character.get_character(character_id) do
-      {:ok, %{eve_id: eve_id, access_token: access_token}}
+      {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
         (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
@@ -233,7 +233,7 @@ defmodule WandererApp.Character.Tracker do
               {:error, :error_limited, headers} ->
                 reset_timeout = get_reset_timeout(headers)
 
-                Logger.warning(".")
+                Logger.warning("#{inspect(tracking_pool)} ..")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:online_forbidden",
@@ -287,15 +287,15 @@ defmodule WandererApp.Character.Tracker do
   defp get_reset_timeout(_headers, default_timeout), do: default_timeout
 
   def update_info(character_id) do
-    (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
-       WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden") ||
+    (WandererApp.Cache.has_key?("character:#{character_id}:info_forbidden") ||
        WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
       true ->
         {:error, :skipped}
 
       false ->
-        {:ok, %{eve_id: eve_id}} = WandererApp.Character.get_character(character_id)
+        {:ok, %{eve_id: eve_id, tracking_pool: tracking_pool}} =
+          WandererApp.Character.get_character(character_id)
 
         case WandererApp.Esi.get_character_info(eve_id) do
           {:ok, _info} ->
@@ -320,7 +320,7 @@ defmodule WandererApp.Character.Tracker do
           {:error, :error_limited, headers} ->
             reset_timeout = get_reset_timeout(headers)
 
-            Logger.warning(".")
+            Logger.warning("#{inspect(tracking_pool)} ..")
 
             WandererApp.Cache.put(
               "character:#{character_id}:info_forbidden",
@@ -358,7 +358,8 @@ defmodule WandererApp.Character.Tracker do
     character_id
     |> WandererApp.Character.get_character()
     |> case do
-      {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
+      {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
+      when not is_nil(access_token) ->
         (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden") ||
            WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
@@ -397,7 +398,7 @@ defmodule WandererApp.Character.Tracker do
               {:error, :error_limited, headers} ->
                 reset_timeout = get_reset_timeout(headers)
 
-                Logger.warning(".")
+                Logger.warning("#{inspect(tracking_pool)} ..")
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:ship_forbidden",
@@ -462,7 +463,8 @@ defmodule WandererApp.Character.Tracker do
         %{track_location: true, is_online: true, character_id: character_id} = character_state
       ) do
     case WandererApp.Character.get_character(character_id) do
-      {:ok, %{eve_id: eve_id, access_token: access_token}} when not is_nil(access_token) ->
+      {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
+      when not is_nil(access_token) ->
         WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused")
         |> case do
           true ->
@@ -494,7 +496,7 @@ defmodule WandererApp.Character.Tracker do
                 {:error, :skipped}
 
               {:error, :error_limited, headers} ->
-                Logger.warning(".")
+                Logger.warning("#{inspect(tracking_pool)} ..")
 
                 reset_timeout = get_reset_timeout(headers, @location_limit_ttl)
 
@@ -550,7 +552,8 @@ defmodule WandererApp.Character.Tracker do
     character_id
     |> WandererApp.Character.get_character()
     |> case do
-      {:ok, %{eve_id: eve_id, access_token: access_token} = character}
+      {:ok,
+       %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool} = character}
       when not is_nil(access_token) ->
         character
         |> WandererApp.Character.can_track_wallet?()
@@ -589,7 +592,7 @@ defmodule WandererApp.Character.Tracker do
                   {:error, :error_limited, headers} ->
                     reset_timeout = get_reset_timeout(headers)
 
-                    Logger.warning(".")
+                    Logger.warning("#{inspect(tracking_pool)} ..")
 
                     WandererApp.Cache.put(
                       "character:#{character_id}:wallet_forbidden",

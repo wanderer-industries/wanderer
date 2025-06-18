@@ -62,6 +62,8 @@ defmodule WandererAppWeb.AdminLive do
        user_character_ids: user_character_ids,
        user_id: user_id,
        invite_link: nil,
+       tracker_stats: [],
+       active_tracking_pool: "default",
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
@@ -294,6 +296,9 @@ defmodule WandererAppWeb.AdminLive do
   defp apply_action(socket, :index, _params, uri) do
     {:ok, invites} = WandererApp.Api.MapInvite.read()
 
+    {:ok, tracker_stats} = WandererApp.Character.TrackingConfigUtils.load_tracker_stats()
+    active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
     socket
     |> assign(:active_page, :admin)
     |> assign(:uri, URI.parse(uri))
@@ -308,6 +313,8 @@ defmodule WandererAppWeb.AdminLive do
     |> assign(:form, to_form(%{"amount" => 500_000_000}))
     |> assign(:unlink_character_form, to_form(%{}))
     |> assign(:invites, invites)
+    |> assign(:tracker_stats, tracker_stats)
+    |> assign(:active_tracking_pool, active_tracking_pool)
   end
 
   defp apply_action(socket, :add_invite_link, _params, uri) do

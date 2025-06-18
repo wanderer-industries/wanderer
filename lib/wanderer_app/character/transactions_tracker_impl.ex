@@ -146,7 +146,12 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   end
 
   defp get_wallet_journal(
-         %{id: character_id, corporation_id: corporation_id, access_token: access_token} =
+         %{
+           id: character_id,
+           corporation_id: corporation_id,
+           access_token: access_token,
+           tracking_pool: tracking_pool
+         } =
            _character,
          division
        )
@@ -164,7 +169,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:error, :forbidden}
 
       {:error, :error_limited, _headers} ->
-        Logger.warning(".")
+        Logger.warning("#{inspect(tracking_pool)} ..")
         {:error, :error_limited}
 
       {:error, error} ->
@@ -176,7 +181,12 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
   defp get_wallet_journal(_character, _division), do: {:error, :skipped}
 
   defp update_corp_wallets(
-         %{id: character_id, corporation_id: corporation_id, access_token: access_token} =
+         %{
+           id: character_id,
+           corporation_id: corporation_id,
+           access_token: access_token,
+           tracking_pool: tracking_pool
+         } =
            _character
        )
        when not is_nil(access_token) do
@@ -193,7 +203,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         {:error, :forbidden}
 
       {:error, :error_limited, _headers} ->
-        Logger.warning(".")
+        Logger.warning("#{inspect(tracking_pool)} ..")
         {:error, :error_limited}
 
       {:error, error} ->

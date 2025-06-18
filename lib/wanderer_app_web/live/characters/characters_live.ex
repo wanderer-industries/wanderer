@@ -56,10 +56,19 @@ defmodule WandererAppWeb.CharactersLive do
   @impl true
   def handle_event("authorize", form, socket) do
     track_wallet = form |> Map.get("track_wallet", false)
-    token = UUID.uuid4(:default)
-    WandererApp.Cache.put("invite_#{token}", true, ttl: :timer.minutes(30))
 
-    {:noreply, socket |> push_navigate(to: ~p"/auth/eve?invite=#{token}&w=#{track_wallet}")}
+    active_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
+    {:ok, esi_config} =
+      Cachex.get(
+        :esi_auth_cache,
+        "config_#{active_pool}"
+      )
+
+    WandererApp.Cache.put("invite_#{esi_config.uuid}", true, ttl: :timer.minutes(30))
+
+    {:noreply,
+     socket |> push_navigate(to: ~p"/auth/eve?invite=#{esi_config.uuid}&w=#{track_wallet}")}
   end
 
   @impl true

@@ -671,13 +671,20 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp refresh_token(character_id) do
-    {:ok, %{expires_at: expires_at, refresh_token: refresh_token, scopes: scopes} = character} =
+    {:ok,
+     %{
+       expires_at: expires_at,
+       refresh_token: refresh_token,
+       scopes: scopes,
+       tracking_pool: tracking_pool
+     } = character} =
       WandererApp.Character.get_character(character_id)
 
     refresh_token_result =
       WandererApp.Ueberauth.Strategy.Eve.OAuth.get_refresh_token([],
         with_wallet: WandererApp.Character.can_track_wallet?(character),
         is_admin?: WandererApp.Character.can_track_corp_wallet?(character),
+        tracking_pool: tracking_pool,
         token: %OAuth2.AccessToken{refresh_token: refresh_token}
       )
 
