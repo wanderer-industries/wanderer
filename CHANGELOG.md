@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.70.7](https://github.com/wanderer-industries/wanderer/compare/v1.70.6...v1.70.7) (2025-06-18)
+
+
+
+
+### Bug Fixes:
+
+* Subscriptions: Added option to topup using ALL user balance available
+
 ## [v1.70.6](https://github.com/wanderer-industries/wanderer/compare/v1.70.5...v1.70.6) (2025-06-18)
 
 
