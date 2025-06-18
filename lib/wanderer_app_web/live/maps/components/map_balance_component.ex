@@ -51,12 +51,15 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
        |> assign(
          :amounts,
          [
-           {"150M", 150_000_000},
-           {"300M", 300_000_000},
-           {"600M", 600_000_000},
-           {"1.2B", 1_200_000_000},
-           {"2.4B", 2_400_000_000},
-           {"5B", 5_000_000_000}
+           {"50M", 50_000_000},
+           {"100M", 100_000_000},
+           {"250M", 250_000_000},
+           {"500M", 500_000_000},
+           {"1B", 1_000_000_000},
+           {"2.5B", 2_500_000_000},
+           {"5B", 5_000_000_000},
+           {"10B", 10_000_000_000},
+           {"ALL", nil}
          ]
        )
        |> assign(is_topping_up?: true)}
@@ -71,8 +74,6 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         %{"amount" => amount} = _event,
         %{assigns: %{current_user: current_user, map: map, map_id: map_id}} = socket
       ) do
-    amount = amount |> Decimal.new() |> Decimal.to_float()
-
     user =
       current_user.id
       |> WandererApp.User.load()
@@ -80,6 +81,13 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
     {:ok, user_balance} =
       user
       |> WandererApp.User.get_balance()
+
+    amount =
+      if amount == "" do
+        user_balance
+      else
+        amount |> Decimal.new() |> Decimal.to_float()
+      end
 
     case amount <= user_balance do
       true ->
@@ -98,7 +106,8 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
           })
 
         {:ok, user_balance} =
-          user
+          current_user.id
+          |> WandererApp.User.load()
           |> WandererApp.User.get_balance()
 
         {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
