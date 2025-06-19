@@ -7,48 +7,24 @@ defmodule WandererAppWeb.MapKillsEventHandler do
   use WandererAppWeb, :live_component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCoreEventHandler, MapEventHandler}
 
   def handle_server_event(
         %{event: :init_kills},
         %{assigns: %{map_id: map_id} = assigns} = socket
       ) do
-    
+
     # Get kill counts from cache
     case WandererApp.Map.get_map(map_id) do
       {:ok, %{systems: systems}} ->
-        
-        kill_counts =
-          systems
-          |> Enum.into(%{}, fn {solar_system_id, _system} ->
-            # Use explicit cache lookup with validation from WandererApp.Cache
-            kills_count =
-              case WandererApp.Cache.get("zkb:kills:#{solar_system_id}") do
-                count when is_integer(count) and count >= 0 ->
-                  count
 
-                nil ->
-                  0
-
-                invalid_data ->
-                  Logger.warning(
-                    "[#{__MODULE__}] Invalid kill count data for system #{solar_system_id}: #{inspect(invalid_data)}"
-                  )
-
-                  0
-              end
-
-            {solar_system_id, kills_count}
-          end)
-          |> Enum.filter(fn {_system_id, count} -> count > 0 end)
-          |> Enum.into(%{})
+        kill_counts = build_kill_counts(systems)
 
         kills_payload = kill_counts
           |> Enum.map(fn {system_id, kills} ->
             %{solar_system_id: system_id, kills: kills}
           end)
-        
-        
+
         MapEventHandler.push_map_event(
           socket,
           "kills_updated",
@@ -62,7 +38,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
   end
 
   def handle_server_event(%{event: :update_system_kills, payload: solar_system_id}, socket) do
-    
+
     # Get kill count for the specific system
     kills_count = case WandererApp.Cache.get("zkb:kills:#{solar_system_id}") do
       count when is_integer(count) and count >= 0 ->
@@ -73,7 +49,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
         Logger.warning("[#{__MODULE__}] Invalid kill count data for new system #{solar_system_id}: #{inspect(invalid_data)}")
         0
     end
-    
+
     # Only send update if there are kills
     if kills_count > 0 do
       MapEventHandler.push_map_event(socket, "kills_updated", [%{solar_system_id: solar_system_id, kills: kills_count}])
@@ -169,6 +145,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
 
   defp handle_get_system_kills(sid, sh, payload, socket) do
     with {:ok, system_id} <- parse_id(sid),
+         # Parse since_hours for validation, but filtering is done on frontend
          {:ok, _since_hours} <- parse_id(sh) do
       cache_key = "map:#{socket.assigns.map_id}:zkb:detailed_kills"
 
@@ -210,42 +187,19 @@ defmodule WandererAppWeb.MapKillsEventHandler do
   end
 
   defp handle_get_systems_kills(sids, sh, payload, socket) do
+    # Parse since_hours for validation, but filtering is done on frontend
     with {:ok, _since_hours} <- parse_id(sh),
          {:ok, parsed_ids} <- parse_system_ids(sids) do
 
       cache_key = "map:#{socket.assigns.map_id}:zkb:detailed_kills"
 
       # Get from WandererApp.Cache (not Cachex)
-      filtered_data =
-        case WandererApp.Cache.get(cache_key) do
-          cached_map when is_map(cached_map) ->
-            # Validate and filter cached data
-            parsed_ids
-            |> Enum.reduce(%{}, fn system_id, acc ->
-              case Map.get(cached_map, system_id) do
-                kills when is_list(kills) -> Map.put(acc, system_id, kills)
-                _ -> acc
-              end
-            end)
-
-          nil ->
-            %{}
-
-          invalid_data ->
-            Logger.warning(
-              "[#{__MODULE__}] Invalid cache data structure for key: #{cache_key}, got: #{inspect(invalid_data)}"
-            )
-
-            # Clear invalid cache entry
-            WandererApp.Cache.delete(cache_key)
-            %{}
-        end
+      filtered_data = get_kills_for_systems(cache_key, parsed_ids)
 
       # filtered_data is already the final result, not wrapped in a tuple
       systems_data = filtered_data
 
       reply_payload = %{"systems_kills" => systems_data}
-
 
       {:reply, reply_payload, socket}
     else
@@ -281,4 +235,62 @@ defmodule WandererAppWeb.MapKillsEventHandler do
   end
 
   defp parse_system_ids(_), do: :error
+
+  defp build_kill_counts(systems) do
+    systems
+    |> Enum.map(&extract_system_kill_count/1)
+    |> Enum.filter(fn {_system_id, count} -> count > 0 end)
+    |> Enum.into(%{})
+  end
+
+  defp extract_system_kill_count({solar_system_id, _system}) do
+    kills_count = get_validated_kill_count(solar_system_id)
+    {solar_system_id, kills_count}
+  end
+
+  defp get_validated_kill_count(solar_system_id) do
+    case WandererApp.Cache.get("zkb:kills:#{solar_system_id}") do
+      count when is_integer(count) and count >= 0 ->
+        count
+
+      nil ->
+        0
+
+      invalid_data ->
+        Logger.warning(
+          "[#{__MODULE__}] Invalid kill count data for system #{solar_system_id}: #{inspect(invalid_data)}"
+        )
+        0
+    end
+  end
+
+  defp get_kills_for_systems(cache_key, system_ids) do
+    case WandererApp.Cache.get(cache_key) do
+      cached_map when is_map(cached_map) ->
+        extract_cached_kills(cached_map, system_ids)
+
+      nil ->
+        %{}
+
+      invalid_data ->
+        Logger.warning(
+          "[#{__MODULE__}] Invalid cache data structure for key: #{cache_key}, got: #{inspect(invalid_data)}"
+        )
+        # Clear invalid cache entry
+        WandererApp.Cache.delete(cache_key)
+        %{}
+    end
+  end
+
+  defp extract_cached_kills(cached_map, system_ids) do
+    Enum.reduce(system_ids, %{}, fn system_id, acc ->
+      case Map.get(cached_map, system_id) do
+        kills when is_list(kills) ->
+          Map.put(acc, system_id, kills)
+        _ ->
+          acc
+      end
+    end)
+  end
+
 end

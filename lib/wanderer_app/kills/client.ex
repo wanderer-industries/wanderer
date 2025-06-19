@@ -16,11 +16,13 @@ defmodule WandererApp.Kills.Client do
   @retry_delays [5_000, 10_000, 30_000, 60_000]
   @max_retries 10
   @health_check_interval :timer.seconds(30)  # Check every 30 seconds
+  @message_timeout :timer.minutes(15)  # No messages timeout
 
   defstruct [
     :socket_pid,
     :retry_timer_ref,
     :connection_timeout_ref,
+    :last_message_time,
     connected: false,
     connecting: false,
     subscribed_systems: MapSet.new(),
@@ -162,7 +164,8 @@ defmodule WandererApp.Kills.Client do
           connecting: false,
           socket_pid: socket_pid,
           retry_count: 0,  # Reset retry count only on successful connection
-          last_error: nil
+          last_error: nil,
+          last_message_time: System.system_time(:millisecond)
       }
       |> cancel_retry()
       |> cancel_connection_timeout()
@@ -255,16 +258,9 @@ defmodule WandererApp.Kills.Client do
     {:noreply, state}
   end
 
-  # Handle process DOWN messages for socket monitoring
-  def handle_info({:DOWN, _ref, :process, pid, reason}, %{socket_pid: pid} = state) do
-    Logger.error("[Client] Socket process died: #{inspect(reason)}")
-    send(self(), {:disconnected, {:socket_died, reason}})
-    {:noreply, state}
-  end
-
-  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
-    # Ignore DOWN messages for other processes
-    {:noreply, state}
+  def handle_info({:message_received, _type}, state) do
+    # Update last message time when we receive a kill message
+    {:noreply, %{state | last_message_time: System.system_time(:millisecond)}}
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
@@ -454,6 +450,22 @@ defmodule WandererApp.Kills.Client do
     :needs_reconnect
   end
 
+  defp check_health(%{socket_pid: pid, last_message_time: last_msg_time} = state) when not is_nil(last_msg_time) do
+    cond do
+      not socket_alive?(pid) ->
+        Logger.warning("[Client] Health check: Socket process #{inspect(pid)} is dead")
+        :needs_reconnect
+      
+      # Check if we haven't received a message in the configured timeout
+      System.system_time(:millisecond) - last_msg_time > @message_timeout ->
+        Logger.warning("[Client] Health check: No messages received for 15+ minutes, reconnecting")
+        :needs_reconnect
+        
+      true ->
+        :healthy
+    end
+  end
+
   defp check_health(%{socket_pid: pid} = state) do
     if socket_alive?(pid) do
       :healthy
@@ -565,6 +577,9 @@ defmodule WandererApp.Kills.Client do
     def handle_message(topic, event, payload, _transport, state) do
       case {topic, event} do
         {"killmails:lobby", "killmail_update"} ->
+          # Notify parent that we received a message
+          send(state.parent, {:message_received, :killmail_update})
+          
           # Use supervised task to handle failures gracefully
           Task.Supervisor.start_child(
             WandererApp.Kills.TaskSupervisor,
@@ -572,6 +587,9 @@ defmodule WandererApp.Kills.Client do
           )
 
         {"killmails:lobby", "kill_count_update"} ->
+          # Notify parent that we received a message
+          send(state.parent, {:message_received, :kill_count_update})
+          
           # Use supervised task to handle failures gracefully
           Task.Supervisor.start_child(
             WandererApp.Kills.TaskSupervisor,
