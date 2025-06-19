@@ -3,6 +3,10 @@ defmodule WandererApp.Kills.Subscription.Manager do
   Manages system subscriptions for kills WebSocket service.
   """
 
+  require Logger
+
+  require Logger
+
   @type subscriptions :: MapSet.t(integer())
 
   @spec subscribe_systems(subscriptions(), [integer()]) :: {subscriptions(), [integer()]}
@@ -23,11 +27,20 @@ defmodule WandererApp.Kills.Subscription.Manager do
   end
 
   @spec sync_with_server(pid() | nil, [integer()], [integer()]) :: :ok
-  def sync_with_server(nil, _to_subscribe, _to_unsubscribe), do: :ok
+  def sync_with_server(nil, _to_subscribe, _to_unsubscribe) do
+    Logger.warning("[Manager] Attempted to sync with server but socket_pid is nil")
+    :ok
+  end
 
   def sync_with_server(socket_pid, to_subscribe, to_unsubscribe) do
-    if to_unsubscribe != [], do: send(socket_pid, {:unsubscribe_systems, to_unsubscribe})
-    if to_subscribe != [], do: send(socket_pid, {:subscribe_systems, to_subscribe})
+    if to_unsubscribe != [] do
+      send(socket_pid, {:unsubscribe_systems, to_unsubscribe})
+    end
+
+    if to_subscribe != [] do
+      send(socket_pid, {:subscribe_systems, to_subscribe})
+    end
+
     :ok
   end
 
@@ -36,7 +49,13 @@ defmodule WandererApp.Kills.Subscription.Manager do
     system_list = MapSet.to_list(subscribed_systems)
 
     if system_list != [] do
+      Logger.info(
+        "[Manager] Resubscribing to all #{length(system_list)} systems after reconnection"
+      )
+
       send(socket_pid, {:subscribe_systems, system_list})
+    else
+      Logger.debug(fn -> "[Manager] No systems to resubscribe after reconnection" end)
     end
 
     :ok

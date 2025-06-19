@@ -27,6 +27,14 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
       |> MapSet.to_list()
       |> Enum.reject(&(&1 in system_ids))
 
+    if new_systems != [] or obsolete_systems != [] do
+      Logger.debug(fn ->
+        "[MapIntegration] Map systems updated - " <>
+          "New: #{length(new_systems)}, Obsolete: #{length(obsolete_systems)}, " <>
+          "Total active: #{length(system_ids)}"
+      end)
+    end
+
     {:ok, new_systems, obsolete_systems}
   end
 
@@ -80,16 +88,34 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
   def get_tracked_system_ids do
     try do
       # Get systems from currently running maps
-      system_ids =
-        WandererApp.Map.RegistryHelper.list_all_maps()
-        |> Enum.flat_map(fn %{id: map_id} ->
+      active_maps = WandererApp.Map.RegistryHelper.list_all_maps()
+
+      Logger.debug("[MapIntegration] Found #{length(active_maps)} active maps")
+
+      map_systems =
+        active_maps
+        |> Enum.map(fn %{id: map_id} ->
           case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
-            {:ok, systems} -> Enum.map(systems, & &1.solar_system_id)
-            _ -> []
+            {:ok, systems} ->
+              system_ids = Enum.map(systems, & &1.solar_system_id)
+              Logger.debug("[MapIntegration] Map #{map_id} has #{length(system_ids)} systems")
+              {map_id, system_ids}
+
+            _ ->
+              Logger.warning("[MapIntegration] Failed to get systems for map #{map_id}")
+              {map_id, []}
           end
         end)
+
+      system_ids =
+        map_systems
+        |> Enum.flat_map(fn {_map_id, systems} -> systems end)
         |> Enum.reject(&is_nil/1)
         |> Enum.uniq()
+
+      Logger.debug(fn ->
+        "[MapIntegration] Total tracked systems: #{length(system_ids)} across #{length(active_maps)} maps"
+      end)
 
       {:ok, system_ids}
     rescue

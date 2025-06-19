@@ -15,11 +15,12 @@ defmodule WandererApp.Kills.Client do
   # Simple retry configuration - inline like character module
   @retry_delays [5_000, 10_000, 30_000, 60_000]
   @max_retries 10
-  @health_check_interval :timer.minutes(2)
+  @health_check_interval :timer.seconds(30)  # Check every 30 seconds
 
   defstruct [
     :socket_pid,
     :retry_timer_ref,
+    :connection_timeout_ref,
     connected: false,
     connecting: false,
     subscribed_systems: MapSet.new(),
@@ -72,15 +73,28 @@ defmodule WandererApp.Kills.Client do
     :exit, _ -> {:error, :not_running}
   end
 
+  @spec force_health_check() :: :ok
+  def force_health_check do
+    send(__MODULE__, :health_check)
+    :ok
+  end
+
+  @spec force_health_check() :: :ok
+  def force_health_check do
+    send(__MODULE__, :health_check)
+    :ok
+  end
+
   # Server callbacks
 
   @impl true
   def init(_opts) do
     if Config.enabled?() do
-      Logger.info("[Client] Starting kills WebSocket client")
-
+      # Start connection attempt immediately
       send(self(), :connect)
-      schedule_health_check()
+
+      # Schedule first health check after a reasonable delay
+      Process.send_after(self(), :health_check, @health_check_interval)
 
       {:ok, %__MODULE__{}}
     else
@@ -90,22 +104,36 @@ defmodule WandererApp.Kills.Client do
   end
 
   @impl true
+  def handle_info(:connect, %{connecting: true} = state) do
+    {:noreply, state}
+  end
+
+  def handle_info(:connect, %{connected: true} = state) do
+    {:noreply, state}
+  end
+
   def handle_info(:connect, state) do
+    Logger.info("[Client] Initiating connection attempt (retry count: #{state.retry_count})")
     state = cancel_retry(state)
     new_state = attempt_connection(%{state | connecting: true})
     {:noreply, new_state}
   end
 
+  def handle_info(:retry_connection, %{connecting: true} = state) do
+    {:noreply, %{state | retry_timer_ref: nil}}
+  end
+
+  def handle_info(:retry_connection, %{connected: true} = state) do
+    {:noreply, %{state | retry_timer_ref: nil}}
+  end
+
   def handle_info(:retry_connection, state) do
-    Logger.info("[Client] Retrying connection (attempt #{state.retry_count + 1}/#{@max_retries})")
-    state = %{state | retry_timer_ref: nil}
+    state = %{state | retry_timer_ref: nil, connecting: true}
     new_state = attempt_connection(state)
     {:noreply, new_state}
   end
 
   def handle_info(:refresh_subscriptions, %{connected: true} = state) do
-    Logger.info("[Client] Refreshing subscriptions after connection")
-
     case MapIntegration.get_tracked_system_ids() do
       {:ok, system_list} ->
         if system_list != [] do
@@ -130,7 +158,9 @@ defmodule WandererApp.Kills.Client do
   end
 
   def handle_info({:connected, socket_pid}, state) do
-    Logger.info("[Client] WebSocket connected")
+    Logger.info("[Client] WebSocket connected, socket_pid: #{inspect(socket_pid)}")
+    # Monitor the socket process so we know if it dies
+    Process.monitor(socket_pid)
 
     new_state =
       %{
@@ -138,38 +168,109 @@ defmodule WandererApp.Kills.Client do
         | connected: true,
           connecting: false,
           socket_pid: socket_pid,
-          retry_count: 0,
+          retry_count: 0,  # Reset retry count only on successful connection
           last_error: nil
       }
       |> cancel_retry()
+      |> cancel_connection_timeout()
 
     {:noreply, new_state}
   end
 
-  def handle_info({:disconnected, reason}, state) do
-    Logger.warning("[Client] WebSocket disconnected: #{inspect(reason)}")
+  # Guard against duplicate disconnection events
+  def handle_info({:disconnected, reason}, %{connected: false, connecting: false} = state) do
+    {:noreply, state}
+  end
 
-    state = %{state | connected: false, connecting: false, socket_pid: nil, last_error: reason}
+  def handle_info({:disconnected, reason}, state) do
+    Logger.warning("[Client] WebSocket disconnected: #{inspect(reason)} (was connected: #{state.connected}, was connecting: #{state.connecting})")
+
+    # Cancel connection timeout if pending
+    state = cancel_connection_timeout(state)
+
+    state =
+      %{state |
+        connected: false,
+        connecting: false,
+        socket_pid: nil,
+        last_error: reason
+      }
 
     if should_retry?(state) do
       {:noreply, schedule_retry(state)}
     else
-      Logger.error("[Client] Max retry attempts reached. Giving up.")
+      Logger.error("[Client] Max retry attempts (#{@max_retries}) reached. Will not retry automatically.")
       {:noreply, state}
     end
   end
 
   def handle_info(:health_check, state) do
-    case check_health(state) do
+    health_status = check_health(state)
+    new_state = case health_status do
       :healthy ->
-        Logger.debug("[Client] Connection healthy")
+        state
 
       :needs_reconnect ->
-        Logger.warning("[Client] Connection unhealthy, triggering reconnect")
-        send(self(), :connect)
+        Logger.warning("[Client] Connection unhealthy, triggering reconnect (retry count: #{state.retry_count})")
+        # Don't reset retry count during health check failures
+        if state.connected or state.connecting do
+          send(self(), {:disconnected, :health_check_failed})
+          %{state | connected: false, connecting: false, socket_pid: nil}
+        else
+          # Already disconnected, just maintain state
+          state
+        end
     end
 
     schedule_health_check()
+    {:noreply, new_state}
+  end
+
+  # Handle process DOWN messages for socket monitoring
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %{socket_pid: pid} = state) do
+    Logger.error("[Client] Socket process died: #{inspect(reason)}")
+    send(self(), {:disconnected, {:socket_died, reason}})
+    {:noreply, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+    # Ignore DOWN messages for other processes
+    {:noreply, state}
+  end
+
+  def handle_info({:connection_timeout, socket_pid}, %{socket_pid: socket_pid} = state) do
+    Logger.error("[Client] Connection timeout - socket process failed to connect within 10s (retry #{state.retry_count}/#{@max_retries})")
+
+    # Kill the socket process if it's still alive
+    if socket_alive?(socket_pid) do
+      try do
+        GenServer.stop(socket_pid, :normal, 5000)
+      catch
+        :exit, _ -> :ok
+      end
+    end
+
+    # Clear connection timeout ref
+    state = %{state | connection_timeout_ref: nil}
+
+    # Treat this as a disconnection
+    send(self(), {:disconnected, :connection_timeout})
+    {:noreply, state}
+  end
+
+  def handle_info({:connection_timeout, _old_pid}, state) do
+    {:noreply, state}
+  end
+
+  # Handle process DOWN messages for socket monitoring
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %{socket_pid: pid} = state) do
+    Logger.error("[Client] Socket process died: #{inspect(reason)}")
+    send(self(), {:disconnected, {:socket_died, reason}})
+    {:noreply, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+    # Ignore DOWN messages for other processes
     {:noreply, state}
   end
 
@@ -179,6 +280,18 @@ defmodule WandererApp.Kills.Client do
   def handle_cast({:subscribe_systems, system_ids}, state) do
     {updated_systems, to_subscribe} =
       Manager.subscribe_systems(state.subscribed_systems, system_ids)
+
+    # Log subscription details
+    if length(to_subscribe) > 0 do
+      # Get map information for the systems
+      map_info = get_system_map_info(to_subscribe)
+
+      Logger.debug(fn ->
+        "[Client] Subscribing to #{length(to_subscribe)} new systems. " <>
+        "Total subscribed: #{MapSet.size(updated_systems)}. " <>
+        "Map breakdown: #{inspect(map_info)}" end
+      )
+    end
 
     if length(to_subscribe) > 0 and state.socket_pid do
       Manager.sync_with_server(state.socket_pid, to_subscribe, [])
@@ -190,7 +303,6 @@ defmodule WandererApp.Kills.Client do
   def handle_cast({:unsubscribe_systems, system_ids}, state) do
     {updated_systems, to_unsubscribe} =
       Manager.unsubscribe_systems(state.subscribed_systems, system_ids)
-
     if length(to_unsubscribe) > 0 and state.socket_pid do
       Manager.sync_with_server(state.socket_pid, [], to_unsubscribe)
     end
@@ -216,17 +328,18 @@ defmodule WandererApp.Kills.Client do
   end
 
   def handle_call(:reconnect, _from, state) do
-    Logger.info("[Client] Manual reconnection requested")
-
     state = cancel_retry(state)
-    disconnect_socket(state.socket_pid)
+
+    if state.socket_pid do
+      disconnect_socket(state.socket_pid)
+    end
 
     new_state = %{
       state
       | connected: false,
         connecting: false,
         socket_pid: nil,
-        retry_count: 0,
+        retry_count: 0,  # Manual reconnect resets retry count
         last_error: nil
     }
 
@@ -239,7 +352,8 @@ defmodule WandererApp.Kills.Client do
   defp attempt_connection(state) do
     case connect_to_server() do
       {:ok, socket_pid} ->
-        %{state | socket_pid: socket_pid, connecting: true}
+        timeout_ref = Process.send_after(self(), {:connection_timeout, socket_pid}, 10_000)
+        %{state | socket_pid: socket_pid, connecting: true, connection_timeout_ref: timeout_ref}
 
       {:error, reason} ->
         Logger.error("[Client] Connection failed: #{inspect(reason)}")
@@ -249,14 +363,10 @@ defmodule WandererApp.Kills.Client do
 
   defp connect_to_server do
     url = Config.server_url()
-    Logger.info("[Client] Connecting to: #{url}")
-
-    # Get systems for initial subscription
     systems =
       case MapIntegration.get_tracked_system_ids() do
         {:ok, system_list} ->
           system_list
-
         {:error, reason} ->
           Logger.warning(
             "[Client] Failed to get tracked system IDs for initial subscription: #{inspect(reason)}, will retry after connection"
@@ -270,16 +380,34 @@ defmodule WandererApp.Kills.Client do
     handler_state = %{
       server_url: url,
       parent: self(),
-      subscribed_systems: systems
+      subscribed_systems: systems,
+      disconnected: false
     }
+
+    # GenSocketClient expects transport_opts to be wrapped in a specific format
+    opts = [
+      transport_opts: [
+        timeout: 10_000,  # 10 second connection timeout
+        tcp_opts: [
+          connect_timeout: 10_000,  # TCP connection timeout
+          send_timeout: 5_000,
+          recv_timeout: 5_000
+        ]
+      ]
+    ]
 
     case GenSocketClient.start_link(
            __MODULE__.Handler,
            Phoenix.Channels.GenSocketClient.Transport.WebSocketClient,
-           handler_state
+           handler_state,
+           opts
          ) do
-      {:ok, socket_pid} -> {:ok, socket_pid}
-      error -> error
+      {:ok, socket_pid} ->
+        {:ok, socket_pid}
+
+      error ->
+        Logger.error("[Client] Failed to start WebSocket client: #{inspect(error)}")
+        error
     end
   end
 
@@ -287,11 +415,15 @@ defmodule WandererApp.Kills.Client do
   defp should_retry?(_), do: true
 
   defp schedule_retry(state) do
+    # Cancel any existing retry timer first
+    state = cancel_retry(state)
+
+    # Increment retry count first
+    new_retry_count = state.retry_count + 1
     delay = Enum.at(@retry_delays, min(state.retry_count, length(@retry_delays) - 1))
-    Logger.info("[Client] Scheduling retry in #{delay}ms")
 
     timer_ref = Process.send_after(self(), :retry_connection, delay)
-    %{state | retry_timer_ref: timer_ref, retry_count: state.retry_count + 1}
+    %{state | retry_timer_ref: timer_ref, retry_count: new_retry_count}
   end
 
   defp cancel_retry(%{retry_timer_ref: nil} = state), do: state
@@ -301,11 +433,41 @@ defmodule WandererApp.Kills.Client do
     %{state | retry_timer_ref: nil}
   end
 
-  defp check_health(%{connected: false}), do: :needs_reconnect
-  defp check_health(%{socket_pid: nil}), do: :needs_reconnect
+  defp cancel_connection_timeout(%{connection_timeout_ref: nil} = state), do: state
 
-  defp check_health(%{socket_pid: pid}) do
-    if socket_alive?(pid), do: :healthy, else: :needs_reconnect
+  defp cancel_connection_timeout(%{connection_timeout_ref: ref} = state) do
+    Process.cancel_timer(ref)
+    %{state | connection_timeout_ref: nil}
+  end
+
+  defp check_health(%{connecting: true} = _state) do
+    :healthy  # Don't interfere with ongoing connection attempts
+  end
+
+  defp check_health(%{connected: false, retry_timer_ref: ref} = _state) when not is_nil(ref) do
+    :healthy  # Don't interfere with scheduled retries
+  end
+
+  defp check_health(%{connected: false} = state) do
+    if should_retry?(state) do
+      :needs_reconnect
+    else
+      :healthy  # Max retries reached, don't trigger more
+    end
+  end
+
+  defp check_health(%{socket_pid: nil} = state) do
+    Logger.debug("[Client] Health check: no socket pid")
+    :needs_reconnect
+  end
+
+  defp check_health(%{socket_pid: pid} = state) do
+    if socket_alive?(pid) do
+      :healthy
+    else
+      Logger.warning("[Client] Health check: Socket process #{inspect(pid)} is dead")
+      :needs_reconnect
+    end
   end
 
   defp socket_alive?(nil), do: false
@@ -323,6 +485,23 @@ defmodule WandererApp.Kills.Client do
     Process.send_after(self(), :health_check, @health_check_interval)
   end
 
+  defp handle_connection_lost(%{connected: false} = _state) do
+    Logger.debug("[Client] Connection already lost, skipping cleanup")
+  end
+
+  defp handle_connection_lost(state) do
+    Logger.warning("[Client] Connection lost, cleaning up and reconnecting")
+
+    # Clean up existing socket
+    if state.socket_pid do
+      disconnect_socket(state.socket_pid)
+    end
+
+    # Reset state and trigger reconnection
+    send(self(), {:disconnected, :connection_lost})
+  end
+
+
   # Handler module for WebSocket events
   defmodule Handler do
     @moduledoc """
@@ -339,40 +518,54 @@ defmodule WandererApp.Kills.Client do
     @impl true
     def init(state) do
       ws_url = "#{state.server_url}/socket/websocket"
-      {:connect, ws_url, [{"vsn", "2.0.0"}], state}
+      # Configure with heartbeat interval (Phoenix default is 30s)
+      params = [
+        {"vsn", "2.0.0"},
+        {"heartbeat", "30000"}  # 30 second heartbeat
+      ]
+      {:connect, ws_url, params, state}
     end
 
     @impl true
     def handle_connected(transport, state) do
-      Logger.debug("[Client] Connected, joining channel...")
+      join_params = %{
+        systems: state.subscribed_systems,
+        client_identifier: "wanderer_app"
+      }
 
-      case GenSocketClient.join(transport, "killmails:lobby", %{
-             systems: state.subscribed_systems,
-             client_identifier: "wanderer_app"
-           }) do
-        {:ok, _response} ->
-          Logger.debug("[Client] Successfully joined killmails:lobby")
+      case GenSocketClient.join(transport, "killmails:lobby", join_params) do
+        {:ok, response} ->
           send(state.parent, {:connected, self()})
-          {:ok, state}
+          # Reset disconnected flag on successful connection
+          {:ok, %{state | disconnected: false}}
 
         {:error, reason} ->
-          Logger.error("[Client] Failed to join channel: #{inspect(reason)}")
+          Logger.error("[Handler] Failed to join channel: #{inspect(reason)}")
           send(state.parent, {:disconnected, {:join_error, reason}})
-          {:ok, state}
+          {:ok, %{state | disconnected: true}}
       end
     end
 
     @impl true
     def handle_disconnected(reason, state) do
-      send(state.parent, {:disconnected, reason})
-      {:ok, state}
+      if state.disconnected do
+        {:ok, state}
+      else
+        Logger.warning("[Handler] Disconnected from server: #{inspect(reason)}")
+        send(state.parent, {:disconnected, reason})
+        {:ok, %{state | disconnected: true}}
+      end
     end
 
     @impl true
-    def handle_channel_closed(topic, _payload, _transport, state) do
-      Logger.warning("[Client] Channel #{topic} closed")
-      send(state.parent, {:disconnected, {:channel_closed, topic}})
-      {:ok, state}
+    def handle_channel_closed(topic, payload, _transport, state) do
+      if state.disconnected do
+        {:ok, state}
+      else
+        Logger.warning("[Handler] Channel #{topic} closed with payload: #{inspect(payload)}")
+        send(state.parent, {:disconnected, {:channel_closed, topic}})
+        {:ok, %{state | disconnected: true}}
+      end
     end
 
     @impl true
@@ -393,6 +586,7 @@ defmodule WandererApp.Kills.Client do
           )
 
         _ ->
+          Logger.debug("[Handler] Unhandled message: #{topic} - #{event}")
           :ok
       end
 
@@ -404,13 +598,25 @@ defmodule WandererApp.Kills.Client do
 
     @impl true
     def handle_info({:subscribe_systems, system_ids}, transport, state) do
-      push_to_channel(transport, "subscribe_systems", %{"systems" => system_ids})
+      case push_to_channel(transport, "subscribe_systems", %{"systems" => system_ids}) do
+        :ok ->
+          Logger.debug(fn -> "[Handler] Successfully pushed subscribe_systems event" end)
+        error ->
+          Logger.error("[Handler] Failed to push subscribe_systems: #{inspect(error)}")
+      end
+
       {:ok, state}
     end
 
     @impl true
     def handle_info({:unsubscribe_systems, system_ids}, transport, state) do
-      push_to_channel(transport, "unsubscribe_systems", %{"systems" => system_ids})
+      case push_to_channel(transport, "unsubscribe_systems", %{"systems" => system_ids}) do
+        :ok ->
+          Logger.debug(fn -> "[Handler] Successfully pushed unsubscribe_systems event" end)
+        error ->
+          Logger.error("[Handler] Failed to push unsubscribe_systems: #{inspect(error)}")
+      end
+
       {:ok, state}
     end
 
@@ -428,19 +634,26 @@ defmodule WandererApp.Kills.Client do
 
     @impl true
     def handle_join_error(topic, payload, _transport, state) do
-      send(state.parent, {:disconnected, {:join_error, {topic, payload}}})
-      {:ok, state}
-    end
-
-    defp push_to_channel(transport, event, payload) do
-      case GenSocketClient.push(transport, "killmails:lobby", event, payload) do
-        {:ok, _ref} -> :ok
-        error -> error
+      if state.disconnected do
+        {:ok, state}
+      else
+        Logger.error("[Handler] Join error on #{topic}: #{inspect(payload)}")
+        send(state.parent, {:disconnected, {:join_error, {topic, payload}}})
+        {:ok, %{state | disconnected: true}}
       end
     end
 
-    defp push_to_channel(_socket, _event, _payload) do
-      {:error, :no_socket}
+    defp push_to_channel(transport, event, payload) do
+      Logger.debug(fn -> "[Handler] Pushing event '#{event}' with payload: #{inspect(payload)}" end)
+
+      case GenSocketClient.push(transport, "killmails:lobby", event, payload) do
+        {:ok, ref} ->
+          Logger.debug(fn -> "[Handler] Push successful, ref: #{inspect(ref)}" end)
+          :ok
+        error ->
+          Logger.error("[Handler] Push failed: #{inspect(error)}")
+          error
+      end
     end
   end
 
@@ -479,4 +692,21 @@ defmodule WandererApp.Kills.Client do
   end
 
   defp validate_system_ids(_), do: {:error, :invalid_system_ids}
+
+  # Helper function to get map information for systems
+  defp get_system_map_info(system_ids) do
+    # Use the SystemMapIndex to get map associations
+    system_ids
+    |> Enum.reduce(%{}, fn system_id, acc ->
+      maps = WandererApp.Kills.Subscription.SystemMapIndex.get_maps_for_system(system_id)
+      Enum.reduce(maps, acc, fn map_id, inner_acc ->
+        Map.update(inner_acc, map_id, 1, &(&1 + 1))
+      end)
+    end)
+    |> Enum.map_join(", ", fn {map_id, count} -> "#{map_id}: #{count} systems" end)
+    |> case do
+      "" -> "no map associations found"
+      info -> info
+    end
+  end
 end
