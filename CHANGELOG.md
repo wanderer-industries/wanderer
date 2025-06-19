@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.71.1](https://github.com/wanderer-industries/wanderer/compare/v1.71.0...v1.71.1) (2025-06-19)
+
+
+
+
+### Bug Fixes:
+
+* update system kills widget timing
+
 ## [v1.71.0](https://github.com/wanderer-industries/wanderer/compare/v1.70.7...v1.71.0) (2025-06-19)
 
 
