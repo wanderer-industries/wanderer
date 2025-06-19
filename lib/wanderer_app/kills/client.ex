@@ -177,10 +177,6 @@ defmodule WandererApp.Kills.Client do
 
   def handle_info({:disconnected, reason}, state) do
     Logger.warning("[Client] WebSocket disconnected: #{inspect(reason)} (was connected: #{state.connected}, was connecting: #{state.connecting})")
-    
-    # Log additional context
-    Logger.info("[Client] Disconnection context: retry_count=#{state.retry_count}, subscribed_systems=#{MapSet.size(state.subscribed_systems)}")
-
     # Cancel connection timeout if pending
     state = cancel_connection_timeout(state)
 
@@ -360,9 +356,6 @@ defmodule WandererApp.Kills.Client do
   defp connect_to_server do
     url = Config.server_url()
     websocket_url = "#{url}/socket/websocket"
-    
-    Logger.info("[Client] Attempting connection to: #{websocket_url}")
-    
     systems =
       case MapIntegration.get_tracked_system_ids() do
         {:ok, system_list} ->
@@ -424,9 +417,8 @@ defmodule WandererApp.Kills.Client do
     
     # Add jitter to prevent thundering herd (0-2000ms)
     jitter = :rand.uniform(2000)
-    delay = base_delay + jitter
-    
-    Logger.info("[Client] Scheduling retry #{new_retry_count}/#{@max_retries} in #{delay}ms (base: #{base_delay}ms + jitter: #{jitter}ms)")
+    delay = Enum.at(@retry_delays, min(state.retry_count, length(@retry_delays) - 1))
+
 
     timer_ref = Process.send_after(self(), :retry_connection, delay)
     %{state | retry_timer_ref: timer_ref, retry_count: new_retry_count}
@@ -558,7 +550,6 @@ defmodule WandererApp.Kills.Client do
         {:ok, state}
       else
         Logger.warning("[Handler] Disconnected from server: #{inspect(reason)}")
-        Logger.info("[Handler] Connection URL: #{inspect(state.url)}, Transport PID: #{inspect(self())}")
         send(state.parent, {:disconnected, reason})
         {:ok, %{state | disconnected: true}}
       end
