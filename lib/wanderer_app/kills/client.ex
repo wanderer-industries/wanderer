@@ -79,14 +79,7 @@ defmodule WandererApp.Kills.Client do
     :ok
   end
 
-  @spec force_health_check() :: :ok
-  def force_health_check do
-    send(__MODULE__, :health_check)
-    :ok
-  end
-
   # Server callbacks
-
   @impl true
   def init(_opts) do
     if Config.enabled?() do

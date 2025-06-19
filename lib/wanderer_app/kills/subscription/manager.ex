@@ -2,9 +2,6 @@ defmodule WandererApp.Kills.Subscription.Manager do
   @moduledoc """
   Manages system subscriptions for kills WebSocket service.
   """
-
-  require Logger
-
   require Logger
 
   @type subscriptions :: MapSet.t(integer())
