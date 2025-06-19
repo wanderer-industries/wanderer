@@ -22,6 +22,7 @@ export function useKillsCounter({ realSystemId }: UseKillsCounterProps) {
     systemId: realSystemId,
     outCommand,
     showAllVisible: false,
+    sinceHours: 1,
   });
 
   const filteredKills = useMemo(() => {
