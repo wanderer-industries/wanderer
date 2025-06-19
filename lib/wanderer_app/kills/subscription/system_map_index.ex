@@ -95,7 +95,7 @@ defmodule WandererApp.Kills.Subscription.SystemMapIndex do
   defp fetch_all_map_systems do
     try do
       {:ok, maps} = WandererApp.Maps.get_available_maps()
-      
+
       # Build the index: system_id -> [map_ids]
       index =
         maps
