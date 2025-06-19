@@ -2,6 +2,23 @@
 
 <!-- changelog -->
 
+## [v1.71.0](https://github.com/wanderer-industries/wanderer/compare/v1.70.7...v1.71.0) (2025-06-19)
+
+
+
+
+### Features:
+
+* use external services for kill data
+
+### Bug Fixes:
+
+* remove duplicate kills connections
+
+* Fixed kills clinet init & map start/update logic
+
+* avoid duplicate subs, and remove subs on inactive maps
+
 ## [v1.70.7](https://github.com/wanderer-industries/wanderer/compare/v1.70.6...v1.70.7) (2025-06-18)
 
 
