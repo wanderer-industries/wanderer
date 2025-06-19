@@ -1,19 +1,17 @@
 defmodule WandererApp.Map.ZkbDataFetcher do
   @moduledoc """
-  Refreshes the map zKillboard data every 15 seconds.
+  Refreshes and broadcasts map kill data every 15 seconds.
+  Works with cache data populated by the WandererKills WebSocket service.
   """
   use GenServer
 
   require Logger
 
-  alias WandererApp.Zkb.KillsProvider.KillsCache
 
   @interval :timer.seconds(15)
   @store_map_kills_timeout :timer.hours(1)
+  @killmail_ttl_hours 24
   @logger Application.compile_env(:wanderer_app, :logger)
-
-  # This means 120 “ticks” of 15s each → ~30 minutes
-  @preload_cycle_ticks 120
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -22,53 +20,40 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   @impl true
   def init(_arg) do
     {:ok, _timer_ref} = :timer.send_interval(@interval, :fetch_data)
-    {:ok, %{iteration: 0}}
+    {:ok, %{}}
   end
 
   @impl true
-  def handle_info(:fetch_data, %{iteration: iteration} = state) do
-    zkill_preload_disabled = WandererApp.Env.zkill_preload_disabled?()
+  def handle_info(:fetch_data, state) do
+    kills_enabled = Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, true)
 
-    WandererApp.Map.RegistryHelper.list_all_maps()
-    |> Task.async_stream(
-      fn %{id: map_id, pid: _server_pid} ->
-        try do
-          if WandererApp.Map.Server.map_pid(map_id) do
-            update_map_kills(map_id)
+    if kills_enabled do
+      WandererApp.Map.RegistryHelper.list_all_maps()
+      |> Task.async_stream(
+        fn %{id: map_id, pid: _server_pid} ->
+          try do
+            if WandererApp.Map.Server.map_pid(map_id) do
+              # Always update kill counts
+              update_map_kills(map_id)
 
-            {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
-
-            can_preload_zkill = not zkill_preload_disabled && is_subscription_active
-
-            if can_preload_zkill do
-              update_detailed_map_kills(map_id)
+              # Update detailed kills for maps with active subscriptions
+              {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+              if is_subscription_active do
+                update_detailed_map_kills(map_id)
+              end
             end
+          rescue
+            e ->
+              @logger.error(Exception.message(e))
           end
-        rescue
-          e ->
-            @logger.error(Exception.message(e))
-        end
-      end,
-      max_concurrency: 10,
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn _ -> :ok end)
-
-    new_iteration = iteration + 1
-
-    cond do
-      zkill_preload_disabled ->
-        # If preload is disabled, just update iteration
-        {:noreply, %{state | iteration: new_iteration}}
-
-      new_iteration >= @preload_cycle_ticks ->
-        Logger.info("[ZkbDataFetcher] Triggering a fresh kill preload pass ...")
-        WandererApp.Zkb.KillsPreloader.run_preload_now()
-        {:noreply, %{state | iteration: 0}}
-
-      true ->
-        {:noreply, %{state | iteration: new_iteration}}
+        end,
+        max_concurrency: 10,
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn _ -> :ok end)
     end
+
+    {:noreply, state}
   end
 
   # Catch any async task results we aren't explicitly pattern-matching
@@ -84,7 +69,8 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       |> WandererApp.Map.get_map!()
       |> Map.get(:systems, %{})
       |> Enum.into(%{}, fn {solar_system_id, _system} ->
-        kills_count = WandererApp.Cache.get("zkb_kills_#{solar_system_id}") || 0
+        # Read kill counts from cache (populated by WebSocket)
+        kills_count = WandererApp.Cache.get("zkb:kills:#{solar_system_id}") || 0
         {solar_system_id, kills_count}
       end)
       |> maybe_broadcast_map_kills(map_id)
@@ -98,16 +84,32 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         |> WandererApp.Map.get_map!()
         |> Map.get(:systems, %{})
 
-      # Old cache data
-      old_ids_map = WandererApp.Cache.get("map_#{map_id}:zkb_ids") || %{}
-      old_details_map = WandererApp.Cache.get("map_#{map_id}:zkb_detailed_kills") || %{}
+      # Get existing cached data - ensure it's a map
+      cache_key_ids = "map:#{map_id}:zkb:ids"
+      cache_key_details = "map:#{map_id}:zkb:detailed_kills"
 
+      old_ids_map = case WandererApp.Cache.get(cache_key_ids) do
+        map when is_map(map) -> map
+        _ -> %{}
+      end
+
+      old_details_map = case WandererApp.Cache.get(cache_key_details) do
+        map when is_map(map) -> map
+        _ ->
+          # Initialize with empty map and store it
+          WandererApp.Cache.insert(cache_key_details, %{}, ttl: :timer.hours(@killmail_ttl_hours))
+          %{}
+      end
+
+      # Build current killmail ID map from cache
       new_ids_map =
         Enum.into(systems, %{}, fn {solar_system_id, _} ->
-          ids = KillsCache.get_system_killmail_ids(solar_system_id) |> MapSet.new()
-          {solar_system_id, ids}
+          # Get killmail IDs from cache (populated by WebSocket)
+          ids = WandererApp.Cache.get("zkb:kills:list:#{solar_system_id}") || []
+          {solar_system_id, MapSet.new(ids)}
         end)
 
+      # Find systems with changed killmail lists
       changed_systems =
         new_ids_map
         |> Enum.filter(fn {system_id, new_ids_set} ->
@@ -121,6 +123,16 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}"
         end)
 
+        # Don't overwrite existing cache data when there are no changes
+        # Only initialize if cache doesn't exist
+        if old_details_map == %{} do
+          # First time initialization - create empty structure
+          empty_map = systems
+                      |> Enum.into(%{}, fn {system_id, _} -> {system_id, []} end)
+
+          WandererApp.Cache.insert(cache_key_details, empty_map, ttl: :timer.hours(@killmail_ttl_hours))
+        end
+
         :ok
       else
         # Build new details for each changed system
@@ -131,30 +143,34 @@ defmodule WandererApp.Map.ZkbDataFetcher do
               |> Map.fetch!(system_id)
               |> MapSet.to_list()
 
+            # Get killmail details from cache (populated by WebSocket)
             kill_details =
               kill_ids
-              |> Enum.map(&KillsCache.get_killmail/1)
+              |> Enum.map(&WandererApp.Cache.get("zkb:killmail:#{&1}"))
               |> Enum.reject(&is_nil/1)
 
+            # Ensure system_id is an integer key
             Map.put(acc, system_id, kill_details)
           end)
 
+        # Update the ID map cache
         updated_ids_map =
           Enum.reduce(changed_systems, old_ids_map, fn system_id, acc ->
             new_ids_list = new_ids_map[system_id] |> MapSet.to_list()
             Map.put(acc, system_id, new_ids_list)
           end)
 
-        WandererApp.Cache.put("map_#{map_id}:zkb_ids", updated_ids_map,
-          ttl: :timer.hours(KillsCache.killmail_ttl())
+        # Store updated caches
+        WandererApp.Cache.insert(cache_key_ids, updated_ids_map,
+          ttl: :timer.hours(@killmail_ttl_hours)
         )
 
-        WandererApp.Cache.put("map_#{map_id}:zkb_detailed_kills", updated_details_map,
-          ttl: :timer.hours(KillsCache.killmail_ttl())
+        WandererApp.Cache.insert(cache_key_details, updated_details_map,
+          ttl: :timer.hours(@killmail_ttl_hours)
         )
 
+        # Broadcast changes
         changed_data = Map.take(updated_details_map, changed_systems)
-
         WandererApp.Map.Server.Impl.broadcast!(map_id, :detailed_kills_updated, changed_data)
 
         :ok
@@ -163,7 +179,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   end
 
   defp maybe_broadcast_map_kills(new_kills_map, map_id) do
-    {:ok, old_kills_map} = WandererApp.Cache.lookup("map_#{map_id}:zkb_kills", %{})
+    {:ok, old_kills_map} = WandererApp.Cache.lookup("map:#{map_id}:zkb:kills", %{})
 
     # Use the union of keys from both the new and old maps
     all_system_ids = Map.keys(Map.merge(new_kills_map, old_kills_map))
@@ -181,7 +197,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       :ok
     else
       :ok =
-        WandererApp.Cache.put("map_#{map_id}:zkb_kills", new_kills_map,
+        WandererApp.Cache.insert("map:#{map_id}:zkb:kills", new_kills_map,
           ttl: @store_map_kills_timeout
         )
 
