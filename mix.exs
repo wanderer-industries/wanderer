@@ -38,8 +38,23 @@ defmodule WandererApp.MixProject do
     ]
   end
 
+  # Specifies CLI configuration
+  def cli do
+    [
+      preferred_envs: [
+        "test-api": :test,
+        "test.unit": :test,
+        "test.ash": :test,
+        "test.api": :test,
+        "test.e2e": :test,
+        "test.property": :test,
+        "openapi.export": :test
+      ]
+    ]
+  end
+
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support", "test/api/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -54,7 +69,7 @@ defmodule WandererApp.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_check, "~> 0.14.0", only: [:dev], runtime: false},
-      {:open_api_spex, github: "mbuhot/open_api_spex", branch: "master"},
+      {:open_api_spex, "~> 3.21"},
       {:ex_rated, "~> 2.0"},
       {:retry, "~> 0.18.0"},
       {:phoenix, "~> 1.7.14"},
@@ -90,6 +105,7 @@ defmodule WandererApp.MixProject do
       {:ash_cloak, "~> 0.1.2"},
       {:ash_phoenix, "~> 2.1"},
       {:ash_postgres, "~> 2.4"},
+      {:ash_json_api, "~> 1.4"},
       {:exsync, "~> 0.4", only: :dev},
       {:nimble_csv, "~> 1.2.0"},
       {:cachex, "~> 3.6"},
@@ -115,13 +131,17 @@ defmodule WandererApp.MixProject do
       {:quantum, "~> 3.0"},
       {:pathex, "~> 2.5"},
       {:mox, "~> 1.1", only: [:test, :integration]},
+      {:ex_machina, "~> 2.7.0", only: :test},
       {:git_ops, "~> 2.6.1"},
       {:version_tasks, "~> 0.12.0"},
       {:error_tracker, "~> 0.2"},
       {:ddrt, "~> 0.2.1"},
       {:live_view_events, "~> 0.1.0"},
       {:ash_pagify, "~> 1.4.1"},
-      {:timex, "~> 3.0"}
+      {:timex, "~> 3.0"},
+      {:picosat_elixir, "~> 0.2"},
+      {:guardian, "~> 2.3"},
+      {:stream_data, "~> 1.1"}
     ]
   end
 
@@ -131,6 +151,12 @@ defmodule WandererApp.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "test.unit": ["ecto.create --quiet", "ecto.migrate --quiet", "test --only unit"],
+      "test.ash": ["ecto.create --quiet", "ecto.migrate --quiet", "test --only ash"],
+      "test.api": ["ecto.create --quiet", "ecto.migrate --quiet", "test --only api"],
+      "test.e2e": ["ecto.create --quiet", "ecto.migrate --quiet", "test --only e2e"],
+      "test.property": ["ecto.create --quiet", "ecto.migrate --quiet", "test --only property"],
+      "test-api": ["ecto.create --quiet", "ecto.migrate --quiet", "test test/api/"],
       "assets.setup": [
         "cmd yarn install --cwd assets"
       ],

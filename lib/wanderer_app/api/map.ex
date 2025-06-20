@@ -3,11 +3,26 @@ defmodule WandererApp.Api.Map do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
+  end
+
+  json_api do
+    type "map"
+
+    routes do
+      base("/maps")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
   end
 
   code_interface do

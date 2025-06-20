@@ -50,7 +50,7 @@ jobs:
           elixir-version: ${{matrix.elixir}}
         # nix build would also work here because `todos` is the default package
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: 😅 Cache deps
@@ -79,13 +79,38 @@ jobs:
       # Step: Download project dependencies. If unchanged, uses
       # the cached version.
       - name: 🌐 Install dependencies
-        run: mix deps.get --only "prod"
+        run: mix deps.get
 
       # Step: Compile the project treating any warnings as errors.
       # Customize this step if a different behavior is desired.
       - name: 🛠 Compiles without warnings
         if: steps.cache-build.outputs.cache-hit != 'true'
         run: mix compile
+
+      # Export OpenAPI specification for documentation and versioning
+      - name: 📚 Export OpenAPI Specification
+        env:
+          MIX_ENV: test
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+        run: |
+          # Ensure test dependencies are available and compile in test environment
+          mix deps.get
+          mix deps.compile
+          mix compile --force
+          # List available tasks to debug
+          echo "Available mix tasks:"
+          mix help | grep openapi || echo "No openapi tasks found"
+          # Try the mix task directly first
+          mix openapi.export --output openapi-v1.json || \
+          # If that fails, try with application started
+          mix run -e "Mix.Task.run(\"openapi.export\", [\"--output\", \"openapi-v1.json\"])" || \
+          # If that fails, compile and run it manually
+          mix run --no-start -e "
+            Mix.Task.rerun(\"compile\", [\"--force\"])
+            Mix.Task.rerun(\"openapi.export\", [\"--output\", \"openapi-v1.json\"])
+          "
+          echo "OpenAPI spec exported to openapi-v1.json"
 
       - name: Generate Changelog & Update Tag Version
         id: generate-changelog
@@ -95,6 +120,14 @@ jobs:
           mix git_ops.release --force-patch --yes
           git push --follow-tags
           echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      # Upload OpenAPI spec as artifact
+      - name: Upload OpenAPI Specification
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: openapi-v1.json
+          retention-days: 90
 
   docker:
     name: 🛠 Build Docker Images
@@ -124,7 +157,7 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.build.outputs.commit_hash }}
           fetch-depth: 0
@@ -257,7 +290,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     steps:
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

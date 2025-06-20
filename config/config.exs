@@ -116,11 +116,18 @@ config :git_ops,
     # a section in the changelog with the header "Important Changes"
     important: [
       header: "Important Changes"
+    ],
+    # API-specific commit types for better change tracking
+    api: [
+      header: "API Changes"
+    ],
+    api!: [
+      header: "Breaking API Changes"
     ]
   ],
   tags: [
     # Only add commits to the changelog that has the "backend" tag
-    allowed: ["feat", "fix", "docs"],
+    allowed: ["feat", "fix", "docs", "api", "api!"],
     # Filter out or not commits that don't contain tags
     allow_untagged?: true
   ],
@@ -131,6 +138,13 @@ config :git_ops,
   # Pass in `true` to use `"README.md"` or a string to customize
   manage_readme_version: "README.md",
   version_tag_prefix: "v"
+
+# Guardian configuration moved to runtime.exs
+
+# Configure MIME types for JSON:API support
+config :mime, :types, %{
+  "application/vnd.api+json" => ["json-api"]
+}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

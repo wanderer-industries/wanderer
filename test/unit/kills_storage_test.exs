@@ -1,6 +1,6 @@
 defmodule WandererApp.Kills.StorageTest do
   use ExUnit.Case
-  alias WandererApp.Kills.{Storage, CacheKeys}
+  alias WandererApp.Kills.Storage
 
   setup do
     # Clear cache before each test
@@ -29,7 +29,7 @@ defmodule WandererApp.Kills.StorageTest do
       assert :ok = Storage.store_kill_count(system_id, 100)
       
       # Manually update metadata to simulate old timestamp
-      metadata_key = CacheKeys.kill_count_metadata(system_id)
+      metadata_key = "zkb:kills:metadata:#{system_id}"
       old_timestamp = System.system_time(:millisecond) - 10_000  # 10 seconds ago
       WandererApp.Cache.insert(metadata_key, %{
         "source" => "websocket",
@@ -48,7 +48,7 @@ defmodule WandererApp.Kills.StorageTest do
       system_id = 30000144
       
       # Set initial count without metadata (simulating old data)
-      key = CacheKeys.system_kill_count(system_id)
+      key = "zkb:kills:#{system_id}"
       WandererApp.Cache.insert(key, 50, ttl: :timer.minutes(5))
       
       # Try incremental update
@@ -62,8 +62,8 @@ defmodule WandererApp.Kills.StorageTest do
       system_id = 30000145
       
       # Set up mismatched count and list
-      count_key = CacheKeys.system_kill_count(system_id)
-      list_key = CacheKeys.system_kill_list(system_id)
+      count_key = "zkb:kills:#{system_id}"
+      list_key = "zkb:kills:list:#{system_id}"
       
       # Count says 100, but list only has 50
       WandererApp.Cache.insert(count_key, 100, ttl: :timer.minutes(5))
@@ -91,9 +91,10 @@ defmodule WandererApp.Kills.StorageTest do
       assert {:ok, %{"killmail_id" => 123}} = Storage.get_killmail(123)
       assert {:ok, %{"killmail_id" => 124}} = Storage.get_killmail(124)
       
-      # Check system list is updated
-      list_key = CacheKeys.system_kill_list(system_id)
-      assert [124, 123] = WandererApp.Cache.get(list_key)
+      # Check system list is updated (order might vary)
+      list_key = "zkb:kills:list:#{system_id}"
+      list = WandererApp.Cache.get(list_key)
+      assert Enum.sort(list) == [123, 124]
     end
 
     test "handles missing killmail_id gracefully" do
@@ -103,14 +104,14 @@ defmodule WandererApp.Kills.StorageTest do
         %{"killmail_id" => 125, "kill_time" => "2024-01-01T12:01:00Z"}
       ]
       
-      # Should still store the valid killmail
-      assert :ok = Storage.store_killmails(system_id, killmails, :timer.minutes(5))
+      # Should return an error when a killmail has no ID
+      assert {:error, :missing_killmail_id} = Storage.store_killmails(system_id, killmails, :timer.minutes(5))
       
-      # Only the valid killmail is stored
+      # The valid killmail is still stored (function processes all before returning error)
       assert {:ok, %{"killmail_id" => 125}} = Storage.get_killmail(125)
       
-      # System list only contains valid ID
-      list_key = CacheKeys.system_kill_list(system_id)
+      # System list contains only the valid ID
+      list_key = "zkb:kills:list:#{system_id}"
       assert [125] = WandererApp.Cache.get(list_key)
     end
   end

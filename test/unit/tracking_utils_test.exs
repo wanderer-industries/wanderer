@@ -10,15 +10,19 @@ ExUnit.start()
 
 defmodule WandererApp.Character.TrackingConsistencyTest do
   use ExUnit.Case
+
+  @moduletag :unit
+
   require Logger
   import ExUnit.CaptureIO
 
   # This is a copy of the function from TrackingUtils
   def check_tracking_consistency(tracking_data) do
     # Find any characters that are followed but not tracked
-    inconsistent_characters = Enum.filter(tracking_data, fn data ->
-      data.followed && !data.tracked
-    end)
+    inconsistent_characters =
+      Enum.filter(tracking_data, fn data ->
+        data.followed && !data.tracked
+      end)
 
     # Log a warning for each inconsistent character
     Enum.each(inconsistent_characters, fn data ->
@@ -26,7 +30,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       # Use IO.puts instead of Logger to avoid dependencies
       eve_id = Map.get(character, :eve_id, "unknown")
       name = Map.get(character, :name, "unknown")
-      IO.puts("WARNING: Inconsistent state detected: Character is followed but not tracked. Character ID: #{eve_id}, Name: #{name}")
+
+      IO.puts(
+        "WARNING: Inconsistent state detected: Character is followed but not tracked. Character ID: #{eve_id}, Name: #{name}"
+      )
     end)
 
     # Return the original tracking data
@@ -45,9 +52,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        check_tracking_consistency(tracking_data)
-      end)
+      output =
+        capture_io(fn ->
+          check_tracking_consistency(tracking_data)
+        end)
 
       # Assert that the warning was logged
       assert output =~ "Inconsistent state detected: Character is followed but not tracked"
@@ -66,9 +74,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        check_tracking_consistency(tracking_data)
-      end)
+      output =
+        capture_io(fn ->
+          check_tracking_consistency(tracking_data)
+        end)
 
       # Assert that no warning was logged
       refute output =~ "Inconsistent state detected"
@@ -85,9 +94,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        check_tracking_consistency(tracking_data)
-      end)
+      output =
+        capture_io(fn ->
+          check_tracking_consistency(tracking_data)
+        end)
 
       # Assert that no warning was logged
       refute output =~ "Inconsistent state detected"
@@ -119,9 +129,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        check_tracking_consistency(tracking_data)
-      end)
+      output =
+        capture_io(fn ->
+          check_tracking_consistency(tracking_data)
+        end)
 
       # Assert that only the inconsistent character triggered a warning
       assert output =~ "Inconsistent state detected: Character is followed but not tracked"
@@ -154,11 +165,12 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       tracking_data = []
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        result = check_tracking_consistency(tracking_data)
-        # Assert that the returned data is the same as the input data
-        assert result == tracking_data
-      end)
+      output =
+        capture_io(fn ->
+          result = check_tracking_consistency(tracking_data)
+          # Assert that the returned data is the same as the input data
+          assert result == tracking_data
+        end)
 
       # Assert that no warning was logged
       refute output =~ "Inconsistent state detected"
@@ -185,9 +197,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        check_tracking_consistency(tracking_data)
-      end)
+      output =
+        capture_io(fn ->
+          check_tracking_consistency(tracking_data)
+        end)
 
       # Assert that warnings were logged for both inconsistent characters
       assert output =~ "Character ID: character-1"
@@ -201,23 +214,26 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       # Create test data with missing fields
       tracking_data = [
         %{
-          character: %{eve_id: "character-1"}, # Missing name
+          # Missing name
+          character: %{eve_id: "character-1"},
           tracked: false,
           followed: true
         },
         %{
-          character: %{name: "Character 2"}, # Missing eve_id
+          # Missing eve_id
+          character: %{name: "Character 2"},
           tracked: false,
           followed: true
         }
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        result = check_tracking_consistency(tracking_data)
-        # Assert that the returned data is the same as the input data
-        assert result == tracking_data
-      end)
+      output =
+        capture_io(fn ->
+          result = check_tracking_consistency(tracking_data)
+          # Assert that the returned data is the same as the input data
+          assert result == tracking_data
+        end)
 
       # Assert that warnings were logged with available information
       assert output =~ "Character ID: character-1"
@@ -242,11 +258,12 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Call the function and capture output
-      output = capture_io(fn ->
-        result = check_tracking_consistency(tracking_data)
-        # Assert that the returned data is the same as the input data
-        assert result == tracking_data
-      end)
+      output =
+        capture_io(fn ->
+          result = check_tracking_consistency(tracking_data)
+          # Assert that the returned data is the same as the input data
+          assert result == tracking_data
+        end)
 
       # Assert that a warning was logged for the first character (nil tracked is treated as false)
       assert output =~ "Character ID: character-1"
@@ -300,9 +317,10 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
       ]
 
       # Extract the filter logic from the function
-      inconsistent_characters = Enum.filter(tracking_data, fn data ->
-        data.followed && !data.tracked
-      end)
+      inconsistent_characters =
+        Enum.filter(tracking_data, fn data ->
+          data.followed && !data.tracked
+        end)
 
       # Assert that only the first character is identified as inconsistent
       assert length(inconsistent_characters) == 1
@@ -315,14 +333,16 @@ defmodule WandererApp.Character.TrackingConsistencyTest do
         %{
           character: %{eve_id: "char-1", name: "Character 1"},
           tracked: false,
-          followed: "true" # String instead of boolean - in Elixir, only false and nil are falsy
+          # String instead of boolean - in Elixir, only false and nil are falsy
+          followed: "true"
         }
       ]
 
       # Extract the filter logic from the function
-      inconsistent_characters = Enum.filter(tracking_data, fn data ->
-        data.followed && !data.tracked
-      end)
+      inconsistent_characters =
+        Enum.filter(tracking_data, fn data ->
+          data.followed && !data.tracked
+        end)
 
       # Assert that the character is identified as inconsistent
       # (since in Elixir, only false and nil are falsy, everything else is truthy)

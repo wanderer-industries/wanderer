@@ -128,8 +128,6 @@ defmodule WandererApp.Map.Server.Impl do
 
   def get_map(%{map: map} = _state), do: {:ok, map}
 
-  defdelegate get_characters(state), to: CharactersImpl
-
   defdelegate add_character(state, character, track_character), to: CharactersImpl
 
   def remove_character(%{map_id: map_id} = state, character_id) do

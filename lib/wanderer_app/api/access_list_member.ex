@@ -3,11 +3,32 @@ defmodule WandererApp.Api.AccessListMember do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("access_list_members_v1")
+  end
+
+  json_api do
+    type "access_list_member"
+
+    routes do
+      # Shorter, consistent with /acls
+      base("/acl_members")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom action routes
+      patch(:update_role, route: "/:id/role")
+      patch(:block, route: "/:id/block")
+      patch(:unblock, route: "/:id/unblock")
+    end
   end
 
   code_interface do
@@ -44,6 +65,27 @@ defmodule WandererApp.Api.AccessListMember do
     update :update_role do
       accept [:role]
       require_atomic? false
+
+      validate fn changeset, _context ->
+        role = Ash.Changeset.get_attribute(changeset, :role)
+        member = changeset.data
+
+        member_type =
+          cond do
+            member.eve_corporation_id -> "corporation"
+            member.eve_alliance_id -> "alliance"
+            member.eve_character_id -> "character"
+            true -> "character"
+          end
+
+        if member_type in ["corporation", "alliance"] and role in [:admin, :manager] do
+          {:error,
+           field: :role,
+           message: "#{String.capitalize(member_type)} members cannot have #{role} role"}
+        else
+          :ok
+        end
+      end
     end
 
     update :block do

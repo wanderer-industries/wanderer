@@ -1,0 +1,128 @@
+name: API Breaking Changes Check
+
+on:
+  pull_request:
+    paths:
+      - 'lib/wanderer_app_web/controllers/**'
+      - 'lib/wanderer_app_web/schemas/**'
+      - 'lib/wanderer_app_web/api_spec.ex'
+      - 'lib/wanderer_app_web/router.ex'
+      - 'lib/wanderer_app_web/routers/**'
+      - 'lib/wanderer_app/api/**'
+      - 'lib/mix/tasks/openapi.export.ex'
+
+jobs:
+  check-breaking-changes:
+    name: Check for API Breaking Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.17.3'
+          otp-version: '26.0'
+
+      - name: Install inotify-tools
+        run: sudo apt-get update && sudo apt-get install -y inotify-tools
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            main/deps
+            main/_build
+            pr/deps
+            pr/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Export main branch OpenAPI spec
+        working-directory: main
+        env:
+          MIX_ENV: dev
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+          PHX_HOST: "localhost"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost/wanderer_test"
+        run: |
+          mix deps.get --only dev
+          mix deps.compile
+          mix compile --force
+          mix run --no-start --no-deps-check -e "Mix.Task.run(\"openapi.export\", [\"--output\", \"../main-spec.json\"])" || \
+          mix run --no-start -e "
+            Application.ensure_all_started(:wanderer_app)
+            spec = WandererAppWeb.ApiSpec.spec()
+            json = spec |> OpenApiSpex.OpenApi.to_map() |> Jason.encode!(pretty: true)
+            File.write!(\"../main-spec.json\", json)
+          "
+
+      - name: Export PR branch OpenAPI spec
+        working-directory: pr
+        env:
+          MIX_ENV: dev
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+          PHX_HOST: "localhost"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost/wanderer_test"
+        run: |
+          mix deps.get --only dev
+          mix deps.compile
+          mix compile --force
+          mix run --no-start --no-deps-check -e "Mix.Task.run(\"openapi.export\", [\"--output\", \"../pr-spec.json\"])" || \
+          mix run --no-start -e "
+            Application.ensure_all_started(:wanderer_app)
+            spec = WandererAppWeb.ApiSpec.spec()
+            json = spec |> OpenApiSpex.OpenApi.to_map() |> Jason.encode!(pretty: true)
+            File.write!(\"../pr-spec.json\", json)
+          "
+
+      - name: Check for breaking changes
+        working-directory: pr
+        run: |
+          mix run scripts/check_api_breaking_changes.exs ../main-spec.json ../pr-spec.json
+
+      - name: Comment on PR if breaking changes detected
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `
+            ⚠️ **API Breaking Changes Detected**
+            
+            This PR contains breaking changes to the API. Please ensure:
+            1. The changes are intentional and necessary
+            2. API version is bumped appropriately
+            3. Migration guide is provided for API consumers
+            4. Deprecation notices are added to affected endpoints
+            
+            Run \`mix openapi.export\` locally and use \`elixir scripts/check_api_breaking_changes.exs\` to see details.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Upload OpenAPI diff artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-specs
+          path: |
+            main-spec.json
+            pr-spec.json

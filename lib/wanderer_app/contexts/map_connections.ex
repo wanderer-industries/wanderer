@@ -1,0 +1,368 @@
+defmodule WandererApp.Contexts.MapConnections do
+  @moduledoc """
+  Context for managing map connections.
+  
+  This module provides a high-level interface for connection operations,
+  including creation, updates, deletions, and batch operations.
+  Handles special cases like C1 wormhole sizing rules and unique constraint handling.
+  """
+
+  require Logger
+  alias Ash.Error.Invalid
+  alias WandererApp.MapConnectionRepo
+  alias WandererApp.CachedInfo
+
+  @map_server Application.compile_env(:wanderer_app, :map_server, WandererApp.Map.Server)
+
+  # Connection type constants
+  @connection_type_wormhole 0
+  # Ship size constants
+  @medium_ship_size 1
+  @large_ship_size 2
+
+  # System class constants
+  @c1_system_class 1
+
+  @doc """
+  Lists all connections for a map.
+  """
+  @spec list_connections(String.t()) :: [map()] | {:error, atom()}
+  def list_connections(map_id) do
+    with {:ok, conns} <- MapConnectionRepo.get_by_map(map_id) do
+      conns
+    else
+      {:error, err} ->
+        Logger.warning("[list_connections] Repo error: #{inspect(err)}")
+        {:error, :repo_error}
+
+      other ->
+        Logger.error("[list_connections] Unexpected repo result: #{inspect(other)}")
+        {:error, :unexpected_repo_result}
+    end
+  end
+
+  @doc """
+  Lists connections for a specific system within a map.
+  """
+  @spec list_connections_for_system(String.t(), integer()) :: [map()]
+  def list_connections_for_system(map_id, system_id) do
+    list_connections(map_id)
+    |> Enum.filter(fn c ->
+      c.solar_system_source == system_id or c.solar_system_target == system_id
+    end)
+  end
+
+  @doc """
+  Gets a specific connection by ID.
+  """
+  @spec get_connection(String.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def get_connection(map_id, conn_id) do
+    case MapConnectionRepo.get_by_id(map_id, conn_id) do
+      {:ok, conn} -> {:ok, conn}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Gets a connection by source and target system IDs.
+  """
+  @spec get_connection_by_systems(String.t(), integer(), integer()) ::
+          {:ok, map()} | {:ok, nil} | {:error, String.t()}
+  def get_connection_by_systems(map_id, source, target) do
+    with {:ok, conn} <- WandererApp.Map.find_connection(map_id, source, target) do
+      if conn, do: {:ok, conn}, else: WandererApp.Map.find_connection(map_id, target, source)
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Creates a connection between two systems.
+  Applies special rules for C1 wormholes and handles unique constraint violations.
+  """
+  @spec create_connection(String.t(), map(), String.t()) ::
+          {:ok, :created} | {:skip, :exists} | {:error, atom()}
+  def create_connection(map_id, attrs, character_id) do
+    with {:ok, source} <- parse_int(attrs["solar_system_source"], "solar_system_source"),
+         {:ok, target} <- parse_int(attrs["solar_system_target"], "solar_system_target"),
+         {:ok, src_info} <- CachedInfo.get_system_static_info(source),
+         {:ok, tgt_info} <- CachedInfo.get_system_static_info(target) do
+      build_and_add_connection(attrs, map_id, character_id, src_info, tgt_info)
+    else
+      {:error, reason} -> handle_precondition_error(reason, attrs)
+      {:ok, []} -> {:error, :inconsistent_state}
+      other -> {:error, :unexpected_precondition_error, other}
+    end
+  end
+
+  @doc """
+  Creates a connection from controller context (extracts map_id and character_id from conn).
+  """
+  @spec create_connection(Plug.Conn.t(), map()) ::
+          {:ok, :created} | {:skip, :exists} | {:error, atom()}
+  def create_connection(%{assigns: %{map_id: map_id, owner_character_id: char_id}} = _conn, attrs) do
+    create_connection(map_id, attrs, char_id)
+  end
+
+  @doc """
+  Updates an existing connection.
+  """
+  @spec update_connection(Plug.Conn.t(), String.t(), map()) :: {:ok, map()} | {:error, atom()}
+  def update_connection(
+        %{assigns: %{map_id: map_id, owner_character_id: char_id}} = _conn,
+        conn_id,
+        attrs
+      ) do
+    with {:ok, conn_struct} <- MapConnectionRepo.get_by_id(map_id, conn_id),
+         :ok <- apply_connection_updates(map_id, conn_struct, attrs, char_id),
+         {:ok, updated_conn} <- MapConnectionRepo.get_by_id(map_id, conn_id) do
+      {:ok, updated_conn}
+    else
+      {:error, err} -> {:error, err}
+      _ -> {:error, :unexpected_error}
+    end
+  end
+
+  def update_connection(_conn, _conn_id, _attrs), do: {:error, :missing_params}
+
+  @doc """
+  Deletes a connection between two systems.
+  """
+  @spec delete_connection(Plug.Conn.t(), integer(), integer()) :: :ok | {:error, atom()}
+  def delete_connection(%{assigns: %{map_id: map_id}} = _conn, source_id, target_id) do
+    case @map_server.delete_connection(map_id, %{
+           solar_system_source_id: source_id,
+           solar_system_target_id: target_id
+         }) do
+      :ok ->
+        :ok
+
+      {:error, :not_found} ->
+        Logger.warning(
+          "[delete_connection] Connection not found: source=#{inspect(source_id)}, target=#{inspect(target_id)}"
+        )
+
+        {:error, :not_found}
+
+      {:error, _} = err ->
+        Logger.error("[delete_connection] Server error: #{inspect(err)}")
+        {:error, :server_error}
+
+      _ ->
+        Logger.error("[delete_connection] Unknown error")
+        {:error, :unknown}
+    end
+  end
+
+  def delete_connection(_conn, _src, _tgt), do: {:error, :missing_params}
+
+  @doc """
+  Batch upserts connections.
+  """
+  @spec upsert_batch(Plug.Conn.t(), [map()]) :: %{
+          created: integer(),
+          updated: integer(),
+          skipped: integer()
+        }
+  def upsert_batch(%{assigns: %{map_id: _map_id, owner_character_id: _char_id}} = conn, conns) do
+    Enum.reduce(conns, %{created: 0, updated: 0, skipped: 0}, fn conn_attrs, acc ->
+      case upsert_single(conn, conn_attrs) do
+        {:ok, :created} -> %{acc | created: acc.created + 1}
+        {:ok, :updated} -> %{acc | updated: acc.updated + 1}
+        _ -> %{acc | skipped: acc.skipped + 1}
+      end
+    end)
+  end
+
+  def upsert_batch(_conn, _conns), do: %{created: 0, updated: 0, skipped: 0}
+
+  @doc """
+  Upserts a single connection (update if exists, create if not).
+  """
+  @spec upsert_single(Plug.Conn.t(), map()) :: {:ok, :created | :updated} | {:error, atom()}
+  def upsert_single(%{assigns: %{map_id: map_id, owner_character_id: char_id}} = conn, conn_data) do
+    source = conn_data["solar_system_source"] || conn_data[:solar_system_source]
+    target = conn_data["solar_system_target"] || conn_data[:solar_system_target]
+
+    with {:ok, %{} = existing_conn} <- get_connection_by_systems(map_id, source, target),
+         {:ok, _} <- update_connection(conn, existing_conn.id, conn_data) do
+      {:ok, :updated}
+    else
+      {:ok, nil} ->
+        case create_connection(map_id, conn_data, char_id) do
+          {:ok, _} -> {:ok, :created}
+          {:skip, :exists} -> {:ok, :updated}
+          err -> {:error, err}
+        end
+
+      {:error, _} = err ->
+        Logger.warning("[upsert_single] Connection lookup error: #{inspect(err)}")
+        {:error, :lookup_error}
+
+      err ->
+        Logger.error("[upsert_single] Update failed: #{inspect(err)}")
+        {:error, :unexpected_error}
+    end
+  end
+
+  def upsert_single(_conn, _conn_data), do: {:error, :missing_params}
+
+  # -- Private Functions -----------------------------------------------------
+
+  defp build_and_add_connection(attrs, map_id, char_id, src_info, tgt_info) do
+    Logger.debug(
+      "[MapConnections] build_and_add_connection called with src_info: #{inspect(src_info)}, tgt_info: #{inspect(tgt_info)}"
+    )
+
+    # Guard against nil info
+    if is_nil(src_info) or is_nil(tgt_info) do
+      {:error, :invalid_system_info}
+    else
+      info = %{
+        solar_system_source_id: src_info.solar_system_id,
+        solar_system_target_id: tgt_info.solar_system_id,
+        character_id: char_id,
+        type: parse_type(attrs["type"]),
+        ship_size_type: resolve_ship_size(attrs, src_info, tgt_info)
+      }
+
+      case @map_server.add_connection(map_id, info) do
+        :ok ->
+          {:ok, :created}
+
+        {:ok, []} ->
+          log_warn_and(:inconsistent_state, info)
+
+        {:error, %Invalid{errors: errs}} = err ->
+          if Enum.any?(errs, &is_unique_constraint_error?/1), do: {:skip, :exists}, else: err
+
+        {:error, _} = err ->
+          Logger.error("[add_connection] #{inspect(err)}")
+          {:error, :server_error}
+
+        other ->
+          Logger.error("[add_connection] unexpected: #{inspect(other)}")
+          {:error, :unexpected_error}
+      end
+    end
+  end
+
+  defp resolve_ship_size(attrs, src_info, tgt_info) do
+    type = parse_type(attrs["type"])
+
+    if type == @connection_type_wormhole and
+         (src_info.system_class == @c1_system_class or
+            tgt_info.system_class == @c1_system_class) do
+      @medium_ship_size
+    else
+      parse_ship_size(attrs["ship_size_type"], @large_ship_size)
+    end
+  end
+
+  defp apply_connection_updates(map_id, conn, attrs, _char_id) do
+    Enum.reduce_while(attrs, :ok, fn {key, val}, _acc ->
+      result =
+        case key do
+          "mass_status" -> maybe_update_mass_status(map_id, conn, val)
+          "time_status" -> maybe_update_time_status(map_id, conn, val)
+          "ship_size_type" -> maybe_update_ship_size_type(map_id, conn, val)
+          "type" -> maybe_update_type(map_id, conn, val)
+          _ -> :ok
+        end
+
+      if result == :ok do
+        {:cont, :ok}
+      else
+        {:halt, result}
+      end
+    end)
+    |> case do
+      :ok -> :ok
+      err -> err
+    end
+  end
+
+  # Update helpers
+  defp maybe_update_mass_status(_map_id, _conn, nil), do: :ok
+  defp maybe_update_mass_status(map_id, conn, value) do
+    @map_server.update_connection_mass_status(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      mass_status: value
+    })
+  end
+
+  defp maybe_update_time_status(_map_id, _conn, nil), do: :ok
+  defp maybe_update_time_status(map_id, conn, value) do
+    @map_server.update_connection_time_status(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      time_status: value
+    })
+  end
+
+  defp maybe_update_ship_size_type(_map_id, _conn, nil), do: :ok
+  defp maybe_update_ship_size_type(map_id, conn, value) do
+    @map_server.update_connection_ship_size_type(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      ship_size_type: value
+    })
+  end
+
+  defp maybe_update_type(_map_id, _conn, nil), do: :ok
+  defp maybe_update_type(map_id, conn, value) do
+    @map_server.update_connection_type(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      type: value
+    })
+  end
+
+  # Parsing and validation helpers
+  defp parse_ship_size(nil, default), do: default
+  defp parse_ship_size(val, _default) when is_integer(val), do: val
+  defp parse_ship_size(val, default) when is_binary(val) do
+    case Integer.parse(val) do
+      {i, _} -> i
+      :error -> default
+    end
+  end
+  defp parse_ship_size(_, default), do: default
+
+  defp parse_type(nil), do: @connection_type_wormhole
+  defp parse_type(val) when is_integer(val), do: val
+  defp parse_type(val) when is_binary(val) do
+    case Integer.parse(val) do
+      {i, _} -> i
+      :error -> @connection_type_wormhole
+    end
+  end
+  defp parse_type(_), do: @connection_type_wormhole
+
+  defp parse_int(nil, field), do: {:error, {:missing_field, field}}
+  defp parse_int(val, _) when is_integer(val), do: {:ok, val}
+  defp parse_int(val, _) when is_binary(val) do
+    case Integer.parse(val) do
+      {i, _} -> {:ok, i}
+      :error -> {:error, :invalid_integer}
+    end
+  end
+  defp parse_int(_, field), do: {:error, {:invalid_field, field}}
+
+  defp handle_precondition_error(reason, attrs) do
+    Logger.warning(
+      "[add_connection] precondition failed: #{inspect(reason)} for #{inspect(attrs)}"
+    )
+
+    {:error, :precondition_failed, reason}
+  end
+
+  defp log_warn_and(return, info) do
+    Logger.warning("[add_connection] inconsistent for #{inspect(info)}")
+    {:error, return}
+  end
+
+  defp is_unique_constraint_error?(%{code: :unique_constraint}), do: true
+  defp is_unique_constraint_error?(_), do: false
+end

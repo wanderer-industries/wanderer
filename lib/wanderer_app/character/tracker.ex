@@ -39,7 +39,6 @@ defmodule WandererApp.Character.Tracker do
   @ship_error_timeout :timer.minutes(2)
   @location_error_timeout :timer.minutes(2)
   @online_forbidden_ttl :timer.seconds(7)
-  @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
   @limit_ttl :timer.seconds(5)
   @location_limit_ttl :timer.seconds(1)
@@ -372,7 +371,7 @@ defmodule WandererApp.Character.Tracker do
                    access_token: access_token,
                    character_id: character_id
                  ) do
-              {:ok, ship} when is_non_struct_map(ship) ->
+              {:ok, ship} when is_map(ship) ->
                 character_state |> maybe_update_ship(ship)
 
                 :ok
@@ -475,7 +474,7 @@ defmodule WandererApp.Character.Tracker do
                    access_token: access_token,
                    character_id: character_id
                  ) do
-              {:ok, location} when is_non_struct_map(location) ->
+              {:ok, location} when is_map(location) ->
                 character_state
                 |> maybe_update_location(location)
 
@@ -739,7 +738,7 @@ defmodule WandererApp.Character.Tracker do
            state,
          ship
        )
-       when is_non_struct_map(ship) do
+       when is_map(ship) do
     ship_type_id = Map.get(ship, "ship_type_id")
     ship_name = Map.get(ship, "ship_name")
 

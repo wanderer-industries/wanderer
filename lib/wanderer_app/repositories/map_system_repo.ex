@@ -33,7 +33,11 @@ defmodule WandererApp.MapSystemRepo do
   end
 
   def get_visible_by_map(map_id) do
-    WandererApp.Api.MapSystem.read_visible_by_map(%{map_id: map_id})
+    get_visible_by_map(map_id, %{})
+  end
+
+  def get_visible_by_map(map_id, filter_opts) do
+    WandererApp.Api.MapSystem.read_visible_by_map(Map.put(filter_opts, :map_id, map_id))
   end
 
   def remove_from_map(map_id, solar_system_id) do
