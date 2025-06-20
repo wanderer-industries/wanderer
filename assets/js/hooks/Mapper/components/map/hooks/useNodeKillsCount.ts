@@ -22,23 +22,37 @@ export function useNodeKillsCount(systemId: number | string, initialKillsCount: 
   // Calculate 1-hour kill count from detailed kills
   const oneHourKillCount = useMemo(() => {
     const systemKills = detailedKills[systemId] || [];
-    if (systemKills.length === 0) return null;
 
-    const oneHourAgo = Date.now() - 60 * 60 * 1000; // 1 hour in milliseconds
-    const recentKills = systemKills.filter(kill => {
-      if (!kill.kill_time) return false;
-      const killTime = new Date(kill.kill_time).getTime();
-      if (isNaN(killTime)) return false;
-      return killTime >= oneHourAgo;
-    });
+    // If we have detailed kills data (even if empty), use it for counting
+    if (Object.prototype.hasOwnProperty.call(detailedKills, systemId)) {
+      const oneHourAgo = Date.now() - 60 * 60 * 1000; // 1 hour in milliseconds
+      const recentKills = systemKills.filter(kill => {
+        if (!kill.kill_time) return false;
+        const killTime = new Date(kill.kill_time).getTime();
+        if (isNaN(killTime)) return false;
+        return killTime >= oneHourAgo;
+      });
 
-    return recentKills.length > 0 ? recentKills.length : null;
+      return recentKills.length; // Return 0 if no recent kills, not null
+    }
+
+    // Return null only if we don't have detailed kills data for this system
+    return null;
   }, [detailedKills, systemId]);
 
   useEffect(() => {
-    // Use 1-hour count if available, otherwise fall back to initial count
-    setKillsCount(oneHourKillCount !== null ? oneHourKillCount : initialKillsCount);
-  }, [oneHourKillCount, initialKillsCount]);
+    // Always prefer the calculated 1-hour count over initial count
+    // This ensures we properly expire old kills
+    if (oneHourKillCount !== null) {
+      setKillsCount(oneHourKillCount);
+    } else if (detailedKills[systemId] && detailedKills[systemId].length === 0) {
+      // If we have detailed kills data but it's empty, set to 0
+      setKillsCount(0);
+    } else {
+      // Only fall back to initial count if we have no detailed kills data at all
+      setKillsCount(initialKillsCount);
+    }
+  }, [oneHourKillCount, initialKillsCount, detailedKills, systemId]);
 
   const handleEvent = useCallback(
     (event: MapEvent): boolean => {
