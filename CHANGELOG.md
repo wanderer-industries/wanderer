@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.71.2](https://github.com/wanderer-industries/wanderer/compare/v1.71.1...v1.71.2) (2025-06-20)
+
+
+
+
+### Bug Fixes:
+
+* fix issue with kill service disconnect
+
 ## [v1.71.1](https://github.com/wanderer-industries/wanderer/compare/v1.71.0...v1.71.1) (2025-06-19)
 
 
