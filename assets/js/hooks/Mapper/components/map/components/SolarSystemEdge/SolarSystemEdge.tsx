@@ -42,7 +42,8 @@ export const SHIP_SIZES_COLORS = {
 export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: EdgeProps<SolarSystemConnection>) => {
   const sourceNode = useStore(useCallback(store => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback(store => store.nodeInternals.get(target), [target]));
-  const isWormhole = data?.type !== ConnectionType.gate;
+  const isLoop = data?.type === ConnectionType.loop;
+  const isWormholeType = data?.type === ConnectionType.wormhole || data?.type === ConnectionType.loop;
 
   const {
     data: { isThickConnections },
@@ -55,7 +56,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
-    const method = isWormhole ? getBezierPath : getSmoothStepPath;
+    const method = isWormholeType ? getBezierPath : getSmoothStepPath;
 
     const [edgePath, labelX, labelY] = method({
       sourceX: sx - offset.x,
@@ -67,7 +68,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
     });
 
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
-  }, [isThickConnections, sourceNode, targetNode, isWormhole]);
+  }, [isThickConnections, sourceNode, targetNode, isWormholeType]);
 
   if (!sourceNode || !targetNode || !data) {
     return null;
@@ -79,9 +80,10 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         id={`back_${id}`}
         className={clsx(classes.EdgePathBack, {
           [classes.Tick]: isThickConnections,
-          [classes.TimeCrit]: isWormhole && data.time_status === TimeStatus.eol,
+          [classes.TimeCrit]: isWormholeType && data.time_status === TimeStatus.eol,
           [classes.Hovered]: hovered,
-          [classes.Gate]: !isWormhole,
+          [classes.Gate]: !isWormholeType,
+          [classes.Loop]: isLoop,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -92,10 +94,11 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         className={clsx(classes.EdgePathFront, {
           [classes.Tick]: isThickConnections,
           [classes.Hovered]: hovered,
-          [classes.MassVerge]: isWormhole && data.mass_status === MassState.verge,
-          [classes.MassHalf]: isWormhole && data.mass_status === MassState.half,
-          [classes.Frigate]: isWormhole && data.ship_size_type === ShipSizeStatus.small,
-          [classes.Gate]: !isWormhole,
+          [classes.MassVerge]: isWormholeType && data.mass_status === MassState.verge,
+          [classes.MassHalf]: isWormholeType && data.mass_status === MassState.half,
+          [classes.Frigate]: isWormholeType && data.ship_size_type === ShipSizeStatus.small,
+          [classes.Gate]: !isWormholeType,
+          [classes.Loop]: isLoop,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -135,7 +138,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}
         >
-          {isWormhole && data.locked && (
+          {isWormholeType && data.locked && (
             <WdTooltipWrapper
               content="Save mass"
               className={clsx(
@@ -147,7 +150,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
             </WdTooltipWrapper>
           )}
 
-          {isWormhole && data.ship_size_type !== ShipSizeStatus.large && (
+          {isWormholeType && data.ship_size_type !== ShipSizeStatus.large && (
             <WdTooltipWrapper
               content={SHIP_SIZES_DESCRIPTION[data.ship_size_type]}
               className={clsx(
