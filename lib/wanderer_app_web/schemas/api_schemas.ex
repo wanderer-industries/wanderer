@@ -9,18 +9,60 @@ defmodule WandererAppWeb.Schemas.ApiSchemas do
   alias OpenApiSpex.Schema
 
   # Standard response wrappers
-  def data_wrapper(schema) do
+  def data_wrapper(schema, meta_schema \\ nil) do
+    base_properties = %{data: schema}
+
+    properties =
+      if meta_schema do
+        Map.put(base_properties, :meta, meta_schema)
+      else
+        base_properties
+      end
+
     %Schema{
       type: :object,
-      properties: %{
-        data: schema
-      },
+      properties: properties,
       required: ["data"]
     }
   end
 
-  # Standard error responses
+  # Standard error responses following {errors: [...]} format
   def error_response(description \\ "Error") do
+    %Schema{
+      type: :object,
+      properties: %{
+        errors: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              message: %Schema{type: :string, description: "Error message"},
+              details: %Schema{type: :string, description: "Detailed explanation", nullable: true},
+              code: %Schema{type: :string, description: "Error code", nullable: true},
+              field: %Schema{
+                type: :string,
+                description: "Field that caused the error",
+                nullable: true
+              }
+            },
+            required: ["message"]
+          }
+        }
+      },
+      required: ["errors"],
+      example: %{
+        "errors" => [
+          %{
+            "message" => description,
+            "details" => "Additional information about the error"
+          }
+        ]
+      }
+    }
+  end
+
+  # Legacy error response for backward compatibility
+  def legacy_error_response(description \\ "Error") do
     %Schema{
       type: :object,
       properties: %{
@@ -52,7 +94,11 @@ defmodule WandererAppWeb.Schemas.ApiSchemas do
         ship: %Schema{type: :integer, description: "Current ship type ID"},
         ship_name: %Schema{type: :string, description: "Current ship name"},
         inserted_at: %Schema{type: :string, format: :date_time, description: "Creation timestamp"},
-        updated_at: %Schema{type: :string, format: :date_time, description: "Last update timestamp"}
+        updated_at: %Schema{
+          type: :string,
+          format: :date_time,
+          description: "Last update timestamp"
+        }
       },
       required: ~w(eve_id name)a
     }

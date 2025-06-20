@@ -11,12 +11,14 @@ ExUnit.start()
 defmodule CharacterAPIControllerTest do
   use ExUnit.Case
 
+  @moduletag :unit
+
   # Mock modules to simulate the behavior of the controller's dependencies
   defmodule MockUtil do
     def require_param(params, key) do
       case params[key] do
         nil -> {:error, "Missing required param: #{key}"}
-        ""  -> {:error, "Param #{key} cannot be empty"}
+        "" -> {:error, "Param #{key} cannot be empty"}
         val -> {:ok, val}
       end
     end
@@ -24,15 +26,15 @@ defmodule CharacterAPIControllerTest do
     def parse_int(str) do
       case Integer.parse(str) do
         {num, ""} -> {:ok, num}
-        _         -> {:error, "Invalid integer for param id=#{str}"}
+        _ -> {:error, "Invalid integer for param id=#{str}"}
       end
     end
 
     def parse_bool(str) do
       case str do
-        "true"  -> {:ok, true}
+        "true" -> {:ok, true}
         "false" -> {:ok, false}
-        _       -> {:error, "Invalid boolean value: #{str}"}
+        _ -> {:error, "Invalid boolean value: #{str}"}
       end
     end
   end
@@ -43,15 +45,23 @@ defmodule CharacterAPIControllerTest do
       :ets.new(:character_tracking, [:set, :public, :named_table])
 
       # Initialize with some test data
-      :ets.insert(:character_tracking, {"user1", [
-        %{eve_id: "123456", name: "Character One", tracked: true, followed: true},
-        %{eve_id: "234567", name: "Character Two", tracked: true, followed: false},
-        %{eve_id: "345678", name: "Character Three", tracked: false, followed: false}
-      ]})
+      :ets.insert(
+        :character_tracking,
+        {"user1",
+         [
+           %{eve_id: "123456", name: "Character One", tracked: true, followed: true},
+           %{eve_id: "234567", name: "Character Two", tracked: true, followed: false},
+           %{eve_id: "345678", name: "Character Three", tracked: false, followed: false}
+         ]}
+      )
 
-      :ets.insert(:character_tracking, {"user2", [
-        %{eve_id: "456789", name: "Character Four", tracked: true, followed: true}
-      ]})
+      :ets.insert(
+        :character_tracking,
+        {"user2",
+         [
+           %{eve_id: "456789", name: "Character Four", tracked: true, followed: true}
+         ]}
+      )
     end
 
     def get_tracking_data(user_id) do
@@ -70,13 +80,14 @@ defmodule CharacterAPIControllerTest do
       case get_tracking_data(user_id) do
         {:ok, data} ->
           # Find the character and update its followed state
-          updated_data = Enum.map(data, fn char ->
-            if char.eve_id == character_id do
-              %{char | followed: follow_state}
-            else
-              char
-            end
-          end)
+          updated_data =
+            Enum.map(data, fn char ->
+              if char.eve_id == character_id do
+                %{char | followed: follow_state}
+              else
+                char
+              end
+            end)
 
           # Update the storage
           update_tracking_data(user_id, updated_data)
@@ -85,7 +96,8 @@ defmodule CharacterAPIControllerTest do
           updated_char = Enum.find(updated_data, fn char -> char.eve_id == character_id end)
           {:ok, updated_char}
 
-        error -> error
+        error ->
+          error
       end
     end
 
@@ -93,13 +105,14 @@ defmodule CharacterAPIControllerTest do
       case get_tracking_data(user_id) do
         {:ok, data} ->
           # Find the character and update its tracked state
-          updated_data = Enum.map(data, fn char ->
-            if char.eve_id == character_id do
-              %{char | tracked: track_state}
-            else
-              char
-            end
-          end)
+          updated_data =
+            Enum.map(data, fn char ->
+              if char.eve_id == character_id do
+                %{char | tracked: track_state}
+              else
+                char
+              end
+            end)
 
           # Update the storage
           update_tracking_data(user_id, updated_data)
@@ -108,7 +121,8 @@ defmodule CharacterAPIControllerTest do
           updated_char = Enum.find(updated_data, fn char -> char.eve_id == character_id end)
           {:ok, updated_char}
 
-        error -> error
+        error ->
+          error
       end
     end
   end
@@ -116,15 +130,19 @@ defmodule CharacterAPIControllerTest do
   defmodule MockTrackingUtils do
     def check_tracking_consistency(tracking_data) do
       # Log warnings for characters that are followed but not tracked
-      inconsistent_chars = Enum.filter(tracking_data, fn char ->
-        char[:followed] == true && char[:tracked] == false
-      end)
+      inconsistent_chars =
+        Enum.filter(tracking_data, fn char ->
+          char[:followed] == true && char[:tracked] == false
+        end)
 
       if length(inconsistent_chars) > 0 do
         Enum.each(inconsistent_chars, fn char ->
           eve_id = Map.get(char, :eve_id, "unknown")
           name = Map.get(char, :name, "Unknown Character")
-          IO.puts("WARNING: Inconsistent state detected - Character (ID: #{eve_id}, Name: #{name}) is followed but not tracked")
+
+          IO.puts(
+            "WARNING: Inconsistent state detected - Character (ID: #{eve_id}, Name: #{name}) is followed but not tracked"
+          )
         end)
       end
 
@@ -140,7 +158,6 @@ defmodule CharacterAPIControllerTest do
       with {:ok, character_id} <- MockUtil.require_param(params, "character_id"),
            {:ok, follow_str} <- MockUtil.require_param(params, "follow"),
            {:ok, follow} <- MockUtil.parse_bool(follow_str) do
-
         case MockCharacterRepo.toggle_character_follow(user_id, character_id, follow) do
           {:ok, updated_char} ->
             # Get all tracking data to check consistency
@@ -166,17 +183,17 @@ defmodule CharacterAPIControllerTest do
       with {:ok, character_id} <- MockUtil.require_param(params, "character_id"),
            {:ok, track_str} <- MockUtil.require_param(params, "track"),
            {:ok, track} <- MockUtil.parse_bool(track_str) do
-
         # If we're untracking a character, we should also unfollow it
-        result = if track == false do
-          # First unfollow if needed
-          MockCharacterRepo.toggle_character_follow(user_id, character_id, false)
-          # Then untrack
-          MockCharacterRepo.toggle_character_track(user_id, character_id, false)
-        else
-          # Just track
-          MockCharacterRepo.toggle_character_track(user_id, character_id, true)
-        end
+        result =
+          if track == false do
+            # First unfollow if needed
+            MockCharacterRepo.toggle_character_follow(user_id, character_id, false)
+            # Then untrack
+            MockCharacterRepo.toggle_character_track(user_id, character_id, false)
+          else
+            # Just track
+            MockCharacterRepo.toggle_character_track(user_id, character_id, true)
+          end
 
         case result do
           {:ok, updated_char} ->
@@ -285,7 +302,8 @@ defmodule CharacterAPIControllerTest do
       assert {:ok, %{data: data}} = result
       assert data.eve_id == "123456"
       assert data.tracked == false
-      assert data.followed == false  # Should also be unfollowed
+      # Should also be unfollowed
+      assert data.followed == false
     end
 
     test "returns error when character_id is missing" do

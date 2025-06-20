@@ -3,11 +3,30 @@ defmodule WandererApp.Api.AccessList do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("access_lists_v1")
+  end
+
+  json_api do
+    type "access_list"
+
+    routes do
+      # Shorter, more REST-like
+      base("/acls")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom routes
+      index :available, route: "/available"
+    end
   end
 
   code_interface do
@@ -44,12 +63,18 @@ defmodule WandererApp.Api.AccessList do
 
       argument :owner_id, :uuid, allow_nil?: false
 
+      validate present(:name)
+      validate string_length(:name, max: 255)
+
       change manage_relationship(:owner_id, :owner, on_lookup: :relate, on_no_match: nil)
     end
 
     update :update do
       accept [:name, :description, :owner_id, :api_key]
       primary?(true)
+
+      validate present(:name)
+      validate string_length(:name, max: 255)
     end
 
     update :assign_owner do

@@ -3,11 +3,33 @@ defmodule WandererApp.Api.MapSystemSignature do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_signatures_v1")
+  end
+
+  json_api do
+    type "map_system_signature"
+
+    routes do
+      # Simpler, matches REST convention
+      base("/signatures")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom routes
+      patch(:update_linked_system, route: "/:id/linked_system")
+      patch(:update_type, route: "/:id/type")
+      patch(:update_group, route: "/:id/group")
+      index :all_active, route: "/active"
+    end
   end
 
   code_interface do

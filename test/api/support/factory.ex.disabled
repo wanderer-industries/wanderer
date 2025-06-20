@@ -1,0 +1,202 @@
+defmodule WandererApp.Factory do
+  @moduledoc """
+  Factory module for creating test data using ExMachina.
+  """
+
+  use ExMachina.Ecto, repo: WandererApp.Repo
+
+  alias WandererApp.Api.{User, Map, Character, AccessList, AccessListMember}
+  alias WandererApp.Api.{MapSystem, MapConnection, MapSystemSignature, MapSystemStructure}
+
+  def user_factory do
+    %User{
+      name: sequence(:name, &"User #{&1}"),
+      hash: sequence(:hash, &"hash#{&1}"),
+      balance: 0.0
+    }
+  end
+
+  def map_factory do
+    %Map{
+      name: sequence(:map_name, &"Map #{&1}"),
+      slug: sequence(:map_slug, &"map-#{&1}"),
+      description: "Test map description",
+      public: false,
+      owner: build(:user),
+      settings: %{
+        "scope_type" => "system",
+        "show_labels" => true,
+        "show_connections" => true
+      },
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def character_factory do
+    %Character{
+      name: sequence(:character_name, &"Character #{&1}"),
+      eve_id: sequence(:eve_id, & &1),
+      corporation_id: sequence(:corporation_id, & &1),
+      corporation_name: sequence(:corporation_name, &"Corp #{&1}"),
+      alliance_id: sequence(:alliance_id, & &1),
+      alliance_name: sequence(:alliance_name, &"Alliance #{&1}"),
+      user: build(:user),
+      online: false,
+      tracking: false,
+      access_token: Ecto.UUID.generate(),
+      refresh_token: Ecto.UUID.generate(),
+      expires_at: DateTime.add(DateTime.utc_now(), 1200, :second),
+      scopes: ["esi-location.read_location.v1", "esi-location.read_ship_type.v1"],
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def access_list_factory do
+    %AccessList{
+      name: sequence(:acl_name, &"ACL #{&1}"),
+      description: "Test access list",
+      owner: build(:user),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def access_list_member_factory do
+    %AccessListMember{
+      access_list: build(:access_list),
+      eve_entity_id: sequence(:eve_entity_id, & &1),
+      eve_entity_name: sequence(:eve_entity_name, &"Entity #{&1}"),
+      eve_entity_category: "character",
+      role: "member",
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def map_system_factory do
+    %MapSystem{
+      map: build(:map),
+      solar_system_id: sequence(:solar_system_id, &30000000 + &1),
+      solar_system_name: sequence(:solar_system_name, &"System #{&1}"),
+      solar_system_info: %{
+        "region_id" => 10000001,
+        "constellation_id" => 20000001,
+        "security_status" => 0.5,
+        "class" => nil
+      },
+      name: sequence(:system_name, &"System #{&1}"),
+      description: "Test system",
+      locked: false,
+      status: "unknown",
+      tag: [],
+      labels: [],
+      position_x: :rand.uniform(1000),
+      position_y: :rand.uniform(1000),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def map_connection_factory do
+    %MapConnection{
+      map: build(:map),
+      from_system: build(:map_system),
+      to_system: build(:map_system),
+      from_solar_system_id: sequence(:from_solar_system_id, &30000000 + &1),
+      to_solar_system_id: sequence(:to_solar_system_id, &30001000 + &1),
+      mass_status: "stable",
+      size_status: "normal",
+      time_status: "normal",
+      locked: false,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def map_system_signature_factory do
+    %MapSystemSignature{
+      map_system: build(:map_system),
+      eve_id: sequence(:sig_eve_id, &"ABC-#{&1}"),
+      name: sequence(:sig_name, &"Signature #{&1}"),
+      description: "Test signature",
+      group: "cosmic_signature",
+      type: "data_site",
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def map_system_structure_factory do
+    %MapSystemStructure{
+      map_system: build(:map_system),
+      eve_id: sequence(:structure_eve_id, & &1),
+      name: sequence(:structure_name, &"Structure #{&1}"),
+      type_id: 35832,  # Astrahus
+      corporation_id: sequence(:corp_id, & &1),
+      corporation_name: sequence(:corp_name, &"Corp #{&1}"),
+      alliance_id: sequence(:alliance_id, & &1),
+      alliance_name: sequence(:alliance_name, &"Alliance #{&1}"),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def character_skill_factory do
+    %{
+      character: build(:character),
+      skill_id: sequence(:skill_id, & &1),
+      level: Enum.random(1..5),
+      skillpoints: sequence(:skillpoints, &(&1 * 1000))
+    }
+  end
+
+  # Helper functions for common scenarios
+
+  def with_characters(%User{} = user, count \\ 3) do
+    characters = for _ <- 1..count, do: insert(:character, user: user)
+    %{user | characters: characters}
+  end
+
+  def with_maps(%User{} = user, count \\ 2) do
+    maps = for _ <- 1..count, do: insert(:map, owner: user)
+    %{user | owned_maps: maps}
+  end
+
+  def with_systems(%Map{} = map, count \\ 5) do
+    systems = for _ <- 1..count, do: insert(:map_system, map: map)
+    %{map | systems: systems}
+  end
+
+  def with_connections(%Map{} = map, systems) do
+    connections = 
+      systems
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map(fn [from, to] ->
+        insert(:map_connection, 
+          map: map,
+          from_system: from,
+          to_system: to,
+          from_solar_system_id: from.solar_system_id,
+          to_solar_system_id: to.solar_system_id
+        )
+      end)
+    
+    %{map | connections: connections}
+  end
+
+  def with_acl_members(%AccessList{} = acl, members) do
+    acl_members = 
+      Enum.map(members, fn member ->
+        insert(:access_list_member, 
+          access_list: acl,
+          eve_entity_id: member.eve_id,
+          eve_entity_name: member.name,
+          eve_entity_category: "character"
+        )
+      end)
+    
+    %{acl | members: acl_members}
+  end
+end
