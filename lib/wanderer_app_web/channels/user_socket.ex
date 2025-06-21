@@ -6,6 +6,14 @@ defmodule WandererAppWeb.UserSocket do
 
   @impl true
   def connect(params, socket, connect_info) do
+    # Check if websocket events are enabled
+    unless WandererApp.Env.websocket_events_enabled?() do
+      require Logger
+      remote_ip = get_remote_ip(connect_info)
+      Logger.info("WebSocket connection rejected - websocket events disabled from #{remote_ip}")
+      :error
+    else
+    
     # Extract API key from connection params
     # Client should connect with: /socket/websocket?api_key=<key>
     require Logger
@@ -29,6 +37,7 @@ defmodule WandererAppWeb.UserSocket do
         # Require API key for external events
         Logger.warning("WebSocket connection rejected - missing API key from #{remote_ip}")
         :error
+    end
     end
   end
   

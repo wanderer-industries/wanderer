@@ -72,6 +72,11 @@ map_subscriptions_enabled =
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
   |> String.to_existing_atom()
 
+websocket_events_enabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_WEBSOCKET_EVENTS_ENABLED", "false")
+  |> String.to_existing_atom()
+
 map_subscription_characters_limit =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 10_000)
@@ -143,6 +148,7 @@ config :wanderer_app,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,
   map_subscriptions_enabled: map_subscriptions_enabled,
+  websocket_events_enabled: websocket_events_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
