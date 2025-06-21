@@ -56,13 +56,12 @@ defmodule WandererApp.Application do
         {WandererApp.Character.TrackerPoolSupervisor, []},
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
-        WandererApp.ExternalEvents.MapEventRelay,
-        WandererApp.ExternalEvents.WebhookDispatcher,
         WandererAppWeb.Presence,
         WandererAppWeb.Endpoint
       ] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
-        maybe_start_kills_services()
+        maybe_start_kills_services() ++
+        maybe_start_websocket_services(WandererApp.Env.websocket_events_enabled?())
 
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
 
@@ -106,4 +105,15 @@ defmodule WandererApp.Application do
       []
     end
   end
+
+  defp maybe_start_websocket_services(true) do
+    Logger.info("Starting WebSocket/Webhook services...")
+
+    [
+      WandererApp.ExternalEvents.MapEventRelay,
+      WandererApp.ExternalEvents.WebhookDispatcher
+    ]
+  end
+
+  defp maybe_start_websocket_services(_), do: []
 end
