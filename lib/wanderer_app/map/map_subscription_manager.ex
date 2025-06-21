@@ -186,6 +186,7 @@ defmodule WandererApp.Map.SubscriptionManager do
       end
 
     period = get_active_months(selected_subscription)
+
     total_price = additional_price * period
 
     {:ok, discount} =
@@ -200,9 +201,16 @@ defmodule WandererApp.Map.SubscriptionManager do
   end
 
   defp get_active_months(subscription) do
-    subscription.active_till
-    |> Timex.shift(days: 5)
-    |> Timex.diff(Timex.now(), :months)
+    months =
+      subscription.active_till
+      |> Timex.shift(days: 5)
+      |> Timex.diff(Timex.now(), :months)
+
+    if months == 0 do
+      1
+    else
+      months
+    end
   end
 
   defp calc_discount(

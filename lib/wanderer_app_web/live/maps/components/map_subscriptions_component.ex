@@ -419,7 +419,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         }
       >
         <.button
-          :if={not @is_adding_subscription?}
+          :if={not @readonly && not @is_adding_subscription?}
           type="button"
           disabled={
             @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
@@ -462,7 +462,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {if subscription.auto_renew?, do: "Yes", else: "No"}
         </:col>
         <:action :let={subscription}>
-          <div class="tooltip tooltip-left" data-tip="Edit subscription">
+          <div :if={not @readonly} class="tooltip tooltip-left" data-tip="Edit subscription">
             <button
               :if={subscription.status == :active && subscription.plan != :alpha}
               phx-click="edit-subscription"
@@ -474,7 +474,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           </div>
         </:action>
         <:action :let={subscription}>
-          <div class="tooltip tooltip-left" data-tip="Cancel subscription">
+          <div :if={not @readonly} class="tooltip tooltip-left" data-tip="Cancel subscription">
             <button
               :if={subscription.status == :active && subscription.plan != :alpha}
               phx-click="cancel-subscription"
@@ -488,7 +488,10 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         </:action>
       </.table>
 
-      <.header :if={@is_adding_subscription?} class="bordered border-1 flex flex-col gap-4">
+      <.header
+        :if={not @readonly && @is_adding_subscription?}
+        class="bordered border-1 flex flex-col gap-4"
+      >
         <div :if={is_nil(@selected_subscription)}>
           Add subscription
         </div>
