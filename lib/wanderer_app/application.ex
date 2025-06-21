@@ -56,6 +56,8 @@ defmodule WandererApp.Application do
         {WandererApp.Character.TrackerPoolSupervisor, []},
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
+        WandererApp.ExternalEvents.MapEventRelay,
+        WandererApp.ExternalEvents.WebhookDispatcher,
         WandererAppWeb.Presence,
         WandererAppWeb.Endpoint
       ] ++
