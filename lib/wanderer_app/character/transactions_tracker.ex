@@ -71,7 +71,10 @@ defmodule WandererApp.Character.TransactionsTracker do
 
   @impl true
   def handle_info(:shutdown, %Impl{} = state) do
-    Logger.debug(fn -> "Shutting down character transaction tracker: #{inspect(state.character_id)}" end)
+    Logger.debug(fn ->
+      "Shutting down character transaction tracker: #{inspect(state.character_id)}"
+    end)
+
     {:stop, :normal, state}
   end
 

@@ -3,11 +3,27 @@ defmodule WandererApp.Api.MapTransaction do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_transactions_v1")
+  end
+
+  json_api do
+    type "map_transaction"
+
+    routes do
+      # Simpler, consistent naming
+      base("/transactions")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
   end
 
   code_interface do

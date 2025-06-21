@@ -16,7 +16,7 @@
         },
         "elixirLS.dialyzerEnabled": false
       }
-    }
+    },
   },
   "service": "wanderer",
   "workspaceFolder": "/app",

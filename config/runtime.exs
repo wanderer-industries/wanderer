@@ -1,6 +1,43 @@
 import Config
 import WandererApp.ConfigHelpers
 
+# Helper function to safely parse boolean environment variables
+parse_boolean = fn
+  "true" -> true
+  "false" -> false
+  other -> raise "Invalid boolean value: #{other}. Expected 'true' or 'false'"
+end
+
+# Helper function to safely parse log level environment variables
+parse_log_level = fn
+  "emergency" ->
+    :emergency
+
+  "alert" ->
+    :alert
+
+  "critical" ->
+    :critical
+
+  "error" ->
+    :error
+
+  "warning" ->
+    :warning
+
+  "notice" ->
+    :notice
+
+  "info" ->
+    :info
+
+  "debug" ->
+    :debug
+
+  other ->
+    raise "Invalid log level: #{other}. Expected one of: emergency, alert, critical, error, warning, notice, info, debug"
+end
+
 if System.get_env("PHX_SERVER") do
   config :wanderer_app, WandererAppWeb.Endpoint, server: true
 end
@@ -51,7 +88,7 @@ scheme = System.get_env("WEB_EXTERNAL_SCHEME", "http")
 public_api_disabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_PUBLIC_API_DISABLED", "false")
-  |> String.to_existing_atom()
+  |> parse_boolean.()
 
 character_api_disabled =
   config_dir
@@ -70,7 +107,7 @@ wanderer_kills_base_url =
 map_subscriptions_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
-  |> String.to_existing_atom()
+  |> parse_boolean.()
 
 map_subscription_characters_limit =
   config_dir
@@ -107,7 +144,7 @@ map_connection_eol_expire_timeout_mins =
 wallet_tracking_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_WALLET_TRACKING_ENABLED", "false")
-  |> String.to_existing_atom()
+  |> parse_boolean.()
 
 admins =
   System.get_env("WANDERER_ADMINS", "")
@@ -119,13 +156,20 @@ admins =
 restrict_maps_creation =
   config_dir
   |> get_var_from_path_or_env("WANDERER_RESTRICT_MAPS_CREATION", "false")
-  |> String.to_existing_atom()
+  |> parse_boolean.()
+
+character_api_disabled =
+  if config_env() == :test do
+    false
+  else
+    System.get_env("WANDERER_CHARACTER_API_DISABLED", "true") |> parse_boolean.()
+  end
 
 config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
   custom_route_base_url: System.get_env("CUSTOM_ROUTE_BASE_URL"),
-  invites: System.get_env("WANDERER_INVITES", "false") |> String.to_existing_atom(),
+  invites: System.get_env("WANDERER_INVITES", "false") |> parse_boolean.(),
   admin_username: System.get_env("WANDERER_ADMIN_USERNAME", "admin"),
   admin_password: System.get_env("WANDERER_ADMIN_PASSWORD"),
   admins: admins,
@@ -220,19 +264,31 @@ config :ueberauth, WandererApp.Ueberauth.Strategy.Eve.OAuth,
   client_secret_with_corp_wallet:
     System.get_env("EVE_CLIENT_WITH_CORP_WALLET_SECRET", "<EVE_CLIENT_WITH_CORP_WALLET_SECRET>")
 
+# Guardian configuration - JWT authentication
+# Only configured when not in test environment
+if config_env() != :test do
+  config :wanderer_app, WandererApp.Guardian,
+    issuer: "wanderer_app",
+    secret_key:
+      System.get_env("GUARDIAN_SECRET_KEY") ||
+        raise(
+          "GUARDIAN_SECRET_KEY environment variable must be set. Generate one with: mix guardian.gen.secret"
+        ),
+    ttl: {30, :days}
+end
+
 config :logger,
   truncate: :infinity,
   level:
-    String.to_existing_atom(
-      System.get_env(
-        "LOG_LEVEL",
-        case config_env() do
-          :prod -> "info"
-          :dev -> "info"
-          :test -> "debug"
-        end
-      )
+    System.get_env(
+      "LOG_LEVEL",
+      case config_env() do
+        :prod -> "info"
+        :dev -> "info"
+        :test -> "debug"
+      end
     )
+    |> parse_log_level.()
 
 sheduler_jobs =
   map_subscriptions_enabled
@@ -287,12 +343,12 @@ if config_env() == :prod do
     db_ssl_enabled =
       config_dir
       |> get_var_from_path_or_env("DATABASE_SSL_ENABLED", "false")
-      |> String.to_existing_atom()
+      |> parse_boolean.()
 
     db_ssl_verify_none =
       config_dir
       |> get_var_from_path_or_env("DATABASE_SSL_VERIFY_NONE", "false")
-      |> String.to_existing_atom()
+      |> parse_boolean.()
 
     client_opts =
       if db_ssl_verify_none do
@@ -302,7 +358,7 @@ if config_env() == :prod do
     maybe_ipv6 =
       config_dir
       |> get_var_from_path_or_env("ECTO_IPV6", "false")
-      |> String.to_existing_atom()
+      |> parse_boolean.()
       |> case do
         true -> [:inet6]
         _ -> []
@@ -372,7 +428,7 @@ if config_env() == :prod do
   promex_disabled? =
     config_dir
     |> get_var_from_path_or_env("PROMEX_DISABLED", "true")
-    |> String.to_existing_atom()
+    |> parse_boolean.()
 
   config :wanderer_app, WandererApp.PromEx,
     disabled: promex_disabled?,

@@ -52,15 +52,32 @@ config :wanderer_app, WandererAppWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :wanderer_app, WandererAppWeb.Endpoint,
-  live_reload: [
-    interval: 1000,
-    patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/wanderer_app_web/(controllers|live|components)/.*(ex|heex)$"
+# Disable if running in CI or if inotify-tools is not available
+# Check for common CI environment variables and container environments
+is_ci = System.get_env("CI") ||
+        System.get_env("GITHUB_ACTIONS") ||
+        File.exists?("/.dockerenv") ||
+        System.get_env("CONTAINER") == "true"
+
+has_inotify = System.find_executable("inotifywait") != nil
+
+live_reload_config =
+  if is_ci || !has_inotify do
+    []
+  else
+    [
+      live_reload: [
+        interval: 1000,
+        patterns: [
+          ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
+          ~r"priv/gettext/.*(po)$",
+          ~r"lib/wanderer_app_web/(controllers|live|components)/.*(ex|heex)$"
+        ]
+      ]
     ]
-  ]
+  end
+
+config :wanderer_app, WandererAppWeb.Endpoint, live_reload_config
 
 config :wanderer_app,
   dev_routes: true
@@ -80,6 +97,12 @@ config :phoenix_live_view, :debug_heex_annotations, true
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Configure exsync to disable source monitoring if inotify-tools is not available
+# This prevents startup errors in CI environments
+if is_ci || !has_inotify do
+  config :exsync, src_monitor: false
+end
 
 config :logger, :console,
   level: :info,

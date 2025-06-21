@@ -30,6 +30,10 @@ defmodule WandererApp.Map.Operations do
   @spec list_systems(String.t()) :: [map()]
   defdelegate list_systems(map_id), to: Systems
 
+  @doc "List visible systems with filters"
+  @spec list_systems(String.t(), map()) :: [map()]
+  defdelegate list_systems(map_id, filter_opts), to: Systems
+
   @doc "Get a specific system"
   @spec get_system(String.t(), integer()) :: {:ok, map()} | {:error, :not_found}
   defdelegate get_system(map_id, system_id), to: Systems
@@ -76,7 +80,6 @@ defmodule WandererApp.Map.Operations do
           {:ok, map()} | {:skip, :exists} | {:error, String.t()}
   defdelegate create_connection(map_id, attrs, char_id), to: Connections
 
-  @doc "Create a connection from a Plug.Conn"
   @spec create_connection(Plug.Conn.t(), map()) ::
           {:ok, :created} | {:skip, :exists} | {:error, atom()}
   defdelegate create_connection(conn, attrs), to: Connections
@@ -91,7 +94,8 @@ defmodule WandererApp.Map.Operations do
   defdelegate delete_connection(map_id, src_id, tgt_id), to: Connections
 
   @doc "Get a connection by source and target system IDs"
-  @spec get_connection_by_systems(String.t(), integer(), integer()) :: {:ok, map()} | {:error, String.t()}
+  @spec get_connection_by_systems(String.t(), integer(), integer()) ::
+          {:ok, map()} | {:error, String.t()}
   defdelegate get_connection_by_systems(map_id, source, target), to: Connections
 
   # -- Structures ------------------------------------------------------------

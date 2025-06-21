@@ -1,0 +1,81 @@
+name: Test Without Legacy API
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  MIX_ENV: test
+  FEATURE_LEGACY_API: false
+
+jobs:
+  test-no-legacy:
+    name: Test with Legacy API Disabled
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.17.3'
+          otp-version: '26.0'
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-no-legacy-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-no-legacy-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check deprecation
+        env:
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+        run: mix deprecation.check --strict
+        continue-on-error: true
+
+      - name: Run tests without legacy API
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost/wanderer_test
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+          FEATURE_LEGACY_API: "false"
+        run: |
+          echo "Running tests with FEATURE_LEGACY_API=false"
+          mix test --exclude legacy_api_required
+
+      - name: Generate deprecation report
+        if: always()
+        env:
+          SECRET_KEY_BASE: "test-secret-key-base-for-ci-only"
+          GUARDIAN_SECRET_KEY: "test-guardian-secret-key-for-ci-only"
+        run: |
+          echo "## Deprecation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          mix deprecation.check 2>&1 | tail -n +3 >> $GITHUB_STEP_SUMMARY || true

@@ -1,16 +1,18 @@
 defmodule WandererAppWeb.MapAPIController do
   use WandererAppWeb, :controller
   use OpenApiSpex.ControllerSpecs
+  use WandererAppWeb.Controllers.Behaviours.Paginated
 
-  import Ash.Query, only: [filter: 2]
   require Logger
+  import Ash.Query, only: [filter: 2]
 
-  alias WandererApp.Api.Character
+  alias OpenApiSpex.Operation
   alias WandererApp.MapSystemRepo
-  alias WandererApp.MapCharacterSettingsRepo
-  alias WandererApp.MapConnectionRepo
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
+  alias WandererAppWeb.Validations.ApiValidations
+
+  action_fallback WandererAppWeb.FallbackController
 
   # -----------------------------------------------------------------
   # Schema Definitions
@@ -34,12 +36,10 @@ defmodule WandererAppWeb.MapAPIController do
     required: ["id", "map_id", "character_id", "tracked"]
   }
 
-  @tracked_characters_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @character_tracking_schema
-    }
-  )
+  @tracked_characters_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                                        type: :array,
+                                        items: @character_tracking_schema
+                                      })
 
   # Structure timer schemas
   @structure_timer_schema %OpenApiSpex.Schema{
@@ -62,12 +62,10 @@ defmodule WandererAppWeb.MapAPIController do
     required: ["system_id", "solar_system_id", "name", "status"]
   }
 
-  @structure_timers_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @structure_timer_schema
-    }
-  )
+  @structure_timers_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                                      type: :array,
+                                      items: @structure_timer_schema
+                                    })
 
   # System kills schemas
   @kill_detail_schema %OpenApiSpex.Schema{
@@ -75,10 +73,17 @@ defmodule WandererAppWeb.MapAPIController do
     description: "Kill detail object",
     properties: %{
       kill_id: %OpenApiSpex.Schema{type: :integer, description: "Unique identifier for the kill"},
-      kill_time: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Time when the kill occurred"},
+      kill_time: %OpenApiSpex.Schema{
+        type: :string,
+        format: :date_time,
+        description: "Time when the kill occurred"
+      },
       victim_id: %OpenApiSpex.Schema{type: :integer, description: "ID of the victim character"},
       victim_name: %OpenApiSpex.Schema{type: :string, description: "Name of the victim character"},
-      ship_type_id: %OpenApiSpex.Schema{type: :integer, description: "Type ID of the destroyed ship"},
+      ship_type_id: %OpenApiSpex.Schema{
+        type: :integer,
+        description: "Type ID of the destroyed ship"
+      },
       ship_name: %OpenApiSpex.Schema{type: :string, description: "Name of the destroyed ship"}
     }
   }
@@ -95,12 +100,6 @@ defmodule WandererAppWeb.MapAPIController do
     required: ["solar_system_id", "kills"]
   }
 
-  @systems_kills_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @system_kills_schema
-    }
-  )
 
   # Character activity schemas
   @character_activity_schema %OpenApiSpex.Schema{
@@ -108,20 +107,24 @@ defmodule WandererAppWeb.MapAPIController do
     description: "Character activity data",
     properties: %{
       character: @character_schema,
-      passages: %OpenApiSpex.Schema{type: :integer, description: "Number of passages through systems"},
-      connections: %OpenApiSpex.Schema{type: :integer, description: "Number of connections created"},
+      passages: %OpenApiSpex.Schema{
+        type: :integer,
+        description: "Number of passages through systems"
+      },
+      connections: %OpenApiSpex.Schema{
+        type: :integer,
+        description: "Number of connections created"
+      },
       signatures: %OpenApiSpex.Schema{type: :integer, description: "Number of signatures added"},
-      timestamp: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Timestamp of the activity"}
+      timestamp: %OpenApiSpex.Schema{
+        type: :string,
+        format: :date_time,
+        description: "Timestamp of the activity"
+      }
     },
     required: ["character", "passages", "connections", "signatures"]
   }
 
-  @character_activity_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @character_activity_schema
-    }
-  )
 
   # User characters schemas
   @user_character_group_schema %OpenApiSpex.Schema{
@@ -142,12 +145,10 @@ defmodule WandererAppWeb.MapAPIController do
     required: ["characters"]
   }
 
-  @user_characters_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @user_character_group_schema
-    }
-  )
+  @user_characters_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                                     type: :array,
+                                     items: @user_character_group_schema
+                                   })
 
   # Map connection schemas
   @map_connection_schema %OpenApiSpex.Schema{
@@ -166,27 +167,16 @@ defmodule WandererAppWeb.MapAPIController do
     }
   }
 
-  @map_connections_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @map_connection_schema
-    }
-  )
 
   # -----------------------------------------------------------------
   # Helper functions for the API controller
   # -----------------------------------------------------------------
 
-  defp get_map_id_by_slug(slug) do
-    case WandererApp.Api.Map.get_map_by_slug(slug) do
-      {:ok, map} -> {:ok, map.id}
-      {:error, error} -> {:error, "Map not found for slug: #{slug}, error: #{inspect(error)}"}
-    end
-  end
-
   defp normalize_map_identifier(params) do
     case Map.get(params, "map_identifier") do
-      nil -> params
+      nil ->
+        params
+
       id ->
         if Ecto.UUID.cast(id) == :error,
           do: Map.put(params, "slug", id),
@@ -204,29 +194,32 @@ defmodule WandererAppWeb.MapAPIController do
     case WandererApp.Api.read(query) do
       {:ok, settings} ->
         # Format the settings to include character data
-        formatted_settings = Enum.map(settings, fn setting ->
-          character_data =
-            if Ash.Resource.loaded?(setting, :character) and not is_nil(setting.character) do
-              WandererAppWeb.MapEventHandler.map_ui_character_stat(setting.character)
-            else
-              nil
-            end
+        formatted_settings =
+          Enum.map(settings, fn setting ->
+            character_data =
+              if Ash.Resource.loaded?(setting, :character) and not is_nil(setting.character) do
+                WandererAppWeb.MapEventHandler.map_ui_character_stat(setting.character)
+              else
+                nil
+              end
 
-          # Extract only the fields we need for JSON serialization
-          %{
-            id: setting.id,
-            map_id: setting.map_id,
-            character_id: setting.character_id,
-            tracked: setting.tracked,
-            followed: setting.followed,
-            inserted_at: setting.inserted_at,
-            updated_at: setting.updated_at,
-            character: character_data
-          }
-        end)
+            # Extract only the fields we need for JSON serialization
+            %{
+              id: setting.id,
+              map_id: setting.map_id,
+              character_id: setting.character_id,
+              tracked: setting.tracked,
+              followed: setting.followed,
+              inserted_at: setting.inserted_at,
+              updated_at: setting.updated_at,
+              character: character_data
+            }
+          end)
 
         {:ok, formatted_settings}
-      {:error, error} -> {:error, "Could not fetch tracked characters: #{inspect(error)}"}
+
+      {:error, error} ->
+        {:error, "Could not fetch tracked characters: #{inspect(error)}"}
     end
   end
 
@@ -237,7 +230,7 @@ defmodule WandererAppWeb.MapAPIController do
   @doc """
   GET /api/map/tracked-characters
   """
-  operation :list_tracked_characters,
+  operation(:list_tracked_characters,
     summary: "List Tracked Characters",
     description: "Lists all characters that are tracked on a specified map.",
     parameters: [
@@ -256,24 +249,51 @@ defmodule WandererAppWeb.MapAPIController do
     ],
     responses: [
       ok: ResponseSchemas.ok(@tracked_characters_response_schema, "Tracked characters"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
+      bad_request:
+        ResponseSchemas.bad_request(
+          "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        ),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
-  def list_tracked_characters(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params) do
-      # Find tracked characters for this map
-      case find_tracked_characters_by_map(map_id) do
-        {:ok, formatted_settings} ->
-          # Return the formatted tracked characters
-          json(conn, %{data: formatted_settings})
+  )
 
-        {:error, reason} ->
-          Logger.error("Error listing tracked characters: #{APIUtils.format_error(reason)}")
-          conn
-          |> put_status(:internal_server_error)
-          |> json(%{error: APIUtils.format_error(reason)})
-      end
-    else
+  # Add operation spec for index (characters resource)
+  operation(:index,
+    summary: "List map characters",
+    description: "Lists characters associated with the map with pagination support",
+    parameters: [
+      Operation.parameter(:map_identifier, :path, :string, "Map identifier (UUID or slug)",
+        required: true
+      )
+    ] ++ pagination_parameters(),
+    responses: [
+      ok: {
+        "Paginated list of map characters",
+        "application/json",
+        pagination_response_schema(%OpenApiSpex.Schema{
+          type: :array,
+          items: @character_tracking_schema
+        })
+      },
+      not_found: ResponseSchemas.not_found(),
+      internal_server_error: ResponseSchemas.internal_server_error()
+    ]
+  )
+
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def index(conn, params), do: list_tracked_characters(conn, params)
+
+  @spec list_tracked_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_tracked_characters(conn, params) do
+    case APIUtils.fetch_map_id(params) do
+      {:ok, map_id} ->
+        paginated_response conn, params do
+          query = WandererApp.Api.MapCharacterSettings
+                  |> filter(map_id == ^map_id and tracked == true)
+                  |> Ash.Query.load(:character)
+          {query, &transform_tracked_character/1}
+        end
+
       {:error, msg} ->
         conn
         |> put_status(:bad_request)
@@ -284,7 +304,7 @@ defmodule WandererAppWeb.MapAPIController do
   @doc """
   GET /api/maps/{map_identifier}/tracked-characters
   """
-  operation :show_tracked_characters,
+  operation(:show_tracked_characters,
     summary: "Show Tracked Characters for a Map",
     description: "Lists all characters that are tracked on a specified map.",
     parameters: [
@@ -301,6 +321,9 @@ defmodule WandererAppWeb.MapAPIController do
       bad_request: ResponseSchemas.bad_request("Map identifier is required"),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
+  )
+
+  @spec show_tracked_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show_tracked_characters(%{assigns: %{map_id: map_id}} = conn, _params) do
     # Find tracked characters for this map
     case find_tracked_characters_by_map(map_id) do
@@ -310,6 +333,7 @@ defmodule WandererAppWeb.MapAPIController do
 
       {:error, reason} ->
         Logger.error("Error listing tracked characters: #{APIUtils.format_error(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: APIUtils.format_error(reason)})
@@ -322,7 +346,7 @@ defmodule WandererAppWeb.MapAPIController do
   Returns structure timers for visible systems on the map or for a specific system.
   """
   @spec show_structure_timers(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :show_structure_timers,
+  operation(:show_structure_timers,
     summary: "Show Structure Timers",
     description: "Retrieves structure timers for a map.",
     deprecated: true,
@@ -348,34 +372,24 @@ defmodule WandererAppWeb.MapAPIController do
     ],
     responses: [
       ok: ResponseSchemas.ok(@structure_timers_response_schema, "Structure timers"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
+      bad_request:
+        ResponseSchemas.bad_request(
+          "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        ),
       not_found: ResponseSchemas.not_found("System not found"),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
+  )
+
   def show_structure_timers(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params) do
-      system_id_str = params["system_id"]
+    alias WandererAppWeb.Validations.ApiValidations
 
-      case system_id_str do
-        nil ->
-          handle_all_structure_timers(conn, map_id)
-
-        _ ->
-          case APIUtils.parse_int(system_id_str) do
-            {:ok, system_id} ->
-              handle_single_structure_timers(conn, map_id, system_id)
-
-            {:error, reason} ->
-              conn
-              |> put_status(:bad_request)
-              |> json(%{error: "system_id must be int: #{reason}"})
-          end
+    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
+         {:ok, validated} <- ApiValidations.validate_optional_system_id(params) do
+      case validated.system_id do
+        nil -> handle_all_structure_timers(conn, map_id)
+        system_id -> handle_single_structure_timers(conn, map_id, system_id)
       end
-    else
-      {:error, msg} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: msg})
     end
   end
 
@@ -385,9 +399,9 @@ defmodule WandererAppWeb.MapAPIController do
   Returns kills data for all *visible* systems on the map.
   """
   @spec list_systems_kills(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :list_systems_kills,
+  operation(:list_systems_kills,
     summary: "List Systems Kills",
-    description: "Returns kills data for all visible systems on the map.",
+    description: "Returns kills data for all visible systems on the map with pagination support.",
     parameters: [
       map_id: [
         in: :query,
@@ -407,20 +421,29 @@ defmodule WandererAppWeb.MapAPIController do
         type: :string,
         required: false
       ]
-    ],
+    ] ++ pagination_parameters(),
     responses: [
-      ok: ResponseSchemas.ok(@systems_kills_response_schema, "Systems kills data"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
+      ok: {
+        "Paginated systems kills data",
+        "application/json",
+        pagination_response_schema(%OpenApiSpex.Schema{
+          type: :array,
+          items: @system_kills_schema
+        })
+      },
+      bad_request:
+        ResponseSchemas.bad_request(
+          "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        ),
       not_found: ResponseSchemas.not_found("Could not fetch systems")
     ]
+  )
+
   def list_systems_kills(conn, params) do
     with {:ok, map_id} <- APIUtils.fetch_map_id(params),
          {:ok, systems} <- MapSystemRepo.get_visible_by_map(map_id),
-         {:ok, hours_ago} <- parse_hours_ago(
-           params["hours"]      # documented name
-           || params["hours_ago"] # legacy fallback
-           || params["hour_ago"]  # legacy typo
-         ) do
+         {:ok, validated} <- validate_kills_hours_param(params) do
+      hours_ago = validated[:hours]
       solar_ids = Enum.map(systems, & &1.solar_system_id)
       # Fetch cached kills for each system from cache
       kills_map =
@@ -444,8 +467,8 @@ defmodule WandererAppWeb.MapAPIController do
 
           Logger.debug(fn ->
             "[list_systems_kills] For system_id=#{sys.solar_system_id}, " <>
-            "found #{length(kills)} kills total, " <>
-            "returning #{length(filtered_kills)} kills after hours_ago=#{inspect(hours_ago)} filter"
+              "found #{length(kills)} kills total, " <>
+              "returning #{length(filtered_kills)} kills after hours_ago=#{inspect(hours_ago)} filter"
           end)
 
           %{
@@ -454,16 +477,20 @@ defmodule WandererAppWeb.MapAPIController do
           }
         end)
 
-      json(conn, %{data: data})
+      paginated_list_response conn, params do
+        data
+      end
     else
       {:error, msg} when is_binary(msg) ->
         Logger.warning("[list_systems_kills] Bad request: #{msg}")
+
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})
 
       {:error, reason} ->
         Logger.error("[list_systems_kills] Could not fetch systems: #{inspect(reason)}")
+
         conn
         |> put_status(:not_found)
         |> json(%{error: "Could not fetch systems: #{inspect(reason)}"})
@@ -476,9 +503,9 @@ defmodule WandererAppWeb.MapAPIController do
   Returns character activity data for a map.
   """
   @spec character_activity(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :character_activity,
+  operation(:character_activity,
     summary: "Get Character Activity",
-    description: "Returns character activity data for a map.",
+    description: "Returns character activity data for a map with pagination support.",
     parameters: [
       map_id: [
         in: :query,
@@ -498,18 +525,33 @@ defmodule WandererAppWeb.MapAPIController do
         type: :integer,
         required: false
       ]
-    ],
+    ] ++ pagination_parameters(),
     responses: [
-      ok: ResponseSchemas.ok(@character_activity_response_schema, "Character activity data"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
+      ok: {
+        "Paginated character activity data",
+        "application/json",
+        pagination_response_schema(%OpenApiSpex.Schema{
+          type: :array,
+          items: @character_activity_schema
+        })
+      },
+      bad_request:
+        ResponseSchemas.bad_request(
+          "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        ),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
+  )
+
   def character_activity(conn, params) do
+    alias WandererAppWeb.Validations.ApiValidations
+
     # Normalize params to make sure we handle both map_id and slug variations
     normalized_params = normalize_map_identifier(params)
 
     with {:ok, map_id} <- APIUtils.fetch_map_id(normalized_params),
-         {:ok, days} <- parse_days(params["days"]) do
+         {:ok, validated} <- ApiValidations.validate_days_param(params) do
+      days = validated.days
       raw_activity = WandererApp.Map.get_character_activity(map_id, days)
 
       summarized_result =
@@ -537,7 +579,9 @@ defmodule WandererAppWeb.MapAPIController do
           end)
         end
 
-      json(conn, %{data: summarized_result})
+      paginated_list_response conn, params do
+        summarized_result
+      end
     else
       {:error, msg} when is_binary(msg) ->
         conn
@@ -557,9 +601,9 @@ defmodule WandererAppWeb.MapAPIController do
   Returns characters grouped by user for a specific map.
   """
   @spec user_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :user_characters,
+  operation(:user_characters,
     summary: "Get User Characters",
-    description: "Returns characters grouped by user for a specific map.",
+    description: "Returns characters grouped by user for a specific map with pagination support.",
     parameters: [
       map_id: [
         in: :query,
@@ -573,16 +617,41 @@ defmodule WandererAppWeb.MapAPIController do
         type: :string,
         required: false
       ]
-    ],
+    ] ++ pagination_parameters(),
     responses: [
-      ok: ResponseSchemas.ok(@user_characters_response_schema, "User characters with main character indication"),
-      bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"),
+      ok: {
+        "Paginated user characters with main character indication",
+        "application/json",
+        pagination_response_schema(%OpenApiSpex.Schema{
+          type: :array,
+          items: @user_character_group_schema
+        })
+      },
+      bad_request:
+        ResponseSchemas.bad_request(
+          "Must provide either ?map_id=UUID or ?slug=SLUG as a query parameter"
+        ),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
+  )
+
   def user_characters(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params) do
-      fetch_and_format_user_characters(conn, map_id)
-    else
+    case APIUtils.fetch_map_id(params) do
+      {:ok, map_id} ->
+        case fetch_user_characters_data(map_id) do
+          {:ok, character_groups} ->
+            paginated_list_response conn, params do
+              character_groups
+            end
+
+          {:error, reason} ->
+            Logger.error("Failed to fetch user characters: #{inspect(reason)}")
+
+            conn
+            |> put_status(:internal_server_error)
+            |> json(%{error: "Failed to fetch user characters: #{inspect(reason)}"})
+        end
+
       {:error, msg} when is_binary(msg) ->
         conn
         |> put_status(:bad_request)
@@ -599,7 +668,7 @@ defmodule WandererAppWeb.MapAPIController do
   GET /api/maps/{map_identifier}/user-characters
   """
   @spec show_user_characters(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :show_user_characters,
+  operation(:show_user_characters,
     summary: "Show User Characters for a Map",
     description: "Returns characters grouped by user for a specific map.",
     parameters: [
@@ -612,19 +681,25 @@ defmodule WandererAppWeb.MapAPIController do
       ]
     ],
     responses: [
-      ok: ResponseSchemas.ok(@user_characters_response_schema, "User characters with main character indication"),
+      ok:
+        ResponseSchemas.ok(
+          @user_characters_response_schema,
+          "User characters with main character indication"
+        ),
       internal_server_error: ResponseSchemas.internal_server_error()
     ]
+  )
+
   def show_user_characters(%{assigns: %{map_id: map_id}} = conn, _params) do
     fetch_and_format_user_characters(conn, map_id)
   end
 
-  # Helper function to fetch and format user characters for a map
-  defp fetch_and_format_user_characters(conn, map_id) do
+  # Helper function to fetch user characters data for pagination
+  defp fetch_user_characters_data(map_id) do
     # Create a query to get all MapCharacterSettings for this map and preload characters
     settings_query =
       WandererApp.Api.MapCharacterSettings
-      |> Ash.Query.filter(map_id == ^map_id)
+      |> filter(map_id == ^map_id)
       |> Ash.Query.load(:character)
 
     case WandererApp.Api.read(settings_query) do
@@ -643,21 +718,90 @@ defmodule WandererAppWeb.MapAPIController do
           user_settings_query =
             WandererApp.Api.MapUserSettings
             |> Ash.Query.new()
-            |> Ash.Query.filter(map_id == ^map_id)
+            |> filter(map_id == ^map_id)
 
           main_characters_by_user =
             case WandererApp.Api.read(user_settings_query) do
               {:ok, map_user_settings} ->
-                Map.new(map_user_settings, fn settings -> {settings.user_id, settings.main_character_eve_id} end)
-              _ -> %{}
+                Map.new(map_user_settings, fn settings ->
+                  {settings.user_id, settings.main_character_eve_id}
+                end)
+
+              _ ->
+                %{}
             end
 
           # Format the characters by user
           character_groups =
             Enum.map(characters_by_user, fn {user_id, user_characters} ->
-              formatted_characters = Enum.map(user_characters, fn char ->
-                character_to_json(char)
-              end)
+              formatted_characters =
+                Enum.map(user_characters, fn char ->
+                  character_to_json(char)
+                end)
+
+              %{
+                characters: formatted_characters,
+                main_character_eve_id: Map.get(main_characters_by_user, user_id)
+              }
+            end)
+
+          {:ok, character_groups}
+        else
+          {:ok, []}
+        end
+
+      {:ok, []} ->
+        {:ok, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # Helper function to fetch and format user characters for a map
+  defp fetch_and_format_user_characters(conn, map_id) do
+    # Create a query to get all MapCharacterSettings for this map and preload characters
+    settings_query =
+      WandererApp.Api.MapCharacterSettings
+      |> filter(map_id == ^map_id)
+      |> Ash.Query.load(:character)
+
+    case WandererApp.Api.read(settings_query) do
+      {:ok, map_character_settings} when map_character_settings != [] ->
+        # Extract characters and filter out those without a user_id
+        characters =
+          map_character_settings
+          |> Enum.map(& &1.character)
+          |> Enum.filter(fn char -> char != nil && not is_nil(char.user_id) end)
+
+        if characters != [] do
+          # Group characters by user_id
+          characters_by_user = Enum.group_by(characters, & &1.user_id)
+
+          # Get main character settings
+          user_settings_query =
+            WandererApp.Api.MapUserSettings
+            |> Ash.Query.new()
+            |> filter(map_id == ^map_id)
+
+          main_characters_by_user =
+            case WandererApp.Api.read(user_settings_query) do
+              {:ok, map_user_settings} ->
+                Map.new(map_user_settings, fn settings ->
+                  {settings.user_id, settings.main_character_eve_id}
+                end)
+
+              _ ->
+                %{}
+            end
+
+          # Format the characters by user
+          character_groups =
+            Enum.map(characters_by_user, fn {user_id, user_characters} ->
+              formatted_characters =
+                Enum.map(user_characters, fn char ->
+                  character_to_json(char)
+                end)
 
               %{
                 characters: formatted_characters,
@@ -669,9 +813,13 @@ defmodule WandererAppWeb.MapAPIController do
         else
           json(conn, %{data: []})
         end
-      {:ok, []} -> json(conn, %{data: []})
+
+      {:ok, []} ->
+        json(conn, %{data: []})
+
       {:error, reason} ->
         Logger.error("Failed to fetch map character settings: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to fetch map character settings: #{inspect(reason)}"})
@@ -684,10 +832,13 @@ defmodule WandererAppWeb.MapAPIController do
       {:ok, systems} ->
         all_timers = systems |> Enum.flat_map(&get_timers_for_system/1)
         json(conn, %{data: all_timers})
+
       {:error, reason} ->
         conn
         |> put_status(:not_found)
-        |> json(%{error: "Could not fetch visible systems for map_id=#{map_id}: #{inspect(reason)}"})
+        |> json(%{
+          error: "Could not fetch visible systems for map_id=#{map_id}: #{inspect(reason)}"
+        })
     end
   end
 
@@ -696,10 +847,12 @@ defmodule WandererAppWeb.MapAPIController do
       {:ok, map_system} ->
         timers = get_timers_for_system(map_system)
         json(conn, %{data: timers})
+
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "No system with solar_system_id=#{system_id} in map=#{map_id}"})
+
       {:error, reason} ->
         conn
         |> put_status(:internal_server_error)
@@ -738,54 +891,104 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   # --- Helpers for System Kills ---
-  defp parse_hours_ago(nil), do: {:ok, nil}
-  defp parse_hours_ago(hours_str) do
-    Logger.debug(fn -> "[parse_hours_ago] Parsing hours_str: #{inspect(hours_str)}" end)
-    case Integer.parse(hours_str) do
-      {num, ""} when num > 0 -> {:ok, num}
-      {0, ""} -> {:ok, nil} # 0 means "disable filtering"
-      _ -> {:error, "hours must be a positive integer"}
+  defp validate_kills_hours_param(params) do
+    # Support multiple parameter names for backward compatibility
+    hours_value = params["hours"] || params["hours_ago"] || params["hour_ago"]
+
+    case hours_value do
+      value when value in [nil, "0"] ->
+        {:ok, %{hours: nil}}
+
+      _ ->
+        validate_hours_integer(hours_value)
     end
+  end
+
+  defp validate_hours_integer(hours_value) do
+    case ApiValidations.parse_and_validate_integer(hours_value, :hours) do
+      {:ok, num} when num > 0 -> {:ok, %{hours: num}}
+      {:ok, 0} -> {:ok, %{hours: nil}}
+      {:ok, _} -> create_hours_error()
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp create_hours_error do
+    changeset =
+      {%{}, %{hours: :integer}}
+      |> Ecto.Changeset.cast(%{}, [])
+      |> Ecto.Changeset.add_error(:hours, "must be a positive integer")
+
+    {:error, changeset}
   end
 
   defp maybe_filter_kills_by_time(kills, hours_ago) when is_integer(hours_ago) do
     cutoff = DateTime.utc_now() |> DateTime.add(-hours_ago * 3600, :second)
-    Logger.debug(fn -> "[maybe_filter_kills_by_time] Filtering kills with cutoff: #{DateTime.to_iso8601(cutoff)}" end)
-    filtered = Enum.filter(kills, fn kill ->
-      kill_time = kill["kill_time"]
-      result = case kill_time do
-        %DateTime{} = dt -> DateTime.compare(dt, cutoff) != :lt
-        time when is_binary(time) ->
-          case DateTime.from_iso8601(time) do
-            {:ok, dt, _} -> DateTime.compare(dt, cutoff) != :lt
-            _ -> false
-          end
-        _ -> false
-      end
-      Logger.debug(fn ->
-        kill_time_str = if is_binary(kill_time), do: kill_time, else: inspect(kill_time)
-        "[maybe_filter_kills_by_time] Kill time: #{kill_time_str}, included: #{result}"
-      end)
-      result
+
+    Logger.debug(fn ->
+      "[maybe_filter_kills_by_time] Filtering kills with cutoff: #{DateTime.to_iso8601(cutoff)}"
     end)
+
+    filtered =
+      Enum.filter(kills, fn kill ->
+        kill_time = kill["kill_time"]
+
+        result =
+          case kill_time do
+            %DateTime{} = dt ->
+              DateTime.compare(dt, cutoff) != :lt
+
+            time when is_binary(time) ->
+              case DateTime.from_iso8601(time) do
+                {:ok, dt, _} -> DateTime.compare(dt, cutoff) != :lt
+                _ -> false
+              end
+
+            _ ->
+              false
+          end
+
+        Logger.debug(fn ->
+          kill_time_str = if is_binary(kill_time), do: kill_time, else: inspect(kill_time)
+          "[maybe_filter_kills_by_time] Kill time: #{kill_time_str}, included: #{result}"
+        end)
+
+        result
+      end)
+
     filtered
   end
 
   defp maybe_filter_kills_by_time(kills, nil), do: kills
 
   # --- Helpers for Character Activity ---
-  defp parse_days(nil), do: {:ok, nil}
-  defp parse_days(days_str) do
-    case Integer.parse(days_str) do
-      {days, ""} when days > 0 -> {:ok, days}
-      _ -> {:error, "days must be a positive integer"}
-    end
-  end
 
   # --- JSON Formatting Helpers ---
   defp character_to_json(nil), do: nil
+
   defp character_to_json(ch) do
     WandererAppWeb.MapEventHandler.map_ui_character_stat(ch)
+  end
+
+  # Transform function for paginated tracked characters
+  defp transform_tracked_character(setting) do
+    character_data =
+      if Ash.Resource.loaded?(setting, :character) and not is_nil(setting.character) do
+        WandererAppWeb.MapEventHandler.map_ui_character_stat(setting.character)
+      else
+        nil
+      end
+
+    %{
+      id: setting.id,
+      map_id: setting.map_id,
+      character_id: setting.character_id,
+      tracked: setting.tracked,
+      followed: setting.followed,
+      inserted_at: setting.inserted_at,
+      updated_at: setting.updated_at,
+      character: character_data
+    }
   end
 
   @doc """
@@ -794,9 +997,10 @@ defmodule WandererAppWeb.MapAPIController do
   Requires either `?map_id=<UUID>` **OR** `?slug=<map-slug>` in the query params.
   """
   @spec list_connections(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :list_connections,
+  operation(:list_connections,
     summary: "List Map Connections",
-    description: "Lists all connections for a map. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
+    description:
+      "Lists all connections for a map with pagination support. Requires either 'map_id' or 'slug' as a query parameter to identify the map.",
     parameters: [
       map_id: [
         in: :query,
@@ -810,27 +1014,34 @@ defmodule WandererAppWeb.MapAPIController do
         type: :string,
         required: false
       ]
-    ],
+    ] ++ pagination_parameters(),
     responses: [
-      ok: ResponseSchemas.ok(@map_connections_response_schema, "List of map connections"),
+      ok: {
+        "Paginated list of map connections",
+        "application/json",
+        pagination_response_schema(%OpenApiSpex.Schema{
+          type: :array,
+          items: @map_connection_schema
+        })
+      },
       bad_request: ResponseSchemas.bad_request("Must provide either ?map_id=UUID or ?slug=SLUG"),
       not_found: ResponseSchemas.not_found("Could not fetch connections")
     ]
+  )
+
   def list_connections(conn, params) do
-    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
-          {:ok, connections} <- MapConnectionRepo.get_by_map(map_id) do
-      data = Enum.map(connections, &APIUtils.connection_to_json/1)
-      json(conn, %{data: data})
-    else
-      {:error, msg} when is_binary(msg) ->
+    case APIUtils.fetch_map_id(params) do
+      {:ok, map_id} ->
+        paginated_response conn, params do
+          query = WandererApp.Api.MapConnection
+                  |> Ash.Query.for_read(:read_by_map, %{map_id: map_id})
+          {query, &APIUtils.connection_to_json/1}
+        end
+
+      {:error, msg} ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: msg})
-
-      {:error, reason} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Could not fetch connections: #{APIUtils.format_error(reason)}"})
     end
   end
 end

@@ -25,9 +25,6 @@ services:
       - 4444:4444
     volumes:
       - ..:/app:delegated
-      - ~/.gitconfig:/root/.gitconfig
-      - ~/.gitignore:/root/.gitignore
-      - ~/.ssh:/root/.ssh
       - elixir-artifacts:/opt/elixir-artifacts
     command: sleep infinity
 

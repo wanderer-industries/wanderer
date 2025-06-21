@@ -3,11 +3,30 @@ defmodule WandererApp.Api.MapPing do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_pings_v1")
+  end
+
+  json_api do
+    type "map_ping"
+
+    routes do
+      # Simpler, consistent naming
+      base("/pings")
+
+      get(:read)
+      index :read, route: "/"
+      post(:new, route: "/")
+      delete(:destroy)
+
+      # Custom routes for map-scoped operations
+      index :by_map, route: "/by_map/:map_id"
+      index :by_map_and_system, route: "/by_map/:map_id/system/:system_id"
+    end
   end
 
   code_interface do

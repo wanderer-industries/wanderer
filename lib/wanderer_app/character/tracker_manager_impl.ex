@@ -17,7 +17,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   @inactive_character_timeout :timer.minutes(10)
   @untrack_character_timeout :timer.minutes(10)
 
-  @logger Application.compile_env(:wanderer_app, :logger)
+  @logger Application.compile_env(:wanderer_app, :logger, Logger)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
