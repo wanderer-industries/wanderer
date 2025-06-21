@@ -278,6 +278,16 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
           @ddrt.delete([solar_system_id], rtree_name)
           Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
+          
+          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+          Logger.debug(fn -> "SystemsImpl.delete_systems calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}" end)
+          # For consistency, include basic fields even for deleted systems
+          WandererApp.ExternalEvents.broadcast(map_id, :deleted_system, %{
+            solar_system_id: solar_system_id,
+            name: nil,  # System is deleted, name not available
+            position_x: nil,
+            position_y: nil
+          })
           track_systems_removed(map_id, user_id, character_id, [solar_system_id])
           remove_system_connections(map_id, [solar_system_id])
 
@@ -425,6 +435,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             WandererApp.Map.add_system(map_id, updated_system)
 
             Impl.broadcast!(map_id, :add_system, updated_system)
+            
+            # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+            WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+              solar_system_id: updated_system.solar_system_id,
+              name: updated_system.name,
+              position_x: updated_system.position_x,
+              position_y: updated_system.position_y
+            })
             :ok
 
           _ ->
@@ -454,6 +472,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
                 WandererApp.Map.add_system(map_id, new_system)
                 Impl.broadcast!(map_id, :add_system, new_system)
+                
+                # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+                WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+                  solar_system_id: new_system.solar_system_id,
+                  name: new_system.name,
+                  position_x: new_system.position_x,
+                  position_y: new_system.position_y
+                })
 
                 :ok
 
@@ -560,6 +586,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     )
 
     Impl.broadcast!(map_id, :add_system, system)
+    
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    Logger.debug(fn -> "SystemsImpl._add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}" end)
+    WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+      solar_system_id: system.solar_system_id,
+      name: system.name,
+      position_x: system.position_x,
+      position_y: system.position_y
+    })
 
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
@@ -624,5 +659,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     )
 
     Impl.broadcast!(map_id, :update_system, updated_system)
+    
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    WandererApp.ExternalEvents.broadcast(map_id, :system_metadata_changed, %{
+      solar_system_id: updated_system.solar_system_id,
+      name: updated_system.name
+    })
   end
 end

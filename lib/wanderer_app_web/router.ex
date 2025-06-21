@@ -240,6 +240,12 @@ defmodule WandererAppWeb.Router do
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
+    get "/events", MapEventsAPIController, :list_events
+    
+    # Webhook management endpoints
+    resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
+      post "/rotate-secret", MapWebhooksAPIController, :rotate_secret
+    end
   end
 
   #
