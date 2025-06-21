@@ -38,7 +38,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
             </div>
           )}
 
-          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && (
+          {localKillsCount != null && localKillsCount > 0 && nodeVars.solarSystemId && (
             <KillsCounter
               killsCount={localKillsCount}
               systemId={nodeVars.solarSystemId}
