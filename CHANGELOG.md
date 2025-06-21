@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.72.0](https://github.com/wanderer-industries/wanderer/compare/v1.71.3...v1.72.0) (2025-06-21)
+
+
+
+
+### Features:
+
+* Core: Added an ability to see & topup map balance and map subscription info (on public)
+
 ## [v1.71.3](https://github.com/wanderer-industries/wanderer/compare/v1.71.2...v1.71.3) (2025-06-21)
 
 
