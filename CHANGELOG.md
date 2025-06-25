@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.73.0](https://github.com/wanderer-industries/wanderer/compare/v1.72.1...v1.73.0) (2025-06-25)
+
+
+
+
+### Features:
+
+* Core: Allowed system temp names up to 12 characters. Deprecated showing linked signature ID as part of temporary name.
+
 ## [v1.72.1](https://github.com/wanderer-industries/wanderer/compare/v1.72.0...v1.72.1) (2025-06-23)
 
 
