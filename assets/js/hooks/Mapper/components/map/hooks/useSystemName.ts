@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 interface UseSystemNameParams {
   isTempSystemNameEnabled: boolean;
   temporary_name?: string | null;
+  isShowLinkedSigIdTempName: boolean;
+  linkedSigPrefix: string | null;
   name?: string | null;
   systemStaticInfo: SolarSystemStaticInfoRaw;
 }
@@ -11,6 +13,8 @@ interface UseSystemNameParams {
 export const useSystemName = ({
   isTempSystemNameEnabled,
   temporary_name,
+  isShowLinkedSigIdTempName,
+  linkedSigPrefix,
   name,
   systemStaticInfo,
 }: UseSystemNameParams) => {
@@ -21,8 +25,12 @@ export const useSystemName = ({
       return '';
     }
 
+    if (isShowLinkedSigIdTempName && linkedSigPrefix) {
+      return temporary_name ? `${linkedSigPrefix}:${temporary_name}` : `${linkedSigPrefix}:${solar_system_name}`;
+    }
+
     return temporary_name ?? '';
-  }, [isTempSystemNameEnabled, temporary_name]);
+  }, [isTempSystemNameEnabled, temporary_name, solar_system_name, isShowLinkedSigIdTempName, linkedSigPrefix]);
 
   const systemName = useMemo(() => {
     if (isTempSystemNameEnabled && computedTemporaryName) {
