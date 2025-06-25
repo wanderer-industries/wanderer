@@ -1,19 +1,19 @@
-import { useMemo } from 'react';
-import { MapSolarSystemType } from '../map.types';
-import { NodeProps } from 'reactflow';
+import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
+import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
+import { useMapState } from '@/hooks/Mapper/components/map/MapProvider';
+import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
+import { sortWHClasses } from '@/hooks/Mapper/helpers';
+import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
-import { useMapState } from '@/hooks/Mapper/components/map/MapProvider';
-import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick';
-import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
-import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
-import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
-import { sortWHClasses } from '@/hooks/Mapper/helpers';
-import { CharacterTypeRaw, OutCommand, PingType, SystemSignature } from '@/hooks/Mapper/types';
-import { useUnsplashedSignatures } from './useUnsplashedSignatures';
-import { useSystemName } from './useSystemName';
-import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { CharacterTypeRaw, OutCommand, PingType, SystemSignature } from '@/hooks/Mapper/types';
+import { useMemo } from 'react';
+import { NodeProps } from 'reactflow';
+import { MapSolarSystemType } from '../map.types';
+import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
+import { useSystemName } from './useSystemName';
+import { useUnsplashedSignatures } from './useUnsplashedSignatures';
 
 function getActivityType(count: number): string {
   if (count <= 5) return 'activityNormal';
@@ -117,7 +117,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
   const { isShowUnsplashedSignatures } = interfaceSettings;
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
   const isShowLinkedSigId = useMapGetOption('show_linked_signature_id') === 'true';
-  const isShowLinkedSigIdTempName = useMapGetOption('show_linked_signature_id_temp_name') === 'true';
 
   const {
     data: {
@@ -184,8 +183,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
   const { systemName, computedTemporaryName, customName } = useSystemName({
     isTempSystemNameEnabled,
     temporary_name,
-    isShowLinkedSigIdTempName,
-    linkedSigPrefix,
     name,
     systemStaticInfo,
   });

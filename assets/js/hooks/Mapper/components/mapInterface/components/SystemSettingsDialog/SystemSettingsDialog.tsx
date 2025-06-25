@@ -1,16 +1,16 @@
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dialog } from 'primereact/dialog';
+import { TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
-import { OutCommand } from '@/hooks/Mapper/types';
-import { IconField } from 'primereact/iconfield';
-import { TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
-import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { OutCommand } from '@/hooks/Mapper/types';
+import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
+import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
+import { IconField } from 'primereact/iconfield';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SystemSettingsDialog {
   systemId: string;
@@ -206,7 +206,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                     aria-describedby="temporaryName"
                     autoComplete="off"
                     value={temporaryName}
-                    maxLength={10}
+                    maxLength={12}
                     onChange={e => setTemporaryName(e.target.value)}
                   />
                 </IconField>
