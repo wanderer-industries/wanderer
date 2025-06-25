@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.74.0](https://github.com/wanderer-industries/wanderer/compare/v1.73.0...v1.74.0) (2025-06-25)
+
+
+
+
+### Features:
+
+* Core: Reverted showing linked signature ID as part of temporary names
+
 ## [v1.73.0](https://github.com/wanderer-industries/wanderer/compare/v1.72.1...v1.73.0) (2025-06-25)
 
 
