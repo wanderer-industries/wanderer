@@ -8,6 +8,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
+  @refresh_delay 100
+  # Rate limiting: 5 minutes in milliseconds
+  @clear_all_cooldown 5 * 60 * 1000
+
   def handle_server_event(%{event: :character_added, payload: character}, socket) do
     socket
     |> MapEventHandler.push_map_event(
@@ -136,10 +140,45 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
-    {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+    case WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id) do
+      {:ok, tracking_data} ->
+        {:reply, %{data: tracking_data}, socket}
 
-    {:reply, %{data: tracking_data}, socket}
+      {:error, reason} ->
+        Logger.error("Failed to build tracking data: #{inspect(reason)}")
+
+        {:reply, %{data: %{characters: [], main: nil, following: nil, ready_characters: []}},
+         socket}
+    end
+  end
+
+  def handle_ui_event(
+        "getAllReadyCharacters",
+        _event,
+        %{
+          assigns: %{
+            map_id: map_id
+          }
+        } = socket
+      ) do
+    try do
+      case build_all_ready_characters_data(map_id) do
+        {:ok, ready_characters_data} ->
+          {:reply, %{data: ready_characters_data}, socket}
+
+        {:error, reason} ->
+          Logger.error("Failed to build all ready characters data: #{inspect(reason)}")
+          {:reply, %{data: %{characters: []}}, socket}
+      end
+    rescue
+      error ->
+        Logger.error("Exception in getAllReadyCharacters: #{inspect(error)}")
+        {:reply, %{data: %{characters: []}}, socket}
+    catch
+      :exit, reason ->
+        Logger.error("Exit in getAllReadyCharacters: #{inspect(reason)}")
+        {:reply, %{data: %{characters: []}}, socket}
+    end
   end
 
   def handle_ui_event(
@@ -279,6 +318,46 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   end
 
   def handle_ui_event(
+        "updateReadyCharacters",
+        %{"ready_character_eve_ids" => ready_character_eve_ids},
+        %{assigns: %{map_id: map_id, current_user: %{id: current_user_id}}} = socket
+      ) do
+    # Not a clear all operation, proceed normally
+    perform_update_ready_characters(
+      ready_character_eve_ids,
+      map_id,
+      current_user_id,
+      socket,
+      false
+    )
+  end
+
+  def handle_ui_event(
+        "clearAllReadyCharacters",
+        _event,
+        %{assigns: %{map_id: map_id, current_user: %{id: current_user_id}}} = socket
+      ) do
+    # Check rate limiting for clear all operation
+    case check_clear_all_rate_limit(map_id) do
+      {:ok, remaining_cooldown} when remaining_cooldown > 0 ->
+        {:reply,
+         %{
+           error: "rate_limited",
+           message: "Clear all function is on cooldown",
+           remaining_cooldown: remaining_cooldown
+         }, socket}
+
+      {:ok, _} ->
+        # Rate limit passed, continue with the operation
+        perform_clear_all_ready_characters(map_id, current_user_id, socket)
+
+      {:error, reason} ->
+        Logger.error("Rate limit check failed: #{inspect(reason)}")
+        {:reply, %{error: "internal_error", message: "Failed to check rate limit"}, socket}
+    end
+  end
+
+  def handle_ui_event(
         "startTracking",
         %{"character_eve_id" => character_eve_id},
         %{
@@ -299,6 +378,224 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
+  # Private functions
+
+  defp perform_clear_all_ready_characters(map_id, current_user_id, socket) do
+    try do
+      # Get all user settings for this map
+      import Ecto.Query
+
+      user_settings_query =
+        from(settings in "map_user_settings_v1",
+          where: settings.map_id == type(^map_id, :binary_id),
+          select: %{
+            id: settings.id,
+            map_id: settings.map_id,
+            user_id: settings.user_id,
+            ready_characters: settings.ready_characters,
+            settings: settings.settings,
+            main_character_eve_id: settings.main_character_eve_id,
+            following_character_eve_id: settings.following_character_eve_id,
+            hubs: settings.hubs
+          }
+        )
+
+      map_user_settings = WandererApp.Repo.all(user_settings_query)
+
+      # Clear ready characters for all users
+      results =
+        Enum.map(map_user_settings, fn user_setting ->
+          # Load the user setting as an Ash resource using by_user_id
+          case WandererApp.Api.MapUserSettings.by_user_id(
+                 user_setting.map_id,
+                 user_setting.user_id
+               ) do
+            {:ok, ash_user_setting} ->
+              case WandererApp.Api.MapUserSettings.update_ready_characters(ash_user_setting, %{
+                     ready_characters: []
+                   }) do
+                {:ok, _updated_settings} ->
+                  :ok
+
+                {:error, reason} ->
+                  Logger.error(
+                    "Failed to clear ready characters for user #{user_setting.user_id}: #{inspect(reason)}"
+                  )
+
+                  {:error, reason}
+              end
+
+            {:error, reason} ->
+              Logger.error(
+                "Failed to load user setting for map #{user_setting.map_id} user #{user_setting.user_id}: #{inspect(reason)}"
+              )
+
+              {:error, reason}
+          end
+        end)
+
+      # Check if all operations succeeded
+      failed_operations = Enum.filter(results, &(&1 != :ok))
+
+      if Enum.empty?(failed_operations) do
+        # Set rate limit for clear all operation
+        set_clear_all_rate_limit(map_id)
+
+        # Broadcast to all users that ready characters have been cleared
+        WandererAppWeb.Endpoint.broadcast!(
+          "map:#{map_id}",
+          "all_ready_characters_cleared",
+          %{
+            cleared_by_user_id: current_user_id
+          }
+        )
+
+        # Build and return updated tracking data for current user
+        {:ok, tracking_data} =
+          WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+
+        # Send characters_updated event to update all character data including ready status
+        Process.send_after(self(), %{event: :characters_updated}, @refresh_delay + 10)
+
+        {:reply, %{data: tracking_data}, socket}
+      else
+        Logger.error("Some clear operations failed: #{inspect(failed_operations)}")
+        {:reply, %{error: "Failed to clear some ready characters"}, socket}
+      end
+    rescue
+      error ->
+        Logger.error("Exception in clear all ready characters: #{inspect(error)}")
+        {:reply, %{error: "Internal error while clearing ready characters"}, socket}
+    end
+  end
+
+  defp perform_update_ready_characters(
+         ready_character_eve_ids,
+         map_id,
+         current_user_id,
+         socket,
+         is_clear_all
+       ) do
+    # Validate ready characters exist, are owned by user, and are tracked
+    {:ok, valid_ready_characters} =
+      validate_ready_characters(map_id, current_user_id, ready_character_eve_ids)
+
+    # Get or create user settings and update ready characters
+    {:ok, map_user_settings} = WandererApp.MapUserSettingsRepo.get(map_id, current_user_id)
+
+    result =
+      case map_user_settings do
+        nil ->
+          # Create new settings if none exist, then update with ready characters
+          case WandererApp.Api.MapUserSettings.create(%{
+                 map_id: map_id,
+                 user_id: current_user_id,
+                 settings: "{}"
+               }) do
+            {:ok, new_settings} ->
+              # Now update with ready characters
+              case WandererApp.Api.MapUserSettings.update_ready_characters(new_settings, %{
+                     ready_characters: valid_ready_characters
+                   }) do
+                {:ok, _updated_settings} ->
+                  :ok
+
+                {:error, reason} ->
+                  Logger.error(
+                    "Failed to update ready characters on new settings: #{inspect(reason)}"
+                  )
+
+                  {:error, "Failed to save ready characters"}
+              end
+
+            {:error, reason} ->
+              Logger.error("Failed to create user settings: #{inspect(reason)}")
+              {:error, "Failed to create user settings"}
+          end
+
+        existing_settings ->
+          # Update existing settings
+          case WandererApp.Api.MapUserSettings.update_ready_characters(existing_settings, %{
+                 ready_characters: valid_ready_characters
+               }) do
+            {:ok, _updated_settings} ->
+              :ok
+
+            {:error, reason} ->
+              Logger.error("Failed to update ready characters: #{inspect(reason)}")
+              {:error, "Failed to save ready characters"}
+          end
+      end
+
+    case result do
+      :ok ->
+        # If this was a clear all operation, update the rate limit cache
+        if is_clear_all do
+          set_clear_all_rate_limit(map_id)
+        end
+
+        # Broadcast ready status changes to other users in the map
+        broadcast_ready_status_change(map_id, current_user_id, valid_ready_characters)
+
+        # Build and return updated tracking data immediately
+        {:ok, tracking_data} =
+          WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+
+        # Send characters_updated event to update all character data including ready status
+        Process.send_after(self(), %{event: :characters_updated}, @refresh_delay + 10)
+
+        {:reply, %{data: tracking_data}, socket}
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, reason)}
+    end
+  end
+
+  defp check_clear_all_rate_limit(map_id) do
+    cache_key = "map:#{map_id}:clear_all_ready_last_used"
+
+    case WandererApp.Cache.get(cache_key) do
+      nil ->
+        # No previous clear all operation recorded
+        {:ok, 0}
+
+      last_clear_time when is_integer(last_clear_time) ->
+        current_time = System.system_time(:millisecond)
+        time_since_last_clear = current_time - last_clear_time
+        remaining_cooldown = max(0, @clear_all_cooldown - time_since_last_clear)
+        {:ok, remaining_cooldown}
+
+      _ ->
+        # Invalid cache value, treat as no rate limit
+        {:ok, 0}
+    end
+  rescue
+    error ->
+      Logger.error("Error checking clear all rate limit: #{inspect(error)}")
+      {:error, :cache_error}
+  end
+
+  defp set_clear_all_rate_limit(map_id) do
+    cache_key = "map:#{map_id}:clear_all_ready_last_used"
+    current_time = System.system_time(:millisecond)
+
+    # Set with TTL slightly longer than the cooldown to ensure cleanup
+    ttl_seconds = div(@clear_all_cooldown, 1000) + 60
+
+    case WandererApp.Cache.put(cache_key, current_time, ttl: ttl_seconds) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to set clear all rate limit: #{inspect(reason)}")
+        {:error, reason}
+    end
+  rescue
+    error ->
+      Logger.error("Error setting clear all rate limit: #{inspect(error)}")
+      {:error, :cache_error}
+  end
+
   def map_ui_character(character),
     do:
       character
@@ -316,12 +613,13 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
       |> Map.put_new(:tracking_paused, character |> Map.get(:tracking_paused, false))
+      |> Map.put_new(:ready, character |> Map.get(:ready, false))
 
   defp get_location(character),
     do: %{
-      solar_system_id: character.solar_system_id,
-      structure_id: character.structure_id,
-      station_id: character.station_id
+      solar_system_id: Map.get(character, :solar_system_id),
+      structure_id: Map.get(character, :structure_id),
+      station_id: Map.get(character, :station_id)
     }
 
   defp get_map_with_acls(map_id) do
@@ -404,5 +702,175 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       is_tracked = setting && setting.tracked
       !is_tracked
     end)
+  end
+
+  @doc """
+  Validates that the provided character EVE IDs are valid.
+  Returns {:ok, valid_character_eve_ids} or {:error, reason}.
+  """
+  defp validate_ready_characters(map_id, current_user_id, ready_character_eve_ids) do
+    with {:ok, user_characters_list} <-
+           WandererApp.Api.Character.active_by_user(%{user_id: current_user_id}),
+         user_character_ids = Enum.map(user_characters_list, & &1.id),
+         {:ok, character_settings} <-
+           WandererApp.MapCharacterSettingsRepo.get_by_map_filtered(map_id, user_character_ids) do
+      # Get valid user character EVE IDs
+      user_character_eve_ids = user_characters_list |> Enum.map(& &1.eve_id) |> MapSet.new()
+
+      # Get tracked character IDs
+      tracked_character_ids =
+        character_settings
+        |> Enum.filter(& &1.tracked)
+        |> Enum.map(& &1.character_id)
+        |> MapSet.new()
+
+      # Find tracked characters that match user characters
+      tracked_user_characters =
+        user_characters_list
+        |> Enum.filter(&MapSet.member?(tracked_character_ids, &1.id))
+        |> Enum.map(& &1.eve_id)
+        |> MapSet.new()
+
+      # Filter ready characters to only include owned, tracked characters
+      valid_ready_characters =
+        ready_character_eve_ids
+        |> Enum.filter(fn eve_id ->
+          MapSet.member?(user_character_eve_ids, eve_id) &&
+            MapSet.member?(tracked_user_characters, eve_id)
+        end)
+
+      {:ok, valid_ready_characters}
+    else
+      error ->
+        {:error, "Failed to validate characters: #{inspect(error)}"}
+    end
+  end
+
+  @doc """
+  Broadcasts ready status changes to other users in the map.
+  """
+  defp broadcast_ready_status_change(map_id, current_user_id, ready_character_eve_ids) do
+    # Get current user info for the broadcast
+    {:ok, current_user} = WandererApp.Api.User.by_id(current_user_id)
+
+    # Broadcast to all users in the map
+    WandererAppWeb.Endpoint.broadcast!(
+      "map:#{map_id}",
+      "ready_characters_updated",
+      %{
+        user_id: current_user_id,
+        user_name: current_user.name,
+        ready_character_eve_ids: ready_character_eve_ids
+      }
+    )
+  end
+
+  @doc """
+  Builds data for all ready characters from all users in the map.
+  """
+  defp build_all_ready_characters_data(map_id) do
+    # Get all character settings for this map and preload characters (like map API controller)
+    case WandererApp.Api.MapCharacterSettings.read_by_map(%{map_id: map_id}) do
+      {:ok, map_character_settings} when map_character_settings != [] ->
+        # Load character relationships
+        map_character_settings_with_chars =
+          Enum.map(map_character_settings, fn setting ->
+            Ash.load!(setting, :character)
+          end)
+
+        # Extract characters and filter out those without a user_id
+        characters =
+          map_character_settings_with_chars
+          |> Enum.map(& &1.character)
+          |> Enum.filter(fn char -> char != nil && not is_nil(char.user_id) end)
+
+        if characters != [] do
+          # Get all user settings for this map to find ready characters
+          # Use raw Ecto query since there's no get_all_by_map for MapUserSettings
+          import Ecto.Query
+
+          user_settings_query =
+            from(settings in "map_user_settings_v1",
+              where: settings.map_id == type(^map_id, :binary_id),
+              select: %{
+                id: settings.id,
+                map_id: settings.map_id,
+                user_id: settings.user_id,
+                ready_characters: settings.ready_characters,
+                settings: settings.settings,
+                main_character_eve_id: settings.main_character_eve_id,
+                following_character_eve_id: settings.following_character_eve_id,
+                hubs: settings.hubs
+              }
+            )
+
+          case WandererApp.Repo.all(user_settings_query) do
+            map_user_settings when is_list(map_user_settings) ->
+              # Extract all ready character EVE IDs from all users
+              all_ready_character_eve_ids =
+                map_user_settings
+                |> Enum.flat_map(fn settings ->
+                  case settings.ready_characters do
+                    nil -> []
+                    ready_chars -> ready_chars
+                  end
+                end)
+                |> MapSet.new()
+
+              # Filter to only tracked and ready characters
+              ready_characters =
+                characters
+                |> Enum.filter(fn char ->
+                  # Check if character is tracked
+                  setting =
+                    Enum.find(map_character_settings_with_chars, &(&1.character_id == char.id))
+
+                  is_tracked = setting && setting.tracked
+
+                  # Check if character is in ready list and tracked
+                  is_ready =
+                    MapSet.member?(all_ready_character_eve_ids, char.eve_id) && is_tracked
+
+                  is_ready
+                end)
+                |> Enum.map(fn char ->
+                  # Get actual online status
+                  actual_online =
+                    case WandererApp.Character.get_character_state(char.id, false) do
+                      {:ok, %{is_online: is_online}} when not is_nil(is_online) -> is_online
+                      _ -> Map.get(char, :online, false)
+                    end
+
+                  character_data =
+                    char
+                    |> Map.put(:online, actual_online)
+                    |> map_ui_character()
+
+                  %{
+                    character: character_data,
+                    tracked: true,
+                    ready: true
+                  }
+                end)
+
+              {:ok, %{characters: ready_characters}}
+
+            _ ->
+              {:ok, %{characters: []}}
+          end
+        else
+          {:ok, %{characters: []}}
+        end
+
+      {:ok, []} ->
+        {:ok, %{characters: []}}
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to fetch map character settings for ready characters: #{inspect(reason)}"
+        )
+
+        {:ok, %{characters: []}}
+    end
   end
 end

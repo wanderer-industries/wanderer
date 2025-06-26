@@ -199,6 +199,15 @@ defmodule WandererApp.Character.Tracker do
                 WandererApp.Cache.delete("character:#{character_id}:wallet_forbidden")
                 WandererApp.Character.update_character(character_id, online)
 
+                # Clear ready status if character went offline
+                if not online.online do
+                  {:ok, character} = WandererApp.Character.get_character(character_id)
+
+                  WandererApp.Character.TrackingUtils.clear_ready_status_on_offline(
+                    character.eve_id
+                  )
+                end
+
                 update = %{
                   character_state
                   | is_online: online.online,

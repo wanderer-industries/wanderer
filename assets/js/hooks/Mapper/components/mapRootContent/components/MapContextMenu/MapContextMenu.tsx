@@ -12,9 +12,15 @@ export interface MapContextMenuProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
+  onShowFleetReadiness?: () => void;
 }
 
-export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: MapContextMenuProps) => {
+export const MapContextMenu = ({
+  onShowOnTheMap,
+  onShowMapSettings,
+  onShowTrackingDialog,
+  onShowFleetReadiness,
+}: MapContextMenuProps) => {
   const {
     outCommand,
     storedSettings: { setInterfaceSettings },
@@ -38,6 +44,12 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTracki
           label: 'Tracking',
           icon: 'pi pi-user-plus',
           command: onShowTrackingDialog,
+          visible: canTrackCharacters,
+        },
+        {
+          label: 'Fleet Readiness',
+          icon: 'pi pi-users',
+          command: onShowFleetReadiness,
           visible: canTrackCharacters,
         },
         {
@@ -74,6 +86,7 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTracki
   }, [
     canTrackCharacters,
     onShowTrackingDialog,
+    onShowFleetReadiness,
     handleShowActivity,
     onShowMapSettings,
     onShowOnTheMap,
