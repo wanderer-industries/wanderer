@@ -1,15 +1,5 @@
 import React, { useCallback } from 'react';
-
-export interface TrackingCharacter {
-  character: {
-    eve_id: string;
-    name: string;
-    ship_name?: string;
-    online: boolean;
-  };
-  tracked: boolean;
-  ready: boolean;
-}
+import { TrackingCharacter } from '@/hooks/Mapper/types';
 
 interface ReadyCharactersListProps {
   trackingCharacters: TrackingCharacter[];
@@ -44,9 +34,11 @@ export const ReadyCharactersList = ({ trackingCharacters, ready, onReadyChange }
       ) : (
         <div className="space-y-1">
           {availableCharacters.map(({ character }) => {
-            const { eve_id, name, ship_name } = character;
+            const { eve_id, name, ship } = character;
             const isReady = ready.includes(eve_id);
-            const shipInfo = ship_name || 'Unknown ship';
+            const shipTypeName = ship?.ship_type_info?.name;
+            const shipName = ship?.ship_name;
+            const shipInfo = shipTypeName ? `${shipTypeName} (${shipName})` : shipName || 'Unknown ship';
 
             return (
               <label
@@ -75,9 +67,7 @@ export const ReadyCharactersList = ({ trackingCharacters, ready, onReadyChange }
                     <span className="text-xs" style={{ color: 'var(--gray-500)' }}>
                       •
                     </span>
-                    <span className="text-xs" style={{ color: 'var(--gray-400)' }}>
-                      {shipInfo}
-                    </span>
+                    <span className="text-xs text-stone-400">{shipInfo}</span>
                   </div>
                 </div>
                 <div className="text-xs" style={{ color: 'var(--primary-color)' }}>

@@ -31,7 +31,7 @@ const renderSystemLocation = (character: TrackingCharacter) => {
   return (
     <div className="flex items-center gap-2">
       <span className="font-medium">{systemName}</span>
-      {isDocked && <span className="text-xs text-stone-500">(Docked)</span>}
+      {isDocked && <span className="text-xs text-stone-400">(Docked)</span>}
     </div>
   );
 };
@@ -47,8 +47,8 @@ const renderShipType = (character: TrackingCharacter) => {
 
   return (
     <div className="flex items-center space-x-2">
-      <span className="font-medium">{char.ship.ship_name}</span>
-      {shipTypeName && <span className="text-xs text-stone-500">({shipTypeName})</span>}
+      <span className="font-medium">{shipTypeName || 'Unknown type'}</span>
+      <span className="text-xs text-stone-400">({char.ship.ship_name})</span>
     </div>
   );
 };
