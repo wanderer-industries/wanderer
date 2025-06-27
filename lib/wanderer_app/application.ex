@@ -7,6 +7,11 @@ defmodule WandererApp.Application do
 
   @impl true
   def start(_type, _args) do
+    # Load test mocks if we're in test environment
+    if Mix.env() == :test and Code.ensure_loaded?(WandererApp.Test.Mocks) do
+      WandererApp.Test.Mocks.setup_mocks()
+    end
+
     children =
       [
         WandererApp.PromEx,
@@ -94,7 +99,7 @@ defmodule WandererApp.Application do
     wanderer_kills_enabled =
       Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
 
-    if wanderer_kills_enabled in [true, :true, "true"] do
+    if wanderer_kills_enabled in [true, true, "true"] do
       Logger.info("Starting WandererKills service integration...")
 
       [

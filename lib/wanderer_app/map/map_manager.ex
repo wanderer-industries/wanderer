@@ -161,7 +161,6 @@ defmodule WandererApp.Map.Manager do
 
     case MapSystemSignature.by_deleted_and_updated_before!(true, delete_after_date) do
       {:ok, deleted_signatures} ->
-
         Enum.each(deleted_signatures, fn sig ->
           Ash.destroy!(sig)
         end)
@@ -173,8 +172,6 @@ defmodule WandererApp.Map.Manager do
         {:error, error}
     end
   end
-
-
 
   defp cleanup_expired_pings() do
     delete_after_date = DateTime.utc_now() |> DateTime.add(-1 * @pings_expire_minutes, :minute)
