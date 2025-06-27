@@ -7,6 +7,11 @@ defmodule WandererApp.Application do
 
   @impl true
   def start(_type, _args) do
+    # Load test mocks if we're in test environment
+    if Mix.env() == :test and Code.ensure_loaded?(WandererApp.Test.Mocks) do
+      WandererApp.Test.Mocks.setup_mocks()
+    end
+
     children =
       [
         WandererApp.PromEx,

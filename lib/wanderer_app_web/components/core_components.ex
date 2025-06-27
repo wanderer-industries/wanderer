@@ -88,7 +88,7 @@ defmodule WandererAppWeb.CoreComponents do
             ]}
           >
             <h3 class="p-dialog-header font-bold text-base">
-              <div><%= @title %></div>
+              <div>{@title}</div>
               <div class="absolute right-4">
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
@@ -101,7 +101,7 @@ defmodule WandererAppWeb.CoreComponents do
               </div>
             </h3>
             <div id={"#{@id}-content"} class="p-dialog-content !overflow-visible">
-              <%= render_slot(@inner_block) %>
+              {render_slot(@inner_block)}
             </div>
           </.focus_wrap>
         </div>
@@ -129,7 +129,7 @@ defmodule WandererAppWeb.CoreComponents do
           </div>
           <div class="ml-3 flex items-center">
             <p class="text-sm font-medium text-red-800" role="alert">
-              <%= render_slot(@inner_block) %>
+              {render_slot(@inner_block)}
             </p>
           </div>
         </div>
@@ -208,7 +208,7 @@ defmodule WandererAppWeb.CoreComponents do
             class="h-5 !w-[50px] text-orange-500"
           />
           <.icon :if={@kind == :error} name="hero-x-circle" class="h-5 !w-[50px] text-red-500" />
-          <span :if={@kind == :loading} class="loading loading-ring loading-md"></span> <%= msg %>
+          <span :if={@kind == :loading} class="loading loading-ring loading-md"></span> {msg}
         </div>
       </div>
       <button type="button" class="flex items-center" aria-label={gettext("close")}>
@@ -266,9 +266,9 @@ defmodule WandererAppWeb.CoreComponents do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="w-full space-y-8">
-        <%= render_slot(@inner_block, f) %>
+        {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-          <%= render_slot(action, f) %>
+          {render_slot(action, f)}
         </div>
       </div>
     </.form>
@@ -299,7 +299,7 @@ defmodule WandererAppWeb.CoreComponents do
       ]}
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -379,7 +379,7 @@ defmodule WandererAppWeb.CoreComponents do
     ~H"""
     <div phx-feedback-for={@name} class="form-control mt-2">
       <label class="inputContainer" for={@name}>
-        <span><%= @label %></span>
+        <span>{@label}</span>
         <div></div>
         <div class="smallInputSwitch">
           <div class="flex items-center">
@@ -443,9 +443,9 @@ defmodule WandererAppWeb.CoreComponents do
     <div phx-feedback-for={@name}>
       <div class="form-control w-full">
         <.label for={@id}>
-          <span><%= @label %></span>
+          <span>{@label}</span>
           <div></div>
-          <%= @value %>
+          {@value}
         </.label>
 
         <div>
@@ -463,7 +463,7 @@ defmodule WandererAppWeb.CoreComponents do
           />
         </div>
       </div>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -477,7 +477,7 @@ defmodule WandererAppWeb.CoreComponents do
         @wrapper_class
       ]}
     >
-      <.label :if={@label} for={@id}><%= @label %></.label>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <div :if={@label}></div>
       <select
         id={@id}
@@ -489,10 +489,10 @@ defmodule WandererAppWeb.CoreComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value=""><%= @prompt %></option>
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+        <option :if={@prompt} value="">{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -500,7 +500,7 @@ defmodule WandererAppWeb.CoreComponents do
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <label phx-feedback-for={@name} class="form-control">
-      <.label for={@id}><span class="label-text"><%= @label %></span></.label>
+      <.label for={@id}><span class="label-text">{@label}</span></.label>
       <textarea
         id={@id}
         name={@name}
@@ -511,7 +511,7 @@ defmodule WandererAppWeb.CoreComponents do
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </label>
     """
   end
@@ -520,7 +520,7 @@ defmodule WandererAppWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <label class="form-control w-full" phx-feedback-for={@name}>
-      <.label for={@id}><span class="label-text"><%= @label %></span></.label>
+      <.label for={@id}><span class="label-text">{@label}</span></.label>
       <div class="join">
         <input :if={@prefix} class="p-inputtext bg-neutral-700 join-item" disabled value={@prefix} />
         <input
@@ -538,7 +538,7 @@ defmodule WandererAppWeb.CoreComponents do
       </div>
 
       <div class="label">
-        <.error :for={msg <- @errors}><%= msg %></.error>
+        <.error :for={msg <- @errors}>{msg}</.error>
       </div>
     </label>
     """
@@ -553,7 +553,7 @@ defmodule WandererAppWeb.CoreComponents do
   def label(assigns) do
     ~H"""
     <label for={@for} class="inputContainer">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </label>
     """
   end
@@ -567,7 +567,7 @@ defmodule WandererAppWeb.CoreComponents do
     ~H"""
     <p class="label-text-alt text-rose-600 phx-no-feedback:hidden">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </p>
     """
   end
@@ -589,13 +589,13 @@ defmodule WandererAppWeb.CoreComponents do
     ]}>
       <div>
         <h1 class="text-lg font-semibold leading-8">
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         </h1>
         <p :if={@subtitle != []} class="mt-2 text-sm leading-6">
-          <%= render_slot(@subtitle) %>
+          {render_slot(@subtitle)}
         </p>
       </div>
-      <div class="flex-none"><%= render_slot(@actions) %></div>
+      <div class="flex-none">{render_slot(@actions)}</div>
     </header>
     """
   end
@@ -641,16 +641,16 @@ defmodule WandererAppWeb.CoreComponents do
       <table class="table overflow-y-auto">
         <thead>
           <tr>
-            <th :for={col <- @col}><%= col[:label] %></th>
+            <th :for={col <- @col}>{col[:label]}</th>
             <th :if={@action != []} class="relative p-0 pb-4">
-              <span class="sr-only"><%= gettext("Actions") %></span>
+              <span class="sr-only">{gettext("Actions")}</span>
             </th>
           </tr>
         </thead>
         <tbody id={@id} phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}>
           <tr :if={@rows |> Enum.empty?()}>
             <td colspan={@col |> Enum.count()}>
-              <%= @empty_label %>
+              {@empty_label}
             </td>
           </tr>
           <tr
@@ -660,13 +660,13 @@ defmodule WandererAppWeb.CoreComponents do
             class={"hover #{if @row_selected && @row_selected.(row), do: "!bg-slate-600", else: ""} #{if @row_click, do: "cursor-pointer", else: ""}"}
           >
             <td :for={{col, _index} <- Enum.with_index(@col)}>
-              <%= render_slot(col, @row_item.(row)) %>
+              {render_slot(col, @row_item.(row))}
             </td>
             <td :if={@action != []}>
               <div class="relative whitespace-nowrap text-right text-sm font-medium">
                 <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
                 <span :for={action <- @action} class="relative pl-4 font-semibold leading-6">
-                  <%= render_slot(action, @row_item.(row)) %>
+                  {render_slot(action, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -696,8 +696,8 @@ defmodule WandererAppWeb.CoreComponents do
     <div class="mt-14">
       <dl class="-my-4 divide-y divide-zinc-100">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500"><%= item.title %></dt>
-          <dd class="text-zinc-700"><%= render_slot(item) %></dd>
+          <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
+          <dd class="text-zinc-700">{render_slot(item)}</dd>
         </div>
       </dl>
     </div>
@@ -757,10 +757,10 @@ defmodule WandererAppWeb.CoreComponents do
         text_input_selected_class="p-inputtext"
         {@live_select_opts}
       >
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </LiveSelect.live_select>
       <div for="form_description" class="label">
-        <.error :for={msg <- @errors}><%= msg %></.error>
+        <.error :for={msg <- @errors}>{msg}</.error>
       </div>
     </div>
     """
@@ -788,7 +788,7 @@ defmodule WandererAppWeb.CoreComponents do
         ]}
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </.link>
     </div>
     """
@@ -836,7 +836,7 @@ defmodule WandererAppWeb.CoreComponents do
 
   def local_time(assigns) do
     ~H"""
-    <time phx-hook="LocalTime" id={"time-#{@id}"} class="invisible"><%= @at %></time>
+    <time phx-hook="LocalTime" id={"time-#{@id}"} class="invisible">{@at}</time>
     """
   end
 
@@ -845,7 +845,7 @@ defmodule WandererAppWeb.CoreComponents do
 
   def client_time(assigns) do
     ~H"""
-    <time phx-hook="ClientTime" id={"client-time-#{@id}"} class="invisible"><%= @at %></time>
+    <time phx-hook="ClientTime" id={"client-time-#{@id}"} class="invisible">{@at}</time>
     """
   end
 

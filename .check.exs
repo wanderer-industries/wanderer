@@ -13,8 +13,8 @@
 
   ## list of tools (see `mix check` docs for a list of default curated tools)
   tools: [
-    ## curated tools may be disabled (e.g. the check for compilation warnings)
-    {:compiler, false},
+    ## Allow compilation warnings for now (error budget: unlimited warnings)
+    {:compiler, "mix compile"},
 
     ## ...or have command & args adjusted (e.g. enable skip comments for sobelow)
     # {:sobelow, "mix sobelow --exit --skip"},
@@ -22,10 +22,15 @@
     ## ...or reordered (e.g. to see output from dialyzer before others)
     # {:dialyzer, order: -1},
 
-    ## ...or reconfigured (e.g. disable parallel execution of ex_unit in umbrella)
+    ## Credo with relaxed error budget: max 200 issues
+    {:credo, "mix credo --strict --max-issues 200"},
 
+    ## Dialyzer but don't halt on exit (allow warnings)
+    {:dialyzer, "mix dialyzer"},
+
+    ## Tests without warnings-as-errors for now
+    {:ex_unit, "mix test"},
     {:doctor, false},
-    {:ex_unit, false},
     {:npm_test, false},
     {:sobelow, false}
 

@@ -13,11 +13,11 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   @impl true
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, map_id}       <- fetch_map_id(conn),
-         {:ok, map}          <- ApiMap.by_id(map_id),
-         true                <- is_binary(map.public_api_key) &&
-                               Crypto.secure_compare(map.public_api_key, token)
-    do
+         {:ok, map_id} <- fetch_map_id(conn),
+         {:ok, map} <- ApiMap.by_id(map_id),
+         true <-
+           is_binary(map.public_api_key) &&
+             Crypto.secure_compare(map.public_api_key, token) do
       conn
       |> assign(:map, map)
       |> assign(:map_id, map.id)
@@ -36,12 +36,19 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
 
       {:error, _} ->
         Logger.warning("Map identifier required")
+
         conn
-        |> respond(400, "Map identifier required. Provide `map_identifier` in the path or `map_id`/`slug` in query.")
+        |> respond(
+          400,
+          "Map identifier required. Provide `map_identifier` in the path or `map_id`/`slug` in query."
+        )
         |> halt()
 
       false ->
-        Logger.warning("Unauthorized: invalid token for map #{inspect(conn.params["map_identifier"])}")
+        Logger.warning(
+          "Unauthorized: invalid token for map #{inspect(conn.params["map_identifier"])}"
+        )
+
         conn |> respond(401, "Unauthorized (invalid token for map)") |> halt()
 
       error ->
@@ -51,9 +58,11 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   end
 
   # Try unified path param first, then fall back to legacy query params
-  defp fetch_map_id(%Plug.Conn{params: %{"map_identifier" => id}}) when is_binary(id) and id != "" do
+  defp fetch_map_id(%Plug.Conn{params: %{"map_identifier" => id}})
+       when is_binary(id) and id != "" do
     resolve_identifier(id)
   end
+
   defp fetch_map_id(conn), do: legacy_fetch(conn)
 
   # Try ID lookup first, then slug lookup
@@ -76,8 +85,8 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   # Legacy: check assigns, then params["map_id"], then params["slug"]
   defp legacy_fetch(conn) do
     map_id_from_assign = conn.assigns[:map_id]
-    map_id_param       = conn.params["map_id"]
-    slug_param         = conn.params["slug"]
+    map_id_param = conn.params["map_id"]
+    slug_param = conn.params["slug"]
 
     cond do
       is_binary(map_id_from_assign) and map_id_from_assign != "" ->
@@ -89,7 +98,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
       is_binary(slug_param) and slug_param != "" ->
         case ApiMap.get_map_by_slug(slug_param) do
           {:ok, %{id: map_id}} -> {:ok, map_id}
-          _                    -> {:error, :not_found, "Map not found for slug: #{slug_param}"}
+          _ -> {:error, :not_found, "Map not found for slug: #{slug_param}"}
         end
 
       true ->
@@ -106,7 +115,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
         401 -> R.unauthorized(msg)
         404 -> R.not_found(msg)
         500 -> R.internal_server_error(msg)
-        _   -> R.internal_server_error("Unexpected error")
+        _ -> R.internal_server_error("Unexpected error")
       end
 
     conn
