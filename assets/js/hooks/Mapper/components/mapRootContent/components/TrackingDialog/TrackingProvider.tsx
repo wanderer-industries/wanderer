@@ -6,14 +6,23 @@ import { CommandInCharactersTrackingInfo } from '@/hooks/Mapper/types/commandsIn
 
 type DiffTrackingInfo = { characterId: string; tracked: boolean };
 
+interface UpdateReadyResponse {
+  data?: unknown;
+  error?: string;
+  message?: string;
+  remaining_cooldown?: number;
+}
+
 type TrackingContextType = {
   loadTracking: () => void;
   updateTracking: (selected: string[]) => void;
   updateFollowing: (characterId: string | null) => void;
   updateMain: (characterId: string) => void;
+  updateReady: (readyCharacterIds: string[]) => Promise<unknown>;
   trackingCharacters: TrackingCharacter[];
   following: string | null;
   main: string | null;
+  ready: string[];
   loading: boolean;
 };
 
@@ -23,6 +32,7 @@ export const TrackingProvider = ({ children }: WithChildren) => {
   const [trackingCharacters, setTrackingCharacters] = useState<TrackingCharacter[]>([]);
   const [following, setFollowing] = useState<string | null>(null);
   const [main, setMain] = useState<string | null>(null);
+  const [ready, setReady] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const { outCommand } = useMapRootState();
@@ -41,6 +51,7 @@ export const TrackingProvider = ({ children }: WithChildren) => {
       setTrackingCharacters(res.data.characters);
       setFollowing(res.data.following);
       setMain(res.data.main);
+      setReady(res.data.ready_characters);
     } catch (err) {
       console.error('TrackingProviderError', err);
     }
@@ -92,6 +103,7 @@ export const TrackingProvider = ({ children }: WithChildren) => {
         return {
           tracked: selected.includes(x.character.eve_id),
           character: x.character,
+          ready: x.ready,
         };
       });
 
@@ -122,6 +134,40 @@ export const TrackingProvider = ({ children }: WithChildren) => {
     [outCommand],
   );
 
+  const updateReady = useCallback(
+    async (readyCharacterIds: string[]) => {
+      try {
+        const response = await outCommand({
+          type: OutCommand.updateReadyCharacters,
+          data: { ready_character_eve_ids: readyCharacterIds },
+        });
+
+        // Check if the response indicates a rate limit error
+        const responseObj = response as UpdateReadyResponse;
+        if (responseObj?.error) {
+          throw responseObj;
+        }
+
+        // Update local state immediately
+        setReady(readyCharacterIds);
+
+        // Also update trackingCharacters to reflect ready status
+        setTrackingCharacters(prev =>
+          prev.map(char => ({
+            ...char,
+            ready: readyCharacterIds.includes(char.character.eve_id),
+          })),
+        );
+
+        return response;
+      } catch (error) {
+        console.error('Error updating ready characters:', error);
+        throw error;
+      }
+    },
+    [outCommand],
+  );
+
   return (
     <TrackingContext.Provider
       value={{
@@ -129,10 +175,12 @@ export const TrackingProvider = ({ children }: WithChildren) => {
         trackingCharacters,
         following,
         main,
+        ready,
         loading,
         updateTracking,
         updateFollowing,
         updateMain,
+        updateReady,
       }}
     >
       {children}

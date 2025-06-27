@@ -39,6 +39,7 @@ export type CharacterTypeRaw = {
 export interface TrackingCharacter {
   character: CharacterTypeRaw;
   tracked: boolean;
+  ready: boolean;
 }
 
 export type WithIsOwnCharacter = {

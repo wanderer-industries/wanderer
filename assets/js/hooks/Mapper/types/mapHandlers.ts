@@ -151,6 +151,9 @@ export type CommandUpdateTracking = {
 };
 export type CommandPingAdded = PingData[];
 export type CommandPingCancelled = Pick<PingData, 'type' | 'solar_system_id'>;
+export type CommandUpdateReadyCharacters = {
+  ready_character_eve_ids: string[];
+};
 
 export interface UserSettings {
   primaryCharacterId?: string;
@@ -258,6 +261,9 @@ export enum OutCommand {
   updateCharacterTracking = 'updateCharacterTracking',
   updateFollowingCharacter = 'updateFollowingCharacter',
   updateMainCharacter = 'updateMainCharacter',
+  updateReadyCharacters = 'updateReadyCharacters',
+  getAllReadyCharacters = 'getAllReadyCharacters',
+  clearAllReadyCharacters = 'clearAllReadyCharacters',
   addPing = 'add_ping',
   cancelPing = 'cancel_ping',
   startTracking = 'startTracking',
