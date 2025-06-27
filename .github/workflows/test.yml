@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  pull_request_target:
+    branches: [main, develop]
 
 env:
   MIX_ENV: test
@@ -318,7 +320,7 @@ jobs:
     name: 💬 Post PR Results
     runs-on: ubuntu-22.04
     needs: [test, openapi-check]
-    if: always() && github.event_name == 'pull_request'
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
     permissions:
       pull-requests: write
       issues: write
