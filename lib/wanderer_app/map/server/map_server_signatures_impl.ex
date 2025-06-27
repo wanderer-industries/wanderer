@@ -28,12 +28,11 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
            MapSystem.read_by_map_and_solar_system(%{
              map_id: map_id,
              solar_system_id: system_solar_id
-           }),
-         {:ok, %{eve_id: char_eve_id}} <- Character.get_character(char_id) do
+           }) do
       do_update_signatures(
         state,
         system,
-        char_eve_id,
+        char_id,
         user_id,
         delete_conn?,
         added_params,
@@ -52,13 +51,24 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   defp do_update_signatures(
          state,
          system,
-         character_eve_id,
+         character_id,
          user_id,
          delete_conn?,
          added_params,
          updated_params,
          removed_params
        ) do
+    # Get character EVE ID for signature parsing
+    character_eve_id =
+      case Character.get_character(character_id) do
+        {:ok, %{eve_id: eve_id}} ->
+          eve_id
+
+        _ ->
+          Logger.warning("Could not get character EVE ID for character_id: #{character_id}")
+          nil
+      end
+
     # parse incoming DTOs
     added_sigs = parse_signatures(added_params, character_eve_id, system.id)
     updated_sigs = parse_signatures(updated_params, character_eve_id, system.id)
@@ -89,7 +99,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     added_eve_ids = Enum.map(added_sigs, & &1.eve_id)
 
     existing_index =
-      MapSystemSignature.by_system_id_all!(system.id)
+      existing_all
       |> Enum.filter(&(&1.eve_id in added_eve_ids))
       |> Map.new(&{&1.eve_id, &1})
 
@@ -127,7 +137,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         state.map_id,
         system.solar_system_id,
         user_id,
-        character_eve_id,
+        character_id,
         added_ids
       )
     end
@@ -138,7 +148,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         state.map_id,
         system.solar_system_id,
         user_id,
-        character_eve_id,
+        character_id,
         removed_ids
       )
     end

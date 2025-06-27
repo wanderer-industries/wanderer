@@ -2,6 +2,95 @@
 
 <!-- changelog -->
 
+## [v1.74.0](https://github.com/wanderer-industries/wanderer/compare/v1.73.0...v1.74.0) (2025-06-25)
+
+
+
+
+### Features:
+
+* Core: Reverted showing linked signature ID as part of temporary names
+
+## [v1.73.0](https://github.com/wanderer-industries/wanderer/compare/v1.72.1...v1.73.0) (2025-06-25)
+
+
+
+
+### Features:
+
+* Core: Allowed system temp names up to 12 characters. Deprecated showing linked signature ID as part of temporary name.
+
+## [v1.72.1](https://github.com/wanderer-industries/wanderer/compare/v1.72.0...v1.72.1) (2025-06-23)
+
+
+
+
+### Bug Fixes:
+
+* issue with tracking signature activity
+
+## [v1.72.0](https://github.com/wanderer-industries/wanderer/compare/v1.71.3...v1.72.0) (2025-06-21)
+
+
+
+
+### Features:
+
+* Core: Added an ability to see & topup map balance and map subscription info (on public)
+
+## [v1.71.3](https://github.com/wanderer-industries/wanderer/compare/v1.71.2...v1.71.3) (2025-06-21)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix incorrect placing of labels
+
+## [v1.71.2](https://github.com/wanderer-industries/wanderer/compare/v1.71.1...v1.71.2) (2025-06-20)
+
+
+
+
+### Bug Fixes:
+
+* fix issue with kill service disconnect
+
+## [v1.71.1](https://github.com/wanderer-industries/wanderer/compare/v1.71.0...v1.71.1) (2025-06-19)
+
+
+
+
+### Bug Fixes:
+
+* update system kills widget timing
+
+## [v1.71.0](https://github.com/wanderer-industries/wanderer/compare/v1.70.7...v1.71.0) (2025-06-19)
+
+
+
+
+### Features:
+
+* use external services for kill data
+
+### Bug Fixes:
+
+* remove duplicate kills connections
+
+* Fixed kills clinet init & map start/update logic
+
+* avoid duplicate subs, and remove subs on inactive maps
+
+## [v1.70.7](https://github.com/wanderer-industries/wanderer/compare/v1.70.6...v1.70.7) (2025-06-18)
+
+
+
+
+### Bug Fixes:
+
+* Subscriptions: Added option to topup using ALL user balance available
+
 ## [v1.70.6](https://github.com/wanderer-industries/wanderer/compare/v1.70.5...v1.70.6) (2025-06-18)
 
 

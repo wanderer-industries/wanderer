@@ -13,16 +13,13 @@ interface UseSystemKillsProps {
   sinceHours?: number;
 }
 
-function combineKills(existing: DetailedKill[], incoming: DetailedKill[], sinceHours: number): DetailedKill[] {
-  const cutoff = Date.now() - sinceHours * 60 * 60 * 1000;
+function combineKills(existing: DetailedKill[], incoming: DetailedKill[]): DetailedKill[] {
+  // Don't filter by time when storing - let components filter when displaying
   const byId: Record<string, DetailedKill> = {};
 
   for (const kill of [...existing, ...incoming]) {
     if (!kill.kill_time) continue;
-    const killTimeMs = new Date(kill.kill_time).valueOf();
-    if (killTimeMs >= cutoff) {
-      byId[kill.killmail_id] = kill;
-    }
+    byId[kill.killmail_id] = kill;
   }
 
   return Object.values(byId);
@@ -55,14 +52,14 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
 
         for (const [sid, newKills] of Object.entries(killsMap)) {
           const existing = updated[sid] ?? [];
-          const combined = combineKills(existing, newKills, effectiveSinceHours);
+          const combined = combineKills(existing, newKills);
           updated[sid] = combined;
         }
 
         return { ...prev, detailedKills: updated };
       });
     },
-    [update, effectiveSinceHours],
+    [update],
   );
 
   const fetchKills = useCallback(

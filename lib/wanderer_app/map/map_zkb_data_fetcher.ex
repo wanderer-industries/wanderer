@@ -7,6 +7,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
   require Logger
 
+  alias WandererApp.Map.Server.Impl, as: MapServerImpl
 
   @interval :timer.seconds(15)
   @store_map_kills_timeout :timer.hours(1)
@@ -109,56 +110,32 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           {solar_system_id, MapSet.new(ids)}
         end)
 
-      # Find systems with changed killmail lists
+      # Find systems with changed killmail lists or empty detailed kills
       changed_systems =
         new_ids_map
         |> Enum.filter(fn {system_id, new_ids_set} ->
           old_set = MapSet.new(Map.get(old_ids_map, system_id, []))
-          not MapSet.equal?(new_ids_set, old_set)
+          old_details = Map.get(old_details_map, system_id, [])
+          # Update if IDs changed OR if we have IDs but no detailed kills
+          not MapSet.equal?(new_ids_set, old_set) or 
+            (MapSet.size(new_ids_set) > 0 and old_details == [])
         end)
         |> Enum.map(&elem(&1, 0))
 
       if changed_systems == [] do
-        Logger.debug(fn ->
-          "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}"
-        end)
+        log_no_changes(map_id)
 
         # Don't overwrite existing cache data when there are no changes
         # Only initialize if cache doesn't exist
-        if old_details_map == %{} do
-          # First time initialization - create empty structure
-          empty_map = systems
-                      |> Enum.into(%{}, fn {system_id, _} -> {system_id, []} end)
-
-          WandererApp.Cache.insert(cache_key_details, empty_map, ttl: :timer.hours(@killmail_ttl_hours))
-        end
+        maybe_initialize_empty_details_map(old_details_map, systems, cache_key_details)
 
         :ok
       else
         # Build new details for each changed system
-        updated_details_map =
-          Enum.reduce(changed_systems, old_details_map, fn system_id, acc ->
-            kill_ids =
-              new_ids_map
-              |> Map.fetch!(system_id)
-              |> MapSet.to_list()
-
-            # Get killmail details from cache (populated by WebSocket)
-            kill_details =
-              kill_ids
-              |> Enum.map(&WandererApp.Cache.get("zkb:killmail:#{&1}"))
-              |> Enum.reject(&is_nil/1)
-
-            # Ensure system_id is an integer key
-            Map.put(acc, system_id, kill_details)
-          end)
+        updated_details_map = build_updated_details_map(changed_systems, old_details_map, new_ids_map)
 
         # Update the ID map cache
-        updated_ids_map =
-          Enum.reduce(changed_systems, old_ids_map, fn system_id, acc ->
-            new_ids_list = new_ids_map[system_id] |> MapSet.to_list()
-            Map.put(acc, system_id, new_ids_list)
-          end)
+        updated_ids_map = build_updated_ids_map(changed_systems, old_ids_map, new_ids_map)
 
         # Store updated caches
         WandererApp.Cache.insert(cache_key_ids, updated_ids_map,
@@ -171,7 +148,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
         # Broadcast changes
         changed_data = Map.take(updated_details_map, changed_systems)
-        WandererApp.Map.Server.Impl.broadcast!(map_id, :detailed_kills_updated, changed_data)
+        MapServerImpl.broadcast!(map_id, :detailed_kills_updated, changed_data)
 
         :ok
       end
@@ -203,7 +180,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
       payload = Map.take(new_kills_map, changed_system_ids)
 
-      WandererApp.Map.Server.Impl.broadcast!(map_id, :kills_updated, payload)
+      MapServerImpl.broadcast!(map_id, :kills_updated, payload)
 
       :ok
     end
@@ -216,5 +193,41 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       Logger.debug(fn -> "[ZkbDataFetcher] Map #{map_id} not started => skipping #{label}" end)
       :ok
     end
+  end
+
+  defp maybe_initialize_empty_details_map(%{}, systems, cache_key_details) do
+    # First time initialization - create empty structure
+    initial_map = Enum.into(systems, %{}, fn {system_id, _} -> {system_id, []} end)
+    WandererApp.Cache.insert(cache_key_details, initial_map, ttl: :timer.hours(@killmail_ttl_hours))
+  end
+
+  defp maybe_initialize_empty_details_map(_old_details_map, _systems, _cache_key_details), do: :ok
+
+  defp build_updated_details_map(changed_systems, old_details_map, new_ids_map) do
+    Enum.reduce(changed_systems, old_details_map, fn system_id, acc ->
+      kill_details = get_kill_details_for_system(system_id, new_ids_map)
+      Map.put(acc, system_id, kill_details)
+    end)
+  end
+
+  defp get_kill_details_for_system(system_id, new_ids_map) do
+    new_ids_map
+    |> Map.fetch!(system_id)
+    |> MapSet.to_list()
+    |> Enum.map(&WandererApp.Cache.get("zkb:killmail:#{&1}"))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp build_updated_ids_map(changed_systems, old_ids_map, new_ids_map) do
+    Enum.reduce(changed_systems, old_ids_map, fn system_id, acc ->
+      new_ids_list = new_ids_map[system_id] |> MapSet.to_list()
+      Map.put(acc, system_id, new_ids_list)
+    end)
+  end
+
+  defp log_no_changes(map_id) do
+    Logger.debug(fn ->
+      "[ZkbDataFetcher] No changes in detailed kills for map_id=#{map_id}"
+    end)
   end
 end

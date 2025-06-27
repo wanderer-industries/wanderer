@@ -14,6 +14,7 @@ defmodule WandererApp.Env do
   def base_url, do: get_key(:web_app_url, "<BASE_URL>")
   def custom_route_base_url, do: get_key(:custom_route_base_url, "<CUSTOM_ROUTE_BASE_URL>")
   def invites, do: get_key(:invites, false)
+
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
   def websocket_events_enabled?, do: get_key(:websocket_events_enabled, false)
   def public_api_disabled?, do: get_key(:public_api_disabled, false)
@@ -75,5 +76,4 @@ defmodule WandererApp.Env do
   def to_client_env do
     %{detailedKillsDisabled: not wanderer_kills_service_enabled?()}
   end
-
 end

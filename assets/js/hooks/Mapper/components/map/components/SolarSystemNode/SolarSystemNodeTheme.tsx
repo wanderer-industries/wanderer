@@ -47,7 +47,7 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             >
               <div className={clsx(classes.BookmarkWithIcon)}>
                 <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
-                <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
+                <span className={clsx(classes.text)}>{localKillsCount}</span>
               </div>
             </KillsCounter>
           )}
