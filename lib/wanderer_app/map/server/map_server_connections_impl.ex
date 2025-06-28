@@ -30,7 +30,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @a4 22
   @a5 23
   @ccp4 24
-  # @pochven 25
+  @pochven 25
   # @zarzakh 10100
 
   @jita 30_000_142
@@ -51,7 +51,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     @redoubt
   ]
 
-  @known_space [@hs, @ls, @ns]
+  @known_space [@hs, @ls, @ns, @pochven]
 
   @prohibited_systems [@jita]
   @prohibited_system_classes [
