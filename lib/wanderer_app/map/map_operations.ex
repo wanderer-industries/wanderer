@@ -91,7 +91,8 @@ defmodule WandererApp.Map.Operations do
   defdelegate delete_connection(map_id, src_id, tgt_id), to: Connections
 
   @doc "Get a connection by source and target system IDs"
-  @spec get_connection_by_systems(String.t(), integer(), integer()) :: {:ok, map()} | {:error, String.t()}
+  @spec get_connection_by_systems(String.t(), integer(), integer()) ::
+          {:ok, map()} | {:error, String.t()}
   defdelegate get_connection_by_systems(map_id, source, target), to: Connections
 
   # -- Structures ------------------------------------------------------------

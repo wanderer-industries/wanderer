@@ -13,30 +13,33 @@ defmodule WandererAppWeb.UserSocket do
       Logger.info("WebSocket connection rejected - websocket events disabled from #{remote_ip}")
       :error
     else
+      # Extract API key from connection params
+      # Client should connect with: /socket/websocket?api_key=<key>
 
-    # Extract API key from connection params
-    # Client should connect with: /socket/websocket?api_key=<key>
+      # Log connection attempt for security auditing
+      remote_ip = get_remote_ip(connect_info)
+      Logger.info("WebSocket connection attempt from #{remote_ip}")
 
-    # Log connection attempt for security auditing
-    remote_ip = get_remote_ip(connect_info)
-    Logger.info("WebSocket connection attempt from #{remote_ip}")
+      case params["api_key"] do
+        api_key when is_binary(api_key) and api_key != "" ->
+          # Store the API key in socket assigns for channel authentication
+          # Full validation happens in channel join where we have the map context
+          socket =
+            socket
+            |> assign(:api_key, api_key)
+            |> assign(:remote_ip, remote_ip)
 
-    case params["api_key"] do
-      api_key when is_binary(api_key) and api_key != "" ->
-        # Store the API key in socket assigns for channel authentication
-        # Full validation happens in channel join where we have the map context
-        socket = socket
-          |> assign(:api_key, api_key)
-          |> assign(:remote_ip, remote_ip)
+          Logger.info(
+            "WebSocket connection accepted from #{remote_ip}, pending channel authentication"
+          )
 
-        Logger.info("WebSocket connection accepted from #{remote_ip}, pending channel authentication")
-        {:ok, socket}
+          {:ok, socket}
 
-      _ ->
-        # Require API key for external events
-        Logger.warning("WebSocket connection rejected - missing API key from #{remote_ip}")
-        :error
-    end
+        _ ->
+          # Require API key for external events
+          Logger.warning("WebSocket connection rejected - missing API key from #{remote_ip}")
+          :error
+      end
     end
   end
 

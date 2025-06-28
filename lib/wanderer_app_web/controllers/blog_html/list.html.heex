@@ -20,7 +20,7 @@
                     navigate={~p"/news?tag=#{tag}"}
                     class={if @selected_tag == tag, do: "active", else: "false"}
                   >
-                    <%= tag %>
+                    {tag}
                   </.link>
                 </li>
               <% end %>
@@ -44,9 +44,9 @@
                   />
                 </figure>
                 <div class="card-body hover:text-white">
-                  <h2 class="card-title"><%= post.title %></h2>
+                  <h2 class="card-title">{post.title}</h2>
                   <p class="text-xs opacity-60">
-                    <%= post.description %>
+                    {post.description}
                   </p>
                   <div class="card-actions justify-end">
                     <ul class="flex flex-wrap items-center p-0 m-0">
@@ -55,7 +55,7 @@
                         class="inline-flex rounded-[35px] bg-primary px-1 text-white"
                       >
                         <div class="badge badge-outline text-primary rounded-none border-none text-sm">
-                          #<%= tag %>
+                          #{tag}
                         </div>
                       </li>
                     </ul>

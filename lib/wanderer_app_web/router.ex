@@ -249,9 +249,9 @@ defmodule WandererAppWeb.Router do
   # WebSocket events and webhook management endpoints (disabled by default)
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map, :api_websocket_events]
-    
+
     get "/events", MapEventsAPIController, :list_events
-    
+
     # Webhook management endpoints
     resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
       post "/rotate-secret", MapWebhooksAPIController, :rotate_secret

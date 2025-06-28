@@ -5,25 +5,24 @@ defmodule WandererApp.Api.MapSystemStructure do
   """
 
   @derive {Jason.Encoder,
-    only: [
-      :id,
-      :system_id,
-      :solar_system_id,
-      :solar_system_name,
-      :structure_type_id,
-      :structure_type,
-      :character_eve_id,
-      :name,
-      :notes,
-      :owner_name,
-      :owner_ticker,
-      :owner_id,
-      :status,
-      :end_time,
-      :inserted_at,
-      :updated_at
-    ]
-  }
+           only: [
+             :id,
+             :system_id,
+             :solar_system_id,
+             :solar_system_name,
+             :structure_type_id,
+             :structure_type,
+             :character_eve_id,
+             :name,
+             :notes,
+             :owner_name,
+             :owner_ticker,
+             :owner_id,
+             :status,
+             :end_time,
+             :inserted_at,
+             :updated_at
+           ]}
 
   use Ash.Resource,
     domain: WandererApp.Api,
@@ -100,10 +99,9 @@ defmodule WandererApp.Api.MapSystemStructure do
       argument :system_id, :uuid, allow_nil?: false
 
       change manage_relationship(:system_id, :system,
-        on_lookup: :relate,
-        on_no_match: nil
-      )
-
+               on_lookup: :relate,
+               on_no_match: nil
+             )
     end
 
     update :update do
@@ -125,9 +123,7 @@ defmodule WandererApp.Api.MapSystemStructure do
         :status,
         :end_time
       ]
-
     end
-
   end
 
   attributes do

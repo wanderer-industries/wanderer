@@ -3,12 +3,12 @@
   <div class="w-full px-4 md:px-6 text-xl leading-normal ccp-font">
     <!--Title-->
     <h1 class="font-bold break-normal pt-10 ccp-font text-white">
-      <%= @post.title %>
+      {@post.title}
     </h1>
 
     <div class="text-md md:text-base font-normal mt-0 ccp-font flex items-center gap-4">
       <div class="flex justify-start content-center gap-2">
-        <%= @post.date %> - BY <span class="uppercase"><%= @post.author %></span>
+        {@post.date} - BY <span class="uppercase">{@post.author}</span>
       </div>
 
       <div class="min-h-[10px] w-px self-stretch border-t-0 bg-gradient-to-tr from-transparent to-transparent opacity-25 via-neutral-200 block">
@@ -100,7 +100,7 @@
         <li :for={tag <- @post.tags} class="inline-flex rounded-[35px] bg-primary px-1 text-white">
           <a href="#">
             <div class="badge badge-outline text-primary rounded-none border-none text-xl">
-              #<%= tag %>
+              #{tag}
             </div>
           </a>
         </li>
@@ -108,10 +108,10 @@
     </div>
 
     <h4 class=" break-normal font-normal mt-8 ccp-font">
-      <%= @post.description %>
+      {@post.description}
     </h4>
     <!--Post Content-->
-    <%= raw(@post.body) %>
+    {raw(@post.body)}
   </div>
   <!--/container-->
 </article>

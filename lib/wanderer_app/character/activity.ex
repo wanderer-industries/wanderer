@@ -50,8 +50,8 @@ defmodule WandererApp.Character.Activity do
   def process_character_activity(map_id, current_user) do
     with {:ok, map_user_settings} <- get_map_user_settings(map_id, current_user.id),
          raw_activity <- WandererApp.Map.get_character_activity(map_id),
-         {:ok, user_characters} <- WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
-
+         {:ok, user_characters} <-
+           WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
       result = process_activity_data(raw_activity, map_user_settings, user_characters)
       result
     end
@@ -61,6 +61,7 @@ defmodule WandererApp.Character.Activity do
     case WandererApp.MapUserSettingsRepo.get(map_id, user_id) do
       {:ok, settings} when not is_nil(settings) ->
         {:ok, settings}
+
       _ ->
         {:ok, %{main_character_eve_id: nil}}
     end
@@ -98,17 +99,24 @@ defmodule WandererApp.Character.Activity do
     |> sort_by_timestamp()
   end
 
-  defp process_user_activity(user_id, user_activities, %{user_id: user_id, main_character_eve_id: main_id} = _map_user_settings, all_characters)
+  defp process_user_activity(
+         user_id,
+         user_activities,
+         %{user_id: user_id, main_character_eve_id: main_id} = _map_user_settings,
+         all_characters
+       )
        when not is_nil(main_id) do
     # Group activities by character
     activities_by_character = group_activities_by_character(user_activities)
 
     main_id_str = to_string(main_id)
 
-    display_character = case Enum.find(all_characters, &(to_string(&1.eve_id) == main_id_str)) do
-      nil -> find_most_active_character_details(activities_by_character) # Fall back to most active
-      main_char -> main_char
-    end
+    display_character =
+      case Enum.find(all_characters, &(to_string(&1.eve_id) == main_id_str)) do
+        # Fall back to most active
+        nil -> find_most_active_character_details(activities_by_character)
+        main_char -> main_char
+      end
 
     build_activity_entry_if_valid(display_character, activities_by_character, user_id)
   end
@@ -147,7 +155,8 @@ defmodule WandererApp.Character.Activity do
 
   # Find the details of the most active character
   defp find_most_active_character_details(activities_by_character) do
-    with most_active_id when not is_nil(most_active_id) <- find_most_active_character(activities_by_character),
+    with most_active_id when not is_nil(most_active_id) <-
+           find_most_active_character(activities_by_character),
          most_active_activities <- Map.get(activities_by_character, most_active_id, []),
          [first_activity | _] <- most_active_activities,
          character when not is_nil(character) <- Map.get(first_activity, :character) do
@@ -168,13 +177,15 @@ defmodule WandererApp.Character.Activity do
 
     # Only create entry if there's at least some activity
     if all_passages + all_connections + all_signatures > 0 do
-      [%{
-        character: character,
-        passages: all_passages,
-        connections: all_connections,
-        signatures: all_signatures,
-        timestamp: get_latest_timestamp(activities_by_character)
-      }]
+      [
+        %{
+          character: character,
+          passages: all_passages,
+          connections: all_connections,
+          signatures: all_signatures,
+          timestamp: get_latest_timestamp(activities_by_character)
+        }
+      ]
     else
       Logger.warning("Character has no activity, not creating entry")
       []

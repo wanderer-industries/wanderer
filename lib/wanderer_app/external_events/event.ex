@@ -1,40 +1,45 @@
 defmodule WandererApp.ExternalEvents.Event do
   @moduledoc """
   Event struct for external webhook and WebSocket delivery.
-  
+
   This is completely separate from the internal PubSub event system
   and is only used for external client notifications.
   """
-  
-  @type event_type :: 
-    :add_system | 
-    :deleted_system | 
-    :system_renamed | 
-    :system_metadata_changed |
-    :signatures_updated |
-    :signature_added |
-    :signature_removed |
-    :connection_added |
-    :connection_removed |
-    :connection_updated |
-    :character_added | 
-    :character_removed | 
-    :character_updated |
-    :map_kill
-    
+
+  @type event_type ::
+          :add_system
+          | :deleted_system
+          | :system_renamed
+          | :system_metadata_changed
+          | :signatures_updated
+          | :signature_added
+          | :signature_removed
+          | :connection_added
+          | :connection_removed
+          | :connection_updated
+          | :character_added
+          | :character_removed
+          | :character_updated
+          | :map_kill
+
   @type t :: %__MODULE__{
-    id: String.t(),         # ULID for ordering
-    map_id: String.t(),     # Map identifier
-    type: event_type(),     # Event type
-    payload: map(),         # Event-specific data
-    timestamp: DateTime.t() # When the event occurred
-  }
-  
+          # ULID for ordering
+          id: String.t(),
+          # Map identifier
+          map_id: String.t(),
+          # Event type
+          type: event_type(),
+          # Event-specific data
+          payload: map(),
+          # When the event occurred
+          timestamp: DateTime.t()
+        }
+
   defstruct [:id, :map_id, :type, :payload, :timestamp]
-  
+
   @doc """
   Creates a new external event with ULID for ordering.
-  
+
   Validates that the event_type is supported before creating the event.
   """
   @spec new(String.t(), event_type(), map()) :: t() | {:error, :invalid_event_type}
@@ -48,10 +53,11 @@ defmodule WandererApp.ExternalEvents.Event do
         timestamp: DateTime.utc_now()
       }
     else
-      raise ArgumentError, "Invalid event type: #{inspect(event_type)}. Must be one of: #{inspect(supported_event_types())}"
+      raise ArgumentError,
+            "Invalid event type: #{inspect(event_type)}. Must be one of: #{inspect(supported_event_types())}"
     end
   end
-  
+
   @doc """
   Converts an event to JSON format for delivery.
   """
@@ -65,59 +71,78 @@ defmodule WandererApp.ExternalEvents.Event do
       "payload" => serialize_payload(event.payload)
     }
   end
-  
+
   # Convert Ash structs and other complex types to plain maps
   defp serialize_payload(payload) when is_struct(payload) do
     serialize_payload(payload, MapSet.new())
   end
-  
+
   defp serialize_payload(payload) when is_map(payload) do
     serialize_payload(payload, MapSet.new())
   end
-  
+
   # Define allowlisted fields for different struct types
   @system_fields [:id, :solar_system_id, :name, :position_x, :position_y, :visible, :locked]
-  @character_fields [:id, :character_id, :character_eve_id, :name, :corporation_id, :alliance_id, :ship_type_id, :online]
-  @connection_fields [:id, :source_id, :target_id, :connection_type, :time_status, :mass_status, :ship_size]
+  @character_fields [
+    :id,
+    :character_id,
+    :character_eve_id,
+    :name,
+    :corporation_id,
+    :alliance_id,
+    :ship_type_id,
+    :online
+  ]
+  @connection_fields [
+    :id,
+    :source_id,
+    :target_id,
+    :connection_type,
+    :time_status,
+    :mass_status,
+    :ship_size
+  ]
   @signature_fields [:id, :signature_id, :name, :type, :group]
-  
+
   # Overloaded versions with visited tracking
   defp serialize_payload(payload, visited) when is_struct(payload) do
     # Check for circular reference
     ref = {payload.__struct__, Map.get(payload, :id)}
+
     if MapSet.member?(visited, ref) do
       # Return a reference indicator instead of recursing
       %{"__ref__" => to_string(ref)}
     else
       visited = MapSet.put(visited, ref)
-      
+
       # Get allowlisted fields based on struct type
       allowed_fields = get_allowed_fields(payload.__struct__)
-      
+
       payload
       |> Map.from_struct()
       |> Map.take(allowed_fields)
       |> serialize_fields(visited)
     end
   end
-  
+
   # Get allowed fields based on struct type
   defp get_allowed_fields(module) do
     module_name = module |> Module.split() |> List.last()
-    
+
     case module_name do
       "MapSystem" -> @system_fields
       "MapCharacter" -> @character_fields
       "MapConnection" -> @connection_fields
       "MapSystemSignature" -> @signature_fields
-      _ -> [:id, :name]  # Default minimal fields for unknown types
+      # Default minimal fields for unknown types
+      _ -> [:id, :name]
     end
   end
-  
+
   defp serialize_payload(payload, visited) when is_map(payload) do
     Map.new(payload, fn {k, v} -> {to_string(k), serialize_value(v, visited)} end)
   end
-  
+
   defp serialize_fields(fields, visited) do
     Enum.reduce(fields, %{}, fn {k, v}, acc ->
       if is_nil(v) do
@@ -127,14 +152,14 @@ defmodule WandererApp.ExternalEvents.Event do
       end
     end)
   end
-  
+
   defp serialize_value(%DateTime{} = dt, _visited), do: DateTime.to_iso8601(dt)
   defp serialize_value(%NaiveDateTime{} = dt, _visited), do: NaiveDateTime.to_iso8601(dt)
   defp serialize_value(v, visited) when is_struct(v), do: serialize_payload(v, visited)
   defp serialize_value(v, visited) when is_map(v), do: serialize_payload(v, visited)
   defp serialize_value(v, visited) when is_list(v), do: Enum.map(v, &serialize_value(&1, visited))
   defp serialize_value(v, _visited), do: v
-  
+
   @doc """
   Returns all supported event types.
   """
@@ -157,7 +182,7 @@ defmodule WandererApp.ExternalEvents.Event do
       :map_kill
     ]
   end
-  
+
   @doc """
   Validates an event type.
   """
@@ -165,6 +190,6 @@ defmodule WandererApp.ExternalEvents.Event do
   def valid_event_type?(event_type) when is_atom(event_type) do
     event_type in supported_event_types()
   end
-  
+
   def valid_event_type?(_), do: false
 end

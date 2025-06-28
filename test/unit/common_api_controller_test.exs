@@ -16,7 +16,7 @@ defmodule CommonAPIControllerTest do
     def require_param(params, key) do
       case params[key] do
         nil -> {:error, "Missing required param: #{key}"}
-        ""  -> {:error, "Param #{key} cannot be empty"}
+        "" -> {:error, "Param #{key} cannot be empty"}
         val -> {:ok, val}
       end
     end
@@ -24,56 +24,58 @@ defmodule CommonAPIControllerTest do
     def parse_int(str) do
       case Integer.parse(str) do
         {num, ""} -> {:ok, num}
-        _         -> {:error, "Invalid integer for param id=#{str}"}
+        _ -> {:error, "Invalid integer for param id=#{str}"}
       end
     end
   end
 
   defmodule MockCachedInfo do
-    def get_system_static_info(30000142) do
-      {:ok, %{
-        solar_system_id: 30000142,
-        region_id: 10000002,
-        constellation_id: 20000020,
-        solar_system_name: "Jita",
-        solar_system_name_lc: "jita",
-        constellation_name: "Kimotoro",
-        region_name: "The Forge",
-        system_class: 0,
-        security: "0.9",
-        type_description: "High Security",
-        class_title: "High Sec",
-        is_shattered: false,
-        effect_name: nil,
-        effect_power: nil,
-        statics: [],
-        wandering: [],
-        triglavian_invasion_status: nil,
-        sun_type_id: 45041
-      }}
+    def get_system_static_info(30_000_142) do
+      {:ok,
+       %{
+         solar_system_id: 30_000_142,
+         region_id: 10_000_002,
+         constellation_id: 20_000_020,
+         solar_system_name: "Jita",
+         solar_system_name_lc: "jita",
+         constellation_name: "Kimotoro",
+         region_name: "The Forge",
+         system_class: 0,
+         security: "0.9",
+         type_description: "High Security",
+         class_title: "High Sec",
+         is_shattered: false,
+         effect_name: nil,
+         effect_power: nil,
+         statics: [],
+         wandering: [],
+         triglavian_invasion_status: nil,
+         sun_type_id: 45041
+       }}
     end
 
-    def get_system_static_info(31000005) do
-      {:ok, %{
-        solar_system_id: 31000005,
-        region_id: 11000000,
-        constellation_id: 21000000,
-        solar_system_name: "J123456",
-        solar_system_name_lc: "j123456",
-        constellation_name: "Unknown",
-        region_name: "Wormhole Space",
-        system_class: 1,
-        security: "-0.9",
-        type_description: "Wormhole",
-        class_title: "Class 1",
-        is_shattered: false,
-        effect_name: "Wolf-Rayet Star",
-        effect_power: 1,
-        statics: ["N110"],
-        wandering: ["K162"],
-        triglavian_invasion_status: nil,
-        sun_type_id: 45042
-      }}
+    def get_system_static_info(31_000_005) do
+      {:ok,
+       %{
+         solar_system_id: 31_000_005,
+         region_id: 11_000_000,
+         constellation_id: 21_000_000,
+         solar_system_name: "J123456",
+         solar_system_name_lc: "j123456",
+         constellation_name: "Unknown",
+         region_name: "Wormhole Space",
+         system_class: 1,
+         security: "-0.9",
+         type_description: "Wormhole",
+         class_title: "Class 1",
+         is_shattered: false,
+         effect_name: "Wolf-Rayet Star",
+         effect_power: 1,
+         statics: ["N110"],
+         wandering: ["K162"],
+         triglavian_invasion_status: nil,
+         sun_type_id: 45042
+       }}
     end
 
     def get_system_static_info(_) do
@@ -81,16 +83,17 @@ defmodule CommonAPIControllerTest do
     end
 
     def get_wormhole_types do
-      {:ok, [
-        %{
-          name: "N110",
-          dest: 1,
-          lifetime: "16h",
-          total_mass: 500000000,
-          max_mass_per_jump: 20000000,
-          mass_regen: 0
-        }
-      ]}
+      {:ok,
+       [
+         %{
+           name: "N110",
+           dest: 1,
+           lifetime: "16h",
+           total_mass: 500_000_000,
+           max_mass_per_jump: 20_000_000,
+           mass_regen: 0
+         }
+       ]}
     end
 
     def get_wormhole_classes! do
@@ -173,9 +176,10 @@ defmodule CommonAPIControllerTest do
       wormhole_classes = MockCachedInfo.get_wormhole_classes!()
 
       # Create a map of wormhole classes by ID for quick lookup
-      classes_by_id = Enum.reduce(wormhole_classes, %{}, fn class, acc ->
-        Map.put(acc, class.id, class)
-      end)
+      classes_by_id =
+        Enum.reduce(wormhole_classes, %{}, fn class, acc ->
+          Map.put(acc, class.id, class)
+        end)
 
       # Find detailed information for each static
       Enum.map(statics, fn static_name ->
@@ -200,8 +204,8 @@ defmodule CommonAPIControllerTest do
         name: wh_type.name,
         destination: %{
           id: to_string(wh_type.dest),
-          name: (if dest_class, do: dest_class.title, else: wh_type.dest),
-          short_name: (if dest_class, do: dest_class.short_name, else: wh_type.dest)
+          name: if(dest_class, do: dest_class.title, else: wh_type.dest),
+          short_name: if(dest_class, do: dest_class.short_name, else: wh_type.dest)
         },
         properties: %{
           lifetime: wh_type.lifetime,
@@ -237,7 +241,7 @@ defmodule CommonAPIControllerTest do
       result = MockCommonAPIController.show_system_static(params)
 
       assert {:ok, %{data: data}} = result
-      assert data.solar_system_id == 30000142
+      assert data.solar_system_id == 30_000_142
       assert data.solar_system_name == "Jita"
       assert data.region_name == "The Forge"
       assert data.security == "0.9"
@@ -250,7 +254,7 @@ defmodule CommonAPIControllerTest do
       result = MockCommonAPIController.show_system_static(params)
 
       assert {:ok, %{data: data}} = result
-      assert data.solar_system_id == 31000005
+      assert data.solar_system_id == 31_000_005
       assert data.solar_system_name == "J123456"
       assert data.region_name == "Wormhole Space"
       assert data.system_class == 1
@@ -268,7 +272,7 @@ defmodule CommonAPIControllerTest do
       assert static.destination.name == "Class 1 Wormhole"
       assert static.destination.short_name == "C1"
       assert static.properties.lifetime == "16h"
-      assert static.properties.max_mass == 500000000
+      assert static.properties.max_mass == 500_000_000
     end
 
     test "returns error when system is not found" do

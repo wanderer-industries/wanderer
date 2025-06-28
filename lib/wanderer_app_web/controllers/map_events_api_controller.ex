@@ -53,19 +53,17 @@ defmodule WandererAppWeb.MapEventsAPIController do
       map_id: "550e8400-e29b-41d4-a716-446655440000",
       type: "add_system",
       payload: %{
-        solar_system_id: 30000142,
+        solar_system_id: 30_000_142,
         solar_system_name: "Jita"
       },
       ts: "2025-01-20T12:34:56Z"
     }
   }
 
-  @events_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @event_schema
-    }
-  )
+  @events_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                            type: :array,
+                            items: @event_schema
+                          })
 
   @events_list_params %OpenApiSpex.Schema{
     type: :object,
@@ -89,7 +87,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
   # OpenApiSpex Operations
   # -----------------------------------------------------------------
 
-  operation :list_events,
+  operation(:list_events,
     summary: "List recent events for a map",
     description: """
     Retrieves recent events for the specified map. This endpoint provides a way to catch up on missed events
@@ -124,6 +122,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
       404 => ResponseSchemas.not_found("Map not found"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
   # -----------------------------------------------------------------
   # Controller Actions
@@ -133,47 +132,47 @@ defmodule WandererAppWeb.MapEventsAPIController do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, since} <- parse_since_param(params),
          {:ok, limit} <- parse_limit_param(params) do
-      
       # If no 'since' parameter provided, default to 10 minutes ago
       since_datetime = since || DateTime.add(DateTime.utc_now(), -10, :minute)
-      
+
       # Check if MapEventRelay is running before calling
-      events = if Process.whereis(MapEventRelay) do
-        try do
-          MapEventRelay.get_events_since(map.id, since_datetime, limit)
-        catch
-          :exit, {:noproc, _} ->
-            Logger.error("MapEventRelay process not available")
-            []
-          
-          :exit, reason ->
-            Logger.error("Failed to get events from MapEventRelay: #{inspect(reason)}")
-            []
+      events =
+        if Process.whereis(MapEventRelay) do
+          try do
+            MapEventRelay.get_events_since(map.id, since_datetime, limit)
+          catch
+            :exit, {:noproc, _} ->
+              Logger.error("MapEventRelay process not available")
+              []
+
+            :exit, reason ->
+              Logger.error("Failed to get events from MapEventRelay: #{inspect(reason)}")
+              []
+          end
+        else
+          Logger.error("MapEventRelay is not running")
+          []
         end
-      else
-        Logger.error("MapEventRelay is not running")
-        []
-      end
-      
+
       # Events are already in JSON format from ETS
-      
+
       json(conn, %{data: events})
     else
       {:error, :map_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :invalid_since} ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Invalid 'since' parameter. Must be ISO8601 datetime."})
-        
+
       {:error, :invalid_limit} ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Invalid 'limit' parameter. Must be between 1 and 100."})
-        
+
       {:error, reason} ->
         conn
         |> put_status(:internal_server_error)
@@ -199,6 +198,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
       {:error, _} -> {:error, :invalid_since}
     end
   end
+
   defp parse_since_param(_), do: {:ok, nil}
 
   defp parse_limit_param(%{"limit" => limit_str}) when is_binary(limit_str) do
@@ -207,6 +207,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
       _ -> {:error, :invalid_limit}
     end
   end
+
   defp parse_limit_param(%{"limit" => limit}) when is_integer(limit) do
     if limit >= 1 and limit <= 100 do
       {:ok, limit}
@@ -214,5 +215,6 @@ defmodule WandererAppWeb.MapEventsAPIController do
       {:error, :invalid_limit}
     end
   end
+
   defp parse_limit_param(_), do: {:ok, 100}
 end

@@ -24,6 +24,12 @@ defmodule WandererApp.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import WandererApp.DataCase
+
+      # Import Ash test helpers
+      import WandererAppWeb.Factory
+
+      # Import test utilities
+      import WandererApp.TestHelpers
     end
   end
 
@@ -54,5 +60,90 @@ defmodule WandererApp.DataCase do
         opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
       end)
     end)
+  end
+
+  @doc """
+  Truncates all tables in the test database.
+  Use with caution - this will delete all test data.
+  """
+  def truncate_all_tables do
+    Ecto.Adapters.SQL.query!(
+      WandererApp.Repo,
+      "TRUNCATE #{tables_to_truncate()} RESTART IDENTITY CASCADE",
+      []
+    )
+  end
+
+  @doc """
+  Resets the database to a clean state.
+  """
+  def reset_database do
+    Ecto.Adapters.SQL.Sandbox.restart(WandererApp.Repo)
+  end
+
+  @doc """
+  Waits for async operations to complete using polling.
+  Useful when testing async processes.
+  """
+  # Backward compatibility - accepts just timeout
+  def wait_for_async(timeout) when is_integer(timeout) do
+    :timer.sleep(timeout)
+  end
+
+  def wait_for_async(condition_fn) when is_function(condition_fn) do
+    wait_for_async(condition_fn, 1000)
+  end
+
+  def wait_for_async(condition_fn, timeout) when is_function(condition_fn) do
+    wait_for_async_poll(condition_fn, timeout, 50)
+  end
+
+  defp wait_for_async_poll(condition_fn, timeout, interval) when timeout > 0 do
+    if condition_fn.() do
+      :ok
+    else
+      :timer.sleep(interval)
+      wait_for_async_poll(condition_fn, timeout - interval, interval)
+    end
+  end
+
+  defp wait_for_async_poll(_condition_fn, _timeout, _interval) do
+    raise "Timeout waiting for async condition"
+  end
+
+  @doc """
+  Asserts that an Ash action succeeds and returns the result.
+  """
+  def assert_ash_success({:ok, result}), do: result
+
+  def assert_ash_success({:error, error}) do
+    flunk("Expected Ash action to succeed, but got error: #{inspect(error)}")
+  end
+
+  @doc """
+  Asserts that an Ash action fails with expected error.
+  """
+  def assert_ash_error({:error, _error} = result), do: result
+
+  def assert_ash_error({:ok, result}) do
+    flunk("Expected Ash action to fail, but got success: #{inspect(result)}")
+  end
+
+  @doc """
+  Asserts that an Ash action fails with a specific error message.
+  """
+  def assert_ash_error({:error, error}, expected_message) when is_binary(expected_message) do
+    error_string = inspect(error)
+
+    assert error_string =~ expected_message,
+           "Expected error to contain '#{expected_message}', but got: #{error_string}"
+
+    {:error, error}
+  end
+
+  # Private helpers
+
+  defp tables_to_truncate do
+    "users, characters, maps, map_systems, map_connections, access_lists, access_list_members"
   end
 end

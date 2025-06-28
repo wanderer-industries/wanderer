@@ -7,8 +7,12 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   def handle_server_event(%{event: :add_system, payload: system}, socket) do
     # Schedule kill update for the new system after a short delay to allow subscription
-    Process.send_after(self(), %{event: :update_system_kills, payload: system.solar_system_id}, 2000)
-    
+    Process.send_after(
+      self(),
+      %{event: :update_system_kills, payload: system.solar_system_id},
+      2000
+    )
+
     socket
     |> MapEventHandler.push_map_event("add_systems", [
       MapEventHandler.map_ui_system(system)

@@ -50,7 +50,7 @@ defmodule WandererAppWeb.AclMember do
           <img src={member_icon_url(@member)} alt={@member.name} />
         </div>
       </div>
-      <%= @member.name %>
+      {@member.name}
     </div>
     """
   end
