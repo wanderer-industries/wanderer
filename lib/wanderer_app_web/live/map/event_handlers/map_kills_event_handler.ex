@@ -16,7 +16,6 @@ defmodule WandererAppWeb.MapKillsEventHandler do
     # Get kill counts from cache
     case WandererApp.Map.get_map(map_id) do
       {:ok, %{systems: systems}} ->
-
         kill_counts = build_kill_counts(systems)
 
         kills_payload =
@@ -266,6 +265,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
         Logger.warning(
           "[#{__MODULE__}] Invalid kill count data for system #{solar_system_id}: #{inspect(invalid_data)}"
         )
+
         0
     end
   end
@@ -282,6 +282,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
         Logger.warning(
           "[#{__MODULE__}] Invalid cache data structure for key: #{cache_key}, got: #{inspect(invalid_data)}"
         )
+
         # Clear invalid cache entry
         WandererApp.Cache.delete(cache_key)
         %{}
@@ -293,10 +294,10 @@ defmodule WandererAppWeb.MapKillsEventHandler do
       case Map.get(cached_map, system_id) do
         kills when is_list(kills) ->
           Map.put(acc, system_id, kills)
+
         _ ->
           acc
       end
     end)
   end
-
 end
