@@ -2,11 +2,11 @@ name: Test & Quality
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, test]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, test]
   pull_request_target:
-    branches: [main, develop]
+    branches: [main, develop, test]
 
 env:
   MIX_ENV: test
