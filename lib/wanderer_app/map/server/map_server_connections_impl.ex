@@ -389,7 +389,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         Impl.broadcast!(map_id, :add_connection, connection)
-        
+
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
         WandererApp.ExternalEvents.broadcast(map_id, :connection_added, %{
           connection_id: connection.id,
@@ -572,7 +572,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         Impl.broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
-        
+
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
         WandererApp.ExternalEvents.broadcast(map_id, :connection_removed, %{
           connection_id: connection.id,
@@ -621,7 +621,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       end
 
       Impl.broadcast!(map_id, :update_connection, updated_connection)
-      
+
       # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
       WandererApp.ExternalEvents.broadcast(map_id, :connection_updated, %{
         connection_id: updated_connection.id,

@@ -228,8 +228,12 @@ defmodule WandererApp.Kills.Client do
           end
 
         :needs_reconnect_with_timestamp ->
-          Logger.warning("[Client] Health check triggering reconnect (retry count: #{state.retry_count})")
+          Logger.warning(
+            "[Client] Health check triggering reconnect (retry count: #{state.retry_count})"
+          )
+
           new_state = %{state | last_health_reconnect_attempt: System.system_time(:millisecond)}
+
           if state.connected or state.connecting do
             send(self(), {:disconnected, :health_check_failed})
             %{new_state | connected: false, connecting: false, socket_pid: nil}
@@ -242,6 +246,7 @@ defmodule WandererApp.Kills.Client do
         :needs_reconnect_reset_retries ->
           Logger.warning("[Client] Health check resetting retry count and triggering reconnect")
           new_state = %{state | retry_count: 0, last_retry_cycle_end: nil}
+
           if state.connected or state.connecting do
             send(self(), {:disconnected, :health_check_failed})
             %{new_state | connected: false, connecting: false, socket_pid: nil}
@@ -446,6 +451,7 @@ defmodule WandererApp.Kills.Client do
   defp should_retry?(_), do: true
 
   defp should_start_new_retry_cycle?(%{last_retry_cycle_end: nil}), do: true
+
   defp should_start_new_retry_cycle?(%{last_retry_cycle_end: end_time}) do
     System.system_time(:millisecond) - end_time >= @message_timeout
   end
@@ -453,8 +459,9 @@ defmodule WandererApp.Kills.Client do
   # Prevent health check from triggering reconnects too frequently
   # Allow health check reconnects only every 2 minutes to avoid spam
   @health_check_reconnect_cooldown :timer.minutes(2)
-  
+
   defp should_health_check_reconnect?(%{last_health_reconnect_attempt: nil}), do: true
+
   defp should_health_check_reconnect?(%{last_health_reconnect_attempt: last_attempt}) do
     System.system_time(:millisecond) - last_attempt >= @health_check_reconnect_cooldown
   end
@@ -465,14 +472,15 @@ defmodule WandererApp.Kills.Client do
 
     # Increment retry count first
     new_retry_count = state.retry_count + 1
-    
+
     # If we've hit max retries, mark the end of this retry cycle
-    state = if new_retry_count >= @max_retries do
-      %{state | last_retry_cycle_end: System.system_time(:millisecond)}
-    else
-      state
-    end
-    
+    state =
+      if new_retry_count >= @max_retries do
+        %{state | last_retry_cycle_end: System.system_time(:millisecond)}
+      else
+        state
+      end
+
     delay = Enum.at(@retry_delays, min(state.retry_count, length(@retry_delays) - 1))
 
     timer_ref = Process.send_after(self(), :retry_connection, delay)
@@ -509,7 +517,8 @@ defmodule WandererApp.Kills.Client do
       if should_health_check_reconnect?(state) do
         :needs_reconnect_with_timestamp
       else
-        :healthy  # Recent health check reconnect attempt
+        # Recent health check reconnect attempt
+        :healthy
       end
     else
       # Max retries reached, check if 15 minutes have passed since last retry cycle
@@ -517,7 +526,8 @@ defmodule WandererApp.Kills.Client do
         Logger.info("[Client] 15 minutes elapsed since max retries, starting new retry cycle")
         :needs_reconnect_reset_retries
       else
-        :healthy  # Still within 15-minute cooldown period
+        # Still within 15-minute cooldown period
+        :healthy
       end
     end
   end
@@ -533,17 +543,21 @@ defmodule WandererApp.Kills.Client do
     end
   end
 
-  defp check_health(%{socket_pid: pid, last_message_time: last_msg_time} = state) when not is_nil(pid) and not is_nil(last_msg_time) do
+  defp check_health(%{socket_pid: pid, last_message_time: last_msg_time} = state)
+       when not is_nil(pid) and not is_nil(last_msg_time) do
     cond do
       not socket_alive?(pid) ->
         Logger.warning("[Client] Health check: Socket process #{inspect(pid)} is dead")
         :needs_reconnect
-      
+
       # Check if we haven't received a message in the configured timeout
       System.system_time(:millisecond) - last_msg_time > @message_timeout ->
-        Logger.warning("[Client] Health check: No messages received for 15+ minutes, reconnecting")
+        Logger.warning(
+          "[Client] Health check: No messages received for 15+ minutes, reconnecting"
+        )
+
         :needs_reconnect
-        
+
       true ->
         :healthy
     end
@@ -663,7 +677,7 @@ defmodule WandererApp.Kills.Client do
         {"killmails:lobby", "killmail_update"} ->
           # Notify parent that we received a message
           send(state.parent, {:message_received, :killmail_update})
-          
+
           # Use supervised task to handle failures gracefully
           Task.Supervisor.start_child(
             WandererApp.Kills.TaskSupervisor,
@@ -673,7 +687,7 @@ defmodule WandererApp.Kills.Client do
         {"killmails:lobby", "kill_count_update"} ->
           # Notify parent that we received a message
           send(state.parent, {:message_received, :kill_count_update})
-          
+
           # Use supervised task to handle failures gracefully
           Task.Supervisor.start_child(
             WandererApp.Kills.TaskSupervisor,

@@ -17,7 +17,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       id: %OpenApiSpex.Schema{type: :string, description: "Webhook subscription UUID"},
       map_id: %OpenApiSpex.Schema{type: :string, description: "Map UUID"},
       url: %OpenApiSpex.Schema{
-        type: :string, 
+        type: :string,
         description: "HTTPS webhook endpoint URL",
         example: "https://example.com/webhook"
       },
@@ -29,14 +29,14 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       },
       active: %OpenApiSpex.Schema{type: :boolean, description: "Whether webhook is active"},
       last_delivery_at: %OpenApiSpex.Schema{
-        type: :string, 
+        type: :string,
         format: :date_time,
         description: "Last successful delivery timestamp",
         nullable: true
       },
       last_error: %OpenApiSpex.Schema{
         type: :string,
-        description: "Last error message if delivery failed", 
+        description: "Last error message if delivery failed",
         nullable: true
       },
       consecutive_failures: %OpenApiSpex.Schema{
@@ -49,7 +49,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     required: [:id, :map_id, :url, :events, :active, :consecutive_failures],
     example: %{
       id: "550e8400-e29b-41d4-a716-446655440000",
-      map_id: "550e8400-e29b-41d4-a716-446655440001", 
+      map_id: "550e8400-e29b-41d4-a716-446655440001",
       url: "https://example.com/wanderer-webhook",
       events: ["add_system", "map_kill"],
       active: true,
@@ -126,12 +126,10 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     }
   }
 
-  @webhooks_response_schema ApiSchemas.data_wrapper(
-    %OpenApiSpex.Schema{
-      type: :array,
-      items: @webhook_subscription_schema
-    }
-  )
+  @webhooks_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                              type: :array,
+                              items: @webhook_subscription_schema
+                            })
 
   @webhook_response_schema ApiSchemas.data_wrapper(@webhook_subscription_schema)
   @secret_response_schema ApiSchemas.data_wrapper(@webhook_secret_response_schema)
@@ -140,7 +138,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   # OpenApiSpex Operations
   # -----------------------------------------------------------------
 
-  operation :index,
+  operation(:index,
     summary: "List webhook subscriptions for a map",
     description: "Retrieves all webhook subscriptions configured for the specified map.",
     tags: ["Webhook Management"],
@@ -158,8 +156,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       404 => ResponseSchemas.not_found("Map not found"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
-  operation :show,
+  operation(:show,
     summary: "Get a specific webhook subscription",
     description: "Retrieves details of a specific webhook subscription.",
     tags: ["Webhook Management"],
@@ -183,8 +182,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       404 => ResponseSchemas.not_found("Webhook not found"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
-  operation :create,
+  operation(:create,
     summary: "Create a new webhook subscription",
     description: """
     Creates a new webhook subscription for the map. The webhook will receive HTTP POST
@@ -204,12 +204,13 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     responses: %{
       201 => {"Created", "application/json", @webhook_response_schema},
       400 => ResponseSchemas.bad_request("Invalid webhook data"),
-      401 => ResponseSchemas.bad_request("Unauthorized"), 
+      401 => ResponseSchemas.bad_request("Unauthorized"),
       409 => ResponseSchemas.bad_request("Webhook URL already exists for this map"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
-  operation :update,
+  operation(:update,
     summary: "Update a webhook subscription",
     description: "Updates an existing webhook subscription. Partial updates are supported.",
     tags: ["Webhook Management"],
@@ -236,8 +237,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       409 => ResponseSchemas.bad_request("Webhook URL already exists for this map"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
-  operation :delete,
+  operation(:delete,
     summary: "Delete a webhook subscription",
     description: "Permanently deletes a webhook subscription.",
     tags: ["Webhook Management"],
@@ -261,8 +263,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       404 => ResponseSchemas.not_found("Webhook not found"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
-  operation :rotate_secret,
+  operation(:rotate_secret,
     summary: "Rotate webhook secret",
     description: """
     Generates a new secret for the webhook subscription. The old secret will be
@@ -290,6 +293,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       404 => ResponseSchemas.not_found("Webhook not found"),
       500 => ResponseSchemas.internal_server_error("Internal server error")
     }
+  )
 
   # -----------------------------------------------------------------
   # Controller Actions
@@ -298,7 +302,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   def index(conn, %{"map_identifier" => map_identifier}) do
     with {:ok, map} <- get_map(conn, map_identifier) do
       webhooks = MapWebhookSubscription.by_map!(map.id)
-      
+
       json_webhooks = Enum.map(webhooks, &webhook_to_json/1)
       json(conn, %{data: json_webhooks})
     else
@@ -306,9 +310,10 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to list webhooks: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -318,21 +323,21 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   def show(conn, %{"map_identifier" => map_identifier, "id" => webhook_id}) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
-      
       json(conn, %{data: webhook_to_json(webhook)})
     else
       {:error, :map_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :webhook_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Webhook not found"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to get webhook: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -353,21 +358,22 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   defp do_create_webhook(conn, map_identifier, params) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook_params} <- validate_create_params(params, map.id) do
-      
       case MapWebhookSubscription.create(webhook_params) do
         {:ok, webhook} ->
           conn
           |> put_status(:created)
           |> json(%{data: webhook_to_json(webhook)})
-          
+
         {:error, %Ash.Error.Invalid{errors: errors}} ->
           error_messages = Enum.map(errors, & &1.message)
+
           conn
           |> put_status(:bad_request)
           |> json(%{error: "Validation failed", details: error_messages})
-          
+
         {:error, reason} ->
           Logger.error("Failed to create webhook: #{inspect(reason)}")
+
           conn
           |> put_status(:internal_server_error)
           |> json(%{error: "Internal server error"})
@@ -377,14 +383,15 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :invalid_params} ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Invalid webhook parameters"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to create webhook: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -395,19 +402,20 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id),
          {:ok, update_params} <- validate_update_params(params) do
-      
       case MapWebhookSubscription.update(webhook, update_params) do
         {:ok, updated_webhook} ->
           json(conn, %{data: webhook_to_json(updated_webhook)})
-          
+
         {:error, %Ash.Error.Invalid{errors: errors}} ->
           error_messages = Enum.map(errors, & &1.message)
+
           conn
           |> put_status(:bad_request)
           |> json(%{error: "Validation failed", details: error_messages})
-          
+
         {:error, reason} ->
           Logger.error("Failed to update webhook: #{inspect(reason)}")
+
           conn
           |> put_status(:internal_server_error)
           |> json(%{error: "Internal server error"})
@@ -417,19 +425,20 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :webhook_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Webhook not found"})
-        
+
       {:error, :invalid_params} ->
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Invalid webhook parameters"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to update webhook: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -439,13 +448,13 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   def delete(conn, %{"map_identifier" => map_identifier, "id" => webhook_id}) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
-      
       case MapWebhookSubscription.destroy(webhook) do
         :ok ->
           conn |> put_status(:no_content)
-          
+
         {:error, reason} ->
           Logger.error("Failed to delete webhook: #{inspect(reason)}")
+
           conn
           |> put_status(:internal_server_error)
           |> json(%{error: "Internal server error"})
@@ -455,14 +464,15 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :webhook_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Webhook not found"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to delete webhook: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -472,14 +482,14 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   def rotate_secret(conn, %{"map_identifier" => map_identifier, "id" => webhook_id}) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
-      
       case MapWebhookSubscription.rotate_secret(webhook) do
         {:ok, updated_webhook} ->
           # Return the new secret (this is the only time it's exposed)
           json(conn, %{data: %{secret: updated_webhook.secret}})
-          
+
         {:error, reason} ->
           Logger.error("Failed to rotate webhook secret: #{inspect(reason)}")
+
           conn
           |> put_status(:internal_server_error)
           |> json(%{error: "Internal server error"})
@@ -489,14 +499,15 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Map not found"})
-        
+
       {:error, :webhook_not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Webhook not found"})
-        
+
       {:error, reason} ->
         Logger.error("Failed to rotate webhook secret: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -518,7 +529,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   defp get_webhook(webhook_id, map_id) do
     try do
       case MapWebhookSubscription.by_id(webhook_id) do
-        nil -> {:error, :webhook_not_found}
+        nil ->
+          {:error, :webhook_not_found}
+
         webhook ->
           if webhook.map_id == map_id do
             {:ok, webhook}
@@ -528,7 +541,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       end
     rescue
       # Only catch specific Ash-related exceptions
-      error in [Ash.Error.Query.NotFound, Ash.Error.Invalid] -> 
+      error in [Ash.Error.Query.NotFound, Ash.Error.Invalid] ->
         Logger.debug("Webhook lookup error: #{inspect(error)}")
         {:error, :webhook_not_found}
     end
@@ -536,7 +549,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
 
   defp validate_create_params(params, map_id) do
     required_fields = ["url", "events"]
-    
+
     if Enum.all?(required_fields, &Map.has_key?(params, &1)) do
       webhook_params = %{
         map_id: map_id,
@@ -544,6 +557,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         events: params["events"],
         active?: Map.get(params, "active", true)
       }
+
       {:ok, webhook_params}
     else
       {:error, :invalid_params}
@@ -553,18 +567,19 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   defp validate_update_params(params) do
     # Filter out non-updatable fields and map identifier
     allowed_fields = ["url", "events", "active"]
-    
-    update_params = params
-    |> Map.take(allowed_fields)
-    |> Enum.reduce(%{}, fn {k, v}, acc ->
-      case k do
-        "active" -> Map.put(acc, :active?, v)
-        "url" -> Map.put(acc, :url, v)
-        "events" -> Map.put(acc, :events, v)
-        _ -> acc
-      end
-    end)
-    
+
+    update_params =
+      params
+      |> Map.take(allowed_fields)
+      |> Enum.reduce(%{}, fn {k, v}, acc ->
+        case k do
+          "active" -> Map.put(acc, :active?, v)
+          "url" -> Map.put(acc, :url, v)
+          "events" -> Map.put(acc, :events, v)
+          _ -> acc
+        end
+      end)
+
     {:ok, update_params}
   end
 
