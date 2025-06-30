@@ -6,6 +6,8 @@ import {
   CommandCharactersUpdated,
   CommandCharacterUpdated,
   CommandPresentCharacters,
+  CommandReadyCharactersUpdated,
+  CommandAllReadyCharactersCleared,
 } from '@/hooks/Mapper/types';
 
 export const useCommandsCharacters = () => {
@@ -40,5 +42,38 @@ export const useCommandsCharacters = () => {
     ref.current.update(() => ({ presentCharacters: value }));
   }, []);
 
-  return { charactersUpdated, characterAdded, characterRemoved, characterUpdated, presentCharacters };
+  const readyCharactersUpdated = useCallback((value: CommandReadyCharactersUpdated) => {
+    const { ready_character_eve_ids } = value;
+    ref.current.update(state => ({
+      characters: state.characters.map(char => ({
+        ...char,
+        ready: ready_character_eve_ids.includes(char.eve_id),
+      })),
+    }));
+  }, []);
+
+  const allReadyCharactersCleared = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_value: CommandAllReadyCharactersCleared) => {
+      // Clear all ready status for all characters
+      // Note: _value contains cleared_by_user_id but we don't need it for this operation
+      ref.current.update(state => ({
+        characters: state.characters.map(char => ({
+          ...char,
+          ready: false,
+        })),
+      }));
+    },
+    [],
+  );
+
+  return {
+    charactersUpdated,
+    characterAdded,
+    characterRemoved,
+    characterUpdated,
+    presentCharacters,
+    readyCharactersUpdated,
+    allReadyCharactersCleared,
+  };
 };

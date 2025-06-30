@@ -11,6 +11,7 @@ import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components
 import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
 import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
+import { FleetReadiness } from '@/hooks/Mapper/components/mapRootContent/components/FleetReadiness/FleetReadiness';
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types';
 import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
@@ -32,6 +33,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
+  const [showFleetReadiness, setShowFleetReadiness] = useState(false);
 
   /* Important Notice - this solution needs for use one instance of MapInterface */
   const mapInterface = <MapInterface />;
@@ -39,6 +41,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
   const handleShowTrackingDialog = useCallback(() => setShowTrackingDialog(true), []);
+  const handleShowFleetReadiness = useCallback(() => setShowFleetReadiness(true), []);
 
   useMapEventListener(event => {
     if (event.name === Commands.showTracking) {
@@ -63,6 +66,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
                 onShowOnTheMap={handleShowOnTheMap}
                 onShowMapSettings={handleShowMapSettings}
                 onShowTrackingDialog={handleShowTrackingDialog}
+                onShowFleetReadiness={handleShowFleetReadiness}
                 additionalContent={<PingsInterface hasLeftOffset />}
               />
             </div>
@@ -76,6 +80,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
                   onShowOnTheMap={handleShowOnTheMap}
                   onShowMapSettings={handleShowMapSettings}
                   onShowTrackingDialog={handleShowTrackingDialog}
+                  onShowFleetReadiness={handleShowFleetReadiness}
                 />
               </div>
             </Topbar>
@@ -89,6 +94,9 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         )}
         {showTrackingDialog && (
           <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
+        )}
+        {showFleetReadiness && (
+          <FleetReadiness visible={showFleetReadiness} onHide={() => setShowFleetReadiness(false)} />
         )}
       </Layout>
     </div>
