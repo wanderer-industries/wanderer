@@ -111,7 +111,8 @@ defmodule WandererApp.Application do
 
     [
       WandererApp.ExternalEvents.MapEventRelay,
-      WandererApp.ExternalEvents.WebhookDispatcher
+      WandererApp.ExternalEvents.WebhookDispatcher,
+      WandererApp.ExternalEvents.SseConnectionTracker
     ]
   end
 

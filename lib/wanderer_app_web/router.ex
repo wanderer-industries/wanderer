@@ -230,6 +230,9 @@ defmodule WandererAppWeb.Router do
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map]
 
+    # SSE endpoint for real-time events
+    get "/events/stream", Api.EventsController, :stream
+
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete

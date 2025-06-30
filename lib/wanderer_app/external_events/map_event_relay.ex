@@ -36,6 +36,15 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
   def get_events_since(map_id, since_datetime, limit \\ 100) do
     GenServer.call(__MODULE__, {:get_events_since, map_id, since_datetime, limit})
   end
+
+  @doc """
+  Retrieves events since a given ULID for SSE backfill.
+  """
+  @spec get_events_since_ulid(String.t(), String.t(), pos_integer()) ::
+          {:ok, [map()]} | {:error, term()}
+  def get_events_since_ulid(map_id, since_ulid, limit \\ 1_000) do
+    GenServer.call(__MODULE__, {:get_events_since_ulid, map_id, since_ulid, limit})
+  end
   
   @impl true
   def init(_opts) do
@@ -77,6 +86,32 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
   def handle_call({:get_events_since, map_id, since_datetime, limit}, _from, state) do
     events = get_events_from_ets(map_id, since_datetime, limit, state.ets_table)
     {:reply, events, state}
+  end
+
+  @impl true
+  def handle_call({:get_events_since_ulid, map_id, since_ulid}, from, state) do
+    handle_call({:get_events_since_ulid, map_id, since_ulid, 1_000}, from, state)
+  end
+
+  @impl true
+  def handle_call({:get_events_since_ulid, map_id, since_ulid, limit}, _from, state) do
+    # Get all events for this map and filter by ULID
+    try do
+      # Events are stored as {event_id, map_id, json_data}
+      # Filter by map_id and event_id (ULID) > since_ulid
+      events =
+        :ets.select(state.ets_table, [
+          {{:"$1", :"$2", :"$3"}, 
+           [{:andalso, {:>, :"$1", since_ulid}, {:==, :"$2", map_id}}], 
+           [:"$3"]}
+        ])
+        |> Enum.take(limit)
+
+      {:reply, {:ok, events}, state}
+    catch
+      _, reason ->
+        {:reply, {:error, reason}, state}
+    end
   end
   
   @impl true
@@ -131,6 +166,9 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
     
     # 3. Send to webhook subscriptions via WebhookDispatcher
     WebhookDispatcher.dispatch_event(event.map_id, event)
+    
+    # 4. Broadcast to SSE clients
+    WandererApp.ExternalEvents.SseStreamManager.broadcast_event(event.map_id, event_json)
     
     # Emit delivered telemetry
     :telemetry.execute(
