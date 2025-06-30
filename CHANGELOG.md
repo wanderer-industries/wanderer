@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.74.1](https://github.com/wanderer-industries/wanderer/compare/v1.74.0...v1.74.1) (2025-06-28)
+
+
+
+
+### Bug Fixes:
+
+* Core: Mark connections between Pochven systems as known.
+
 ## [v1.74.0](https://github.com/wanderer-industries/wanderer/compare/v1.73.0...v1.74.0) (2025-06-25)
 
 
