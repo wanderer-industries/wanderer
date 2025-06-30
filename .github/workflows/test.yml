@@ -1,0 +1,109 @@
+name: Build Test
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  MIX_ENV: prod
+  GH_TOKEN: ${{ github.token }}
+  REGISTRY_IMAGE: wandererltd/community-edition
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-test:
+    name: 🚀 Deploy to test env (fly.io)
+    runs-on: ubuntu-latest
+    if: ${{ github.base_ref == 'develop' || (github.ref == 'refs/heads/develop' && github.event_name == 'push') }}
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: 👀 Read app name
+        uses: SebRollen/toml-action@v1.0.0
+        id: app_name
+        with:
+          file: "fly.toml"
+          field: "app"
+
+      - name: 🚀 Deploy Test
+        run: flyctl deploy --remote-only --wait-timeout=300 --ha=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  build:
+    name: 🛠 Build
+    runs-on: ubuntu-22.04
+    if: ${{ (github.ref == 'refs/heads/develop') && github.event_name == 'push' }}
+    permissions:
+      checks: write
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+      pull-requests: write
+      repository-projects: write
+    strategy:
+      matrix:
+        otp: ["27"]
+        elixir: ["1.17"]
+        node-version: ["18.x"]
+    outputs:
+      commit_hash: ${{ steps.generate-changelog.outputs.commit_hash }}
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+        # nix build would also work here because `todos` is the default package
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: 😅 Cache deps
+        id: cache-deps
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-elixir-deps
+        with:
+          path: |
+            deps
+          key: ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
+      - name: 😅 Cache compiled build
+        id: cache-build
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-compiled-build
+        with:
+          path: |
+            _build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-${{ hashFiles( '**/lib/**/*.{ex,eex}', '**/config/*.exs', '**/mix.exs' ) }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('**/mix.lock') }}-
+            ${{ runner.os }}-build-
+      # Step: Download project dependencies. If unchanged, uses
+      # the cached version.
+      - name: 🌐 Install dependencies
+        run: mix deps.get --only "prod"
+
+      # Step: Compile the project treating any warnings as errors.
+      # Customize this step if a different behavior is desired.
+      - name: 🛠 Compiles without warnings
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: mix compile
