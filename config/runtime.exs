@@ -75,6 +75,10 @@ map_subscriptions_enabled =
 websocket_events_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_WEBSOCKET_EVENTS_ENABLED", "false")
+  
+fleet_readiness_enabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_FLEET_READINESS_ENABLED", "false")
   |> String.to_existing_atom()
 
 map_subscription_characters_limit =
@@ -154,6 +158,7 @@ config :wanderer_app,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
   wallet_tracking_enabled: wallet_tracking_enabled,
   restrict_maps_creation: restrict_maps_creation,
+  fleet_readiness_enabled: fleet_readiness_enabled,
   subscription_settings: %{
     plans: [
       %{

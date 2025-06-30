@@ -4,4 +4,5 @@ export type CommandInCharactersTrackingInfo = {
   characters: TrackingCharacter[];
   following: string | null;
   main: string | null;
+  ready_characters: string[];
 };

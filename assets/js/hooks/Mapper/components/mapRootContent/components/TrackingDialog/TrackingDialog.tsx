@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { TrackingSettings } from './TrackingSettings.tsx';
 import { TrackingCharactersList } from './TrackingCharactersList.tsx';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { ReadyCharactersList } from './ReadyCharactersList.tsx';
 import { TrackingProvider, useTracking } from './TrackingProvider.tsx';
 
 interface TrackingDialogProps {
@@ -11,34 +11,38 @@ interface TrackingDialogProps {
   onHide: () => void;
 }
 
-const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
+const TrackingDialogContent = ({ visible, onHide }: TrackingDialogProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const { outCommand } = useMapRootState();
-  const { loadTracking } = useTracking();
-
-  const refVars = useRef({ outCommand });
-  refVars.current = { outCommand };
+  const { loadTracking, trackingCharacters, ready, updateReady } = useTracking();
 
   useEffect(() => {
-    if (!visible) {
-      return;
+    if (visible) {
+      loadTracking();
     }
+  }, [visible, loadTracking]);
 
-    loadTracking();
-  }, [loadTracking, visible]);
+  const handleReadyChange = useCallback(
+    (characterId: string, isReady: boolean) => {
+      if (isReady) {
+        if (ready.includes(characterId)) {
+          return;
+        }
+        updateReady([...ready, characterId]);
+        return;
+      }
+      updateReady(ready.filter(id => id !== characterId));
+    },
+    [ready, updateReady],
+  );
 
   return (
     <Dialog
-      header={
-        <div className="dialog-header">
-          <span className="pointer-events-none">Track & Follow</span>
-        </div>
-      }
+      header={<div className="dialog-header pointer-events-none">Track &amp; Follow</div>}
       draggable={false}
       resizable={false}
       visible={visible}
       onHide={onHide}
-      className="w-[640px] h-[400px] text-text-color min-h-0"
+      className="w-[640px] h-[400px] min-h-0 text-text-color"
     >
       <TabView
         className="vertical-tabs-container h-full [&_.p-tabview-panels]:!pr-0"
@@ -49,8 +53,15 @@ const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
         <TabPanel header="Tracking" contentClassName="h-full">
           <TrackingCharactersList />
         </TabPanel>
-        <TabPanel header="Follow & Settings">
+        <TabPanel header="Follow &amp; Settings">
           <TrackingSettings />
+        </TabPanel>
+        <TabPanel header="Ready" contentClassName="h-full">
+          <ReadyCharactersList
+            trackingCharacters={trackingCharacters}
+            ready={ready}
+            onReadyChange={handleReadyChange}
+          />
         </TabPanel>
       </TabView>
     </Dialog>
@@ -60,7 +71,7 @@ const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
 export const TrackingDialog = (props: TrackingDialogProps) => {
   return (
     <TrackingProvider>
-      <TrackingDialogComp {...props} />
+      <TrackingDialogContent {...props} />
     </TrackingProvider>
   );
 };
