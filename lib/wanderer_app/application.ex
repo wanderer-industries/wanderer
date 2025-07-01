@@ -56,13 +56,12 @@ defmodule WandererApp.Application do
         {WandererApp.Character.TrackerPoolSupervisor, []},
         WandererApp.Character.TrackerManager,
         WandererApp.Map.Manager,
-        WandererApp.ExternalEvents.MapEventRelay,
-        WandererApp.ExternalEvents.WebhookDispatcher,
         WandererAppWeb.Presence,
         WandererAppWeb.Endpoint
       ] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
-        maybe_start_kills_services()
+        maybe_start_kills_services() ++
+        maybe_start_external_events_services()
 
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
 
@@ -105,5 +104,39 @@ defmodule WandererApp.Application do
     else
       []
     end
+  end
+
+  defp maybe_start_external_events_services do
+    external_events_config = Application.get_env(:wanderer_app, :external_events, [])
+    sse_enabled = external_events_config[:sse_enabled] || false
+    webhooks_enabled = external_events_config[:webhooks_enabled] || false
+
+    services = []
+
+    # Always include MapEventRelay if any external events are enabled
+    services = if sse_enabled || webhooks_enabled do
+      Logger.info("Starting external events system...")
+      [WandererApp.ExternalEvents.MapEventRelay | services]
+    else
+      services
+    end
+
+    # Add WebhookDispatcher if webhooks are enabled
+    services = if webhooks_enabled do
+      Logger.info("Starting webhook dispatcher...")
+      [WandererApp.ExternalEvents.WebhookDispatcher | services]
+    else
+      services
+    end
+
+    # Add SseStreamManager if SSE is enabled
+    services = if sse_enabled do
+      Logger.info("Starting SSE stream manager...")
+      [WandererApp.ExternalEvents.SseStreamManager | services]
+    else
+      services
+    end
+
+    Enum.reverse(services)
   end
 end

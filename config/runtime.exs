@@ -390,3 +390,18 @@ end
 config :wanderer_app, :license_manager,
   api_url: System.get_env("LM_API_URL", "http://localhost:4000"),
   auth_key: System.get_env("LM_AUTH_KEY")
+
+# SSE Configuration
+config :wanderer_app, :sse,
+  max_connections_per_map: String.to_integer(System.get_env("SSE_MAX_CONNECTIONS_PER_MAP", "50")),
+  max_connections_per_api_key:
+    String.to_integer(System.get_env("SSE_MAX_CONNECTIONS_PER_API_KEY", "10")),
+  keepalive_interval: String.to_integer(System.get_env("SSE_KEEPALIVE_INTERVAL", "30000")),
+  connection_timeout: String.to_integer(System.get_env("SSE_CONNECTION_TIMEOUT", "300000"))
+
+# External Events Configuration
+config :wanderer_app, :external_events,
+  sse_enabled: System.get_env("WANDERER_SSE_ENABLED", "true") == "true",
+  webhooks_enabled: System.get_env("WANDERER_WEBHOOKS_ENABLED", "true") == "true",
+  sse_max_connections: String.to_integer(System.get_env("WANDERER_SSE_MAX_CONNECTIONS", "1000")),
+  webhook_timeout_ms: String.to_integer(System.get_env("WANDERER_WEBHOOK_TIMEOUT_MS", "15000"))

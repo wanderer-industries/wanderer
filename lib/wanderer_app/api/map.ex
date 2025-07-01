@@ -22,6 +22,7 @@ defmodule WandererApp.Api.Map do
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
     define(:update_api_key, action: :update_api_key)
+    define(:toggle_webhooks, action: :toggle_webhooks)
 
     define(:by_id,
       get_by: [:id],
@@ -127,6 +128,10 @@ defmodule WandererApp.Api.Map do
     update :update_api_key do
       accept [:public_api_key]
     end
+
+    update :toggle_webhooks do
+      accept [:webhooks_enabled]
+    end
   end
 
   attributes do
@@ -183,6 +188,12 @@ defmodule WandererApp.Api.Map do
 
     attribute :options, :string do
       allow_nil? true
+    end
+
+    attribute :webhooks_enabled, :boolean do
+      default(false)
+      allow_nil?(false)
+      public?(true)
     end
 
     create_timestamp(:inserted_at)
