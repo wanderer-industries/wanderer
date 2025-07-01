@@ -10,6 +10,8 @@ defmodule WandererAppWeb.MapSubscription do
     socket =
       socket
       |> assign(title: "")
+      |> assign(status: :alpha)
+      |> assign(balance: 0)
 
     {:ok, socket}
   end
@@ -24,19 +26,20 @@ defmodule WandererAppWeb.MapSubscription do
       ) do
     socket = handle_info_or_assign(socket, assigns)
 
-    {:ok, %{id: map_id} = map} =
-      WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
-
-    {:ok, %{plan: plan} = subscription} =
-      WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id)
-
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
-    {:ok,
-     socket
-     |> assign(status: plan)
-     |> assign(title: get_title(subscription))
-     |> assign(balance: map_balance)}
+    with {:ok, %{id: map_id} = map} <-
+           WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user),
+         {:ok, %{plan: plan} = subscription} <-
+           WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id),
+         {:ok, map_balance} <- WandererApp.Map.SubscriptionManager.get_balance(map) do
+      {:ok,
+       socket
+       |> assign(status: plan)
+       |> assign(title: get_title(subscription))
+       |> assign(balance: map_balance)}
+    else
+      _error ->
+        {:ok, socket}
+    end
   end
 
   @impl true

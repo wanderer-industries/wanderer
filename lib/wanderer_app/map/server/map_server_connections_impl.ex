@@ -30,7 +30,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @a4 22
   @a5 23
   @ccp4 24
-  # @pochven 25
+  @pochven 25
   # @zarzakh 10100
 
   @jita 30_000_142
@@ -51,7 +51,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     @redoubt
   ]
 
-  @known_space [@hs, @ls, @ns]
+  @known_space [@hs, @ls, @ns, @pochven]
 
   @prohibited_systems [@jita]
   @prohibited_system_classes [
@@ -302,8 +302,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                                  solar_system_target: solar_system_target_id
                                },
                                state ->
-        state
-        |> delete_connection(%{
+        delete_connection(state, %{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id
         })
@@ -388,6 +387,17 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         Impl.broadcast!(map_id, :add_connection, connection)
+        
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :connection_added, %{
+          connection_id: connection.id,
+          solar_system_source_id: old_location.solar_system_id,
+          solar_system_target_id: location.solar_system_id,
+          type: connection_type,
+          ship_size_type: ship_size_type,
+          mass_status: connection.mass_status,
+          time_status: connection.time_status
+        })
 
         {:ok, character} = WandererApp.Character.get_character(character_id)
 
@@ -560,6 +570,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         Impl.broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
+        
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :connection_removed, %{
+          connection_id: connection.id,
+          solar_system_source_id: location.solar_system_id,
+          solar_system_target_id: old_location.solar_system_id
+        })
 
         WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
 
@@ -602,6 +619,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       end
 
       Impl.broadcast!(map_id, :update_connection, updated_connection)
+      
+      # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+      WandererApp.ExternalEvents.broadcast(map_id, :connection_updated, %{
+        connection_id: updated_connection.id,
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id,
+        type: updated_connection.type,
+        ship_size_type: updated_connection.ship_size_type,
+        mass_status: updated_connection.mass_status,
+        time_status: updated_connection.time_status,
+        locked: updated_connection.locked,
+        custom_info: updated_connection.custom_info
+      })
 
       state
     else
