@@ -7,7 +7,7 @@ defmodule WandererAppWeb.Api.EventsController do
   
   use WandererAppWeb, :controller
   
-  alias WandererApp.ExternalEvents.{SseConnectionTracker, EventFilter, MapEventRelay}
+  alias WandererApp.ExternalEvents.{SseStreamManager, EventFilter, MapEventRelay}
   alias WandererApp.Api.Map, as: ApiMap
   alias WandererAppWeb.SSE
   alias Plug.Crypto
@@ -25,36 +25,17 @@ defmodule WandererAppWeb.Api.EventsController do
     Logger.info("SSE stream requested for map #{map_identifier}")
     
     # Check if SSE is enabled
-    unless Application.get_env(:wanderer_app, :external_events, [])[:sse_enabled] do
+    unless Application.get_env(:wanderer_app, :sse, [])[:enabled] do
       conn
       |> put_status(:service_unavailable)
-      |> json(%{error: "Server-Sent Events are disabled on this server"})
+      |> put_resp_content_type("text/plain")
+      |> send_resp(503, "Server-Sent Events are disabled on this server")
     else
     
     # Validate API key and get map
     case validate_api_key(conn, map_identifier) do
       {:ok, map, api_key} ->
-        # Check connection limits
-        case SseConnectionTracker.check_limits(map.id, api_key) do
-          :ok ->
-            establish_sse_connection(conn, map.id, api_key, params)
-            
-          {:error, :map_limit_exceeded} ->
-            conn
-            |> put_status(:too_many_requests)
-            |> json(%{
-              error: "Too many connections to this map",
-              code: "MAP_CONNECTION_LIMIT"
-            })
-            
-          {:error, :api_key_limit_exceeded} ->
-            conn
-            |> put_status(:too_many_requests)
-            |> json(%{
-              error: "Too many connections for this API key",
-              code: "API_KEY_CONNECTION_LIMIT"
-            })
-        end
+        establish_sse_connection(conn, map.id, api_key, params)
         
       {:error, status, message} ->
         conn
@@ -76,33 +57,56 @@ defmodule WandererAppWeb.Api.EventsController do
     conn = SSE.send_headers(conn)
     
     # Track the connection
-    :ok = SseConnectionTracker.track_connection(map_id, api_key, self())
-    
-    # Send initial connection event
-    conn = SSE.send_event(conn, %{
-      id: Ulid.generate(),
-      event: "connected",
-      data: %{
-        map_id: map_id,
-        server_time: DateTime.utc_now() |> DateTime.to_iso8601()
-      }
-    })
-    
-    # Handle backfill if last_event_id is provided
-    conn = 
-      case Map.get(params, "last_event_id") do
-        nil -> 
-          conn
-          
-        last_event_id ->
-          send_backfill_events(conn, map_id, last_event_id, event_filter)
-      end
-    
-    # Subscribe to map events
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, "external_events:map:#{map_id}")
-    
-    # Start streaming loop
-    stream_events(conn, map_id, api_key, event_filter)
+    case SseStreamManager.add_client(map_id, api_key, self(), event_filter) do
+      {:ok, _} ->
+        # Send initial connection event
+        conn = SSE.send_event(conn, %{
+          id: Ulid.generate(),
+          event: "connected",
+          data: %{
+            map_id: map_id,
+            server_time: DateTime.utc_now() |> DateTime.to_iso8601()
+          }
+        })
+        
+        # Handle backfill if last_event_id is provided
+        conn = 
+          case Map.get(params, "last_event_id") do
+            nil -> 
+              conn
+              
+            last_event_id ->
+              send_backfill_events(conn, map_id, last_event_id, event_filter)
+          end
+        
+        # Subscribe to map events
+        Phoenix.PubSub.subscribe(WandererApp.PubSub, "external_events:map:#{map_id}")
+        
+        # Start streaming loop
+        stream_events(conn, map_id, api_key, event_filter)
+        
+      {:error, :map_limit_exceeded} ->
+        conn
+        |> put_status(:too_many_requests)
+        |> json(%{
+          error: "Too many connections to this map",
+          code: "MAP_CONNECTION_LIMIT"
+        })
+        
+      {:error, :api_key_limit_exceeded} ->
+        conn
+        |> put_status(:too_many_requests)
+        |> json(%{
+          error: "Too many connections for this API key",
+          code: "API_KEY_CONNECTION_LIMIT"
+        })
+        
+      {:error, reason} ->
+        Logger.error("Failed to add SSE client: #{inspect(reason)}")
+        conn
+        |> put_status(:internal_server_error)
+        |> send_resp(500, "Internal server error")
+    end
   end
   
   defp send_backfill_events(conn, map_id, last_event_id, event_filter) do
@@ -110,12 +114,17 @@ defmodule WandererAppWeb.Api.EventsController do
       {:ok, events} ->
         # Filter and send each event
         Enum.reduce(events, conn, fn event_json, acc_conn ->
-          event = Jason.decode!(event_json)
-          
-          if EventFilter.matches?(event["type"], event_filter) do
-            SSE.send_event(acc_conn, event)
-          else
-            acc_conn
+          case Jason.decode(event_json) do
+            {:ok, event} ->
+              if EventFilter.matches?(event["type"], event_filter) do
+                SSE.send_event(acc_conn, event)
+              else
+                acc_conn
+              end
+              
+            {:error, reason} ->
+              Logger.error("Failed to decode event during backfill: #{inspect(reason)}")
+              acc_conn
           end
         end)
         
@@ -129,13 +138,18 @@ defmodule WandererAppWeb.Api.EventsController do
     receive do
       {:external_event, event_json} ->
         # Parse and check if event matches filter
-        event = Jason.decode!(event_json)
-        
         conn = 
-          if EventFilter.matches?(event["type"], event_filter) do
-            SSE.send_event(conn, event)
-          else
-            conn
+          case Jason.decode(event_json) do
+            {:ok, event} ->
+              if EventFilter.matches?(event["type"], event_filter) do
+                SSE.send_event(conn, event)
+              else
+                conn
+              end
+              
+            {:error, reason} ->
+              Logger.error("Failed to decode event in stream: #{inspect(reason)}")
+              conn
           end
         
         # Continue streaming
@@ -159,11 +173,17 @@ defmodule WandererAppWeb.Api.EventsController do
         stream_events(conn, map_id, api_key, event_filter)
     end
   rescue
-    _ ->
+    _error in [Plug.Conn.WrapperError, DBConnection.ConnectionError] ->
       # Connection closed, cleanup
       Logger.info("SSE connection closed for map #{map_id}")
-      SseConnectionTracker.remove_connection(map_id, api_key, self())
+      SseStreamManager.remove_client(map_id, api_key, self())
       conn
+    
+    error ->
+      # Log unexpected errors before cleanup
+      Logger.error("Unexpected error in SSE stream: #{inspect(error)}")
+      SseStreamManager.remove_client(map_id, api_key, self())
+      reraise error, __STACKTRACE__
   end
   
   defp validate_api_key(conn, map_identifier) do

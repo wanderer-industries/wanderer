@@ -96,21 +96,27 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
   @impl true
   def handle_call({:get_events_since_ulid, map_id, since_ulid, limit}, _from, state) do
     # Get all events for this map and filter by ULID
-    try do
-      # Events are stored as {event_id, map_id, json_data}
-      # Filter by map_id and event_id (ULID) > since_ulid
-      events =
-        :ets.select(state.ets_table, [
-          {{:"$1", :"$2", :"$3"}, 
-           [{:andalso, {:>, :"$1", since_ulid}, {:==, :"$2", map_id}}], 
-           [:"$3"]}
-        ])
-        |> Enum.take(limit)
+    case validate_ulid(since_ulid) do
+      :ok ->
+        try do
+          # Events are stored as {event_id, map_id, json_data}
+          # Filter by map_id and event_id (ULID) > since_ulid
+          events =
+            :ets.select(state.ets_table, [
+              {{:"$1", :"$2", :"$3"}, 
+               [{:andalso, {:>, :"$1", since_ulid}, {:==, :"$2", map_id}}], 
+               [:"$3"]}
+            ])
+            |> Enum.take(limit)
 
-      {:reply, {:ok, events}, state}
-    catch
-      _, reason ->
-        {:reply, {:error, reason}, state}
+          {:reply, {:ok, events}, state}
+        rescue
+          error in [ArgumentError] ->
+            {:reply, {:error, {:ets_error, error}}, state}
+        end
+        
+      {:error, :invalid_ulid} ->
+        {:reply, {:error, :invalid_ulid}, state}
     end
   end
   
@@ -189,6 +195,21 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
     end
   end
   
+  defp validate_ulid(ulid) when is_binary(ulid) do
+    # ULID format validation: 26 characters, [0-9A-Z] excluding I, L, O, U
+    case byte_size(ulid) do
+      26 ->
+        if ulid =~ ~r/^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/ do
+          :ok
+        else
+          {:error, :invalid_ulid}
+        end
+      _ ->
+        {:error, :invalid_ulid}
+    end
+  end
+  defp validate_ulid(_), do: {:error, :invalid_ulid}
+
   defp cleanup_old_events(ets_table) do
     cutoff_time = DateTime.add(DateTime.utc_now(), -@event_retention_minutes, :minute)
     cutoff_ulid = datetime_to_ulid(cutoff_time)

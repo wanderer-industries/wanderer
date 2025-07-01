@@ -70,11 +70,11 @@ defmodule WandererApp.ExternalEvents.SseStreamManager do
   @impl true
   def handle_call({:add_client, map_id, api_key, client_pid, event_filter}, _from, state) do
     # Check if feature is enabled
-    unless Application.get_env(:wanderer_app, :external_events, [])[:sse_enabled] do
+    unless Application.get_env(:wanderer_app, :sse, [])[:enabled] do
       {:reply, {:error, :sse_disabled}, state}
     else
       # Check connection limits
-      max_connections = Application.get_env(:wanderer_app, :external_events, [])[:sse_max_connections] || 1000
+      max_connections = Application.get_env(:wanderer_app, :sse, [])[:max_connections_total] || 1000
       
       case check_connection_limits(state, map_id, api_key, max_connections) do
         :ok ->

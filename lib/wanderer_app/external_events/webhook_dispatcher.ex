@@ -143,7 +143,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
       {:ok, subscriptions}
     rescue
       # Catch specific Ash errors
-      error in [Ash.Error.Query.NotFound] ->
+      _error in [Ash.Error.Query.NotFound] ->
         {:ok, []}
       
       error in [Ash.Error.Invalid] ->
@@ -365,9 +365,11 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
          true <- map.webhooks_enabled do
       :ok
     else
-      false -> {:error, :webhooks_disabled}
-      {:error, :not_found} -> {:error, :webhooks_disabled}
-      _ -> {:error, :webhooks_disabled}
+      false -> {:error, :webhooks_globally_disabled}
+      {:error, :not_found} -> {:error, :map_not_found}
+      %{webhooks_enabled: false} -> {:error, :webhooks_disabled_for_map}
+      {:error, reason} -> {:error, reason}
+      error -> {:error, {:unexpected_error, error}}
     end
   end
 end

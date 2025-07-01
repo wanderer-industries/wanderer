@@ -968,12 +968,18 @@ defmodule WandererAppWeb.MapAPIController do
     }
 
   def toggle_webhooks(conn, %{"map_id" => map_identifier, "enabled" => enabled}) do
-    with :ok <- check_global_webhooks_enabled(),
+    with {:ok, enabled_boolean} <- validate_boolean_param(enabled, "enabled"),
+         :ok <- check_global_webhooks_enabled(),
          {:ok, map} <- resolve_map_identifier(map_identifier),
          :ok <- check_map_owner(conn, map),
-         {:ok, updated_map} <- WandererApp.Api.Map.toggle_webhooks(map, %{webhooks_enabled: enabled}) do
+         {:ok, updated_map} <- WandererApp.Api.Map.toggle_webhooks(map, %{webhooks_enabled: enabled_boolean}) do
       json(conn, %{webhooks_enabled: updated_map.webhooks_enabled})
     else
+      {:error, :invalid_boolean} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "The 'enabled' parameter must be a boolean value"})
+
       {:error, :webhooks_disabled} ->
         conn
         |> put_status(:service_unavailable)
@@ -997,6 +1003,11 @@ defmodule WandererAppWeb.MapAPIController do
   end
 
   # Helper functions for webhook toggle
+
+  defp validate_boolean_param(value, _param_name) when is_boolean(value), do: {:ok, value}
+  defp validate_boolean_param("true", _param_name), do: {:ok, true}
+  defp validate_boolean_param("false", _param_name), do: {:ok, false}
+  defp validate_boolean_param(_, _param_name), do: {:error, :invalid_boolean}
 
   defp check_global_webhooks_enabled do
     if Application.get_env(:wanderer_app, :external_events)[:webhooks_enabled] do

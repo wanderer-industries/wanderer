@@ -56,12 +56,20 @@ const apiToken = "your-map-api-token";
 
 // Optional: Filter specific events
 const eventTypes = ["add_system", "map_kill"].join(",");
-const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?events=${eventTypes}`;
 
-const eventSource = new EventSource(url, {
-  headers: {
-    'Authorization': `Bearer ${apiToken}`
-  }
+// Note: Native EventSource doesn't support custom headers
+// You have two options:
+
+// Option 1: Include the API token as a query parameter
+const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?events=${eventTypes}&token=${apiToken}`;
+const eventSource = new EventSource(url);
+
+// Option 2: Use an EventSource polyfill that supports headers
+ import { EventSourcePolyfill } from 'event-source-polyfill';
+ const eventSource = new EventSourcePolyfill(url, {
+   headers: {
+     'Authorization': `Bearer ${apiToken}`
+   }
 });
 
 // Handle connection opened
@@ -107,16 +115,13 @@ const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream`;
 ```
 
 ### Event Backfill
-SSE supports automatic backfill using the `Last-Event-ID` header:
+SSE supports automatic backfill when reconnecting:
 
 ```javascript
 // Reconnect with backfill from last received event
-const eventSource = new EventSource(url, {
-  headers: {
-    'Authorization': `Bearer ${apiToken}`,
-    'Last-Event-ID': lastEventId // Will receive events since this ID
-  }
-});
+// Add the last_event_id as a query parameter
+const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?token=${apiToken}&last_event_id=${lastEventId}`;
+const eventSource = new EventSource(url);
 ```
 
 ## Webhook Setup
