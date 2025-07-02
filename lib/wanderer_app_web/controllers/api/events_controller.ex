@@ -25,7 +25,7 @@ defmodule WandererAppWeb.Api.EventsController do
     Logger.info("SSE stream requested for map #{map_identifier}")
     
     # Check if SSE is enabled
-    unless Application.get_env(:wanderer_app, :sse, [])[:enabled] do
+    unless WandererApp.Env.sse_enabled?() do
       conn
       |> put_status(:service_unavailable)
       |> put_resp_content_type("text/plain")
