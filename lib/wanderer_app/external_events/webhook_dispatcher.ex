@@ -55,9 +55,16 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
     # Extract the pid from the tuple returned by start_link
     {:ok, task_supervisor_pid} = Task.Supervisor.start_link(name: WebhookDispatcher.TaskSupervisor)
     
+    # Read configuration once during initialization
+    webhooks_enabled = WandererApp.Env.webhooks_enabled?() |> then(fn
+      true -> :true
+      false -> :false
+    end)
+    
     {:ok, %{
       task_supervisor: task_supervisor_pid,
-      delivery_count: 0
+      delivery_count: 0,
+      webhooks_enabled: webhooks_enabled
     }}
   end
   
@@ -99,7 +106,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
   
   defp process_webhook_delivery(map_id, events, state) do
     # Check if webhooks are enabled globally and for this map
-    case webhooks_allowed?(map_id) do
+    case webhooks_allowed?(map_id, state.webhooks_enabled) do
       :ok ->
         # Get active webhook subscriptions for this map
         case get_active_subscriptions(map_id) do
@@ -116,8 +123,16 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
             state
         end
         
-      {:error, :webhooks_disabled} ->
+      {:error, :webhooks_globally_disabled} ->
+        Logger.debug(fn -> "Webhooks globally disabled" end)
+        state
+        
+      {:error, :webhooks_disabled_for_map} ->
         Logger.debug(fn -> "Webhooks disabled for map #{map_id}" end)
+        state
+        
+      {:error, reason} ->
+        Logger.debug(fn -> "Webhooks not allowed for map #{map_id}: #{inspect(reason)}" end)
         state
     end
     |> Map.update(:delivery_count, length(events), &(&1 + length(events)))
@@ -359,13 +374,14 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
     round(capped_delay + jitter)
   end
   
-  defp webhooks_allowed?(map_id) do
-    with true <- Application.get_env(:wanderer_app, :external_events, [])[:webhooks_enabled],
+  defp webhooks_allowed?(map_id, webhooks_globally_enabled) do
+    with :true <- webhooks_globally_enabled,
          {:ok, map} <- WandererApp.Api.Map.by_id(map_id),
          true <- map.webhooks_enabled do
       :ok
     else
-      false -> {:error, :webhooks_globally_disabled}
+      :false -> {:error, :webhooks_globally_disabled}
+      nil -> {:error, :webhooks_globally_disabled}
       {:error, :not_found} -> {:error, :map_not_found}
       %{webhooks_enabled: false} -> {:error, :webhooks_disabled_for_map}
       {:error, reason} -> {:error, reason}

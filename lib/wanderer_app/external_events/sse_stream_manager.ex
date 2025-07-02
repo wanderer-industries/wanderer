@@ -58,9 +58,20 @@ defmodule WandererApp.ExternalEvents.SseStreamManager do
     # Schedule periodic cleanup of dead connections
     schedule_cleanup()
     
+    # Read configuration once during initialization
+    sse_config = Application.get_env(:wanderer_app, :sse, [])
+    
     state = %{
       connections: %{}, # map_id => %{api_key => [connection_info]}
-      monitors: %{}     # pid => {map_id, api_key}
+      monitors: %{},    # pid => {map_id, api_key}
+      # Configuration
+      enabled: WandererApp.Env.sse_enabled?() |> then(fn
+        true -> :true
+        false -> :false
+      end),
+      max_connections_total: Keyword.get(sse_config, :max_connections_total, 1000),
+      max_connections_per_map: Keyword.get(sse_config, :max_connections_per_map, 50),
+      max_connections_per_api_key: Keyword.get(sse_config, :max_connections_per_api_key, 10)
     }
     
     Logger.info("SSE Stream Manager started")
@@ -70,13 +81,11 @@ defmodule WandererApp.ExternalEvents.SseStreamManager do
   @impl true
   def handle_call({:add_client, map_id, api_key, client_pid, event_filter}, _from, state) do
     # Check if feature is enabled
-    unless Application.get_env(:wanderer_app, :sse, [])[:enabled] do
+    unless state.enabled == :true do
       {:reply, {:error, :sse_disabled}, state}
     else
       # Check connection limits
-      max_connections = Application.get_env(:wanderer_app, :sse, [])[:max_connections_total] || 1000
-      
-      case check_connection_limits(state, map_id, api_key, max_connections) do
+      case check_connection_limits(state, map_id, api_key, state.max_connections_total) do
         :ok ->
           # Monitor the client process
           ref = Process.monitor(client_pid)
@@ -184,18 +193,14 @@ defmodule WandererApp.ExternalEvents.SseStreamManager do
     if total_connections >= max_total do
       {:error, :max_connections_reached}
     else
-      # Check per-map and per-API-key limits from existing SSE config
-      sse_config = Application.get_env(:wanderer_app, :sse, [])
-      max_per_map = sse_config[:max_connections_per_map] || 50
-      max_per_key = sse_config[:max_connections_per_api_key] || 10
-      
+      # Check per-map and per-API-key limits from state
       map_connections = count_map_connections(state, map_id)
       key_connections = count_api_key_connections(state, map_id, api_key)
       
       cond do
-        map_connections >= max_per_map ->
+        map_connections >= state.max_connections_per_map ->
           {:error, :map_connection_limit_reached}
-        key_connections >= max_per_key ->
+        key_connections >= state.max_connections_per_api_key ->
           {:error, :api_key_connection_limit_reached}
         true ->
           :ok
