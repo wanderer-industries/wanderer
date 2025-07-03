@@ -18,9 +18,12 @@ defmodule WandererApp.Api.MapUserSettings do
       action: :read
     )
 
+    define(:read_by_map, action: :read_by_map)
+    
     define(:update_settings, action: :update_settings)
     define(:update_main_character, action: :update_main_character)
     define(:update_following_character, action: :update_following_character)
+    define(:update_ready_characters, action: :update_ready_characters)
 
     define(:update_hubs, action: :update_hubs)
   end
@@ -34,6 +37,11 @@ defmodule WandererApp.Api.MapUserSettings do
 
     defaults [:create, :read, :update, :destroy]
 
+    read :read_by_map do
+      argument(:map_id, :string, allow_nil?: false)
+      filter(expr(map_id == ^arg(:map_id)))
+    end
+
     update :update_settings do
       accept [:settings]
     end
@@ -44,6 +52,10 @@ defmodule WandererApp.Api.MapUserSettings do
 
     update :update_following_character do
       accept [:following_character_eve_id]
+    end
+
+    update :update_ready_characters do
+      accept [:ready_characters]
     end
 
     update :update_hubs do
@@ -64,6 +76,11 @@ defmodule WandererApp.Api.MapUserSettings do
 
     attribute :following_character_eve_id, :string do
       allow_nil? true
+    end
+
+    attribute :ready_characters, {:array, :string} do
+      allow_nil? true
+      default([])
     end
 
     attribute :hubs, {:array, :string} do

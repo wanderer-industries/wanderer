@@ -199,6 +199,21 @@ defmodule WandererApp.Character.Tracker do
                 WandererApp.Cache.delete("character:#{character_id}:wallet_forbidden")
                 WandererApp.Character.update_character(character_id, online)
 
+                # Clear ready status if character went offline
+                if not online.online do
+                  case WandererApp.Character.get_character(character_id) do
+                    {:ok, character} ->
+                      case WandererApp.Character.TrackingUtils.clear_ready_status_on_offline(character.eve_id) do
+                        :ok -> :ok
+                        {:error, reason} ->
+                          Logger.warning("Failed to clear ready status for character #{character.eve_id}: #{inspect(reason)}")
+                      end
+                    
+                    {:error, reason} ->
+                      Logger.warning("Failed to get character #{character_id} for ready status clearing: #{inspect(reason)}")
+                  end
+                end
+
                 update = %{
                   character_state
                   | is_online: online.online,
