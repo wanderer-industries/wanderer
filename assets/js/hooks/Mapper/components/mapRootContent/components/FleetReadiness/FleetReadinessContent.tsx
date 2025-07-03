@@ -54,9 +54,17 @@ const renderShipType = (character: TrackingCharacter) => {
 };
 
 export const FleetReadinessContent = () => {
-  const { outCommand } = useMapRootState();
-  const [readyCharacters, setReadyCharacters] = useState<TrackingCharacter[]>([]);
+  const { outCommand, data } = useMapRootState();
+  const [allReadyCharacters, setAllReadyCharacters] = useState<TrackingCharacter[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Get ready character count from global state
+  const globalReadyCount = data.characters.filter(char => char.ready).length;
+
+  // Use fetched detailed character data, but filter by global ready state when count changes
+  const readyCharacters = allReadyCharacters.filter(char =>
+    data.characters.some(globalChar => globalChar.eve_id === char.character.eve_id && globalChar.ready),
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -73,26 +81,28 @@ export const FleetReadinessContent = () => {
 
         // Safe type checking instead of unsafe assertion
         const isValidResponse = (response: unknown): response is { data?: { characters?: TrackingCharacter[] } } => {
-          return typeof response === 'object' && 
-            response !== null && 
-            'data' in response && 
-            typeof response.data === 'object' && 
+          return (
+            typeof response === 'object' &&
+            response !== null &&
+            'data' in response &&
+            typeof response.data === 'object' &&
             response.data !== null &&
-            (!('characters' in response.data) || Array.isArray((response.data as any).characters));
+            (!('characters' in response.data) || Array.isArray((response.data as any).characters))
+          );
         };
 
         if (!isMounted) return;
 
         if (isValidResponse(res) && res.data && Array.isArray(res.data.characters)) {
-          setReadyCharacters(res.data.characters);
+          setAllReadyCharacters(res.data.characters);
         } else {
           console.warn('Invalid response format for getAllReadyCharacters:', res);
-          setReadyCharacters([]);
+          setAllReadyCharacters([]);
         }
       } catch (err) {
         console.error('Failed to load all ready characters:', err);
         if (isMounted) {
-          setReadyCharacters([]);
+          setAllReadyCharacters([]);
         }
       }
 
@@ -106,7 +116,7 @@ export const FleetReadinessContent = () => {
     return () => {
       isMounted = false;
     };
-  }, [outCommand]);
+  }, [outCommand, globalReadyCount]); // Re-fetch when global ready count changes
 
   if (loading) {
     return (
