@@ -95,6 +95,30 @@ defmodule WandererApp.MapUserSettingsRepo do
   def to_boolean(value) when is_boolean(value), do: value
 
   @doc """
+  Gets all map user settings for a given map_id.
+  Returns {:ok, [settings]} or {:error, reason}
+  """
+  def get_by_map(map_id) when is_binary(map_id) and map_id != "" do
+    try do
+      case WandererApp.Api.MapUserSettings.read_by_map!(%{map_id: map_id}) do
+        settings_list when is_list(settings_list) ->
+          {:ok, settings_list}
+
+        nil ->
+          {:ok, []}
+
+        error ->
+          Logger.error("Unexpected result from read_by_map: #{inspect(error)}")
+          {:error, :unexpected_result}
+      end
+    rescue
+      error ->
+        Logger.error("Database error in get_by_map: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  @doc """
   Gets all map user settings where the specified character_eve_id is marked as ready.
   Returns {:ok, [settings]} or {:error, reason}
   """

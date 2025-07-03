@@ -56,11 +56,20 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
+
+    # Get all ready characters for this map from all users
+    all_ready_characters = get_all_ready_characters_for_map(map_id)
+
     characters =
       map_id
       |> WandererApp.Map.list_characters()
-      |> Enum.map(&map_ui_character/1)
-
+      |> Enum.map(fn character ->
+        ui_character = map_ui_character(character)
+        # Add ready status to character data
+        is_ready = character.eve_id in all_ready_characters
+        ui_character_with_ready = Map.put(ui_character, :ready, is_ready)
+        ui_character_with_ready
+      end)
     socket
     |> MapEventHandler.push_map_event(
       "characters_updated",
@@ -629,7 +638,8 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
       |> Map.put_new(:tracking_paused, character |> Map.get(:tracking_paused, false))
-      |> Map.put_new(:ready, character |> Map.get(:ready, false))
+      # Remove ready status from character updates - ready status is managed separately
+      # through dedicated ready status events to prevent race conditions
 
   defp get_location(character),
     do: %{
@@ -638,9 +648,17 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       station_id: Map.get(character, :station_id)
     }
 
-  defp get_map_with_acls(map_id) do
-    with {:ok, map} <- WandererApp.Api.Map.by_id(map_id) do
-      {:ok, Ash.load!(map, :acls)}
+  # Gets all ready characters for a map from all users' settings.
+  # Returns a list of character EVE IDs that are marked as ready.
+  defp get_all_ready_characters_for_map(map_id) do
+    case WandererApp.MapUserSettingsRepo.get_by_map(map_id) do
+      {:ok, settings_list} ->
+        settings_list
+        |> Enum.flat_map(fn setting -> setting.ready_characters || [] end)
+        |> Enum.uniq()
+
+      {:error, _reason} ->
+        []
     end
   end
 

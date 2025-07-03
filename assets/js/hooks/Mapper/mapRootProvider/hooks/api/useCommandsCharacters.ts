@@ -33,8 +33,12 @@ export const useCommandsCharacters = () => {
   }, []);
 
   const characterUpdated = useCallback((value: CommandCharacterUpdated) => {
+    console.log('READY_DEBUG: characterUpdated called with:', value);
     ref.current.update(state => {
-      return { characters: [...state.characters.filter(x => x.eve_id !== value.eve_id), value] };
+      const existingCharacter = state.characters.find(x => x.eve_id === value.eve_id);
+      const updatedCharacter =
+        existingCharacter && value.ready === undefined ? { ...value, ready: existingCharacter.ready } : value;
+      return { characters: [...state.characters.filter(x => x.eve_id !== value.eve_id), updatedCharacter] };
     });
   }, []);
 
