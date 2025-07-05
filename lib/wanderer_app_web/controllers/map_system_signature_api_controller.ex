@@ -30,7 +30,10 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
       updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
     },
     required: [
-      :id, :system_id, :eve_id, :character_eve_id
+      :id,
+      :system_id,
+      :eve_id,
+      :character_eve_id
     ],
     example: %{
       id: "sig-uuid-1",
@@ -40,7 +43,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
       name: "Wormhole K162",
       description: "Leads to unknown space",
       type: "Wormhole",
-      linked_system_id: 30000144,
+      linked_system_id: 30_000_144,
       kind: "cosmic_signature",
       group: "wormhole",
       custom_info: "Fresh",
@@ -53,23 +56,34 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   @doc """
   List all signatures for a map.
   """
-  operation :index,
+  operation(:index,
     summary: "List all signatures for a map",
     parameters: [
-      map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true]
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ]
     ],
-    responses: [ok: {"List of signatures", "application/json", %OpenApiSpex.Schema{
-      type: :object,
-      properties: %{
-        data: %OpenApiSpex.Schema{
-          type: :array,
-          items: @signature_schema
-        }
-      },
-      example: %{
-        data: [@signature_schema.example]
-      }
-    }}]
+    responses: [
+      ok:
+        {"List of signatures", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             data: %OpenApiSpex.Schema{
+               type: :array,
+               items: @signature_schema
+             }
+           },
+           example: %{
+             data: [@signature_schema.example]
+           }
+         }}
+    ]
+  )
+
   def index(conn, _params) do
     map_id = conn.assigns.map_id
     signatures = MapOperations.list_signatures(map_id)
@@ -79,45 +93,71 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   @doc """
   Show a single signature by ID.
   """
-  operation :show,
+  operation(:show,
     summary: "Show a single signature by ID",
     parameters: [
-      map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true],
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ],
       id: [in: :path, description: "Signature UUID", type: :string, required: true]
     ],
-    responses: [ok: {"Signature", "application/json", %OpenApiSpex.Schema{
-      type: :object,
-      properties: %{data: @signature_schema},
-      example: %{data: @signature_schema.example}
-    }}]
+    responses: [
+      ok:
+        {"Signature", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{data: @signature_schema},
+           example: %{data: @signature_schema.example}
+         }}
+    ]
+  )
+
   def show(conn, %{"id" => id}) do
     map_id = conn.assigns.map_id
+
     case MapSystemSignature.by_id(id) do
       {:ok, signature} ->
         case WandererApp.Api.MapSystem.by_id(signature.system_id) do
           {:ok, system} when system.map_id == map_id ->
             json(conn, %{data: signature})
+
           _ ->
             conn |> put_status(:not_found) |> json(%{error: "Signature not found"})
         end
-      _ -> conn |> put_status(:not_found) |> json(%{error: "Signature not found"})
+
+      _ ->
+        conn |> put_status(:not_found) |> json(%{error: "Signature not found"})
     end
   end
 
   @doc """
   Create a new signature.
   """
-  operation :create,
+  operation(:create,
     summary: "Create a new signature",
     parameters: [
-      map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true]
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ]
     ],
     request_body: {"Signature", "application/json", @signature_schema},
-    responses: [created: {"Created signature", "application/json", %OpenApiSpex.Schema{
-      type: :object,
-      properties: %{data: @signature_schema},
-      example: %{data: @signature_schema.example}
-    }}]
+    responses: [
+      created:
+        {"Created signature", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{data: @signature_schema},
+           example: %{data: @signature_schema.example}
+         }}
+    ]
+  )
+
   def create(conn, params) do
     case MapOperations.create_signature(conn, params) do
       {:ok, sig} -> conn |> put_status(:created) |> json(%{data: sig})
@@ -128,18 +168,29 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   @doc """
   Update a signature by ID.
   """
-  operation :update,
+  operation(:update,
     summary: "Update a signature by ID",
     parameters: [
-      map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true],
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ],
       id: [in: :path, description: "Signature UUID", type: :string, required: true]
     ],
     request_body: {"Signature update", "application/json", @signature_schema},
-    responses: [ok: {"Updated signature", "application/json", %OpenApiSpex.Schema{
-      type: :object,
-      properties: %{data: @signature_schema},
-      example: %{data: @signature_schema.example}
-    }}]
+    responses: [
+      ok:
+        {"Updated signature", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{data: @signature_schema},
+           example: %{data: @signature_schema.example}
+         }}
+    ]
+  )
+
   def update(conn, %{"id" => id} = params) do
     case MapOperations.update_signature(conn, id, params) do
       {:ok, sig} -> json(conn, %{data: sig})
@@ -150,16 +201,27 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   @doc """
   Delete a signature by ID.
   """
-  operation :delete,
+  operation(:delete,
     summary: "Delete a signature by ID",
     parameters: [
-      map_identifier: [in: :path, description: "Map identifier (UUID or slug)", type: :string, required: true],
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ],
       id: [in: :path, description: "Signature UUID", type: :string, required: true]
     ],
-    responses: [no_content: {"Deleted", "application/json", %OpenApiSpex.Schema{
-      type: :object,
-      example: %{}
-    }}]
+    responses: [
+      no_content:
+        {"Deleted", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           example: %{}
+         }}
+    ]
+  )
+
   def delete(conn, %{"id" => id}) do
     case MapOperations.delete_signature(conn, id) do
       :ok -> send_resp(conn, :no_content, "")
