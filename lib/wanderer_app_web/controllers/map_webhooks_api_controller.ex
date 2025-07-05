@@ -340,6 +340,17 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   end
 
   def create(conn, %{"map_identifier" => map_identifier} = params) do
+    # Check if webhooks are enabled
+    if not Application.get_env(:wanderer_app, :external_events, [])[:webhooks_enabled] do
+      conn
+      |> put_status(:service_unavailable)
+      |> json(%{error: "Webhooks are disabled on this server"})
+    else
+      do_create_webhook(conn, map_identifier, params)
+    end
+  end
+  
+  defp do_create_webhook(conn, map_identifier, params) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook_params} <- validate_create_params(params, map.id) do
       

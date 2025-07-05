@@ -55,9 +55,16 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
     # Extract the pid from the tuple returned by start_link
     {:ok, task_supervisor_pid} = Task.Supervisor.start_link(name: WebhookDispatcher.TaskSupervisor)
     
+    # Read configuration once during initialization
+    webhooks_enabled = WandererApp.Env.webhooks_enabled?() |> then(fn
+      true -> :true
+      false -> :false
+    end)
+    
     {:ok, %{
       task_supervisor: task_supervisor_pid,
-      delivery_count: 0
+      delivery_count: 0,
+      webhooks_enabled: webhooks_enabled
     }}
   end
   
@@ -98,20 +105,37 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
   end
   
   defp process_webhook_delivery(map_id, events, state) do
-    # Get active webhook subscriptions for this map
-    case get_active_subscriptions(map_id) do
-      {:ok, [_ | _] = subscriptions} ->
-        Logger.debug(fn -> "Found #{length(subscriptions)} active webhook subscriptions for map #{map_id}" end)
-        process_active_subscriptions(subscriptions, events, state)
+    # Check if webhooks are enabled globally and for this map
+    case webhooks_allowed?(map_id, state.webhooks_enabled) do
+      :ok ->
+        # Get active webhook subscriptions for this map
+        case get_active_subscriptions(map_id) do
+          {:ok, [_ | _] = subscriptions} ->
+            Logger.debug(fn -> "Found #{length(subscriptions)} active webhook subscriptions for map #{map_id}" end)
+            process_active_subscriptions(subscriptions, events, state)
+            
+          {:ok, []} ->
+            Logger.debug(fn -> "No webhook subscriptions found for map #{map_id}" end)
+            state
+            
+          {:error, reason} ->
+            Logger.error("Failed to get webhook subscriptions for map #{map_id}: #{inspect(reason)}")
+            state
+        end
         
-      {:ok, []} ->
-        Logger.debug(fn -> "No webhook subscriptions found for map #{map_id}" end)
+      {:error, :webhooks_globally_disabled} ->
+        Logger.debug(fn -> "Webhooks globally disabled" end)
+        state
+        
+      {:error, :webhooks_disabled_for_map} ->
+        Logger.debug(fn -> "Webhooks disabled for map #{map_id}" end)
+        state
         
       {:error, reason} ->
-        Logger.error("Failed to get webhook subscriptions for map #{map_id}: #{inspect(reason)}")
+        Logger.debug(fn -> "Webhooks not allowed for map #{map_id}: #{inspect(reason)}" end)
+        state
     end
-    
-    %{state | delivery_count: state.delivery_count + length(events)}
+    |> Map.update(:delivery_count, length(events), &(&1 + length(events)))
   end
   
   defp process_active_subscriptions(subscriptions, events, state) do
@@ -134,7 +158,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
       {:ok, subscriptions}
     rescue
       # Catch specific Ash errors
-      error in [Ash.Error.Query.NotFound] ->
+      _error in [Ash.Error.Query.NotFound] ->
         {:ok, []}
       
       error in [Ash.Error.Invalid] ->
@@ -348,5 +372,20 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
     jitter = :rand.uniform() * 2 * jitter_amount - jitter_amount
     
     round(capped_delay + jitter)
+  end
+  
+  defp webhooks_allowed?(map_id, webhooks_globally_enabled) do
+    with :true <- webhooks_globally_enabled,
+         {:ok, map} <- WandererApp.Api.Map.by_id(map_id),
+         true <- map.webhooks_enabled do
+      :ok
+    else
+      :false -> {:error, :webhooks_globally_disabled}
+      nil -> {:error, :webhooks_globally_disabled}
+      {:error, :not_found} -> {:error, :map_not_found}
+      %{webhooks_enabled: false} -> {:error, :webhooks_disabled_for_map}
+      {:error, reason} -> {:error, reason}
+      error -> {:error, {:unexpected_error, error}}
+    end
   end
 end

@@ -42,10 +42,6 @@ defmodule WandererAppWeb.Endpoint do
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [compress: true, connect_info: [session: @session_options]]
 
-  socket "/socket", WandererAppWeb.UserSocket,
-    websocket: true,
-    longpoll: false
-
   plug PhoenixDDoS
 
   # Serve at "/" the static files from "priv/static" directory.

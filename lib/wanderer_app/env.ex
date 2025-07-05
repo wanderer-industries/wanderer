@@ -48,6 +48,26 @@ defmodule WandererApp.Env do
             )
   def restrict_maps_creation?, do: get_key(:restrict_maps_creation, false)
 
+  def sse_enabled? do
+    Application.get_env(@app, :sse, [])
+    |> Keyword.get(:enabled, false)
+    |> case do
+      :true -> true
+      :false -> false
+      _ -> false
+    end
+  end
+
+  def webhooks_enabled? do
+    Application.get_env(@app, :external_events, [])
+    |> Keyword.get(:webhooks_enabled, false) 
+    |> case do
+      :true -> true
+      :false -> false
+      _ -> false
+    end
+  end
+
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "map-connection-auto-expire-hours"
