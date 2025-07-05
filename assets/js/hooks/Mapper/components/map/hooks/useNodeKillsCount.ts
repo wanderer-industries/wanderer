@@ -14,7 +14,13 @@ interface MapEvent {
   payload?: Kill[];
 }
 
-export function useNodeKillsCount(systemId: number | string, initialKillsCount: number | null): number | null {
+function getActivityType(count: number): string {
+  if (count <= 5) return 'activityNormal';
+  if (count <= 30) return 'activityWarn';
+  return 'activityDanger';
+}
+
+export function useNodeKillsCount(systemId: number | string, initialKillsCount: number | null = null): { killsCount: number | null; killsActivityType: string | null } {
   const [killsCount, setKillsCount] = useState<number | null>(initialKillsCount);
   const { data: mapData } = useMapRootState();
   const { detailedKills = {} } = mapData;
@@ -73,5 +79,9 @@ export function useNodeKillsCount(systemId: number | string, initialKillsCount: 
 
   useMapEventListener(handleEvent);
 
-  return killsCount;
+  const killsActivityType = useMemo(() => {
+    return killsCount !== null && killsCount > 0 ? getActivityType(killsCount) : null;
+  }, [killsCount]);
+
+  return { killsCount, killsActivityType };
 }
