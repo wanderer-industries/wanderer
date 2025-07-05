@@ -833,4 +833,114 @@ defmodule WandererAppWeb.MapAPIController do
         |> json(%{error: "Could not fetch connections: #{APIUtils.format_error(reason)}"})
     end
   end
+
+  @doc """
+  Toggle webhooks for a map.
+  """
+  operation :toggle_webhooks,
+    summary: "Toggle webhooks for a map",
+    parameters: [
+      map_id: [
+        in: :path,
+        schema: %OpenApiSpex.Schema{type: :string},
+        required: true,
+        description: "Map identifier (slug or ID)"
+      ]
+    ],
+    request_body: {
+      "Webhook toggle request",
+      "application/json",
+      %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          enabled: %OpenApiSpex.Schema{type: :boolean, description: "Enable or disable webhooks"}
+        },
+        required: ["enabled"]
+      }
+    },
+    responses: %{
+      200 => {
+        "Webhook status updated",
+        "application/json",
+        %OpenApiSpex.Schema{
+          type: :object,
+          properties: %{
+            webhooks_enabled: %OpenApiSpex.Schema{type: :boolean}
+          }
+        }
+      },
+      400 => ResponseSchemas.bad_request(),
+      404 => ResponseSchemas.not_found(),
+      503 => ResponseSchemas.internal_server_error("Service unavailable")
+    }
+
+  def toggle_webhooks(conn, %{"map_id" => map_identifier, "enabled" => enabled}) do
+    with {:ok, enabled_boolean} <- validate_boolean_param(enabled, "enabled"),
+         :ok <- check_global_webhooks_enabled(),
+         {:ok, map} <- resolve_map_identifier(map_identifier),
+         :ok <- check_map_owner(conn, map),
+         {:ok, updated_map} <- WandererApp.Api.Map.toggle_webhooks(map, %{webhooks_enabled: enabled_boolean}) do
+      json(conn, %{webhooks_enabled: updated_map.webhooks_enabled})
+    else
+      {:error, :invalid_boolean} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "The 'enabled' parameter must be a boolean value"})
+
+      {:error, :webhooks_disabled} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "Webhooks are disabled on this server"})
+
+      {:error, :map_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Map not found"})
+
+      {:error, :unauthorized} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Only the map owner can toggle webhooks"})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Failed to update webhook settings: #{APIUtils.format_error(reason)}"})
+    end
+  end
+
+  # Helper functions for webhook toggle
+
+  defp validate_boolean_param(value, _param_name) when is_boolean(value), do: {:ok, value}
+  defp validate_boolean_param("true", _param_name), do: {:ok, true}
+  defp validate_boolean_param("false", _param_name), do: {:ok, false}
+  defp validate_boolean_param(_, _param_name), do: {:error, :invalid_boolean}
+
+  defp check_global_webhooks_enabled do
+    if Application.get_env(:wanderer_app, :external_events)[:webhooks_enabled] do
+      :ok
+    else
+      {:error, :webhooks_disabled}
+    end
+  end
+
+  defp resolve_map_identifier(identifier) do
+    case WandererApp.Api.Map.by_id(identifier) do
+      {:ok, map} -> {:ok, map}
+      {:error, _} ->
+        case WandererApp.Api.Map.get_map_by_slug(identifier) do
+          {:ok, map} -> {:ok, map}
+          {:error, _} -> {:error, :map_not_found}
+        end
+    end
+  end
+
+  defp check_map_owner(conn, map) do
+    current_user = conn.assigns[:current_character]
+    if current_user && current_user.id == map.owner_id do
+      :ok
+    else
+      {:error, :unauthorized}
+    end
+  end
 end

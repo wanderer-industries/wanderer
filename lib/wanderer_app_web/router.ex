@@ -180,6 +180,10 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckCharacterApiDisabled
   end
 
+  pipeline :api_websocket_events do
+    plug WandererAppWeb.Plugs.CheckWebsocketDisabled
+  end
+
   pipeline :api_acl do
     plug WandererAppWeb.Plugs.CheckAclApiKey
   end
@@ -226,6 +230,9 @@ defmodule WandererAppWeb.Router do
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map]
 
+    # SSE endpoint for real-time events
+    get "/events/stream", Api.EventsController, :stream
+
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete
@@ -240,6 +247,21 @@ defmodule WandererAppWeb.Router do
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
+  end
+
+  # WebSocket events and webhook management endpoints (disabled by default)
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api, :api_map, :api_websocket_events]
+    
+    get "/events", MapEventsAPIController, :list_events
+    
+    # Webhook management endpoints
+    resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
+      post "/rotate-secret", MapWebhooksAPIController, :rotate_secret
+    end
+    
+    # Webhook control endpoint
+    put "/webhooks/toggle", MapAPIController, :toggle_webhooks
   end
 
   #

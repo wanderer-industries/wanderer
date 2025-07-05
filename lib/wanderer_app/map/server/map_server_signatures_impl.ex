@@ -155,6 +155,34 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     # 5. Broadcast to any live subscribers
     Impl.broadcast!(state.map_id, :signatures_updated, system.solar_system_id)
+    
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    # Send individual signature events
+    Enum.each(added_sigs, fn sig ->
+      WandererApp.ExternalEvents.broadcast(state.map_id, :signature_added, %{
+        solar_system_id: system.solar_system_id,
+        signature_id: sig.eve_id,
+        name: sig.name,
+        kind: sig.kind,
+        group: sig.group,
+        type: sig.type
+      })
+    end)
+    
+    Enum.each(removed_ids, fn sig_eve_id ->
+      WandererApp.ExternalEvents.broadcast(state.map_id, :signature_removed, %{
+        solar_system_id: system.solar_system_id,
+        signature_id: sig_eve_id
+      })
+    end)
+    
+    # Also send the summary event for backwards compatibility
+    WandererApp.ExternalEvents.broadcast(state.map_id, :signatures_updated, %{
+      solar_system_id: system.solar_system_id,
+      added_count: length(added_ids),
+      updated_count: length(updated_ids),
+      removed_count: length(removed_ids)
+    })
 
     state
   end
