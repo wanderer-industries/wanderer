@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.74.2](https://github.com/wanderer-industries/wanderer/compare/v1.74.1...v1.74.2) (2025-06-30)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map loading for not existing maps
+
 ## [v1.74.1](https://github.com/wanderer-industries/wanderer/compare/v1.74.0...v1.74.1) (2025-06-28)
 
 
