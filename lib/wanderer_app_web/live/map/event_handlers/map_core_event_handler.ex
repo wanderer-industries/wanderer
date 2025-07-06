@@ -126,6 +126,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     |> assign(show_topup: true)
   end
 
+  @impl true
+  def handle_server_event(
+        {_event, {:flash, type, message}},
+        socket
+      ) do
+    socket |> put_flash(type, message)
+  end
+
   def handle_server_event(event, socket) do
     Logger.warning(fn -> "unhandled map core event: #{inspect(event)}" end)
     socket

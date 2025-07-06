@@ -515,19 +515,19 @@ defmodule WandererAppWeb.MapsLive do
           {:ok, tmp_file_path}
         end)
 
-      Task.async(fn ->
-        {:ok, data} =
-          WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
+      # Task.async(fn ->
+      #   {:ok, data} =
+      #     WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
 
-        WandererApp.Map.Manager.start_map(map_id)
+      #   WandererApp.Map.Manager.start_map(map_id)
 
-        :timer.sleep(1000)
+      #   :timer.sleep(1000)
 
-        map_id
-        |> WandererApp.Map.Server.import_settings(data, current_user.id)
+      #   map_id
+      #   |> WandererApp.Map.Server.import_settings(data, current_user.id)
 
-        :imported
-      end)
+      #   :imported
+      # end)
 
       {:noreply,
        socket
