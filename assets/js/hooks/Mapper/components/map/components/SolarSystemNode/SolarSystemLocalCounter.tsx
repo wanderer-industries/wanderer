@@ -4,10 +4,10 @@ import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrap
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit/WdTooltip';
 import { CharItemProps, LocalCharactersList } from '../../../mapInterface/widgets/LocalCharacters/components';
 import { useLocalCharactersItemTemplate } from '../../../mapInterface/widgets/LocalCharacters/hooks/useLocalCharacters';
-import { useLocalCharacterWidgetSettings } from '../../../mapInterface/widgets/LocalCharacters/hooks/useLocalWidgetSettings';
 import classes from './SolarSystemLocalCounter.module.scss';
 import { useTheme } from '@/hooks/Mapper/hooks/useTheme.ts';
 import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 
 interface LocalCounterProps {
   localCounterCharacters: Array<CharItemProps>;
@@ -16,8 +16,10 @@ interface LocalCounterProps {
 }
 
 export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIcon = true }: LocalCounterProps) => {
-  const [settings] = useLocalCharacterWidgetSettings();
-  const itemTemplate = useLocalCharactersItemTemplate(settings.showShipName);
+  const {
+    data: { localShowShipName },
+  } = useMapState();
+  const itemTemplate = useLocalCharactersItemTemplate(localShowShipName);
   const theme = useTheme();
 
   const pilotTooltipContent = useMemo(() => {

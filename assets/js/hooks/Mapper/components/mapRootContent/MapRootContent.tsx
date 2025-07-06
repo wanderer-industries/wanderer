@@ -20,7 +20,7 @@ export interface MapRootContentProps {}
 // eslint-disable-next-line no-empty-pattern
 export const MapRootContent = ({}: MapRootContentProps) => {
   const {
-    storedSettings: { interfaceSettings },
+    storedSettings: { interfaceSettings, isReady },
     data,
   } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
@@ -34,7 +34,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
 
   /* Important Notice - this solution needs for use one instance of MapInterface */
-  const mapInterface = <MapInterface />;
+  const mapInterface = isReady ? <MapInterface /> : null;
 
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);

@@ -98,6 +98,7 @@ interface MapCompProps {
   theme?: string;
   pings: PingData[];
   minimapPlacement?: PanelPosition;
+  localShowShipName?: boolean;
 }
 
 const MapComp = ({
@@ -117,6 +118,7 @@ const MapComp = ({
   onAddSystem,
   pings,
   minimapPlacement = 'bottom-right',
+  localShowShipName = false,
 }: MapCompProps) => {
   const { getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -212,8 +214,9 @@ const MapComp = ({
       showKSpaceBG: showKSpaceBG,
       isThickConnections: isThickConnections,
       pings,
+      localShowShipName,
     }));
-  }, [showKSpaceBG, isThickConnections, pings, update]);
+  }, [showKSpaceBG, isThickConnections, pings, update, localShowShipName]);
 
   return (
     <>

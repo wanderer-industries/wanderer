@@ -3,12 +3,12 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { PrimeIcons } from 'primereact/api';
-import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
 import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
 import { SystemView, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 interface KillsSettingsDialogProps {
   visible: boolean;
@@ -16,12 +16,15 @@ interface KillsSettingsDialogProps {
 }
 
 export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visible, setVisible }) => {
-  const [globalSettings, setGlobalSettings] = useKillsWidgetSettings();
+  const {
+    storedSettings: { settingsKills, settingsKillsUpdate },
+  } = useMapRootState();
+
   const localRef = useRef({
-    showAll: globalSettings.showAll,
-    whOnly: globalSettings.whOnly,
-    excludedSystems: globalSettings.excludedSystems || [],
-    timeRange: globalSettings.timeRange,
+    showAll: settingsKills.showAll,
+    whOnly: settingsKills.whOnly,
+    excludedSystems: settingsKills.excludedSystems || [],
+    timeRange: settingsKills.timeRange,
   });
 
   const [, forceRender] = useState(0);
@@ -30,14 +33,14 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   useEffect(() => {
     if (visible) {
       localRef.current = {
-        showAll: globalSettings.showAll,
-        whOnly: globalSettings.whOnly,
-        excludedSystems: globalSettings.excludedSystems || [],
-        timeRange: globalSettings.timeRange,
+        showAll: settingsKills.showAll,
+        whOnly: settingsKills.whOnly,
+        excludedSystems: settingsKills.excludedSystems || [],
+        timeRange: settingsKills.timeRange,
       };
       forceRender(n => n + 1);
     }
-  }, [visible, globalSettings]);
+  }, [visible, settingsKills]);
 
   const handleWHChange = useCallback((checked: boolean) => {
     localRef.current = {
@@ -75,12 +78,12 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
   }, []);
 
   const handleApply = useCallback(() => {
-    setGlobalSettings(prev => ({
+    settingsKillsUpdate(prev => ({
       ...prev,
       ...localRef.current,
     }));
     setVisible(false);
-  }, [setGlobalSettings, setVisible]);
+  }, [settingsKillsUpdate, setVisible]);
 
   const handleHide = useCallback(() => {
     setVisible(false);

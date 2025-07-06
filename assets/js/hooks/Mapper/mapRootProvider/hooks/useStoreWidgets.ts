@@ -1,14 +1,13 @@
-import useLocalStorageState from 'use-local-storage-state';
 import {
   CURRENT_WINDOWS_VERSION,
   DEFAULT_WIDGETS,
-  STORED_VISIBLE_WIDGETS_DEFAULT,
   WidgetsIds,
   WINDOWS_LOCAL_STORE_KEY,
 } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
-import { useCallback, useEffect, useRef } from 'react';
-import { /*SNAP_GAP,*/ WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
+import { Dispatch, SetStateAction, useCallback, useEffect, useRef } from 'react';
+import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
+import { getDefaultWidgetProps } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 
 export type StoredWindowProps = Omit<WindowProps, 'content'>;
 export type WindowStoreInfo = {
@@ -20,17 +19,12 @@ export type WindowStoreInfo = {
 // export type UpdateWidgetSettingsFunc = (widgets: WindowProps[]) => void;
 export type ToggleWidgetVisibility = (widgetId: WidgetsIds) => void;
 
-export const getDefaultWidgetProps = () => ({
-  version: CURRENT_WINDOWS_VERSION,
-  visible: STORED_VISIBLE_WIDGETS_DEFAULT,
-  windows: DEFAULT_WIDGETS,
-});
+interface UseStoreWidgetsProps {
+  windowsSettings: WindowStoreInfo;
+  setWindowsSettings: Dispatch<SetStateAction<WindowStoreInfo>>;
+}
 
-export const useStoreWidgets = () => {
-  const [windowsSettings, setWindowsSettings] = useLocalStorageState<WindowStoreInfo>(WINDOWS_LOCAL_STORE_KEY, {
-    defaultValue: getDefaultWidgetProps(),
-  });
-
+export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStoreWidgetsProps) => {
   const ref = useRef({ windowsSettings, setWindowsSettings });
   ref.current = { windowsSettings, setWindowsSettings };
 

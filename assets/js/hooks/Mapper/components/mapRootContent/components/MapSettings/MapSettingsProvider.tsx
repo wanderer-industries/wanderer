@@ -22,6 +22,7 @@ import { OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
@@ -30,7 +31,7 @@ type MapSettingsContextType = {
 
 const MapSettingsContext = createContext<MapSettingsContextType | undefined>(undefined);
 
-export const MapSettingsProvider = ({ children }: { children: ReactNode }) => {
+export const MapSettingsProvider = ({ children }: WithChildren) => {
   const {
     outCommand,
     storedSettings: { interfaceSettings, setInterfaceSettings },

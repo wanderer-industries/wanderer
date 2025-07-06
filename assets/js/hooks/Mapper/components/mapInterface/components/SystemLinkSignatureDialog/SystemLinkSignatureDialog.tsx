@@ -7,10 +7,6 @@ import {
   SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
   WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
-import {
-  SETTINGS_KEYS,
-  SignatureSettingsType,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
@@ -18,6 +14,7 @@ import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureC
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
 

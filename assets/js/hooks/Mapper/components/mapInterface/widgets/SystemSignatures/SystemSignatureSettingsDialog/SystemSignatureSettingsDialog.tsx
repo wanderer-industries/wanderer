@@ -8,8 +8,8 @@ import {
   Setting,
   SettingsTypes,
   SIGNATURE_SETTINGS,
-  SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 
 interface SystemSignatureSettingsDialogProps {
   settings: SignatureSettingsType;

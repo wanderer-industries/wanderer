@@ -1,39 +1,170 @@
 import useLocalStorageState from 'use-local-storage-state';
-import { InterfaceStoredSettings, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { DEFAULT_ROUTES_SETTINGS, STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
-import { useActualizeSettings } from '@/hooks/Mapper/hooks';
-import { useEffect } from 'react';
-import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
+import { MapUserSettings, MapUserSettingsStructure } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import {
+  DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_ON_THE_MAP_SETTINGS,
+  DEFAULT_ROUTES_SETTINGS,
+  DEFAULT_WIDGET_LOCAL_SETTINGS,
+  getDefaultWidgetProps,
+  STORED_INTERFACE_DEFAULT_VALUES,
+} from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { useEffect, useRef, useState } from 'react';
+import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures';
+import { MapRootData } from '@/hooks/Mapper/mapRootProvider';
+import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/useSettingsValueAndSetter.ts';
+// import { actualizeSettings } from '@/hooks/Mapper/mapRootProvider/helpers';
 
-export const useMigrationRoutesSettingsV1 = (update: (upd: RoutesType) => void) => {
-  //TODO if current Date is more than 01.01.2026 - remove this hook.
-
-  useEffect(() => {
-    const items = localStorage.getItem(SESSION_KEY.routes);
-    if (items) {
-      update(JSON.parse(items));
-      localStorage.removeItem(SESSION_KEY.routes);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+// TODO - we need provide and compare version
+const createWidgetSettingsWithVersion = <T>(settings: T) => {
+  return {
+    version: 0,
+    settings,
+  };
 };
 
-export const useMapUserSettings = () => {
-  const [interfaceSettings, setInterfaceSettings] = useLocalStorageState<InterfaceStoredSettings>(
-    'window:interface:settings',
-    {
-      defaultValue: STORED_INTERFACE_DEFAULT_VALUES,
-    },
-  );
+const createDefaultWidgetSettings = (): MapUserSettings => {
+  return {
+    killsWidget: createWidgetSettingsWithVersion(DEFAULT_KILLS_WIDGET_SETTINGS),
+    localWidget: createWidgetSettingsWithVersion(DEFAULT_WIDGET_LOCAL_SETTINGS),
+    widgets: createWidgetSettingsWithVersion(getDefaultWidgetProps()),
+    routes: createWidgetSettingsWithVersion(DEFAULT_ROUTES_SETTINGS),
+    onTheMap: createWidgetSettingsWithVersion(DEFAULT_ON_THE_MAP_SETTINGS),
+    signaturesWidget: createWidgetSettingsWithVersion(DEFAULT_SIGNATURE_SETTINGS),
+    interface: createWidgetSettingsWithVersion(STORED_INTERFACE_DEFAULT_VALUES),
+  };
+};
 
-  const [settingsRoutes, settingsRoutesUpdate] = useLocalStorageState<RoutesType>('window:interface:routes', {
-    defaultValue: DEFAULT_ROUTES_SETTINGS,
+const EMPTY_OBJ = {};
+
+export const useMapUserSettings = ({ map_slug }: MapRootData) => {
+  const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>('map-user-settings', {
+    defaultValue: EMPTY_OBJ,
   });
 
-  useActualizeSettings(STORED_INTERFACE_DEFAULT_VALUES, interfaceSettings, setInterfaceSettings);
-  useActualizeSettings(DEFAULT_ROUTES_SETTINGS, settingsRoutes, settingsRoutesUpdate);
+  const ref = useRef({ mapUserSettings, setMapUserSettings });
+  ref.current = { mapUserSettings, setMapUserSettings };
 
-  useMigrationRoutesSettingsV1(settingsRoutesUpdate);
+  useEffect(() => {
+    const { mapUserSettings, setMapUserSettings } = ref.current;
+    if (map_slug === null) {
+      return;
+    }
 
-  return { interfaceSettings, setInterfaceSettings, settingsRoutes, settingsRoutesUpdate };
+    if (!(map_slug in mapUserSettings)) {
+      setMapUserSettings({
+        ...mapUserSettings,
+        [map_slug]: createDefaultWidgetSettings(),
+      });
+    }
+  }, [map_slug]);
+
+  const [interfaceSettings, setInterfaceSettings] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'interface',
+  );
+
+  const [settingsRoutes, settingsRoutesUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'routes',
+  );
+
+  const [settingsLocal, settingsLocalUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'localWidget',
+  );
+
+  const [settingsSignatures, settingsSignaturesUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'signaturesWidget',
+  );
+
+  const [settingsOnTheMap, settingsOnTheMapUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'onTheMap',
+  );
+
+  const [settingsKills, settingsKillsUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'killsWidget',
+  );
+
+  const [windowsSettings, setWindowsSettings] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'widgets',
+  );
+
+  const [isReady, setIsReady] = useState(false);
+
+  // HERE we MUST work with migrations
+  useEffect(() => {
+    if (isReady) {
+      return;
+    }
+
+    if (map_slug === null) {
+      return;
+    }
+
+    if (mapUserSettings[map_slug] == null) {
+      return;
+    }
+
+    // TODO !!!! FROM this date 06.07.2025 - we must work only with migrations
+    // actualizeSettings(STORED_INTERFACE_DEFAULT_VALUES, interfaceSettings, setInterfaceSettings);
+    // actualizeSettings(DEFAULT_ROUTES_SETTINGS, settingsRoutes, settingsRoutesUpdate);
+    // actualizeSettings(DEFAULT_WIDGET_LOCAL_SETTINGS, settingsLocal, settingsLocalUpdate);
+    // actualizeSettings(DEFAULT_SIGNATURE_SETTINGS, settingsSignatures, settingsSignaturesUpdate);
+    // actualizeSettings(DEFAULT_ON_THE_MAP_SETTINGS, settingsOnTheMap, settingsOnTheMapUpdate);
+    // actualizeSettings(DEFAULT_KILLS_WIDGET_SETTINGS, settingsKills, settingsKillsUpdate);
+
+    setIsReady(true);
+  }, [
+    map_slug,
+    mapUserSettings,
+    interfaceSettings,
+    setInterfaceSettings,
+    settingsRoutes,
+    settingsRoutesUpdate,
+    settingsLocal,
+    settingsLocalUpdate,
+    settingsSignatures,
+    settingsSignaturesUpdate,
+    settingsOnTheMap,
+    settingsOnTheMapUpdate,
+    settingsKills,
+    settingsKillsUpdate,
+    isReady,
+  ]);
+
+  return {
+    isReady,
+    interfaceSettings,
+    setInterfaceSettings,
+    settingsRoutes,
+    settingsRoutesUpdate,
+    settingsLocal,
+    settingsLocalUpdate,
+    settingsSignatures,
+    settingsSignaturesUpdate,
+    settingsOnTheMap,
+    settingsOnTheMapUpdate,
+    settingsKills,
+    settingsKillsUpdate,
+    windowsSettings,
+    setWindowsSettings,
+  };
 };
