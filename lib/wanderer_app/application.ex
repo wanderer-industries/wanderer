@@ -68,6 +68,14 @@ defmodule WandererApp.Application do
     Supervisor.start_link(children, opts)
     |> case do
       {:ok, _pid} = ok ->
+        # Attach telemetry handler for database pool monitoring
+        :telemetry.attach(
+          "wanderer-db-pool-handler",
+          [:wanderer_app, :repo, :query],
+          &WandererApp.Tracker.handle_pool_query/4,
+          nil
+        )
+
         ok
 
       {:error, info} = e ->
