@@ -69,12 +69,12 @@ defmodule WandererApp.Application do
     |> case do
       {:ok, _pid} = ok ->
         # Attach telemetry handler for database pool monitoring
-        :telemetry.attach(
-          "wanderer-db-pool-handler",
-          [:wanderer_app, :repo, :query],
-          &WandererApp.Tracker.handle_pool_query/4,
-          nil
-        )
+        # :telemetry.attach(
+        #   "wanderer-db-pool-handler",
+        #   [:wanderer_app, :repo, :query],
+        #   &WandererApp.Tracker.handle_pool_query/4,
+        #   nil
+        # )
 
         ok
 
@@ -102,7 +102,7 @@ defmodule WandererApp.Application do
     wanderer_kills_enabled =
       Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
 
-    if wanderer_kills_enabled in [true, :true, "true"] do
+    if wanderer_kills_enabled in [true, true, "true"] do
       Logger.info("Starting WandererKills service integration...")
 
       [
@@ -122,28 +122,31 @@ defmodule WandererApp.Application do
     services = []
 
     # Always include MapEventRelay if any external events are enabled
-    services = if sse_enabled || webhooks_enabled do
-      Logger.info("Starting external events system...")
-      [WandererApp.ExternalEvents.MapEventRelay | services]
-    else
-      services
-    end
+    services =
+      if sse_enabled || webhooks_enabled do
+        Logger.info("Starting external events system...")
+        [WandererApp.ExternalEvents.MapEventRelay | services]
+      else
+        services
+      end
 
     # Add WebhookDispatcher if webhooks are enabled
-    services = if webhooks_enabled do
-      Logger.info("Starting webhook dispatcher...")
-      [WandererApp.ExternalEvents.WebhookDispatcher | services]
-    else
-      services
-    end
+    services =
+      if webhooks_enabled do
+        Logger.info("Starting webhook dispatcher...")
+        [WandererApp.ExternalEvents.WebhookDispatcher | services]
+      else
+        services
+      end
 
     # Add SseStreamManager if SSE is enabled
-    services = if sse_enabled do
-      Logger.info("Starting SSE stream manager...")
-      [WandererApp.ExternalEvents.SseStreamManager | services]
-    else
-      services
-    end
+    services =
+      if sse_enabled do
+        Logger.info("Starting SSE stream manager...")
+        [WandererApp.ExternalEvents.SseStreamManager | services]
+      else
+        services
+      end
 
     Enum.reverse(services)
   end
