@@ -544,6 +544,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   defp map_start(
          %{
            assigns: %{
+             map_slug: map_slug,
              current_user: current_user,
              needs_tracking_setup: needs_tracking_setup,
              main_character_id: main_character_id,
@@ -589,6 +590,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         initial_data
         |> Map.merge(map_data)
         |> Map.merge(%{
+          map_slug: map_slug,
           main_character_eve_id: main_character_eve_id,
           following_character_eve_id: following_character_eve_id,
           is_subscription_active: is_subscription_active,
