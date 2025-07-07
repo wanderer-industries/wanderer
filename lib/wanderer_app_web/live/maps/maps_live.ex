@@ -543,7 +543,7 @@ defmodule WandererAppWeb.MapsLive do
          selected_subscription
        ) do
     %{
-      extra_characters_100: extra_characters_100,
+      extra_characters_50: extra_characters_50,
       extra_hubs_10: extra_hubs_10
     } = WandererApp.Env.subscription_settings()
 
@@ -558,7 +558,7 @@ defmodule WandererAppWeb.MapsLive do
       case characters_limit > sub_characters_limit do
         true ->
           additional_price +
-            (characters_limit - sub_characters_limit) / 100 * extra_characters_100
+            (characters_limit - sub_characters_limit) / 50 * extra_characters_50
 
         _ ->
           additional_price

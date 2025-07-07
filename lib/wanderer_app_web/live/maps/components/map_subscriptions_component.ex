@@ -31,8 +31,8 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     subscription_form = %{
       "plan" => "omega",
       "period" => "1",
-      "characters_limit" => "100",
-      "hubs_limit" => "10",
+      "characters_limit" => "50",
+      "hubs_limit" => "20",
       "auto_renew?" => true
     }
 
@@ -522,9 +522,9 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
             label="Characters limit"
             show_value={true}
             type="range"
-            min="100"
+            min="50"
             max="5000"
-            step="100"
+            step="50"
             class="range range-xs"
           />
           <.input
