@@ -8,7 +8,7 @@ import { useHotkey } from '@/hooks/Mapper/hooks/useHotkey';
 import { getDeletionTimeoutMs } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers';
 import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
-import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
+import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 /**
  * Custom hook for managing pending signature deletions and undo countdown.

@@ -28,11 +28,7 @@ export const useMapInit = () => {
         following_character_eve_id,
         user_hubs,
         map_slug,
-        ...rest
       } = props;
-
-      // eslint-disable-next-line no-console
-      console.log('JOipP', `rest`, rest);
 
       const updateData: Partial<MapRootData> = {};
 

@@ -14,13 +14,14 @@ import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/compone
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types';
 import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
+import { OldSettingsDialog } from '@/hooks/Mapper/components/mapRootContent/components/OldSettingsDialog.tsx';
 
 export interface MapRootContentProps {}
 
 // eslint-disable-next-line no-empty-pattern
 export const MapRootContent = ({}: MapRootContentProps) => {
   const {
-    storedSettings: { interfaceSettings, isReady },
+    storedSettings: { interfaceSettings, isReady, hasOldSettings },
     data,
   } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
@@ -90,6 +91,8 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         {showTrackingDialog && (
           <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
         )}
+
+        {hasOldSettings && <OldSettingsDialog />}
       </Layout>
     </div>
   );

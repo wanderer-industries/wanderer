@@ -1,11 +1,6 @@
-import {
-  CURRENT_WINDOWS_VERSION,
-  DEFAULT_WIDGETS,
-  WidgetsIds,
-  WINDOWS_LOCAL_STORE_KEY,
-} from '@/hooks/Mapper/components/mapInterface/constants.tsx';
+import { DEFAULT_WIDGETS, WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { WindowProps } from '@/hooks/Mapper/components/ui-kit/WindowManager/types.ts';
-import { Dispatch, SetStateAction, useCallback, useEffect, useRef } from 'react';
+import { Dispatch, SetStateAction, useCallback, useRef } from 'react';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { getDefaultWidgetProps } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 
@@ -74,33 +69,6 @@ export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStor
         windows,
         visible: visible.filter(x => x !== widgetId),
       };
-    });
-  }, []);
-
-  useEffect(() => {
-    const { setWindowsSettings } = ref.current;
-
-    const raw = localStorage.getItem(WINDOWS_LOCAL_STORE_KEY);
-    if (!raw) {
-      console.warn('No windows found in local storage!!');
-
-      setWindowsSettings(getDefaultWidgetProps());
-      return;
-    }
-
-    const { version, windows, visible, viewPort } = JSON.parse(raw) as WindowStoreInfo;
-    if (!version || CURRENT_WINDOWS_VERSION > version) {
-      setWindowsSettings(getDefaultWidgetProps());
-    }
-
-    // eslint-disable-next-line no-debugger
-    const out = windows.filter(x => DEFAULT_WIDGETS.find(def => def.id === x.id));
-
-    setWindowsSettings({
-      version: CURRENT_WINDOWS_VERSION,
-      windows: out as WindowProps[],
-      visible,
-      viewPort,
     });
   }, []);
 

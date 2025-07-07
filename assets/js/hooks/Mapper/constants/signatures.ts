@@ -1,6 +1,5 @@
 import { SignatureGroup, SignatureKind } from '@/hooks/Mapper/types';
 
-export const SIGNATURE_SETTING_STORE_KEY = 'wanderer_system_signature_settings_v6_5';
 export const SIGNATURE_WINDOW_ID = 'system_signatures_window';
 
 export enum SIGNATURES_DELETION_TIMING {

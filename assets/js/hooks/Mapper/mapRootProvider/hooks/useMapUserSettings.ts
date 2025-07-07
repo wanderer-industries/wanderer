@@ -8,10 +8,12 @@ import {
   getDefaultWidgetProps,
   STORED_INTERFACE_DEFAULT_VALUES,
 } from '@/hooks/Mapper/mapRootProvider/constants.ts';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures';
 import { MapRootData } from '@/hooks/Mapper/mapRootProvider';
 import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/useSettingsValueAndSetter.ts';
+import fastDeepEqual from 'fast-deep-equal';
+
 // import { actualizeSettings } from '@/hooks/Mapper/mapRootProvider/helpers';
 
 // TODO - we need provide and compare version
@@ -37,12 +39,15 @@ const createDefaultWidgetSettings = (): MapUserSettings => {
 const EMPTY_OBJ = {};
 
 export const useMapUserSettings = ({ map_slug }: MapRootData) => {
+  const [isReady, setIsReady] = useState(false);
+  const [hasOldSettings, setHasOldSettings] = useState(false);
+
   const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>('map-user-settings', {
     defaultValue: EMPTY_OBJ,
   });
 
-  const ref = useRef({ mapUserSettings, setMapUserSettings });
-  ref.current = { mapUserSettings, setMapUserSettings };
+  const ref = useRef({ mapUserSettings, setMapUserSettings, map_slug });
+  ref.current = { mapUserSettings, setMapUserSettings, map_slug };
 
   useEffect(() => {
     const { mapUserSettings, setMapUserSettings } = ref.current;
@@ -107,8 +112,6 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
     'widgets',
   );
 
-  const [isReady, setIsReady] = useState(false);
-
   // HERE we MUST work with migrations
   useEffect(() => {
     if (isReady) {
@@ -150,8 +153,53 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
     isReady,
   ]);
 
+  const checkOldSettings = useCallback(() => {
+    const interfaceSettings = localStorage.getItem('window:interface:settings');
+    const widgetRoutes = localStorage.getItem('window:interface:routes');
+    const widgetLocal = localStorage.getItem('window:interface:local');
+    const widgetKills = localStorage.getItem('kills:widget:settings');
+    const onTheMapOld = localStorage.getItem('window:onTheMap:settings');
+    const widgetsOld = localStorage.getItem('windows:settings:v2');
+
+    setHasOldSettings(!!(widgetsOld || interfaceSettings || widgetRoutes || widgetLocal || widgetKills || onTheMapOld));
+  }, []);
+
+  useEffect(() => {
+    checkOldSettings();
+  }, [checkOldSettings]);
+
+  const getSettingsForExport = useCallback(() => {
+    const { map_slug } = ref.current;
+
+    if (map_slug == null) {
+      return;
+    }
+
+    return JSON.stringify(ref.current.mapUserSettings[map_slug]);
+  }, []);
+
+  const applySettings = useCallback((settings: MapUserSettings) => {
+    const { map_slug, mapUserSettings, setMapUserSettings } = ref.current;
+
+    if (map_slug == null) {
+      return false;
+    }
+
+    if (fastDeepEqual(settings, mapUserSettings[map_slug])) {
+      return false;
+    }
+
+    setMapUserSettings(old => ({
+      ...old,
+      [map_slug]: settings,
+    }));
+    return true;
+  }, []);
+
   return {
     isReady,
+    hasOldSettings,
+
     interfaceSettings,
     setInterfaceSettings,
     settingsRoutes,
@@ -166,5 +214,9 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
     settingsKillsUpdate,
     windowsSettings,
     setWindowsSettings,
+
+    getSettingsForExport,
+    applySettings,
+    checkOldSettings,
   };
 };
