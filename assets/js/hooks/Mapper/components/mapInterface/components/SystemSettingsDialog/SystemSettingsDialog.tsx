@@ -206,7 +206,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                     aria-describedby="temporaryName"
                     autoComplete="off"
                     value={temporaryName}
-                    maxLength={10}
+                    maxLength={12}
                     onChange={e => setTemporaryName(e.target.value)}
                   />
                 </IconField>

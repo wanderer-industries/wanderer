@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
+import { useMemo } from 'react';
 
 interface UseSystemNameParams {
   isTempSystemNameEnabled: boolean;
@@ -26,7 +26,7 @@ export const useSystemName = ({
     }
 
     if (isShowLinkedSigIdTempName && linkedSigPrefix) {
-      return temporary_name ? `${linkedSigPrefix}・${temporary_name}` : `${linkedSigPrefix}・${solar_system_name}`;
+      return temporary_name ? `${linkedSigPrefix}:${temporary_name}` : `${linkedSigPrefix}:${solar_system_name}`;
     }
 
     return temporary_name ?? '';
