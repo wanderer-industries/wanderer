@@ -48,6 +48,7 @@ export type SystemSignature = {
   inserted_at?: string;
   updated_at?: string;
   deleted?: boolean;
+  temporary_name?: string;
 };
 
 export interface ExtendedSystemSignature extends SystemSignature {
