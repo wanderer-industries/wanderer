@@ -432,9 +432,9 @@
                   for={@import_form}
                   phx-change="import"
                 >
-                  <div phx-drop-target="{@uploads.settings.ref}">
+                  <%!-- <div phx-drop-target="{@uploads.settings.ref}">
                     <.live_file_input upload={@uploads.settings} />
-                  </div>
+                  </div> --%>
                 </.form>
                 <progress :if={@importing} class="progress w-56"></progress>
                 <.button

@@ -84,9 +84,9 @@ map_subscription_base_price =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_BASE_PRICE", 100_000_000)
 
-map_subscription_extra_characters_100_price =
+map_subscription_extra_characters_50_price =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_CHARACTERS_100_PRICE", 50_000_000)
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_CHARACTERS_50_PRICE", 50_000_000)
 
 map_subscription_extra_hubs_10_price =
   config_dir
@@ -167,7 +167,7 @@ config :wanderer_app,
         month_12_discount: 0.5
       }
     ],
-    extra_characters_100: map_subscription_extra_characters_100_price,
+    extra_characters_50: map_subscription_extra_characters_50_price,
     extra_hubs_10: map_subscription_extra_hubs_10_price
   }
 

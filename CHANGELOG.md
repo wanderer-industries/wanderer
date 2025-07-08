@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.74.4](https://github.com/wanderer-industries/wanderer/compare/v1.74.3...v1.74.4) (2025-07-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed issue with update system positions
+
+## [v1.74.3](https://github.com/wanderer-industries/wanderer/compare/v1.74.2...v1.74.3) (2025-07-06)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed issues with map subscription component
+
 ## [v1.74.2](https://github.com/wanderer-industries/wanderer/compare/v1.74.1...v1.74.2) (2025-06-30)
 
 

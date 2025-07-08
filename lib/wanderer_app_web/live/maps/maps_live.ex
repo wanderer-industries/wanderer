@@ -515,19 +515,19 @@ defmodule WandererAppWeb.MapsLive do
           {:ok, tmp_file_path}
         end)
 
-      Task.async(fn ->
-        {:ok, data} =
-          WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
+      # Task.async(fn ->
+      #   {:ok, data} =
+      #     WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
 
-        WandererApp.Map.Manager.start_map(map_id)
+      #   WandererApp.Map.Manager.start_map(map_id)
 
-        :timer.sleep(1000)
+      #   :timer.sleep(1000)
 
-        map_id
-        |> WandererApp.Map.Server.import_settings(data, current_user.id)
+      #   map_id
+      #   |> WandererApp.Map.Server.import_settings(data, current_user.id)
 
-        :imported
-      end)
+      #   :imported
+      # end)
 
       {:noreply,
        socket
@@ -543,7 +543,7 @@ defmodule WandererAppWeb.MapsLive do
          selected_subscription
        ) do
     %{
-      extra_characters_100: extra_characters_100,
+      extra_characters_50: extra_characters_50,
       extra_hubs_10: extra_hubs_10
     } = WandererApp.Env.subscription_settings()
 
@@ -558,7 +558,7 @@ defmodule WandererAppWeb.MapsLive do
       case characters_limit > sub_characters_limit do
         true ->
           additional_price +
-            (characters_limit - sub_characters_limit) / 100 * extra_characters_100
+            (characters_limit - sub_characters_limit) / 50 * extra_characters_50
 
         _ ->
           additional_price
