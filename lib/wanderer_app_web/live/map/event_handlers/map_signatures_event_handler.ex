@@ -290,11 +290,14 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           |> Enum.map(fn s ->
             s |> WandererApp.Api.MapSystemSignature.update!(%{deleted: false})
           end)
+
         Phoenix.PubSub.broadcast!(WandererApp.PubSub, map_id, %{
           event: :signatures_updated,
           payload: system.solar_system_id
         })
+
         {:noreply, socket}
+
       _ ->
         {:noreply, socket}
     end
@@ -317,6 +320,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           :eve_id,
           :character_eve_id,
           :name,
+          :temporary_name,
           :description,
           :kind,
           :group,

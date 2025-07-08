@@ -45,6 +45,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       :eve_id,
       :character_eve_id,
       :name,
+      :temporary_name,
       :description,
       :kind,
       :group,
@@ -73,6 +74,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :eve_id,
         :character_eve_id,
         :name,
+        :temporary_name,
         :description,
         :kind,
         :group,
@@ -92,6 +94,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :eve_id,
         :character_eve_id,
         :name,
+        :temporary_name,
         :description,
         :kind,
         :group,
@@ -167,6 +170,10 @@ defmodule WandererApp.Api.MapSystemSignature do
       allow_nil? true
     end
 
+    attribute :temporary_name, :string do
+      allow_nil? true
+    end
+
     attribute :type, :string do
       allow_nil? true
     end
@@ -212,6 +219,7 @@ defmodule WandererApp.Api.MapSystemSignature do
              :eve_id,
              :character_eve_id,
              :name,
+             :temporary_name,
              :description,
              :type,
              :linked_system_id,
