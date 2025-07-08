@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { useKillsCounter } from '../../hooks/useKillsCounter';
+import { useKillsCounter } from '../../hooks/useKillsCounter.ts';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
-import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common';
+import { WithChildren, WithClassName } from '@/hooks/Mapper/types/common.ts';
 import {
   KILLS_ROW_HEIGHT,
   SystemKillsList,
