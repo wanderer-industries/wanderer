@@ -39,6 +39,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
 
               # Update detailed kills for maps with active subscriptions
               {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+
               if is_subscription_active do
                 update_detailed_map_kills(map_id)
               end
@@ -89,18 +90,25 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       cache_key_ids = "map:#{map_id}:zkb:ids"
       cache_key_details = "map:#{map_id}:zkb:detailed_kills"
 
-      old_ids_map = case WandererApp.Cache.get(cache_key_ids) do
-        map when is_map(map) -> map
-        _ -> %{}
-      end
+      old_ids_map =
+        case WandererApp.Cache.get(cache_key_ids) do
+          map when is_map(map) -> map
+          _ -> %{}
+        end
 
-      old_details_map = case WandererApp.Cache.get(cache_key_details) do
-        map when is_map(map) -> map
-        _ ->
-          # Initialize with empty map and store it
-          WandererApp.Cache.insert(cache_key_details, %{}, ttl: :timer.hours(@killmail_ttl_hours))
-          %{}
-      end
+      old_details_map =
+        case WandererApp.Cache.get(cache_key_details) do
+          map when is_map(map) ->
+            map
+
+          _ ->
+            # Initialize with empty map and store it
+            WandererApp.Cache.insert(cache_key_details, %{},
+              ttl: :timer.hours(@killmail_ttl_hours)
+            )
+
+            %{}
+        end
 
       # Build current killmail ID map from cache
       new_ids_map =
@@ -117,7 +125,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
           old_set = MapSet.new(Map.get(old_ids_map, system_id, []))
           old_details = Map.get(old_details_map, system_id, [])
           # Update if IDs changed OR if we have IDs but no detailed kills
-          not MapSet.equal?(new_ids_set, old_set) or 
+          not MapSet.equal?(new_ids_set, old_set) or
             (MapSet.size(new_ids_set) > 0 and old_details == [])
         end)
         |> Enum.map(&elem(&1, 0))
@@ -132,7 +140,8 @@ defmodule WandererApp.Map.ZkbDataFetcher do
         :ok
       else
         # Build new details for each changed system
-        updated_details_map = build_updated_details_map(changed_systems, old_details_map, new_ids_map)
+        updated_details_map =
+          build_updated_details_map(changed_systems, old_details_map, new_ids_map)
 
         # Update the ID map cache
         updated_ids_map = build_updated_ids_map(changed_systems, old_ids_map, new_ids_map)
@@ -198,7 +207,10 @@ defmodule WandererApp.Map.ZkbDataFetcher do
   defp maybe_initialize_empty_details_map(%{}, systems, cache_key_details) do
     # First time initialization - create empty structure
     initial_map = Enum.into(systems, %{}, fn {system_id, _} -> {system_id, []} end)
-    WandererApp.Cache.insert(cache_key_details, initial_map, ttl: :timer.hours(@killmail_ttl_hours))
+
+    WandererApp.Cache.insert(cache_key_details, initial_map,
+      ttl: :timer.hours(@killmail_ttl_hours)
+    )
   end
 
   defp maybe_initialize_empty_details_map(_old_details_map, _systems, _cache_key_details), do: :ok

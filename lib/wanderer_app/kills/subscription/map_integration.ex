@@ -179,7 +179,10 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
             WandererApp.ExternalEvents.broadcast(map_id, :map_kill, kill_data)
           rescue
             error ->
-              Logger.error("Failed to broadcast external event for map #{map_id}: #{inspect(error)}")
+              Logger.error(
+                "Failed to broadcast external event for map #{map_id}: #{inspect(error)}"
+              )
+
               # Continue processing other maps even if one fails
           end
         end)
