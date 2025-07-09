@@ -87,9 +87,8 @@ defmodule WandererAppWeb.MapCharacters do
   end
 
   @impl true
-  def handle_event("undo", %{"event-data" => _event_data} = _params, socket) do
-    {:noreply, socket}
-  end
+  def handle_event("undo", %{"event-data" => _event_data} = _params, socket),
+    do: {:noreply, socket}
 
   defp is_online?(character_id) do
     {:ok, state} = WandererApp.Character.get_character_state(character_id)
