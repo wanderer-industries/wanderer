@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/Mapper/hooks/useTheme.ts';
 import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import classes from './LocalCounter.module.scss';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
+import { useLocalCharactersItemTemplate } from '@/hooks/Mapper/components/mapInterface/widgets/LocalCharacters/hooks/useLocalCharacters.tsx';
 
 interface LocalCounterProps {
   localCounterCharacters: Array<CharItemProps>;
