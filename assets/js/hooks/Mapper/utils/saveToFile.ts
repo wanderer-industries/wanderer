@@ -6,12 +6,9 @@ export function saveTextFile(filename: string, content: string) {
   a.href = url;
   a.download = filename;
 
-  // эмулируем клик
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-
-  // освобождаем URL
   URL.revokeObjectURL(url);
 }
 
