@@ -40,6 +40,7 @@ $neon-color-3: rgba(27, 132, 236, 0.40);
   z-index: 3;
   overflow: hidden;
 
+  &.Pochven,
   &.Mataria,
   &.Amarria,
   &.Gallente,
@@ -92,6 +93,15 @@ $neon-color-3: rgba(27, 132, 236, 0.40);
       background-image: url('/images/gallente-180.png');
       background-position-x: 1px;
       background-position-y: 0;
+    }
+  }
+
+  &.Pochven {
+    &::after {
+      opacity: 0.8;
+      background-image: url('/images/pochven.webp');
+      background-position-x: 0;
+      background-position-y: -13px;
     }
   }
 

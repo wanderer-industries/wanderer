@@ -3,10 +3,9 @@ import clsx from 'clsx';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit/WdTooltip';
 import { CharItemProps, LocalCharactersList } from '../../../mapInterface/widgets/LocalCharacters/components';
-import { useLocalCharactersItemTemplate } from '../../../mapInterface/widgets/LocalCharacters/hooks/useLocalCharacters';
-import classes from './SolarSystemLocalCounter.module.scss';
 import { useTheme } from '@/hooks/Mapper/hooks/useTheme.ts';
 import { AvailableThemes } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import classes from './LocalCounter.module.scss';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 
 interface LocalCounterProps {

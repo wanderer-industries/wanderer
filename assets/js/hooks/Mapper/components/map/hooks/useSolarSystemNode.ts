@@ -5,7 +5,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider';
 import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick';
-import { REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
+import { Regions, REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
@@ -65,6 +65,7 @@ const SpaceToClass: Record<string, string> = {
   [Spaces.Matar]: 'Mataria',
   [Spaces.Amarr]: 'Amarria',
   [Spaces.Gallente]: 'Gallente',
+  [Spaces.Pochven]: 'Pochven',
 };
 
 export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
@@ -112,6 +113,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     region_id,
     is_shattered,
     solar_system_name,
+    constellation_name,
   } = systemStaticInfo;
 
   const { isShowUnsplashedSignatures } = interfaceSettings;
@@ -195,9 +197,17 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
   const hubsAsStrings = useMemo(() => hubs.map(item => item.toString()), [hubs]);
 
   const isRally = useMemo(
-    () => pings.find(x => x.solar_system_id === solar_system_id && x.type === PingType.Rally),
+    () => !!pings.find(x => x.solar_system_id === solar_system_id && x.type === PingType.Rally),
     [pings, solar_system_id],
   );
+
+  const regionName = useMemo(() => {
+    if (region_id === Regions.Pochven) {
+      return constellation_name;
+    }
+
+    return region_name;
+  }, [constellation_name, region_id, region_name]);
 
   const nodeVars: SolarSystemNodeVars = {
     id,
@@ -233,7 +243,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     isThickConnections,
     classTitle: class_title,
     temporaryName: computedTemporaryName,
-    regionName: region_name,
+    regionName,
     solarSystemName: solar_system_name,
     isRally,
   };

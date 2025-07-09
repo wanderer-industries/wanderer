@@ -2,6 +2,25 @@
 
 <!-- changelog -->
 
+## [v1.74.7](https://github.com/wanderer-industries/wanderer/compare/v1.74.6...v1.74.7) (2025-07-09)
+
+
+
+
+## [v1.74.6](https://github.com/wanderer-industries/wanderer/compare/v1.74.5...v1.74.6) (2025-07-09)
+
+
+
+
+## [v1.74.5](https://github.com/wanderer-industries/wanderer/compare/v1.74.4...v1.74.5) (2025-07-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add background for Pochven's systems. Changed from Region name to constellation name for pochven systems. Changed connection style for gates (display like common connection). Changed behaviour of connections.
+
 ## [v1.74.4](https://github.com/wanderer-industries/wanderer/compare/v1.74.3...v1.74.4) (2025-07-07)
 
 
