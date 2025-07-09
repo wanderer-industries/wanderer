@@ -12,11 +12,11 @@ import {
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
-import { LocalCounter } from './SolarSystemLocalCounter';
-import { KillsCounter } from './SolarSystemKillsCounter';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { Tag } from 'primereact/tag';
+import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
+import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
 
 // let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {

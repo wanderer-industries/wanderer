@@ -33,6 +33,7 @@ export enum Regions {
   Solitude = 10000044,
   TashMurkon = 10000020,
   VergeVendor = 10000068,
+  Pochven = 10000070,
 }
 
 export enum Spaces {
@@ -40,6 +41,7 @@ export enum Spaces {
   'Gallente' = 'Gallente',
   'Matar' = 'Matar',
   'Amarr' = 'Amarr',
+  'Pochven' = 'Pochven',
 }
 
 export const REGIONS_MAP: Record<number, Spaces> = {
@@ -66,6 +68,7 @@ export const REGIONS_MAP: Record<number, Spaces> = {
   [Regions.Solitude]: Spaces.Gallente,
   [Regions.TashMurkon]: Spaces.Amarr,
   [Regions.VergeVendor]: Spaces.Gallente,
+  [Regions.Pochven]: Spaces.Pochven,
 };
 
 export type K162Type = {
