@@ -6,7 +6,6 @@ import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootP
 import { UserPermission } from '@/hooks/Mapper/types/permissions';
 import { LocalCharactersList } from './components/LocalCharactersList';
 import { useLocalCharactersItemTemplate } from './hooks/useLocalCharacters';
-import { useLocalCharacterWidgetSettings } from './hooks/useLocalWidgetSettings';
 import { LocalCharactersHeader } from './components/LocalCharactersHeader';
 import classes from './LocalCharacters.module.scss';
 import clsx from 'clsx';
@@ -14,9 +13,9 @@ import clsx from 'clsx';
 export const LocalCharacters = () => {
   const {
     data: { characters, userCharacters, selectedSystems },
+    storedSettings: { settingsLocal, settingsLocalUpdate },
   } = useMapRootState();
 
-  const [settings, setSettings] = useLocalCharacterWidgetSettings();
   const [systemId] = selectedSystems;
   const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
   const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
@@ -31,12 +30,12 @@ export const LocalCharacters = () => {
       .map(x => ({
         ...x,
         isOwn: userCharacters.includes(x.eve_id),
-        compact: settings.compact,
-        showShipName: settings.showShipName,
+        compact: settingsLocal.compact,
+        showShipName: settingsLocal.showShipName,
       }))
       .sort(sortCharacters);
 
-    if (!showOffline || !settings.showOffline) {
+    if (!showOffline || !settingsLocal.showOffline) {
       return filtered.filter(c => c.online);
     }
     return filtered;
@@ -44,9 +43,9 @@ export const LocalCharacters = () => {
     characters,
     systemId,
     userCharacters,
-    settings.compact,
-    settings.showOffline,
-    settings.showShipName,
+    settingsLocal.compact,
+    settingsLocal.showOffline,
+    settingsLocal.showShipName,
     showOffline,
   ]);
 
@@ -54,7 +53,7 @@ export const LocalCharacters = () => {
   const isNotSelectedSystem = selectedSystems.length !== 1;
   const showList = sorted.length > 0 && selectedSystems.length === 1;
 
-  const itemTemplate = useLocalCharactersItemTemplate(settings.showShipName);
+  const itemTemplate = useLocalCharactersItemTemplate(settingsLocal.showShipName);
 
   return (
     <Widget
@@ -63,8 +62,8 @@ export const LocalCharacters = () => {
           sortedCount={sorted.length}
           showList={showList}
           showOffline={showOffline}
-          settings={settings}
-          setSettings={setSettings}
+          settings={settingsLocal}
+          setSettings={settingsLocalUpdate}
         />
       }
     >
@@ -81,7 +80,7 @@ export const LocalCharacters = () => {
       {showList && (
         <LocalCharactersList
           items={sorted}
-          itemSize={settings.compact ? 26 : 41}
+          itemSize={settingsLocal.compact ? 26 : 41}
           itemTemplate={itemTemplate}
           containerClassName={clsx(
             'w-full h-full overflow-x-hidden overflow-y-auto custom-scrollbar select-none',

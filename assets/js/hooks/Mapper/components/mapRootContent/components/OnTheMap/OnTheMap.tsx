@@ -7,23 +7,10 @@ import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virt
 import clsx from 'clsx';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
 import { CharacterCard, TooltipPosition, WdCheckbox, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
-import useLocalStorageState from 'use-local-storage-state';
 import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { InputText } from 'primereact/inputtext';
 import { IconField } from 'primereact/iconfield';
-
-type WindowLocalSettingsType = {
-  compact: boolean;
-  hideOffline: boolean;
-  version: number;
-};
-
-const STORED_DEFAULT_VALUES: WindowLocalSettingsType = {
-  compact: true,
-  hideOffline: false,
-  version: 0,
-};
 
 const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: VirtualScrollerTemplateOptions) => {
   return (
@@ -48,13 +35,10 @@ export interface OnTheMapProps {
 export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
   const {
     data: { characters, userCharacters },
+    storedSettings: { settingsOnTheMap, settingsOnTheMapUpdate },
   } = useMapRootState();
 
   const [searchVal, setSearchVal] = useState('');
-
-  const [settings, setSettings] = useLocalStorageState<WindowLocalSettingsType>('window:onTheMap:settings', {
-    defaultValue: STORED_DEFAULT_VALUES,
-  });
 
   const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
   const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
@@ -107,12 +91,12 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
       });
     }
 
-    if (showOffline && !settings.hideOffline) {
+    if (showOffline && !settingsOnTheMap.hideOffline) {
       return out;
     }
 
     return out.filter(x => x.online);
-  }, [showOffline, searchVal, characters, settings.hideOffline, userCharacters]);
+  }, [showOffline, searchVal, characters, settingsOnTheMap.hideOffline, userCharacters]);
 
   return (
     <Sidebar
@@ -153,9 +137,11 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
               size="m"
               labelSide="left"
               label={'Hide offline'}
-              value={settings.hideOffline}
+              value={settingsOnTheMap.hideOffline}
               classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-              onChange={() => setSettings(() => ({ ...settings, hideOffline: !settings.hideOffline }))}
+              onChange={() =>
+                settingsOnTheMapUpdate(() => ({ ...settingsOnTheMap, hideOffline: !settingsOnTheMap.hideOffline }))
+              }
             />
           )}
         </div>

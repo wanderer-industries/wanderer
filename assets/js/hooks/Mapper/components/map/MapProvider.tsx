@@ -10,6 +10,7 @@ export type MapData = MapUnionTypes & {
   showKSpaceBG: boolean;
   isThickConnections: boolean;
   linkedSigEveId: string;
+  localShowShipName: boolean;
 };
 
 interface MapProviderProps {
@@ -42,6 +43,7 @@ const INITIAL_DATA: MapData = {
   followingCharacterEveId: null,
   userHubs: [],
   pings: [],
+  localShowShipName: false,
 };
 
 export interface MapContextProps {

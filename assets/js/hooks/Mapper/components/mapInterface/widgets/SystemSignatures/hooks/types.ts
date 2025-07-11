@@ -1,5 +1,5 @@
-import { SignatureSettingsType } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
+import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 
 export interface UseSystemSignaturesDataProps {
   systemId: string;

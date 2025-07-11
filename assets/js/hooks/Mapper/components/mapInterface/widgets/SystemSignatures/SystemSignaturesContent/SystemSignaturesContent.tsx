@@ -8,7 +8,6 @@ import {
   SortOrder,
 } from 'primereact/datatable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useLocalStorageState from 'use-local-storage-state';
 
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
@@ -17,9 +16,6 @@ import {
   GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
-  SETTINGS_KEYS,
-  SIGNATURE_WINDOW_ID,
-  SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
 import { TooltipPosition, WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
@@ -36,18 +32,10 @@ import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
+import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
-
-type SystemSignaturesSortSettings = {
-  sortField: string;
-  sortOrder: SortOrder;
-};
-
-const SORT_DEFAULT_VALUES: SystemSignaturesSortSettings = {
-  sortField: 'inserted_at',
-  sortOrder: -1,
-};
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -79,6 +67,10 @@ export const SystemSignaturesContent = ({
   const [nameColumnWidth, setNameColumnWidth] = useState('auto');
   const [hoveredSignature, setHoveredSignature] = useState<SystemSignature | null>(null);
 
+  const {
+    storedSettings: { settingsSignatures, settingsSignaturesUpdate },
+  } = useMapRootState();
+
   const tableRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<WdTooltipHandlers>(null);
 
@@ -86,11 +78,6 @@ export const SystemSignaturesContent = ({
   const isMedium = useMaxWidth(tableRef, MEDIUM_MAX_WIDTH);
 
   const { clipboardContent, setClipboardContent } = useClipboard();
-
-  const [sortSettings, setSortSettings] = useLocalStorageState<{ sortField: string; sortOrder: SortOrder }>(
-    'window:signatures:sort',
-    { defaultValue: SORT_DEFAULT_VALUES },
-  );
 
   const {
     signatures,
@@ -246,8 +233,8 @@ export const SystemSignaturesContent = ({
     tooltipRef.current?.hide();
   }, []);
 
-  const refVars = useRef({ settings, selectedSignatures, setSortSettings });
-  refVars.current = { settings, selectedSignatures, setSortSettings };
+  const refVars = useRef({ settings, selectedSignatures, settingsSignatures, settingsSignaturesUpdate });
+  refVars.current = { settings, selectedSignatures, settingsSignatures, settingsSignaturesUpdate };
 
   // @ts-ignore
   const getRowClassName = useCallback(rowData => {
@@ -263,7 +250,12 @@ export const SystemSignaturesContent = ({
   }, []);
 
   const handleSortSettings = useCallback(
-    (e: DataTableStateEvent) => refVars.current.setSortSettings({ sortField: e.sortField, sortOrder: e.sortOrder }),
+    (e: DataTableStateEvent) =>
+      refVars.current.settingsSignaturesUpdate({
+        ...refVars.current.settingsSignatures,
+        [SETTINGS_KEYS.SORT_FIELD]: e.sortField,
+        [SETTINGS_KEYS.SORT_ORDER]: e.sortOrder,
+      }),
     [],
   );
 
@@ -295,8 +287,8 @@ export const SystemSignaturesContent = ({
             rowHover
             selectAll
             onRowDoubleClick={handleRowClick}
-            sortField={sortSettings.sortField}
-            sortOrder={sortSettings.sortOrder}
+            sortField={settingsSignatures[SETTINGS_KEYS.SORT_FIELD] as string}
+            sortOrder={settingsSignatures[SETTINGS_KEYS.SORT_ORDER] as SortOrder}
             onSort={handleSortSettings}
             onRowMouseEnter={onRowMouseEnter}
             onRowMouseLeave={onRowMouseLeave}
