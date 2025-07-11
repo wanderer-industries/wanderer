@@ -21,6 +21,7 @@ defmodule UtilAPIControllerTest do
             {map_id, ""} -> {:ok, map_id}
             _ -> {:error, "Invalid map_id format"}
           end
+
         params["slug"] ->
           # In a real app, this would look up the map by slug
           # For testing, we'll just use a simple mapping
@@ -29,6 +30,7 @@ defmodule UtilAPIControllerTest do
             "another-map" -> {:ok, 2}
             _ -> {:error, "Map not found"}
           end
+
         true ->
           {:error, "Missing required param: map_id or slug"}
       end
@@ -38,7 +40,7 @@ defmodule UtilAPIControllerTest do
     def require_param(params, key) do
       case params[key] do
         nil -> {:error, "Missing required param: #{key}"}
-        ""  -> {:error, "Param #{key} cannot be empty"}
+        "" -> {:error, "Param #{key} cannot be empty"}
         val -> {:ok, val}
       end
     end
@@ -47,7 +49,7 @@ defmodule UtilAPIControllerTest do
     def parse_int(str) do
       case Integer.parse(str) do
         {num, ""} -> {:ok, num}
-        _         -> {:error, "Invalid integer for param id=#{str}"}
+        _ -> {:error, "Invalid integer for param id=#{str}"}
       end
     end
   end

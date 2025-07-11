@@ -66,7 +66,7 @@ defmodule WandererAppWeb.CommonAPIController do
   GET /api/common/system-static-info?id=<solar_system_id>
   """
   @spec show_system_static(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :show_system_static,
+  operation(:show_system_static,
     summary: "Get System Static Information",
     description: "Retrieves static information for a given solar system.",
     parameters: [
@@ -85,6 +85,8 @@ defmodule WandererAppWeb.CommonAPIController do
         @system_static_response_schema
       }
     ]
+  )
+
   def show_system_static(conn, params) do
     with {:ok, solar_system_str} <- APIUtils.require_param(params, "id"),
          {:ok, solar_system_id} <- APIUtils.parse_int(solar_system_str) do
@@ -152,9 +154,10 @@ defmodule WandererAppWeb.CommonAPIController do
     wormhole_classes = CachedInfo.get_wormhole_classes!()
 
     # Create a map of wormhole classes by ID for quick lookup
-    classes_by_id = Enum.reduce(wormhole_classes, %{}, fn class, acc ->
-      Map.put(acc, class.id, class)
-    end)
+    classes_by_id =
+      Enum.reduce(wormhole_classes, %{}, fn class, acc ->
+        Map.put(acc, class.id, class)
+      end)
 
     # Find detailed information for each static
     Enum.map(statics, fn static_name ->
@@ -178,8 +181,8 @@ defmodule WandererAppWeb.CommonAPIController do
       name: wh_type.name,
       destination: %{
         id: to_string(wh_type.dest),
-        name: (if dest_class, do: dest_class.title, else: wh_type.dest),
-        short_name: (if dest_class, do: dest_class.short_name, else: wh_type.dest)
+        name: if(dest_class, do: dest_class.title, else: wh_type.dest),
+        short_name: if(dest_class, do: dest_class.short_name, else: wh_type.dest)
       },
       properties: %{
         lifetime: wh_type.lifetime,

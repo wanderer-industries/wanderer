@@ -11,14 +11,14 @@
           <h3 class="card-title text-center text-md">Create Map</h3>
         </div>
       </.link>
-      <.async_result :if={assigns[:maps]} :let={maps} assign={@maps}>
+      <.async_result :let={maps} :if={assigns[:maps]} assign={@maps}>
         <:loading>
           <div class="skeleton card rounded"></div>
           <div class="skeleton card rounded"></div>
           <div class="skeleton card rounded"></div>
           <div class="skeleton card rounded"></div>
         </:loading>
-        <:failed :let={reason}><%= reason %></:failed>
+        <:failed :let={reason}>{reason}</:failed>
         <.link
           :for={map <- maps}
           navigate={~p"/#{map.slug}"}
@@ -26,11 +26,7 @@
         >
           <figure class="absolute z-10 h-200 avatar w-full h-full">
             <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
-            <img
-              :if={map.scope === :wormholes}
-              class="absolute h-200"
-              src="/images/wh_back.jpg"
-            />
+            <img :if={map.scope === :wormholes} class="absolute h-200" src="/images/wh_back.jpg" />
             <img
               :if={map.scope === :stargates}
               class="absolute h-200"
@@ -41,10 +37,10 @@
           <div class="absolute z-50 left-0 top-0 w-full h-full p-6 flex flex-col justify-between bg-opacity-70 bg-neutral-900 hover:bg-opacity-30 transform transition duration-500">
             <div>
               <h2 class="card-title text-sm">
-                <%= map.name %>
+                {map.name}
               </h2>
               <p title={map.description} class="text-sm mt-4 line-clamp-2">
-                <%= map.description %>
+                {map.description}
               </p>
               <div
                 :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
@@ -60,7 +56,7 @@
                   data-data={acl.id}
                 >
                   <div class="p-tag-value">
-                    <%= acl.name %>
+                    {acl.name}
                   </div>
                 </button>
               </div>
@@ -69,7 +65,7 @@
               <h2 class="w-full flex justify-between mb-4 text-sm">
                 Tracked Characters:
                 <span class="font-bold">
-                  <%= map.characters_count %>
+                  {map.characters_count}
                 </span>
               </h2>
               <div class="flex gap-2 justify-end">
@@ -187,7 +183,7 @@
     />
     <div class="modal-action">
       <.button class="mt-2" type="submit">
-        <%= (@live_action == :create && "Create") || "Save" %>
+        {(@live_action == :create && "Create") || "Save"}
       </.button>
     </div>
   </.form>
@@ -344,12 +340,10 @@
                   </a>
                 </li>
                 <li
-                :if={@map_subscriptions_enabled?}
+                  :if={@map_subscriptions_enabled?}
                   class={[
                     "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_settings_tab == "bot"
-                    )
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "bot")
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -469,8 +463,10 @@
                     </li> --%>
                   </ol>
                   <p class="text-sm text-gray-600">
-                    For detailed API documentation, please refer to our
-                    <a href="/license" class="text-blue-600 hover:underline">API documentation</a>.
+                    For detailed API documentation, please refer to our <a
+                      href="/license"
+                      class="text-blue-600 hover:underline"
+                    >API documentation</a>.
                   </p>
                 </div>
 
@@ -556,7 +552,5 @@
     </div>
   </div>
 
-  <div class="modal-action">
-
-  </div>
+  <div class="modal-action"></div>
 </.modal>

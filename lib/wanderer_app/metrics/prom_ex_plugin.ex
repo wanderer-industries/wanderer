@@ -17,6 +17,10 @@ defmodule WandererApp.Metrics.PromExPlugin do
   @map_subscription_cancel_event [:wanderer_app, :map, :subscription, :cancel]
   @map_subscription_expired_event [:wanderer_app, :map, :subscription, :expired]
 
+  # ESI-related events
+  @esi_rate_limited_event [:wanderer_app, :esi, :rate_limited]
+  @esi_error_event [:wanderer_app, :esi, :error]
+
   @impl true
   def event_metrics(_opts) do
     [
@@ -24,7 +28,8 @@ defmodule WandererApp.Metrics.PromExPlugin do
       character_event_metrics(),
       map_event_metrics(),
       map_subscription_metrics(),
-      characters_distribution_event_metrics()
+      characters_distribution_event_metrics(),
+      esi_event_metrics()
     ]
   end
 
@@ -172,6 +177,52 @@ defmodule WandererApp.Metrics.PromExPlugin do
         )
       ]
     )
+  end
+
+  defp esi_event_metrics do
+    Event.build(
+      :wanderer_app_esi_event_metrics,
+      [
+        counter(
+          @esi_rate_limited_event ++ [:count],
+          event_name: @esi_rate_limited_event,
+          description: "The number of ESI rate limiting incidents that have occurred",
+          tags: [:endpoint, :method, :tracking_pool],
+          tag_values: &get_esi_tag_values/1
+        ),
+        distribution(
+          @esi_rate_limited_event ++ [:reset_duration],
+          event_name: @esi_rate_limited_event,
+          description: "ESI rate limit reset duration in milliseconds",
+          tags: [:endpoint, :method, :tracking_pool],
+          tag_values: &get_esi_tag_values/1,
+          reporter_options: [buckets: [1000, 5000, 10000, 30000, 60000, 300000]]
+        ),
+        counter(
+          @esi_error_event ++ [:count],
+          event_name: @esi_error_event,
+          description: "The number of ESI API errors that have occurred",
+          tags: [:endpoint, :error_type, :tracking_pool],
+          tag_values: &get_esi_error_tag_values/1
+        )
+      ]
+    )
+  end
+
+  defp get_esi_tag_values(metadata) do
+    %{
+      endpoint: Map.get(metadata, :endpoint, "unknown"),
+      method: Map.get(metadata, :method, "unknown"),
+      tracking_pool: Map.get(metadata, :tracking_pool, "unknown")
+    }
+  end
+
+  defp get_esi_error_tag_values(metadata) do
+    %{
+      endpoint: Map.get(metadata, :endpoint, "unknown"),
+      error_type: to_string(Map.get(metadata, :error_type, "unknown")),
+      tracking_pool: Map.get(metadata, :tracking_pool, "unknown")
+    }
   end
 
   defp get_empty_tag_values(_) do

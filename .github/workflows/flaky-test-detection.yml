@@ -1,0 +1,300 @@
+name: Flaky Test Detection
+
+on:
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_file:
+        description: 'Specific test file to check (optional)'
+        required: false
+        type: string
+      iterations:
+        description: 'Number of test iterations'
+        required: false
+        default: '10'
+        type: string
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: "1.17"
+  OTP_VERSION: "27"
+
+jobs:
+  detect-flaky-tests:
+    name: 🔍 Detect Flaky Tests
+    runs-on: ubuntu-22.04
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Elixir & Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: 📦 Restore dependencies cache
+        uses: actions/cache@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
+
+      - name: 📦 Install dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: 🏗️ Compile project
+        run: mix compile --warnings-as-errors
+
+      - name: 🏗️ Setup test database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+
+      - name: 🔍 Run flaky test detection
+        id: flaky-detection
+        run: |
+          # Determine test target
+          TEST_FILE="${{ github.event.inputs.test_file }}"
+          ITERATIONS="${{ github.event.inputs.iterations || '10' }}"
+          
+          if [ -n "$TEST_FILE" ]; then
+            echo "Checking specific file: $TEST_FILE"
+            mix test.stability --runs $ITERATIONS --file "$TEST_FILE" --detect --report flaky_report.json
+          else
+            echo "Checking all tests"
+            mix test.stability --runs $ITERATIONS --detect --report flaky_report.json
+          fi
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+        continue-on-error: true
+
+      - name: 📊 Upload flaky test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-test-report
+          path: flaky_report.json
+          retention-days: 30
+
+      - name: 💬 Comment on flaky tests
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read the report
+            let report;
+            try {
+              const reportContent = fs.readFileSync('flaky_report.json', 'utf8');
+              report = JSON.parse(reportContent);
+            } catch (error) {
+              console.log('No flaky test report found');
+              return;
+            }
+            
+            if (!report.flaky_tests || report.flaky_tests.length === 0) {
+              console.log('No flaky tests detected!');
+              return;
+            }
+            
+            // Create issue body
+            const issueBody = `## 🔍 Flaky Tests Detected
+            
+            The automated flaky test detection found ${report.flaky_tests.length} potentially flaky test(s).
+            
+            ### Summary
+            - **Total test runs**: ${report.summary.total_runs}
+            - **Success rate**: ${(report.summary.success_rate * 100).toFixed(1)}%
+            - **Average duration**: ${(report.summary.avg_duration_ms / 1000).toFixed(2)}s
+            
+            ### Flaky Tests
+            
+            | Test | Failure Rate | Details |
+            |------|--------------|---------|
+            ${report.flaky_tests.map(test => 
+              `| ${test.test} | ${(test.failure_rate * 100).toFixed(1)}% | Failed ${test.failures}/${report.summary.total_runs} runs |`
+            ).join('\n')}
+            
+            ### Recommended Actions
+            
+            1. Review the identified tests for race conditions
+            2. Check for timing dependencies or async issues
+            3. Ensure proper test isolation and cleanup
+            4. Consider adding explicit waits or synchronization
+            5. Use \`async: false\` if tests share resources
+            
+            ---
+            *This issue was automatically created by the flaky test detection workflow.*
+            *Run time: ${new Date().toISOString()}*
+            `;
+            
+            try {
+              // Check if there's already an open issue
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'flaky-test',
+                state: 'open'
+              });
+              
+              if (issues.data.length > 0) {
+                // Update existing issue
+                const issue = issues.data[0];
+                try {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: issueBody
+                  });
+                  console.log(`Updated existing issue #${issue.number}`);
+                } catch (commentError) {
+                  console.error('Failed to create comment:', commentError.message);
+                  throw commentError;
+                }
+              } else {
+                // Create new issue
+                try {
+                  const newIssue = await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: '🔍 Flaky Tests Detected',
+                    body: issueBody,
+                    labels: ['flaky-test', 'test-quality', 'automated']
+                  });
+                  console.log(`Created new issue #${newIssue.data.number}`);
+                } catch (createError) {
+                  console.error('Failed to create issue:', createError.message);
+                  throw createError;
+                }
+              }
+            } catch (listError) {
+              console.error('Failed to list issues:', listError.message);
+              console.error('API error details:', listError.response?.data || 'No response data');
+              throw listError;
+            }
+
+      - name: 📈 Update metrics
+        if: always()
+        run: |
+          # Parse and store metrics for tracking
+          if [ -f flaky_report.json ]; then
+            FLAKY_COUNT=$(jq '.flaky_tests | length' flaky_report.json)
+            SUCCESS_RATE=$(jq '.summary.success_rate' flaky_report.json)
+            
+            echo "FLAKY_TEST_COUNT=$FLAKY_COUNT" >> $GITHUB_ENV
+            echo "TEST_SUCCESS_RATE=$SUCCESS_RATE" >> $GITHUB_ENV
+            
+            # Log metrics (could be sent to monitoring service)
+            echo "::notice title=Flaky Test Metrics::Found $FLAKY_COUNT flaky tests with ${SUCCESS_RATE}% success rate"
+          fi
+
+  analyze-test-history:
+    name: 📊 Analyze Test History
+    runs-on: ubuntu-22.04
+    needs: detect-flaky-tests
+    if: always()
+    
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Download previous reports
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: flaky-test-detection.yml
+          workflow_conclusion: completed
+          name: flaky-test-report
+          path: historical-reports
+          if_no_artifact_found: warn
+
+      - name: 📊 Generate trend analysis
+        run: |
+          # Analyze historical trends
+          python3 <<'EOF'
+          import json
+          import os
+          from datetime import datetime
+          import glob
+          
+          reports = []
+          for report_file in glob.glob('historical-reports/*/flaky_report.json'):
+              try:
+                  with open(report_file, 'r') as f:
+                      data = json.load(f)
+                      reports.append(data)
+              except:
+                  pass
+          
+          if not reports:
+              print("No historical data found")
+              exit(0)
+          
+          # Sort by timestamp
+          reports.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+          
+          # Analyze trends
+          print("## Test Stability Trend Analysis")
+          print(f"\nAnalyzed {len(reports)} historical reports")
+          print("\n### Flaky Test Counts Over Time")
+          
+          for report in reports[:10]:  # Last 10 reports
+              timestamp = report.get('timestamp', 'Unknown')
+              flaky_count = len(report.get('flaky_tests', []))
+              success_rate = report.get('summary', {}).get('success_rate', 0) * 100
+              print(f"- {timestamp[:10]}: {flaky_count} flaky tests ({success_rate:.1f}% success rate)")
+          
+          # Identify persistently flaky tests
+          all_flaky = {}
+          for report in reports:
+              for test in report.get('flaky_tests', []):
+                  test_name = test.get('test', '')
+                  if test_name not in all_flaky:
+                      all_flaky[test_name] = 0
+                  all_flaky[test_name] += 1
+          
+          if all_flaky:
+              print("\n### Persistently Flaky Tests")
+              sorted_flaky = sorted(all_flaky.items(), key=lambda x: x[1], reverse=True)
+              for test_name, count in sorted_flaky[:5]:
+                  percentage = (count / len(reports)) * 100
+                  print(f"- {test_name}: Flaky in {count}/{len(reports)} runs ({percentage:.1f}%)")
+          EOF
+
+      - name: 💾 Save analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-stability-analysis
+          path: |
+            flaky_report.json
+            historical-reports/
+          retention-days: 90

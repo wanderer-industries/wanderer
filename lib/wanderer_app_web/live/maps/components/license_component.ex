@@ -99,7 +99,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
       <% else %>
         <%= if @error do %>
           <div class="border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <p><%= @error %></p>
+            <p>{@error}</p>
           </div>
         <% end %>
 
@@ -109,9 +109,9 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
               <div class="flex items-center gap-2">
                 <span class="font-medium">License Key:</span>
                 <span class="font-mono bg-gray-800 px-2 py-1 rounded">
-                  <%= if @show_key,
+                  {if @show_key,
                     do: @license.license_key,
-                    else: "••••••••••••••••" %>
+                    else: "••••••••••••••••"}
                 </span>
                 <button
                   type="button"
@@ -119,7 +119,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
                   phx-target={@myself}
                   class="ml-2 btn"
                 >
-                  <%= if @show_key, do: "Hide", else: "Show" %>
+                  {if @show_key, do: "Hide", else: "Show"}
                 </button>
                 <.button
                   phx-hook="CopyToClipboard"
@@ -147,7 +147,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
               <div>
                 <span class="font-medium">Status:</span>
                 <span class={(@license.is_valid && "text-green-600") || "text-red-600"}>
-                  <%= (@license.is_valid && "Active") || "Inactive" %>
+                  {(@license.is_valid && "Active") || "Inactive"}
                 </span>
               </div>
 
@@ -155,7 +155,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
                 <span class="font-medium">Expires:</span>
                 <span>
                   <%= if @license.expire_at do %>
-                    <%= Calendar.strftime(@license.expire_at, "%Y-%m-%d") %>
+                    {Calendar.strftime(@license.expire_at, "%Y-%m-%d")}
                   <% else %>
                     Never
                   <% end %>

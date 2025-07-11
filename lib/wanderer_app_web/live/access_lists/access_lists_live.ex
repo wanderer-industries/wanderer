@@ -663,7 +663,7 @@ defmodule WandererAppWeb.AccessListsLive do
         </div>
       </div>
       <span :if={@option.value == :loading} <span class="loading loading-spinner loading-xs"></span>
-      &nbsp; <%= @option.label %>
+      &nbsp; {@option.label}
     </div>
     """
   end

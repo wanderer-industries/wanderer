@@ -4,7 +4,8 @@
 *.iml
 
 *.key
-
+.repomixignore
+repomix*
 /.idea/
 /node_modules/
 /assets/node_modules/
@@ -16,6 +17,9 @@
 /priv/static/images/
 /priv/static/*.js
 /priv/static/*.css
+
+# Dialyzer PLT files
+/priv/plts/
 
 .DS_Store
 **/.DS_Store

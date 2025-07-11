@@ -16,7 +16,7 @@ defmodule MapAPIControllerTest do
     def require_param(params, key) do
       case params[key] do
         nil -> {:error, "Missing required param: #{key}"}
-        ""  -> {:error, "Param #{key} cannot be empty"}
+        "" -> {:error, "Param #{key} cannot be empty"}
         val -> {:ok, val}
       end
     end
@@ -24,7 +24,7 @@ defmodule MapAPIControllerTest do
     def parse_int(str) do
       case Integer.parse(str) do
         {num, ""} -> {:ok, num}
-        _         -> {:error, "Invalid integer for param id=#{str}"}
+        _ -> {:error, "Invalid integer for param id=#{str}"}
       end
     end
 
@@ -35,6 +35,7 @@ defmodule MapAPIControllerTest do
             {:ok, map_id} -> {:ok, map_id}
             {:error, _} -> {:error, "Invalid map_id format"}
           end
+
         params["slug"] ->
           # In a real app, this would look up the map by slug
           # For testing, we'll just use a simple mapping
@@ -43,6 +44,7 @@ defmodule MapAPIControllerTest do
             "another-map" -> {:ok, 2}
             _ -> {:error, "Map not found"}
           end
+
         true ->
           {:error, "Missing required param: map_id or slug"}
       end
@@ -52,9 +54,9 @@ defmodule MapAPIControllerTest do
   defmodule MockMapSystemRepo do
     def get_visible_systems_by_map_id(1) do
       [
-        %{id: 30000142, name: "Jita", security: 0.9, region_id: 10000002},
-        %{id: 30002659, name: "Dodixie", security: 0.9, region_id: 10000032},
-        %{id: 30002187, name: "Amarr", security: 1.0, region_id: 10000043}
+        %{id: 30_000_142, name: "Jita", security: 0.9, region_id: 10_000_002},
+        %{id: 30_002_659, name: "Dodixie", security: 0.9, region_id: 10_000_032},
+        %{id: 30_002_187, name: "Amarr", security: 1.0, region_id: 10_000_043}
       ]
     end
 
@@ -62,16 +64,16 @@ defmodule MapAPIControllerTest do
       []
     end
 
-    def get_system_by_id(1, 30000142) do
-      %{id: 30000142, name: "Jita", security: 0.9, region_id: 10000002}
+    def get_system_by_id(1, 30_000_142) do
+      %{id: 30_000_142, name: "Jita", security: 0.9, region_id: 10_000_002}
     end
 
-    def get_system_by_id(1, 30002659) do
-      %{id: 30002659, name: "Dodixie", security: 0.9, region_id: 10000032}
+    def get_system_by_id(1, 30_002_659) do
+      %{id: 30_002_659, name: "Dodixie", security: 0.9, region_id: 10_000_032}
     end
 
-    def get_system_by_id(1, 30002187) do
-      %{id: 30002187, name: "Amarr", security: 1.0, region_id: 10000043}
+    def get_system_by_id(1, 30_002_187) do
+      %{id: 30_002_187, name: "Amarr", security: 1.0, region_id: 10_000_043}
     end
 
     def get_system_by_id(_, _) do
@@ -80,9 +82,9 @@ defmodule MapAPIControllerTest do
   end
 
   defmodule MockMapSolarSystem do
-    def get_name_by_id(30000142), do: "Jita"
-    def get_name_by_id(30002659), do: "Dodixie"
-    def get_name_by_id(30002187), do: "Amarr"
+    def get_name_by_id(30_000_142), do: "Jita"
+    def get_name_by_id(30_002_659), do: "Dodixie"
+    def get_name_by_id(30_002_187), do: "Amarr"
     def get_name_by_id(_), do: nil
   end
 
@@ -97,13 +99,14 @@ defmodule MapAPIControllerTest do
           {:error, :not_found, "No systems found for this map"}
         else
           # Format the response
-          formatted_systems = Enum.map(systems, fn system ->
-            %{
-              id: system.id,
-              name: system.name,
-              security: system.security
-            }
-          end)
+          formatted_systems =
+            Enum.map(systems, fn system ->
+              %{
+                id: system.id,
+                name: system.name,
+                security: system.security
+              }
+            end)
 
           {:ok, %{data: formatted_systems}}
         end
@@ -118,7 +121,6 @@ defmodule MapAPIControllerTest do
       with {:ok, map_id} <- MockUtil.fetch_map_id(params),
            {:ok, system_id_str} <- MockUtil.require_param(params, "id"),
            {:ok, system_id} <- MockUtil.parse_int(system_id_str) do
-
         system = MockMapSystemRepo.get_system_by_id(map_id, system_id)
 
         if system == nil do
@@ -149,11 +151,11 @@ defmodule MapAPIControllerTest do
       assert length(data) == 3
 
       # Check that the data contains the expected systems
-      jita = Enum.find(data, fn system -> system.id == 30000142 end)
+      jita = Enum.find(data, fn system -> system.id == 30_000_142 end)
       assert jita.name == "Jita"
       assert jita.security == 0.9
 
-      dodixie = Enum.find(data, fn system -> system.id == 30002659 end)
+      dodixie = Enum.find(data, fn system -> system.id == 30_002_659 end)
       assert dodixie.name == "Dodixie"
       assert dodixie.security == 0.9
     end
@@ -197,7 +199,7 @@ defmodule MapAPIControllerTest do
       result = MockMapAPIController.show_system(params)
 
       assert {:ok, %{data: data}} = result
-      assert data.id == 30000142
+      assert data.id == 30_000_142
       assert data.name == "Jita"
       assert data.security == 0.9
     end

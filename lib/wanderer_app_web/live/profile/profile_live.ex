@@ -99,7 +99,7 @@ defmodule WandererAppWeb.ProfileLive do
           />
         </div>
       </div>
-      <span>&nbsp; <%= @corporation_info["name"] %></span>
+      <span>&nbsp; {@corporation_info["name"]}</span>
     </div>
     """
   end

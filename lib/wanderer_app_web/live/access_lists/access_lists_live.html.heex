@@ -9,10 +9,10 @@
         row_selected={fn acl -> @selected_acl_id == acl.id end}
       >
         <:col :let={acl} label="Access List">
-          <%= acl.name %>
+          {acl.name}
         </:col>
         <:col :let={acl} label="Description">
-          <%= acl.description %>
+          {acl.description}
         </:col>
         <:action :let={acl}>
           <.link
@@ -142,11 +142,11 @@
       placeholder="Select an owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
-
-    <!-- Divider between above inputs and the API key section -->
+    
+<!-- Divider between above inputs and the API key section -->
     <hr class="my-4 border-gray-600" />
-
-    <!-- API Key Section with grid layout -->
+    
+<!-- API Key Section with grid layout -->
     <div class="mt-2">
       <label class="block text-sm font-medium text-gray-200 mb-1">ACL API key</label>
       <div class="grid grid-cols-12 gap-2">
@@ -188,7 +188,7 @@
 
     <div class="modal-action">
       <.button class="mt-2" type="submit" phx-disable-with="Saving...">
-        <%= (@live_action == :create && "Create") || "Save" %>
+        {(@live_action == :create && "Create") || "Save"}
       </.button>
     </div>
   </.form>

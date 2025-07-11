@@ -7,6 +7,11 @@ defmodule WandererApp.Application do
 
   @impl true
   def start(_type, _args) do
+    # Load test mocks if we're in test environment
+    if Mix.env() == :test and Code.ensure_loaded?(WandererApp.Test.Mocks) do
+      WandererApp.Test.Mocks.setup_mocks()
+    end
+
     children =
       [
         WandererApp.PromEx,
@@ -60,13 +65,22 @@ defmodule WandererApp.Application do
         WandererAppWeb.Endpoint
       ] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
-        maybe_start_kills_services()
+        maybe_start_kills_services() ++
+        maybe_start_external_events_services()
 
     opts = [strategy: :one_for_one, name: WandererApp.Supervisor]
 
     Supervisor.start_link(children, opts)
     |> case do
       {:ok, _pid} = ok ->
+        # Attach telemetry handler for database pool monitoring
+        # :telemetry.attach(
+        #   "wanderer-db-pool-handler",
+        #   [:wanderer_app, :repo, :query],
+        #   &WandererApp.Tracker.handle_pool_query/4,
+        #   nil
+        # )
+
         ok
 
       {:error, info} = e ->
@@ -93,7 +107,7 @@ defmodule WandererApp.Application do
     wanderer_kills_enabled =
       Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
 
-    if wanderer_kills_enabled in [true, :true, "true"] do
+    if wanderer_kills_enabled in [true, true, "true"] do
       Logger.info("Starting WandererKills service integration...")
 
       [
@@ -103,5 +117,42 @@ defmodule WandererApp.Application do
     else
       []
     end
+  end
+
+  defp maybe_start_external_events_services do
+    external_events_config = Application.get_env(:wanderer_app, :external_events, [])
+    sse_enabled = external_events_config[:sse_enabled] || false
+    webhooks_enabled = external_events_config[:webhooks_enabled] || false
+
+    services = []
+
+    # Always include MapEventRelay if any external events are enabled
+    services =
+      if sse_enabled || webhooks_enabled do
+        Logger.info("Starting external events system...")
+        [WandererApp.ExternalEvents.MapEventRelay | services]
+      else
+        services
+      end
+
+    # Add WebhookDispatcher if webhooks are enabled
+    services =
+      if webhooks_enabled do
+        Logger.info("Starting webhook dispatcher...")
+        [WandererApp.ExternalEvents.WebhookDispatcher | services]
+      else
+        services
+      end
+
+    # Add SseStreamManager if SSE is enabled
+    services =
+      if sse_enabled do
+        Logger.info("Starting SSE stream manager...")
+        [WandererApp.ExternalEvents.SseStreamManager | services]
+      else
+        services
+      end
+
+    Enum.reverse(services)
   end
 end

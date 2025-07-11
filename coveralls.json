@@ -1,0 +1,25 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "output_dir": "cover/",
+    "template_path": "cover/coverage.html.eex",
+    "minimum_coverage": 70
+  },
+  "terminal_options": {
+    "file_column_width": 40
+  },
+  "html_options": {
+    "output_dir": "cover/"
+  },
+  "skip_files": [
+    "test/",
+    "lib/wanderer_app_web.ex",
+    "lib/wanderer_app.ex",
+    "lib/wanderer_app/application.ex",
+    "lib/wanderer_app/release.ex",
+    "lib/wanderer_app_web/endpoint.ex",
+    "lib/wanderer_app_web/telemetry.ex",
+    "lib/wanderer_app_web/gettext.ex",
+    "priv/"
+  ]
+} 

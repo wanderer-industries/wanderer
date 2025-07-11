@@ -52,7 +52,11 @@ defmodule WandererAppWeb.Schemas.ApiSchemas do
         ship: %Schema{type: :integer, description: "Current ship type ID"},
         ship_name: %Schema{type: :string, description: "Current ship name"},
         inserted_at: %Schema{type: :string, format: :date_time, description: "Creation timestamp"},
-        updated_at: %Schema{type: :string, format: :date_time, description: "Last update timestamp"}
+        updated_at: %Schema{
+          type: :string,
+          format: :date_time,
+          description: "Last update timestamp"
+        }
       },
       required: ~w(eve_id name)a
     }

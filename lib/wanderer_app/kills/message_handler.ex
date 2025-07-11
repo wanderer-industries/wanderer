@@ -187,13 +187,11 @@ defmodule WandererApp.Kills.MessageHandler do
   # Pattern match on flat format - already adapted
   defp adapt_kill_data(%{"victim_char_id" => _} = kill) do
     validated_kill = validate_flat_format_kill(kill)
-    
+
     if map_size(validated_kill) > 0 do
       {:ok, validated_kill}
     else
-      Logger.warning(
-        "[MessageHandler] Invalid flat format kill: #{inspect(kill["killmail_id"])}"
-      )
+      Logger.warning("[MessageHandler] Invalid flat format kill: #{inspect(kill["killmail_id"])}")
       {:error, :invalid_data}
     end
   end
@@ -219,7 +217,7 @@ defmodule WandererApp.Kills.MessageHandler do
         |> Map.delete("system_id")
 
       adapted_kill = adapt_nested_format_kill(normalized_kill)
-      
+
       if map_size(adapted_kill) > 0 do
         {:ok, adapted_kill}
       else
@@ -410,6 +408,7 @@ defmodule WandererApp.Kills.MessageHandler do
   defp get_character_name(data) when is_map(data) do
     # Try multiple possible field names
     field_names = ["attacker_name", "victim_name", "character_name", "name"]
+
     extract_field(data, field_names) ||
       case Map.get(data, "character") do
         %{"name" => name} when is_binary(name) -> name
@@ -420,33 +419,38 @@ defmodule WandererApp.Kills.MessageHandler do
   defp get_character_name(_), do: nil
 
   @spec get_corp_ticker(map() | any()) :: String.t() | nil
-  defp get_corp_ticker(data) when is_map(data) do 
+  defp get_corp_ticker(data) when is_map(data) do
     extract_field(data, ["corporation_ticker", "corp_ticker"])
   end
+
   defp get_corp_ticker(_), do: nil
 
   @spec get_corp_name(map() | any()) :: String.t() | nil
   defp get_corp_name(data) when is_map(data) do
     extract_field(data, ["corporation_name", "corp_name"])
   end
+
   defp get_corp_name(_), do: nil
 
   @spec get_alliance_ticker(map() | any()) :: String.t() | nil
   defp get_alliance_ticker(data) when is_map(data) do
     extract_field(data, ["alliance_ticker"])
   end
+
   defp get_alliance_ticker(_), do: nil
 
   @spec get_alliance_name(map() | any()) :: String.t() | nil
   defp get_alliance_name(data) when is_map(data) do
     extract_field(data, ["alliance_name"])
   end
+
   defp get_alliance_name(_), do: nil
 
   @spec get_ship_name(map() | any()) :: String.t() | nil
   defp get_ship_name(data) when is_map(data) do
     extract_field(data, ["ship_name", "ship_type_name"])
   end
+
   defp get_ship_name(_), do: nil
 
   defp get_and_validate_system_id(kill) do

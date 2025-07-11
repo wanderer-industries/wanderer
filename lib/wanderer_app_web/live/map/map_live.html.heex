@@ -37,9 +37,7 @@
     id={"map-audit-#{@map_slug}"}
     navigate={~p"/#{@map_slug}/audit?period=1H&activity=all"}
   >
-    <button
-      class="h-8 w-8 hover:text-white"
-    >
+    <button class="h-8 w-8 hover:text-white">
       <.icon name="hero-key-solid" class="w-6 h-6" />
     </button>
   </.link>
@@ -49,9 +47,7 @@
     id={"map-characters-#{@map_slug}"}
     navigate={~p"/#{@map_slug}/characters"}
   >
-    <button
-      class="h-8 w-8 hover:text-white"
-    >
+    <button class="h-8 w-8 hover:text-white">
       <.icon name="hero-user-group-solid" class="w-6 h-6" />
     </button>
   </.link>
@@ -75,12 +71,13 @@
                 <li
                   class={[
                     "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_subscription_tab == "balance")
+                    classes(
+                      "p-tabview-selected p-highlight": @active_subscription_tab == "balance"
+                    )
                   ]}
                   role="presentation"
                   data-pc-name=""
                   data-pc-section="header"
-
                 >
                   <a
                     role="tab"
@@ -147,7 +144,8 @@
                     phx-value-tab="balance"
                   >
                     <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-arrow-up-solid" class="w-4 h-4" />&nbsp;Top Donators <span class="badge">coming soon</span>
+                      <.icon name="hero-arrow-up-solid" class="w-4 h-4" />&nbsp;Top Donators
+                      <span class="badge">coming soon</span>
                     </span>
                   </a>
                 </li>
@@ -164,7 +162,9 @@
               data-pc-section="content"
             >
               <.live_component
-                :if={@active_subscription_tab == "balance" && not is_nil(assigns |> Map.get(:map_id))}
+                :if={
+                  @active_subscription_tab == "balance" && not is_nil(assigns |> Map.get(:map_id))
+                }
                 module={WandererAppWeb.Maps.MapBalanceComponent}
                 id="map-balance-component"
                 map_id={@map_id}
@@ -181,7 +181,9 @@
                 notify_to={self()}
                 event_name="subscriptions_event"
                 current_user={@current_user}
-                readonly={(@user_permissions || %{}) |> Map.get(:delete_map, false) |> Kernel.not()}
+                readonly={
+                  (@user_permissions || %{}) |> Map.get(:delete_map, false) |> Kernel.not()
+                }
               />
             </div>
           </div>
@@ -190,7 +192,5 @@
     </div>
   </div>
 
-  <div class="modal-action">
-
-  </div>
+  <div class="modal-action"></div>
 </.modal>

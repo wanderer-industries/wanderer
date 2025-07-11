@@ -7,7 +7,7 @@
             Profile
           </h4>
           <div class="flex justify-center items-center gap-2">
-            <span class="hidden"><%= @user_hash %></span>
+            <span class="hidden">{@user_hash}</span>
           </div>
         </div>
       </div>
@@ -18,8 +18,8 @@
               <span class="text-gray-700 dark:text-gray-400">Account Balance</span>
               <h4 class="mt-4 font-medium text-gray-800 text-4xl dark:text-gray-100">
                 <span class="counter-value">
-                  ISK <%= @wanderer_balance
-                  |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                  ISK {@wanderer_balance
+                  |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                 </span>
               </h4>
             </div>
@@ -67,26 +67,26 @@
                               <:col :let={transaction} label="Transaction">
                                 <div>
                                   <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
-                                    <%= transaction.reason_encoded %>
+                                    {transaction.reason_encoded}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     <.local_time
                                       id={"invoice-inserted-#{transaction.id}"}
                                       at={transaction.date}
                                     >
-                                      <%= transaction.date %>
+                                      {transaction.date}
                                     </.local_time>
                                   </p>
                                 </div>
                               </:col>
                               <:col :let={transaction} label="Description">
-                                <%= transaction.description %>
+                                {transaction.description}
                               </:col>
                               <:col :let={transaction} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= transaction.amount_encoded
-                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                    {transaction.amount_encoded
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     ISK
@@ -152,7 +152,7 @@
                               </:col>
                               <:col :let={invoice} label="Map">
                                 <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
-                                  <%= invoice.map.name %>
+                                  {invoice.map.name}
                                 </p>
                               </:col>
                               <:col :let={invoice} label="Date">
@@ -161,15 +161,15 @@
                                     id={"invoice-inserted-#{invoice.id}"}
                                     at={invoice.inserted_at}
                                   >
-                                    <%= invoice.inserted_at %>
+                                    {invoice.inserted_at}
                                   </.local_time>
                                 </p>
                               </:col>
                               <:col :let={invoice} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= invoice.amount
-                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                    {invoice.amount
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     ISK

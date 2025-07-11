@@ -26,7 +26,6 @@ defmodule WandererApp.Esi do
 
   defdelegate get_killmail(killmail_id, killmail_hash, opts \\ []), to: WandererApp.Esi.ApiClient
 
-
   defdelegate set_autopilot_waypoint(
                 add_to_beginning,
                 clear_other_waypoints,

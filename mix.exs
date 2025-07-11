@@ -14,6 +14,18 @@ defmodule WandererApp.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
+      ],
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:mix]
+      ],
       source_url: @source_url,
       releases: [
         wanderer_app: [
@@ -48,7 +60,7 @@ defmodule WandererApp.MixProject do
   defp deps do
     [
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, ">= 0.0.0", only: [:dev], runtime: false},
+      {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:doctor, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.37", runtime: false},
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
@@ -92,6 +104,7 @@ defmodule WandererApp.MixProject do
       {:ash_postgres, "~> 2.4"},
       {:exsync, "~> 0.4", only: :dev},
       {:nimble_csv, "~> 1.2.0"},
+      {:ulid, "~> 0.2.0"},
       {:cachex, "~> 3.6"},
       {:live_select, "~> 1.5"},
       {:nebulex, "~> 2.6"},
@@ -121,7 +134,9 @@ defmodule WandererApp.MixProject do
       {:ddrt, "~> 0.2.1"},
       {:live_view_events, "~> 0.1.0"},
       {:ash_pagify, "~> 1.4.1"},
-      {:timex, "~> 3.0"}
+      {:timex, "~> 3.0"},
+      # Test coverage and quality
+      {:excoveralls, "~> 0.18", only: :test}
     ]
   end
 
@@ -131,6 +146,9 @@ defmodule WandererApp.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "test.coverage": ["ecto.create --quiet", "ecto.migrate --quiet", "coveralls"],
+      "test.coverage.html": ["ecto.create --quiet", "ecto.migrate --quiet", "coveralls.html"],
+      "test.coverage.github": ["ecto.create --quiet", "ecto.migrate --quiet", "coveralls.github"],
       "assets.setup": [
         "cmd yarn install --cwd assets"
       ],
