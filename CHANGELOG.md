@@ -2,6 +2,21 @@
 
 <!-- changelog -->
 
+## [v1.74.8](https://github.com/wanderer-industries/wanderer/compare/v1.74.7...v1.74.8) (2025-07-11)
+
+
+
+
+### Bug Fixes:
+
+* Map: removed comments
+
+* Map: Fixed conflict
+
+* Map: Unified settings. Second part: Import/Export
+
+* Map: Unified settings. First part: add one place for storing settings
+
 ## [v1.74.7](https://github.com/wanderer-industries/wanderer/compare/v1.74.6...v1.74.7) (2025-07-09)
 
 
