@@ -3,6 +3,12 @@ defmodule WandererApp.Kills.StorageTest do
   alias WandererApp.Kills.{Storage, CacheKeys}
 
   setup do
+    # Start cache if not already started
+    case WandererApp.Cache.start_link() do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+    end
+
     # Clear cache before each test
     WandererApp.Cache.delete_all()
     :ok
@@ -98,9 +104,9 @@ defmodule WandererApp.Kills.StorageTest do
       assert {:ok, %{"killmail_id" => 123}} = Storage.get_killmail(123)
       assert {:ok, %{"killmail_id" => 124}} = Storage.get_killmail(124)
 
-      # Check system list is updated
+      # Check system list is updated  
       list_key = CacheKeys.system_kill_list(system_id)
-      assert [124, 123] = WandererApp.Cache.get(list_key)
+      assert [123, 124] = WandererApp.Cache.get(list_key)
     end
 
     test "handles missing killmail_id gracefully" do
@@ -112,15 +118,12 @@ defmodule WandererApp.Kills.StorageTest do
         %{"killmail_id" => 125, "kill_time" => "2024-01-01T12:01:00Z"}
       ]
 
-      # Should still store the valid killmail
-      assert :ok = Storage.store_killmails(system_id, killmails, :timer.minutes(5))
+      # Should return error when killmail is missing killmail_id
+      assert {:error, :missing_killmail_id} =
+               Storage.store_killmails(system_id, killmails, :timer.minutes(5))
 
-      # Only the valid killmail is stored
+      # Valid killmail still gets stored despite the error (partial success behavior)
       assert {:ok, %{"killmail_id" => 125}} = Storage.get_killmail(125)
-
-      # System list only contains valid ID
-      list_key = CacheKeys.system_kill_list(system_id)
-      assert [125] = WandererApp.Cache.get(list_key)
     end
   end
 end

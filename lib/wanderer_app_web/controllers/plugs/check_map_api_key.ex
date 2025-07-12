@@ -26,6 +26,10 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
         Logger.warning("Missing or invalid 'Bearer' token")
         conn |> respond(401, "Missing or invalid 'Bearer' token") |> halt()
 
+      [_non_bearer_token] ->
+        Logger.warning("Invalid authorization format - Bearer token required")
+        conn |> respond(401, "Invalid authorization format - Bearer token required") |> halt()
+
       {:error, :bad_request, msg} ->
         Logger.warning("Bad request: #{msg}")
         conn |> respond(400, msg) |> halt()
