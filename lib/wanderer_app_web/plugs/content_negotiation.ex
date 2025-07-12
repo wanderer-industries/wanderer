@@ -11,23 +11,24 @@ defmodule WandererAppWeb.Plugs.ContentNegotiation do
 
   def call(conn, opts) do
     accepted_formats = Keyword.get(opts, :accepts, ["json"])
-    
+
     case get_req_header(conn, "accept") do
       [] ->
         # No Accept header, continue with default
         conn
-        
+
       [accept_header | _] ->
         if accepts_any?(accept_header, accepted_formats) do
           conn
         else
           Logger.debug("Rejecting request with Accept header: #{accept_header}")
-          
+
           conn
           |> put_status(406)
           |> put_resp_content_type("application/json")
           |> Phoenix.Controller.json(%{
-            error: "Not acceptable format. This API only supports: #{Enum.join(accepted_formats, ", ")}"
+            error:
+              "Not acceptable format. This API only supports: #{Enum.join(accepted_formats, ", ")}"
           })
           |> halt()
         end

@@ -24,6 +24,8 @@ defmodule WandererApp.ExternalEvents.Event do
           | :acl_member_added
           | :acl_member_removed
           | :acl_member_updated
+          | :rally_point_added
+          | :rally_point_removed
 
   @type t :: %__MODULE__{
           # ULID for ordering
@@ -185,7 +187,9 @@ defmodule WandererApp.ExternalEvents.Event do
       :map_kill,
       :acl_member_added,
       :acl_member_removed,
-      :acl_member_updated
+      :acl_member_updated,
+      :rally_point_added,
+      :rally_point_removed
     ]
   end
 
