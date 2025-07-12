@@ -51,21 +51,11 @@ defmodule WandererApp.Env do
   def sse_enabled? do
     Application.get_env(@app, :sse, [])
     |> Keyword.get(:enabled, false)
-    |> case do
-      :true -> true
-      :false -> false
-      _ -> false
-    end
   end
 
   def webhooks_enabled? do
     Application.get_env(@app, :external_events, [])
-    |> Keyword.get(:webhooks_enabled, false) 
-    |> case do
-      :true -> true
-      :false -> false
-      _ -> false
-    end
+    |> Keyword.get(:webhooks_enabled, false)
   end
 
   @decorate cacheable(

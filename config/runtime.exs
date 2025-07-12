@@ -393,15 +393,23 @@ config :wanderer_app, :license_manager,
 
 # SSE Configuration
 config :wanderer_app, :sse,
-  enabled: config_dir |> get_var_from_path_or_env("WANDERER_SSE_ENABLED", "true") |> String.to_existing_atom(),
-  max_connections_total: config_dir |> get_int_from_path_or_env("WANDERER_SSE_MAX_CONNECTIONS", 1000),
-  max_connections_per_map: config_dir |> get_int_from_path_or_env("SSE_MAX_CONNECTIONS_PER_MAP", 50),
+  enabled:
+    config_dir
+    |> get_var_from_path_or_env("WANDERER_SSE_ENABLED", "true")
+    |> String.to_existing_atom(),
+  max_connections_total:
+    config_dir |> get_int_from_path_or_env("WANDERER_SSE_MAX_CONNECTIONS", 1000),
+  max_connections_per_map:
+    config_dir |> get_int_from_path_or_env("SSE_MAX_CONNECTIONS_PER_MAP", 50),
   max_connections_per_api_key:
     config_dir |> get_int_from_path_or_env("SSE_MAX_CONNECTIONS_PER_API_KEY", 10),
   keepalive_interval: config_dir |> get_int_from_path_or_env("SSE_KEEPALIVE_INTERVAL", 30000),
-  connection_timeout: config_dir |> get_int_from_path_or_env("SSE_CONNECTION_TIMEOUT", 300000)
+  connection_timeout: config_dir |> get_int_from_path_or_env("SSE_CONNECTION_TIMEOUT", 300_000)
 
 # External Events Configuration
 config :wanderer_app, :external_events,
-  webhooks_enabled: config_dir |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "true") |> String.to_existing_atom(),
+  webhooks_enabled:
+    config_dir
+    |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "true")
+    |> String.to_existing_atom(),
   webhook_timeout_ms: config_dir |> get_int_from_path_or_env("WANDERER_WEBHOOK_TIMEOUT_MS", 15000)
