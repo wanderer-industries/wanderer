@@ -538,7 +538,9 @@ defmodule WandererAppWeb.AccessListsLive do
 
   defp broadcast_member_added_event(access_list_id, member) do
     case AclEventBroadcaster.broadcast_member_event(access_list_id, member, :acl_member_added) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, broadcast_error} ->
         Logger.warning("Failed to broadcast ACL member added event: #{inspect(broadcast_error)}")
     end
