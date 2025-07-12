@@ -91,7 +91,7 @@ defmodule WandererAppWeb.CommonAPIController do
     with {:ok, solar_system_str} <- APIUtils.require_param(params, "id"),
          {:ok, solar_system_id} <- APIUtils.parse_int(solar_system_str) do
       case CachedInfo.get_system_static_info(solar_system_id) do
-        {:ok, system} ->
+        {:ok, system} when not is_nil(system) ->
           # Get basic system data
           data = static_system_to_json(system)
 
@@ -102,6 +102,11 @@ defmodule WandererAppWeb.CommonAPIController do
           json(conn, %{data: enhanced_data})
 
         {:error, :not_found} ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: "System not found"})
+
+        {:ok, nil} ->
           conn
           |> put_status(:not_found)
           |> json(%{error: "System not found"})

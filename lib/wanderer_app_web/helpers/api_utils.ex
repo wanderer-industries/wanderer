@@ -33,7 +33,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
 
         case Ecto.UUID.cast(id) do
           {:ok, _} -> {:ok, id}
-          :error -> {:error, "Invalid UUID format for map_id: #{id}"}
+          :error -> {:error, "Invalid UUID format for map_id: #{inspect(id)}"}
         end
 
       has_slug ->
@@ -41,7 +41,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
 
         case MapApi.get_map_by_slug(slug) do
           {:ok, %{id: id}} -> {:ok, id}
-          _ -> {:error, "No map found for slug=#{slug}"}
+          _ -> {:error, "No map found for slug=#{inspect(slug)}"}
         end
 
       true ->

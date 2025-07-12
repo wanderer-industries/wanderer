@@ -60,7 +60,9 @@ defmodule WandererApp.Api.MapSystem do
       :solar_system_id,
       :position_x,
       :position_y,
-      :status
+      :status,
+      :visible,
+      :locked
     ]
 
     defaults [:create, :read, :update, :destroy]

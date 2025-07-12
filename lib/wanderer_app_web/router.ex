@@ -162,6 +162,7 @@ defmodule WandererAppWeb.Router do
   end
 
   pipeline :api do
+    plug WandererAppWeb.Plugs.ContentNegotiation, accepts: ["json"]
     plug :accepts, ["json"]
     plug WandererAppWeb.Plugs.CheckApiDisabled
   end

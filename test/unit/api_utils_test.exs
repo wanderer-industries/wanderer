@@ -11,7 +11,7 @@ defmodule WandererAppWeb.Helpers.APIUtilsTest do
     end
 
     test "returns error for invalid UUID format in map_id" do
-      assert {:error, "Invalid UUID format for map_id: invalid-uuid"} =
+      assert {:error, "Invalid UUID format for map_id: \"invalid-uuid\""} =
                APIUtils.fetch_map_id(%{"map_id" => "invalid-uuid"})
     end
 

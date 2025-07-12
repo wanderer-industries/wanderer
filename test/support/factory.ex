@@ -62,17 +62,16 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:map_system_signature, attrs) do
-    map_id = Map.fetch!(attrs, :map_id)
-    system_id = Map.fetch!(attrs, :solar_system_id)
-    attrs = attrs |> Map.delete(:map_id) |> Map.delete(:solar_system_id)
-    create_map_system_signature(map_id, system_id, attrs)
+    system_id = Map.fetch!(attrs, :system_id)
+    attrs = Map.delete(attrs, :system_id)
+    create_map_system_signature(system_id, attrs)
   end
 
   def insert(:map_system_structure, attrs) do
-    map_id = Map.fetch!(attrs, :map_id)
-    system_id = Map.fetch!(attrs, :solar_system_id)
-    attrs = attrs |> Map.delete(:map_id) |> Map.delete(:solar_system_id)
-    create_map_system_structure(map_id, system_id, attrs)
+    # Get the system_id from attrs - this should be a map system ID
+    system_id = Map.fetch!(attrs, :system_id)
+    attrs = Map.delete(attrs, :system_id)
+    create_map_system_structure(system_id, attrs)
   end
 
   def insert(:license, attrs) do
@@ -97,6 +96,10 @@ defmodule WandererAppWeb.Factory do
     character_id = Map.fetch!(attrs, :character_id)
     attrs = attrs |> Map.delete(:map_id) |> Map.delete(:character_id)
     create_map_character_settings(map_id, character_id, attrs)
+  end
+
+  def insert(:map_webhook_subscription, attrs) do
+    create_map_webhook_subscription(attrs)
   end
 
   def insert(resource_type, _attrs) do
@@ -137,7 +140,10 @@ defmodule WandererAppWeb.Factory do
       refresh_token: "test_refresh_token_#{unique_id}",
       expires_at: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix(),
       scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
-      tracking_pool: "default"
+      tracking_pool: "default",
+      corporation_ticker: "TEST",
+      corporation_name: "Test Corporation",
+      corporation_id: 1_000_000_000 + unique_id
     }
 
     Map.merge(default_attrs, attrs)
@@ -145,8 +151,68 @@ defmodule WandererAppWeb.Factory do
 
   def create_character(attrs \\ %{}) do
     attrs = build_character(attrs)
-    {:ok, character} = Ash.create(Api.Character, attrs)
-    character
+
+    # Use link action if user_id is provided, otherwise use default create
+    if Map.has_key?(attrs, :user_id) do
+      # For link action, only use the fields it accepts
+      link_attrs = Map.take(attrs, [:eve_id, :name, :user_id])
+
+      case Ash.create(Api.Character, link_attrs, action: :link) do
+        {:ok, character} ->
+          # Update with corporation data if provided
+          character =
+            if Map.has_key?(attrs, :corporation_ticker) do
+              corp_attrs =
+                Map.take(attrs, [:corporation_id, :corporation_name, :corporation_ticker])
+
+              {:ok, updated_character} =
+                Ash.update(character, corp_attrs, action: :update_corporation)
+
+              updated_character
+            else
+              character
+            end
+
+          character
+
+        {:error, error} ->
+          raise "Failed to create character with link action: #{inspect(error)}"
+      end
+    else
+      # For create action, only use the fields it accepts
+      create_attrs =
+        Map.take(attrs, [
+          :eve_id,
+          :name,
+          :access_token,
+          :refresh_token,
+          :expires_at,
+          :scopes,
+          :tracking_pool
+        ])
+
+      case Ash.create(Api.Character, create_attrs, action: :create) do
+        {:ok, character} ->
+          # Update with corporation data if provided
+          character =
+            if Map.has_key?(attrs, :corporation_ticker) do
+              corp_attrs =
+                Map.take(attrs, [:corporation_id, :corporation_name, :corporation_ticker])
+
+              {:ok, updated_character} =
+                Ash.update(character, corp_attrs, action: :update_corporation)
+
+              updated_character
+            else
+              character
+            end
+
+          character
+
+        {:error, error} ->
+          raise "Failed to create character with create action: #{inspect(error)}"
+      end
+    end
   end
 
   @doc """
@@ -174,31 +240,55 @@ defmodule WandererAppWeb.Factory do
     # Extract public_api_key if provided, as it needs to be set separately
     {public_api_key, built_attrs} = Map.pop(built_attrs, :public_api_key)
 
-    # Ensure we have an owner for the map
-    owner =
-      if built_attrs[:owner_id] do
-        {:ok, owner} = Ash.get(Api.Character, built_attrs[:owner_id])
-        owner
+    # Extract owner_id from attrs if provided, or create a default owner
+    {owner_id, built_attrs} = Map.pop(built_attrs, :owner_id)
+
+    owner_id =
+      if owner_id do
+        owner_id
       else
-        # Create a default owner if none provided
-        create_character()
+        # Create a default character owner if none provided - ensure it has a user
+        user = create_user()
+        owner = create_character(%{user_id: user.id})
+
+        # Debug: ensure character creation succeeded
+        if owner == nil do
+          raise "create_character returned nil!"
+        end
+
+        owner.id
       end
 
-    # Clean up attrs for creation
+    # Include owner_id in the form data just like the LiveView does
     create_attrs =
       built_attrs
-      |> Map.delete(:owner_id)
-      |> Map.put(:owner_id, owner.id)
+      |> Map.take([:name, :slug, :description, :scope, :only_tracked_characters])
+      |> Map.put(:owner_id, owner_id)
 
-    {:ok, map} = Ash.create(Api.Map, create_attrs, action: :new)
+    # Debug: ensure owner_id is valid
+    if owner_id == nil do
+      raise "owner_id is nil!"
+    end
 
-    # Always update with public_api_key if we have one (from defaults or provided)
+    # Create the map using the same approach as the LiveView
     map =
-      if public_api_key do
-        {:ok, updated_map} = Api.Map.update_api_key(map, %{public_api_key: public_api_key})
-        updated_map
-      else
-        map
+      case Api.Map.new(create_attrs) do
+        {:ok, created_map} ->
+          # Reload the map to ensure all fields are populated
+          {:ok, reloaded_map} = Ash.get(Api.Map, created_map.id)
+
+          # Always update with public_api_key if we have one (from defaults or provided)
+          if public_api_key do
+            {:ok, updated_map} =
+              Api.Map.update_api_key(reloaded_map, %{public_api_key: public_api_key})
+
+            updated_map
+          else
+            reloaded_map
+          end
+
+        {:error, error} ->
+          raise "Failed to create map: #{inspect(error)}"
       end
 
     map
@@ -211,6 +301,7 @@ defmodule WandererAppWeb.Factory do
     default_attrs = %{
       # Jita
       solar_system_id: 30_000_142,
+      name: "Jita",
       position_x: 100,
       position_y: 200,
       status: 0,
@@ -241,10 +332,7 @@ defmodule WandererAppWeb.Factory do
       # Dodixie
       solar_system_target: 30_002659,
       type: 0,
-      mass_status: 0,
-      time_status: 0,
-      ship_size_type: 0,
-      locked: false
+      ship_size_type: 0
     }
 
     Map.merge(default_attrs, attrs)
@@ -292,9 +380,8 @@ defmodule WandererAppWeb.Factory do
     unique_id = System.unique_integer([:positive])
 
     default_attrs = %{
-      eve_entity_id: "#{3_000_000_000 + unique_id}",
-      eve_entity_name: "Test Entity #{unique_id}",
-      eve_entity_category: "character",
+      name: "Test Entity #{unique_id}",
+      eve_character_id: "#{3_000_000_000 + unique_id}",
       role: "viewer"
     }
 
@@ -315,9 +402,7 @@ defmodule WandererAppWeb.Factory do
   Creates a test map access list association with reasonable defaults.
   """
   def build_map_access_list(attrs \\ %{}) do
-    default_attrs = %{
-      role: "viewer"
-    }
+    default_attrs = %{}
 
     Map.merge(default_attrs, attrs)
   end
@@ -341,20 +426,20 @@ defmodule WandererAppWeb.Factory do
 
     default_attrs = %{
       eve_id: "ABC-#{unique_id}",
-      signature_type: "wormhole",
+      type: "wormhole",
       name: "Test Signature #{unique_id}",
-      description: "A test signature"
+      description: "A test signature",
+      character_eve_id: "#{2_000_000_000 + unique_id}"
     }
 
     Map.merge(default_attrs, attrs)
   end
 
-  def create_map_system_signature(map_id, system_id, attrs \\ %{}) do
+  def create_map_system_signature(system_id, attrs \\ %{}) do
     attrs =
       attrs
       |> build_map_system_signature()
-      |> Map.put(:map_id, map_id)
-      |> Map.put(:solar_system_id, system_id)
+      |> Map.put(:system_id, system_id)
 
     {:ok, signature} = Ash.create(Api.MapSystemSignature, attrs)
     signature
@@ -367,22 +452,23 @@ defmodule WandererAppWeb.Factory do
     unique_id = System.unique_integer([:positive])
 
     default_attrs = %{
-      structure_id: "#{1_000_000_000_000 + unique_id}",
+      structure_type_id: "35825",
+      structure_type: "Astrahus",
+      character_eve_id: "#{2_000_000_000 + unique_id}",
+      solar_system_name: "Jita",
+      solar_system_id: 30_000_142,
       name: "Test Structure #{unique_id}",
-      type_id: 35825,
-      # Astrahus
       status: "anchored"
     }
 
     Map.merge(default_attrs, attrs)
   end
 
-  def create_map_system_structure(map_id, system_id, attrs \\ %{}) do
+  def create_map_system_structure(system_id, attrs \\ %{}) do
     attrs =
       attrs
       |> build_map_system_structure()
-      |> Map.put(:map_id, map_id)
-      |> Map.put(:solar_system_id, system_id)
+      |> Map.put(:system_id, system_id)
 
     {:ok, structure} = Ash.create(Api.MapSystemStructure, attrs)
     structure
@@ -446,8 +532,7 @@ defmodule WandererAppWeb.Factory do
   """
   def build_map_character_settings(attrs \\ %{}) do
     default_attrs = %{
-      tracked: true,
-      visible: true
+      tracked: true
     }
 
     Map.merge(default_attrs, attrs)
@@ -476,7 +561,7 @@ defmodule WandererAppWeb.Factory do
     character = create_character(%{user_id: user.id})
 
     # Create map
-    map = create_map(%{owner_id: user.id})
+    map = create_map(%{owner_id: character.id})
 
     # Create systems if requested
     systems =
@@ -522,9 +607,9 @@ defmodule WandererAppWeb.Factory do
       if Keyword.get(opts, :with_signatures, false) and length(systems) > 0 do
         Enum.flat_map(systems, fn system ->
           [
-            create_map_system_signature(map.id, system.solar_system_id, %{
+            create_map_system_signature(system.id, %{
               eve_id: "ABC-#{system.solar_system_id}",
-              signature_type: "wormhole"
+              type: "wormhole"
             })
           ]
         end)
@@ -538,7 +623,7 @@ defmodule WandererAppWeb.Factory do
         [first_system | _] = systems
 
         [
-          create_map_system_structure(map.id, first_system.solar_system_id, %{
+          create_map_system_structure(first_system.id, %{
             name: "Test Citadel",
             type_id: 35825
           })
@@ -628,5 +713,27 @@ defmodule WandererAppWeb.Factory do
       {:error, error} ->
         raise "Failed to create user activity: #{inspect(error)}"
     end
+  end
+
+  @doc """
+  Creates a test map webhook subscription with reasonable defaults.
+  """
+  def build_map_webhook_subscription(attrs \\ %{}) do
+    unique_id = System.unique_integer([:positive])
+
+    default_attrs = %{
+      url: "https://webhook#{unique_id}.example.com/hook",
+      events: ["add_system", "remove_system"],
+      active?: true
+    }
+
+    Map.merge(default_attrs, attrs)
+  end
+
+  def create_map_webhook_subscription(attrs \\ %{}) do
+    attrs = build_map_webhook_subscription(attrs)
+
+    {:ok, webhook} = Ash.create(Api.MapWebhookSubscription, attrs)
+    webhook
   end
 end

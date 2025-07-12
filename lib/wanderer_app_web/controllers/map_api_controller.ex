@@ -552,7 +552,11 @@ defmodule WandererAppWeb.MapAPIController do
 
     with {:ok, map_id} <- APIUtils.fetch_map_id(normalized_params),
          {:ok, days} <- parse_days(params["days"]) do
-      raw_activity = WandererApp.Map.get_character_activity(map_id, days)
+      raw_activity =
+        case WandererApp.Map.get_character_activity(map_id, days) do
+          {:ok, activity} -> activity
+          {:error, _} -> []
+        end
 
       summarized_result =
         if raw_activity == [] do

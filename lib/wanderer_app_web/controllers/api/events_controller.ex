@@ -177,20 +177,20 @@ defmodule WandererAppWeb.Api.EventsController do
       Logger.info("SSE connection closed for map #{map_id}")
       SseStreamManager.remove_client(map_id, api_key, self())
       conn
-    
+
     error ->
       # Log unexpected errors before cleanup
       Logger.error("Unexpected error in SSE stream: #{inspect(error)}")
       SseStreamManager.remove_client(map_id, api_key, self())
       reraise error, __STACKTRACE__
   end
-  
+
   defp validate_api_key(conn, map_identifier) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
          {:ok, map} <- resolve_map(map_identifier),
-         true <- is_binary(map.public_api_key) && 
-                 Crypto.secure_compare(map.public_api_key, token)
-    do
+         true <-
+           is_binary(map.public_api_key) &&
+             Crypto.secure_compare(map.public_api_key, token) do
       {:ok, map, token}
     else
       [] ->

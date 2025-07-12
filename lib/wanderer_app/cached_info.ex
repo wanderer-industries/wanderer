@@ -69,7 +69,10 @@ defmodule WandererApp.CachedInfo do
               )
             end)
 
-            Cachex.get(:system_static_info_cache, solar_system_id)
+            case Cachex.get(:system_static_info_cache, solar_system_id) do
+              {:ok, nil} -> {:error, :not_found}
+              result -> result
+            end
 
           {:error, reason} ->
             Logger.error("Failed to read solar systems from API: #{inspect(reason)}")

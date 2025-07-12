@@ -121,9 +121,8 @@ defmodule WandererApp.TestHelpers do
   Creates a unique test identifier using the current test name and a counter.
   """
   def unique_test_id do
-    test_name = ExUnit.current_context()[:test] || :unknown_test
     counter = System.unique_integer([:positive])
-    "#{test_name}_#{counter}"
+    "test_#{counter}"
   end
 
   @doc """
@@ -173,5 +172,42 @@ defmodule WandererApp.TestHelpers do
   def assert_logged(log_output, expected_message) do
     assert log_output =~ expected_message,
            "Expected log to contain '#{expected_message}', but got: #{log_output}"
+  end
+
+  @doc """
+  Ensures a map server is started for testing.
+  """
+  def ensure_map_server_started(map_id) do
+    case WandererApp.Map.Server.map_pid(map_id) do
+      pid when is_pid(pid) ->
+        :ok
+
+      nil ->
+        # Start the map server directly for tests
+        {:ok, _pid} = start_map_server_directly(map_id)
+        :ok
+    end
+  end
+
+  defp start_map_server_directly(map_id) do
+    # Use the same approach as MapManager.start_map_server/1
+    case DynamicSupervisor.start_child(
+           {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+           {WandererApp.Map.ServerSupervisor, map_id: map_id}
+         ) do
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, {:already_started, pid}} ->
+        {:ok, pid}
+
+      {:error, :max_children} ->
+        # If we hit max children, wait a bit and retry
+        :timer.sleep(100)
+        start_map_server_directly(map_id)
+
+      error ->
+        error
+    end
   end
 end

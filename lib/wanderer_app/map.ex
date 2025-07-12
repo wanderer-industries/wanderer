@@ -554,31 +554,35 @@ defmodule WandererApp.Map do
   If days parameter is provided, filters activity to that time period.
   """
   def get_character_activity(map_id, days \\ nil) do
-    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
-    _map_with_acls = Ash.load!(map, :acls)
+    with {:ok, map} <- WandererApp.Api.Map.by_id(map_id) do
+      _map_with_acls = Ash.load!(map, :acls)
 
-    # Calculate cutoff date if days is provided
-    cutoff_date =
-      if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
+      # Calculate cutoff date if days is provided
+      cutoff_date =
+        if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
 
-    # Get activity data
-    passages_activity = get_passages_activity(map_id, cutoff_date)
-    connections_activity = get_connections_activity(map_id, cutoff_date)
-    signatures_activity = get_signatures_activity(map_id, cutoff_date)
+      # Get activity data
+      passages_activity = get_passages_activity(map_id, cutoff_date)
+      connections_activity = get_connections_activity(map_id, cutoff_date)
+      signatures_activity = get_signatures_activity(map_id, cutoff_date)
 
-    # Return activity data
-    passages_activity
-    |> Enum.map(fn passage ->
-      %{
-        character: passage.character,
-        passages: passage.count,
-        connections: Map.get(connections_activity, passage.character.id, 0),
-        signatures: Map.get(signatures_activity, passage.character.id, 0),
-        timestamp: DateTime.utc_now(),
-        character_id: passage.character.id,
-        user_id: passage.character.user_id
-      }
-    end)
+      # Return activity data
+      result =
+        passages_activity
+        |> Enum.map(fn passage ->
+          %{
+            character: passage.character,
+            passages: passage.count,
+            connections: Map.get(connections_activity, passage.character.id, 0),
+            signatures: Map.get(signatures_activity, passage.character.id, 0),
+            timestamp: DateTime.utc_now(),
+            character_id: passage.character.id,
+            user_id: passage.character.user_id
+          }
+        end)
+
+      {:ok, result}
+    end
   end
 
   defp get_passages_activity(map_id, nil) do
