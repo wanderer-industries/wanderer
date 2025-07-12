@@ -7,6 +7,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   use OpenApiSpex.ControllerSpecs
 
   alias WandererApp.Api.AccessListMember
+  alias WandererApp.ExternalEvents.AclEventBroadcaster
   import Ash.Query
   require Logger
 
@@ -184,7 +185,15 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
 
           case AccessListMember.create(new_params) do
             {:ok, new_member} ->
-              json(conn, %{data: member_to_json(new_member)})
+              # Broadcast event to all maps using this ACL
+              case AclEventBroadcaster.broadcast_member_event(acl_id, new_member, :acl_member_added) do
+                :ok ->
+                  json(conn, %{data: member_to_json(new_member)})
+                
+                {:error, broadcast_error} ->
+                  Logger.warning("Failed to broadcast ACL member added event: #{inspect(broadcast_error)}")
+                  json(conn, %{data: member_to_json(new_member)})
+              end
 
             {:error, error} ->
               conn
@@ -277,7 +286,15 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         else
           case AccessListMember.update_role(membership, member_params) do
             {:ok, updated_membership} ->
-              json(conn, %{data: member_to_json(updated_membership)})
+              # Broadcast event to all maps using this ACL
+              case AclEventBroadcaster.broadcast_member_event(acl_id, updated_membership, :acl_member_updated) do
+                :ok ->
+                  json(conn, %{data: member_to_json(updated_membership)})
+                
+                {:error, broadcast_error} ->
+                  Logger.warning("Failed to broadcast ACL member updated event: #{inspect(broadcast_error)}")
+                  json(conn, %{data: member_to_json(updated_membership)})
+              end
 
             {:error, error} ->
               conn
@@ -347,7 +364,15 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       {:ok, [membership]} ->
         case AccessListMember.destroy(membership) do
           :ok ->
-            json(conn, %{ok: true})
+            # Broadcast event to all maps using this ACL
+            case AclEventBroadcaster.broadcast_member_event(acl_id, membership, :acl_member_removed) do
+              :ok ->
+                json(conn, %{ok: true})
+              
+              {:error, broadcast_error} ->
+                Logger.warning("Failed to broadcast ACL member removed event: #{inspect(broadcast_error)}")
+                json(conn, %{ok: true})
+            end
 
           {:error, error} ->
             conn
@@ -370,15 +395,14 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   # ---------------------------------------------------------------------------
   # Private Helpers
   # ---------------------------------------------------------------------------
+  
+  
   @doc false
   defp member_to_json(member) do
     base = %{
       id: member.id,
       name: member.name,
       role: member.role,
-      eve_character_id: member.eve_character_id,
-      eve_corporation_id: member.eve_corporation_id,
-      eve_alliance_id: member.eve_alliance_id,
       inserted_at: member.inserted_at,
       updated_at: member.updated_at
     }

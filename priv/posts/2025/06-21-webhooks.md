@@ -33,6 +33,7 @@ In the dynamic world of EVE Online wormhole mapping, every second counts. When a
 - **Connection Events**: `connection_added`, `connection_removed`, `connection_updated`
 - **Signature Events**: `signature_added`, `signature_removed`, `signatures_updated`
 - **Kill Events**: `map_kill`
+- **ACL Events**: `acl_member_added`, `acl_member_removed`, `acl_member_updated`
 
 ## Getting Started
 
@@ -319,6 +320,48 @@ const formatters = {
       ],
       timestamp: event.ts
     }]
+  }),
+  
+  acl_member_added: (event) => ({
+    embeds: [{
+      title: "ACL Member Added",
+      description: `**${event.payload.member_name}** was added to the access list`,
+      color: 0x00ff00,
+      fields: [
+        { name: "Member Type", value: event.payload.member_type, inline: true },
+        { name: "Role", value: event.payload.role, inline: true },
+        { name: "ACL ID", value: event.payload.acl_id, inline: true }
+      ],
+      timestamp: event.ts
+    }]
+  }),
+  
+  acl_member_removed: (event) => ({
+    embeds: [{
+      title: "ACL Member Removed",
+      description: `**${event.payload.member_name}** was removed from the access list`,
+      color: 0xff9900,
+      fields: [
+        { name: "Member Type", value: event.payload.member_type, inline: true },
+        { name: "Role", value: event.payload.role, inline: true },
+        { name: "ACL ID", value: event.payload.acl_id, inline: true }
+      ],
+      timestamp: event.ts
+    }]
+  }),
+  
+  acl_member_updated: (event) => ({
+    embeds: [{
+      title: "ACL Member Updated",
+      description: `**${event.payload.member_name}**'s role was updated`,
+      color: 0x0099ff,
+      fields: [
+        { name: "Member Type", value: event.payload.member_type, inline: true },
+        { name: "New Role", value: event.payload.role, inline: true },
+        { name: "ACL ID", value: event.payload.acl_id, inline: true }
+      ],
+      timestamp: event.ts
+    }]
   })
 };
 
@@ -449,6 +492,24 @@ Your Discord channel will now receive formatted notifications for all map events
       "corporation": "Corp Name"
     },
     "value": 250000000
+  }
+}
+```
+
+### ACL Member Added Event
+```json
+{
+  "id": "01J0ZZZZZZZZZZZZZZZZZZ",
+  "type": "acl_member_added",
+  "map_id": "550e8400-e29b-41d4-a716-446655440000",
+  "ts": "2025-06-21T12:36:00.456Z",
+  "payload": {
+    "acl_id": "660e8400-e29b-41d4-a716-446655440001",
+    "member_id": "770e8400-e29b-41d4-a716-446655440002",
+    "member_name": "Pilot Name",
+    "member_type": "character",
+    "eve_id": "95123456",
+    "role": "viewer"
   }
 }
 ```
@@ -596,7 +657,7 @@ We're continuously improving our real-time events API. Upcoming features include
 - **Batch event delivery** for high-volume maps
 - **Historical event replay** for analysis
 - **Event transformations** and filtering rules
-- **Additional event types** (structure timers, ACL changes)
+- **Additional event types** (structure timers, ACL member management events)
 
 ## Get Support
 
