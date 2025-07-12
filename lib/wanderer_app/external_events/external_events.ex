@@ -54,7 +54,9 @@ defmodule WandererApp.ExternalEvents do
   """
   @spec broadcast(String.t(), Event.event_type(), map()) :: :ok
   def broadcast(map_id, event_type, payload) when is_binary(map_id) and is_map(payload) do
-    Logger.debug(fn -> "ExternalEvents.broadcast called - map: #{map_id}, type: #{event_type}" end)
+    log_message = "ExternalEvents.broadcast called - map: #{map_id}, type: #{event_type}"
+
+    Logger.debug(fn -> log_message end)
 
     # Validate event type
     if Event.valid_event_type?(event_type) do

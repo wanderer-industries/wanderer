@@ -108,7 +108,7 @@ defmodule WandererApp.Application do
 
   defp maybe_start_external_events_services do
     external_events_config = Application.get_env(:wanderer_app, :external_events, [])
-    sse_enabled = external_events_config[:sse_enabled] || false
+    sse_enabled = WandererApp.Env.sse_enabled?()
     webhooks_enabled = external_events_config[:webhooks_enabled] || false
 
     services = []

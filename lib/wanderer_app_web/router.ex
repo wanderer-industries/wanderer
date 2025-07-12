@@ -172,6 +172,14 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.AssignMapOwner
   end
 
+  pipeline :api_sse do
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+    plug WandererAppWeb.Plugs.CheckSseDisabled
+    plug WandererAppWeb.Plugs.CheckMapApiKey
+    plug WandererAppWeb.Plugs.CheckMapSubscription
+    plug WandererAppWeb.Plugs.AssignMapOwner
+  end
+
   pipeline :api_kills do
     plug WandererAppWeb.Plugs.CheckApiDisabled
   end
@@ -221,13 +229,19 @@ defmodule WandererAppWeb.Router do
   end
 
   #
+  # SSE endpoint for real-time events (uses separate pipeline without accepts restriction)
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api_sse]
+
+    get "/events/stream", Api.EventsController, :stream
+  end
+
+  #
   # Unified RESTful routes for systems & connections by slug or ID
   #
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map]
-
-    # SSE endpoint for real-time events
-    get "/events/stream", Api.EventsController, :stream
 
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
@@ -249,7 +263,7 @@ defmodule WandererAppWeb.Router do
     resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
       post "/rotate-secret", MapWebhooksAPIController, :rotate_secret
     end
-    
+
     # Webhook control endpoint
     put "/webhooks/toggle", MapAPIController, :toggle_webhooks
   end
