@@ -30,7 +30,11 @@ defmodule WandererApp.ExternalEvents.EventFilter do
     :signature_removed,
     :signatures_updated,
     # Kill events
-    :map_kill
+    :map_kill,
+    # ACL events
+    :acl_member_added,
+    :acl_member_removed,
+    :acl_member_updated
   ]
 
   @type event_type :: atom()
@@ -79,8 +83,25 @@ defmodule WandererApp.ExternalEvents.EventFilter do
       false
   """
   @spec matches?(event_type(), event_filter()) :: boolean()
-  def matches?(event_type, filter) when is_atom(event_type) and is_list(filter) do
-    event_type in filter
+  def matches?(event_type, filter) when is_list(filter) do
+    # Convert string event types to atoms for comparison
+    atom_event_type =
+      case event_type do
+        atom when is_atom(atom) ->
+          atom
+
+        string when is_binary(string) ->
+          try do
+            String.to_existing_atom(string)
+          rescue
+            ArgumentError -> nil
+          end
+
+        _ ->
+          nil
+      end
+
+    atom_event_type && atom_event_type in filter
   end
 
   @doc """

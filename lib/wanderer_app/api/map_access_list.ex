@@ -16,6 +16,10 @@ defmodule WandererApp.Api.MapAccessList do
     define(:read_by_map,
       action: :read_by_map
     )
+    
+    define(:read_by_acl,
+      action: :read_by_acl
+    )
   end
 
   actions do
@@ -29,6 +33,11 @@ defmodule WandererApp.Api.MapAccessList do
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id)))
+    end
+    
+    read :read_by_acl do
+      argument(:acl_id, :string, allow_nil?: false)
+      filter(expr(access_list_id == ^arg(:acl_id)))
     end
   end
 
