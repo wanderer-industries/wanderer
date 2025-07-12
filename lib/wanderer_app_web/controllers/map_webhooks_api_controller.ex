@@ -354,7 +354,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       do_create_webhook(conn, map_identifier, params)
     end
   end
-  
+
   defp do_create_webhook(conn, map_identifier, params) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook_params} <- validate_create_params(params, map.id) do
