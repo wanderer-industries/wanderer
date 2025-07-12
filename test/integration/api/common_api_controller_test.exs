@@ -3,9 +3,30 @@ defmodule WandererAppWeb.CommonAPIControllerTest do
 
   describe "GET /api/common/system-static-info" do
     test "returns system static info for valid system ID", %{conn: conn} do
-      # Use factory to generate a valid solar system ID
-      system_data = build_map_system()
-      system_id = system_data.solar_system_id
+      # Create test solar system data
+      system_id = 30_000_142
+
+      {:ok, _solar_system} =
+        Ash.create(WandererApp.Api.MapSolarSystem, %{
+          solar_system_id: system_id,
+          region_id: 10_000_002,
+          constellation_id: 20_000_020,
+          solar_system_name: "Jita",
+          solar_system_name_lc: "jita",
+          constellation_name: "Kimotoro",
+          region_name: "The Forge",
+          system_class: 0,
+          security: "0.9",
+          type_description: "High Security",
+          class_title: "High Sec",
+          is_shattered: false,
+          effect_name: nil,
+          effect_power: nil,
+          statics: [],
+          wandering: [],
+          triglavian_invasion_status: nil,
+          sun_type_id: 45041
+        })
 
       response =
         conn
@@ -66,11 +87,30 @@ defmodule WandererAppWeb.CommonAPIControllerTest do
     end
 
     test "includes static wormhole details for wormhole systems", %{conn: conn} do
-      # Test with a known wormhole system that has statics
-      # Note: This assumes we have test data or mocked system info
-      # For now, we'll test the response structure regardless
-      # Example J-space system
+      # Create test wormhole solar system data
       system_id = 31_000_005
+
+      {:ok, _solar_system} =
+        Ash.create(WandererApp.Api.MapSolarSystem, %{
+          solar_system_id: system_id,
+          region_id: 11_000_000,
+          constellation_id: 21_000_000,
+          solar_system_name: "J123456",
+          solar_system_name_lc: "j123456",
+          constellation_name: "Unknown",
+          region_name: "Wormhole Space",
+          system_class: 1,
+          security: "-0.9",
+          type_description: "Wormhole",
+          class_title: "Class 1",
+          is_shattered: false,
+          effect_name: "Wolf-Rayet Star",
+          effect_power: 1,
+          statics: ["N110"],
+          wandering: ["K162"],
+          triglavian_invasion_status: nil,
+          sun_type_id: 45042
+        })
 
       response =
         conn

@@ -57,10 +57,9 @@ defmodule WandererAppWeb.ApiCase do
   Helper for creating map-specific API authentication
   """
   def authenticate_map_api(conn, map) do
-    # In a real implementation, you'd fetch the actual API key
-    # For now, we'll use a test API key pattern
-    test_api_key = "test_api_key_#{map.id}"
-    put_api_key(conn, test_api_key)
+    # Use the map's actual public_api_key if available
+    api_key = map.public_api_key || "test_api_key_#{map.id}"
+    put_api_key(conn, api_key)
   end
 
   @doc """
@@ -99,6 +98,21 @@ defmodule WandererAppWeb.ApiCase do
   Creates a test map and authenticates the connection.
   """
   def setup_map_authentication(%{conn: conn}) do
+    # Create a test map
+    map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
+    # Ensure the map server is started
+    WandererApp.TestHelpers.ensure_map_server_started(map.id)
+    # Authenticate the connection with the map's actual public_api_key
+    authenticated_conn = put_api_key(conn, map.public_api_key)
+    {:ok, conn: authenticated_conn, map: map}
+  end
+
+  @doc """
+  Setup callback for tests that need map authentication without starting map servers.
+  Creates a test map and authenticates the connection, but doesn't start the map server.
+  Use this for integration tests that don't need the full map server infrastructure.
+  """
+  def setup_map_authentication_without_server(%{conn: conn}) do
     # Create a test map
     map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
     # Authenticate the connection with the map's actual public_api_key

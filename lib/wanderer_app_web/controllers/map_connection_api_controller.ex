@@ -246,10 +246,17 @@ defmodule WandererAppWeb.MapConnectionAPIController do
       }) do
     with {:ok, source} <- APIUtils.parse_int(src),
          {:ok, target} <- APIUtils.parse_int(tgt),
-         {:ok, conn_struct} <- Operations.get_connection_by_systems(map_id, source, target) do
+         {:ok, conn_struct} when not is_nil(conn_struct) <-
+           Operations.get_connection_by_systems(map_id, source, target) do
       APIUtils.respond_data(conn, APIUtils.connection_to_json(conn_struct))
     else
-      err -> err
+      {:ok, nil} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Connection not found"})
+
+      err ->
+        err
     end
   end
 

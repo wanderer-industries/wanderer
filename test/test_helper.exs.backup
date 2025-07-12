@@ -1,4 +1,4 @@
-# Just require the mocks module - it will handle loading everything else
+# Load mocks first, before anything else starts
 require WandererApp.Test.Mocks
 
 ExUnit.start()
@@ -11,29 +11,26 @@ import Mox
 
 # Ensure critical services are ready
 case GenServer.whereis(WandererApp.Repo) do
-  nil ->
+  nil -> 
     IO.puts("WARNING: WandererApp.Repo not started!")
     raise "Repository not available for tests"
-
-  _pid ->
+  _pid -> 
     :ok
 end
 
 case GenServer.whereis(WandererApp.Cache) do
-  nil ->
+  nil -> 
     IO.puts("WARNING: WandererApp.Cache not started!")
     raise "Cache not available for tests"
-
-  _pid ->
+  _pid -> 
     :ok
 end
 
 case Process.whereis(WandererApp.MapRegistry) do
-  nil ->
+  nil -> 
     IO.puts("WARNING: WandererApp.MapRegistry not started!")
     raise "MapRegistry not available for tests"
-
-  _pid ->
+  _pid -> 
     :ok
 end
 

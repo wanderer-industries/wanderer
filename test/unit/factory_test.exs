@@ -25,20 +25,20 @@ defmodule WandererAppWeb.FactoryTest do
     end
 
     test "creates valid map" do
-      user = insert(:user)
-      map = insert(:map, %{owner_id: user.id})
+      character = insert(:character)
+      map = insert(:map, %{owner_id: character.id})
 
       assert map.id
       assert map.name
       assert map.slug
-      assert map.owner_id == user.id
+      assert map.owner_id == character.id
       assert is_binary(map.name)
       assert is_binary(map.slug)
     end
 
     test "creates valid map system" do
-      user = insert(:user)
-      map = insert(:map, %{owner_id: user.id})
+      character = insert(:character)
+      map = insert(:map, %{owner_id: character.id})
       system = insert(:map_system, %{map_id: map.id})
 
       assert system.id
@@ -48,8 +48,8 @@ defmodule WandererAppWeb.FactoryTest do
     end
 
     test "creates valid map connection" do
-      user = insert(:user)
-      map = insert(:map, %{owner_id: user.id})
+      character = insert(:character)
+      map = insert(:map, %{owner_id: character.id})
 
       connection =
         insert(:map_connection, %{
@@ -65,9 +65,8 @@ defmodule WandererAppWeb.FactoryTest do
     end
 
     test "creates valid map character settings" do
-      user = insert(:user)
-      map = insert(:map, %{owner_id: user.id})
-      character = insert(:character, %{user_id: user.id})
+      character = insert(:character)
+      map = insert(:map, %{owner_id: character.id})
 
       settings =
         insert(:map_character_settings, %{
@@ -120,7 +119,7 @@ defmodule WandererAppWeb.FactoryTest do
       # Create a user with a character and map
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      map = insert(:map, %{owner_id: user.id})
+      map = insert(:map, %{owner_id: character.id})
 
       # Create a tracking relationship
       settings =

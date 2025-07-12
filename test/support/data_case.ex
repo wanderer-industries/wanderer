@@ -42,6 +42,11 @@ defmodule WandererApp.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
+    # Ensure the repo is started before setting up sandbox
+    unless Process.whereis(WandererApp.Repo) do
+      {:ok, _} = WandererApp.Repo.start_link()
+    end
+
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
@@ -78,7 +83,9 @@ defmodule WandererApp.DataCase do
   Resets the database to a clean state.
   """
   def reset_database do
-    Ecto.Adapters.SQL.Sandbox.restart(WandererApp.Repo)
+    # Use checkout and checkin to reset sandbox mode
+    Ecto.Adapters.SQL.Sandbox.checkout(WandererApp.Repo)
+    Ecto.Adapters.SQL.Sandbox.checkin(WandererApp.Repo)
   end
 
   @doc """
