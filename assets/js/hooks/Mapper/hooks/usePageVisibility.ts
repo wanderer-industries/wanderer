@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 
 function usePageVisibility() {
-  const [isVisible, setIsVisible] = useState(!document.hidden);
+  const getIsVisible = () => !document.hidden;
+  const [isVisible, setIsVisible] = useState(getIsVisible());
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      setIsVisible(!document.hidden);
+      setIsVisible(getIsVisible());
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
