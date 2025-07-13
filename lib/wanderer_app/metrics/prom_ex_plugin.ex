@@ -196,7 +196,7 @@ defmodule WandererApp.Metrics.PromExPlugin do
           description: "ESI rate limit reset duration in milliseconds",
           tags: [:endpoint, :method, :tracking_pool],
           tag_values: &get_esi_tag_values/1,
-          reporter_options: [buckets: [1000, 5000, 10000, 30000, 60000, 300000]]
+          reporter_options: [buckets: [1000, 5000, 10000, 30000, 60000, 300_000]]
         ),
         counter(
           @esi_error_event ++ [:count],

@@ -39,6 +39,21 @@ defmodule WandererApp.Map.Server.PingsImpl do
       ping |> Map.merge(%{character_eve_id: character.eve_id, solar_system_id: solar_system_id})
     )
 
+    # Broadcast rally point events to external clients (webhooks/SSE)
+    if type == 1 do
+      WandererApp.ExternalEvents.broadcast(map_id, :rally_point_added, %{
+        rally_point_id: ping.id,
+        solar_system_id: solar_system_id,
+        system_id: system.id,
+        character_id: character_id,
+        character_name: character.name,
+        character_eve_id: character.eve_id,
+        system_name: system.name,
+        message: message,
+        created_at: ping.inserted_at
+      })
+    end
+
     WandererApp.User.ActivityTracker.track_map_event(:map_rally_added, %{
       character_id: character_id,
       user_id: user_id,
@@ -71,6 +86,18 @@ defmodule WandererApp.Map.Server.PingsImpl do
       solar_system_id: solar_system_id,
       type: type
     })
+
+    # Broadcast rally point removal events to external clients (webhooks/SSE)
+    if type == 1 do
+      WandererApp.ExternalEvents.broadcast(map_id, :rally_point_removed, %{
+        solar_system_id: solar_system_id,
+        system_id: system.id,
+        character_id: character_id,
+        character_name: character.name,
+        character_eve_id: character.eve_id,
+        system_name: system.name
+      })
+    end
 
     WandererApp.User.ActivityTracker.track_map_event(:map_rally_cancelled, %{
       character_id: character_id,
