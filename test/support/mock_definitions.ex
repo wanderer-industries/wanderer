@@ -125,6 +125,12 @@ if Mix.env() == :test do
     @callback get_alliance_info(binary(), keyword()) :: {:ok, map()} | {:error, any()}
   end
 
+  defmodule WandererApp.ExternalEvents.MapEventRelay.MockBehaviour do
+    @callback get_events_since(binary(), DateTime.t(), pos_integer()) :: [map()]
+    @callback get_events_since_ulid(binary(), binary(), pos_integer()) ::
+                {:ok, [map()]} | {:error, term()}
+  end
+
   # Define all the mocks
   Mox.defmock(Test.CacheMock, for: WandererApp.Cache.MockBehaviour)
   Mox.defmock(Test.MapRepoMock, for: WandererApp.MapRepo.MockBehaviour)
@@ -155,4 +161,5 @@ if Mix.env() == :test do
   Mox.defmock(Test.TelemetryMock, for: Test.TelemetryMock.MockBehaviour)
   Mox.defmock(Test.AshMock, for: Test.AshMock.MockBehaviour)
   Mox.defmock(WandererApp.Esi.Mock, for: WandererApp.Esi.MockBehaviour)
+  Mox.defmock(Test.MapEventRelayMock, for: WandererApp.ExternalEvents.MapEventRelay.MockBehaviour)
 end
