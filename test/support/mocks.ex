@@ -45,6 +45,59 @@ defmodule WandererApp.Test.Mocks do
     |> Mox.stub(:update, fn _id, _data, _tree_name -> :ok end)
     |> Mox.stub(:delete, fn _ids, _tree_name -> :ok end)
 
+    # Set up default stubs for CachedInfo mock
+    WandererApp.CachedInfo.Mock
+    |> Mox.stub(:get_system_static_info, fn
+      30_000_142 ->
+        {:ok,
+         %{
+           solar_system_id: 30_000_142,
+           region_id: 10_000_002,
+           constellation_id: 20_000_020,
+           solar_system_name: "Jita",
+           solar_system_name_lc: "jita",
+           constellation_name: "Kimotoro",
+           region_name: "The Forge",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      30_000_144 ->
+        {:ok,
+         %{
+           solar_system_id: 30_000_144,
+           region_id: 10_000_043,
+           constellation_id: 20_000_304,
+           solar_system_name: "Amarr",
+           solar_system_name_lc: "amarr",
+           constellation_name: "Throne Worlds",
+           region_name: "Domain",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      _ ->
+        {:error, :not_found}
+    end)
+
     :ok
   end
 

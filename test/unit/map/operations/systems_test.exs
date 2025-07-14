@@ -2,18 +2,8 @@ defmodule WandererApp.Map.Operations.SystemsTest do
   use WandererApp.DataCase
 
   alias WandererApp.Map.Operations.Systems
+  alias WandererApp.MapTestHelpers
   alias WandererAppWeb.Factory
-
-  # Helper function to handle map server dependency in unit tests
-  defp expect_map_server_error(test_fun) do
-    try do
-      test_fun.()
-    catch
-      "Map server not started" ->
-        # Expected in unit test environment - map servers aren't started
-        :ok
-    end
-  end
 
   describe "parameter validation" do
     test "validates missing connection assigns for create_system" do
@@ -62,7 +52,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
       systems = []
       connections = []
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Systems.upsert_systems_and_connections(conn, systems, connections)
 
         case result do
@@ -116,7 +106,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
       }
 
       # This should not crash on parameter parsing
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Systems.create_system(conn, params_valid)
         # Result depends on underlying services, but function should handle the call
         assert is_tuple(result)
@@ -129,7 +119,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
         "position_y" => "200"
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result_invalid = Systems.create_system(conn, params_invalid)
         # Should handle invalid parameter gracefully
         assert is_tuple(result_invalid)
@@ -177,7 +167,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
         }
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Systems.delete_system(conn, system_id)
         # Function should handle the call
         assert is_tuple(result)
@@ -213,7 +203,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
         }
       ]
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Systems.upsert_systems_and_connections(conn, systems, connections)
         # Function should process the data and return a result
         assert is_tuple(result)
@@ -235,14 +225,14 @@ defmodule WandererApp.Map.Operations.SystemsTest do
 
     test "internal helper functions work correctly" do
       # Test coordinate normalization by creating a system with coordinates
-      params_with_coords = %{
+      _params_with_coords = %{
         "position_x" => 100,
         "position_y" => 200
       }
 
       # Test solar system ID parsing
       system_id_valid = "30000142"
-      system_id_invalid = "invalid"
+      _system_id_invalid = "invalid"
 
       # These are internal functions tested indirectly through public API
       # The main goal is to exercise code paths that use these helpers
@@ -268,7 +258,7 @@ defmodule WandererApp.Map.Operations.SystemsTest do
       ]
 
       Enum.each(params_various_formats, fn params ->
-        expect_map_server_error(fn ->
+        MapTestHelpers.expect_map_server_error(fn ->
           result = Systems.create_system(conn_valid, params)
           # Each call should handle the parameter format
           assert is_tuple(result)

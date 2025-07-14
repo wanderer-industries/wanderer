@@ -62,7 +62,14 @@ defmodule WandererApp.Api.MapSystem do
       :position_y,
       :status,
       :visible,
-      :locked
+      :locked,
+      :custom_name,
+      :description,
+      :tag,
+      :temporary_name,
+      :labels,
+      :added_at,
+      :linked_sig_eve_id
     ]
 
     defaults [:create, :read, :update, :destroy]

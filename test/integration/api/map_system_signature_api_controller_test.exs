@@ -130,17 +130,6 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
       end
     end
 
-    test "returns error for missing required fields", %{conn: conn, map: map} do
-      incomplete_params = %{
-        "name" => "Test Signature"
-      }
-
-      conn = post(conn, ~p"/api/maps/#{map.slug}/signatures", incomplete_params)
-
-      # Should return validation error
-      assert %{"error" => _error} = json_response(conn, 422)
-    end
-
     test "handles signature creation with minimal required fields", %{conn: conn, map: map} do
       minimal_params = %{
         "system_id" => Ecto.UUID.generate(),

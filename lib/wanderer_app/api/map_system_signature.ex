@@ -49,7 +49,8 @@ defmodule WandererApp.Api.MapSystemSignature do
       :kind,
       :group,
       :type,
-      :deleted
+      :deleted,
+      :custom_info
     ]
 
     defaults [:read, :destroy]

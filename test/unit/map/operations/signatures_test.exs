@@ -2,18 +2,8 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
   use WandererApp.DataCase
 
   alias WandererApp.Map.Operations.Signatures
+  alias WandererApp.MapTestHelpers
   alias WandererAppWeb.Factory
-
-  # Helper function to handle map server dependency in unit tests
-  defp expect_map_server_error(test_fun) do
-    try do
-      test_fun.()
-    catch
-      "Map server not started" ->
-        # Expected in unit test environment - map servers aren't started
-        :ok
-    end
-  end
 
   describe "parameter validation" do
     test "validates missing connection assigns for create_signature" do
@@ -192,7 +182,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         "group" => "Unknown"
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.create_signature(conn, params)
         # If no exception, check the result
         assert is_tuple(result)
@@ -221,7 +211,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       # Test with minimal required parameters
       params = %{"solar_system_id" => "30000142"}
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.create_signature(conn, params)
         assert is_tuple(result)
       end)
@@ -335,7 +325,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       ]
 
       Enum.each(invalid_params, fn params ->
-        expect_map_server_error(fn ->
+        MapTestHelpers.expect_map_server_error(fn ->
           result = Signatures.create_signature(conn, params)
           assert {:error, :missing_params} = result
         end)
@@ -472,7 +462,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       tasks =
         Enum.map(1..3, fn i ->
           Task.async(fn ->
-            expect_map_server_error(fn ->
+            MapTestHelpers.expect_map_server_error(fn ->
               params = %{"solar_system_id" => "3000014#{i}"}
               Signatures.create_signature(conn, params)
             end)
@@ -502,7 +492,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         "name" => "Test Signature"
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.create_signature(conn, params)
         assert is_tuple(result)
         assert tuple_size(result) == 2
@@ -608,7 +598,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         "eve_id" => "ABC-123"
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.create_signature(conn, params)
 
         case result do
@@ -640,7 +630,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         "custom_info" => "New Info"
       }
 
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.update_signature(conn, sig_id, params)
         assert is_tuple(result)
       end)
@@ -658,7 +648,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       sig_id = Ecto.UUID.generate()
 
       # This tests that the function exercises the signature removal structure building
-      expect_map_server_error(fn ->
+      MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.delete_signature(conn, sig_id)
         assert is_atom(result) or is_tuple(result)
       end)
@@ -684,7 +674,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       Enum.each(assign_variations, fn assigns ->
         conn = %{assigns: assigns}
 
-        expect_map_server_error(fn ->
+        MapTestHelpers.expect_map_server_error(fn ->
           result = Signatures.create_signature(conn, params)
           assert is_tuple(result)
         end)
