@@ -24,6 +24,7 @@ config :wanderer_app,
   pubsub_client: Test.PubSubMock,
   cached_info: WandererApp.CachedInfo.Mock,
   character_api_disabled: false,
+  websocket_events_enabled: true,
   environment: :test
 
 # We don't run a server during test. If one is required,
