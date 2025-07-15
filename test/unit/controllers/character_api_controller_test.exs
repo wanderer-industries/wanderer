@@ -335,7 +335,7 @@ defmodule WandererAppWeb.CharactersAPIControllerUnitTest do
           character_fields = Map.keys(character)
           unexpected_fields = character_fields -- possible_fields
 
-          assert length(unexpected_fields) == 0,
+          assert Enum.empty?(unexpected_fields),
                  "Unexpected fields found: #{inspect(unexpected_fields)}"
 
           # If eve_id is present, it should be a string

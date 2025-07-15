@@ -7,4 +7,5 @@ defmodule WandererApp.Test.DDRT do
   @callback insert({integer(), any()}, String.t()) :: :ok | {:error, term()}
   @callback update(integer(), any(), String.t()) :: :ok | {:error, term()}
   @callback delete([integer()], String.t()) :: :ok | {:error, term()}
+  @callback search(any(), String.t()) :: [any()]
 end

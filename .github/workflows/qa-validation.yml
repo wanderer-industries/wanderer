@@ -1,0 +1,713 @@
+name: 🔍 QA Validation Pipeline
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main, develop]
+
+# Prevent concurrent runs for the same PR
+concurrency:
+  group: qa-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.15'
+  OTP_VERSION: '26'
+  NODE_VERSION: '18'
+
+jobs:
+  # ============================================================================
+  # Pre-validation: Fast checks that can fail early
+  # ============================================================================
+  
+  pre-validation:
+    name: 📋 Pre-validation Checks
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    outputs:
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      tests-changed: ${{ steps.changes.outputs.tests }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Detect file changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'lib/**/*.ex'
+              - 'config/**/*.exs'
+              - 'mix.exs'
+              - 'mix.lock'
+            frontend:
+              - 'assets/**/*'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'vite.config.js'
+            tests:
+              - 'test/**/*.exs'
+              - 'test/**/*.ex'
+              
+      - name: Validate commit messages
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🔍 Validating commit messages..."
+          
+          # Get commits in this PR
+          git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} > commits.txt
+          
+          # Check commit message format
+          while IFS= read -r commit; do
+            if [[ ! $commit =~ ^[a-f0-9]+\ (feat|fix|docs|style|refactor|test|chore|perf|ci)(\(.+\))?:\ .+ ]]; then
+              echo "❌ Invalid commit message format: $commit"
+              echo "Expected format: type(scope): description"
+              echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci"
+              exit 1
+            fi
+          done < commits.txt
+          
+          echo "✅ All commit messages follow conventional format"
+          
+      - name: Check for merge conflicts
+        run: |
+          echo "🔍 Checking for merge conflict markers..."
+          if grep -r "<<<<<<< HEAD\|>>>>>>> \|=======" . --exclude-dir=.git; then
+            echo "❌ Merge conflict markers found!"
+            exit 1
+          fi
+          echo "✅ No merge conflicts detected"
+          
+      - name: Validate file sizes
+        run: |
+          echo "🔍 Checking for large files..."
+          find . -type f -size +50M -not -path "./.git/*" | while read file; do
+            echo "❌ Large file detected: $file ($(du -h "$file" | cut -f1))"
+            echo "Consider using Git LFS for files larger than 50MB"
+            exit 1
+          done
+          echo "✅ No oversized files detected"
+
+  # ============================================================================
+  # Backend Quality Gates
+  # ============================================================================
+  
+  backend-quality:
+    name: 🎯 Backend Quality Gates
+    runs-on: ubuntu-latest
+    needs: pre-validation
+    if: needs.pre-validation.outputs.backend-changed == 'true' || needs.pre-validation.outputs.tests-changed == 'true'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        check: 
+          - name: "compile"
+            command: "mix compile --warnings-as-errors"
+            description: "Compilation without warnings"
+          - name: "format"
+            command: "mix format --check-formatted"
+            description: "Code formatting"
+          - name: "credo"
+            command: "mix credo --strict"
+            description: "Code quality analysis"
+          - name: "dialyzer"
+            command: "mix dialyzer"
+            description: "Static type analysis"
+          - name: "deps-audit"
+            command: "mix deps.audit"
+            description: "Dependency security audit"
+          - name: "sobelow"
+            command: "mix sobelow --config"
+            description: "Security vulnerability scan"
+            
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Cache PLT files
+        uses: actions/cache@v3
+        if: matrix.check.name == 'dialyzer'
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-plt-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Run ${{ matrix.check.description }}
+        run: |
+          echo "🔍 Running ${{ matrix.check.description }}..."
+          ${{ matrix.check.command }}
+          echo "✅ ${{ matrix.check.description }} passed"
+
+  # ============================================================================
+  # Test Execution with Quality Gates
+  # ============================================================================
+  
+  test-execution:
+    name: 🧪 Test Execution & Coverage
+    runs-on: ubuntu-latest
+    needs: pre-validation
+    if: needs.pre-validation.outputs.backend-changed == 'true' || needs.pre-validation.outputs.tests-changed == 'true'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Setup database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+          
+      - name: Run tests with coverage
+        env:
+          PERFORMANCE_MONITORING: true
+        run: |
+          echo "🧪 Running test suite with performance monitoring..."
+          mix test --cover --export-coverage default
+          echo "✅ Test execution completed"
+          
+      - name: Generate coverage report
+        run: |
+          echo "📊 Generating coverage report..."
+          mix test.coverage.summary
+          
+      - name: Check coverage threshold
+        run: |
+          echo "🎯 Checking coverage threshold..."
+          COVERAGE=$(mix test.coverage.summary --format json | jq -r '.total_coverage')
+          THRESHOLD=80
+          
+          echo "Current coverage: ${COVERAGE}%"
+          echo "Required threshold: ${THRESHOLD}%"
+          
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          
+          echo "✅ Coverage threshold met"
+          
+      - name: Run flaky test detection
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🎲 Running flaky test detection..."
+          mix test.stability test/ --runs 3 --threshold 95
+          echo "✅ Flaky test detection completed"
+          
+      - name: Performance budget check
+        env:
+          PERFORMANCE_MONITORING: true
+        run: |
+          echo "⚡ Checking performance budgets..."
+          mix test.performance --budget 5000 --report-only
+          echo "✅ Performance budget check completed"
+          
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./cover/excoveralls.json
+          flags: unittests
+          name: codecov-umbrella
+          
+      - name: Archive test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            _build/test/lib/*/eunit
+            cover/
+            test-results.xml
+
+  # ============================================================================
+  # Frontend Quality Gates
+  # ============================================================================
+  
+  frontend-quality:
+    name: 🎨 Frontend Quality Gates
+    runs-on: ubuntu-latest
+    needs: pre-validation
+    if: needs.pre-validation.outputs.frontend-changed == 'true'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - name: "lint"
+            command: "npm run lint"
+            description: "ESLint code quality"
+          - name: "format"
+            command: "npm run format:check"
+            description: "Prettier formatting"
+          - name: "type-check"
+            command: "npm run type-check"
+            description: "TypeScript type checking"
+          - name: "test"
+            command: "npm run test"
+            description: "Frontend tests"
+          - name: "build"
+            command: "npm run build"
+            description: "Production build"
+            
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: assets/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: assets
+        run: npm ci
+        
+      - name: Run ${{ matrix.check.description }}
+        working-directory: assets
+        run: |
+          echo "🔍 Running ${{ matrix.check.description }}..."
+          ${{ matrix.check.command }}
+          echo "✅ ${{ matrix.check.description }} passed"
+
+  # ============================================================================
+  # API Contract Validation
+  # ============================================================================
+  
+  api-contract-validation:
+    name: 📋 API Contract Validation
+    runs-on: ubuntu-latest
+    needs: pre-validation
+    if: needs.pre-validation.outputs.backend-changed == 'true' || needs.pre-validation.outputs.tests-changed == 'true'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Setup database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+          
+      - name: Generate OpenAPI spec
+        run: |
+          echo "📋 Generating OpenAPI specification..."
+          mix openapi.spec.json --output openapi.json
+          echo "✅ OpenAPI spec generated"
+          
+      - name: Validate OpenAPI spec
+        run: |
+          echo "🔍 Validating OpenAPI specification..."
+          npx @apidevtools/swagger-parser validate openapi.json
+          echo "✅ OpenAPI spec is valid"
+          
+      - name: Run contract tests
+        run: |
+          echo "🧪 Running API contract tests..."
+          mix test test/contract/ --include contract
+          echo "✅ API contract tests passed"
+          
+      - name: Check for breaking changes
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🔍 Checking for API breaking changes..."
+          
+          # Get base branch OpenAPI spec
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git checkout origin/${{ github.event.pull_request.base.ref }} -- || true
+          
+          if [ -f "openapi_base.json" ]; then
+            mix openapi.spec.json --output openapi_base.json
+            
+            # Use oasdiff to detect breaking changes
+            npx oasdiff diff openapi_base.json openapi.json \
+              --format json \
+              --fail-on breaking \
+              --output breaking-changes.json || {
+                echo "❌ Breaking API changes detected!"
+                cat breaking-changes.json
+                exit 1
+              }
+              
+            echo "✅ No breaking API changes detected"
+          else
+            echo "⚠️ No base OpenAPI spec found, skipping breaking change detection"
+          fi
+          
+      - name: Upload OpenAPI artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: openapi-spec
+          path: |
+            openapi.json
+            breaking-changes.json
+
+  # ============================================================================
+  # Security and Compliance
+  # ============================================================================
+  
+  security-scan:
+    name: 🛡️ Security & Compliance
+    runs-on: ubuntu-latest
+    needs: pre-validation
+    if: needs.pre-validation.outputs.backend-changed == 'true' || needs.pre-validation.outputs.frontend-changed == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Run security audit
+        run: |
+          echo "🛡️ Running security audit..."
+          mix deps.audit
+          echo "✅ Dependency security audit passed"
+          
+      - name: Run Sobelow security scan
+        run: |
+          echo "🔍 Running Sobelow security scan..."
+          mix sobelow --config --exit
+          echo "✅ Sobelow security scan passed"
+          
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+          
+      - name: Check for hardcoded credentials
+        run: |
+          echo "🔍 Checking for hardcoded credentials..."
+          
+          # Common patterns to avoid
+          PATTERNS=(
+            "password.*=.*['\"][^'\"]*['\"]"
+            "api_key.*=.*['\"][^'\"]*['\"]"
+            "secret.*=.*['\"][^'\"]*['\"]"
+            "token.*=.*['\"][^'\"]*['\"]"
+          )
+          
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -r -i "$pattern" lib/ config/ --exclude-dir=.git; then
+              echo "❌ Potential hardcoded credential found!"
+              echo "Pattern: $pattern"
+              echo "Please use environment variables for sensitive data"
+              exit 1
+            fi
+          done
+          
+          echo "✅ No hardcoded credentials detected"
+
+  # ============================================================================
+  # Quality Gate Summary
+  # ============================================================================
+  
+  quality-gate-summary:
+    name: 📊 Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [pre-validation, backend-quality, test-execution, frontend-quality, api-contract-validation, security-scan]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Generate quality report
+        run: |
+          echo "📊 Generating comprehensive quality report..."
+          mix quality_report --format json --output quality-report.json
+          mix quality_report --format markdown --output quality-report.md
+          
+      - name: Check quality gates
+        run: |
+          echo "🎯 Evaluating quality gates..."
+          
+          # Get current quality metrics
+          REPORT=$(cat quality-report.json)
+          
+          # Extract key metrics
+          COMPILATION_WARNINGS=$(echo $REPORT | jq -r '.compilation.warnings // 0')
+          CREDO_ISSUES=$(echo $REPORT | jq -r '.credo.issues // 0')
+          DIALYZER_ERRORS=$(echo $REPORT | jq -r '.dialyzer.errors // 0')
+          TEST_COVERAGE=$(echo $REPORT | jq -r '.coverage.percentage // 0')
+          TEST_FAILURES=$(echo $REPORT | jq -r '.tests.failures // 0')
+          
+          echo "Current Quality Metrics:"
+          echo "- Compilation Warnings: $COMPILATION_WARNINGS"
+          echo "- Credo Issues: $CREDO_ISSUES"
+          echo "- Dialyzer Errors: $DIALYZER_ERRORS"
+          echo "- Test Coverage: $TEST_COVERAGE%"
+          echo "- Test Failures: $TEST_FAILURES"
+          
+          # Quality gate thresholds
+          PASS=true
+          
+          if [ "$COMPILATION_WARNINGS" -gt 0 ]; then
+            echo "❌ Compilation warnings detected: $COMPILATION_WARNINGS"
+            PASS=false
+          fi
+          
+          if [ "$CREDO_ISSUES" -gt 50 ]; then
+            echo "❌ Too many Credo issues: $CREDO_ISSUES (max: 50)"
+            PASS=false
+          fi
+          
+          if [ "$DIALYZER_ERRORS" -gt 0 ]; then
+            echo "❌ Dialyzer errors detected: $DIALYZER_ERRORS"
+            PASS=false
+          fi
+          
+          if [ "$(echo "$TEST_COVERAGE < 80" | bc)" -eq 1 ]; then
+            echo "❌ Test coverage below threshold: $TEST_COVERAGE% (min: 80%)"
+            PASS=false
+          fi
+          
+          if [ "$TEST_FAILURES" -gt 0 ]; then
+            echo "❌ Test failures detected: $TEST_FAILURES"
+            PASS=false
+          fi
+          
+          if [ "$PASS" = true ]; then
+            echo "✅ All quality gates passed!"
+          else
+            echo "❌ Quality gates failed!"
+            exit 1
+          fi
+          
+      - name: Upload quality report
+        uses: actions/upload-artifact@v3
+        with:
+          name: quality-report
+          path: |
+            quality-report.json
+            quality-report.md
+            
+      - name: Comment PR with quality summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read quality report
+            let qualityReport = '';
+            try {
+              qualityReport = fs.readFileSync('quality-report.md', 'utf8');
+            } catch (error) {
+              qualityReport = '📊 Quality report generation failed. Please check the logs.';
+            }
+            
+            // Create comment body
+            const body = `## 🔍 QA Validation Summary
+            
+            ${qualityReport}
+            
+            ---
+            
+            🤖 This summary was automatically generated by the QA validation pipeline.
+            `;
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.data.find(
+              comment => comment.user.login === 'github-actions[bot]' && 
+                         comment.body.includes('QA Validation Summary')
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # ============================================================================
+  # Progressive Quality Enforcement
+  # ============================================================================
+  
+  progressive-quality-check:
+    name: 🎯 Progressive Quality Enforcement
+    runs-on: ubuntu-latest
+    needs: quality-gate-summary
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Check progressive quality targets
+        run: |
+          echo "🎯 Checking progressive quality improvement targets..."
+          
+          # Run quality check with target enforcement
+          mix quality.progressive_check --enforce-targets
+          
+          echo "✅ Progressive quality targets evaluation completed"
+          
+      - name: Update quality baselines
+        run: |
+          echo "📊 Updating quality baselines..."
+          
+          # Update baseline metrics for future comparisons
+          mix quality.update_baselines
+          
+          echo "✅ Quality baselines updated"

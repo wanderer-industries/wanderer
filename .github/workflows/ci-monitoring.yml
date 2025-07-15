@@ -1,0 +1,440 @@
+name: 📊 CI Test Monitoring
+
+on:
+  workflow_run:
+    workflows: ["🔍 QA Validation Pipeline"]
+    types: [completed]
+  schedule:
+    # Run monitoring analysis daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      analysis_days:
+        description: 'Days of history to analyze'
+        required: false
+        default: '30'
+      force_export:
+        description: 'Force export to external systems'
+        required: false
+        default: 'false'
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.15'
+  OTP_VERSION: '26'
+
+jobs:
+  # ============================================================================
+  # Collect Test Metrics from Latest Run
+  # ============================================================================
+  
+  collect-metrics:
+    name: 📈 Collect Test Metrics
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Collect test metrics
+        run: |
+          echo "📊 Collecting test metrics from current run..."
+          mix ci_monitoring --collect
+          
+      - name: Upload metrics artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-metrics
+          path: test_metrics/
+          retention-days: 90
+
+  # ============================================================================
+  # Daily Monitoring Analysis
+  # ============================================================================
+  
+  daily-analysis:
+    name: 🔍 Daily Monitoring Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Download historical metrics
+        uses: actions/download-artifact@v3
+        with:
+          name: test-metrics
+          path: test_metrics/
+        continue-on-error: true
+        
+      - name: Restore historical data from cache
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          restore-keys: |
+            test-metrics-
+            
+      - name: Run comprehensive monitoring analysis
+        env:
+          ANALYSIS_DAYS: ${{ github.event.inputs.analysis_days || '30' }}
+        run: |
+          echo "🔍 Running comprehensive monitoring analysis..."
+          mix ci_monitoring --analyze --days $ANALYSIS_DAYS
+          mix ci_monitoring --report --days $ANALYSIS_DAYS
+          
+      - name: Generate monitoring dashboard
+        run: |
+          echo "📊 Generating monitoring dashboard..."
+          # Create a simple HTML dashboard
+          cat > test_metrics/dashboard.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>CI Test Monitoring Dashboard</title>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+                  .container { max-width: 1200px; margin: 0 auto; }
+                  .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                  .metric { display: inline-block; margin: 10px 20px; text-align: center; }
+                  .metric-value { font-size: 2em; font-weight: bold; }
+                  .metric-label { color: #666; }
+                  .chart-container { position: relative; height: 400px; margin: 20px 0; }
+                  .excellent { color: #28a745; }
+                  .good { color: #17a2b8; }
+                  .warning { color: #ffc107; }
+                  .danger { color: #dc3545; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>🔍 CI Test Monitoring Dashboard</h1>
+                  <p><em>Generated: $(date)</em></p>
+                  
+                  <div class="card">
+                      <h2>📊 Current Status</h2>
+                      <div id="current-metrics">
+                          <div class="metric">
+                              <div class="metric-value excellent" id="success-rate">-</div>
+                              <div class="metric-label">Success Rate</div>
+                          </div>
+                          <div class="metric">
+                              <div class="metric-value" id="duration">-</div>
+                              <div class="metric-label">Avg Duration</div>
+                          </div>
+                          <div class="metric">
+                              <div class="metric-value" id="coverage">-</div>
+                              <div class="metric-label">Coverage</div>
+                          </div>
+                          <div class="metric">
+                              <div class="metric-value" id="stability">-</div>
+                              <div class="metric-label">Stability</div>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="card">
+                      <h2>📈 Trends</h2>
+                      <div class="chart-container">
+                          <canvas id="trendsChart"></canvas>
+                      </div>
+                  </div>
+                  
+                  <div class="card">
+                      <h2>💡 Recent Recommendations</h2>
+                      <div id="recommendations">
+                          Loading recommendations...
+                      </div>
+                  </div>
+              </div>
+              
+              <script>
+                  // Load and display monitoring data
+                  fetch('latest_monitoring_report.json')
+                      .then(response => response.json())
+                      .then(data => {
+                          // Update current metrics
+                          if (data.current_status) {
+                              document.getElementById('success-rate').textContent = 
+                                  Math.round(data.current_status.success_rate) + '%';
+                              document.getElementById('duration').textContent = 
+                                  Math.round(data.current_status.duration / 1000) + 's';
+                              document.getElementById('coverage').textContent = 
+                                  Math.round(data.current_status.coverage) + '%';
+                              document.getElementById('stability').textContent = 
+                                  Math.round(data.summary.stability_score) + '%';
+                          }
+                          
+                          // Update recommendations
+                          const recContainer = document.getElementById('recommendations');
+                          if (data.recommendations && data.recommendations.length > 0) {
+                              recContainer.innerHTML = data.recommendations
+                                  .map(rec => `<div class="${rec.priority}">
+                                      <strong>${rec.type.toUpperCase()}:</strong> ${rec.message}
+                                  </div>`)
+                                  .join('');
+                          } else {
+                              recContainer.innerHTML = '<div class="excellent">✅ All systems healthy!</div>';
+                          }
+                      })
+                      .catch(err => console.error('Error loading data:', err));
+              </script>
+          </body>
+          </html>
+          EOF
+          
+      - name: Export metrics to external systems
+        if: github.event.inputs.force_export == 'true' || github.event_name == 'schedule'
+        env:
+          PROMETHEUS_ENABLED: ${{ secrets.PROMETHEUS_ENABLED }}
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          CI_METRICS_WEBHOOK_URL: ${{ secrets.CI_METRICS_WEBHOOK_URL }}
+        run: |
+          if [ "$PROMETHEUS_ENABLED" = "true" ] || [ -n "$DATADOG_API_KEY" ] || [ -n "$CI_METRICS_WEBHOOK_URL" ]; then
+            echo "📤 Exporting metrics to external systems..."
+            mix ci_monitoring --export
+          else
+            echo "ℹ️  No external monitoring systems configured"
+          fi
+          
+      - name: Check for alerts
+        run: |
+          echo "🚨 Checking for monitoring alerts..."
+          
+          # Check if latest report exists
+          if [ -f "test_metrics/latest_monitoring_report.json" ]; then
+            # Extract health status
+            HEALTH=$(cat test_metrics/latest_monitoring_report.json | jq -r '.summary.overall_health // "unknown"')
+            
+            echo "Current health status: $HEALTH"
+            
+            # Set job output for downstream actions
+            echo "health_status=$HEALTH" >> $GITHUB_OUTPUT
+            
+            # Check for critical issues
+            if [ "$HEALTH" = "needs_attention" ]; then
+              echo "⚠️  Test suite health needs attention!"
+              echo "::warning::Test suite health status: needs_attention"
+            fi
+          else
+            echo "⚠️  No monitoring report available"
+          fi
+          
+      - name: Update monitoring cache
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          
+      - name: Upload monitoring reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: monitoring-reports
+          path: |
+            test_metrics/latest_monitoring_report.json
+            test_metrics/latest_monitoring_report.md
+            test_metrics/dashboard.html
+          retention-days: 30
+          
+      - name: Comment on recent PRs with monitoring summary
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read monitoring report
+            let report = {};
+            try {
+              const reportData = fs.readFileSync('test_metrics/latest_monitoring_report.json', 'utf8');
+              report = JSON.parse(reportData);
+            } catch (error) {
+              console.log('Could not read monitoring report:', error.message);
+              return;
+            }
+            
+            // Create summary comment
+            const healthEmoji = {
+              'excellent': '🌟',
+              'good': '✅',
+              'fair': '⚠️',
+              'needs_attention': '❌'
+            };
+            
+            const summary = `## 📊 Daily CI Monitoring Summary
+            
+            **Overall Health:** ${healthEmoji[report.summary?.overall_health] || '❓'} ${report.summary?.overall_health || 'Unknown'}
+            
+            **Key Metrics:**
+            - Success Rate: ${Math.round(report.summary?.avg_success_rate || 0)}%
+            - Avg Duration: ${Math.round((report.summary?.avg_duration || 0) / 1000)}s
+            - Stability Score: ${Math.round(report.summary?.stability_score || 0)}%
+            
+            **Period:** Last ${report.period_days || 30} days (${report.summary?.total_test_runs || 0} runs)
+            
+            ${report.recommendations?.length > 0 ? 
+              '**Recommendations:**\n' + 
+              report.recommendations.map(r => `- ${r.message}`).join('\n') : 
+              '**Status:** All systems operating normally ✅'
+            }
+            
+            *Monitoring report generated automatically*`;
+            
+            // Find recent PRs to comment on (optional)
+            // This could be enhanced to post to Slack, Discord, etc.
+            console.log('Monitoring summary generated:', summary);
+
+  # ============================================================================
+  # Performance Regression Detection
+  # ============================================================================
+  
+  performance-regression:
+    name: ⚡ Performance Regression Detection
+    runs-on: ubuntu-latest
+    needs: daily-analysis
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download monitoring reports
+        uses: actions/download-artifact@v3
+        with:
+          name: monitoring-reports
+          path: test_metrics/
+          
+      - name: Check for performance regressions
+        run: |
+          echo "⚡ Checking for performance regressions..."
+          
+          if [ -f "test_metrics/latest_monitoring_report.json" ]; then
+            # Extract performance trend
+            PERF_TREND=$(cat test_metrics/latest_monitoring_report.json | jq -r '.trends.performance_trend.trend // 0')
+            CURRENT_DURATION=$(cat test_metrics/latest_monitoring_report.json | jq -r '.trends.performance_trend.current // 0')
+            AVG_DURATION=$(cat test_metrics/latest_monitoring_report.json | jq -r '.trends.performance_trend.average // 0')
+            
+            echo "Performance trend: $PERF_TREND"
+            echo "Current duration: ${CURRENT_DURATION}ms"
+            echo "Average duration: ${AVG_DURATION}ms"
+            
+            # Check for significant regression (>20% increase)
+            if (( $(echo "$PERF_TREND > 1000" | bc -l) )); then
+              echo "🚨 Performance regression detected!"
+              echo "::error::Test execution time has increased significantly"
+              
+              # Create issue for performance regression
+              echo "regression_detected=true" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No performance regression detected"
+            fi
+          else
+            echo "⚠️  No monitoring data available for regression check"
+          fi
+          
+      - name: Create performance regression issue
+        if: steps.performance-regression.outputs.regression_detected == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚡ Performance Regression Detected in Test Suite',
+              body: `## 🚨 Performance Regression Alert
+              
+              Our automated monitoring has detected a significant performance regression in the test suite.
+              
+              **Details:**
+              - Test execution time has increased significantly
+              - This may impact CI/CD pipeline performance
+              - Investigation and optimization recommended
+              
+              **Next Steps:**
+              1. Review recent changes that may have impacted test performance
+              2. Run performance profiling on slow tests
+              3. Consider optimizing database setup, test data, or test logic
+              
+              **Monitoring Dashboard:** Check the latest monitoring reports in CI artifacts
+              
+              *This issue was created automatically by the CI monitoring system.*`,
+              labels: ['performance', 'ci', 'monitoring', 'regression']
+            });
+
+  # ============================================================================
+  # Weekly Summary Report
+  # ============================================================================
+  
+  weekly-summary:
+    name: 📅 Weekly Summary Report
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 6 * * 1'  # Monday 6 AM
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Generate weekly summary
+        run: |
+          echo "📅 Generating weekly CI monitoring summary..."
+          
+          # This would generate a comprehensive weekly report
+          # Could include trend analysis, team insights, recommendations
+          mix ci_monitoring --report --days 7
+          
+          echo "Weekly summary generated successfully"

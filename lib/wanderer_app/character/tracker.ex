@@ -1152,7 +1152,6 @@ defmodule WandererApp.Character.Tracker do
        ),
        do:
          solar_system_id != new_solar_system_id ||
-           solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
            station_id != new_station_id
 

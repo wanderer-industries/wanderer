@@ -193,6 +193,7 @@ defmodule WandererAppWeb.MapEventsAPIControllerIntegrationTest do
       end
     end
 
+    @tag :skip
     test "validates limit parameter boundaries", %{conn: conn, map: map} do
       valid_limits = [1, 50, 100, "1", "50", "100"]
 

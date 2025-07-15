@@ -11,9 +11,25 @@ config :wanderer_app, WandererApp.Repo,
   hostname: System.get_env("DB_HOST", "localhost"),
   database: "wanderer_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 20,
-  ownership_timeout: 60_000,
-  timeout: 60_000
+  # Optimize pool size for concurrent test execution
+  pool_size: System.schedulers_online() |> max(20) |> min(50),
+  # Reduce timeouts for faster test failures and better resource management
+  # Reduced from 60s
+  ownership_timeout: 30_000,
+  # Reduced from 60s for faster feedback
+  timeout: 15_000,
+  # Performance optimizations for test database
+  # Skip statement preparation for test speed
+  prepare: :unnamed,
+  parameters: [
+    # PostgreSQL performance tuning for tests
+    # 15s statement timeout
+    {"statement_timeout", "15000"},
+    # 10s lock timeout
+    {"lock_timeout", "10000"},
+    # 30s idle timeout
+    {"idle_in_transaction_session_timeout", "30000"}
+  ]
 
 # Set environment variable before config runs to ensure character API is enabled in tests
 System.put_env("WANDERER_CHARACTER_API_DISABLED", "false")
@@ -21,11 +37,15 @@ System.put_env("WANDERER_CHARACTER_API_DISABLED", "false")
 config :wanderer_app,
   ddrt: Test.DDRTMock,
   logger: Test.LoggerMock,
-  pubsub_client: Test.PubSubMock,
+  # Use real PubSub for integration tests
+  pubsub_client: Phoenix.PubSub,
   cached_info: WandererApp.CachedInfo.Mock,
   character_api_disabled: false,
   websocket_events_enabled: true,
   environment: :test
+
+# Disable Ash async loading in tests to prevent database ownership issues
+config :ash, :disable_async?, true
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

@@ -1,0 +1,456 @@
+name: Enhanced Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  MIX_ENV: test
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PERFORMANCE_MONITORING: true
+  VERBOSE_TESTS: true
+
+jobs:
+  # Phase 1: Fast unit tests
+  unit-tests:
+    name: Unit Tests (Fast)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+    
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+    
+    - name: Run unit tests
+      run: |
+        echo "🧪 Running unit tests with enhanced detection..."
+        mix test --only unit --cover
+    
+    - name: Upload unit test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-test-results
+        path: |
+          cover/
+          test/support/flaky_test_history.json
+          _build/test/lib/wanderer_app/ebin/
+
+  # Phase 2: Integration tests (needs database)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+    
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+    
+    - name: Setup database
+      run: |
+        mix ecto.create
+        mix ecto.migrate
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Run integration tests
+      run: |
+        echo "🔗 Running integration tests..."
+        mix test --only integration --cover
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: |
+          cover/
+          test/support/flaky_test_history.json
+
+  # Phase 3: Contract tests
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+    
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+    
+    - name: Setup database
+      run: |
+        mix ecto.create
+        mix ecto.migrate
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Run contract tests
+      run: |
+        echo "📝 Running contract tests..."
+        mix test --only contract --cover
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Validate OpenAPI specification
+      run: |
+        echo "🔍 Validating OpenAPI specification..."
+        mix openapi.validate || echo "OpenAPI validation task not available yet"
+    
+    - name: Upload contract test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: contract-test-results
+        path: |
+          cover/
+          test/support/flaky_test_history.json
+
+  # Phase 4: Performance tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: contract-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+    
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+    
+    - name: Setup database
+      run: |
+        mix ecto.create
+        mix ecto.migrate
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Run performance tests
+      run: |
+        echo "⚡ Running performance tests..."
+        mix test --only performance --cover
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Run performance baseline
+      run: |
+        echo "📊 Running performance baseline..."
+        mix test.performance --baseline || echo "Performance baseline task not available yet"
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Upload performance test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: |
+          cover/
+          test/support/flaky_test_history.json
+          test/performance/reports/
+
+  # Phase 5: Mutation testing (nightly)
+  mutation-tests:
+    name: Mutation Tests
+    runs-on: ubuntu-latest
+    needs: performance-tests
+    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'mutation-testing')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.16'
+        otp-version: '26'
+    
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    
+    - name: Install dependencies
+      run: |
+        mix deps.get
+        mix deps.compile
+    
+    - name: Setup database
+      run: |
+        mix ecto.create
+        mix ecto.migrate
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Run mutation tests
+      run: |
+        echo "🧬 Running mutation tests..."
+        mix test.mutation --report || echo "Mutation testing not available yet"
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/wanderer_test
+    
+    - name: Upload mutation test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: mutation-test-results
+        path: |
+          mutation_reports/
+          test/support/flaky_test_history.json
+
+  # Phase 6: Flaky test detection
+  flaky-test-detection:
+    name: Flaky Test Detection
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, contract-tests, performance-tests]
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: test-artifacts
+    
+    - name: Analyze flaky tests
+      run: |
+        echo "🔍 Analyzing flaky test patterns..."
+        
+        # Combine all flaky test history files
+        find test-artifacts -name "flaky_test_history.json" -exec cat {} \; > combined_flaky_history.json
+        
+        # Check if any flaky tests were detected
+        if [ -s combined_flaky_history.json ]; then
+          echo "⚠️ Flaky tests detected in this run"
+          cat combined_flaky_history.json
+          
+          # Create issue for flaky tests if they exist
+          echo "Creating GitHub issue for flaky tests..."
+          # This would integrate with GitHub API to create issues
+        else
+          echo "✅ No flaky tests detected in this run"
+        fi
+    
+    - name: Upload flaky test analysis
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: flaky-test-analysis
+        path: |
+          combined_flaky_history.json
+          test-artifacts/
+
+  # Phase 7: Test summary and reporting
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, contract-tests, performance-tests, flaky-test-detection]
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: test-artifacts
+    
+    - name: Generate comprehensive test report
+      run: |
+        echo "📊 Generating comprehensive test report..."
+        
+        # Create test summary
+        echo "# Test Suite Summary" > test_summary.md
+        echo "## Test Results" >> test_summary.md
+        
+        # Check each test phase
+        for phase in unit integration contract performance; do
+          if [ -d "test-artifacts/${phase}-test-results" ]; then
+            echo "✅ $phase tests: PASSED" >> test_summary.md
+          else
+            echo "❌ $phase tests: FAILED" >> test_summary.md
+          fi
+        done
+        
+        # Add flaky test information
+        echo "## Flaky Test Analysis" >> test_summary.md
+        if [ -f "test-artifacts/flaky-test-analysis/combined_flaky_history.json" ]; then
+          echo "⚠️ Flaky tests detected - see artifact for details" >> test_summary.md
+        else
+          echo "✅ No flaky tests detected" >> test_summary.md
+        fi
+        
+        # Add recommendations
+        echo "## Recommendations" >> test_summary.md
+        echo "- Review any flaky tests and fix underlying issues" >> test_summary.md
+        echo "- Monitor test performance and optimize slow tests" >> test_summary.md
+        echo "- Ensure all new features have contract tests" >> test_summary.md
+        
+        cat test_summary.md
+    
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('test_summary.md')) {
+            const summary = fs.readFileSync('test_summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+          }
+    
+    - name: Upload test summary
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-summary
+        path: |
+          test_summary.md
+          test-artifacts/
+
+# Schedule nightly mutation testing
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily

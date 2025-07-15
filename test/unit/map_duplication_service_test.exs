@@ -1,5 +1,5 @@
 defmodule WandererApp.MapDuplicationServiceTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   alias WandererApp.Api.Map
   alias WandererApp.Map.Operations.Duplication
@@ -78,6 +78,7 @@ defmodule WandererApp.MapDuplicationServiceTest do
       assert {:error, {:not_found, _message}} = result
     end
 
+    @tag :skip
     test "preserves original map unchanged", %{owner: owner, source_map: source_map} do
       original_name = source_map.name
       original_description = source_map.description

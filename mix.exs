@@ -66,7 +66,7 @@ defmodule WandererApp.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_check, "~> 0.14.0", only: [:dev], runtime: false},
-      {:open_api_spex, github: "mbuhot/open_api_spex", branch: "master"},
+      {:open_api_spex, "~> 3.16"},
       {:ex_rated, "~> 2.0"},
       {:retry, "~> 0.18.0"},
       {:phoenix, "~> 1.7.14"},
@@ -128,6 +128,7 @@ defmodule WandererApp.MixProject do
       {:quantum, "~> 3.0"},
       {:pathex, "~> 2.5"},
       {:mox, "~> 1.1", only: [:test, :integration]},
+      {:benchee, "~> 1.0", only: :test},
       {:git_ops, "~> 2.6.1"},
       {:version_tasks, "~> 0.12.0"},
       {:error_tracker, "~> 0.2"},
@@ -135,6 +136,8 @@ defmodule WandererApp.MixProject do
       {:live_view_events, "~> 0.1.0"},
       {:ash_pagify, "~> 1.4.1"},
       {:timex, "~> 3.0"},
+      # ash_json_api for JSON:API compliant endpoints
+      {:ash_json_api, "~> 1.4"},
       # Test coverage and quality
       {:excoveralls, "~> 0.18", only: :test}
     ]

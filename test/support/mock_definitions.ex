@@ -47,6 +47,10 @@ if Mix.env() == :test do
   defmodule WandererApp.CachedInfo.MockBehaviour do
     @callback get_ship_type(integer()) :: {:ok, map()} | {:error, any()}
     @callback get_system_static_info(integer()) :: {:ok, map()} | {:error, any()}
+    @callback get_server_status() :: {:ok, map()} | {:error, any()}
+    @callback get_character_info(binary()) :: {:ok, map()} | {:error, any()}
+    @callback get_character_location(binary()) :: {:ok, map()} | {:error, any()}
+    @callback get_character_ship(binary()) :: {:ok, map()} | {:error, any()}
   end
 
   defmodule WandererApp.MapSystemRepo.MockBehaviour do
@@ -162,4 +166,26 @@ if Mix.env() == :test do
   Mox.defmock(Test.AshMock, for: Test.AshMock.MockBehaviour)
   Mox.defmock(WandererApp.Esi.Mock, for: WandererApp.Esi.MockBehaviour)
   Mox.defmock(Test.MapEventRelayMock, for: WandererApp.ExternalEvents.MapEventRelay.MockBehaviour)
+
+  # Additional mocks needed for MockSetup
+  defmodule WandererApp.ExternalServices.MockBehaviour do
+    @callback send_webhook(binary(), map(), list()) :: {:ok, map()} | {:error, any()}
+    @callback validate_license(binary()) :: {:ok, map()} | {:error, any()}
+  end
+
+  defmodule WandererApp.Telemetry.MockBehaviour do
+    @callback track_event(binary(), map()) :: :ok
+    @callback track_timing(binary(), number()) :: :ok
+    @callback track_error(any(), map()) :: :ok
+  end
+
+  defmodule WandererApp.Cache.MockBehaviour2 do
+    @callback get(binary()) :: {:ok, any()} | {:error, any()}
+    @callback put(binary(), any()) :: :ok
+    @callback delete(binary()) :: :ok
+  end
+
+  Mox.defmock(WandererApp.ExternalServices.Mock, for: WandererApp.ExternalServices.MockBehaviour)
+  Mox.defmock(WandererApp.Telemetry.Mock, for: WandererApp.Telemetry.MockBehaviour)
+  Mox.defmock(WandererApp.Cache.Mock, for: WandererApp.Cache.MockBehaviour2)
 end

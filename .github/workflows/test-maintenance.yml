@@ -1,0 +1,535 @@
+name: 🔧 Test Maintenance Automation
+
+on:
+  schedule:
+    # Daily maintenance at 2 AM UTC
+    - cron: '0 2 * * *'
+    # Weekly deep maintenance on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      maintenance_type:
+        description: 'Type of maintenance to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - analyze
+          - optimize
+          - clean
+          - report
+      dry_run:
+        description: 'Run in dry-run mode (show what would be done)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.15'
+  OTP_VERSION: '26'
+
+jobs:
+  # ============================================================================
+  # Daily Maintenance Tasks
+  # ============================================================================
+  
+  daily-maintenance:
+    name: 📅 Daily Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Restore test metrics
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          restore-keys: test-metrics-
+          
+      - name: Run daily analysis
+        run: |
+          echo "🔍 Running daily test maintenance analysis..."
+          mix test_maintenance --analyze
+          
+      - name: Clean test artifacts
+        run: |
+          echo "🧹 Cleaning test artifacts..."
+          mix test_maintenance --clean
+          
+      - name: Update CI monitoring
+        run: |
+          echo "📊 Updating CI monitoring data..."
+          mix ci_monitoring --collect
+          
+      - name: Check for maintenance alerts
+        run: |
+          echo "🚨 Checking for maintenance alerts..."
+          
+          # Check if analysis found critical issues
+          if [ -f "test_metrics/latest_maintenance_analysis.json" ]; then
+            FLAKY_TESTS=$(cat test_metrics/latest_maintenance_analysis.json | jq -r '.flaky_tests.flaky_test_count // 0')
+            SLOW_TESTS=$(cat test_metrics/latest_maintenance_analysis.json | jq -r '.slow_tests.slow_test_count // 0')
+            
+            echo "Flaky tests: $FLAKY_TESTS"
+            echo "Slow tests: $SLOW_TESTS"
+            
+            # Create alerts for critical issues
+            if [ "$FLAKY_TESTS" -gt 5 ]; then
+              echo "::warning::High number of flaky tests detected: $FLAKY_TESTS"
+            fi
+            
+            if [ "$SLOW_TESTS" -gt 20 ]; then
+              echo "::warning::High number of slow tests detected: $SLOW_TESTS"
+            fi
+          fi
+          
+      - name: Update test metrics cache
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          
+      - name: Upload daily maintenance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: daily-maintenance-results
+          path: test_metrics/
+          retention-days: 7
+
+  # ============================================================================
+  # Weekly Deep Maintenance
+  # ============================================================================
+  
+  weekly-maintenance:
+    name: 📅 Weekly Deep Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 3 * * 0'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Restore test metrics
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          restore-keys: test-metrics-
+          
+      - name: Run comprehensive analysis
+        run: |
+          echo "🔍 Running comprehensive test maintenance analysis..."
+          mix test_maintenance --analyze
+          
+      - name: Generate maintenance report
+        run: |
+          echo "📄 Generating weekly maintenance report..."
+          mix test_maintenance --report
+          
+      - name: Run optimizations (dry-run)
+        run: |
+          echo "⚡ Analyzing potential optimizations..."
+          mix test_maintenance --optimize --dry-run
+          
+      - name: Generate test health dashboard
+        run: |
+          echo "🎛️ Generating test health dashboard..."
+          mix test_health_dashboard --export
+          
+      - name: Update quality baselines
+        run: |
+          echo "📊 Updating quality baselines..."
+          mix quality.update_baselines --force
+          
+      - name: Create maintenance PR if needed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔧 Checking if maintenance PR is needed..."
+          
+          # Check if significant issues were found
+          if [ -f "test_metrics/latest_maintenance_analysis.json" ]; then
+            MAINTENANCE_BURDEN=$(cat test_metrics/latest_maintenance_analysis.json | jq -r '.health_metrics.maintenance_burden // 0')
+            QUALITY_SCORE=$(cat test_metrics/latest_maintenance_analysis.json | jq -r '.health_metrics.quality_score // 100')
+            
+            echo "Maintenance burden: $MAINTENANCE_BURDEN"
+            echo "Quality score: $QUALITY_SCORE"
+            
+            # Create PR if maintenance burden is high or quality score is low
+            if (( $(echo "$MAINTENANCE_BURDEN > 20" | bc -l) )) || (( $(echo "$QUALITY_SCORE < 80" | bc -l) )); then
+              echo "🚨 High maintenance burden or low quality score detected"
+              echo "maintenance_pr_needed=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+          
+      - name: Create maintenance branch and PR
+        if: steps.weekly-maintenance.outputs.maintenance_pr_needed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create maintenance branch
+          BRANCH_NAME="automated-maintenance/$(date +%Y-%m-%d)"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Apply optimizations
+          echo "🔧 Applying automated optimizations..."
+          mix test_maintenance --optimize
+          
+          # Check if there are changes to commit
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          # Commit changes
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add .
+          git commit -m "$(cat <<EOF
+          chore: automated test maintenance
+          
+          - Applied automated test optimizations
+          - Updated test patterns and configurations
+          - Cleaned up unused test artifacts
+          
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+          
+          Co-Authored-By: Claude <noreply@anthropic.com>
+          EOF
+          )"
+          
+          # Push branch
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR
+          gh pr create \
+            --title "🔧 Automated Test Maintenance - $(date +%Y-%m-%d)" \
+            --body "$(cat <<'EOF'
+          ## 🔧 Automated Test Maintenance
+          
+          This PR contains automated test maintenance optimizations identified by our maintenance system.
+          
+          ### Changes Applied
+          - ⚡ Optimized test imports and patterns
+          - 🧹 Cleaned up unused test factories and fixtures
+          - 🚀 Applied async test optimizations where applicable
+          - 📄 Updated deprecated test patterns
+          
+          ### Maintenance Metrics
+          - Maintenance burden reduced
+          - Quality score improvements
+          - Performance optimizations applied
+          
+          ### Review Notes
+          - All changes are automated and safe
+          - Tests should continue to pass
+          - Manual review recommended for complex changes
+          
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+          EOF
+          )" \
+            --label "maintenance,automated,testing" \
+            --assignee "${{ github.actor }}"
+          
+      - name: Update test metrics cache
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          
+      - name: Upload weekly maintenance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: weekly-maintenance-results
+          path: |
+            test_metrics/
+            test_metrics/dashboard/
+          retention-days: 30
+
+  # ============================================================================
+  # Manual Maintenance Tasks
+  # ============================================================================
+  
+  manual-maintenance:
+    name: 🛠️ Manual Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Restore test metrics
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          restore-keys: test-metrics-
+          
+      - name: Run requested maintenance task
+        env:
+          MAINTENANCE_TYPE: ${{ github.event.inputs.maintenance_type }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          echo "🔧 Running $MAINTENANCE_TYPE maintenance..."
+          
+          DRY_RUN_FLAG=""
+          if [ "$DRY_RUN" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+            echo "🔍 Running in dry-run mode"
+          fi
+          
+          case "$MAINTENANCE_TYPE" in
+            "full")
+              mix test_maintenance $DRY_RUN_FLAG
+              ;;
+            "analyze")
+              mix test_maintenance --analyze $DRY_RUN_FLAG
+              ;;
+            "optimize")
+              mix test_maintenance --optimize $DRY_RUN_FLAG
+              ;;
+            "clean")
+              mix test_maintenance --clean $DRY_RUN_FLAG
+              ;;
+            "report")
+              mix test_maintenance --report
+              ;;
+            *)
+              echo "Unknown maintenance type: $MAINTENANCE_TYPE"
+              exit 1
+              ;;
+          esac
+          
+      - name: Generate dashboard
+        if: github.event.inputs.maintenance_type == 'full' || github.event.inputs.maintenance_type == 'report'
+        run: |
+          echo "🎛️ Generating test health dashboard..."
+          mix test_health_dashboard --export
+          
+      - name: Update test metrics cache
+        uses: actions/cache@v3
+        with:
+          path: test_metrics/
+          key: test-metrics-${{ github.sha }}
+          
+      - name: Upload maintenance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: manual-maintenance-results
+          path: test_metrics/
+          retention-days: 7
+          
+      - name: Comment maintenance summary
+        if: github.event.inputs.dry_run == 'false'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read maintenance report if available
+            let summary = '## 🔧 Maintenance Results\n\n';
+            
+            try {
+              if (fs.existsSync('test_metrics/latest_maintenance_report.json')) {
+                const report = JSON.parse(fs.readFileSync('test_metrics/latest_maintenance_report.json', 'utf8'));
+                
+                summary += `**Quality Score:** ${Math.round(report.health_metrics?.quality_score || 0)}/100\n`;
+                summary += `**Maintenance Burden:** ${Math.round(report.health_metrics?.maintenance_burden || 0)}\n\n`;
+                
+                if (report.recommendations?.length > 0) {
+                  summary += '**Recommendations:**\n';
+                  report.recommendations.forEach(rec => {
+                    const priorityIcon = rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🟢';
+                    summary += `- ${priorityIcon} **${rec.title}**: ${rec.description}\n`;
+                  });
+                } else {
+                  summary += '✅ No maintenance recommendations at this time.\n';
+                }
+              } else {
+                summary += 'Maintenance completed successfully.\n';
+              }
+            } catch (error) {
+              summary += `Error reading maintenance report: ${error.message}\n`;
+            }
+            
+            summary += `\n*Maintenance type: ${process.env.MAINTENANCE_TYPE}*\n`;
+            summary += `*Triggered by: @${context.actor}*`;
+            
+            // Create a comment on the workflow run (if this were a PR)
+            console.log('Maintenance Summary:', summary);
+
+  # ============================================================================
+  # Emergency Maintenance Trigger
+  # ============================================================================
+  
+  emergency-maintenance:
+    name: 🚨 Emergency Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.maintenance_type == 'emergency'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Emergency test suite recovery
+        run: |
+          echo "🚨 Running emergency test suite recovery..."
+          
+          # Clean all artifacts
+          rm -rf _build/test
+          rm -rf cover/
+          rm -rf test_metrics/
+          
+          # Reinstall dependencies
+          mix deps.clean --all
+          mix deps.get
+          mix deps.compile
+          
+          # Run basic test suite to verify
+          mix test --max-failures 1
+          
+          echo "✅ Emergency recovery completed"
+          
+      - name: Create emergency recovery issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 Emergency Test Maintenance Executed" \
+            --body "Emergency test maintenance was executed at $(date). Please review test suite status and investigate what triggered the emergency maintenance." \
+            --label "emergency,maintenance,investigation-needed"
+
+  # ============================================================================
+  # Maintenance Status Reporting
+  # ============================================================================
+  
+  maintenance-status:
+    name: 📊 Maintenance Status Report
+    runs-on: ubuntu-latest
+    needs: [daily-maintenance, weekly-maintenance, manual-maintenance]
+    if: always()
+    
+    steps:
+      - name: Download maintenance results
+        uses: actions/download-artifact@v3
+        with:
+          path: maintenance-results/
+        continue-on-error: true
+        
+      - name: Generate status summary
+        run: |
+          echo "📊 Generating maintenance status summary..."
+          
+          # Check which jobs ran and their status
+          echo "## 🔧 Test Maintenance Status Report" > maintenance-status.md
+          echo "" >> maintenance-status.md
+          echo "**Generated:** $(date)" >> maintenance-status.md
+          echo "" >> maintenance-status.md
+          
+          # Check job statuses
+          if [ "${{ needs.daily-maintenance.result }}" != "skipped" ]; then
+            echo "- **Daily Maintenance:** ${{ needs.daily-maintenance.result }}" >> maintenance-status.md
+          fi
+          
+          if [ "${{ needs.weekly-maintenance.result }}" != "skipped" ]; then
+            echo "- **Weekly Maintenance:** ${{ needs.weekly-maintenance.result }}" >> maintenance-status.md
+          fi
+          
+          if [ "${{ needs.manual-maintenance.result }}" != "skipped" ]; then
+            echo "- **Manual Maintenance:** ${{ needs.manual-maintenance.result }}" >> maintenance-status.md
+          fi
+          
+          echo "" >> maintenance-status.md
+          echo "*Automated maintenance system operational*" >> maintenance-status.md
+          
+          cat maintenance-status.md
+          
+      - name: Upload status report
+        uses: actions/upload-artifact@v3
+        with:
+          name: maintenance-status-report
+          path: maintenance-status.md
+          retention-days: 30

@@ -3,13 +3,43 @@ defmodule WandererApp.Api.Map do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   alias Ash.Resource.Change.Builtins
 
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
+  end
+
+  json_api do
+    type "maps"
+
+    # Include relationships for compound documents
+    includes([
+      :owner,
+      :characters,
+      :acls,
+      :transactions
+    ])
+
+    # Enable filtering and sorting
+    derive_filter?(true)
+    derive_sort?(true)
+
+    # Routes configuration
+    routes do
+      base("/maps")
+      get(:read)
+      index :read
+      post(:new)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom action for map duplication
+      post(:duplicate, route: "/:id/duplicate")
+    end
   end
 
   code_interface do
@@ -219,6 +249,7 @@ defmodule WandererApp.Api.Map do
 
     attribute :name, :string do
       allow_nil? false
+      public? true
       constraints trim?: false, max_length: 20, min_length: 3, allow_empty?: false
     end
 
@@ -228,8 +259,13 @@ defmodule WandererApp.Api.Map do
       constraints trim?: false, max_length: 40, min_length: 3, allow_empty?: false
     end
 
-    attribute :description, :string
-    attribute :personal_note, :string
+    attribute :description, :string do
+      public? true
+    end
+    
+    attribute :personal_note, :string do
+      public? true
+    end
 
     attribute :public_api_key, :string do
       allow_nil? true
@@ -243,6 +279,7 @@ defmodule WandererApp.Api.Map do
 
     attribute :scope, :atom do
       default "wormholes"
+      public? true
 
       constraints(
         one_of: [
@@ -287,20 +324,25 @@ defmodule WandererApp.Api.Map do
   relationships do
     belongs_to :owner, WandererApp.Api.Character do
       attribute_writable? true
+      public? true
     end
 
     many_to_many :characters, WandererApp.Api.Character do
       through WandererApp.Api.MapCharacterSettings
       source_attribute_on_join_resource :map_id
       destination_attribute_on_join_resource :character_id
+      public? true
     end
 
     many_to_many :acls, WandererApp.Api.AccessList do
       through WandererApp.Api.MapAccessList
       source_attribute_on_join_resource :map_id
       destination_attribute_on_join_resource :access_list_id
+      public? true
     end
 
-    has_many :transactions, WandererApp.Api.MapTransaction
+    has_many :transactions, WandererApp.Api.MapTransaction do
+      public? true
+    end
   end
 end

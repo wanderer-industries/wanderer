@@ -4,7 +4,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshCloak]
+    extensions: [AshCloak, AshJsonApi.Resource]
 
   @derive {Jason.Encoder,
            only: [
@@ -22,23 +22,32 @@ defmodule WandererApp.Api.MapCharacterSettings do
     table("map_character_settings_v1")
   end
 
-  code_interface do
-    define(:create, action: :create)
-    define(:destroy, action: :destroy)
-    define(:update, action: :update)
+  json_api do
+    type "map_character_settings"
 
+    includes([:map, :character])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    primary_key do
+      keys([:id])
+    end
+
+    routes do
+      base("/map_character_settings")
+      get(:read)
+      index :read
+    end
+  end
+
+  code_interface do
     define(:read_by_map, action: :read_by_map)
     define(:read_by_map_and_character, action: :read_by_map_and_character)
     define(:by_map_filtered, action: :by_map_filtered)
     define(:tracked_by_map_filtered, action: :tracked_by_map_filtered)
     define(:tracked_by_character, action: :tracked_by_character)
     define(:tracked_by_map_all, action: :tracked_by_map_all)
-
-    define(:track, action: :track)
-    define(:untrack, action: :untrack)
-
-    define(:follow, action: :follow)
-    define(:unfollow, action: :unfollow)
   end
 
   actions do
@@ -48,7 +57,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
       :tracked
     ]
 
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       primary? true
@@ -232,8 +241,12 @@ defmodule WandererApp.Api.MapCharacterSettings do
   end
 
   relationships do
-    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false
-    belongs_to :character, WandererApp.Api.Character, primary_key?: true, allow_nil?: false
+    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false, public?: true
+
+    belongs_to :character, WandererApp.Api.Character,
+      primary_key?: true,
+      allow_nil?: false,
+      public?: true
   end
 
   identities do

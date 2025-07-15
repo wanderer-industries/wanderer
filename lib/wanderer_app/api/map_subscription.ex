@@ -3,16 +3,34 @@ defmodule WandererApp.Api.MapSubscription do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_subscriptions_v1")
   end
 
-  code_interface do
-    define(:create, action: :create)
+  json_api do
+    type "map_subscriptions"
 
+    includes([
+      :map
+    ])
+    
+    # Enable automatic filtering and sorting
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_subscriptions")
+
+      get(:read)
+      index :read
+    end
+  end
+
+  code_interface do
     define(:by_id,
       get_by: [:id],
       action: :read
@@ -21,15 +39,6 @@ defmodule WandererApp.Api.MapSubscription do
     define(:all_active, action: :all_active)
     define(:all_by_map, action: :all_by_map)
     define(:active_by_map, action: :active_by_map)
-    define(:destroy, action: :destroy)
-    define(:cancel, action: :cancel)
-    define(:expire, action: :expire)
-
-    define(:update_plan, action: :update_plan)
-    define(:update_characters_limit, action: :update_characters_limit)
-    define(:update_hubs_limit, action: :update_hubs_limit)
-    define(:update_active_till, action: :update_active_till)
-    define(:update_auto_renew, action: :update_auto_renew)
   end
 
   actions do
@@ -42,7 +51,7 @@ defmodule WandererApp.Api.MapSubscription do
       :auto_renew?
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read]
 
     read :all_active do
       prepare build(sort: [updated_at: :asc])
@@ -158,6 +167,7 @@ defmodule WandererApp.Api.MapSubscription do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 end

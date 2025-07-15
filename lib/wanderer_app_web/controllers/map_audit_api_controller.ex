@@ -115,7 +115,7 @@ defmodule WandererAppWeb.MapAuditAPIController do
          {:ok, period} <- APIUtils.require_param(params, "period"),
          query <- WandererApp.Map.Audit.get_activity_query(map_id, period, "all"),
          {:ok, data} <-
-           Api.read(query) do
+           Ash.read(query) do
       data = Enum.map(data, &map_audit_event_to_json/1)
       json(conn, %{data: data})
     else

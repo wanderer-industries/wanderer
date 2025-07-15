@@ -25,9 +25,13 @@ defmodule WandererAppWeb.MapWebhooksAPIControllerTest do
 
       # This test validates that the controller properly handles cases where
       # the map structure doesn't work with Ash queries (unit test limitation)
-      assert_raise Ash.Error.Invalid, fn ->
-        MapWebhooksAPIController.index(conn, params)
-      end
+      # Updated: The controller now handles errors gracefully without raising
+      result = MapWebhooksAPIController.index(conn, params)
+
+      assert %Plug.Conn{} = result
+      assert result.status == 200
+      response_body = result.resp_body |> Jason.decode!()
+      assert %{"data" => []} = response_body
     end
   end
 
@@ -331,7 +335,7 @@ defmodule WandererAppWeb.MapWebhooksAPIControllerTest do
 
       params = %{
         "map_identifier" => "test-map-id",
-        "id" => Ecto.UUID.generate()
+        "map_webhooks_api_id" => Ecto.UUID.generate()
       }
 
       result = MapWebhooksAPIController.rotate_secret(conn, params)
@@ -349,7 +353,7 @@ defmodule WandererAppWeb.MapWebhooksAPIControllerTest do
 
       params = %{
         "map_identifier" => "test-map-id",
-        "id" => Ecto.UUID.generate()
+        "map_webhooks_api_id" => Ecto.UUID.generate()
       }
 
       result = MapWebhooksAPIController.rotate_secret(conn, params)
