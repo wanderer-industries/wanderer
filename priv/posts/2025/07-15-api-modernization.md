@@ -125,6 +125,9 @@ GET /api/v1/map_systems?page[limit]=100&page[offset]=0
 
 # Combined filtering, sorting, and pagination
 GET /api/v1/map_system_signatures?filter[kind]=wormhole&sort=-updated_at&page[limit]=50&page[offset]=0
+
+# Combined systems and connections endpoint
+GET /api/v1/maps/{map_id}/systems_and_connections
 ```
 
 ### Advanced Features
@@ -146,29 +149,27 @@ The API v1 provides access to over 25 resources with 52+ endpoints. Here are the
 
 ### Core Resources
 - **Maps** (`/api/v1/maps`) - Map management with full CRUD operations
-- **Characters** (`/api/v1/characters`) - Character tracking and management
-- **Users** (`/api/v1/users`) - User profile and settings
+- **Characters** (`/api/v1/characters`) - Character tracking and management (GET, DELETE only)
 - **Access Lists** (`/api/v1/access_lists`) - ACL management and permissions
 - **Access List Members** (`/api/v1/access_list_members`) - ACL member management
 
 ### Map Resources
 - **Map Systems** (`/api/v1/map_systems`) - Solar system data and metadata
 - **Map Connections** (`/api/v1/map_connections`) - Wormhole connections
-- **Map Signatures** (`/api/v1/map_system_signatures`) - Signature scanning data
+- **Map Signatures** (`/api/v1/map_system_signatures`) - Signature scanning data (GET, DELETE only)
 - **Map Structures** (`/api/v1/map_system_structures`) - Structure information
-- **Map Transactions** (`/api/v1/map_transactions`) - Transaction history
-- **Map Subscriptions** (`/api/v1/map_subscriptions`) - Subscription management
+- **Map Transactions** (`/api/v1/map_transactions`) - Transaction history (GET only)
+- **Map Subscriptions** (`/api/v1/map_subscriptions`) - Subscription management (GET only)
+- **Map Systems and Connections** (`/api/v1/maps/{map_id}/systems_and_connections`) - Combined endpoint (GET only)
 
 ### System Resources
-- **Map Solar Systems** (`/api/v1/map_solar_systems`) - Solar system reference data
-- **Ship Type Info** (`/api/v1/ship_type_info`) - EVE ship type information
-- **Map System Comments** (`/api/v1/map_system_comments`) - System annotations
+- **Map System Comments** (`/api/v1/map_system_comments`) - System annotations (GET only)
 
 ### User Resources
-- **User Activities** (`/api/v1/user_activities`) - User activity tracking
-- **User Transactions** (`/api/v1/user_transactions`) - User transaction history
-- **Map Character Settings** (`/api/v1/map_character_settings`) - Character preferences
-- **Map User Settings** (`/api/v1/map_user_settings`) - User map preferences
+- **User Activities** (`/api/v1/user_activities`) - User activity tracking (GET only)
+- **User Transactions** (`/api/v1/user_transactions`) - User transaction history (GET only)
+- **Map Character Settings** (`/api/v1/map_character_settings`) - Character preferences (GET only)
+- **Map User Settings** (`/api/v1/map_user_settings`) - User map preferences (GET only)
 
 ### Additional Resources
 - **Map Webhook Subscriptions** (`/api/v1/map_webhook_subscriptions`) - Webhook management
@@ -176,7 +177,7 @@ The API v1 provides access to over 25 resources with 52+ endpoints. Here are the
 - **Map Pings** (`/api/v1/map_pings`) - In-game ping tracking
 - **Corp Wallet Transactions** (`/api/v1/corp_wallet_transactions`) - Corporation finances
 
-*Note: Some resources may have limited functionality in the initial v1 release.*
+*Note: Some resources have been restricted to read-only access for security and consistency. Resources marked as "(GET only)" support only read operations, while "(GET, DELETE only)" support read and delete operations.*
 
 ## Version Feature Matrix
 

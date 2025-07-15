@@ -21,34 +21,33 @@ defmodule WandererApp.Contract.Api.V1EndpointsContractTest do
     {"/api/v1/map_systems/:id", [:get, :patch, :delete]},
     {"/api/v1/map_connections", [:get, :post]},
     {"/api/v1/map_connections/:id", [:get, :patch, :delete]},
-    {"/api/v1/characters", [:get, :post]},
-    {"/api/v1/characters/:id", [:get, :patch, :delete]},
+    {"/api/v1/characters", [:get]},
+    {"/api/v1/characters/:id", [:get, :delete]},
     {"/api/v1/access_lists", [:get, :post]},
     {"/api/v1/access_lists/:id", [:get, :patch, :delete]},
     {"/api/v1/access_list_members", [:get, :post]},
     {"/api/v1/access_list_members/:id", [:get, :patch, :delete]},
-    {"/api/v1/map_system_signatures", [:get, :post]},
-    {"/api/v1/map_system_signatures/:id", [:get, :patch, :delete]},
+    {"/api/v1/map_system_signatures", [:get]},
+    {"/api/v1/map_system_signatures/:id", [:get, :delete]},
 
     # Extended resource endpoints
     {"/api/v1/map_access_lists", [:get, :post]},
-    {"/api/v1/map_system_comments", [:get, :post]},
-    {"/api/v1/map_solar_systems", [:get]},
+    {"/api/v1/map_system_comments", [:get]},
     {"/api/v1/map_system_structures", [:get, :post]},
-    {"/api/v1/map_user_settings", [:get, :post]},
-    {"/api/v1/map_subscriptions", [:get, :post]},
-    {"/api/v1/user_transactions", [:get, :post]},
-    {"/api/v1/ship_type_info", [:get]},
+    {"/api/v1/map_user_settings", [:get]},
+    {"/api/v1/map_subscriptions", [:get]},
+    {"/api/v1/user_transactions", [:get]},
+    {"/api/v1/map_transactions", [:get]},
+    {"/api/v1/user_activities", [:get]},
+    {"/api/v1/map_character_settings", [:get]},
 
     # Relationship endpoints
     {"/api/v1/maps/:id/relationships/systems", [:get, :post, :patch, :delete]},
     {"/api/v1/maps/:id/relationships/connections", [:get, :post, :patch, :delete]},
     {"/api/v1/maps/:id/relationships/access_lists", [:get, :post, :delete]},
 
-    # Specialized endpoints
-    {"/api/v1/map_solar_systems/search", [:get]},
-    {"/api/v1/map_solar_systems/wormhole_class_a", [:get]},
-    {"/api/v1/map_solar_systems/triglavian", [:get]}
+    # Custom combined endpoints
+    {"/api/v1/maps/:id/systems_and_connections", [:get]}
   ]
 
   describe "JSON:API Content-Type Contract" do

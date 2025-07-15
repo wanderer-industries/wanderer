@@ -12,7 +12,6 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
 
   alias WandererApp.Api.MapSystem
   alias WandererApp.Api.MapConnection
-  alias WandererApp.Utils.APIUtils
 
   @doc """
   GET /api/v1/maps/{map_id}/systems_and_connections
