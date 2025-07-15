@@ -43,7 +43,7 @@ defmodule WandererAppWeb.MapPicker do
       >
         <.async_result :let={maps} assign={@maps}>
           <:loading><span class="loading loading-dots loading-xs" /></:loading>
-          <:failed :let={reason}><%= reason %></:failed>
+          <:failed :let={reason}>{reason}</:failed>
           <.input
             :if={maps}
             type="select"

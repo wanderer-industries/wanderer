@@ -5,7 +5,12 @@ defmodule WandererAppWeb.FallbackController do
 
   # Handles not_found errors from with/else
   def call(conn, {:error, :not_found}) do
-    APIUtils.error_response(conn, :not_found, "Not found", "The requested resource could not be found")
+    APIUtils.error_response(
+      conn,
+      :not_found,
+      "Not found",
+      "The requested resource could not be found"
+    )
   end
 
   # Handles invalid_id errors
@@ -15,7 +20,11 @@ defmodule WandererAppWeb.FallbackController do
 
   # Handles invalid_coordinates_format errors
   def call(conn, {:error, :invalid_coordinates_format}) do
-    APIUtils.error_response(conn, :bad_request, "Invalid coordinates format. Use %{\"coordinates\" => %{\"x\" => number, \"y\" => number}}")
+    APIUtils.error_response(
+      conn,
+      :bad_request,
+      "Invalid coordinates format. Use %{\"coordinates\" => %{\"x\" => number, \"y\" => number}}"
+    )
   end
 
   # Handles not_associated errors

@@ -63,6 +63,7 @@ defmodule WandererAppWeb.LicenseApiController do
 
       {:error, reason} ->
         Logger.error("Failed to create license: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to create license"})
@@ -115,6 +116,7 @@ defmodule WandererAppWeb.LicenseApiController do
 
       {:error, reason} ->
         Logger.error("Failed to update license validity: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to update license validity"})
@@ -167,6 +169,7 @@ defmodule WandererAppWeb.LicenseApiController do
 
       {:error, reason} ->
         Logger.error("Failed to update license expiration: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to update license expiration"})
@@ -213,6 +216,7 @@ defmodule WandererAppWeb.LicenseApiController do
 
       {:error, reason} ->
         Logger.error("Failed to get license by map ID: #{inspect(reason)}")
+
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Failed to get license"})

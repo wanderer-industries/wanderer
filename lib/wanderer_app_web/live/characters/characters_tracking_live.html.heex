@@ -17,11 +17,11 @@
             >
               <.icon name="hero-map-solid" class="w-6 h-6" />
             </.link>
-            <%= map.name %>
+            {map.name}
           </div>
         </:col>
         <:col :let={map} label="Description">
-          <%= map.description %>
+          {map.description}
         </:col>
       </.table>
     </div>
@@ -29,7 +29,7 @@
       <section :if={not is_nil(@selected_map)}>
         <.async_result :let={characters} assign={@characters}>
           <:loading>Loading...</:loading>
-          <:failed :let={reason}><%= reason %></:failed>
+          <:failed :let={reason}>{reason}</:failed>
 
           <span :if={characters}>
             <.table
@@ -54,7 +54,7 @@
                     <.avatar url={member_icon_url(character.eve_id)} label={character.name} />
                     <div>
                       <div>
-                        <span class="font-bold"><%= character.name %></span><span class="ml-1 text-gray-400">[<%= character.corporation_ticker %>]</span>
+                        <span class="font-bold">{character.name}</span><span class="ml-1 text-gray-400">[<%= character.corporation_ticker %>]</span>
                       </div>
                     </div>
                   </div>
