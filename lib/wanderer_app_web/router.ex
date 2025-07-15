@@ -596,6 +596,9 @@ defmodule WandererAppWeb.Router do
   scope "/api/v1" do
     pipe_through :api_v1
 
+    # Custom combined endpoints
+    get "/maps/:map_id/systems_and_connections", WandererAppWeb.Api.MapSystemsConnectionsController, :show
+
     # Forward all v1 requests to AshJsonApi router
     # This will automatically generate RESTful JSON:API endpoints
     # for all Ash resources once they're configured with the AshJsonApi extension
