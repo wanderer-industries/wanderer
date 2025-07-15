@@ -39,7 +39,13 @@ defmodule WandererApp.Api.MapConnection do
       :solar_system_source,
       :solar_system_target,
       :type,
-      :ship_size_type
+      :ship_size_type,
+      :mass_status,
+      :time_status,
+      :wormhole_type,
+      :count_of_passage,
+      :locked,
+      :custom_info
     ]
 
     defaults [:create, :read, :update, :destroy]

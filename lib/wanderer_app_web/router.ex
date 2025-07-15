@@ -248,6 +248,9 @@ defmodule WandererAppWeb.Router do
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map]
 
+    # Map duplication endpoint
+    post "/duplicate", MapAPIController, :duplicate_map
+
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete
@@ -303,7 +306,7 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/api" do
-    pipe_through [:browser, :api, :api_spec]
+    pipe_through [:api_spec]
     get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
   end
 
@@ -352,7 +355,7 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/swaggerui" do
-    pipe_through [:browser, :api, :api_spec]
+    pipe_through [:browser, :api_spec]
 
     get "/", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/openapi",

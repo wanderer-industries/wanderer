@@ -379,11 +379,21 @@ defmodule WandererAppWeb.Factory do
   def build_access_list_member(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
 
-    default_attrs = %{
-      name: "Test Entity #{unique_id}",
-      eve_character_id: "#{3_000_000_000 + unique_id}",
-      role: "viewer"
-    }
+    # Only set default eve_character_id if no entity IDs are provided
+    default_attrs =
+      if Map.has_key?(attrs, :eve_character_id) or Map.has_key?(attrs, :eve_corporation_id) or
+           Map.has_key?(attrs, :eve_alliance_id) do
+        %{
+          name: "Test Entity #{unique_id}",
+          role: "viewer"
+        }
+      else
+        %{
+          name: "Test Entity #{unique_id}",
+          eve_character_id: "#{3_000_000_000 + unique_id}",
+          role: "viewer"
+        }
+      end
 
     Map.merge(default_attrs, attrs)
   end
