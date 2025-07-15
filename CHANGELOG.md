@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.74.9](https://github.com/wanderer-industries/wanderer/compare/v1.74.8...v1.74.9) (2025-07-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Trying to fix problem with fast forwarding after page are inactive some time.
+
 ## [v1.74.8](https://github.com/wanderer-industries/wanderer/compare/v1.74.7...v1.74.8) (2025-07-11)
 
 

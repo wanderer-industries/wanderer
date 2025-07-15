@@ -76,9 +76,6 @@ export const ImportExport = () => {
         detail: 'Settings already imported. Or something went wrong.',
         life: 3000,
       });
-
-      // eslint-disable-next-line no-console
-      console.log('JOipP', `text`, text);
     } catch (error) {
       console.error(`Import from file Error: `, error);
 
