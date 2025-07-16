@@ -1,52 +1,18 @@
-# Just require the mocks module - it will handle loading everything else
-require WandererApp.Test.Mocks
-
+# Start ExUnit
 ExUnit.start()
 
-# Import Mox for test-specific expectations
-import Mox
+# Ensure we're in test environment before starting the application
+Application.put_env(:wanderer_app, :environment, :test)
 
-# Start the application in test mode
+# Start the application
 {:ok, _} = Application.ensure_all_started(:wanderer_app)
-
-# Ensure critical services are ready
-case GenServer.whereis(WandererApp.Repo) do
-  nil ->
-    IO.puts("WARNING: WandererApp.Repo not started!")
-    raise "Repository not available for tests"
-
-  _pid ->
-    :ok
-end
-
-case GenServer.whereis(WandererApp.Cache) do
-  nil ->
-    IO.puts("WARNING: WandererApp.Cache not started!")
-    raise "Cache not available for tests"
-
-  _pid ->
-    :ok
-end
-
-case Process.whereis(WandererApp.MapRegistry) do
-  nil ->
-    IO.puts("WARNING: WandererApp.MapRegistry not started!")
-    raise "MapRegistry not available for tests"
-
-  _pid ->
-    :ok
-end
 
 # Setup Ecto Sandbox for database isolation
 Ecto.Adapters.SQL.Sandbox.mode(WandererApp.Repo, :manual)
 
-# Set up test configuration - exclude integration tests by default for faster unit tests
-ExUnit.configure(exclude: [:pending, :integration], timeout: 60_000)
-
-# Optional: Print test configuration info
-if System.get_env("VERBOSE_TESTS") do
-  IO.puts("🧪 Test environment configured:")
-  IO.puts("   Database: wanderer_test#{System.get_env("MIX_TEST_PARTITION")}")
-  IO.puts("   Repo: #{WandererApp.Repo}")
-  IO.puts("   Sandbox mode: manual")
-end
+# Basic ExUnit configuration
+ExUnit.configure(
+  exclude: [:pending, :integration],
+  capture_log: false,
+  max_cases: System.schedulers_online()
+)

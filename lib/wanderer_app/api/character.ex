@@ -4,26 +4,35 @@ defmodule WandererApp.Api.Character do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshCloak]
+    extensions: [AshCloak, AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("character_v1")
   end
 
+  json_api do
+    type "characters"
+
+    # Only expose safe, non-sensitive attributes
+    includes([:user])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/characters")
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
+  end
+
   code_interface do
-    define(:create, action: :create)
     define(:read, action: :read)
     define(:search_by_name, action: :search_by_name)
-    define(:assign_user, action: :assign)
-    define(:update, action: :update)
-    define(:update_online, action: :update_online)
-    define(:update_location, action: :update_location)
-    define(:update_ship, action: :update_ship)
-    define(:update_corporation, action: :update_corporation)
-    define(:update_alliance, action: :update_alliance)
-    define(:update_wallet_balance, action: :update_wallet_balance)
-    define(:mark_as_deleted, action: :mark_as_deleted)
     define(:last_active, action: :last_active)
 
     define(:by_id,
@@ -39,6 +48,15 @@ defmodule WandererApp.Api.Character do
     define(:active_by_user,
       action: :active_by_user
     )
+
+    define(:create, action: :create)
+    define(:update, action: :update)
+    define(:update_alliance, action: :update_alliance)
+    define(:update_corporation, action: :update_corporation)
+    define(:update_ship, action: :update_ship)
+    define(:update_location, action: :update_location)
+    define(:update_wallet_balance, action: :update_wallet_balance)
+    define(:assign_user!, action: :assign)
   end
 
   actions do
@@ -52,7 +70,37 @@ defmodule WandererApp.Api.Character do
       :tracking_pool
     ]
 
-    defaults [:create, :read, :destroy]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept([
+        :eve_id,
+        :name,
+        :user_id,
+        :access_token,
+        :refresh_token,
+        :expires_at,
+        :scopes,
+        :tracking_pool,
+        :corporation_id,
+        :corporation_name,
+        :corporation_ticker,
+        :alliance_id,
+        :alliance_name,
+        :alliance_ticker,
+        :solar_system_id,
+        :structure_id,
+        :station_id,
+        :ship,
+        :ship_name,
+        :ship_item_id,
+        :eve_wallet_balance,
+        :location,
+        :character_owner_hash,
+        :token_type,
+        :online
+      ])
+    end
 
     create :link do
       accept([:eve_id, :name, :user_id])
@@ -170,10 +218,12 @@ defmodule WandererApp.Api.Character do
 
     attribute :eve_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :name, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :online, :boolean do
@@ -199,22 +249,50 @@ defmodule WandererApp.Api.Character do
     attribute :ship, :integer
     attribute :ship_name, :string
     attribute :ship_item_id, :integer
-    attribute :corporation_id, :integer
-    attribute :corporation_name, :string
-    attribute :corporation_ticker, :string
-    attribute :alliance_id, :integer
-    attribute :alliance_name, :string
-    attribute :alliance_ticker, :string
-    attribute :eve_wallet_balance, :float
-    attribute :tracking_pool, :string
 
-    create_timestamp(:inserted_at)
-    update_timestamp(:updated_at)
+    attribute :corporation_id, :integer do
+      public? true
+    end
+
+    attribute :corporation_name, :string do
+      public? true
+    end
+
+    attribute :corporation_ticker, :string do
+      public? true
+    end
+
+    attribute :alliance_id, :integer do
+      public? true
+    end
+
+    attribute :alliance_name, :string do
+      public? true
+    end
+
+    attribute :alliance_ticker, :string do
+      public? true
+    end
+
+    attribute :eve_wallet_balance, :float
+
+    attribute :tracking_pool, :string do
+      public? true
+    end
+
+    create_timestamp(:inserted_at) do
+      public? true
+    end
+
+    update_timestamp(:updated_at) do
+      public? true
+    end
   end
 
   relationships do
     belongs_to :user, WandererApp.Api.User do
       attribute_writable? true
+      public? true
     end
   end
 

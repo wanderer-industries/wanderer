@@ -46,7 +46,7 @@ defmodule WandererAppWeb.CharactersAPIController do
   )
 
   def index(conn, _params) do
-    case WandererApp.Api.read(Character) do
+    case Ash.read(Character) do
       {:ok, characters} ->
         result =
           characters

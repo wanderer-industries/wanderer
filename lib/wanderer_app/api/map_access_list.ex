@@ -3,11 +3,44 @@ defmodule WandererApp.Api.MapAccessList do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_access_lists_v1")
+  end
+
+  json_api do
+    type "map_access_lists"
+
+    # Handle composite primary key
+    primary_key do
+      keys([:id])
+    end
+
+    includes([
+      :map,
+      :access_list
+    ])
+
+    # Enable automatic filtering and sorting
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_access_lists")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom routes for specific queries
+      get(:read_by_map, route: "/by_map/:map_id")
+      get(:read_by_acl, route: "/by_acl/:acl_id")
+    end
   end
 
   code_interface do
@@ -49,8 +82,12 @@ defmodule WandererApp.Api.MapAccessList do
   end
 
   relationships do
-    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false
-    belongs_to :access_list, WandererApp.Api.AccessList, primary_key?: true, allow_nil?: false
+    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false, public?: true
+
+    belongs_to :access_list, WandererApp.Api.AccessList,
+      primary_key?: true,
+      allow_nil?: false,
+      public?: true
   end
 
   postgres do

@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
-  use WandererAppWeb.ConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   import Mox
   import WandererAppWeb.Factory
