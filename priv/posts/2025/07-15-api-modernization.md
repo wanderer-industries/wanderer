@@ -126,7 +126,7 @@ GET /api/v1/map_systems?page[limit]=100&page[offset]=0
 # Combined filtering, sorting, and pagination
 GET /api/v1/map_system_signatures?filter[kind]=wormhole&sort=-updated_at&page[limit]=50&page[offset]=0
 
-# Combined systems and connections endpoint
+# Combined systems and connections endpoint (new convenience endpoint)
 GET /api/v1/maps/{map_id}/systems_and_connections
 ```
 
@@ -145,7 +145,7 @@ GET /api/v1/user_activities?include=character&sort=-inserted_at&page[limit]=15&p
 
 ## Available Resources
 
-The API v1 provides access to over 25 resources with 52+ endpoints. Here are the primary resources:
+The API v1 provides access to over 25 resources through the Ash Framework. Here are the primary resources:
 
 ### Core Resources
 - **Maps** (`/api/v1/maps`) - Map management with full CRUD operations
@@ -207,7 +207,7 @@ API v1 maintains compatibility with our existing SSE implementation while adding
 ```bash
 # Connect to SSE with JSON:API formatting
 curl -H "Accept: application/vnd.wanderer.v1.2+json" \
-  https://api.wanderer.app/api/v1/maps/123/events
+  https://api.wanderer.app/api/maps/123/events/stream
 ```
 
 ### Webhook Integration
