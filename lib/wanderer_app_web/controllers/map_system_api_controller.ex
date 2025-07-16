@@ -394,9 +394,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
-    with {:ok, system_id} <- APIUtils.parse_int(id),
-         {:ok, system} <- Operations.get_system(map_id, system_id) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid) do
+      # Verify the system belongs to the requested map
+      if system.map_id == map_id do
+        APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+      else
+        {:error, :not_found}
+      end
+    else
+      {:error, %Ash.Error.Query.NotFound{}} -> {:error, :not_found}
+      {:error, _} -> {:error, :not_found}
+      error -> error
     end
   end
 
@@ -450,11 +459,11 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def update(conn, %{"id" => id} = params) do
-    with {:ok, sid} <- APIUtils.parse_int(id),
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
          {:ok, attrs} <- APIUtils.extract_update_params(params),
-         update_attrs = Map.put(attrs, "solar_system_id", sid),
-         {:ok, system} <- Operations.update_system(conn, sid, update_attrs) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+         {:ok, updated_system} <- Ash.update(system, attrs) do
+      APIUtils.respond_data(conn, APIUtils.map_system_to_json(updated_system))
     end
   end
 
@@ -531,8 +540,9 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def delete_single(conn, %{"id" => id}) do
-    with {:ok, sid} <- APIUtils.parse_int(id),
-         {:ok, _} <- Operations.delete_system(conn, sid) do
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
+         {:ok, _} <- Ash.destroy(system) do
       APIUtils.respond_data(conn, %{deleted: true})
     else
       {:error, :not_found} ->

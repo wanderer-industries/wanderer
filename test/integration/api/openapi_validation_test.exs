@@ -64,7 +64,7 @@ defmodule WandererAppWeb.OpenAPIValidationTest do
 
     test "common API endpoint conforms to OpenAPI spec", %{conn: conn} do
       # Get the OpenAPI spec
-      spec_response =
+      _spec_response =
         conn
         |> get("/api/openapi")
         |> assert_json_response(200)

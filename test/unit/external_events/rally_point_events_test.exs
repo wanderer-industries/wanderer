@@ -13,7 +13,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
   describe "external events configuration" do
     test "rally point event types are supported" do
       supported_types = Event.supported_event_types()
-      
+
       assert :rally_point_added in supported_types
       assert :rally_point_removed in supported_types
     end
@@ -33,7 +33,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
       }
 
       event = Event.new("test-map-id", :rally_point_added, payload)
-      
+
       assert event.type == :rally_point_added
       assert event.map_id == "test-map-id"
       assert event.payload == payload
@@ -48,7 +48,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
         rally_point_id: "ping-123",
         solar_system_id: "31000199",
         system_id: "system-uuid",
-        character_id: "char-uuid", 
+        character_id: "char-uuid",
         character_name: "Test Character",
         character_eve_id: 12345,
         system_name: "J123456",
@@ -61,7 +61,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
 
       assert json_event["type"] == "rally_point_added"
       assert json_event["map_id"] == "map-123"
-      
+
       payload = json_event["payload"]
       assert payload["rally_point_id"] == "ping-123"
       assert payload["solar_system_id"] == "31000199"
@@ -74,7 +74,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
         solar_system_id: "31000199",
         system_id: "system-uuid",
         character_id: "char-uuid",
-        character_name: "Test Character", 
+        character_name: "Test Character",
         character_eve_id: 12345,
         system_name: "J123456"
       }
@@ -84,7 +84,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
 
       assert json_event["type"] == "rally_point_removed"
       assert json_event["map_id"] == "map-123"
-      
+
       payload = json_event["payload"]
       assert payload["solar_system_id"] == "31000199"
       assert payload["character_name"] == "Test Character"
@@ -99,13 +99,15 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
     test "broadcast validates event types" do
       # Valid event type should work
       assert :ok = ExternalEvents.broadcast("map-123", :rally_point_added, %{test: "data"})
-      
+
       # Invalid event type should return error
-      assert {:error, :invalid_event_type} = ExternalEvents.broadcast("map-123", :invalid_event, %{test: "data"})
+      assert {:error, :invalid_event_type} =
+               ExternalEvents.broadcast("map-123", :invalid_event, %{test: "data"})
     end
 
     test "broadcast creates properly formatted events" do
       map_id = "test-map-123"
+
       payload = %{
         rally_point_id: "rally-456",
         character_name: "Rally Leader"
@@ -114,7 +116,7 @@ defmodule WandererApp.ExternalEvents.RallyPointEventsTest do
       # This would normally go to the MapEventRelay, but in unit tests
       # the relay process may not be running, so we just test the event creation
       result = ExternalEvents.broadcast(map_id, :rally_point_added, payload)
-      
+
       # Should return :ok or {:error, :relay_not_available} in test environment
       assert result in [:ok, {:error, :relay_not_available}]
     end

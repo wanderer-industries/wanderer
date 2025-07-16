@@ -180,11 +180,19 @@ defmodule WandererApp.TestHelpers do
   def ensure_map_server_started(map_id) do
     case WandererApp.Map.Server.map_pid(map_id) do
       pid when is_pid(pid) ->
+        # Make sure existing server has database access
+        WandererApp.DataCase.allow_database_access(pid)
+        # Ensure global Mox mode is maintained
+        if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
         :ok
 
       nil ->
+        # Ensure global Mox mode before starting map server
+        if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
         # Start the map server directly for tests
-        {:ok, _pid} = start_map_server_directly(map_id)
+        {:ok, pid} = start_map_server_directly(map_id)
+        # Grant database access to the new map server process
+        WandererApp.DataCase.allow_database_access(pid)
         :ok
     end
   end
@@ -196,9 +204,44 @@ defmodule WandererApp.TestHelpers do
            {WandererApp.Map.ServerSupervisor, map_id: map_id}
          ) do
       {:ok, pid} ->
+        # Allow database access for the supervisor and its children
+        WandererApp.DataCase.allow_database_access(pid)
+
+        # Allow Mox access for the supervisor process if in test mode
+        if Code.ensure_loaded?(Mox) do
+          try do
+            Mox.allow(Test.PubSubMock, self(), pid)
+            Mox.allow(Test.DDRTMock, self(), pid)
+          rescue
+            # Ignore errors in case Mox is in global mode
+            _ -> :ok
+          end
+        end
+
+        # Also get the actual map server pid and allow access
+        case WandererApp.Map.Server.map_pid(map_id) do
+          server_pid when is_pid(server_pid) ->
+            WandererApp.DataCase.allow_database_access(server_pid)
+
+            # Allow Mox access for the map server process if in test mode
+            if Code.ensure_loaded?(Mox) do
+              try do
+                Mox.allow(Test.PubSubMock, self(), server_pid)
+                Mox.allow(Test.DDRTMock, self(), server_pid)
+              rescue
+                # Ignore errors in case Mox is in global mode
+                _ -> :ok
+              end
+            end
+
+          _ ->
+            :ok
+        end
+
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
+        WandererApp.DataCase.allow_database_access(pid)
         {:ok, pid}
 
       {:error, :max_children} ->

@@ -11,7 +11,9 @@ config :wanderer_app, WandererApp.Repo,
   hostname: System.get_env("DB_HOST", "localhost"),
   database: "wanderer_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 20,
+  ownership_timeout: 60_000,
+  timeout: 60_000
 
 # Set environment variable before config runs to ensure character API is enabled in tests
 System.put_env("WANDERER_CHARACTER_API_DISABLED", "false")
@@ -20,7 +22,9 @@ config :wanderer_app,
   ddrt: Test.DDRTMock,
   logger: Test.LoggerMock,
   pubsub_client: Test.PubSubMock,
-  character_api_disabled: false
+  cached_info: WandererApp.CachedInfo.Mock,
+  character_api_disabled: false,
+  environment: :test
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

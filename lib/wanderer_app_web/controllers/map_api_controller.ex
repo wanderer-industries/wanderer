@@ -1045,4 +1045,197 @@ defmodule WandererAppWeb.MapAPIController do
       {:error, :unauthorized}
     end
   end
+
+  @doc """
+  POST /api/maps/{map_identifier}/duplicate
+
+  Duplicates a map with all its systems, connections, and optionally ACLs/characters.
+  """
+  operation(:duplicate_map,
+    summary: "Duplicate Map",
+    description:
+      "Creates a copy of an existing map including systems, connections, and optionally ACLs, user settings, and signatures",
+    parameters: [
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        type: :string,
+        required: true,
+        example: "my-map-slug"
+      ]
+    ],
+    request_body: {
+      "Map duplication parameters",
+      "application/json",
+      %OpenApiSpex.Schema{
+        type: :object,
+        properties: %{
+          name: %OpenApiSpex.Schema{
+            type: :string,
+            minLength: 3,
+            maxLength: 20,
+            description: "Name for the duplicated map"
+          },
+          description: %OpenApiSpex.Schema{
+            type: :string,
+            description: "Description for the duplicated map (optional)"
+          },
+          copy_acls: %OpenApiSpex.Schema{
+            type: :boolean,
+            default: true,
+            description: "Whether to copy access control lists"
+          },
+          copy_user_settings: %OpenApiSpex.Schema{
+            type: :boolean,
+            default: true,
+            description: "Whether to copy user/character settings"
+          },
+          copy_signatures: %OpenApiSpex.Schema{
+            type: :boolean,
+            default: true,
+            description: "Whether to copy system signatures"
+          }
+        },
+        required: [:name]
+      }
+    },
+    responses: [
+      created: {
+        "Map duplicated successfully",
+        "application/json",
+        %OpenApiSpex.Schema{
+          type: :object,
+          properties: %{
+            data: %OpenApiSpex.Schema{
+              type: :object,
+              properties: %{
+                id: %OpenApiSpex.Schema{type: :string, description: "ID of the duplicated map"},
+                name: %OpenApiSpex.Schema{
+                  type: :string,
+                  description: "Name of the duplicated map"
+                },
+                slug: %OpenApiSpex.Schema{
+                  type: :string,
+                  description: "Slug of the duplicated map"
+                },
+                description: %OpenApiSpex.Schema{
+                  type: :string,
+                  description: "Description of the duplicated map"
+                }
+              }
+            }
+          }
+        }
+      },
+      bad_request: ResponseSchemas.bad_request(),
+      forbidden: ResponseSchemas.forbidden(),
+      not_found: ResponseSchemas.not_found(),
+      unprocessable_entity: ResponseSchemas.bad_request("Validation failed"),
+      internal_server_error: ResponseSchemas.internal_server_error("Duplication failed")
+    ]
+  )
+
+  def duplicate_map(conn, %{"map_identifier" => map_identifier} = params) do
+    with {:ok, source_map} <- resolve_map_identifier(map_identifier),
+         :ok <- check_map_owner(conn, source_map),
+         {:ok, duplicate_params} <- validate_duplicate_params(params),
+         current_user <- conn.assigns[:current_character],
+         {:ok, duplicated_map} <- perform_duplication(source_map, duplicate_params, current_user) do
+      conn
+      |> put_status(:created)
+      |> json(%{
+        data: %{
+          id: duplicated_map.id,
+          name: duplicated_map.name,
+          slug: duplicated_map.slug,
+          description: duplicated_map.description
+        }
+      })
+    else
+      {:error, :map_not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Map not found"})
+
+      {:error, :unauthorized} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Only the map owner can duplicate maps"})
+
+      {:error, {:validation_error, message}} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: message})
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        Logger.debug("Ash validation error: #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Validation failed",
+          errors:
+            Enum.map(error.errors, fn err ->
+              %{
+                field: err.field,
+                message: err.message,
+                value: err.value
+              }
+            end)
+        })
+
+      {:error, reason} ->
+        Logger.error("Map duplication failed: #{inspect(reason)}")
+
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to duplicate map: #{APIUtils.format_error(reason)}"})
+    end
+  end
+
+  # Helper functions for map duplication
+
+  defp validate_duplicate_params(params) do
+    name = Map.get(params, "name")
+    description = Map.get(params, "description")
+    copy_acls = Map.get(params, "copy_acls", true)
+    copy_user_settings = Map.get(params, "copy_user_settings", true)
+    copy_signatures = Map.get(params, "copy_signatures", true)
+
+    cond do
+      is_nil(name) or name == "" ->
+        {:error, {:validation_error, "Name is required"}}
+
+      String.length(name) < 3 ->
+        {:error, {:validation_error, "Name must be at least 3 characters long"}}
+
+      String.length(name) > 20 ->
+        {:error, {:validation_error, "Name must be no more than 20 characters long"}}
+
+      true ->
+        {:ok,
+         %{
+           name: name,
+           description: description,
+           copy_acls: copy_acls,
+           copy_user_settings: copy_user_settings,
+           copy_signatures: copy_signatures
+         }}
+    end
+  end
+
+  defp perform_duplication(source_map, duplicate_params, current_user) do
+    # Create attributes for the new map
+    map_attrs = %{
+      source_map_id: source_map.id,
+      name: duplicate_params.name,
+      description: duplicate_params.description,
+      copy_acls: duplicate_params.copy_acls,
+      copy_user_settings: duplicate_params.copy_user_settings,
+      copy_signatures: duplicate_params.copy_signatures
+    }
+
+    # Use the Ash action with current user as actor for permissions
+    WandererApp.Api.Map.duplicate(map_attrs, actor: current_user)
+  end
 end

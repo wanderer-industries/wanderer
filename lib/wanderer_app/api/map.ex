@@ -5,6 +5,8 @@ defmodule WandererApp.Api.Map do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
+  alias Ash.Resource.Change.Builtins
+
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
@@ -28,6 +30,8 @@ defmodule WandererApp.Api.Map do
       get_by: [:id],
       action: :read
     )
+
+    define(:duplicate, action: :duplicate)
   end
 
   calculations do
@@ -132,6 +136,82 @@ defmodule WandererApp.Api.Map do
     update :toggle_webhooks do
       accept [:webhooks_enabled]
     end
+
+    create :duplicate do
+      accept [:name, :description, :scope, :only_tracked_characters]
+
+      argument :source_map_id, :uuid, allow_nil?: false
+      argument :copy_acls, :boolean, default: true
+      argument :copy_user_settings, :boolean, default: true
+      argument :copy_signatures, :boolean, default: true
+
+      # Set defaults from source map before creation
+      change fn changeset, context ->
+        source_map_id = Ash.Changeset.get_argument(changeset, :source_map_id)
+
+        case WandererApp.Api.Map.by_id(source_map_id) do
+          {:ok, source_map} ->
+            # Use provided description or fall back to source map description
+            description =
+              Ash.Changeset.get_attribute(changeset, :description) || source_map.description
+
+            changeset
+            |> Ash.Changeset.change_attribute(:description, description)
+            |> Ash.Changeset.change_attribute(:scope, source_map.scope)
+            |> Ash.Changeset.change_attribute(
+              :only_tracked_characters,
+              source_map.only_tracked_characters
+            )
+            |> Ash.Changeset.change_attribute(:owner_id, context.actor.id)
+            |> Ash.Changeset.change_attribute(
+              :slug,
+              generate_unique_slug(Ash.Changeset.get_attribute(changeset, :name))
+            )
+
+          {:error, _} ->
+            Ash.Changeset.add_error(changeset,
+              field: :source_map_id,
+              message: "Source map not found"
+            )
+        end
+      end
+
+      # Copy related data after creation
+      change Builtins.after_action(fn changeset, new_map, context ->
+               source_map_id = Ash.Changeset.get_argument(changeset, :source_map_id)
+               copy_acls = Ash.Changeset.get_argument(changeset, :copy_acls)
+               copy_user_settings = Ash.Changeset.get_argument(changeset, :copy_user_settings)
+               copy_signatures = Ash.Changeset.get_argument(changeset, :copy_signatures)
+
+               case WandererApp.Map.Operations.Duplication.duplicate_map(
+                      source_map_id,
+                      new_map,
+                      copy_acls: copy_acls,
+                      copy_user_settings: copy_user_settings,
+                      copy_signatures: copy_signatures
+                    ) do
+                 {:ok, _result} ->
+                   {:ok, new_map}
+
+                 {:error, error} ->
+                   {:error, error}
+               end
+             end)
+    end
+  end
+
+  # Generate a unique slug from map name
+  defp generate_unique_slug(name) do
+    base_slug =
+      name
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9\s-]/, "")
+      |> String.replace(~r/\s+/, "-")
+      |> String.trim("-")
+
+    # Add timestamp to ensure uniqueness
+    timestamp = System.system_time(:millisecond) |> Integer.to_string()
+    "#{base_slug}-#{timestamp}"
   end
 
   attributes do
