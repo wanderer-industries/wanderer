@@ -31,6 +31,7 @@ defmodule WandererApp.Api.MapConnection do
 
   code_interface do
     define(:create, action: :create)
+    define(:update, action: :update)
 
     define(:by_id,
       get_by: [:id],

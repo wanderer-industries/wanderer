@@ -23,23 +23,15 @@ The new API v1 leverages the power of the Ash Framework and AshJsonApi to provid
 - **Advanced filtering and sorting** capabilities
 - **Offset-based pagination** for select high-volume resources
 
-### Comprehensive API Versioning
-- **Multi-version support** (v1.0, v1.1, v1.2) with feature flags
+### Simplified API Versioning
+- **Consolidated v1 API** with all features included
 - **Flexible version detection** via URL, headers, or query parameters
-- **Graceful degradation** for unsupported versions
-- **Deprecation warnings** for smooth migration paths
+- **Graceful fallback** for unsupported versions
+- **Comprehensive feature set** in a single stable version
 
 ### Enhanced Security & Authentication
 - **Bearer token authentication** using map-specific API keys
-- **Comprehensive audit logging** for all API interactions
-- **Security monitoring** with real-time threat detection
-- **Content validation** and response sanitization
-
-### Enterprise-Grade Monitoring
-- **Real-time performance metrics** with OpenTelemetry integration
-- **Health check endpoints** for system monitoring
-- **Comprehensive telemetry** for observability
-- **Performance benchmarking** and optimization
+- **Secure authentication** with comprehensive access controls
 
 ## Getting Started with API v1
 
@@ -60,18 +52,18 @@ The API supports multiple version detection methods:
 
 **URL Path (Recommended):**
 ```
-GET /api/v1.2/maps
+GET /api/v1/maps
 ```
 
 **Headers:**
 ```
-API-Version: 1.2
-Accept: application/vnd.wanderer.v1.2+json
+API-Version: 1
+Accept: application/vnd.wanderer.v1+json
 ```
 
 **Query Parameters:**
 ```
-GET /api/v1/maps?version=1.2
+GET /api/v1/maps?version=1
 ```
 
 ### Authentication
@@ -182,9 +174,9 @@ The API v1 provides access to over 25 resources through the Ash Framework. Here 
 
 *Note: Some resources have been restricted to read-only access for security and consistency. Resources marked as "(GET only)" support only read operations, while "(GET, DELETE only)" support read and delete operations.*
 
-## Version Feature Matrix
+## API v1 Feature Set
 
-All API versions (1.0, 1.1, 1.2) currently provide the same comprehensive feature set:
+Our consolidated API v1 provides a comprehensive feature set:
 - Full CRUD operations for supported resources
 - Advanced filtering and sorting capabilities
 - Relationship includes and sparse fieldsets
@@ -193,8 +185,10 @@ All API versions (1.0, 1.1, 1.2) currently provide the same comprehensive featur
 - Webhook integration
 - Real-time event streaming via SSE
 - Advanced security features and audit logging
+- Bulk operations for efficient data management
+- Enhanced error handling with detailed suggestions
 
-*Note: Version-specific feature differentiation is planned for future releases to provide graduated access to advanced capabilities.*
+*Note: All features are available in v1, providing a complete and stable API surface for integrations.*
 
 ## Real-Time Integration
 
@@ -203,8 +197,8 @@ API v1 maintains compatibility with our existing SSE implementation while adding
 
 ```bash
 # Connect to SSE with JSON:API formatting
-curl -H "Accept: application/vnd.wanderer.v1.2+json" \
-  https://your-wanderer-instance.com/api/maps/123/events/stream
+curl -H "Accept: application/vnd.wanderer.v1+json" \
+  https://your-wanderer-instance.com/api/v1/maps/123/events/stream
 ```
 
 ### Webhook Integration
@@ -242,36 +236,16 @@ Enhanced webhook support with JSON payloads. Webhooks currently use a simple JSO
 }
 ```
 
-*Note: JSON:API formatted webhook payloads are planned for version 1.3 to match the SSE event format.*
+*Note: JSON:API formatted webhook payloads are planned for a future release to match the SSE event format.*
 
-## Performance and Monitoring
+## Performance and Reliability
 
-### Health Checks
-Comprehensive health monitoring endpoints:
-```bash
-# Basic health check
-GET /api/health
-
-# Detailed system status
-GET /api/health/status
-
-# Readiness check (for Kubernetes/orchestration)
-GET /api/health/ready
-
-# Liveness check
-GET /api/health/live
-
-# Deep health check with all subsystems
-GET /api/health/deep
-```
-
-### Performance Metrics
-Real-time performance monitoring with detailed metrics:
-- Request/response times
-- Payload sizes
-- Authentication performance
-- Error rates
-- Resource utilization
+The API v1 is designed for high performance and reliability:
+- Optimized database queries with efficient caching
+- Streamlined authentication flows
+- Robust error handling and graceful degradation
+- Compiled route patterns for faster request routing
+- Enhanced similarity detection for helpful error suggestions
 
 ## Migration Guide
 
@@ -288,30 +262,23 @@ We recommend a gradual migration approach:
 
 ### Migration Benefits
 - **Reduced API calls** through relationship includes
-- **Improved performance** with sparse fieldsets
-- **Better error handling** with standardized error responses
-- **Enhanced security** with audit logging and monitoring
+- **Improved performance** with sparse fieldsets and compiled routing
+- **Better error handling** with standardized error responses and route suggestions
+- **Enhanced security** with robust authentication and access controls
+- **Simplified versioning** with a single stable API version
+- **Better developer experience** with comprehensive introspection and documentation
 
 ## Security Enhancements
-
-### Comprehensive Audit Logging
-Every API interaction is logged with:
-- Authentication events
-- Data access patterns
-- Administrative actions
-- Security incidents
 
 ### Enhanced Authentication
 - Map-specific API key authentication
 - API key management and regeneration
-- Authentication event logging
-- Real-time security monitoring
+- Secure session handling
 
-### Content Security
-- Request validation and sanitization
-- Response content filtering
-- Security headers management
-- CORS configuration
+### Access Control
+- Resource-level permissions
+- Role-based access controls
+- CORS configuration for secure cross-origin requests
 
 ## Developer Experience Improvements
 
@@ -322,19 +289,27 @@ Every API interaction is logged with:
 - **Machine-readable OpenAPI spec** at `/api/v1/open_api` for client generation
 
 ### Error Handling
-Standardized JSON:API error responses:
+Enhanced error responses with helpful suggestions:
 ```json
 {
-  "errors": [
-    {
-      "status": "400",
-      "title": "Invalid Request",
-      "detail": "The 'name' field is required",
-      "source": {
-        "pointer": "/data/attributes/name"
-      }
+  "error": {
+    "code": "ROUTE_NOT_FOUND",
+    "message": "The requested route is not available in version 1",
+    "details": {
+      "requested_path": "/api/v1/map",
+      "requested_method": "GET",
+      "requested_version": "1",
+      "available_versions": ["1"],
+      "suggested_routes": [
+        {
+          "version": "1",
+          "method": "GET", 
+          "path": "/api/v1/maps",
+          "description": "List all maps with full feature set"
+        }
+      ]
     }
-  ]
+  }
 }
 ```
 
@@ -342,6 +317,7 @@ Standardized JSON:API error responses:
 - **Rate Limiting**: Transparent rate limiting with informative headers (planned)
 - **Enhanced Webhook Formats**: JSON:API formatted webhook payloads (planned)
 - **Advanced Analytics**: Detailed usage analytics and insights (planned)
+- **Route Introspection**: Advanced route discovery and documentation APIs
 
 ## Getting Help
 
@@ -352,10 +328,12 @@ Standardized JSON:API error responses:
 
 ## Conclusion
 
-The API v1 modernization represents a significant leap forward in Wanderer's API ecosystem. By combining JSON:API compliance, comprehensive versioning, enhanced security, and enterprise-grade monitoring, we've created a robust foundation for the future of EVE Online mapping integrations.
+The API v1 modernization represents a significant leap forward in Wanderer's API ecosystem. By consolidating multiple versions into a single, feature-complete API with JSON:API compliance, enhanced security, and enterprise-grade performance, we've created a robust foundation for the future of EVE Online mapping integrations.
+
+The simplified versioning approach eliminates confusion while providing all advanced features in a single stable version. Enhanced error handling with route suggestions, compiled routing for better performance, and comprehensive introspection capabilities make the API more developer-friendly than ever.
 
 The zero-downtime migration, comprehensive backward compatibility, and gradual rollout capabilities ensure that your existing integrations continue to work while providing a clear path to leverage advanced features.
 
-We're excited to see what you build with these new capabilities. The combination of real-time events, comprehensive filtering, relationship management, and performance optimization opens up possibilities for more sophisticated and responsive EVE Online tools.
+We're excited to see what you build with these new capabilities. The combination of real-time events, comprehensive filtering, relationship management, performance optimization, and intelligent error handling opens up possibilities for more sophisticated and responsive EVE Online tools.
 
-Start exploring the new API v1 today and experience the difference that modern, standards-compliant APIs can make for your EVE Online mapping workflows.
+Start exploring the new API v1 today and experience the difference that modern, standards-compliant APIs with intelligent routing can make for your EVE Online mapping workflows.

@@ -8,6 +8,65 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   require Logger
 
   # -----------------------------------------------------------------
+  # V1 API Actions (for compatibility with versioned API router)
+  # -----------------------------------------------------------------
+
+  def index_v1(conn, params) do
+    # Convert map_id to map_identifier for existing implementation
+    updated_params =
+      case params do
+        %{"map_id" => map_id} -> Map.put(params, "map_identifier", map_id)
+        _ -> params
+      end
+
+    index(conn, updated_params)
+  end
+
+  def show_v1(conn, params) do
+    # Convert map_id to map_identifier for existing implementation
+    updated_params =
+      case params do
+        %{"map_id" => map_id} -> Map.put(params, "map_identifier", map_id)
+        _ -> params
+      end
+
+    show(conn, updated_params)
+  end
+
+  def create_v1(conn, params) do
+    # Convert map_id to map_identifier for existing implementation
+    updated_params =
+      case params do
+        %{"map_id" => map_id} -> Map.put(params, "map_identifier", map_id)
+        _ -> params
+      end
+
+    create(conn, updated_params)
+  end
+
+  def update_v1(conn, params) do
+    # Convert map_id to map_identifier for existing implementation
+    updated_params =
+      case params do
+        %{"map_id" => map_id} -> Map.put(params, "map_identifier", map_id)
+        _ -> params
+      end
+
+    update(conn, updated_params)
+  end
+
+  def delete_v1(conn, params) do
+    # Convert map_id to map_identifier for existing implementation
+    updated_params =
+      case params do
+        %{"map_id" => map_id} -> Map.put(params, "map_identifier", map_id)
+        _ -> params
+      end
+
+    delete(conn, updated_params)
+  end
+
+  # -----------------------------------------------------------------
   # Schema Definitions
   # -----------------------------------------------------------------
 

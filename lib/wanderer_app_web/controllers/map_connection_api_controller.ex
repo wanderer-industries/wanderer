@@ -276,7 +276,10 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   )
 
   def create(conn, params) do
-    case Operations.create_connection(conn, params) do
+    # Filter out map_id to prevent external modification
+    filtered_params = Map.drop(params, ["map_id", :map_id])
+
+    case Operations.create_connection(conn, filtered_params) do
       {:ok, conn_struct} when is_map(conn_struct) ->
         conn
         |> APIUtils.respond_data(APIUtils.connection_to_json(conn_struct), :created)

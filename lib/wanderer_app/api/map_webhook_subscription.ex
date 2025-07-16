@@ -16,8 +16,11 @@ defmodule WandererApp.Api.MapWebhookSubscription do
     table("map_webhook_subscriptions_v1")
   end
 
-  # Note: Secret is intentionally not encrypted with AshCloak 
-  # as it's generated automatically and needs to be accessible for webhook operations
+  cloak do
+    vault(WandererApp.Vault)
+    attributes([:secret])
+    decrypt_by_default([:secret])
+  end
 
   code_interface do
     define(:create, action: :create)
@@ -122,7 +125,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
     end
 
     update :rotate_secret do
-      accept [:secret]
+      accept []
       require_atomic? false
 
       change fn changeset, _context ->

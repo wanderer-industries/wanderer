@@ -6,7 +6,15 @@ defmodule WandererAppWeb.ApiRouterHelpers do
   alias WandererAppWeb.Plugs.ApiVersioning
 
   def version_specific_action(base_action, version) do
-    String.to_atom("#{base_action}_v#{String.replace(version, ".", "_")}")
+    # Validate version format before converting to atom
+    validated_version =
+      case validate_version_format(version) do
+        :ok -> String.replace(version, ".", "_")
+        # fallback to v1
+        :error -> "1"
+      end
+
+    String.to_atom("#{base_action}_v#{validated_version}")
   end
 
   def supports_feature?(conn, feature) do
@@ -21,10 +29,10 @@ defmodule WandererAppWeb.ApiRouterHelpers do
       "1.0" ->
         # Legacy pagination
         %{
-          page: String.to_integer(conn.params["page"] || "1"),
+          page: parse_integer(conn.params["page"], 1),
           per_page:
             min(
-              String.to_integer(conn.params["per_page"] || "#{version_config.default_page_size}"),
+              parse_integer(conn.params["per_page"], version_config.default_page_size),
               version_config.max_page_size
             )
         }
@@ -34,10 +42,10 @@ defmodule WandererAppWeb.ApiRouterHelpers do
         page_params = conn.params["page"] || %{}
 
         %{
-          number: String.to_integer(page_params["number"] || "1"),
+          number: parse_integer(page_params["number"], 1),
           size:
             min(
-              String.to_integer(page_params["size"] || "#{version_config.default_page_size}"),
+              parse_integer(page_params["size"], version_config.default_page_size),
               version_config.max_page_size
             )
         }
@@ -79,4 +87,28 @@ defmodule WandererAppWeb.ApiRouterHelpers do
       %{}
     end
   end
+
+  # Private helper functions
+
+  # Safe integer parsing helper
+  defp parse_integer(value, default) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, ""} -> int
+      _ -> default
+    end
+  end
+
+  defp parse_integer(value, _default) when is_integer(value), do: value
+  defp parse_integer(_value, default), do: default
+
+  # Validate version format (digits separated by dots or just digits)
+  defp validate_version_format(version) when is_binary(version) do
+    if Regex.match?(~r/^\d+(\.\d+)*$/, version) do
+      :ok
+    else
+      :error
+    end
+  end
+
+  defp validate_version_format(_), do: :error
 end

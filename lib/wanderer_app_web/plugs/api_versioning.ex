@@ -14,11 +14,11 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   alias WandererApp.SecurityAudit
 
-  @supported_versions ["1.0", "1.1", "1.2"]
-  @default_version "1.2"
-  @deprecated_versions ["1.0"]
-  @minimum_version "1.0"
-  @maximum_version "1.2"
+  @supported_versions ["1"]
+  @default_version "1"
+  @deprecated_versions []
+  @minimum_version "1"
+  @maximum_version "1"
 
   # Version detection methods (in order of precedence)
   @version_methods [:path, :header, :query_param, :default]
@@ -95,7 +95,7 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
       ["api", "v" <> version | _] ->
         {:ok, version}
 
-      ["api", version | _] when version in ["1.0", "1.1", "1.2"] ->
+      ["api", version | _] when version in ["1"] ->
         {:ok, version}
 
       _ ->
@@ -275,18 +275,16 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
   # Version-specific routing support
   def version_supports_feature?(version, feature) do
     case {version, feature} do
-      # Version 1.0 features
-      {v, :basic_crud} when v in ["1.0", "1.1", "1.2"] -> true
-      {v, :pagination} when v in ["1.0", "1.1", "1.2"] -> true
-      # Version 1.1 features
-      {v, :filtering} when v in ["1.1", "1.2"] -> true
-      {v, :sorting} when v in ["1.1", "1.2"] -> true
-      {v, :sparse_fieldsets} when v in ["1.1", "1.2"] -> true
-      # Version 1.2 features
-      {v, :includes} when v in ["1.2"] -> true
-      {v, :bulk_operations} when v in ["1.2"] -> true
-      {v, :webhooks} when v in ["1.2"] -> true
-      {v, :real_time_events} when v in ["1.2"] -> true
+      # Version 1 features (consolidated all previous features)
+      {v, :basic_crud} when v in ["1"] -> true
+      {v, :pagination} when v in ["1"] -> true
+      {v, :filtering} when v in ["1"] -> true
+      {v, :sorting} when v in ["1"] -> true
+      {v, :sparse_fieldsets} when v in ["1"] -> true
+      {v, :includes} when v in ["1"] -> true
+      {v, :bulk_operations} when v in ["1"] -> true
+      {v, :webhooks} when v in ["1"] -> true
+      {v, :real_time_events} when v in ["1"] -> true
       # Future features (not yet implemented)
       {_v, :graphql} -> false
       {_v, :subscriptions} -> false
@@ -296,21 +294,7 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   def get_version_config(version) do
     %{
-      "1.0" => %{
-        features: [:basic_crud, :pagination],
-        max_page_size: 100,
-        default_page_size: 20,
-        supports_includes: false,
-        supports_sparse_fields: false
-      },
-      "1.1" => %{
-        features: [:basic_crud, :pagination, :filtering, :sorting, :sparse_fieldsets],
-        max_page_size: 200,
-        default_page_size: 25,
-        supports_includes: false,
-        supports_sparse_fields: true
-      },
-      "1.2" => %{
+      "1" => %{
         features: [
           :basic_crud,
           :pagination,
@@ -446,31 +430,33 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   defp get_breaking_changes(from_version, to_version) do
     # Define breaking changes between versions
+    # Since we've consolidated to v1, most legacy versions are no longer supported
     %{
-      {"1.0", "1.1"} => [
-        "Pagination parameters changed from page/per_page to page[number]/page[size]",
-        "Error response format updated to JSON:API spec",
-        "Date fields now return ISO 8601 format"
-      ],
-      {"1.0", "1.2"} => [
+      {"1.0", "1"} => [
+        "All API endpoints now use /api/v1/ prefix",
         "Pagination parameters changed from page/per_page to page[number]/page[size]",
         "Error response format updated to JSON:API spec",
         "Date fields now return ISO 8601 format",
         "Relationship URLs moved to links object",
-        "Bulk operations require different request format"
+        "All features (filtering, sorting, includes, bulk operations) are now available"
       ],
-      {"1.1", "1.2"} => [
+      {"1.1", "1"} => [
+        "All API endpoints now use /api/v1/ prefix",
         "Relationship URLs moved to links object",
-        "Bulk operations require different request format"
+        "All features (includes, bulk operations, webhooks) are now available"
+      ],
+      {"1.2", "1"} => [
+        "All API endpoints now use /api/v1/ prefix",
+        "Version consolidated - no functional changes"
       ]
     }[{from_version, to_version}] || []
   end
 
   defp estimate_migration_effort(from_version, to_version) do
     case {from_version, to_version} do
-      {"1.0", "1.1"} -> "medium"
-      {"1.0", "1.2"} -> "high"
-      {"1.1", "1.2"} -> "low"
+      {"1.0", "1"} -> "high"
+      {"1.1", "1"} -> "medium"
+      {"1.2", "1"} -> "low"
       _ -> "unknown"
     end
   end

@@ -1,8 +1,8 @@
+# Ensure we're in test environment BEFORE anything else
+Application.put_env(:wanderer_app, :environment, :test)
+
 # Start ExUnit
 ExUnit.start()
-
-# Ensure we're in test environment before starting the application
-Application.put_env(:wanderer_app, :environment, :test)
 
 # Start the application
 {:ok, _} = Application.ensure_all_started(:wanderer_app)

@@ -16,7 +16,7 @@ defmodule WandererApp.Api.MapUserSettings do
 
     # Handle composite primary key
     primary_key do
-      keys([:id])
+      keys([:map_id, :user_id])
     end
 
     includes([

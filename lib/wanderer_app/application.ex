@@ -105,25 +105,23 @@ defmodule WandererApp.Application do
     :ok
   end
 
-  defp maybe_start_corp_wallet_tracker(true) do
-    if Application.get_env(:wanderer_app, :environment) == :test do
-      []
-    else
-      [WandererApp.StartCorpWalletTrackerTask]
-    end
-  end
+  defp maybe_start_corp_wallet_tracker(true),
+    do: [
+      WandererApp.StartCorpWalletTrackerTask
+    ]
 
   defp maybe_start_corp_wallet_tracker(_),
     do: []
 
   defp maybe_start_kills_services do
+    # Don't start kills services in test environment
     if Application.get_env(:wanderer_app, :environment) == :test do
       []
     else
       wanderer_kills_enabled =
         Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
 
-      if wanderer_kills_enabled in [true, true, "true"] do
+      if wanderer_kills_enabled in [true, "true"] do
         Logger.info("Starting WandererKills service integration...")
 
         [
@@ -137,6 +135,7 @@ defmodule WandererApp.Application do
   end
 
   defp maybe_start_external_events_services do
+    # Don't start external events in test environment
     if Application.get_env(:wanderer_app, :environment) == :test do
       []
     else

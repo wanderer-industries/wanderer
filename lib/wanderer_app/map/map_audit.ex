@@ -8,8 +8,6 @@ defmodule WandererApp.Map.Audit do
 
   alias WandererApp.SecurityAudit
 
-  @logger Application.compile_env(:wanderer_app, :logger)
-
   @week_seconds :timer.hours(24 * 7)
   @month_seconds @week_seconds * 4
   @audit_expired_seconds @month_seconds * 3
@@ -86,9 +84,22 @@ defmodule WandererApp.Map.Audit do
       |> Ash.Query.filter(inserted_at: [less_than_or_equal: to])
       |> Ash.Query.sort(inserted_at: :desc)
 
-    # For now, return the regular map query
-    # In a full implementation, you might want to union these queries
-    map_query
+    # Execute both queries and combine results
+    case {Ash.read(map_query), Ash.read(security_query)} do
+      {{:ok, map_activities}, {:ok, security_activities}} ->
+        # Combine and sort by timestamp
+        combined =
+          (map_activities ++ security_activities)
+          |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+
+        {:ok, combined}
+
+      {{:error, _} = error, _} ->
+        error
+
+      {_, {:error, _} = error} ->
+        error
+    end
   end
 
   @doc """

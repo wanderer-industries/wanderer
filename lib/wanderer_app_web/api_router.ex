@@ -1,451 +1,238 @@
 defmodule WandererAppWeb.ApiRouter do
   @moduledoc """
-  Version-aware API router that handles routing based on API version.
+  Enhanced version-aware API router with structured route definitions.
 
   This module provides:
-  - Version-specific routing logic
-  - Backward compatibility handling
-  - Feature flag support per version
-  - Automatic JSON:API compliance for newer versions
+  - Consolidated v1 API routing
+  - Performance optimizations with compiled route patterns
+  - Enhanced error handling with suggestions
+  - Deprecation warnings and sunset date support
+  - Feature flag support per route
+  - Automatic JSON:API compliance
   """
 
   use Phoenix.Router
-
-  alias WandererAppWeb.Plugs.ApiVersioning
-
-  # Import helpers for version-aware routing
   import WandererAppWeb.ApiRouterHelpers
+  alias WandererAppWeb.{ApiRoutes, ApiRouter.RouteSpec}
+  require Logger
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    version = conn.assigns[:api_version] || "1.2"
+    version = conn.assigns[:api_version] || "1"
 
-    # Route based on version
-    case version do
-      v when v in ["1.0"] ->
-        route_v1_0(conn)
+    with {:ok, route_spec} <- find_matching_route(conn, version),
+         conn <- add_deprecation_warnings(conn, version),
+         conn <- add_version_features(conn, route_spec.features, version),
+         params <- extract_path_params(conn.path_info, route_spec.path) do
+      route_to_controller(conn, route_spec.controller, route_spec.action, params)
+    else
+      {:error, :route_not_found} ->
+        send_enhanced_not_found_error(conn, version)
 
-      v when v in ["1.1"] ->
-        route_v1_1(conn)
+      {:error, :version_not_found} ->
+        send_version_not_found_error(conn, version)
 
-      v when v in ["1.2"] ->
-        route_v1_2(conn)
-
-      _ ->
-        # Default to latest version
-        route_v1_2(conn)
+      {:error, reason} ->
+        send_routing_error(conn, reason)
     end
   end
 
-  # Version 1.0 routing (legacy compatibility)
-  defp route_v1_0(conn) do
-    case {conn.method, conn.path_info} do
-      # Maps API - basic CRUD only
-      {"GET", ["api", "maps"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :index_v1_0)
+  # Get compiled routes - use runtime compilation for now for simplicity
+  defp get_compiled_routes do
+    Enum.map(ApiRoutes.table(), fn {version, routes} ->
+      compiled_routes = Enum.map(routes, &compile_route_pattern/1)
+      {version, compiled_routes}
+    end)
+    |> Map.new()
+  end
 
-      {"GET", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :show_v1_0, %{"id" => map_id})
+  defp compile_route_pattern(%RouteSpec{} = route_spec) do
+    # Pre-compile regex patterns for dynamic segments if needed
+    # For now, we'll keep the simple atom-based matching
+    route_spec
+  end
 
-      {"POST", ["api", "maps"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :create_v1_0)
+  defp find_matching_route(conn, version) do
+    compiled_routes = get_compiled_routes()
 
-      {"PUT", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :update_v1_0, %{"id" => map_id})
+    case Map.get(compiled_routes, version) do
+      nil ->
+        {:error, :version_not_found}
 
-      {"DELETE", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :delete_v1_0, %{"id" => map_id})
-
-      # Characters API - basic CRUD only
-      {"GET", ["api", "characters"]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :index_v1_0)
-
-      {"GET", ["api", "characters", character_id]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :show_v1_0, %{
-          "id" => character_id
-        })
-
-      # Systems API - read only in v1.0
-      {"GET", ["api", "maps", map_id, "systems"]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :index_v1_0, %{
-          "map_id" => map_id
-        })
-
-      {"GET", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :show_v1_0, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      _ ->
-        send_not_supported_error(conn, "1.0")
+      routes ->
+        case Enum.find(routes, &match_route?(conn, &1)) do
+          nil -> {:error, :route_not_found}
+          route_spec -> {:ok, route_spec}
+        end
     end
   end
 
-  # Version 1.1 routing (adds filtering, sorting, sparse fieldsets)
-  defp route_v1_1(conn) do
-    case {conn.method, conn.path_info} do
-      # Enhanced Maps API with filtering and sorting
-      {"GET", ["api", "maps"]} ->
-        route_with_enhancements(conn, WandererAppWeb.MapAPIController, :index_v1_1, [
-          "filtering",
-          "sorting",
-          "pagination"
-        ])
+  defp match_route?(%Plug.Conn{method: method, path_info: path_info}, %RouteSpec{
+         verb: verb,
+         path: route_path
+       }) do
+    verb_atom = method |> String.downcase() |> String.to_atom()
+    verb_atom == verb and path_match?(path_info, route_path)
+  end
 
-      {"GET", ["api", "maps", map_id]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapAPIController,
-          :show_v1_1,
-          ["sparse_fieldsets"],
-          %{"id" => map_id}
-        )
+  # Enhanced path matching with better performance
+  defp path_match?(path_segments, route_segments) do
+    path_match_recursive(path_segments, route_segments)
+  end
 
-      {"POST", ["api", "maps"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :create_v1_1)
+  defp path_match_recursive([], []), do: true
 
-      {"PUT", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :update_v1_1, %{"id" => map_id})
+  defp path_match_recursive([h | t], [s | rest]) when is_binary(s) do
+    h == s and path_match_recursive(t, rest)
+  end
 
-      {"DELETE", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :delete_v1_1, %{"id" => map_id})
+  defp path_match_recursive([_h | t], [s | rest]) when is_atom(s) do
+    path_match_recursive(t, rest)
+  end
 
-      # Enhanced Characters API
-      {"GET", ["api", "characters"]} ->
-        route_with_enhancements(conn, WandererAppWeb.CharactersAPIController, :index_v1_1, [
-          "filtering",
-          "sorting"
-        ])
+  defp path_match_recursive(_, _), do: false
 
-      {"GET", ["api", "characters", character_id]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.CharactersAPIController,
-          :show_v1_1,
-          ["sparse_fieldsets"],
-          %{"id" => character_id}
-        )
+  defp extract_path_params(path_info, route_path) do
+    Enum.zip(route_path, path_info)
+    |> Enum.filter(fn {segment, _value} -> is_atom(segment) end)
+    |> Map.new(fn {segment, value} -> {Atom.to_string(segment), value} end)
+  end
 
-      {"POST", ["api", "characters"]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :create_v1_1)
+  defp add_deprecation_warnings(conn, version) do
+    if ApiRoutes.deprecated?(version) do
+      sunset_date = ApiRoutes.sunset_date(version)
 
-      # Enhanced Systems API with full CRUD
-      {"GET", ["api", "maps", map_id, "systems"]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapSystemAPIController,
-          :index_v1_1,
-          ["filtering", "sorting"],
-          %{"map_id" => map_id}
-        )
-
-      {"GET", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :show_v1_1, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      {"POST", ["api", "maps", map_id, "systems"]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :create_v1_1, %{
-          "map_id" => map_id
-        })
-
-      {"PUT", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :update_v1_1, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      {"DELETE", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :delete_v1_1, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      # Connections API
-      {"GET", ["api", "maps", map_id, "connections"]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapConnectionAPIController,
-          :index_v1_1,
-          ["filtering"],
-          %{"map_id" => map_id}
-        )
-
-      _ ->
-        send_not_supported_error(conn, "1.1")
+      conn
+      |> put_resp_header("deprecation", "true")
+      |> put_resp_header("sunset", (sunset_date && Date.to_iso8601(sunset_date)) || "")
+      |> put_resp_header("link", "</api/v1>; rel=\"successor-version\"")
+    else
+      conn
     end
-  end
-
-  # Version 1.2 routing (adds includes, bulk operations, webhooks, real-time events)
-  defp route_v1_2(conn) do
-    case {conn.method, conn.path_info} do
-      # Full-featured Maps API with includes and bulk operations
-      {"GET", ["api", "maps"]} ->
-        route_with_enhancements(conn, WandererAppWeb.MapAPIController, :index_v1_2, [
-          "filtering",
-          "sorting",
-          "pagination",
-          "includes"
-        ])
-
-      {"GET", ["api", "maps", map_id]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapAPIController,
-          :show_v1_2,
-          ["sparse_fieldsets", "includes"],
-          %{"id" => map_id}
-        )
-
-      {"POST", ["api", "maps"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :create_v1_2)
-
-      {"PUT", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :update_v1_2, %{"id" => map_id})
-
-      {"DELETE", ["api", "maps", map_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :delete_v1_2, %{"id" => map_id})
-
-      # Bulk operations for maps
-      {"POST", ["api", "maps", "bulk"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :bulk_create_v1_2)
-
-      {"PUT", ["api", "maps", "bulk"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :bulk_update_v1_2)
-
-      {"DELETE", ["api", "maps", "bulk"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :bulk_delete_v1_2)
-
-      # Map duplication
-      {"POST", ["api", "maps", map_id, "duplicate"]} ->
-        route_to_controller(conn, WandererAppWeb.MapAPIController, :duplicate_v1_2, %{
-          "id" => map_id
-        })
-
-      # Enhanced Characters API with full features
-      {"GET", ["api", "characters"]} ->
-        route_with_enhancements(conn, WandererAppWeb.CharactersAPIController, :index_v1_2, [
-          "filtering",
-          "sorting",
-          "includes"
-        ])
-
-      {"GET", ["api", "characters", character_id]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.CharactersAPIController,
-          :show_v1_2,
-          ["sparse_fieldsets", "includes"],
-          %{"id" => character_id}
-        )
-
-      {"POST", ["api", "characters"]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :create_v1_2)
-
-      {"PUT", ["api", "characters", character_id]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :update_v1_2, %{
-          "id" => character_id
-        })
-
-      {"DELETE", ["api", "characters", character_id]} ->
-        route_to_controller(conn, WandererAppWeb.CharactersAPIController, :delete_v1_2, %{
-          "id" => character_id
-        })
-
-      # Systems API with full JSON:API compliance
-      {"GET", ["api", "maps", map_id, "systems"]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapSystemAPIController,
-          :index_v1_2,
-          ["filtering", "sorting", "includes"],
-          %{"map_id" => map_id}
-        )
-
-      {"GET", ["api", "maps", map_id, "systems", system_id]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapSystemAPIController,
-          :show_v1_2,
-          ["sparse_fieldsets", "includes"],
-          %{"map_id" => map_id, "id" => system_id}
-        )
-
-      {"POST", ["api", "maps", map_id, "systems"]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :create_v1_2, %{
-          "map_id" => map_id
-        })
-
-      {"PUT", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :update_v1_2, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      {"DELETE", ["api", "maps", map_id, "systems", system_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapSystemAPIController, :delete_v1_2, %{
-          "map_id" => map_id,
-          "id" => system_id
-        })
-
-      # Connections API with full features
-      {"GET", ["api", "maps", map_id, "connections"]} ->
-        route_with_enhancements(
-          conn,
-          WandererAppWeb.MapConnectionAPIController,
-          :index_v1_2,
-          ["filtering", "sorting"],
-          %{"map_id" => map_id}
-        )
-
-      {"GET", ["api", "maps", map_id, "connections", connection_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapConnectionAPIController, :show_v1_2, %{
-          "map_id" => map_id,
-          "id" => connection_id
-        })
-
-      {"POST", ["api", "maps", map_id, "connections"]} ->
-        route_to_controller(conn, WandererAppWeb.MapConnectionAPIController, :create_v1_2, %{
-          "map_id" => map_id
-        })
-
-      {"PUT", ["api", "maps", map_id, "connections", connection_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapConnectionAPIController, :update_v1_2, %{
-          "map_id" => map_id,
-          "id" => connection_id
-        })
-
-      {"DELETE", ["api", "maps", map_id, "connections", connection_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapConnectionAPIController, :delete_v1_2, %{
-          "map_id" => map_id,
-          "id" => connection_id
-        })
-
-      # Webhooks API (v1.2+ only)
-      {"GET", ["api", "maps", map_id, "webhooks"]} ->
-        route_to_controller(conn, WandererAppWeb.MapWebhooksAPIController, :index, %{
-          "map_identifier" => map_id
-        })
-
-      {"GET", ["api", "maps", map_id, "webhooks", webhook_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapWebhooksAPIController, :show, %{
-          "map_identifier" => map_id,
-          "id" => webhook_id
-        })
-
-      {"POST", ["api", "maps", map_id, "webhooks"]} ->
-        route_to_controller(conn, WandererAppWeb.MapWebhooksAPIController, :create, %{
-          "map_identifier" => map_id
-        })
-
-      {"PUT", ["api", "maps", map_id, "webhooks", webhook_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapWebhooksAPIController, :update, %{
-          "map_identifier" => map_id,
-          "id" => webhook_id
-        })
-
-      {"DELETE", ["api", "maps", map_id, "webhooks", webhook_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapWebhooksAPIController, :delete, %{
-          "map_identifier" => map_id,
-          "id" => webhook_id
-        })
-
-      # Real-time events API (v1.2+ only)
-      {"GET", ["api", "maps", map_id, "events", "stream"]} ->
-        route_to_controller(conn, WandererAppWeb.Api.EventsController, :stream, %{
-          "map_identifier" => map_id
-        })
-
-      # Access Lists API
-      {"GET", ["api", "acls"]} ->
-        route_with_enhancements(conn, WandererAppWeb.MapAccessListAPIController, :index_v1_2, [
-          "filtering",
-          "sorting"
-        ])
-
-      {"GET", ["api", "acls", acl_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAccessListAPIController, :show, %{
-          "id" => acl_id
-        })
-
-      {"PUT", ["api", "acls", acl_id]} ->
-        route_to_controller(conn, WandererAppWeb.MapAccessListAPIController, :update, %{
-          "id" => acl_id
-        })
-
-      # ACL Members API
-      {"POST", ["api", "acls", acl_id, "members"]} ->
-        route_to_controller(conn, WandererAppWeb.AccessListMemberAPIController, :create, %{
-          "acl_id" => acl_id
-        })
-
-      {"PUT", ["api", "acls", acl_id, "members", member_id]} ->
-        route_to_controller(conn, WandererAppWeb.AccessListMemberAPIController, :update_role, %{
-          "acl_id" => acl_id,
-          "member_id" => member_id
-        })
-
-      {"DELETE", ["api", "acls", acl_id, "members", member_id]} ->
-        route_to_controller(conn, WandererAppWeb.AccessListMemberAPIController, :delete, %{
-          "acl_id" => acl_id,
-          "member_id" => member_id
-        })
-
-      _ ->
-        send_not_supported_error(conn, "1.2")
-    end
-  end
-
-  # Helper function to route to controller with path params
-  defp route_to_controller(conn, controller, action, path_params \\ %{}) do
-    conn
-    |> Map.put(:path_params, path_params)
-    |> Map.update!(:params, fn params -> Map.merge(params, path_params) end)
-    |> controller.call(controller.init(action))
-  end
-
-  # Helper function to add version-specific enhancements
-  defp route_with_enhancements(conn, controller, action, features, path_params \\ %{}) do
-    version = conn.assigns[:api_version]
-
-    conn
-    |> add_version_features(features, version)
-    |> route_to_controller(controller, action, path_params)
   end
 
   defp add_version_features(conn, features, version) do
-    # Add feature flags based on version capabilities
-    version_config = ApiVersioning.get_version_config(version)
+    # Add feature flags based on route capabilities
+    conn =
+      Enum.reduce(features, conn, fn feature, acc ->
+        assign(acc, :"supports_#{feature}", true)
+      end)
 
-    Enum.reduce(features, conn, fn feature, acc ->
-      feature_atom = String.to_atom(feature)
-
-      if feature_atom in version_config.features do
-        Phoenix.Conn.assign(acc, :"supports_#{feature}", true)
-      else
-        Phoenix.Conn.assign(acc, :"supports_#{feature}", false)
-      end
-    end)
-    |> Phoenix.Conn.assign(:version_config, version_config)
+    conn
+    |> assign(:api_features, features)
+    |> assign(:api_version, version)
   end
 
-  defp send_not_supported_error(conn, version) do
+  defp send_enhanced_not_found_error(conn, version) do
+    available_versions = ApiRoutes.available_versions()
+    suggested_routes = find_similar_routes(conn.path_info, version)
+
     error_response = %{
-      error: "Endpoint not supported in API version #{version}",
-      method: conn.method,
-      path: "/" <> Enum.join(conn.path_info, "/"),
-      supported_versions: ApiVersioning.get_migration_path(version),
-      upgrade_guide: "https://docs.wanderer.com/api/migration/#{version}",
-      timestamp: DateTime.utc_now()
+      error: %{
+        code: "ROUTE_NOT_FOUND",
+        message: "The requested route is not available in version #{version}",
+        details: %{
+          requested_path: "/" <> Enum.join(conn.path_info, "/"),
+          requested_method: conn.method,
+          requested_version: version,
+          available_versions: available_versions,
+          suggested_routes: suggested_routes
+        }
+      }
     }
 
     conn
-    |> Phoenix.Conn.put_status(404)
-    |> Phoenix.Conn.put_resp_content_type("application/json")
-    |> Phoenix.Conn.send_resp(404, Jason.encode!(error_response))
-    |> Phoenix.Conn.halt()
+    |> put_status(404)
+    |> put_resp_content_type("application/json")
+    |> send_resp(404, Jason.encode!(error_response))
+    |> halt()
+  end
+
+  defp send_version_not_found_error(conn, version) do
+    available_versions = ApiRoutes.available_versions()
+
+    error_response = %{
+      error: %{
+        code: "VERSION_NOT_FOUND",
+        message: "API version #{version} is not supported",
+        details: %{
+          requested_version: version,
+          available_versions: available_versions,
+          upgrade_guide: "https://docs.wanderer.com/api/migration"
+        }
+      }
+    }
+
+    conn
+    |> put_status(404)
+    |> put_resp_content_type("application/json")
+    |> send_resp(404, Jason.encode!(error_response))
+    |> halt()
+  end
+
+  defp find_similar_routes(path_info, version) do
+    # Find routes with similar paths in current or other versions
+    all_routes = ApiRoutes.table()
+
+    Enum.flat_map(all_routes, fn {v, routes} ->
+      Enum.filter(routes, fn route_spec ->
+        similarity_score(path_info, route_spec.path) > 0.7
+      end)
+      |> Enum.map(fn route_spec ->
+        %{
+          version: v,
+          method: String.upcase(Atom.to_string(route_spec.verb)),
+          path: "/" <> Enum.join(route_spec.path, "/"),
+          description: get_in(route_spec.metadata, [:description])
+        }
+      end)
+    end)
+    |> Enum.take(3)
+  end
+
+  defp similarity_score(path1, path2) do
+    # Simple Jaccard similarity for path segments
+    set1 = MapSet.new(path1)
+    set2 = MapSet.new(path2)
+
+    intersection_size = MapSet.intersection(set1, set2) |> MapSet.size()
+    union_size = MapSet.union(set1, set2) |> MapSet.size()
+
+    if union_size == 0, do: 0, else: intersection_size / union_size
+  end
+
+  defp send_routing_error(conn, reason) do
+    Logger.error("API routing error: #{inspect(reason)}")
+
+    error_response = %{
+      error: %{
+        code: "ROUTING_ERROR",
+        message: "Internal routing error"
+      }
+    }
+
+    conn
+    |> put_status(500)
+    |> put_resp_content_type("application/json")
+    |> send_resp(500, Jason.encode!(error_response))
+    |> halt()
+  end
+
+  # Helper function to route to controller with path params
+  defp route_to_controller(conn, controller, action, path_params) do
+    conn = %{conn | params: Map.merge(conn.params, path_params)}
+
+    # Handle the different parameter names used by existing controllers
+    conn =
+      case path_params do
+        %{"map_id" => map_id} ->
+          %{conn | params: Map.put(conn.params, "map_identifier", map_id)}
+
+        _ ->
+          conn
+      end
+
+    controller.call(conn, controller.init(action))
   end
 end

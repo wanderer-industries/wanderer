@@ -10,7 +10,6 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
   alias WandererApp.Api.User
   alias WandererApp.SecurityAudit
-  alias Ecto.UUID
 
   def init(opts), do: opts
 
