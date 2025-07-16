@@ -102,6 +102,12 @@ defmodule WandererAppWeb.Factory do
     create_map_webhook_subscription(attrs)
   end
 
+  def insert(:map_transaction, attrs) do
+    map_id = Map.fetch!(attrs, :map_id)
+    attrs = Map.delete(attrs, :map_id)
+    create_map_transaction(map_id, attrs)
+  end
+
   def insert(resource_type, _attrs) do
     raise "Unknown factory resource type: #{resource_type}"
   end
@@ -298,12 +304,15 @@ defmodule WandererAppWeb.Factory do
   Creates a test map system with reasonable defaults.
   """
   def build_map_system(attrs \\ %{}) do
+    # Generate a unique solar_system_id if not provided
+    unique_id = System.unique_integer([:positive])
+    solar_system_id = Map.get(attrs, :solar_system_id, 30_000_000 + rem(unique_id, 10_000))
+
     default_attrs = %{
-      # Jita
-      solar_system_id: 30_000_142,
-      name: "Jita",
-      position_x: 100,
-      position_y: 200,
+      solar_system_id: solar_system_id,
+      name: Map.get(attrs, :name, "System #{solar_system_id}"),
+      position_x: Map.get(attrs, :position_x, 100 + rem(unique_id, 500)),
+      position_y: Map.get(attrs, :position_y, 200 + rem(unique_id, 500)),
       status: 0,
       visible: true,
       locked: false
@@ -557,6 +566,53 @@ defmodule WandererAppWeb.Factory do
 
     {:ok, settings} = Ash.create(Api.MapCharacterSettings, attrs)
     settings
+  end
+
+  @doc """
+  Builds test data for map transaction.
+  """
+  def build_map_transaction(attrs \\ %{}) do
+    default_attrs = %{
+      type: :in,
+      amount: :rand.uniform() * 1000.0,
+      user_id: Ecto.UUID.generate()
+    }
+
+    Map.merge(default_attrs, attrs)
+  end
+
+  def create_map_transaction(map_id, attrs \\ %{}) do
+    # Extract timestamp attributes that need special handling
+    inserted_at = Map.get(attrs, :inserted_at)
+    updated_at = Map.get(attrs, :updated_at)
+
+    attrs =
+      attrs
+      |> Map.drop([:inserted_at, :updated_at])
+      |> build_map_transaction()
+      |> Map.put(:map_id, map_id)
+
+    {:ok, transaction} = Ash.create(Api.MapTransaction, attrs)
+
+    # If timestamps were provided, update them directly in the database
+    if inserted_at || updated_at do
+      import Ecto.Query
+
+      updates = []
+      updates = if inserted_at, do: [{:inserted_at, inserted_at} | updates], else: updates
+      updates = if updated_at, do: [{:updated_at, updated_at} | updates], else: updates
+
+      {1, [updated_transaction]} =
+        WandererApp.Repo.update_all(
+          from(t in "map_transactions_v1", where: t.id == ^transaction.id, select: t),
+          [set: updates],
+          returning: true
+        )
+
+      struct(transaction, updated_transaction)
+    else
+      transaction
+    end
   end
 
   @doc """

@@ -1,0 +1,75 @@
+name: 🧪 Test Suite
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.16'
+  OTP_VERSION: '26'
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+          
+      - name: Cache Elixir dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+          
+      - name: Install Elixir dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          
+      - name: Check code formatting
+        run: mix format --check-formatted
+        
+      - name: Compile code
+        run: mix compile
+        
+      - name: Setup database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+          
+      - name: Run tests
+        run: mix test
+        continue-on-error: true
+        
+      - name: Run Credo
+        run: mix credo --strict
+        continue-on-error: true

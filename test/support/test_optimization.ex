@@ -178,7 +178,7 @@ defmodule WandererApp.TestOptimization do
   defp analyze_setup_complexity(content) do
     setup_blocks = Regex.scan(~r/setup.*?do(.*?)end/ms, content)
 
-    if length(setup_blocks) == 0 do
+    if Enum.empty?(setup_blocks) do
       :simple
     else
       total_lines =

@@ -225,7 +225,7 @@ defmodule WandererAppWeb.AccessListMemberAPIControllerTest do
       assert {:ok, []} =
                WandererApp.Api.AccessListMember
                |> Ash.Query.filter(id: member.id)
-               |> WandererApp.Api.read()
+               |> Ash.read()
     end
 
     test "deletes a corporation member", %{conn: _conn} do
@@ -250,7 +250,7 @@ defmodule WandererAppWeb.AccessListMemberAPIControllerTest do
       assert {:ok, []} =
                WandererApp.Api.AccessListMember
                |> Ash.Query.filter(id: member.id)
-               |> WandererApp.Api.read()
+               |> Ash.read()
     end
 
     test "returns 404 for non-existent member", %{conn: _conn} do
@@ -298,12 +298,12 @@ defmodule WandererAppWeb.AccessListMemberAPIControllerTest do
       assert {:ok, []} =
                WandererApp.Api.AccessListMember
                |> Ash.Query.filter(id: member1.id)
-               |> WandererApp.Api.read()
+               |> Ash.read()
 
       assert {:ok, [_]} =
                WandererApp.Api.AccessListMember
                |> Ash.Query.filter(id: member2.id)
-               |> WandererApp.Api.read()
+               |> Ash.read()
     end
   end
 end

@@ -3,11 +3,30 @@ defmodule WandererApp.Api.MapConnection do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_chain_v1")
+  end
+
+  json_api do
+    type "map_connections"
+
+    includes([:map])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_connections")
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
   end
 
   code_interface do
@@ -175,6 +194,7 @@ defmodule WandererApp.Api.MapConnection do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 end

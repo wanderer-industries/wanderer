@@ -280,7 +280,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
         type: :string,
         required: true
       ],
-      id: [
+      map_webhooks_api_id: [
         in: :path,
         description: "Webhook subscription UUID",
         type: :string,
@@ -365,7 +365,19 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
           |> json(%{data: webhook_to_json(webhook)})
 
         {:error, %Ash.Error.Invalid{errors: errors}} ->
-          error_messages = Enum.map(errors, & &1.message)
+          error_messages =
+            Enum.map(errors, fn error ->
+              case error do
+                %{message: message} ->
+                  message
+
+                %Ash.Error.Changes.NoSuchAttribute{attribute: attr} ->
+                  "Invalid attribute: #{attr}"
+
+                _ ->
+                  inspect(error)
+              end
+            end)
 
           conn
           |> put_status(:bad_request)
@@ -407,7 +419,19 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
           json(conn, %{data: webhook_to_json(updated_webhook)})
 
         {:error, %Ash.Error.Invalid{errors: errors}} ->
-          error_messages = Enum.map(errors, & &1.message)
+          error_messages =
+            Enum.map(errors, fn error ->
+              case error do
+                %{message: message} ->
+                  message
+
+                %Ash.Error.Changes.NoSuchAttribute{attribute: attr} ->
+                  "Invalid attribute: #{attr}"
+
+                _ ->
+                  inspect(error)
+              end
+            end)
 
           conn
           |> put_status(:bad_request)
@@ -479,7 +503,10 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     end
   end
 
-  def rotate_secret(conn, %{"map_identifier" => map_identifier, "id" => webhook_id}) do
+  def rotate_secret(conn, %{
+        "map_identifier" => map_identifier,
+        "map_webhooks_api_id" => webhook_id
+      }) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
       case MapWebhookSubscription.rotate_secret(webhook) do
@@ -530,6 +557,16 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
     try do
       case MapWebhookSubscription.by_id(webhook_id) do
         nil ->
+          {:error, :webhook_not_found}
+
+        {:ok, webhook} ->
+          if webhook.map_id == map_id do
+            {:ok, webhook}
+          else
+            {:error, :webhook_not_found}
+          end
+
+        {:error, _error} ->
           {:error, :webhook_not_found}
 
         webhook ->

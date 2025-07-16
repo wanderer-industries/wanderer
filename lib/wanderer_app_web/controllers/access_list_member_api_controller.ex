@@ -271,7 +271,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
           eve_alliance_id == ^external_id_str
       )
 
-    case WandererApp.Api.read(membership_query) do
+    case Ash.read(membership_query) do
       {:ok, [membership]} ->
         new_role = Map.get(member_params, "role", membership.role)
 
@@ -374,7 +374,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
           eve_alliance_id == ^external_id_str
       )
 
-    case WandererApp.Api.read(membership_query) do
+    case Ash.read(membership_query) do
       {:ok, [membership]} ->
         case AccessListMember.destroy(membership) do
           :ok ->

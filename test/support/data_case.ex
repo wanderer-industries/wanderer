@@ -36,11 +36,18 @@ defmodule WandererApp.DataCase do
   setup tags do
     WandererApp.DataCase.setup_sandbox(tags)
 
+    # Set up integration test environment
+    WandererApp.Test.IntegrationConfig.setup_integration_environment()
+    WandererApp.Test.IntegrationConfig.setup_test_reliability_configs()
+
     # Ensure Mox is in global mode for each test
     # This prevents tests that set private mode from affecting other tests
-    if Code.ensure_loaded?(Mox) do
-      Mox.set_mox_global()
-    end
+    WandererApp.Test.MockAllowance.ensure_global_mocks()
+
+    # Cleanup after test
+    on_exit(fn ->
+      WandererApp.Test.IntegrationConfig.cleanup_integration_environment()
+    end)
 
     :ok
   end
@@ -77,6 +84,15 @@ defmodule WandererApp.DataCase do
   end
 
   @doc """
+  Allows a process to access the database by granting it sandbox access with monitoring.
+  This version provides enhanced monitoring for child processes.
+  """
+  def allow_database_access(pid, owner_pid) when is_pid(pid) and is_pid(owner_pid) do
+    Ecto.Adapters.SQL.Sandbox.allow(WandererApp.Repo, owner_pid, pid)
+    # Note: Skip the manager call to avoid recursion
+  end
+
+  @doc """
   Allows critical system processes to access the database during tests.
   This prevents DBConnection.OwnershipError for processes that are started
   during application boot and need database access.
@@ -86,7 +102,10 @@ defmodule WandererApp.DataCase do
     system_processes = [
       WandererApp.Map.Manager,
       WandererApp.Character.TrackerManager,
-      WandererApp.Server.TheraDataFetcher
+      WandererApp.Server.TheraDataFetcher,
+      WandererApp.ExternalEvents.MapEventRelay,
+      WandererApp.ExternalEvents.WebhookDispatcher,
+      WandererApp.ExternalEvents.SseStreamManager
     ]
 
     Enum.each(system_processes, fn process_name ->
@@ -98,6 +117,26 @@ defmodule WandererApp.DataCase do
           :ok
       end
     end)
+  end
+
+  @doc """
+  Grants database access to a process with comprehensive monitoring.
+
+  This function provides enhanced database access granting with monitoring
+  for child processes and automatic access granting.
+  """
+  def allow_database_access(pid, owner_pid \\ self()) do
+    WandererApp.Test.DatabaseAccessManager.grant_database_access(pid, owner_pid)
+  end
+
+  @doc """
+  Grants database access to a GenServer and all its child processes.
+  """
+  def allow_genserver_database_access(genserver_pid, owner_pid \\ self()) do
+    WandererApp.Test.DatabaseAccessManager.grant_genserver_database_access(
+      genserver_pid,
+      owner_pid
+    )
   end
 
   @doc """

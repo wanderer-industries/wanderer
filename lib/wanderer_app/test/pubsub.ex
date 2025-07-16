@@ -19,4 +19,5 @@ defmodule WandererApp.Test.PubSub do
   @callback subscribe(topic :: String.t()) :: :ok | {:error, term()}
   @callback subscribe(module :: atom(), topic :: String.t()) :: :ok | {:error, term()}
   @callback unsubscribe(topic :: String.t()) :: :ok | {:error, term()}
+  @callback unsubscribe(module :: atom(), topic :: String.t()) :: :ok | {:error, term()}
 end

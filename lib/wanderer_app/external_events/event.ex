@@ -87,7 +87,23 @@ defmodule WandererApp.ExternalEvents.Event do
   end
 
   # Define allowlisted fields for different struct types
-  @system_fields [:id, :solar_system_id, :name, :position_x, :position_y, :visible, :locked]
+  @system_fields [
+    :id,
+    :solar_system_id,
+    :name,
+    :position_x,
+    :position_y,
+    :visible,
+    :locked,
+    # ADD
+    :temporary_name,
+    # ADD  
+    :labels,
+    # ADD
+    :description,
+    # ADD
+    :status
+  ]
   @character_fields [
     :id,
     :character_id,
@@ -96,7 +112,15 @@ defmodule WandererApp.ExternalEvents.Event do
     :corporation_id,
     :alliance_id,
     :ship_type_id,
-    :online
+    # ADD: Ship name for external clients
+    :ship_name,
+    :online,
+    # ADD: Character location
+    :solar_system_id,
+    # ADD: Structure location
+    :structure_id,
+    # ADD: Station location
+    :station_id
   ]
   @connection_fields [
     :id,

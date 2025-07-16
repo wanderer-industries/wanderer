@@ -39,7 +39,9 @@ defmodule WandererAppWeb.Plugs.ContentNegotiation do
     # Simple check for now - can be enhanced to handle quality values
     accept_header == "*/*" or
       Enum.any?(accepted_formats, fn format ->
-        String.contains?(accept_header, "application/#{format}")
+        # Handle both regular JSON and JSON:API formats
+        String.contains?(accept_header, "application/#{format}") or
+          (format == "json" and String.contains?(accept_header, "application/vnd.api+json"))
       end)
   end
 end
