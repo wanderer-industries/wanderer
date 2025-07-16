@@ -113,7 +113,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
 
       # Use a valid UUID that doesn't exist
       nonexistent_uuid = Ecto.UUID.generate()
-      
+
       conn =
         build_authenticated_conn(scenario.map.public_api_key, api_version: :v1)
         |> get("/api/v1/characters/#{nonexistent_uuid}")
@@ -128,7 +128,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
         404 ->
           response = json_response(conn, 404)
           validate_error_contract(404, response)
-          
+
         400 ->
           # Bad request is also valid for invalid IDs
           response = json_response(conn, 400)
@@ -150,7 +150,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
         "name" => "Test Character",
         "user_id" => scenario.user.id
       }
-      
+
       # Wrap in JSON:API format
       character_data = wrap_jsonapi_data("characters", character_attributes)
 
@@ -175,8 +175,11 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
           validate_character_resource_structure(created_character)
 
           # Validate that input data is reflected in response
-          assert created_character["attributes"]["eve_id"] == character_data["data"]["attributes"]["eve_id"]
-          assert created_character["attributes"]["name"] == character_data["data"]["attributes"]["name"]
+          assert created_character["attributes"]["eve_id"] ==
+                   character_data["data"]["attributes"]["eve_id"]
+
+          assert created_character["attributes"]["name"] ==
+                   character_data["data"]["attributes"]["name"]
 
         400 ->
           # Validation error is valid
@@ -203,7 +206,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
         # Invalid: empty name
         "name" => ""
       }
-      
+
       # Wrap in JSON:API format
       invalid_data = wrap_jsonapi_data("characters", invalid_attributes)
 
@@ -227,7 +230,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
       update_attributes = %{
         "tracking_pool" => "updated_pool"
       }
-      
+
       # Wrap in JSON:API format  
       update_data = wrap_jsonapi_data("characters", update_attributes, scenario.character.id)
 
@@ -252,7 +255,8 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
           validate_character_resource_structure(updated_character)
 
           # Validate that updates are reflected
-          assert updated_character["attributes"]["tracking_pool"] == update_data["data"]["attributes"]["tracking_pool"]
+          assert updated_character["attributes"]["tracking_pool"] ==
+                   update_data["data"]["attributes"]["tracking_pool"]
 
         404 ->
           # Character not found is valid
@@ -274,13 +278,14 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
     @tag :contract
     test "successful deletion contract" do
       scenario = create_test_scenario()
-      
+
       # Create a different character that is not the map owner to avoid FK constraint
-      deletable_character = insert(:character, %{
-        user_id: scenario.user.id,
-        name: "Deletable Character",
-        eve_id: "deletable_#{System.unique_integer([:positive])}"
-      })
+      deletable_character =
+        insert(:character, %{
+          user_id: scenario.user.id,
+          name: "Deletable Character",
+          eve_id: "deletable_#{System.unique_integer([:positive])}"
+        })
 
       conn =
         build_authenticated_conn(scenario.map.public_api_key, api_version: :v1)
@@ -391,16 +396,17 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
     assert Map.has_key?(character_data, "type"), "Character missing type field"
     assert Map.has_key?(character_data, "id"), "Character missing id field"
     assert Map.has_key?(character_data, "attributes"), "Character missing attributes field"
-    
+
     assert character_data["type"] == "characters", "Character type should be 'characters'"
     assert is_binary(character_data["id"]), "Character ID should be string"
-    
+
     attributes = character_data["attributes"]
     # Validate that character has required attribute fields
     required_attributes = ["name", "eve_id"]
 
     Enum.each(required_attributes, fn field ->
-      assert Map.has_key?(attributes, field), "Character attributes missing required field: #{field}"
+      assert Map.has_key?(attributes, field),
+             "Character attributes missing required field: #{field}"
     end)
 
     # Validate field types
@@ -409,7 +415,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
 
     # Validate optional attribute fields if present
     attributes = character_data["attributes"]
-    
+
     if Map.has_key?(attributes, "corporation_id") do
       assert is_integer(attributes["corporation_id"]), "Corporation ID should be integer"
     end
@@ -424,7 +430,7 @@ defmodule WandererApp.Contract.Api.CharactersContractTest do
     end
 
     if Map.has_key?(attributes, "tracking_pool") do
-      assert is_nil(attributes["tracking_pool"]) || is_binary(attributes["tracking_pool"]), 
+      assert is_nil(attributes["tracking_pool"]) || is_binary(attributes["tracking_pool"]),
              "Tracking pool should be string or nil"
     end
 

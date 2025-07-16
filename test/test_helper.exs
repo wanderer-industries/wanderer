@@ -1,16 +1,5 @@
-# Just require the mocks module - it will handle loading everything else
-require WandererApp.Test.Mocks
-
-# Start enhanced test components
-{:ok, _} = WandererApp.Support.FlakyTestDetector.start_link()
-
-# Configure ExUnit with enhanced formatter
-ExUnit.start(
-  formatters: [
-    WandererApp.Support.FlakyTestFormatter,
-    ExUnit.CLIFormatter
-  ]
-)
+# Configure ExUnit
+ExUnit.start()
 
 # Import Mox for test-specific expectations
 # import Mox

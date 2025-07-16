@@ -1,29 +1,37 @@
-FROM elixir:1.17-otp-27
+FROM elixir:1.17-otp-27-slim AS builder
 
-RUN apt install -yq curl gnupg
-# Install OS packages and Node.js (via nodesource),
-# plus inotify-tools and yarn
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    curl \
-    make \
-    git \
-    bash \
-    build-essential \
-    ca-certificates \
-    jq \
-    vim \
-    net-tools \
-    procps \
-    # Optionally add any other tools you need, e.g. vim, wget...
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs inotify-tools \
-    && npm install -g yarn \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt --fix-broken install
-
-RUN mix local.hex --force
+      build-essential git curl ca-certificates sudo make jq \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest yarn @anthropic-ai/claude-code \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+COPY mix.exs mix.lock ./
+RUN mix deps.get && mix deps.compile
+
+COPY . .
+
+FROM elixir:1.17-otp-27-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      bash vim nano git curl wget ca-certificates \
+      build-essential make jq htop tree zip unzip \
+      net-tools procps iputils-ping telnet netcat-openbsd \
+      inotify-tools \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g yarn @anthropic-ai/claude-code \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && useradd -m vscode && mkdir /app && chown vscode:vscode /app
+
+USER vscode
+WORKDIR /app
+
+COPY --chown=vscode:vscode --from=builder /app /app
+
+ENV MIX_ENV=dev \
+    ERL_AFLAGS="-kernel shell_history enabled"
+

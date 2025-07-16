@@ -262,7 +262,7 @@ defmodule WandererApp.Api.Map do
     attribute :description, :string do
       public? true
     end
-    
+
     attribute :personal_note, :string do
       public? true
     end

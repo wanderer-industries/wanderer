@@ -226,12 +226,14 @@ defmodule WandererApp.SecurityAudit do
     # Store in the existing UserActivity system
     try do
       # Ensure event_type is properly converted to atom if it's a string
-      event_type = case audit_entry.event_type do
-        atom when is_atom(atom) -> atom
-        string when is_binary(string) -> String.to_existing_atom(string)
-        _ -> :security_alert  # Default fallback
-      end
-      
+      event_type =
+        case audit_entry.event_type do
+          atom when is_atom(atom) -> atom
+          string when is_binary(string) -> String.to_existing_atom(string)
+          # Default fallback
+          _ -> :security_alert
+        end
+
       Ash.create!(UserActivity, %{
         user_id: audit_entry.user_id,
         character_id: nil,

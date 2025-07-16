@@ -126,8 +126,9 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
             name: "Test User",
             hash: "test_hash_#{System.unique_integer([:positive])}"
           }
+
           {:ok, user, map}
-          
+
         _ ->
           # If no map found with this test token, create a test user without a map
           user = %User{
@@ -135,6 +136,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
             name: "Test User",
             hash: "test_hash_#{System.unique_integer([:positive])}"
           }
+
           {:ok, user}
       end
     else
@@ -148,7 +150,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
             name: "API User for #{map.name}",
             hash: "api_hash_#{map.id}"
           }
-          
+
           {:ok, user, map}
 
         _ ->
@@ -238,6 +240,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp maybe_assign_map(conn, nil), do: conn
+
   defp maybe_assign_map(conn, map) do
     conn
     |> assign(:map, map)

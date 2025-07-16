@@ -23,7 +23,7 @@ defmodule WandererApp.Api.MapAccessList do
       :map,
       :access_list
     ])
-    
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)

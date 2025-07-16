@@ -17,7 +17,7 @@ defmodule WandererApp.Api.MapSubscription do
     includes([
       :map
     ])
-    
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)

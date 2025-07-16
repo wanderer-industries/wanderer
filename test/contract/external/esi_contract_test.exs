@@ -21,13 +21,13 @@ defmodule WandererApp.Contract.External.EsiContractTest do
     # Ensure mocks are properly set up for each test
     # This is particularly important when running tests in isolation
     WandererApp.Test.MockAllowance.ensure_global_mocks()
-    
+
     # Explicitly set up the mock stubs that might not be available when running in isolation
     # This ensures the tests work whether run individually or as part of the suite
     Mox.stub(WandererApp.CachedInfo.Mock, :get_server_status, fn ->
       {:ok, %{"players" => 30000, "server_version" => "1234567"}}
     end)
-    
+
     Mox.stub(WandererApp.CachedInfo.Mock, :get_character_info, fn character_id ->
       {:ok,
        %{
@@ -39,15 +39,15 @@ defmodule WandererApp.Contract.External.EsiContractTest do
          "birthday" => "2020-01-01T00:00:00Z"
        }}
     end)
-    
+
     Mox.stub(WandererApp.CachedInfo.Mock, :get_character_location, fn _character_id ->
-      {:ok, %{"solar_system_id" => 30000142, "station_id" => 60003760}}
+      {:ok, %{"solar_system_id" => 30_000_142, "station_id" => 60_003_760}}
     end)
-    
+
     Mox.stub(WandererApp.CachedInfo.Mock, :get_character_ship, fn _character_id ->
-      {:ok, %{"ship_item_id" => 1234567890, "ship_type_id" => 670, "ship_name" => "Test Ship"}}
+      {:ok, %{"ship_item_id" => 1_234_567_890, "ship_type_id" => 670, "ship_name" => "Test Ship"}}
     end)
-    
+
     Mox.stub(WandererApp.CachedInfo.Mock, :get_ship_type, fn ship_type_id ->
       {:ok,
        %{
@@ -57,22 +57,22 @@ defmodule WandererApp.Contract.External.EsiContractTest do
          "mass" => 12_750_000
        }}
     end)
-    
+
     Mox.stub(WandererApp.CachedInfo.Mock, :get_system_static_info, fn system_id ->
       {:ok,
        %{
          solar_system_id: system_id,
          solar_system_name: "Jita",
          security: 0.9,
-         region_id: 10000002,
-         constellation_id: 20000020,
+         region_id: 10_000_002,
+         constellation_id: 20_000_020,
          class_id: nil
        }}
     end)
-    
+
     # Verify the mock is accessible and configured
     {:ok, _status} = WandererApp.CachedInfo.Mock.get_server_status()
-    
+
     :ok
   end
 

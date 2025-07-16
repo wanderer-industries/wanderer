@@ -208,30 +208,33 @@ defmodule WandererApp.Api.Character do
     attribute :ship, :integer
     attribute :ship_name, :string
     attribute :ship_item_id, :integer
+
     attribute :corporation_id, :integer do
       public? true
     end
-    
+
     attribute :corporation_name, :string do
       public? true
     end
-    
+
     attribute :corporation_ticker, :string do
       public? true
     end
-    
+
     attribute :alliance_id, :integer do
       public? true
     end
-    
+
     attribute :alliance_name, :string do
       public? true
     end
-    
+
     attribute :alliance_ticker, :string do
       public? true
     end
+
     attribute :eve_wallet_balance, :float
+
     attribute :tracking_pool, :string do
       public? true
     end
@@ -239,7 +242,7 @@ defmodule WandererApp.Api.Character do
     create_timestamp(:inserted_at) do
       public? true
     end
-    
+
     update_timestamp(:updated_at) do
       public? true
     end

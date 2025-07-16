@@ -46,13 +46,13 @@ defmodule WandererApp.Api.MapTransaction do
 
     read :read do
       primary?(true)
-      
+
       pagination offset?: true,
                  default_limit: 25,
                  max_page_size: 100,
                  countable: true,
                  required?: false
-                 
+
       prepare build(sort: [inserted_at: :desc])
     end
 

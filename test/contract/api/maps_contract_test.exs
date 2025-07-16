@@ -93,7 +93,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
         "description" => "Test map for contract validation",
         "scope" => "none"
       }
-      
+
       # Wrap in JSON:API format
       map_data = wrap_jsonapi_data("maps", map_attributes)
 
@@ -126,7 +126,9 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
 
           # Validate that input data is reflected in response
           assert created_map["attributes"]["name"] == map_data["data"]["attributes"]["name"]
-          assert created_map["attributes"]["description"] == map_data["data"]["attributes"]["description"]
+
+          assert created_map["attributes"]["description"] ==
+                   map_data["data"]["attributes"]["description"]
 
         401 ->
           # Authentication error is valid
@@ -154,7 +156,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
         # Invalid: bad scope
         "scope" => "invalid_scope"
       }
-      
+
       # Wrap in JSON:API format
       invalid_data = wrap_jsonapi_data("maps", invalid_attributes)
 
@@ -191,7 +193,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
         "description" => "Test map without name"
         # Missing required 'name' field
       }
-      
+
       # Wrap in JSON:API format
       incomplete_data = wrap_jsonapi_data("maps", incomplete_attributes)
 
@@ -253,7 +255,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
 
       # Use a valid UUID that doesn't exist
       nonexistent_uuid = Ecto.UUID.generate()
-      
+
       conn =
         build_authenticated_conn(scenario.map.public_api_key, api_version: :v1)
         |> get("/api/v1/maps/#{nonexistent_uuid}")
@@ -269,7 +271,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
         404 ->
           response = json_response(conn, 404)
           validate_error_contract(404, response)
-          
+
         400 ->
           # Bad request is also valid for invalid IDs
           response = json_response(conn, 400)
@@ -290,7 +292,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
         "name" => "Updated Map Name",
         "description" => "Updated description"
       }
-      
+
       # Wrap in JSON:API format
       update_data = wrap_jsonapi_data("maps", update_attributes, scenario.map.id)
 
@@ -316,7 +318,9 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
 
           # Validate that updates are reflected
           assert updated_map["attributes"]["name"] == update_data["data"]["attributes"]["name"]
-          assert updated_map["attributes"]["description"] == update_data["data"]["attributes"]["description"]
+
+          assert updated_map["attributes"]["description"] ==
+                   update_data["data"]["attributes"]["description"]
 
         404 ->
           # Map not found is valid
@@ -381,10 +385,11 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
       scenario = create_test_scenario(with_systems: true)
 
       # The duplicate endpoint uses JSON:API format
-      duplicate_data = wrap_jsonapi_data("maps", %{
-        "name" => "Duplicated Map",
-        "source_map_id" => scenario.map.id
-      })
+      duplicate_data =
+        wrap_jsonapi_data("maps", %{
+          "name" => "Duplicated Map",
+          "source_map_id" => scenario.map.id
+        })
 
       conn =
         build_authenticated_conn(scenario.map.public_api_key, api_version: :v1)
@@ -400,7 +405,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
           # The duplicate endpoint returns plain JSON response
           assert Map.has_key?(response, "data")
           duplicated_map = response["data"]
-          
+
           # Validate the plain JSON structure
           assert Map.has_key?(duplicated_map, "id")
           assert Map.has_key?(duplicated_map, "name")
@@ -481,10 +486,10 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
     assert Map.has_key?(map_data, "type"), "Map missing type field"
     assert Map.has_key?(map_data, "id"), "Map missing id field"
     assert Map.has_key?(map_data, "attributes"), "Map missing attributes field"
-    
+
     assert map_data["type"] == "maps", "Map type should be 'maps'"
     assert is_binary(map_data["id"]), "Map ID should be string"
-    
+
     attributes = map_data["attributes"]
     # Validate that map has required attribute fields
     required_attributes = ["name", "slug"]
@@ -499,7 +504,7 @@ defmodule WandererApp.Contract.Api.MapsContractTest do
 
     # Validate optional attribute fields if present
     attributes = map_data["attributes"]
-    
+
     if Map.has_key?(attributes, "description") do
       assert is_binary(attributes["description"]), "Map description should be string"
     end

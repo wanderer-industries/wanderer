@@ -1,16 +1,15 @@
-version: "0.1"
-
 services:
   db:
-    image: postgres:13-alpine
+    image: postgres:16
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wanderer_dev
     ports:
       - "5432:5432"
     volumes:
-      - db-new:/var/lib/postgresql/data
+      - db:/var/lib/postgresql/data
 
   wanderer:
     environment:
@@ -19,18 +18,22 @@ services:
       WEB_APP_URL: "http://localhost:4444"
       ERL_AFLAGS: "-kernel shell_history enabled"
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     ports:
       - 4444:4444
+    networks:
+      - default
     volumes:
       - ..:/app:delegated
-      - ~/.gitconfig:/root/.gitconfig
-      - ~/.gitignore:/root/.gitignore
-      - ~/.ssh:/root/.ssh
-      - elixir-artifacts:/opt/elixir-artifacts
+      - elixir-deps:/app/deps            # cache deps
+      - elixir-build:/app/_build         # cache build artifacts
     command: sleep infinity
+    user: "vscode"                  # run as non-root user
+    depends_on:
+      - db
 
 volumes:
-  elixir-artifacts: {}
-  db-new: {}
+  elixir-deps:
+  elixir-build:
+  db: {}

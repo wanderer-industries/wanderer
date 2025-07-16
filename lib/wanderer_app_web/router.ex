@@ -212,13 +212,13 @@ defmodule WandererAppWeb.Router do
       otp_app: :wanderer_app,
       module: WandererAppWeb.ApiSpec
   end
-  
+
   pipeline :api_spec_v1 do
     plug OpenApiSpex.Plug.PutApiSpec,
       otp_app: :wanderer_app,
       module: WandererAppWeb.OpenApiV1Spec
   end
-  
+
   pipeline :api_spec_combined do
     plug OpenApiSpex.Plug.PutApiSpec,
       otp_app: :wanderer_app,
@@ -342,13 +342,13 @@ defmodule WandererAppWeb.Router do
     pipe_through [:api_spec]
     get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
   end
-  
+
   # Combined spec needs its own pipeline
   scope "/api" do
     pipe_through [:api_spec_combined]
     get "/openapi-complete", OpenApiSpex.Plug.RenderSpec, :show
   end
-  
+
   scope "/api/v1" do
     pipe_through [:api_spec_v1]
     # v1 JSON:API spec (bypasses authentication)
@@ -427,7 +427,7 @@ defmodule WandererAppWeb.Router do
 
   scope "/swaggerui" do
     pipe_through [:browser, :api_spec]
-    
+
     # v1 JSON:API (AshJsonApi generated)
     get "/v1", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/v1/open_api",
@@ -469,7 +469,7 @@ defmodule WandererAppWeb.Router do
         "docExpansion" => "none",
         "deepLinking" => true
       }
-    
+
     # Complete API (Legacy + v1)
     get "/", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/openapi-complete",
@@ -597,7 +597,9 @@ defmodule WandererAppWeb.Router do
     pipe_through :api_v1
 
     # Custom combined endpoints
-    get "/maps/:map_id/systems_and_connections", WandererAppWeb.Api.MapSystemsConnectionsController, :show
+    get "/maps/:map_id/systems_and_connections",
+        WandererAppWeb.Api.MapSystemsConnectionsController,
+        :show
 
     # Forward all v1 requests to AshJsonApi router
     # This will automatically generate RESTful JSON:API endpoints

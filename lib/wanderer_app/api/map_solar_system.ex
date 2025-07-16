@@ -13,7 +13,7 @@ defmodule WandererApp.Api.MapSolarSystem do
 
   json_api do
     type "map_solar_systems"
-    
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)

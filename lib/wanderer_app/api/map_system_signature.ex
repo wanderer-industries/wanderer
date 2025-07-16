@@ -66,10 +66,10 @@ defmodule WandererApp.Api.MapSystemSignature do
     ]
 
     defaults [:destroy]
-    
+
     read :read do
       primary?(true)
-      
+
       pagination offset?: true,
                  default_limit: 50,
                  max_page_size: 200,

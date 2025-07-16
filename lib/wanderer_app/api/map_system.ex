@@ -92,10 +92,10 @@ defmodule WandererApp.Api.MapSystem do
     ]
 
     defaults [:create, :update, :destroy]
-    
+
     read :read do
       primary?(true)
-      
+
       pagination offset?: true,
                  default_limit: 100,
                  max_page_size: 500,

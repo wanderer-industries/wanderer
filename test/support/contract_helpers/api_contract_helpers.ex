@@ -267,12 +267,13 @@ defmodule WandererApp.Support.ContractHelpers.ApiContractHelpers do
 
     # Determine the correct content type based on the endpoint
     # V1 endpoints require JSON:API content type
-    default_content_type = if opts[:api_version] == :v1 do
-      "application/vnd.api+json"
-    else
-      "application/json"
-    end
-    
+    default_content_type =
+      if opts[:api_version] == :v1 do
+        "application/vnd.api+json"
+      else
+        "application/json"
+      end
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{auth_token}")
@@ -297,7 +298,7 @@ defmodule WandererApp.Support.ContractHelpers.ApiContractHelpers do
       ] ++ opts
     )
   end
-  
+
   @doc """
   Wraps data in JSON:API format for POST/PATCH requests.
   """
@@ -306,9 +307,9 @@ defmodule WandererApp.Support.ContractHelpers.ApiContractHelpers do
       "type" => resource_type,
       "attributes" => attributes
     }
-    
+
     data = if id, do: Map.put(data, "id", id), else: data
-    
+
     %{"data" => data}
   end
 

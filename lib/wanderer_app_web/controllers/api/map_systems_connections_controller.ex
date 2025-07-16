@@ -102,13 +102,13 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
   defp load_map_data(map_id) do
     try do
       # Load systems for the map
-      systems = 
+      systems =
         MapSystem
         |> Ash.Query.filter(expr(map_id == ^map_id and visible == true))
         |> Ash.read!()
 
       # Load connections for the map
-      connections = 
+      connections =
         MapConnection
         |> Ash.Query.filter(expr(map_id == ^map_id))
         |> Ash.read!()

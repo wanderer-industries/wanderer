@@ -40,7 +40,7 @@ defmodule WandererApp.Api.MapSystemStructure do
     includes([
       :system
     ])
-    
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)

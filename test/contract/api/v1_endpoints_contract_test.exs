@@ -89,7 +89,7 @@ defmodule WandererApp.Contract.Api.V1EndpointsContractTest do
       # JSON:API strict mode requires application/vnd.api+json
       assert response.status == 406,
              "Regular JSON content type should return 406 Unacceptable Media Type"
-             
+
       # AshJsonApi returns the error in JSON:API format
       error_response = Jason.decode!(response.resp_body)
       assert error_response["errors"] != nil, "Should have errors array"
