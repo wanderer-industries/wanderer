@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
-  use WandererAppWeb.ConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   import Mox
   import WandererAppWeb.Factory
@@ -80,6 +80,10 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 1
         })
 
+      # Update the map cache with the connections we just created
+      WandererApp.Map.add_connection(map.id, connection1)
+      WandererApp.Map.add_connection(map.id, connection2)
+
       conn = get(conn, ~p"/api/maps/#{map.slug}/connections")
 
       assert %{
@@ -114,6 +118,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 0
         })
 
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
+
       update_params = %{
         "mass_status" => 2
       }
@@ -146,6 +153,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           type: 0,
           ship_size_type: 2
         })
+
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/connections/#{connection.id}")
 

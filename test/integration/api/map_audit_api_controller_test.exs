@@ -1,4 +1,4 @@
-defmodule WandererAppWeb.MapAuditAPIControllerTest do
+defmodule WandererAppWeb.MapAuditAPIControllerIntegrationTest do
   use WandererAppWeb.ApiCase
 
   alias WandererAppWeb.Factory

@@ -103,6 +103,9 @@ defmodule WandererApp.Map.Operations.Structures do
       {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :not_found}
 
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{} | _]}} ->
+        {:error, :not_found}
+
       err ->
         Logger.error("[update_structure] Unexpected error: #{inspect(err)}")
         {:error, :unexpected_error}
@@ -123,6 +126,9 @@ defmodule WandererApp.Map.Operations.Structures do
       :ok
     else
       {:error, %Ash.Error.Query.NotFound{}} ->
+        {:error, :not_found}
+
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{} | _]}} ->
         {:error, :not_found}
 
       err ->

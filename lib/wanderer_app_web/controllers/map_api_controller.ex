@@ -208,7 +208,7 @@ defmodule WandererAppWeb.MapAPIController do
       |> Ash.Query.filter(map_id == ^map_id and tracked == true)
       |> Ash.Query.load(:character)
 
-    case WandererApp.Api.read(query) do
+    case Ash.read(query) do
       {:ok, settings} ->
         # Format the settings to include character data
         formatted_settings =
@@ -688,7 +688,7 @@ defmodule WandererAppWeb.MapAPIController do
       |> Ash.Query.filter(map_id == ^map_id)
       |> Ash.Query.load(:character)
 
-    case WandererApp.Api.read(settings_query) do
+    case Ash.read(settings_query) do
       {:ok, map_character_settings} when map_character_settings != [] ->
         # Extract characters and filter out those without a user_id
         characters =
@@ -707,7 +707,7 @@ defmodule WandererAppWeb.MapAPIController do
             |> Ash.Query.filter(map_id == ^map_id)
 
           main_characters_by_user =
-            case WandererApp.Api.read(user_settings_query) do
+            case Ash.read(user_settings_query) do
               {:ok, map_user_settings} ->
                 Map.new(map_user_settings, fn settings ->
                   {settings.user_id, settings.main_character_eve_id}

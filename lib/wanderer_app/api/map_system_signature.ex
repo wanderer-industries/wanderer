@@ -3,20 +3,33 @@ defmodule WandererApp.Api.MapSystemSignature do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_signatures_v1")
   end
 
+  json_api do
+    type "map_system_signatures"
+
+    includes([:system])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_system_signatures")
+      get(:read)
+      index :read
+      delete(:destroy)
+    end
+  end
+
   code_interface do
-    define(:all_active, action: :all_active)
     define(:create, action: :create)
-    define(:update, action: :update)
-    define(:update_linked_system, action: :update_linked_system)
-    define(:update_type, action: :update_type)
-    define(:update_group, action: :update_group)
+    define(:all_active, action: :all_active)
 
     define(:by_id,
       get_by: [:id],
@@ -53,7 +66,17 @@ defmodule WandererApp.Api.MapSystemSignature do
       :custom_info
     ]
 
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary?(true)
+
+      pagination offset?: true,
+                 default_limit: 50,
+                 max_page_size: 200,
+                 countable: true,
+                 required?: false
+    end
 
     read :all_active do
       prepare build(sort: [updated_at: :desc])
@@ -199,6 +222,7 @@ defmodule WandererApp.Api.MapSystemSignature do
   relationships do
     belongs_to :system, WandererApp.Api.MapSystem do
       attribute_writable? true
+      public? true
     end
   end
 

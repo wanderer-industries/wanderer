@@ -112,6 +112,12 @@ defmodule WandererAppWeb.ApiCase do
 
     # Ensure the map server is started
     WandererApp.TestHelpers.ensure_map_server_started(map.id)
+
+    # Also ensure MapEventRelay has database access if it's running
+    if pid = Process.whereis(WandererApp.ExternalEvents.MapEventRelay) do
+      WandererApp.DataCase.allow_database_access(pid)
+    end
+
     # Authenticate the connection with the map's actual public_api_key
     authenticated_conn = put_api_key(conn, map.public_api_key)
     {:ok, conn: authenticated_conn, map: map}
