@@ -97,6 +97,7 @@ export type CommandInit = {
   is_subscription_active?: boolean;
   main_character_eve_id?: string | null;
   following_character_eve_id?: string | null;
+  map_slug?: string;
 };
 
 export type CommandAddSystems = SolarSystemRawType[];

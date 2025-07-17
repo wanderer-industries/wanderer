@@ -2,6 +2,45 @@
 
 <!-- changelog -->
 
+## [v1.74.10](https://github.com/wanderer-industries/wanderer/compare/v1.74.9...v1.74.10) (2025-07-15)
+
+
+
+
+## [v1.74.9](https://github.com/wanderer-industries/wanderer/compare/v1.74.8...v1.74.9) (2025-07-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Trying to fix problem with fast forwarding after page are inactive some time.
+
+## [v1.74.8](https://github.com/wanderer-industries/wanderer/compare/v1.74.7...v1.74.8) (2025-07-11)
+
+
+
+
+### Bug Fixes:
+
+* Map: removed comments
+
+* Map: Fixed conflict
+
+* Map: Unified settings. Second part: Import/Export
+
+* Map: Unified settings. First part: add one place for storing settings
+
+## [v1.74.7](https://github.com/wanderer-industries/wanderer/compare/v1.74.6...v1.74.7) (2025-07-09)
+
+
+
+
+## [v1.74.6](https://github.com/wanderer-industries/wanderer/compare/v1.74.5...v1.74.6) (2025-07-09)
+
+
+
+
 ## [v1.74.5](https://github.com/wanderer-industries/wanderer/compare/v1.74.4...v1.74.5) (2025-07-09)
 
 

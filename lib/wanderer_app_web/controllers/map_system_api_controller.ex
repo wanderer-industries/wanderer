@@ -569,9 +569,8 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def delete_single(conn, %{"id" => id}) do
-    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
-         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
-         {:ok, _} <- Ash.destroy(system) do
+    with {:ok, sid} <- APIUtils.parse_int(id),
+         {:ok, _} <- Operations.delete_system(conn, sid) do
       APIUtils.respond_data(conn, %{deleted: true})
     else
       {:error, :not_found} ->

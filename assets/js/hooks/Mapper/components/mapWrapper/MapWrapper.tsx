@@ -48,7 +48,7 @@ export const MapWrapper = () => {
       linkSignatureToSystem,
       systemSignatures,
     },
-    storedSettings: { interfaceSettings },
+    storedSettings: { interfaceSettings, settingsLocal },
   } = useMapRootState();
 
   const {
@@ -254,6 +254,7 @@ export const MapWrapper = () => {
         pings={pings}
         onAddSystem={onAddSystem}
         minimapPlacement={minimapPosition}
+        localShowShipName={settingsLocal.showShipName}
       />
 
       {openSettings != null && (

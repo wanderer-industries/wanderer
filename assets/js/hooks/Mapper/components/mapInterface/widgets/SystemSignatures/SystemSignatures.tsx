@@ -1,21 +1,14 @@
-import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
 import { SystemSignatureSettingsDialog } from './SystemSignatureSettingsDialog';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { SystemSignaturesHeader } from './SystemSignatureHeader';
-import useLocalStorageState from 'use-local-storage-state';
 import { useHotkey } from '@/hooks/Mapper/hooks/useHotkey';
-import {
-  SETTINGS_KEYS,
-  SETTINGS_VALUES,
-  SIGNATURE_SETTING_STORE_KEY,
-  SIGNATURE_WINDOW_ID,
-  SignatureSettingsType,
-  getDeletionTimeoutMs,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { getDeletionTimeoutMs } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers';
 import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
+import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 /**
  * Custom hook for managing pending signature deletions and undo countdown.
@@ -126,20 +119,14 @@ export const SystemSignatures = () => {
   const {
     data: { selectedSystems },
     outCommand,
+    storedSettings: { settingsSignatures, settingsSignaturesUpdate },
   } = useMapRootState();
-
-  const [currentSettings, setCurrentSettings] = useLocalStorageState<SignatureSettingsType>(
-    SIGNATURE_SETTING_STORE_KEY,
-    {
-      defaultValue: SETTINGS_VALUES,
-    },
-  );
 
   const [systemId] = selectedSystems;
   const isSystemSelected = useMemo(() => selectedSystems.length === 1, [selectedSystems.length]);
   const { pendingIds, countdown, deletedSignatures, addDeleted, handleUndo } = useSignatureUndo(
     systemId,
-    currentSettings,
+    settingsSignatures,
     outCommand,
   );
 
@@ -157,20 +144,20 @@ export const SystemSignatures = () => {
 
   const handleSettingsSave = useCallback(
     (newSettings: SignatureSettingsType) => {
-      setCurrentSettings(newSettings);
+      settingsSignaturesUpdate(newSettings);
       setVisible(false);
     },
-    [setCurrentSettings],
+    [settingsSignaturesUpdate],
   );
 
   const handleLazyDeleteToggle = useCallback(
     (value: boolean) => {
-      setCurrentSettings(prev => ({
+      settingsSignaturesUpdate(prev => ({
         ...prev,
         [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: value,
       }));
     },
-    [setCurrentSettings],
+    [settingsSignaturesUpdate],
   );
 
   const openSettings = useCallback(() => setVisible(true), []);
@@ -180,7 +167,7 @@ export const SystemSignatures = () => {
       label={
         <SystemSignaturesHeader
           sigCount={sigCount}
-          lazyDeleteValue={currentSettings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
+          lazyDeleteValue={settingsSignatures[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
           pendingCount={pendingIds.size}
           undoCountdown={countdown}
           onLazyDeleteChange={handleLazyDeleteToggle}
@@ -197,7 +184,7 @@ export const SystemSignatures = () => {
       ) : (
         <SystemSignaturesContent
           systemId={systemId}
-          settings={currentSettings}
+          settings={settingsSignatures}
           deletedSignatures={deletedSignatures}
           onLazyDeleteChange={handleLazyDeleteToggle}
           onCountChange={handleCountChange}
@@ -207,7 +194,7 @@ export const SystemSignatures = () => {
 
       {visible && (
         <SystemSignatureSettingsDialog
-          settings={currentSettings}
+          settings={settingsSignatures}
           onCancel={() => setVisible(false)}
           onSave={handleSettingsSave}
         />

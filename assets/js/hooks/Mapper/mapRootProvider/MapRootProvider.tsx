@@ -19,10 +19,24 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
 import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowManager';
 import { DetailedKill } from '../types/kills';
-import { InterfaceStoredSettings, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { DEFAULT_ROUTES_SETTINGS, STORED_INTERFACE_DEFAULT_VALUES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import {
+  InterfaceStoredSettings,
+  KillsWidgetSettings,
+  LocalWidgetSettings,
+  MapUserSettings,
+  OnTheMapSettingsType,
+  RoutesType,
+} from '@/hooks/Mapper/mapRootProvider/types.ts';
+import {
+  DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_ON_THE_MAP_SETTINGS,
+  DEFAULT_ROUTES_SETTINGS,
+  DEFAULT_WIDGET_LOCAL_SETTINGS,
+  STORED_INTERFACE_DEFAULT_VALUES,
+} from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { useMapUserSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useMapUserSettings.ts';
 import { useGlobalHooks } from '@/hooks/Mapper/mapRootProvider/hooks/useGlobalHooks.ts';
+import { DEFAULT_SIGNATURE_SETTINGS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 export type MapRootData = MapUnionTypes & {
   selectedSystems: string[];
@@ -36,6 +50,7 @@ export type MapRootData = MapUnionTypes & {
   };
   trackingCharactersData: TrackingCharacter[];
   loadingPublicRoutes: boolean;
+  map_slug: string | null;
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -70,6 +85,7 @@ const INITIAL_DATA: MapRootData = {
   followingCharacterEveId: null,
   pings: [],
   loadingPublicRoutes: false,
+  map_slug: null,
 };
 
 export enum InterfaceStoredSettingsProps {
@@ -103,6 +119,19 @@ export interface MapRootContextProps {
     setInterfaceSettings: Dispatch<SetStateAction<InterfaceStoredSettings>>;
     settingsRoutes: RoutesType;
     settingsRoutesUpdate: Dispatch<SetStateAction<RoutesType>>;
+    settingsLocal: LocalWidgetSettings;
+    settingsLocalUpdate: Dispatch<SetStateAction<LocalWidgetSettings>>;
+    settingsSignatures: SignatureSettingsType;
+    settingsSignaturesUpdate: Dispatch<SetStateAction<SignatureSettingsType>>;
+    settingsOnTheMap: OnTheMapSettingsType;
+    settingsOnTheMapUpdate: Dispatch<SetStateAction<OnTheMapSettingsType>>;
+    settingsKills: KillsWidgetSettings;
+    settingsKillsUpdate: Dispatch<SetStateAction<KillsWidgetSettings>>;
+    isReady: boolean;
+    hasOldSettings: boolean;
+    getSettingsForExport(): string | undefined;
+    applySettings(settings: MapUserSettings): boolean;
+    checkOldSettings(): void;
   };
 }
 
@@ -134,6 +163,19 @@ const MapRootContext = createContext<MapRootContextProps>({
     setInterfaceSettings: () => null,
     settingsRoutes: DEFAULT_ROUTES_SETTINGS,
     settingsRoutesUpdate: () => null,
+    settingsLocal: DEFAULT_WIDGET_LOCAL_SETTINGS,
+    settingsLocalUpdate: () => null,
+    settingsSignatures: DEFAULT_SIGNATURE_SETTINGS,
+    settingsSignaturesUpdate: () => null,
+    settingsOnTheMap: DEFAULT_ON_THE_MAP_SETTINGS,
+    settingsOnTheMapUpdate: () => null,
+    settingsKills: DEFAULT_KILLS_WIDGET_SETTINGS,
+    settingsKillsUpdate: () => null,
+    isReady: false,
+    hasOldSettings: false,
+    getSettingsForExport: () => '',
+    applySettings: () => false,
+    checkOldSettings: () => null,
   },
 });
 
@@ -154,9 +196,11 @@ const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: Forwarde
 export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProviderProps) => {
   const { update, ref } = useContextStore<MapRootData>({ ...INITIAL_DATA });
 
-  const storedSettings = useMapUserSettings();
+  const storedSettings = useMapUserSettings(ref);
 
-  const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } = useStoreWidgets();
+  const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } =
+    useStoreWidgets(storedSettings);
+
   const comments = useComments({ outCommand });
   const charactersCache = useCharactersCache({ outCommand });
 

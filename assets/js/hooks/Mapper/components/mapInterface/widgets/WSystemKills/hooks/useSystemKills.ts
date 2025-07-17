@@ -3,7 +3,6 @@ import debounce from 'lodash.debounce';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useKillsWidgetSettings } from './useKillsWidgetSettings';
 
 interface UseSystemKillsProps {
   systemId?: string;
@@ -26,10 +25,12 @@ function combineKills(existing: DetailedKill[], incoming: DetailedKill[]): Detai
 }
 
 export function useSystemKills({ systemId, outCommand, showAllVisible = false, sinceHours = 24 }: UseSystemKillsProps) {
-  const { data, update } = useMapRootState();
-  const { detailedKills = {}, systems = [] } = data;
-  const [settings] = useKillsWidgetSettings();
-  const excludedSystems = settings.excludedSystems;
+  const {
+    data: { detailedKills = {}, systems = [] },
+    update,
+    storedSettings: { settingsKills },
+  } = useMapRootState();
+  const { excludedSystems } = settingsKills;
 
   const effectiveSinceHours = sinceHours;
 
