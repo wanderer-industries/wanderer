@@ -115,7 +115,7 @@ Flexible sorting with offset-based pagination (available on select resources):
 # Sort by creation date (newest first) then by name
 GET /api/v1/maps?sort=-inserted_at,name
 
-# Offset-based pagination (available on map_systems, map_system_signatures, user_activities, map_transactions)
+# Offset-based pagination (available on map_systems, map_system_signatures, user_activities)
 GET /api/v1/map_systems?page[limit]=100&page[offset]=0
 
 # Combined filtering, sorting, and pagination
@@ -153,7 +153,6 @@ The API v1 provides access to over 25 resources through the Ash Framework. Here 
 - **Map Connections** (`/api/v1/map_connections`) - Wormhole connections
 - **Map Signatures** (`/api/v1/map_system_signatures`) - Signature scanning data (GET, DELETE only)
 - **Map Structures** (`/api/v1/map_system_structures`) - Structure information
-- **Map Transactions** (`/api/v1/map_transactions`) - Transaction history (GET only)
 - **Map Subscriptions** (`/api/v1/map_subscriptions`) - Subscription management (GET only)
 - **Map Systems and Connections** (`/api/v1/maps/{map_id}/systems_and_connections`) - Combined endpoint (GET only)
 
@@ -162,7 +161,6 @@ The API v1 provides access to over 25 resources through the Ash Framework. Here 
 
 ### User Resources
 - **User Activities** (`/api/v1/user_activities`) - User activity tracking (GET only)
-- **User Transactions** (`/api/v1/user_transactions`) - User transaction history (GET only)
 - **Map Character Settings** (`/api/v1/map_character_settings`) - Character preferences (GET only)
 - **Map User Settings** (`/api/v1/map_user_settings`) - User map preferences (GET only)
 

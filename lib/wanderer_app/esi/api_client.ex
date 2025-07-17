@@ -789,7 +789,8 @@ defmodule WandererApp.Esi.ApiClient do
          scopes
        ) do
     # Log token refresh success with timing info
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
+    expires_at_datetime = DateTime.from_unix!(expires_at)
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
 
     Logger.info("TOKEN_REFRESH_SUCCESS: Character token refreshed successfully",
       character_id: character_id,

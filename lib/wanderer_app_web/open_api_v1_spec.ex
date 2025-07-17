@@ -68,13 +68,11 @@ defmodule WandererAppWeb.OpenApiV1Spec do
       %{"name" => "Map System Comments", "description" => "System comments"},
       %{"name" => "Map Character Settings", "description" => "Character map settings"},
       %{"name" => "Map User Settings", "description" => "User map preferences"},
-      %{"name" => "Map Transactions", "description" => "Map transaction history"},
       %{"name" => "Map Subscriptions", "description" => "Map subscription management"},
       %{"name" => "Map Access Lists", "description" => "Map-specific ACLs"},
       %{"name" => "Map States", "description" => "Map state information"},
       %{"name" => "Users", "description" => "User management"},
       %{"name" => "User Activities", "description" => "User activity tracking"},
-      %{"name" => "User Transactions", "description" => "User transaction history"},
       %{"name" => "Ship Type Info", "description" => "Ship type information"}
     ]
   end
@@ -94,13 +92,11 @@ defmodule WandererAppWeb.OpenApiV1Spec do
       {"map_system_comments", "Map System Comments"},
       {"map_character_settings", "Map Character Settings"},
       {"map_user_settings", "Map User Settings"},
-      {"map_transactions", "Map Transactions"},
       {"map_subscriptions", "Map Subscriptions"},
       {"map_access_lists", "Map Access Lists"},
       {"map_states", "Map States"},
       {"users", "Users"},
       {"user_activities", "User Activities"},
-      {"user_transactions", "User Transactions"},
       {"ship_type_infos", "Ship Type Info"}
     ]
 

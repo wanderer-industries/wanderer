@@ -3,28 +3,11 @@ defmodule WandererApp.Api.UserTransaction do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource]
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     repo(WandererApp.Repo)
     table("user_transaction_v1")
-  end
-
-  json_api do
-    type "user_transactions"
-
-    # Handle composite primary key
-    primary_key do
-      keys([:id])
-    end
-
-    routes do
-      base("/user_transactions")
-
-      get(:read)
-      index :read
-    end
   end
 
   code_interface do
