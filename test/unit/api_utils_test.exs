@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.Helpers.APIUtilsTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   alias WandererAppWeb.Helpers.APIUtils
   alias Phoenix.ConnTest

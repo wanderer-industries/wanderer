@@ -12,7 +12,6 @@ defmodule WandererApp.Map.Operations.Duplication do
   """
 
   require Logger
-
   import Ash.Query, only: [filter: 2]
 
   alias WandererApp.Api
@@ -40,21 +39,24 @@ defmodule WandererApp.Map.Operations.Duplication do
 
     Logger.info("Starting map duplication for source map: #{source_map_id}")
 
-    with {:ok, source_map} <- load_source_map(source_map_id),
-         {:ok, system_mapping} <- copy_systems(source_map, new_map),
-         {:ok, _connections} <- copy_connections(source_map, new_map, system_mapping),
-         {:ok, _signatures} <-
-           maybe_copy_signatures(source_map, new_map, system_mapping, copy_signatures),
-         {:ok, _acls} <- maybe_copy_acls(source_map, new_map, copy_acls),
-         {:ok, _user_settings} <-
-           maybe_copy_user_settings(source_map, new_map, copy_user_settings) do
-      Logger.info("Successfully duplicated map #{source_map_id} to #{new_map.id}")
-      {:ok, new_map}
-    else
-      {:error, reason} = error ->
-        Logger.error("Failed to duplicate map #{source_map_id}: #{inspect(reason)}")
-        error
-    end
+    # Wrap all duplication operations in a transaction
+    WandererApp.Repo.transaction(fn ->
+      with {:ok, source_map} <- load_source_map(source_map_id),
+           {:ok, system_mapping} <- copy_systems(source_map, new_map),
+           {:ok, _connections} <- copy_connections(source_map, new_map, system_mapping),
+           {:ok, _signatures} <-
+             maybe_copy_signatures(source_map, new_map, system_mapping, copy_signatures),
+           {:ok, _acls} <- maybe_copy_acls(source_map, new_map, copy_acls),
+           {:ok, _user_settings} <-
+             maybe_copy_user_settings(source_map, new_map, copy_user_settings) do
+        Logger.info("Successfully duplicated map #{source_map_id} to #{new_map.id}")
+        new_map
+      else
+        {:error, reason} ->
+          Logger.error("Failed to duplicate map #{source_map_id}: #{inspect(reason)}")
+          WandererApp.Repo.rollback(reason)
+      end
+    end)
   end
 
   # Load source map with all required relationships
@@ -143,7 +145,7 @@ defmodule WandererApp.Map.Operations.Duplication do
   end
 
   # Copy a single connection with updated system references
-  defp copy_single_connection(source_connection, new_map_id, _system_mapping) do
+  defp copy_single_connection(source_connection, new_map_id, system_mapping) do
     # Get all attributes from the source connection, excluding system-managed fields and metadata
     excluded_fields = [
       # System managed fields
@@ -167,8 +169,31 @@ defmodule WandererApp.Map.Operations.Duplication do
       |> Map.from_struct()
       |> Map.drop(excluded_fields)
       |> Map.put(:map_id, new_map_id)
+      |> update_system_references(system_mapping)
 
     MapConnection.create(connection_attrs)
+  end
+
+  # Update system references in connection attributes using the system mapping
+  defp update_system_references(connection_attrs, system_mapping) do
+    connection_attrs
+    |> maybe_update_system_reference(:solar_system_source, system_mapping)
+    |> maybe_update_system_reference(:solar_system_target, system_mapping)
+  end
+
+  # Update a single system reference if it exists in the mapping
+  defp maybe_update_system_reference(attrs, field, system_mapping) do
+    case Map.get(attrs, field) do
+      nil ->
+        attrs
+
+      old_system_id ->
+        case Map.get(system_mapping, old_system_id) do
+          # Keep original if no mapping found
+          nil -> attrs
+          new_system_id -> Map.put(attrs, field, new_system_id)
+        end
+    end
   end
 
   # Conditionally copy signatures if requested

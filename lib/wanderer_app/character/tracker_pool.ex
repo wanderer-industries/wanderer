@@ -176,7 +176,7 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.map(fn character_id ->
+      |> Enum.each(fn character_id ->
         WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
           character_id
         ])
@@ -397,7 +397,7 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.map(fn character_id ->
+      |> Enum.each(fn character_id ->
         WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
           character_id
         ])
@@ -434,7 +434,7 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.map(fn character_id ->
+      |> Enum.each(fn character_id ->
         WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
           character_id
         ])

@@ -7,7 +7,13 @@ defmodule WandererAppWeb.Api.EventsController do
 
   use WandererAppWeb, :controller
 
-  alias WandererApp.ExternalEvents.{SseStreamManager, EventFilter, MapEventRelay}
+  alias WandererApp.ExternalEvents.{
+    SseStreamManager,
+    EventFilter,
+    MapEventRelay,
+    JsonApiFormatter
+  }
+
   alias WandererApp.Api.Map, as: ApiMap
   alias Plug.Crypto
 
@@ -19,6 +25,7 @@ defmodule WandererAppWeb.Api.EventsController do
   Query parameters:
   - events: Comma-separated list of event types to filter (optional)
   - last_event_id: ULID of last received event for backfill (optional)
+  - format: Event format - "legacy" (default) or "jsonapi" for JSON:API compliance
   """
   def stream(conn, %{"map_identifier" => map_identifier} = params) do
     Logger.debug(fn -> "SSE stream requested for map #{map_identifier}" end)
@@ -51,6 +58,9 @@ defmodule WandererAppWeb.Api.EventsController do
         events -> EventFilter.parse(events)
       end
 
+    # Parse format parameter
+    event_format = Map.get(params, "format", "legacy")
+
     # Log full SSE subscription details
     Logger.debug(fn ->
       "SSE client subscription - map: #{map_id}, api_key: #{String.slice(api_key, 0..7)}..., events_param: #{inspect(Map.get(params, "events"))}, parsed_filter: #{inspect(event_filter)}, all_params: #{inspect(params)}"
@@ -69,14 +79,18 @@ defmodule WandererAppWeb.Api.EventsController do
         Logger.debug(fn -> "SSE client registered successfully with SseStreamManager" end)
         # Send initial connection event
         conn =
-          send_event(conn, %{
-            id: Ulid.generate(),
-            event: "connected",
-            data: %{
-              map_id: map_id,
-              server_time: DateTime.utc_now() |> DateTime.to_iso8601()
-            }
-          })
+          send_event(
+            conn,
+            %{
+              id: Ulid.generate(),
+              event: "connected",
+              data: %{
+                map_id: map_id,
+                server_time: DateTime.utc_now() |> DateTime.to_iso8601()
+              }
+            },
+            event_format
+          )
 
         # Handle backfill if last_event_id is provided
         conn =
@@ -85,14 +99,14 @@ defmodule WandererAppWeb.Api.EventsController do
               conn
 
             last_event_id ->
-              send_backfill_events(conn, map_id, last_event_id, event_filter)
+              send_backfill_events(conn, map_id, last_event_id, event_filter, event_format)
           end
 
         # Subscribe to map events
         Phoenix.PubSub.subscribe(WandererApp.PubSub, "external_events:map:#{map_id}")
 
         # Start streaming loop
-        stream_events(conn, map_id, api_key, event_filter)
+        stream_events(conn, map_id, api_key, event_filter, event_format)
 
       {:error, :map_limit_exceeded} ->
         conn
@@ -119,7 +133,7 @@ defmodule WandererAppWeb.Api.EventsController do
     end
   end
 
-  defp send_backfill_events(conn, map_id, last_event_id, event_filter) do
+  defp send_backfill_events(conn, map_id, last_event_id, event_filter, event_format) do
     case MapEventRelay.get_events_since_ulid(map_id, last_event_id) do
       {:ok, events} ->
         # Filter and send each event
@@ -152,7 +166,7 @@ defmodule WandererAppWeb.Api.EventsController do
               end)
             end
 
-            send_event(acc_conn, event)
+            send_event(acc_conn, event, event_format)
           else
             # Log ACL events filtering for debugging
             if event &&
@@ -172,7 +186,7 @@ defmodule WandererAppWeb.Api.EventsController do
     end
   end
 
-  defp stream_events(conn, map_id, api_key, event_filter) do
+  defp stream_events(conn, map_id, api_key, event_filter, event_format) do
     receive do
       {:sse_event, event_json} ->
         Logger.debug(fn ->
@@ -214,7 +228,7 @@ defmodule WandererAppWeb.Api.EventsController do
               end
 
               Logger.debug(fn -> "SSE event matches filter, sending to client: #{event_type}" end)
-              send_event(conn, event)
+              send_event(conn, event, event_format)
             else
               # Log ACL events filtering for debugging
               if event_type in ["acl_member_added", "acl_member_removed", "acl_member_updated"] do
@@ -235,25 +249,25 @@ defmodule WandererAppWeb.Api.EventsController do
           end
 
         # Continue streaming
-        stream_events(conn, map_id, api_key, event_filter)
+        stream_events(conn, map_id, api_key, event_filter, event_format)
 
       :keepalive ->
         Logger.debug(fn -> "SSE received keepalive message" end)
         # Send keepalive
         conn = send_keepalive(conn)
         # Continue streaming
-        stream_events(conn, map_id, api_key, event_filter)
+        stream_events(conn, map_id, api_key, event_filter, event_format)
 
       other ->
         Logger.debug(fn -> "SSE received unknown message: #{inspect(other)}" end)
         # Unknown message, continue
-        stream_events(conn, map_id, api_key, event_filter)
+        stream_events(conn, map_id, api_key, event_filter, event_format)
     after
       30_000 ->
         Logger.debug(fn -> "SSE timeout after 30s, sending keepalive" end)
         # Send keepalive every 30 seconds
         conn = send_keepalive(conn)
-        stream_events(conn, map_id, api_key, event_filter)
+        stream_events(conn, map_id, api_key, event_filter, event_format)
     end
   rescue
     _error in [Plug.Conn.WrapperError, DBConnection.ConnectionError] ->
@@ -323,11 +337,22 @@ defmodule WandererAppWeb.Api.EventsController do
     |> send_chunked(200)
   end
 
-  defp send_event(conn, event) when is_map(event) do
+  defp send_event(conn, event, event_format) when is_map(event) do
     event_type = Map.get(event, "type", Map.get(event, :type, "unknown"))
     event_id = Map.get(event, "id", Map.get(event, :id, "unknown"))
-    Logger.debug(fn -> "SSE sending event: type=#{event_type}, id=#{event_id}" end)
-    sse_data = format_sse_event(event)
+
+    Logger.debug(fn ->
+      "SSE sending event: type=#{event_type}, id=#{event_id}, format=#{event_format}"
+    end)
+
+    # Format the event based on the requested format
+    formatted_event =
+      case event_format do
+        "jsonapi" -> JsonApiFormatter.format_legacy_event(event)
+        _ -> event
+      end
+
+    sse_data = format_sse_event(formatted_event)
     Logger.debug(fn -> "SSE formatted data: #{inspect(String.slice(sse_data, 0, 200))}..." end)
 
     case chunk(conn, sse_data) do

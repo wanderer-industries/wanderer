@@ -7,63 +7,73 @@ defmodule WandererApp.Application do
 
   @impl true
   def start(_type, _args) do
-    # Load test mocks if we're in test environment
-    if Mix.env() == :test and Code.ensure_loaded?(WandererApp.Test.Mocks) do
-      WandererApp.Test.Mocks.setup_mocks()
-    end
+    # Skip test mocks setup - handled in test helper if needed
+
+    # Core children that must always start
+    core_children = [
+      WandererApp.PromEx,
+      WandererAppWeb.Telemetry,
+      WandererApp.Vault,
+      WandererApp.Repo,
+      {Phoenix.PubSub, name: WandererApp.PubSub, adapter_name: Phoenix.PubSub.PG2},
+      {
+        Finch,
+        name: WandererApp.Finch,
+        pools: %{
+          default: [
+            # number of connections per pool
+            size: 50,
+            # number of pools (so total 50 connections)
+            count: 4
+          ]
+        }
+      },
+      WandererApp.Cache,
+      Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)},
+        id: :api_cache_worker
+      ),
+      Supervisor.child_spec({Cachex, name: :esi_auth_cache}, id: :esi_auth_cache_worker),
+      Supervisor.child_spec({Cachex, name: :system_static_info_cache},
+        id: :system_static_info_cache_worker
+      ),
+      Supervisor.child_spec({Cachex, name: :ship_types_cache}, id: :ship_types_cache_worker),
+      Supervisor.child_spec({Cachex, name: :character_cache}, id: :character_cache_worker),
+      Supervisor.child_spec({Cachex, name: :map_cache}, id: :map_cache_worker),
+      Supervisor.child_spec({Cachex, name: :character_state_cache},
+        id: :character_state_cache_worker
+      ),
+      Supervisor.child_spec({Cachex, name: :tracked_characters},
+        id: :tracked_characters_cache_worker
+      ),
+      {Registry, keys: :unique, name: WandererApp.MapRegistry},
+      {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
+      {PartitionSupervisor,
+       child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
+      {PartitionSupervisor,
+       child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
+      WandererAppWeb.Presence,
+      WandererAppWeb.Endpoint
+    ]
+
+    # Children that should only start in non-test environments
+    runtime_children =
+      if Application.get_env(:wanderer_app, :environment) == :test do
+        []
+      else
+        [
+          WandererApp.Esi.InitClientsTask,
+          WandererApp.Scheduler,
+          WandererApp.Server.ServerStatusTracker,
+          WandererApp.Server.TheraDataFetcher,
+          {WandererApp.Character.TrackerPoolSupervisor, []},
+          WandererApp.Character.TrackerManager,
+          WandererApp.Map.Manager
+        ]
+      end
 
     children =
-      [
-        WandererApp.PromEx,
-        WandererAppWeb.Telemetry,
-        WandererApp.Vault,
-        WandererApp.Repo,
-        {Phoenix.PubSub, name: WandererApp.PubSub, adapter_name: Phoenix.PubSub.PG2},
-        {
-          Finch,
-          name: WandererApp.Finch,
-          pools: %{
-            default: [
-              # number of connections per pool
-              size: 50,
-              # number of pools (so total 50 connections)
-              count: 4
-            ]
-          }
-        },
-        WandererApp.Cache,
-        Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)},
-          id: :api_cache_worker
-        ),
-        Supervisor.child_spec({Cachex, name: :esi_auth_cache}, id: :esi_auth_cache_worker),
-        Supervisor.child_spec({Cachex, name: :system_static_info_cache},
-          id: :system_static_info_cache_worker
-        ),
-        Supervisor.child_spec({Cachex, name: :ship_types_cache}, id: :ship_types_cache_worker),
-        Supervisor.child_spec({Cachex, name: :character_cache}, id: :character_cache_worker),
-        Supervisor.child_spec({Cachex, name: :map_cache}, id: :map_cache_worker),
-        Supervisor.child_spec({Cachex, name: :character_state_cache},
-          id: :character_state_cache_worker
-        ),
-        Supervisor.child_spec({Cachex, name: :tracked_characters},
-          id: :tracked_characters_cache_worker
-        ),
-        WandererApp.Esi.InitClientsTask,
-        WandererApp.Scheduler,
-        {Registry, keys: :unique, name: WandererApp.MapRegistry},
-        {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
-        {PartitionSupervisor,
-         child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
-        {PartitionSupervisor,
-         child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
-        WandererApp.Server.ServerStatusTracker,
-        WandererApp.Server.TheraDataFetcher,
-        {WandererApp.Character.TrackerPoolSupervisor, []},
-        WandererApp.Character.TrackerManager,
-        WandererApp.Map.Manager,
-        WandererAppWeb.Presence,
-        WandererAppWeb.Endpoint
-      ] ++
+      core_children ++
+        runtime_children ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
         maybe_start_kills_services() ++
         maybe_start_external_events_services()
@@ -104,55 +114,65 @@ defmodule WandererApp.Application do
     do: []
 
   defp maybe_start_kills_services do
-    wanderer_kills_enabled =
-      Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
-
-    if wanderer_kills_enabled in [true, true, "true"] do
-      Logger.info("Starting WandererKills service integration...")
-
-      [
-        WandererApp.Kills.Supervisor,
-        WandererApp.Map.ZkbDataFetcher
-      ]
-    else
+    # Don't start kills services in test environment
+    if Application.get_env(:wanderer_app, :environment) == :test do
       []
+    else
+      wanderer_kills_enabled =
+        Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, false)
+
+      if wanderer_kills_enabled in [true, "true"] do
+        Logger.info("Starting WandererKills service integration...")
+
+        [
+          WandererApp.Kills.Supervisor,
+          WandererApp.Map.ZkbDataFetcher
+        ]
+      else
+        []
+      end
     end
   end
 
   defp maybe_start_external_events_services do
-    external_events_config = Application.get_env(:wanderer_app, :external_events, [])
-    sse_enabled = WandererApp.Env.sse_enabled?()
-    webhooks_enabled = external_events_config[:webhooks_enabled] || false
+    # Don't start external events in test environment
+    if Application.get_env(:wanderer_app, :environment) == :test do
+      []
+    else
+      external_events_config = Application.get_env(:wanderer_app, :external_events, [])
+      sse_enabled = WandererApp.Env.sse_enabled?()
+      webhooks_enabled = external_events_config[:webhooks_enabled] || false
 
-    services = []
+      services = []
 
-    # Always include MapEventRelay if any external events are enabled
-    services =
-      if sse_enabled || webhooks_enabled do
-        Logger.info("Starting external events system...")
-        [WandererApp.ExternalEvents.MapEventRelay | services]
-      else
-        services
-      end
+      # Always include MapEventRelay if any external events are enabled
+      services =
+        if sse_enabled || webhooks_enabled do
+          Logger.info("Starting external events system...")
+          [WandererApp.ExternalEvents.MapEventRelay | services]
+        else
+          services
+        end
 
-    # Add WebhookDispatcher if webhooks are enabled
-    services =
-      if webhooks_enabled do
-        Logger.info("Starting webhook dispatcher...")
-        [WandererApp.ExternalEvents.WebhookDispatcher | services]
-      else
-        services
-      end
+      # Add WebhookDispatcher if webhooks are enabled
+      services =
+        if webhooks_enabled do
+          Logger.info("Starting webhook dispatcher...")
+          [WandererApp.ExternalEvents.WebhookDispatcher | services]
+        else
+          services
+        end
 
-    # Add SseStreamManager if SSE is enabled
-    services =
-      if sse_enabled do
-        Logger.info("Starting SSE stream manager...")
-        [WandererApp.ExternalEvents.SseStreamManager | services]
-      else
-        services
-      end
+      # Add SseStreamManager if SSE is enabled
+      services =
+        if sse_enabled do
+          Logger.info("Starting SSE stream manager...")
+          [WandererApp.ExternalEvents.SseStreamManager | services]
+        else
+          services
+        end
 
-    Enum.reverse(services)
+      Enum.reverse(services)
+    end
   end
 end

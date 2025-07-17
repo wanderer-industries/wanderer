@@ -15,6 +15,35 @@ defmodule WandererAppWeb.MapSystemAPIController do
 
   action_fallback WandererAppWeb.FallbackController
 
+  # -----------------------------------------------------------------
+  # V1 API Actions (for compatibility with versioned API router)
+  # -----------------------------------------------------------------
+
+  def index_v1(conn, params) do
+    # Delegate to existing index action
+    index(conn, params)
+  end
+
+  def show_v1(conn, params) do
+    # Delegate to existing show action
+    show(conn, params)
+  end
+
+  def create_v1(conn, params) do
+    # Delegate to existing create action
+    create(conn, params)
+  end
+
+  def update_v1(conn, params) do
+    # Delegate to existing update action
+    update(conn, params)
+  end
+
+  def delete_v1(conn, params) do
+    # Delegate to existing delete action
+    delete(conn, params)
+  end
+
   # -- JSON Schemas --
   @map_system_schema %Schema{
     type: :object,
