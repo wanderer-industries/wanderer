@@ -33,6 +33,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @pochven 25
   # @zarzakh 10100
 
+  @frigate_ship_size 0
+  @large_ship_size 2
+
   @jita 30_000_142
 
   @wh_space [
@@ -367,7 +370,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
               # C13 systems always get frigate
               source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
-                0
+                @frigate_ship_size
 
               # C4 to null gets frigate (unless C4 is shattered)
               (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
@@ -375,15 +378,15 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                   (target_system_info.system_class == @c4 and
                      source_system_info.system_class == @ns and
                      not target_system_info.is_shattered) ->
-                0
+                @frigate_ship_size
 
               true ->
                 # Default to large for other wormhole connections
-                2
+                @large_ship_size
             end
           else
             # Default to large for non-wormhole connections
-            2
+            @large_ship_size
           end
 
         {:ok, connection} =
