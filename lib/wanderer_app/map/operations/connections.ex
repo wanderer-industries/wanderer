@@ -22,9 +22,12 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # System class constants
   @c1_system_class 1
+  @c4_system_class 4
+  @c13_system_class 13
+  @ns_system_class 9
 
   @doc """
-  Creates a connection between two systems, applying special rules for C1 wormholes.
+  Creates a connection between two systems, applying special rules for C1, C13, and C4 wormholes.
   Handles parsing of input parameters, validates system information, and manages
   unique constraint violations gracefully.
   """
@@ -86,10 +89,27 @@ defmodule WandererApp.Map.Operations.Connections do
   defp resolve_ship_size(attrs, src_info, tgt_info) do
     type = parse_type(attrs["type"])
 
-    if type == @connection_type_wormhole and
-         (src_info.system_class == @c1_system_class or
-            tgt_info.system_class == @c1_system_class) do
-      @medium_ship_size
+    if type == @connection_type_wormhole do
+      cond do
+        # C1 systems always get medium
+        src_info.system_class == @c1_system_class or tgt_info.system_class == @c1_system_class ->
+          @medium_ship_size
+
+        # C13 systems always get frigate
+        src_info.system_class == @c13_system_class or tgt_info.system_class == @c13_system_class ->
+          @small_ship_size
+
+        # C4 to null gets frigate (unless C4 is shattered)
+        (src_info.system_class == @c4_system_class and tgt_info.system_class == @ns_system_class and
+           not src_info.is_shattered) or
+            (tgt_info.system_class == @c4_system_class and
+               src_info.system_class == @ns_system_class and not tgt_info.is_shattered) ->
+          @small_ship_size
+
+        true ->
+          # Default handling for other wormhole connections
+          parse_ship_size(attrs["ship_size_type"], @large_ship_size)
+      end
     else
       parse_ship_size(attrs["ship_size_type"], @large_ship_size)
     end

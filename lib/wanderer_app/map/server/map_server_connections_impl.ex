@@ -357,14 +357,32 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
         {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
 
-        # Set ship size type to medium only for wormhole connections involving C1 systems
+        # Set ship size type based on system classes and special rules
         ship_size_type =
-          if connection_type == @connection_type_wormhole and
-               (source_system_info.system_class == @c1 or
-                  target_system_info.system_class == @c1) do
-            @medium_ship_size
+          if connection_type == @connection_type_wormhole do
+            cond do
+              # C1 systems always get medium
+              source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
+                @medium_ship_size
+
+              # C13 systems always get frigate
+              source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
+                0
+
+              # C4 to null gets frigate (unless C4 is shattered)
+              (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
+                 not source_system_info.is_shattered) or
+                  (target_system_info.system_class == @c4 and
+                     source_system_info.system_class == @ns and
+                     not target_system_info.is_shattered) ->
+                0
+
+              true ->
+                # Default to large for other wormhole connections
+                2
+            end
           else
-            # Default to large for non-wormhole or non-C1 connections
+            # Default to large for non-wormhole connections
             2
           end
 
