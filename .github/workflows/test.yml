@@ -6,6 +6,11 @@ on:
   push:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 env:
   MIX_ENV: test
   ELIXIR_VERSION: '1.16'
