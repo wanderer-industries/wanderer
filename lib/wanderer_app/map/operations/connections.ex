@@ -22,9 +22,12 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # System class constants
   @c1_system_class 1
+  @c4_system_class 4
+  @c13_system_class 13
+  @ns_system_class 9
 
   @doc """
-  Creates a connection between two systems, applying special rules for C1 wormholes.
+  Creates a connection between two systems, applying special rules for C1, C13, and C4 wormholes.
   Handles parsing of input parameters, validates system information, and manages
   unique constraint violations gracefully.
   """
@@ -59,7 +62,8 @@ defmodule WandererApp.Map.Operations.Connections do
         solar_system_target_id: tgt_info.solar_system_id,
         character_id: char_id,
         type: parse_type(attrs["type"]),
-        ship_size_type: resolve_ship_size(attrs, src_info, tgt_info)
+        ship_size_type:
+          resolve_ship_size(attrs["type"], attrs["ship_size_type"], src_info, tgt_info)
       }
 
       case Server.add_connection(map_id, info) do
@@ -83,17 +87,52 @@ defmodule WandererApp.Map.Operations.Connections do
     end
   end
 
-  defp resolve_ship_size(attrs, src_info, tgt_info) do
-    type = parse_type(attrs["type"])
+  @doc """
+  Determines the ship size for a connection, applying wormhole‑specific rules
+  for C1, C13, and C4⇄NS links, falling back to the caller’s provided size or Large.
+  """
+  defp resolve_ship_size(type_val, ship_size_val, src_info, tgt_info) do
+    case parse_type(type_val) do
+      @connection_type_wormhole ->
+        wormhole_ship_size(ship_size_val, src_info, tgt_info)
 
-    if type == @connection_type_wormhole and
-         (src_info.system_class == @c1_system_class or
-            tgt_info.system_class == @c1_system_class) do
-      @medium_ship_size
-    else
-      parse_ship_size(attrs["ship_size_type"], @large_ship_size)
+      _other ->
+        # Stargates and others just use the parsed or default size
+        parse_ship_size(ship_size_val, @large_ship_size)
     end
   end
+
+  # -- Wormhole‑specific sizing rules ----------------------------------------
+
+  defp wormhole_ship_size(ship_size_val, src, tgt) do
+    cond do
+      c1_system?(src, tgt) -> @medium_ship_size
+      c13_system?(src, tgt) -> @small_ship_size
+      c4_to_ns?(src, tgt) -> @small_ship_size
+      true -> parse_ship_size(ship_size_val, @large_ship_size)
+    end
+  end
+
+  defp c1_system?(%{system_class: @c1_system_class}, _), do: true
+  defp c1_system?(_, %{system_class: @c1_system_class}), do: true
+  defp c1_system?(_, _), do: false
+
+  defp c13_system?(%{system_class: @c13_system_class}, _), do: true
+  defp c13_system?(_, %{system_class: @c13_system_class}), do: true
+  defp c13_system?(_, _), do: false
+
+  defp c4_to_ns?(%{system_class: @c4_system_class, is_shattered: false}, %{
+         system_class: @ns_system_class
+       }),
+       do: true
+
+  defp c4_to_ns?(%{system_class: @ns_system_class}, %{
+         system_class: @c4_system_class,
+         is_shattered: false
+       }),
+       do: true
+
+  defp c4_to_ns?(_, _), do: false
 
   defp parse_ship_size(nil, default), do: default
   defp parse_ship_size(val, _default) when is_integer(val), do: val
