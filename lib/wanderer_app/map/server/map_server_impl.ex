@@ -82,36 +82,44 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def start_map(%__MODULE__{map: map, map_id: map_id} = state) do
-    with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
-      @pubsub_client.subscribe(
-        WandererApp.PubSub,
-        "maps:#{map_id}"
-      )
+    # Check if map was loaded successfully
+    case map do
+      nil ->
+        Logger.error("Cannot start map #{map_id}: map not loaded")
+        {:error, :map_not_loaded}
 
-      Process.send_after(self(), :update_characters, @update_characters_timeout)
-      Process.send_after(self(), :update_tracked_characters, 100)
-      Process.send_after(self(), :update_presence, @update_presence_timeout)
-      Process.send_after(self(), :cleanup_connections, 5_000)
-      Process.send_after(self(), :cleanup_systems, 10_000)
-      Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
-      Process.send_after(self(), :backup_state, @backup_state_timeout)
+      map ->
+        with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
+          @pubsub_client.subscribe(
+            WandererApp.PubSub,
+            "maps:#{map_id}"
+          )
 
-      WandererApp.Cache.insert("map_#{map_id}:started", true)
+          Process.send_after(self(), :update_characters, @update_characters_timeout)
+          Process.send_after(self(), :update_tracked_characters, 100)
+          Process.send_after(self(), :update_presence, @update_presence_timeout)
+          Process.send_after(self(), :cleanup_connections, 5_000)
+          Process.send_after(self(), :cleanup_systems, 10_000)
+          Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
+          Process.send_after(self(), :backup_state, @backup_state_timeout)
 
-      # Initialize zkb cache structure to prevent timing issues
-      cache_key = "map:#{map_id}:zkb:detailed_kills"
-      WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
+          WandererApp.Cache.insert("map_#{map_id}:started", true)
 
-      broadcast!(map_id, :map_server_started)
-      @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
+          # Initialize zkb cache structure to prevent timing issues
+          cache_key = "map:#{map_id}:zkb:detailed_kills"
+          WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
 
-      :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
+          broadcast!(map_id, :map_server_started)
+          @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
 
-      state
-    else
-      error ->
-        Logger.error("Failed to start map: #{inspect(error, pretty: true)}")
-        state
+          :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
+
+          state
+        else
+          error ->
+            Logger.error("Failed to start map: #{inspect(error, pretty: true)}")
+            state
+        end
     end
   end
 
@@ -127,8 +135,6 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def get_map(%{map: map} = _state), do: {:ok, map}
-
-  defdelegate get_characters(state), to: CharactersImpl
 
   defdelegate add_character(state, character, track_character), to: CharactersImpl
 
