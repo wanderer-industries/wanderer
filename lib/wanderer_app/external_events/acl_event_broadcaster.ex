@@ -31,7 +31,7 @@ defmodule WandererApp.ExternalEvents.AclEventBroadcaster do
       end)
 
       # Find all maps that use this ACL
-      case WandererApp.Api.read(
+      case Ash.read(
              WandererApp.Api.MapAccessList
              |> Ash.Query.for_read(:read_by_acl, %{acl_id: acl_id})
            ) do

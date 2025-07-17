@@ -1,8 +1,31 @@
 # WandererApp Test Suite Documentation
 
+## 🚀 Quick Start
+
+**New to testing here?** Start with our [QUICKSTART.md](QUICKSTART.md) - get up and running in 10 minutes!
+
+**Looking for specific guidance?** Check our [INDEX.md](INDEX.md) for quick navigation to the right documentation.
+
+## 📚 Documentation Structure
+
+We have comprehensive testing documentation organized for different needs:
+
+| Document | Purpose | Time | Audience |
+|----------|---------|------|----------|
+| **[INDEX.md](INDEX.md)** | 📚 Navigation hub | 2 min | Everyone |
+| **[QUICKSTART.md](QUICKSTART.md)** | 🚀 Fast setup guide | 10 min | New developers |
+| **[WORKFLOW.md](WORKFLOW.md)** | 🔄 Visual workflows | 15 min | All developers |
+| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | 🔧 Problem solving | As needed | When stuck |
+| **[STANDARDS_CONSOLIDATED.md](STANDARDS_CONSOLIDATED.md)** | 📏 Unified standards | 30 min | All developers |
+| **[DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md)** | 👥 Team integration | 1-2 weeks | New team members |
+| **[EXAMPLES.md](EXAMPLES.md)** | 📋 Practical examples | 30 min | Code writers |
+| **[performance/README.md](performance/README.md)** | ⚡ Performance testing | 20 min | Performance focus |
+
 ## Overview
 
 This document provides comprehensive guidance for writing, running, and maintaining tests in the WandererApp project. Our test suite follows Elixir best practices and is designed to ensure API reliability, performance, and maintainability.
+
+> **💡 Pro Tip**: This README contains detailed reference material. For quick getting started, use [QUICKSTART.md](QUICKSTART.md) instead!
 
 ## Table of Contents
 

@@ -406,7 +406,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
       |> Ash.Query.new()
       |> filter(id == ^id)
 
-    case WandererApp.Api.read(query) do
+    case Ash.read(query) do
       {:ok, [acl]} ->
         case Ash.load(acl, :members) do
           {:ok, loaded_acl} ->
@@ -569,7 +569,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
       |> Ash.Query.new()
       |> filter(eve_id == ^eve_id)
 
-    case WandererApp.Api.read(query) do
+    case Ash.read(query) do
       {:ok, [character]} ->
         {:ok, character}
 
