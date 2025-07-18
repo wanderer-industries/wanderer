@@ -18,7 +18,7 @@ defmodule WandererApp.Map.Operations.Owner do
 
   @spec get_owner_character_id(String.t()) ::
           {:ok, %{id: term(), user_id: term()}} | {:error, String.t()}
-  def get_owner_character_id(map_id) do
+  def get_owner_character_id(map_id) when is_binary(map_id) do
     cache_key = "map_#{map_id}:owner_info"
 
     case Cache.lookup!(cache_key) do
@@ -40,6 +40,10 @@ defmodule WandererApp.Map.Operations.Owner do
       cached ->
         {:ok, cached}
     end
+  end
+
+  def get_owner_character_id(_map_id) do
+    {:error, "Invalid map_id: must be a string"}
   end
 
   defp fetch_map_owner(map_id) do

@@ -2,6 +2,20 @@
 
 <!-- changelog -->
 
+## [v1.74.11](https://github.com/wanderer-industries/wanderer/compare/v1.74.10...v1.74.11) (2025-07-18)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed remove pings for removed systems
+
+## [v1.74.10](https://github.com/wanderer-industries/wanderer/compare/v1.74.9...v1.74.10) (2025-07-15)
+
+
+
+
 ## [v1.74.9](https://github.com/wanderer-industries/wanderer/compare/v1.74.8...v1.74.9) (2025-07-13)
 
 

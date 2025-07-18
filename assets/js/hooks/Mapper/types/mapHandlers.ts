@@ -151,7 +151,7 @@ export type CommandUpdateTracking = {
   follow: boolean;
 };
 export type CommandPingAdded = PingData[];
-export type CommandPingCancelled = Pick<PingData, 'type' | 'solar_system_id'>;
+export type CommandPingCancelled = Pick<PingData, 'type' | 'id'>;
 
 export interface UserSettings {
   primaryCharacterId?: string;

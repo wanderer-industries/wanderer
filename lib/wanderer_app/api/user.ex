@@ -4,11 +4,25 @@ defmodule WandererApp.Api.User do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshCloak]
+    extensions: [AshCloak, AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("user_v1")
+  end
+
+  json_api do
+    type "users"
+
+    # Only expose safe, non-sensitive attributes
+    includes([:characters])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      # No routes - this resource should not be exposed via API
+    end
   end
 
   code_interface do
@@ -71,7 +85,9 @@ defmodule WandererApp.Api.User do
   end
 
   relationships do
-    has_many :characters, WandererApp.Api.Character
+    has_many :characters, WandererApp.Api.Character do
+      public? true
+    end
   end
 
   identities do

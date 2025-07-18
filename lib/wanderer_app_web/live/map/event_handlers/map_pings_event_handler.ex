@@ -18,6 +18,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
 
     pings
     |> Enum.reduce(socket, fn %{
+                                id: id,
                                 type: type,
                                 message: message,
                                 system: system,
@@ -28,6 +29,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
       socket
       |> MapEventHandler.push_map_event("ping_added", [
         map_ui_ping(%{
+          id: id,
           inserted_at: inserted_at,
           character_eve_id: character.eve_id,
           solar_system_id: "#{system.solar_system_id}",
@@ -49,6 +51,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
     do:
       socket
       |> MapEventHandler.push_map_event("ping_cancelled", %{
+        id: ping_info.id,
         solar_system_id: ping_info.solar_system_id,
         type: ping_info.type
       })
@@ -97,7 +100,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
 
   def handle_ui_event(
         "cancel_ping",
-        %{"solar_system_id" => solar_system_id, "type" => type} = _event,
+        %{"id" => id, "type" => type} = _event,
         %{
           assigns: %{
             map_id: map_id,
@@ -112,7 +115,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
       when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.cancel_ping(%{
-      solar_system_id: solar_system_id,
+      id: id,
       type: type,
       character_id: main_character_id,
       user_id: current_user.id
@@ -126,6 +129,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
 
   def map_ui_ping(
         %{
+          id: id,
           inserted_at: inserted_at,
           character_eve_id: character_eve_id,
           solar_system_id: solar_system_id,
@@ -134,6 +138,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         } = _ping
       ) do
     %{
+      id: id,
       inserted_at: inserted_at,
       character_eve_id: character_eve_id,
       solar_system_id: solar_system_id,

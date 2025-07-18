@@ -343,7 +343,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
       on_timeout: :kill_task,
       timeout: :timer.minutes(1)
     )
-    |> Enum.map(fn _result -> :skip end)
+    |> Enum.each(fn _result -> :skip end)
 
     {:noreply, socket}
   end

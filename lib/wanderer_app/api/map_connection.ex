@@ -3,15 +3,35 @@ defmodule WandererApp.Api.MapConnection do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_chain_v1")
   end
 
+  json_api do
+    type "map_connections"
+
+    includes([:map])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_connections")
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
+  end
+
   code_interface do
     define(:create, action: :create)
+    define(:update, action: :update)
 
     define(:by_id,
       get_by: [:id],
@@ -39,7 +59,13 @@ defmodule WandererApp.Api.MapConnection do
       :solar_system_source,
       :solar_system_target,
       :type,
-      :ship_size_type
+      :ship_size_type,
+      :mass_status,
+      :time_status,
+      :wormhole_type,
+      :count_of_passage,
+      :locked,
+      :custom_info
     ]
 
     defaults [:create, :read, :update, :destroy]
@@ -170,6 +196,7 @@ defmodule WandererApp.Api.MapConnection do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 end
