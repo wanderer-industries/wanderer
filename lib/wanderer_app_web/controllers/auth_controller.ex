@@ -101,7 +101,15 @@ defmodule WandererAppWeb.AuthController do
   end
 
   def maybe_update_character_user_id(character, user_id) when not is_nil(user_id) do
-    WandererApp.Api.Character.assign_user!(character, %{user_id: user_id})
+    # First try to load the character by ID to ensure it exists and is valid
+    case WandererApp.Api.Character.by_id(character.id) do
+      {:ok, loaded_character} ->
+        WandererApp.Api.Character.assign_user!(loaded_character, %{user_id: user_id})
+
+      {:error, _} ->
+        raise Ash.Error.Invalid,
+          errors: [%Ash.Error.Query.NotFound{resource: WandererApp.Api.Character}]
+    end
   end
 
   def maybe_update_character_user_id(_character, _user_id), do: :ok

@@ -12,7 +12,7 @@ defmodule WandererApp.Api.Changes.SlugifyName do
   defp maybe_slugify_name(changeset) do
     case Changeset.get_attribute(changeset, :slug) do
       slug when is_binary(slug) ->
-        Changeset.change_attribute(changeset, :slug, Slug.slugify(slug))
+        Changeset.force_change_attribute(changeset, :slug, Slug.slugify(slug))
 
       _ ->
         changeset

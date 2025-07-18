@@ -20,21 +20,34 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   # -----------------------------------------------------------------------------
 
   @spec fetch_map_id(map()) :: {:ok, String.t()} | {:error, String.t()}
-  def fetch_map_id(%{"map_id" => id}) when is_binary(id) do
-    case Ecto.UUID.cast(id) do
-      {:ok, _} -> {:ok, id}
-      :error -> {:error, "Invalid UUID format for map_id: #{id}"}
+  def fetch_map_id(params) do
+    has_map_id = Map.has_key?(params, "map_id")
+    has_slug = Map.has_key?(params, "slug")
+
+    cond do
+      has_map_id and has_slug ->
+        {:error, "Cannot provide both map_id and slug parameters"}
+
+      has_map_id ->
+        id = params["map_id"]
+
+        case Ecto.UUID.cast(id) do
+          {:ok, _} -> {:ok, id}
+          :error -> {:error, "Invalid UUID format for map_id: #{inspect(id)}"}
+        end
+
+      has_slug ->
+        slug = params["slug"]
+
+        case MapApi.get_map_by_slug(slug) do
+          {:ok, %{id: id}} -> {:ok, id}
+          _ -> {:error, "No map found for slug=#{inspect(slug)}"}
+        end
+
+      true ->
+        {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
     end
   end
-
-  def fetch_map_id(%{"slug" => slug}) when is_binary(slug) do
-    case MapApi.get_map_by_slug(slug) do
-      {:ok, %{id: id}} -> {:ok, id}
-      _ -> {:error, "No map found for slug=#{slug}"}
-    end
-  end
-
-  def fetch_map_id(_), do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
 
   # -----------------------------------------------------------------------------
   # Parameter Validators and Parsers

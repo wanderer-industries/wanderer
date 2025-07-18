@@ -82,19 +82,25 @@ defmodule WandererApp.MapCharacterSettingsRepo do
     })
   end
 
-  def track!(settings),
-    do:
-      WandererApp.Api.MapCharacterSettings.track!(%{
-        map_id: settings.map_id,
-        character_id: settings.character_id
-      })
+  def track!(settings) do
+    case WandererApp.Api.MapCharacterSettings.track(%{
+           map_id: settings.map_id,
+           character_id: settings.character_id
+         }) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Failed to track: #{inspect(error)}"
+    end
+  end
 
-  def untrack!(settings),
-    do:
-      WandererApp.Api.MapCharacterSettings.untrack!(%{
-        map_id: settings.map_id,
-        character_id: settings.character_id
-      })
+  def untrack!(settings) do
+    case WandererApp.Api.MapCharacterSettings.untrack(%{
+           map_id: settings.map_id,
+           character_id: settings.character_id
+         }) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Failed to untrack: #{inspect(error)}"
+    end
+  end
 
   def follow(settings) do
     WandererApp.Api.MapCharacterSettings.follow(%{
@@ -110,19 +116,30 @@ defmodule WandererApp.MapCharacterSettingsRepo do
     })
   end
 
-  def follow!(settings),
-    do:
-      WandererApp.Api.MapCharacterSettings.follow!(%{
-        map_id: settings.map_id,
-        character_id: settings.character_id
-      })
+  def follow!(settings) do
+    case WandererApp.Api.MapCharacterSettings.follow(%{
+           map_id: settings.map_id,
+           character_id: settings.character_id
+         }) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Failed to follow: #{inspect(error)}"
+    end
+  end
 
-  def unfollow!(settings),
-    do:
-      WandererApp.Api.MapCharacterSettings.unfollow!(%{
-        map_id: settings.map_id,
-        character_id: settings.character_id
-      })
+  def unfollow!(settings) do
+    case WandererApp.Api.MapCharacterSettings.unfollow(%{
+           map_id: settings.map_id,
+           character_id: settings.character_id
+         }) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Failed to unfollow: #{inspect(error)}"
+    end
+  end
 
-  def destroy!(settings), do: settings |> WandererApp.Api.MapCharacterSettings.destroy!()
+  def destroy!(settings) do
+    case Ash.destroy(settings) do
+      :ok -> settings
+      {:error, error} -> raise "Failed to destroy: #{inspect(error)}"
+    end
+  end
 end

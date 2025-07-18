@@ -1,0 +1,454 @@
+defmodule WandererAppWeb.OpenAPITestGenerator do
+  @moduledoc """
+  Auto-generates contract tests from OpenAPI specifications.
+  
+  This module creates comprehensive test cases for all documented
+  API operations, ensuring complete contract coverage.
+  """
+
+  alias WandererAppWeb.OpenAPISpecAnalyzer
+
+  @doc """
+  Generates test modules for all API operations.
+  """
+  def generate_all_tests(output_dir \\ "test/contract/generated") do
+    spec = OpenAPISpecAnalyzer.load_spec()
+    operations = OpenAPISpecAnalyzer.list_all_operations(spec)
+    
+    # Group operations by controller
+    grouped_ops = Enum.group_by(operations, &extract_controller_name/1)
+    
+    # Create output directory
+    File.mkdir_p!(output_dir)
+    
+    # Generate test file for each controller
+    Enum.each(grouped_ops, fn {controller, ops} ->
+      generate_controller_tests(controller, ops, spec, output_dir)
+    end)
+    
+    # Generate a summary test that validates the spec itself
+    generate_spec_validation_test(spec, output_dir)
+    
+    {:ok, length(grouped_ops)}
+  end
+
+  @doc """
+  Generates test cases for a specific operation.
+  """
+  def generate_operation_tests(operation_id, spec \\ nil) do
+    spec = spec || OpenAPISpecAnalyzer.load_spec()
+    
+    operation = find_operation(spec, operation_id)
+    
+    unless operation do
+      raise "Operation #{operation_id} not found in spec"
+    end
+    
+    generate_test_cases(operation, spec)
+  end
+
+  @doc """
+  Generates example requests for an operation.
+  """
+  def generate_example_requests(operation_id, spec \\ nil) do
+    spec = spec || OpenAPISpecAnalyzer.load_spec()
+    operation = find_operation(spec, operation_id)
+    
+    %{
+      valid: generate_valid_request(operation, spec),
+      invalid: generate_invalid_requests(operation, spec)
+    }
+  end
+
+  # Private functions
+
+  defp generate_controller_tests(controller_name, operations, spec, output_dir) do
+    module_name = "#{controller_name}ContractTest"
+    file_path = Path.join(output_dir, "#{Macro.underscore(controller_name)}_contract_test.exs")
+    
+    test_content = """
+    defmodule WandererAppWeb.#{module_name} do
+      use WandererAppWeb.ApiCase, async: true
+      import WandererAppWeb.OpenAPIContractHelpers
+      
+      @moduledoc \"\"\"
+      Auto-generated contract tests for #{controller_name}.
+      
+      Generated on: #{DateTime.utc_now() |> DateTime.to_string()}
+      Operations covered: #{length(operations)}
+      \"\"\"
+      
+      #{generate_operation_test_functions(operations, spec)}
+    end
+    """
+    
+    File.write!(file_path, test_content)
+  end
+
+  defp generate_operation_test_functions(operations, spec) do
+    operations
+    |> Enum.map(fn op -> generate_operation_test_function(op, spec) end)
+    |> Enum.join("\n\n")
+  end
+
+  defp generate_operation_test_function(operation, spec) do
+    test_name = operation.operation_id || "#{operation.method}_#{operation.path}"
+    
+    """
+    describe "#{test_name}" do
+      @tag :contract
+      test "validates successful response schema" do
+        # TODO: Set up test data
+        
+        conn = 
+          build_conn()
+          #{generate_auth_setup(operation)}
+          |> #{operation.method}("#{operation.path}"#{generate_params(operation, spec)})
+        
+        assert conn.status in [200, 201, 204]
+        
+        # Validate response schema
+        if conn.status != 204 do
+          assert_response_schema(conn, conn.status, nil, operation_id: "#{test_name}")
+        end
+      end
+      
+      #{generate_error_tests(operation, spec)}
+      
+      #{generate_parameter_tests(operation, spec)}
+    end
+    """
+  end
+
+  defp generate_auth_setup(%{security: nil}), do: ""
+  defp generate_auth_setup(%{security: []}), do: ""
+  defp generate_auth_setup(_operation) do
+    """
+    |> put_req_header("authorization", "Bearer \#{valid_api_key()}")"""
+  end
+
+  defp generate_params(%{has_request_body: true}, _spec) do
+    ", %{}"  # TODO: Generate valid request body
+  end
+  
+  defp generate_params(_, _), do: ""
+
+  defp generate_error_tests(operation, _spec) do
+    error_responses = 
+      operation.responses
+      |> Map.keys()
+      |> Enum.filter(&String.starts_with?(&1, "4"))
+    
+    if error_responses == [] do
+      ""
+    else
+      """
+      # @tag :contract  # Note: tags should be added outside generated code
+      test "validates error response schemas" do
+        # Test common error scenarios
+        conn = 
+          build_conn()
+          |> #{operation.method}("#{operation.path}", %{invalid: "data"})
+        
+        assert conn.status >= 400
+        assert_error_response(conn, conn.status)
+      end
+      """
+    end
+  end
+
+  defp generate_parameter_tests(%{parameters: []}, _spec), do: ""
+  
+  defp generate_parameter_tests(operation, _spec) do
+    """
+    @tag :contract
+    test "validates parameter schemas" do
+      params = %{
+        #{generate_parameter_map(operation.parameters)}
+      }
+      
+      assert_parameters(params, "#{operation.operation_id}")
+    end
+    """
+  end
+
+  defp generate_parameter_map(parameters) do
+    parameters
+    |> Enum.map(fn param ->
+      "#{param.name}: #{generate_param_value(param)}"
+    end)
+    |> Enum.join(",\n      ")
+  end
+
+  defp generate_param_value(%{schema: %{type: :string}}), do: ~s("test_value")
+  defp generate_param_value(%{schema: %{type: :integer}}), do: "123"
+  defp generate_param_value(%{schema: %{type: :boolean}}), do: "true"
+  defp generate_param_value(_), do: "nil"
+
+  defp generate_spec_validation_test(spec, output_dir) do
+    file_path = Path.join(output_dir, "api_spec_validation_test.exs")
+    
+    test_content = """
+    defmodule WandererAppWeb.ApiSpecValidationTest do
+      use ExUnit.Case, async: true
+      import WandererAppWeb.OpenAPIContractHelpers
+      
+      @moduledoc \"\"\"
+      Validates the OpenAPI specification itself.
+      \"\"\"
+      
+      describe "API Specification" do
+        test "has valid metadata" do
+          spec = api_spec()
+          
+          assert spec.info.title != nil
+          assert spec.info.version != nil
+          assert spec.openapi =~ ~r/^3\\.\\d+\\.\\d+$/
+        end
+        
+        test "all operations are documented" do
+          assert_operations_documented()
+        end
+        
+        test "all schemas are valid" do
+          spec = api_spec()
+          schemas = spec.components[:schemas] || %{}
+          
+          Enum.each(schemas, fn {name, schema} ->
+            assert schema != nil, "Schema #{name} is nil"
+            assert Map.has_key?(schema, :type) || Map.has_key?(schema, :allOf) || Map.has_key?(schema, :oneOf),
+              "Schema #{name} has no type"
+          end)
+        end
+        
+        test "security is properly configured" do
+          spec = api_spec()
+          
+          assert spec.components[:security_schemes] != nil
+          assert map_size(spec.components[:security_schemes]) > 0
+        end
+      end
+    end
+    """
+    
+    File.write!(file_path, test_content)
+  end
+
+  defp extract_controller_name(%{path: path}) do
+    # Extract controller name from path like /api/maps -> Maps
+    case String.split(path, "/", parts: 4) do
+      ["", "api", resource | _] ->
+        resource
+        |> String.replace("-", "_")
+        |> Macro.camelize()
+      _ ->
+        "Unknown"
+    end
+  end
+
+  defp find_operation(spec, operation_id) do
+    spec.paths
+    |> Enum.flat_map(fn {path, path_item} ->
+      path_item
+      |> Map.from_struct()
+      |> Enum.filter(fn {method, _} -> method in [:get, :post, :put, :patch, :delete] end)
+      |> Enum.map(fn {method, op} ->
+        Map.merge(op, %{path: path, method: method})
+      end)
+    end)
+    |> Enum.find(&(&1[:operation_id] == operation_id))
+  end
+
+  defp generate_test_cases(operation, spec) do
+    %{
+      success_cases: generate_success_cases(operation, spec),
+      error_cases: generate_error_cases(operation, spec),
+      edge_cases: generate_edge_cases(operation, spec)
+    }
+  end
+
+  defp generate_success_cases(operation, spec) do
+    # Generate test cases for each successful response code
+    success_codes = 
+      operation[:responses]
+      |> Map.keys()
+      |> Enum.filter(&String.starts_with?(&1, "2"))
+    
+    Enum.map(success_codes, fn code ->
+      %{
+        status_code: code,
+        description: "Successful #{operation[:summary] || "operation"}",
+        request: generate_valid_request(operation, spec),
+        assertions: [
+          "Response matches schema",
+          "Required fields are present",
+          "Data types are correct"
+        ]
+      }
+    end)
+  end
+
+  defp generate_error_cases(operation, spec) do
+    error_codes = 
+      operation[:responses]
+      |> Map.keys()
+      |> Enum.filter(&String.starts_with?(&1, "4"))
+    
+    Enum.flat_map(error_codes, fn code ->
+      case code do
+        "400" -> generate_validation_error_cases(operation, spec)
+        "401" -> [generate_auth_error_case(operation)]
+        "403" -> [generate_forbidden_case(operation)]
+        "404" -> [generate_not_found_case(operation)]
+        _ -> []
+      end
+    end)
+  end
+
+  defp generate_edge_cases(operation, _spec) do
+    cases = []
+    
+    # Add edge cases based on operation characteristics
+    if operation[:has_request_body] do
+      cases ++ [
+        %{
+          description: "Empty request body",
+          request: %{body: %{}},
+          expected_status: 400
+        },
+        %{
+          description: "Null values for optional fields",
+          request: %{body: %{optional_field: nil}},
+          expected_status: [200, 201]
+        }
+      ]
+    else
+      cases
+    end
+  end
+
+  defp generate_valid_request(operation, spec) do
+    %{
+      method: operation.method,
+      path: operation.path,
+      headers: generate_headers(operation),
+      params: generate_valid_params(operation[:parameters] || [], spec),
+      body: generate_valid_body(operation, spec)
+    }
+  end
+
+  defp generate_invalid_requests(operation, spec) do
+    [
+      # Missing required parameters
+      %{
+        type: :missing_required,
+        request: %{
+          method: operation.method,
+          path: operation.path,
+          params: %{},
+          body: %{}
+        }
+      },
+      # Invalid data types
+      %{
+        type: :invalid_types,
+        request: %{
+          method: operation.method,
+          path: operation.path,
+          params: generate_invalid_type_params(operation[:parameters] || []),
+          body: generate_invalid_type_body(operation, spec)
+        }
+      }
+    ]
+  end
+
+  defp generate_headers(%{security: nil}), do: %{}
+  defp generate_headers(%{security: []}), do: %{}
+  defp generate_headers(_), do: %{"authorization" => "Bearer test_token"}
+
+  defp generate_valid_params(parameters, _spec) do
+    Enum.reduce(parameters, %{}, fn param, acc ->
+      if param.required do
+        Map.put(acc, param.name, generate_param_example(param))
+      else
+        acc
+      end
+    end)
+  end
+
+  defp generate_valid_body(%{request_body: nil}, _spec), do: nil
+  defp generate_valid_body(_, _spec) do
+    %{}  # TODO: Generate from schema
+  end
+
+  defp generate_param_example(%{schema: %{type: :string, enum: [first | _]}}), do: first
+  defp generate_param_example(%{schema: %{type: :string}}), do: "example_string"
+  defp generate_param_example(%{schema: %{type: :integer}}), do: 42
+  defp generate_param_example(%{schema: %{type: :boolean}}), do: true
+  defp generate_param_example(_), do: "example"
+
+  defp generate_validation_error_cases(operation, spec) do
+    cases = []
+    
+    # Invalid parameter cases
+    if operation[:parameters] && length(operation[:parameters]) > 0 do
+      cases ++ [%{
+        description: "Invalid parameter format",
+        request: generate_valid_request(operation, spec) |> put_in([:params, :invalid], "bad_value"),
+        expected_status: 400
+      }]
+    else
+      cases
+    end
+  end
+
+  defp generate_auth_error_case(operation) do
+    %{
+      description: "Missing authentication",
+      request: %{
+        method: operation.method,
+        path: operation.path,
+        headers: %{}
+      },
+      expected_status: 401
+    }
+  end
+
+  defp generate_forbidden_case(operation) do
+    %{
+      description: "Insufficient permissions",
+      request: %{
+        method: operation.method,
+        path: operation.path,
+        headers: %{"authorization" => "Bearer low_privilege_token"}
+      },
+      expected_status: 403
+    }
+  end
+
+  defp generate_not_found_case(operation) do
+    %{
+      description: "Resource not found",
+      request: %{
+        method: operation.method,
+        path: String.replace(operation.path, "{id}", "nonexistent_id"),
+        headers: generate_headers(operation)
+      },
+      expected_status: 404
+    }
+  end
+
+  defp generate_invalid_type_params(parameters) do
+    Enum.reduce(parameters, %{}, fn param, acc ->
+      if param[:schema][:type] == :integer do
+        Map.put(acc, param.name, "not_a_number")
+      else
+        acc
+      end
+    end)
+  end
+
+  defp generate_invalid_type_body(_operation, _spec) do
+    %{invalid_field: "invalid_value"}
+  end
+end

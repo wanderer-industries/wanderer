@@ -12,6 +12,8 @@ defmodule WandererApp.Kills.MapEventListener do
   alias WandererApp.Kills.Client
   alias WandererApp.Kills.Subscription.MapIntegration
 
+  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -19,7 +21,7 @@ defmodule WandererApp.Kills.MapEventListener do
   @impl true
   def init(_opts) do
     # Subscribe to map lifecycle events
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, "maps")
+    @pubsub_client.subscribe(WandererApp.PubSub, "maps")
 
     # Defer subscription update to avoid blocking init
     Process.send_after(self(), :initial_subscription_update, 30_000)
@@ -118,14 +120,14 @@ defmodule WandererApp.Kills.MapEventListener do
     maps_to_unsubscribe = MapSet.difference(state.subscribed_maps, current_running_map_ids)
 
     Enum.each(maps_to_unsubscribe, fn map_id ->
-      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.unsubscribe(WandererApp.PubSub, map_id)
     end)
 
     # Subscribe to new running maps
     maps_to_subscribe = MapSet.difference(current_running_map_ids, state.subscribed_maps)
 
     Enum.each(maps_to_subscribe, fn map_id ->
-      Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.subscribe(WandererApp.PubSub, map_id)
     end)
 
     {:noreply, %{state | subscribed_maps: current_running_map_ids}}
@@ -134,7 +136,7 @@ defmodule WandererApp.Kills.MapEventListener do
   # Handle map creation - subscribe to new map
   def handle_info({:map_created, map_id}, state) do
     Logger.debug(fn -> "[MapEventListener] Map created: #{map_id}" end)
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+    @pubsub_client.subscribe(WandererApp.PubSub, map_id)
     updated_subscribed_maps = MapSet.put(state.subscribed_maps, map_id)
     {:noreply, schedule_subscription_update(%{state | subscribed_maps: updated_subscribed_maps})}
   end
@@ -147,11 +149,11 @@ defmodule WandererApp.Kills.MapEventListener do
   def terminate(_reason, state) do
     # Unsubscribe from all maps
     Enum.each(state.subscribed_maps, fn map_id ->
-      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.unsubscribe(WandererApp.PubSub, map_id)
     end)
 
     # Unsubscribe from general maps channel
-    Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "maps")
+    @pubsub_client.unsubscribe(WandererApp.PubSub, "maps")
 
     :ok
   end

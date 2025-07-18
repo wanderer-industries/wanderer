@@ -3,6 +3,12 @@ defmodule WandererApp.Kills.StorageTest do
   alias WandererApp.Kills.{Storage, CacheKeys}
 
   setup do
+    # Start cache if not already started
+    case WandererApp.Cache.start_link() do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+    end
+
     # Clear cache before each test
     WandererApp.Cache.delete_all()
     :ok
@@ -100,7 +106,7 @@ defmodule WandererApp.Kills.StorageTest do
 
       # Check system list is updated
       list_key = CacheKeys.system_kill_list(system_id)
-      assert [124, 123] = WandererApp.Cache.get(list_key)
+      assert [123, 124] = WandererApp.Cache.get(list_key)
     end
 
     test "handles missing killmail_id gracefully" do

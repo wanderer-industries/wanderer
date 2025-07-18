@@ -172,6 +172,21 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
           )
         end)
 
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        # This does NOT modify existing behavior, it's purely additive
+        Enum.each(map_ids, fn map_id ->
+          try do
+            WandererApp.ExternalEvents.broadcast(map_id, :map_kill, kill_data)
+          rescue
+            error ->
+              Logger.error(
+                "Failed to broadcast external event for map #{map_id}: #{inspect(error)}"
+              )
+
+              # Continue processing other maps even if one fails
+          end
+        end)
+
         :ok
 
       system_id when is_binary(system_id) ->

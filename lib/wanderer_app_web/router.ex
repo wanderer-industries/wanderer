@@ -162,11 +162,30 @@ defmodule WandererAppWeb.Router do
   end
 
   pipeline :api do
+    plug WandererAppWeb.Plugs.ContentNegotiation, accepts: ["json"]
     plug :accepts, ["json"]
     plug WandererAppWeb.Plugs.CheckApiDisabled
   end
 
+  # Versioned API pipeline with enhanced security and validation
+  pipeline :api_versioned do
+    plug WandererAppWeb.Plugs.ContentNegotiation, accepts: ["json"]
+    plug :accepts, ["json"]
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+    plug WandererAppWeb.Plugs.RequestValidator
+    plug WandererAppWeb.Plugs.ApiVersioning
+    plug WandererAppWeb.Plugs.ResponseSanitizer
+  end
+
   pipeline :api_map do
+    plug WandererAppWeb.Plugs.CheckMapApiKey
+    plug WandererAppWeb.Plugs.CheckMapSubscription
+    plug WandererAppWeb.Plugs.AssignMapOwner
+  end
+
+  pipeline :api_sse do
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+    plug WandererAppWeb.Plugs.CheckSseDisabled
     plug WandererAppWeb.Plugs.CheckMapApiKey
     plug WandererAppWeb.Plugs.CheckMapSubscription
     plug WandererAppWeb.Plugs.AssignMapOwner
@@ -180,6 +199,10 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckCharacterApiDisabled
   end
 
+  pipeline :api_websocket_events do
+    plug WandererAppWeb.Plugs.CheckWebsocketDisabled
+  end
+
   pipeline :api_acl do
     plug WandererAppWeb.Plugs.CheckAclApiKey
   end
@@ -188,6 +211,29 @@ defmodule WandererAppWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec,
       otp_app: :wanderer_app,
       module: WandererAppWeb.ApiSpec
+  end
+
+  pipeline :api_spec_v1 do
+    plug OpenApiSpex.Plug.PutApiSpec,
+      otp_app: :wanderer_app,
+      module: WandererAppWeb.OpenApiV1Spec
+  end
+
+  pipeline :api_spec_combined do
+    plug OpenApiSpex.Plug.PutApiSpec,
+      otp_app: :wanderer_app,
+      module: WandererAppWeb.ApiSpecV1
+  end
+
+  # New v1 API pipeline for ash_json_api
+  pipeline :api_v1 do
+    plug WandererAppWeb.Plugs.ContentNegotiation, accepts: ["json"]
+    plug :accepts, ["json", "json-api"]
+    plug :fetch_session
+    plug WandererAppWeb.Plugs.CheckApiDisabled
+    plug WandererAppWeb.Plugs.JsonApiPerformanceMonitor
+    plug WandererAppWeb.Plugs.CheckJsonApiAuth
+    # Future: Add rate limiting, advanced permissions, etc.
   end
 
   # pipeline :api_license_management do
@@ -221,10 +267,22 @@ defmodule WandererAppWeb.Router do
   end
 
   #
+  # SSE endpoint for real-time events (uses separate pipeline without accepts restriction)
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api_sse]
+
+    get "/events/stream", Api.EventsController, :stream
+  end
+
+  #
   # Unified RESTful routes for systems & connections by slug or ID
   #
   scope "/api/maps/:map_identifier", WandererAppWeb do
     pipe_through [:api, :api_map]
+
+    # Map duplication endpoint
+    post "/duplicate", MapAPIController, :duplicate_map
 
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
@@ -240,6 +298,21 @@ defmodule WandererAppWeb.Router do
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
+  end
+
+  # WebSocket events and webhook management endpoints (disabled by default)
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api, :api_map, :api_websocket_events]
+
+    get "/events", MapEventsAPIController, :list_events
+
+    # Webhook management endpoints
+    resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
+      post "/rotate-secret", MapWebhooksAPIController, :rotate_secret
+    end
+
+    # Webhook control endpoint
+    put "/webhooks/toggle", MapAPIController, :toggle_webhooks
   end
 
   #
@@ -266,8 +339,46 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/api" do
-    pipe_through [:browser, :api, :api_spec]
+    pipe_through [:api_spec]
     get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
+  end
+
+  # Combined spec needs its own pipeline
+  scope "/api" do
+    pipe_through [:api_spec_combined]
+    get "/openapi-complete", OpenApiSpex.Plug.RenderSpec, :show
+  end
+
+  scope "/api/v1" do
+    pipe_through [:api_spec_v1]
+    # v1 JSON:API spec (bypasses authentication)
+    get "/open_api", OpenApiSpex.Plug.RenderSpec, :show
+  end
+
+  #
+  # Health Check Endpoints
+  # Used for monitoring, load balancer health checks, and deployment validation
+  #
+  scope "/api", WandererAppWeb do
+    pipe_through [:api]
+
+    # Basic health check for load balancers (lightweight)
+    get "/health", Api.HealthController, :health
+
+    # Detailed health status for monitoring systems
+    get "/health/status", Api.HealthController, :status
+
+    # Readiness check for deployment validation
+    get "/health/ready", Api.HealthController, :ready
+
+    # Liveness check for container orchestration
+    get "/health/live", Api.HealthController, :live
+
+    # Metrics endpoint for monitoring systems
+    get "/health/metrics", Api.HealthController, :metrics
+
+    # Deep health check for comprehensive diagnostics
+    get "/health/deep", Api.HealthController, :deep
   end
 
   # scope "/api/licenses", WandererAppWeb do
@@ -315,11 +426,34 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/swaggerui" do
-    pipe_through [:browser, :api, :api_spec]
+    pipe_through [:browser, :api_spec]
 
-    get "/", OpenApiSpex.Plug.SwaggerUI,
+    # v1 JSON:API (AshJsonApi generated)
+    get "/v1", OpenApiSpex.Plug.SwaggerUI,
+      path: "/api/v1/open_api",
+      title: "WandererApp v1 JSON:API Docs",
+      css_urls: [
+        # Standard Swagger UI CSS
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui.min.css",
+        # Material theme from swagger-ui-themes (v3.x):
+        "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-material.css"
+      ],
+      js_urls: [
+        # We need both main JS & standalone preset for full styling
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-bundle.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-standalone-preset.min.js"
+      ],
+      swagger_ui_config: %{
+        "docExpansion" => "none",
+        "deepLinking" => true,
+        "tagsSorter" => "alpha",
+        "operationsSorter" => "alpha"
+      }
+
+    # Legacy API only
+    get "/legacy", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/openapi",
-      title: "WandererApp API Docs",
+      title: "WandererApp Legacy API Docs",
       css_urls: [
         # Standard Swagger UI CSS
         "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui.min.css",
@@ -334,6 +468,28 @@ defmodule WandererAppWeb.Router do
       swagger_ui_config: %{
         "docExpansion" => "none",
         "deepLinking" => true
+      }
+
+    # Complete API (Legacy + v1)
+    get "/", OpenApiSpex.Plug.SwaggerUI,
+      path: "/api/openapi-complete",
+      title: "WandererApp Complete API Docs (Legacy & v1)",
+      css_urls: [
+        # Standard Swagger UI CSS
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui.min.css",
+        # Material theme from swagger-ui-themes (v3.x):
+        "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-material.css"
+      ],
+      js_urls: [
+        # We need both main JS & standalone preset for full styling
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-bundle.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-standalone-preset.min.js"
+      ],
+      swagger_ui_config: %{
+        "docExpansion" => "none",
+        "deepLinking" => true,
+        "tagsSorter" => "alpha",
+        "operationsSorter" => "alpha"
       }
   end
 
@@ -418,5 +574,36 @@ defmodule WandererAppWeb.Router do
       error_tracker_dashboard("/errors", as: :error_tracker_dev_dashboard)
       live_dashboard("/dashboard", metrics: WandererAppWeb.Telemetry)
     end
+  end
+
+  #
+  # Versioned API Routes with backward compatibility
+  # These routes handle version negotiation and provide enhanced features per version
+  # Note: These are experimental routes for testing the versioning system
+  #
+  scope "/api/versioned" do
+    pipe_through :api_versioned
+
+    # Version-aware routes handled by ApiRouter
+    forward "/", WandererAppWeb.ApiRouter
+  end
+
+  #
+  # JSON:API v1 Routes (ash_json_api)
+  # These routes provide a modern JSON:API compliant interface
+  # while maintaining 100% backward compatibility with existing /api/* routes
+  #
+  scope "/api/v1" do
+    pipe_through :api_v1
+
+    # Custom combined endpoints
+    get "/maps/:map_id/systems_and_connections",
+        WandererAppWeb.Api.MapSystemsConnectionsController,
+        :show
+
+    # Forward all v1 requests to AshJsonApi router
+    # This will automatically generate RESTful JSON:API endpoints
+    # for all Ash resources once they're configured with the AshJsonApi extension
+    forward "/", WandererAppWeb.ApiV1Router
   end
 end

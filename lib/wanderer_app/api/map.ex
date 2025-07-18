@@ -3,11 +3,43 @@ defmodule WandererApp.Api.Map do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
+
+  alias Ash.Resource.Change.Builtins
 
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
+  end
+
+  json_api do
+    type "maps"
+
+    # Include relationships for compound documents
+    includes([
+      :owner,
+      :characters,
+      :acls,
+      :transactions
+    ])
+
+    # Enable filtering and sorting
+    derive_filter?(true)
+    derive_sort?(true)
+
+    # Routes configuration
+    routes do
+      base("/maps")
+      get(:read)
+      index :read
+      post(:new)
+      patch(:update)
+      delete(:destroy)
+
+      # Custom action for map duplication
+      post(:duplicate, route: "/:id/duplicate")
+    end
   end
 
   code_interface do
@@ -22,11 +54,14 @@ defmodule WandererApp.Api.Map do
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
     define(:update_api_key, action: :update_api_key)
+    define(:toggle_webhooks, action: :toggle_webhooks)
 
     define(:by_id,
       get_by: [:id],
       action: :read
     )
+
+    define(:duplicate, action: :duplicate)
   end
 
   calculations do
@@ -127,6 +162,86 @@ defmodule WandererApp.Api.Map do
     update :update_api_key do
       accept [:public_api_key]
     end
+
+    update :toggle_webhooks do
+      accept [:webhooks_enabled]
+    end
+
+    create :duplicate do
+      accept [:name, :description, :scope, :only_tracked_characters]
+
+      argument :source_map_id, :uuid, allow_nil?: false
+      argument :copy_acls, :boolean, default: true
+      argument :copy_user_settings, :boolean, default: true
+      argument :copy_signatures, :boolean, default: true
+
+      # Set defaults from source map before creation
+      change fn changeset, context ->
+        source_map_id = Ash.Changeset.get_argument(changeset, :source_map_id)
+
+        case WandererApp.Api.Map.by_id(source_map_id) do
+          {:ok, source_map} ->
+            # Use provided description or fall back to source map description
+            description =
+              Ash.Changeset.get_attribute(changeset, :description) || source_map.description
+
+            changeset
+            |> Ash.Changeset.change_attribute(:description, description)
+            |> Ash.Changeset.change_attribute(:scope, source_map.scope)
+            |> Ash.Changeset.change_attribute(
+              :only_tracked_characters,
+              source_map.only_tracked_characters
+            )
+            |> Ash.Changeset.change_attribute(:owner_id, context.actor.id)
+            |> Ash.Changeset.change_attribute(
+              :slug,
+              generate_unique_slug(Ash.Changeset.get_attribute(changeset, :name))
+            )
+
+          {:error, _} ->
+            Ash.Changeset.add_error(changeset,
+              field: :source_map_id,
+              message: "Source map not found"
+            )
+        end
+      end
+
+      # Copy related data after creation
+      change Builtins.after_action(fn changeset, new_map, context ->
+               source_map_id = Ash.Changeset.get_argument(changeset, :source_map_id)
+               copy_acls = Ash.Changeset.get_argument(changeset, :copy_acls)
+               copy_user_settings = Ash.Changeset.get_argument(changeset, :copy_user_settings)
+               copy_signatures = Ash.Changeset.get_argument(changeset, :copy_signatures)
+
+               case WandererApp.Map.Operations.Duplication.duplicate_map(
+                      source_map_id,
+                      new_map,
+                      copy_acls: copy_acls,
+                      copy_user_settings: copy_user_settings,
+                      copy_signatures: copy_signatures
+                    ) do
+                 {:ok, _result} ->
+                   {:ok, new_map}
+
+                 {:error, error} ->
+                   {:error, error}
+               end
+             end)
+    end
+  end
+
+  # Generate a unique slug from map name
+  defp generate_unique_slug(name) do
+    base_slug =
+      name
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9\s-]/, "")
+      |> String.replace(~r/\s+/, "-")
+      |> String.trim("-")
+
+    # Add timestamp to ensure uniqueness
+    timestamp = System.system_time(:millisecond) |> Integer.to_string()
+    "#{base_slug}-#{timestamp}"
   end
 
   attributes do
@@ -134,6 +249,7 @@ defmodule WandererApp.Api.Map do
 
     attribute :name, :string do
       allow_nil? false
+      public? true
       constraints trim?: false, max_length: 20, min_length: 3, allow_empty?: false
     end
 
@@ -143,8 +259,13 @@ defmodule WandererApp.Api.Map do
       constraints trim?: false, max_length: 40, min_length: 3, allow_empty?: false
     end
 
-    attribute :description, :string
-    attribute :personal_note, :string
+    attribute :description, :string do
+      public? true
+    end
+
+    attribute :personal_note, :string do
+      public? true
+    end
 
     attribute :public_api_key, :string do
       allow_nil? true
@@ -158,6 +279,7 @@ defmodule WandererApp.Api.Map do
 
     attribute :scope, :atom do
       default "wormholes"
+      public? true
 
       constraints(
         one_of: [
@@ -185,6 +307,12 @@ defmodule WandererApp.Api.Map do
       allow_nil? true
     end
 
+    attribute :webhooks_enabled, :boolean do
+      default(false)
+      allow_nil?(false)
+      public?(true)
+    end
+
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
@@ -196,20 +324,25 @@ defmodule WandererApp.Api.Map do
   relationships do
     belongs_to :owner, WandererApp.Api.Character do
       attribute_writable? true
+      public? true
     end
 
     many_to_many :characters, WandererApp.Api.Character do
       through WandererApp.Api.MapCharacterSettings
       source_attribute_on_join_resource :map_id
       destination_attribute_on_join_resource :character_id
+      public? true
     end
 
     many_to_many :acls, WandererApp.Api.AccessList do
       through WandererApp.Api.MapAccessList
       source_attribute_on_join_resource :map_id
       destination_attribute_on_join_resource :access_list_id
+      public? true
     end
 
-    has_many :transactions, WandererApp.Api.MapTransaction
+    has_many :transactions, WandererApp.Api.MapTransaction do
+      public? true
+    end
   end
 end

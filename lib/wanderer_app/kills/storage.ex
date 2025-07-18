@@ -232,19 +232,18 @@ defmodule WandererApp.Kills.Storage do
 
   defp store_individual_killmails(killmails, ttl) do
     results =
-      Enum.map(killmails, fn killmail ->
+      killmails
+      |> Enum.filter(fn killmail ->
         killmail_id = Map.get(killmail, "killmail_id") || Map.get(killmail, :killmail_id)
-
-        if killmail_id do
-          key = "zkb:killmail:#{killmail_id}"
-          # Capture the result of cache insert
-          WandererApp.Cache.insert(key, killmail, ttl: ttl)
-        else
-          {:error, :missing_killmail_id}
-        end
+        not is_nil(killmail_id)
+      end)
+      |> Enum.map(fn killmail ->
+        killmail_id = Map.get(killmail, "killmail_id") || Map.get(killmail, :killmail_id)
+        key = "zkb:killmail:#{killmail_id}"
+        WandererApp.Cache.insert(key, killmail, ttl: ttl)
       end)
 
-    # Check if any failed
+    # Check if any storage operations failed
     case Enum.find(results, &match?({:error, _}, &1)) do
       nil -> :ok
       error -> error

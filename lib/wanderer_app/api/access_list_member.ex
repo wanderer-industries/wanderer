@@ -3,11 +3,30 @@ defmodule WandererApp.Api.AccessListMember do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("access_list_members_v1")
+  end
+
+  json_api do
+    type "access_list_members"
+
+    includes([:access_list])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/access_list_members")
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update_role)
+      delete(:destroy)
+    end
   end
 
   code_interface do
@@ -101,6 +120,7 @@ defmodule WandererApp.Api.AccessListMember do
   relationships do
     belongs_to :access_list, WandererApp.Api.AccessList do
       attribute_writable? true
+      public? true
     end
   end
 
