@@ -23,7 +23,7 @@ defmodule WandererApp.Api.UserTransaction do
       :corporation_id
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read]
 
     create :new do
       accept [:journal_ref_id, :user_id, :date, :amount, :corporation_id]
