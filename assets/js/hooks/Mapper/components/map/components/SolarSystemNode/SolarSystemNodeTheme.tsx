@@ -21,7 +21,7 @@ import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCoun
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
-  const localKillsCount = useNodeKillsCount(nodeVars.solarSystemId, nodeVars.killsCount);
+  const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(nodeVars.solarSystemId);
 
   // console.log('JOipP', `render ${nodeVars.id}`, render++);
 
@@ -37,13 +37,13 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
             </div>
           )}
 
-          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && (
+          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && localKillsActivityType && (
             <KillsCounter
               killsCount={localKillsCount}
               systemId={nodeVars.solarSystemId}
               size={TooltipSize.lg}
-              killsActivityType={nodeVars.killsActivityType}
-              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
+              killsActivityType={localKillsActivityType}
+              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[localKillsActivityType])}
             >
               <div className={clsx(classes.BookmarkWithIcon)}>
                 <span className={clsx(PrimeIcons.BOLT, classes.icon)} />

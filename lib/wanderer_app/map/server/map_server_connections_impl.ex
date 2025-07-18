@@ -33,6 +33,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @pochven 25
   # @zarzakh 10100
 
+  @frigate_ship_size 0
+  @large_ship_size 2
+
   @jita 30_000_142
 
   @wh_space [
@@ -302,8 +305,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                                  solar_system_target: solar_system_target_id
                                },
                                state ->
-        state
-        |> delete_connection(%{
+        delete_connection(state, %{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id
         })
@@ -358,15 +360,33 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
         {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
 
-        # Set ship size type to medium only for wormhole connections involving C1 systems
+        # Set ship size type based on system classes and special rules
         ship_size_type =
-          if connection_type == @connection_type_wormhole and
-               (source_system_info.system_class == @c1 or
-                  target_system_info.system_class == @c1) do
-            @medium_ship_size
+          if connection_type == @connection_type_wormhole do
+            cond do
+              # C1 systems always get medium
+              source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
+                @medium_ship_size
+
+              # C13 systems always get frigate
+              source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
+                @frigate_ship_size
+
+              # C4 to null gets frigate (unless C4 is shattered)
+              (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
+                 not source_system_info.is_shattered) or
+                  (target_system_info.system_class == @c4 and
+                     source_system_info.system_class == @ns and
+                     not target_system_info.is_shattered) ->
+                @frigate_ship_size
+
+              true ->
+                # Default to large for other wormhole connections
+                @large_ship_size
+            end
           else
-            # Default to large for non-wormhole or non-C1 connections
-            2
+            # Default to large for non-wormhole connections
+            @large_ship_size
           end
 
         {:ok, connection} =
@@ -390,6 +410,17 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         Impl.broadcast!(map_id, :add_connection, connection)
+
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :connection_added, %{
+          connection_id: connection.id,
+          solar_system_source_id: old_location.solar_system_id,
+          solar_system_target_id: location.solar_system_id,
+          type: connection_type,
+          ship_size_type: ship_size_type,
+          mass_status: connection.mass_status,
+          time_status: connection.time_status
+        })
 
         {:ok, character} = WandererApp.Character.get_character(character_id)
 
@@ -563,6 +594,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         Impl.broadcast!(map_id, :remove_connections, [connection])
         map_id |> WandererApp.Map.remove_connection(connection)
 
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :connection_removed, %{
+          connection_id: connection.id,
+          solar_system_source_id: location.solar_system_id,
+          solar_system_target_id: old_location.solar_system_id
+        })
+
         WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
 
       _error ->
@@ -604,6 +642,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       end
 
       Impl.broadcast!(map_id, :update_connection, updated_connection)
+
+      # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+      WandererApp.ExternalEvents.broadcast(map_id, :connection_updated, %{
+        connection_id: updated_connection.id,
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id,
+        type: updated_connection.type,
+        ship_size_type: updated_connection.ship_size_type,
+        mass_status: updated_connection.mass_status,
+        time_status: updated_connection.time_status,
+        locked: updated_connection.locked,
+        custom_info: updated_connection.custom_info
+      })
 
       state
     else

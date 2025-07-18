@@ -16,6 +16,7 @@ defmodule WandererApp.Env do
   def invites, do: get_key(:invites, false)
 
   def map_subscriptions_enabled?, do: get_key(:map_subscriptions_enabled, false)
+  def websocket_events_enabled?, do: get_key(:websocket_events_enabled, false)
   def public_api_disabled?, do: get_key(:public_api_disabled, false)
 
   @decorate cacheable(
@@ -46,6 +47,16 @@ defmodule WandererApp.Env do
               key: "restrict_maps_creation"
             )
   def restrict_maps_creation?, do: get_key(:restrict_maps_creation, false)
+
+  def sse_enabled? do
+    Application.get_env(@app, :sse, [])
+    |> Keyword.get(:enabled, false)
+  end
+
+  def webhooks_enabled? do
+    Application.get_env(@app, :external_events, [])
+    |> Keyword.get(:webhooks_enabled, false)
+  end
 
   @decorate cacheable(
               cache: WandererApp.Cache,

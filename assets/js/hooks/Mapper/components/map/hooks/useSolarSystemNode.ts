@@ -15,20 +15,12 @@ import { useSystemName } from './useSystemName';
 import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
-function getActivityType(count: number): string {
-  if (count <= 5) return 'activityNormal';
-  if (count <= 30) return 'activityWarn';
-  return 'activityDanger';
-}
-
 export interface SolarSystemNodeVars {
   id: string;
   selected: boolean;
   visible: boolean;
   isWormhole: boolean;
   classTitleColor: string | null;
-  killsCount: number | null;
-  killsActivityType: string | null;
   hasUserCharacters: boolean;
   showHandlers: boolean;
   regionClass: string | null;
@@ -126,7 +118,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
       characters,
       wormholesData,
       hubs,
-      kills,
       userCharacters,
       isConnecting,
       hoverNodeId,
@@ -162,9 +153,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     linkedSigPrefix,
     isShowLinkedSigId,
   });
-
-  const killsCount = useMemo(() => kills[parseInt(solar_system_id)] ?? null, [kills, solar_system_id]);
-  const killsActivityType = killsCount ? getActivityType(killsCount) : null;
 
   const hasUserCharacters = useMemo(
     () => charactersInSystem.some(x => userCharacters.includes(x.eve_id)),
@@ -215,8 +203,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     visible,
     isWormhole,
     classTitleColor,
-    killsCount,
-    killsActivityType,
     hasUserCharacters,
     userCharacters,
     showHandlers,
