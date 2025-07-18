@@ -12,6 +12,8 @@ defmodule WandererApp.Kills.MapEventListener do
   alias WandererApp.Kills.Client
   alias WandererApp.Kills.Subscription.MapIntegration
 
+  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -19,7 +21,7 @@ defmodule WandererApp.Kills.MapEventListener do
   @impl true
   def init(_opts) do
     # Subscribe to map lifecycle events
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, "maps")
+    @pubsub_client.subscribe(WandererApp.PubSub, "maps")
 
     # Defer subscription update to avoid blocking init
     Process.send_after(self(), :initial_subscription_update, 30_000)
@@ -71,7 +73,10 @@ defmodule WandererApp.Kills.MapEventListener do
   end
 
   def handle_info({:systems_removed, system_ids}, state) do
-    Logger.debug(fn -> "[MapEventListener] Systems removed (alt format): #{length(system_ids)} systems" end)
+    Logger.debug(fn ->
+      "[MapEventListener] Systems removed (alt format): #{length(system_ids)} systems"
+    end)
+
     # Track pending removals so we can handle them immediately
     new_pending_removals = MapSet.union(state.pending_removals, MapSet.new(system_ids))
     {:noreply, schedule_subscription_update(%{state | pending_removals: new_pending_removals})}
@@ -106,20 +111,23 @@ defmodule WandererApp.Kills.MapEventListener do
   def handle_info(:resubscribe_to_maps, state) do
     running_maps = WandererApp.Map.RegistryHelper.list_all_maps()
     current_running_map_ids = MapSet.new(Enum.map(running_maps, & &1.id))
+
     Logger.debug(fn ->
       "[MapEventListener] Resubscribing to maps. Running maps: #{MapSet.size(current_running_map_ids)}"
     end)
 
     # Unsubscribe from maps no longer running
     maps_to_unsubscribe = MapSet.difference(state.subscribed_maps, current_running_map_ids)
+
     Enum.each(maps_to_unsubscribe, fn map_id ->
-      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.unsubscribe(WandererApp.PubSub, map_id)
     end)
 
     # Subscribe to new running maps
     maps_to_subscribe = MapSet.difference(current_running_map_ids, state.subscribed_maps)
+
     Enum.each(maps_to_subscribe, fn map_id ->
-      Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.subscribe(WandererApp.PubSub, map_id)
     end)
 
     {:noreply, %{state | subscribed_maps: current_running_map_ids}}
@@ -128,7 +136,7 @@ defmodule WandererApp.Kills.MapEventListener do
   # Handle map creation - subscribe to new map
   def handle_info({:map_created, map_id}, state) do
     Logger.debug(fn -> "[MapEventListener] Map created: #{map_id}" end)
-    Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+    @pubsub_client.subscribe(WandererApp.PubSub, map_id)
     updated_subscribed_maps = MapSet.put(state.subscribed_maps, map_id)
     {:noreply, schedule_subscription_update(%{state | subscribed_maps: updated_subscribed_maps})}
   end
@@ -141,11 +149,11 @@ defmodule WandererApp.Kills.MapEventListener do
   def terminate(_reason, state) do
     # Unsubscribe from all maps
     Enum.each(state.subscribed_maps, fn map_id ->
-      Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+      @pubsub_client.unsubscribe(WandererApp.PubSub, map_id)
     end)
 
     # Unsubscribe from general maps channel
-    Phoenix.PubSub.unsubscribe(WandererApp.PubSub, "maps")
+    @pubsub_client.unsubscribe(WandererApp.PubSub, "maps")
 
     :ok
   end
@@ -232,9 +240,10 @@ defmodule WandererApp.Kills.MapEventListener do
 
   defp apply_subscription_changes(current_systems, pending_removals) do
     current_set = MapSet.new(current_systems)
+
     Logger.debug(fn ->
       "[MapEventListener] Current subscriptions: #{MapSet.size(current_set)} systems, " <>
-      "Pending removals: #{MapSet.size(pending_removals)} systems"
+        "Pending removals: #{MapSet.size(pending_removals)} systems"
     end)
 
     # Use get_tracked_system_ids to get only systems from running maps
@@ -252,9 +261,10 @@ defmodule WandererApp.Kills.MapEventListener do
 
     # Remove pending removals from tracked_systems since DB might not be updated yet
     tracked_systems_adjusted = MapSet.difference(tracked_systems_set, pending_removals)
+
     Logger.debug(fn ->
       "[MapEventListener] Tracked systems from maps: #{MapSet.size(tracked_systems_set)}, " <>
-      "After removing pending: #{MapSet.size(tracked_systems_adjusted)}"
+        "After removing pending: #{MapSet.size(tracked_systems_adjusted)}"
     end)
 
     # Use the existing MapIntegration logic to determine changes
@@ -266,12 +276,18 @@ defmodule WandererApp.Kills.MapEventListener do
 
     # Apply the changes
     if to_subscribe != [] do
-      Logger.debug(fn -> "[MapEventListener] Triggering subscription for #{length(to_subscribe)} systems" end)
+      Logger.debug(fn ->
+        "[MapEventListener] Triggering subscription for #{length(to_subscribe)} systems"
+      end)
+
       Client.subscribe_to_systems(to_subscribe)
     end
 
     if to_unsubscribe != [] do
-      Logger.debug(fn -> "[MapEventListener] Triggering unsubscription for #{length(to_unsubscribe)} systems" end)
+      Logger.debug(fn ->
+        "[MapEventListener] Triggering unsubscription for #{length(to_unsubscribe)} systems"
+      end)
+
       Client.unsubscribe_from_systems(to_unsubscribe)
     end
   end

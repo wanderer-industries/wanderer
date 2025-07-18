@@ -3,7 +3,6 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { SystemKillsList } from './SystemKillsList';
 import { KillsHeader } from './components/SystemKillsHeader';
-import { useKillsWidgetSettings } from './hooks/useKillsWidgetSettings';
 import { useSystemKills } from './hooks/useSystemKills';
 import { KillsSettingsDialog } from './components/SystemKillsSettingsDialog';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
@@ -13,27 +12,25 @@ const SystemKillsContent = () => {
   const {
     data: { selectedSystems, isSubscriptionActive },
     outCommand,
+    storedSettings: { settingsKills },
   } = useMapRootState();
 
   const [systemId] = selectedSystems || [];
 
   const systemStaticInfo = getSystemStaticInfo(systemId)!;
 
-  const [settings] = useKillsWidgetSettings();
-  const visible = settings.showAll;
-
   const { kills, isLoading, error } = useSystemKills({
     systemId,
     outCommand,
-    showAllVisible: visible,
-    sinceHours: settings.timeRange,
+    showAllVisible: settingsKills.showAll,
+    sinceHours: settingsKills.timeRange,
   });
 
-  const isNothingSelected = !systemId && !visible;
+  const isNothingSelected = !systemId && !settingsKills.showAll;
   const showLoading = isLoading && kills.length === 0;
 
   const filteredKills = useMemo(() => {
-    if (!settings.whOnly || !visible) return kills;
+    if (!settingsKills.whOnly || !settingsKills.showAll) return kills;
     return kills.filter(kill => {
       if (!systemStaticInfo) {
         console.warn(`System with id ${kill.solar_system_id} not found.`);
@@ -41,7 +38,7 @@ const SystemKillsContent = () => {
       }
       return isWormholeSpace(systemStaticInfo.system_class);
     });
-  }, [kills, settings.whOnly, systemStaticInfo, visible]);
+  }, [kills, settingsKills.whOnly, systemStaticInfo, settingsKills.showAll]);
 
   if (!isSubscriptionActive) {
     return (
@@ -87,7 +84,9 @@ const SystemKillsContent = () => {
     );
   }
 
-  return <SystemKillsList kills={filteredKills} onlyOneSystem={!visible} timeRange={settings.timeRange} />;
+  return (
+    <SystemKillsList kills={filteredKills} onlyOneSystem={!settingsKills.showAll} timeRange={settingsKills.timeRange} />
+  );
 };
 
 export const WSystemKills = () => {

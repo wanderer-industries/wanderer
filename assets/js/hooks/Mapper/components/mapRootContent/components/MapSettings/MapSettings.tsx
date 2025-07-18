@@ -12,6 +12,7 @@ import {
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
 import { SettingsListItem } from './types.ts';
+import { ImportExport } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/ImportExport.tsx';
 
 export interface MapSettingsProps {
   visible: boolean;
@@ -86,6 +87,10 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
 
             <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>
               <WidgetsSettings />
+            </TabPanel>
+
+            <TabPanel header="Import/Export" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <ImportExport />
             </TabPanel>
           </TabView>
         </div>

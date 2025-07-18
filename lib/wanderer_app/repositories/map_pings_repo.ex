@@ -4,7 +4,7 @@ defmodule WandererApp.MapPingsRepo do
   require Logger
 
   def get_by_id(ping_id),
-    do: WandererApp.Api.MapPing.by_id(ping_id)
+    do: WandererApp.Api.MapPing.by_id!(ping_id) |> Ash.load([:system])
 
   def get_by_map(map_id),
     do: WandererApp.Api.MapPing.by_map!(%{map_id: map_id}) |> Ash.load([:character, :system])
@@ -18,20 +18,12 @@ defmodule WandererApp.MapPingsRepo do
   def create(ping), do: ping |> WandererApp.Api.MapPing.new()
   def create!(ping), do: ping |> WandererApp.Api.MapPing.new!()
 
-  def destroy(map_id, system_id) when is_binary(map_id) and is_binary(system_id) do
-    {:ok, pings} =
-      WandererApp.Api.MapPing.by_map_and_system(%{
-        map_id: map_id,
-        system_id: system_id
-      })
-
-    pings
-    |> Enum.each(fn ping ->
-      WandererApp.Api.MapPing.destroy!(ping)
-    end)
+  def destroy(ping) do
+    ping
+    |> WandererApp.Api.MapPing.destroy!()
 
     :ok
   end
 
-  def destroy(_ping), do: :ok
+  def destroy(_ping_id), do: :ok
 end

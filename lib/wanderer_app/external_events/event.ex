@@ -21,6 +21,11 @@ defmodule WandererApp.ExternalEvents.Event do
           | :character_removed
           | :character_updated
           | :map_kill
+          | :acl_member_added
+          | :acl_member_removed
+          | :acl_member_updated
+          | :rally_point_added
+          | :rally_point_removed
 
   @type t :: %__MODULE__{
           # ULID for ordering
@@ -54,7 +59,7 @@ defmodule WandererApp.ExternalEvents.Event do
       }
     else
       raise ArgumentError,
-            "Invalid event type: #{inspect(event_type)}. Must be one of: #{inspect(supported_event_types())}"
+            "Invalid event type: #{inspect(event_type)}. Must be one of: #{supported_event_types() |> Enum.map(&to_string/1) |> Enum.join(", ")}"
     end
   end
 
@@ -82,7 +87,23 @@ defmodule WandererApp.ExternalEvents.Event do
   end
 
   # Define allowlisted fields for different struct types
-  @system_fields [:id, :solar_system_id, :name, :position_x, :position_y, :visible, :locked]
+  @system_fields [
+    :id,
+    :solar_system_id,
+    :name,
+    :position_x,
+    :position_y,
+    :visible,
+    :locked,
+    # ADD
+    :temporary_name,
+    # ADD
+    :labels,
+    # ADD
+    :description,
+    # ADD
+    :status
+  ]
   @character_fields [
     :id,
     :character_id,
@@ -91,7 +112,15 @@ defmodule WandererApp.ExternalEvents.Event do
     :corporation_id,
     :alliance_id,
     :ship_type_id,
-    :online
+    # ADD: Ship name for external clients
+    :ship_name,
+    :online,
+    # ADD: Character location
+    :solar_system_id,
+    # ADD: Structure location
+    :structure_id,
+    # ADD: Station location
+    :station_id
   ]
   @connection_fields [
     :id,
@@ -102,7 +131,7 @@ defmodule WandererApp.ExternalEvents.Event do
     :mass_status,
     :ship_size
   ]
-  @signature_fields [:id, :signature_id, :name, :temporary_name, :type, :group]
+  @signature_fields [:id, :signature_id, :name, :type, :group]
 
   # Overloaded versions with visited tracking
   defp serialize_payload(payload, visited) when is_struct(payload) do
@@ -179,7 +208,12 @@ defmodule WandererApp.ExternalEvents.Event do
       :character_added,
       :character_removed,
       :character_updated,
-      :map_kill
+      :map_kill,
+      :acl_member_added,
+      :acl_member_removed,
+      :acl_member_updated,
+      :rally_point_added,
+      :rally_point_removed
     ]
   end
 

@@ -15,6 +15,35 @@ defmodule WandererAppWeb.MapSystemAPIController do
 
   action_fallback WandererAppWeb.FallbackController
 
+  # -----------------------------------------------------------------
+  # V1 API Actions (for compatibility with versioned API router)
+  # -----------------------------------------------------------------
+
+  def index_v1(conn, params) do
+    # Delegate to existing index action
+    index(conn, params)
+  end
+
+  def show_v1(conn, params) do
+    # Delegate to existing show action
+    show(conn, params)
+  end
+
+  def create_v1(conn, params) do
+    # Delegate to existing create action
+    create(conn, params)
+  end
+
+  def update_v1(conn, params) do
+    # Delegate to existing update action
+    update(conn, params)
+  end
+
+  def delete_v1(conn, params) do
+    # Delegate to existing delete action
+    delete(conn, params)
+  end
+
   # -- JSON Schemas --
   @map_system_schema %Schema{
     type: :object,
@@ -24,12 +53,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
       region_name: %Schema{type: :string, description: "EVE region name"},
-      custom_name: %Schema{type: :string, nullable: true, description: "Custom name for the system"},
+      custom_name: %Schema{
+        type: :string,
+        nullable: true,
+        description: "Custom name for the system"
+      },
       position_x: %Schema{type: :integer, description: "X coordinate"},
       position_y: %Schema{type: :integer, description: "Y coordinate"},
       status: %Schema{
         type: :integer,
-        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+        description:
+          "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
       },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
@@ -50,7 +84,8 @@ defmodule WandererAppWeb.MapSystemAPIController do
       position_y: %Schema{type: :integer, description: "Y coordinate"},
       status: %Schema{
         type: :integer,
-        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
+        description:
+          "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)"
       },
       visible: %Schema{type: :boolean, description: "Visibility flag"},
       description: %Schema{type: :string, nullable: true, description: "Custom description"},
@@ -73,12 +108,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
   @system_update_schema %Schema{
     type: :object,
     properties: %{
-      solar_system_name: %Schema{type: :string, description: "EVE solar system name", nullable: true},
+      solar_system_name: %Schema{
+        type: :string,
+        description: "EVE solar system name",
+        nullable: true
+      },
       position_x: %Schema{type: :integer, description: "X coordinate", nullable: true},
       position_y: %Schema{type: :integer, description: "Y coordinate", nullable: true},
       status: %Schema{
         type: :integer,
-        description: "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)",
+        description:
+          "System status (0: unknown, 1: friendly, 2: warning, 3: targetPrimary, 4: targetSecondary, 5: dangerousPrimary, 6: dangerousSecondary, 7: lookingFor, 8: home)",
         nullable: true
       },
       visible: %Schema{type: :boolean, description: "Visibility flag", nullable: true},
@@ -215,7 +255,11 @@ defmodule WandererAppWeb.MapSystemAPIController do
           },
           connections: %Schema{
             type: :object,
-            properties: %{created: %Schema{type: :integer}, updated: %Schema{type: :integer}, deleted: %Schema{type: :integer}},
+            properties: %{
+              created: %Schema{type: :integer},
+              updated: %Schema{type: :integer},
+              deleted: %Schema{type: :integer}
+            },
             required: ~w(created updated deleted)a
           }
         },
@@ -260,47 +304,79 @@ defmodule WandererAppWeb.MapSystemAPIController do
   }
 
   @batch_request_schema ApiSchemas.data_wrapper(%Schema{
-    type: :object,
-    properties: %{
-      systems: %Schema{type: :array, items: @system_request_schema},
-      connections: %Schema{type: :array, items: %Schema{
-        type: :object,
-        properties: %{
-          solar_system_source: %Schema{type: :integer, description: "Source system ID"},
-          solar_system_target: %Schema{type: :integer, description: "Target system ID"},
-          type: %Schema{type: :integer, description: "Connection type (default 0)"},
-          mass_status: %Schema{type: :integer, description: "Mass status (0-3)", nullable: true},
-          time_status: %Schema{type: :integer, description: "Time decay status (0-3)", nullable: true},
-          ship_size_type: %Schema{type: :integer, description: "Ship size limit (0-3)", nullable: true},
-          locked: %Schema{type: :boolean, description: "Lock flag", nullable: true},
-          custom_info: %Schema{type: :string, description: "Optional metadata", nullable: true}
-        },
-        required: ~w(solar_system_source solar_system_target)a
-      }}
-    },
-    example: %{
-      systems: [
-        %{
-          solar_system_id: 30_000_142,
-          solar_system_name: "Jita",
-          position_x: 100.5,
-          position_y: 200.3,
-          visible: true
-        }
-      ],
-      connections: [
-        %{
-          solar_system_source: 30_000_142,
-          solar_system_target: 30_000_144,
-          type: 0
-        }
-      ]
-    }
-  })
+                          type: :object,
+                          properties: %{
+                            systems: %Schema{type: :array, items: @system_request_schema},
+                            connections: %Schema{
+                              type: :array,
+                              items: %Schema{
+                                type: :object,
+                                properties: %{
+                                  solar_system_source: %Schema{
+                                    type: :integer,
+                                    description: "Source system ID"
+                                  },
+                                  solar_system_target: %Schema{
+                                    type: :integer,
+                                    description: "Target system ID"
+                                  },
+                                  type: %Schema{
+                                    type: :integer,
+                                    description: "Connection type (default 0)"
+                                  },
+                                  mass_status: %Schema{
+                                    type: :integer,
+                                    description: "Mass status (0-3)",
+                                    nullable: true
+                                  },
+                                  time_status: %Schema{
+                                    type: :integer,
+                                    description: "Time decay status (0-3)",
+                                    nullable: true
+                                  },
+                                  ship_size_type: %Schema{
+                                    type: :integer,
+                                    description: "Ship size limit (0-3)",
+                                    nullable: true
+                                  },
+                                  locked: %Schema{
+                                    type: :boolean,
+                                    description: "Lock flag",
+                                    nullable: true
+                                  },
+                                  custom_info: %Schema{
+                                    type: :string,
+                                    description: "Optional metadata",
+                                    nullable: true
+                                  }
+                                },
+                                required: ~w(solar_system_source solar_system_target)a
+                              }
+                            }
+                          },
+                          example: %{
+                            systems: [
+                              %{
+                                solar_system_id: 30_000_142,
+                                solar_system_name: "Jita",
+                                position_x: 100.5,
+                                position_y: 200.3,
+                                visible: true
+                              }
+                            ],
+                            connections: [
+                              %{
+                                solar_system_source: 30_000_142,
+                                solar_system_target: 30_000_144,
+                                type: 0
+                              }
+                            ]
+                          }
+                        })
 
   # -- Actions --
 
-  operation :index,
+  operation(:index,
     summary: "List Map Systems and Connections",
     parameters: [
       map_identifier: [
@@ -318,13 +394,15 @@ defmodule WandererAppWeb.MapSystemAPIController do
         @list_response_schema
       }
     ]
+  )
+
   def index(%{assigns: %{map_id: map_id}} = conn, _params) do
     systems = Operations.list_systems(map_id) |> Enum.map(&APIUtils.map_system_to_json/1)
     connections = Operations.list_connections(map_id) |> Enum.map(&APIUtils.connection_to_json/1)
     APIUtils.respond_data(conn, %{systems: systems, connections: connections})
   end
 
-  operation :show,
+  operation(:show,
     summary: "Show Map System",
     parameters: [
       map_identifier: [
@@ -342,14 +420,25 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ]
     ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
+  )
+
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
-    with {:ok, system_id} <- APIUtils.parse_int(id),
-         {:ok, system} <- Operations.get_system(map_id, system_id) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid) do
+      # Verify the system belongs to the requested map
+      if system.map_id == map_id do
+        APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+      else
+        {:error, :not_found}
+      end
+    else
+      {:error, %Ash.Error.Query.NotFound{}} -> {:error, :not_found}
+      {:error, _} -> {:error, :not_found}
+      error -> error
     end
   end
 
-  operation :create,
+  operation(:create,
     summary: "Upsert Systems and Connections (batch or single)",
     parameters: [
       map_identifier: [
@@ -362,18 +451,22 @@ defmodule WandererAppWeb.MapSystemAPIController do
     ],
     request_body: {"Systems+Connections upsert", "application/json", @batch_request_schema},
     responses: ResponseSchemas.standard_responses(@batch_response_schema)
+  )
+
   def create(conn, params) do
     systems = Map.get(params, "systems", [])
     connections = Map.get(params, "connections", [])
+
     case Operations.upsert_systems_and_connections(conn, systems, connections) do
       {:ok, result} ->
         APIUtils.respond_data(conn, result)
+
       error ->
         error
     end
   end
 
-  operation :update,
+  operation(:update,
     summary: "Update System",
     parameters: [
       map_identifier: [
@@ -392,16 +485,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
     ],
     request_body: {"System update request", "application/json", @system_update_schema},
     responses: ResponseSchemas.update_responses(@detail_response_schema)
+  )
+
   def update(conn, %{"id" => id} = params) do
-    with {:ok, sid} <- APIUtils.parse_int(id),
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
          {:ok, attrs} <- APIUtils.extract_update_params(params),
-         update_attrs = Map.put(attrs, "solar_system_id", sid),
-         {:ok, system} <- Operations.update_system(conn, sid, update_attrs) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+         {:ok, updated_system} <- Ash.update(system, attrs) do
+      APIUtils.respond_data(conn, APIUtils.map_system_to_json(updated_system))
     end
   end
 
-  operation :delete,
+  operation(:delete,
     summary: "Batch Delete Systems and Connections",
     parameters: [
       map_identifier: [
@@ -414,6 +509,8 @@ defmodule WandererAppWeb.MapSystemAPIController do
     ],
     request_body: {"Batch delete", "application/json", @batch_delete_schema},
     responses: ResponseSchemas.standard_responses(@batch_delete_response_schema)
+  )
+
   def delete(conn, params) do
     system_ids = Map.get(params, "system_ids", [])
     connection_ids = Map.get(params, "connection_ids", [])
@@ -440,15 +537,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
       {:ok, conn_struct} ->
         source_id = conn_struct.solar_system_source
         target_id = conn_struct.solar_system_target
+
         case Operations.delete_connection(conn, source_id, target_id) do
           :ok -> {:ok, conn_struct}
           error -> error
         end
-      _ -> {:error, :invalid_id}
+
+      _ ->
+        {:error, :invalid_id}
     end
   end
 
-  operation :delete_single,
+  operation(:delete_single,
     summary: "Delete a single Map System",
     parameters: [
       map_identifier: [
@@ -466,19 +566,27 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ]
     ],
     responses: ResponseSchemas.standard_responses(@delete_response_schema)
+  )
+
   def delete_single(conn, %{"id" => id}) do
     with {:ok, sid} <- APIUtils.parse_int(id),
-         {:ok, _}   <- Operations.delete_system(conn, sid) do
+         {:ok, _} <- Operations.delete_system(conn, sid) do
       APIUtils.respond_data(conn, %{deleted: true})
     else
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> APIUtils.respond_data(%{deleted: false, error: "System not found"})
+
       {:error, reason} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> APIUtils.respond_data(%{deleted: false, error: "Failed to delete system", reason: reason})
+        |> APIUtils.respond_data(%{
+          deleted: false,
+          error: "Failed to delete system",
+          reason: reason
+        })
+
       _ ->
         conn
         |> put_status(:bad_request)
@@ -488,43 +596,47 @@ defmodule WandererAppWeb.MapSystemAPIController do
 
   # -- Legacy endpoints --
 
-  operation :list_systems,
+  operation(:list_systems,
     summary: "List Map Systems (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems instead",
     parameters: [
       map_id: [
         in: :query,
-        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        description:
+          "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
         type: :string,
-        required: false,
+        required: false
       ],
       slug: [
         in: :query,
         description: "Map slug - Either map_id or slug must be provided, but not both",
         type: :string,
-        required: false,
+        required: false
       ]
     ],
     responses: ResponseSchemas.standard_responses(@list_response_schema)
+  )
+
   defdelegate list_systems(conn, params), to: __MODULE__, as: :index
 
-  operation :show_system,
+  operation(:show_system,
     summary: "Show Map System (Legacy)",
     deprecated: true,
     description: "Deprecated, use GET /api/maps/:map_identifier/systems/:id instead",
     parameters: [
       map_id: [
         in: :query,
-        description: "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
+        description:
+          "Map identifier (UUID) - Either map_id or slug must be provided, but not both",
         type: :string,
-        required: false,
+        required: false
       ],
       slug: [
         in: :query,
         description: "Map slug - Either map_id or slug must be provided, but not both",
         type: :string,
-        required: false,
+        required: false
       ],
       id: [
         in: :query,
@@ -534,6 +646,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ]
     ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
-  defdelegate show_system(conn, params), to: __MODULE__, as: :show
+  )
 
+  defdelegate show_system(conn, params), to: __MODULE__, as: :show
 end

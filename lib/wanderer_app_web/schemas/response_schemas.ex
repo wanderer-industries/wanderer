@@ -104,8 +104,7 @@ defmodule WandererAppWeb.Schemas.ResponseSchemas do
       ]
     else
       [
-        no_content:
-          {deleted_description <> " (no content)", nil, nil},
+        no_content: {deleted_description <> " (no content)", nil, nil},
         not_found: not_found(),
         internal_server_error: internal_server_error()
       ]

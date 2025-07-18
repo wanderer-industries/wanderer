@@ -7,9 +7,9 @@ import {
   WdImgButton,
   WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
-import { useKillsWidgetSettings } from '../hooks/useKillsWidgetSettings';
 import { PrimeIcons } from 'primereact/api';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 interface KillsHeaderProps {
   systemId?: string;
@@ -17,11 +17,14 @@ interface KillsHeaderProps {
 }
 
 export const KillsHeader: React.FC<KillsHeaderProps> = ({ systemId, onOpenSettings }) => {
-  const [settings, setSettings] = useKillsWidgetSettings();
-  const { showAll } = settings;
+  const {
+    storedSettings: { settingsKills, settingsKillsUpdate },
+  } = useMapRootState();
+
+  const { showAll } = settingsKills;
 
   const onToggleShowAllVisible = () => {
-    setSettings(prev => ({ ...prev, showAll: !prev.showAll }));
+    settingsKillsUpdate(prev => ({ ...prev, showAll: !prev.showAll }));
   };
 
   const headerRef = useRef<HTMLDivElement>(null);

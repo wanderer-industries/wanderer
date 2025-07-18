@@ -539,28 +539,33 @@ defmodule WandererApp.Esi.ApiClient do
           # Extract rate limit information from headers
           reset_seconds = Map.get(headers, "x-esi-error-limit-reset", ["unknown"]) |> List.first()
           remaining = Map.get(headers, "x-esi-error-limit-remain", ["unknown"]) |> List.first()
-          
+
           # Emit telemetry for rate limiting
-          :telemetry.execute([:wanderer_app, :esi, :rate_limited], %{
-            count: 1,
-            reset_duration: case Integer.parse(reset_seconds || "0") do
-              {seconds, _} -> seconds * 1000
-              _ -> 0
-            end
-          }, %{
-            method: "GET",
-            path: path,
-            reset_seconds: reset_seconds,
-            remaining_requests: remaining
-          })
-          
+          :telemetry.execute(
+            [:wanderer_app, :esi, :rate_limited],
+            %{
+              count: 1,
+              reset_duration:
+                case Integer.parse(reset_seconds || "0") do
+                  {seconds, _} -> seconds * 1000
+                  _ -> 0
+                end
+            },
+            %{
+              method: "GET",
+              path: path,
+              reset_seconds: reset_seconds,
+              remaining_requests: remaining
+            }
+          )
+
           Logger.warning("ESI_RATE_LIMITED: GET request rate limited",
             method: "GET",
             path: path,
             reset_seconds: reset_seconds,
             remaining_requests: remaining
           )
-          
+
           {:error, :error_limited, headers}
 
         {:ok, %{status: status} = _error} when status in [401, 403] ->
@@ -620,28 +625,33 @@ defmodule WandererApp.Esi.ApiClient do
           # Extract rate limit information from headers
           reset_seconds = Map.get(headers, "x-esi-error-limit-reset", ["unknown"]) |> List.first()
           remaining = Map.get(headers, "x-esi-error-limit-remain", ["unknown"]) |> List.first()
-          
+
           # Emit telemetry for rate limiting
-          :telemetry.execute([:wanderer_app, :esi, :rate_limited], %{
-            count: 1,
-            reset_duration: case Integer.parse(reset_seconds || "0") do
-              {seconds, _} -> seconds * 1000
-              _ -> 0
-            end
-          }, %{
-            method: "POST",
-            path: url,
-            reset_seconds: reset_seconds,
-            remaining_requests: remaining
-          })
-          
+          :telemetry.execute(
+            [:wanderer_app, :esi, :rate_limited],
+            %{
+              count: 1,
+              reset_duration:
+                case Integer.parse(reset_seconds || "0") do
+                  {seconds, _} -> seconds * 1000
+                  _ -> 0
+                end
+            },
+            %{
+              method: "POST",
+              path: url,
+              reset_seconds: reset_seconds,
+              remaining_requests: remaining
+            }
+          )
+
           Logger.warning("ESI_RATE_LIMITED: POST request rate limited",
             method: "POST",
             path: url,
             reset_seconds: reset_seconds,
             remaining_requests: remaining
           )
-          
+
           {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
@@ -683,28 +693,33 @@ defmodule WandererApp.Esi.ApiClient do
           # Extract rate limit information from headers
           reset_seconds = Map.get(headers, "x-esi-error-limit-reset", ["unknown"]) |> List.first()
           remaining = Map.get(headers, "x-esi-error-limit-remain", ["unknown"]) |> List.first()
-          
+
           # Emit telemetry for rate limiting
-          :telemetry.execute([:wanderer_app, :esi, :rate_limited], %{
-            count: 1,
-            reset_duration: case Integer.parse(reset_seconds || "0") do
-              {seconds, _} -> seconds * 1000
-              _ -> 0
-            end
-          }, %{
-            method: "POST_ESI",
-            path: url,
-            reset_seconds: reset_seconds,
-            remaining_requests: remaining
-          })
-          
+          :telemetry.execute(
+            [:wanderer_app, :esi, :rate_limited],
+            %{
+              count: 1,
+              reset_duration:
+                case Integer.parse(reset_seconds || "0") do
+                  {seconds, _} -> seconds * 1000
+                  _ -> 0
+                end
+            },
+            %{
+              method: "POST_ESI",
+              path: url,
+              reset_seconds: reset_seconds,
+              remaining_requests: remaining
+            }
+          )
+
           Logger.warning("ESI_RATE_LIMITED: POST ESI request rate limited",
             method: "POST_ESI",
             path: url,
             reset_seconds: reset_seconds,
             remaining_requests: remaining
           )
-          
+
           {:error, :error_limited, headers}
 
         {:ok, %{status: status}} ->
@@ -774,14 +789,15 @@ defmodule WandererApp.Esi.ApiClient do
          scopes
        ) do
     # Log token refresh success with timing info
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
-    
+    expires_at_datetime = DateTime.from_unix!(expires_at)
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
+
     Logger.info("TOKEN_REFRESH_SUCCESS: Character token refreshed successfully",
       character_id: character_id,
       time_since_expiry_seconds: time_since_expiry,
       new_expires_at: token.expires_at
     )
-    
+
     {:ok, _character} =
       character
       |> WandererApp.Api.Character.update(%{
@@ -812,21 +828,21 @@ defmodule WandererApp.Esi.ApiClient do
          scopes
        ) do
     time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
-    
+
     Logger.warning("TOKEN_REFRESH_FAILED: Invalid grant error during token refresh",
       character_id: character_id,
       error_message: error_message,
       time_since_expiry_seconds: time_since_expiry,
       original_expires_at: expires_at
     )
-    
+
     # Emit telemetry for token refresh failures
     :telemetry.execute([:wanderer_app, :token, :refresh_failed], %{count: 1}, %{
       character_id: character_id,
       error_type: "invalid_grant",
       time_since_expiry: time_since_expiry
     })
-    
+
     invalidate_character_tokens(character, character_id, expires_at, scopes)
     {:error, :invalid_grant}
   end
@@ -839,21 +855,21 @@ defmodule WandererApp.Esi.ApiClient do
          scopes
        ) do
     time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
-    
+
     Logger.warning("TOKEN_REFRESH_FAILED: Connection refused during token refresh",
       character_id: character_id,
       error: inspect(error),
       time_since_expiry_seconds: time_since_expiry,
       original_expires_at: expires_at
     )
-    
+
     # Emit telemetry for connection failures
     :telemetry.execute([:wanderer_app, :token, :refresh_failed], %{count: 1}, %{
       character_id: character_id,
       error_type: "connection_refused",
       time_since_expiry: time_since_expiry
     })
-    
+
     {:error, :econnrefused}
   end
 

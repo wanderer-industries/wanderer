@@ -7,6 +7,7 @@ import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+// import { DebugComponent } from '@/hooks/Mapper/components/mapRootContent/components/RightBar/DebugComponent.tsx';
 
 interface RightBarProps {
   onShowOnTheMap?: () => void;
@@ -79,6 +80,9 @@ export const RightBar = ({
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
+        {/* TODO - do not delete this code needs for debug */}
+        {/*<DebugComponent />*/}
+
         <WdTooltipWrapper content="Map user settings" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"

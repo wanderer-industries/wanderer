@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import classes from './SolarSystemEdge.module.scss';
-import { EdgeLabelRenderer, EdgeProps, getBezierPath, getSmoothStepPath, Position, useStore } from 'reactflow';
+import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
 import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
 import clsx from 'clsx';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
@@ -51,11 +51,11 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
   const [hovered, setHovered] = useState(false);
 
   const [path, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos] = useMemo(() => {
-    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode!, targetNode!);
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
-    const method = isWormhole ? getBezierPath : getSmoothStepPath;
+    const method = isWormhole ? getBezierPath : getBezierPath;
 
     const [edgePath, labelX, labelY] = method({
       sourceX: sx - offset.x,

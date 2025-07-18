@@ -5,15 +5,13 @@ import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 
-import {
-  SETTINGS_KEYS,
-  getDeletionTimeoutMs,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { getDeletionTimeoutMs } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getActualSigs } from '../helpers';
 import { UseSystemSignaturesDataProps } from './types';
 import { usePendingDeletions } from './usePendingDeletions';
 import { useSignatureFetching } from './useSignatureFetching';
+import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures.ts';
 
 export const useSystemSignaturesData = ({
   systemId,

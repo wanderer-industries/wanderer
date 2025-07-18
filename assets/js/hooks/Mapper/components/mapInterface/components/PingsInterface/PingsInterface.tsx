@@ -1,9 +1,4 @@
-import { Button } from 'primereact/button';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Toast } from 'primereact/toast';
-import clsx from 'clsx';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { Commands, OutCommand, PingType } from '@/hooks/Mapper/types';
+import { PingRoute } from '@/hooks/Mapper/components/mapInterface/components/PingsInterface/PingRoute.tsx';
 import {
   CharacterCardById,
   SystemView,
@@ -12,12 +7,17 @@ import {
   WdImgButton,
   WdImgButtonTooltip,
 } from '@/hooks/Mapper/components/ui-kit';
-import useRefState from 'react-usestateref';
-import { PrimeIcons } from 'primereact/api';
 import { emitMapEvent } from '@/hooks/Mapper/events';
-import { ConfirmPopup } from 'primereact/confirmpopup';
-import { PingRoute } from '@/hooks/Mapper/components/mapInterface/components/PingsInterface/PingRoute.tsx';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { Commands, OutCommand, PingType } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
+import { PrimeIcons } from 'primereact/api';
+import { Button } from 'primereact/button';
+import { ConfirmPopup } from 'primereact/confirmpopup';
+import { Toast } from 'primereact/toast';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useRefState from 'react-usestateref';
 
 const PING_PLACEMENT_MAP = {
   [PingsPlacement.rightTop]: 'top-right',
@@ -119,7 +119,7 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
 
     await outCommand({
       type: OutCommand.cancelPing,
-      data: { type: ping.type, solar_system_id: ping.solar_system_id },
+      data: { type: ping.type, id: ping.id },
     });
   }, [outCommand, ping]);
 

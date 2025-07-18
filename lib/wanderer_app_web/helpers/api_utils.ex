@@ -20,21 +20,34 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   # -----------------------------------------------------------------------------
 
   @spec fetch_map_id(map()) :: {:ok, String.t()} | {:error, String.t()}
-  def fetch_map_id(%{"map_id" => id}) when is_binary(id) do
-    case Ecto.UUID.cast(id) do
-      {:ok, _} -> {:ok, id}
-      :error -> {:error, "Invalid UUID format for map_id: #{id}"}
+  def fetch_map_id(params) do
+    has_map_id = Map.has_key?(params, "map_id")
+    has_slug = Map.has_key?(params, "slug")
+
+    cond do
+      has_map_id and has_slug ->
+        {:error, "Cannot provide both map_id and slug parameters"}
+
+      has_map_id ->
+        id = params["map_id"]
+
+        case Ecto.UUID.cast(id) do
+          {:ok, _} -> {:ok, id}
+          :error -> {:error, "Invalid UUID format for map_id: #{inspect(id)}"}
+        end
+
+      has_slug ->
+        slug = params["slug"]
+
+        case MapApi.get_map_by_slug(slug) do
+          {:ok, %{id: id}} -> {:ok, id}
+          _ -> {:error, "No map found for slug=#{inspect(slug)}"}
+        end
+
+      true ->
+        {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
     end
   end
-
-  def fetch_map_id(%{"slug" => slug}) when is_binary(slug) do
-    case MapApi.get_map_by_slug(slug) do
-      {:ok, %{id: id}} -> {:ok, id}
-      _ -> {:error, "No map found for slug=#{slug}"}
-    end
-  end
-
-  def fetch_map_id(_), do: {:error, "Must provide either ?map_id=UUID or ?slug=SLUG"}
 
   # -----------------------------------------------------------------------------
   # Parameter Validators and Parsers
@@ -45,6 +58,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     case Map.fetch(params, key) do
       {:ok, val} when is_binary(val) ->
         trimmed = String.trim(val)
+
         if trimmed == "" do
           {:error, "Param #{key} cannot be empty"}
         else
@@ -101,14 +115,25 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   @spec extract_upsert_params(map()) :: {:ok, map()} | {:error, String.t()}
   def extract_upsert_params(params) when is_map(params) do
     required = ["solar_system_id"]
+
     optional = [
-      "solar_system_name", "position_x", "position_y", "coordinates",
-      "status", "visible", "description", "tag",
-      "locked", "temporary_name", "labels"
+      "solar_system_name",
+      "position_x",
+      "position_y",
+      "coordinates",
+      "status",
+      "visible",
+      "description",
+      "tag",
+      "locked",
+      "temporary_name",
+      "labels"
     ]
 
     case Map.fetch(params, "solar_system_id") do
-      :error -> {:error, "Missing solar_system_id in request body"}
+      :error ->
+        {:error, "Missing solar_system_id in request body"}
+
       {:ok, _} ->
         params
         |> Map.take(required ++ optional)
@@ -125,9 +150,17 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   @spec extract_update_params(map()) :: {:ok, map()} | {:error, String.t()}
   def extract_update_params(params) when is_map(params) do
     allowed = [
-      "solar_system_name", "position_x", "position_y", "coordinates",
-      "status", "visible", "description", "tag",
-      "locked", "temporary_name", "labels"
+      "solar_system_name",
+      "position_x",
+      "position_y",
+      "coordinates",
+      "status",
+      "visible",
+      "description",
+      "tag",
+      "locked",
+      "temporary_name",
+      "labels"
     ]
 
     attrs =
@@ -142,9 +175,10 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   @spec normalize_connection_params(map()) :: {:ok, map()} | {:error, String.t()}
   def normalize_connection_params(params) do
     # Convert all keys to strings for consistent access
-    string_params = for {k, v} <- params, into: %{} do
-      {to_string(k), v}
-    end
+    string_params =
+      for {k, v} <- params, into: %{} do
+        {to_string(k), v}
+      end
 
     # Define parameter mappings for normalization
     aliases = %{
@@ -155,18 +189,20 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     }
 
     # Normalize parameters using aliases
-    normalized_params = Enum.reduce(aliases, string_params, fn {alias_key, std_key}, acc ->
-      if Map.has_key?(acc, alias_key) && !Map.has_key?(acc, std_key) do
-        Map.put(acc, std_key, acc[alias_key])
-      else
-        acc
-      end
-    end)
+    normalized_params =
+      Enum.reduce(aliases, string_params, fn {alias_key, std_key}, acc ->
+        if Map.has_key?(acc, alias_key) && !Map.has_key?(acc, std_key) do
+          Map.put(acc, std_key, acc[alias_key])
+        else
+          acc
+        end
+      end)
 
     # Handle required parameters
-    with {:ok, src} <- parse_to_int(normalized_params["solar_system_source"], "solar_system_source"),
-         {:ok, tgt} <- parse_to_int(normalized_params["solar_system_target"], "solar_system_target") do
-
+    with {:ok, src} <-
+           parse_to_int(normalized_params["solar_system_source"], "solar_system_source"),
+         {:ok, tgt} <-
+           parse_to_int(normalized_params["solar_system_target"], "solar_system_target") do
       # Handle optional parameters with sane defaults
       type = normalized_params["type"] || 0
       mass_status = normalized_params["mass_status"] || 0
@@ -175,11 +211,13 @@ defmodule WandererAppWeb.Helpers.APIUtils do
       # Coerce to boolean; accept "true"/"false", 1/0, etc.
       locked =
         case normalized_params["locked"] do
-          val when val in [true, "true", 1, "1"]   -> true
+          val when val in [true, "true", 1, "1"] -> true
           val when val in [false, "false", 0, "0"] -> false
-          nil                                         -> false
-          other                                       -> other  # keep unknowns for caller-side validation
+          nil -> false
+          # keep unknowns for caller-side validation
+          other -> other
         end
+
       custom_info = normalized_params["custom_info"]
       wormhole_type = normalized_params["wormhole_type"]
 
@@ -196,7 +234,9 @@ defmodule WandererAppWeb.Helpers.APIUtils do
       # Add non-nil optional attributes
       attrs = if is_nil(locked), do: attrs, else: Map.put(attrs, "locked", locked)
       attrs = if is_nil(custom_info), do: attrs, else: Map.put(attrs, "custom_info", custom_info)
-      attrs = if is_nil(wormhole_type), do: attrs, else: Map.put(attrs, "wormhole_type", wormhole_type)
+
+      attrs =
+        if is_nil(wormhole_type), do: attrs, else: Map.put(attrs, "wormhole_type", wormhole_type)
 
       {:ok, attrs}
     else
@@ -207,6 +247,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   # Helper to handle various input formats
   defp parse_to_int(nil, field), do: {:error, "Missing #{field}"}
   defp parse_to_int(val, _field) when is_integer(val), do: {:ok, val}
+
   defp parse_to_int(val, field) when is_binary(val) do
     case Integer.parse(val) do
       {i, ""} -> {:ok, i}
@@ -214,10 +255,12 @@ defmodule WandererAppWeb.Helpers.APIUtils do
       _ -> {:error, "Invalid #{field}: #{val}"}
     end
   end
+
   defp parse_to_int(val, field), do: {:error, "Invalid #{field} type: #{inspect(val)}"}
 
   defp parse_optional_int(nil, default), do: default
   defp parse_optional_int(i, _default) when is_integer(i), do: i
+
   defp parse_optional_int(s, default) when is_binary(s) do
     case Integer.parse(s) do
       {i, _} -> i
@@ -236,7 +279,8 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     |> json(%{data: data})
   end
 
-  @spec error_response(Plug.Conn.t(), atom() | integer(), String.t(), map() | nil) :: Plug.Conn.t()
+  @spec error_response(Plug.Conn.t(), atom() | integer(), String.t(), map() | nil) ::
+          Plug.Conn.t()
   def error_response(conn, status, message, details \\ nil) do
     body = if details, do: %{error: message, details: details}, else: %{error: message}
 
@@ -265,7 +309,10 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     original = get_original_name(system.solar_system_id)
 
     # Determine the actual custom_name: if name differs from original, use it as custom_name
-    actual_custom_name = if system.name != original and system.name not in [nil, ""], do: system.name, else: system.custom_name
+    actual_custom_name =
+      if system.name != original and system.name not in [nil, ""],
+        do: system.name,
+        else: system.custom_name
 
     base =
       Map.take(system, ~w(

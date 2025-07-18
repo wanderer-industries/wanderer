@@ -1,7 +1,7 @@
 defmodule WandererApp.Api.MapWebhookSubscription do
   @moduledoc """
   Ash resource for managing webhook subscriptions for map events.
-  
+
   Stores webhook endpoint configurations that receive HTTP POST notifications
   when events occur on a specific map.
   """
@@ -18,8 +18,8 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
   cloak do
     vault(WandererApp.Vault)
-    
     attributes([:secret])
+    decrypt_by_default([:secret])
   end
 
   code_interface do
@@ -32,8 +32,8 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       action: :read
     )
 
-    define(:by_map, action: :by_map)
-    define(:active_by_map, action: :active_by_map)
+    define(:by_map, action: :by_map, args: [:map_id])
+    define(:active_by_map, action: :active_by_map, args: [:map_id])
     define(:rotate_secret, action: :rotate_secret)
   end
 
@@ -45,7 +45,20 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       :active?
     ]
 
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
+    update :update do
+      accept [
+        :url,
+        :events,
+        :active?,
+        :last_delivery_at,
+        :last_error,
+        :last_error_at,
+        :consecutive_failures,
+        :secret
+      ]
+    end
 
     read :by_map do
       argument :map_id, :uuid, allow_nil?: false
@@ -66,62 +79,61 @@ defmodule WandererApp.Api.MapWebhookSubscription do
         :events,
         :active?
       ]
-      
+
       # Validate webhook URL format
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :url) do
-          nil -> 
+          nil ->
             changeset
-          
+
           url ->
             case validate_webhook_url_format(url) do
-              :ok -> 
+              :ok ->
                 changeset
-              
+
               {:error, message} ->
                 Ash.Changeset.add_error(changeset, field: :url, message: message)
             end
         end
       end
-      
+
       # Validate events list
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :events) do
-          nil -> 
+          nil ->
             changeset
-          
+
           events when is_list(events) ->
             case validate_events_list(events) do
-              :ok -> 
+              :ok ->
                 changeset
-              
+
               {:error, message} ->
                 Ash.Changeset.add_error(changeset, field: :events, message: message)
             end
-          
+
           _ ->
             changeset
         end
       end
-      
+
       # Generate secret on creation
       change fn changeset, _context ->
         secret = generate_webhook_secret()
-        Ash.Changeset.change_attribute(changeset, :secret, secret)
+        Ash.Changeset.force_change_attribute(changeset, :secret, secret)
       end
     end
 
     update :rotate_secret do
       accept []
       require_atomic? false
-      
+
       change fn changeset, _context ->
         new_secret = generate_webhook_secret()
         Ash.Changeset.change_attribute(changeset, :secret, new_secret)
       end
     end
   end
-
 
   validations do
     validate present(:url), message: "URL is required"
@@ -138,22 +150,25 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
     attribute :url, :string do
       allow_nil? false
-      constraints max_length: 2000  # 2KB limit as per security requirements
+      # 2KB limit as per security requirements
+      constraints max_length: 2000
     end
 
     attribute :events, {:array, :string} do
       allow_nil? false
       default []
-      constraints [
-        min_length: 1,
-        max_length: 50,  # Reasonable limit on number of event types
-        items: [max_length: 100]  # Max length per event type
-      ]
+
+      constraints min_length: 1,
+                  # Reasonable limit on number of event types
+                  max_length: 50,
+                  # Max length per event type
+                  items: [max_length: 100]
     end
 
     attribute :secret, :string do
       allow_nil? false
-      sensitive? true  # Hide in logs and API responses
+      # Hide in logs and API responses
+      sensitive? true
     end
 
     attribute :active?, :boolean do
@@ -205,23 +220,24 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
   defp validate_webhook_url_format(url) do
     uri = URI.parse(url)
-    
+
     cond do
       uri.scheme != "https" ->
         {:error, "Webhook URL must use HTTPS"}
-      
+
       uri.host == nil ->
         {:error, "Webhook URL must have a valid host"}
-      
+
       uri.host in ["localhost", "127.0.0.1", "0.0.0.0"] ->
         {:error, "Webhook URL cannot use localhost or loopback addresses"}
-      
-      String.starts_with?(uri.host, "192.168.") or String.starts_with?(uri.host, "10.") or is_private_ip_172_range?(uri.host) ->
+
+      String.starts_with?(uri.host, "192.168.") or String.starts_with?(uri.host, "10.") or
+          is_private_ip_172_range?(uri.host) ->
         {:error, "Webhook URL cannot use private network addresses"}
-      
+
       byte_size(url) > 2000 ->
         {:error, "Webhook URL cannot exceed 2000 characters"}
-      
+
       true ->
         :ok
     end
@@ -229,28 +245,30 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
   defp validate_events_list(events) do
     alias WandererApp.ExternalEvents.Event
-    
+
     # Get valid event types as strings
-    valid_event_strings = Event.supported_event_types()
+    valid_event_strings =
+      Event.supported_event_types()
       |> Enum.map(&Atom.to_string/1)
-    
+
     # Add wildcard as valid option
     valid_events = ["*" | valid_event_strings]
 
     invalid_events = Enum.reject(events, fn event -> event in valid_events end)
-    
+
     if Enum.empty?(invalid_events) do
       :ok
     else
       {:error, "Invalid event types: #{Enum.join(invalid_events, ", ")}"}
     end
   end
-  
+
   # Check if IP is in the 172.16.0.0/12 range (172.16.0.0 to 172.31.255.255)
   defp is_private_ip_172_range?(host) do
     case :inet.parse_address(String.to_charlist(host)) do
       {:ok, {172, b, _, _}} when b >= 16 and b <= 31 ->
         true
+
       _ ->
         false
     end

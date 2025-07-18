@@ -8,6 +8,23 @@ defmodule WandererApp.Map.Manager do
   require Logger
 
   alias WandererApp.Map.Server
+
+  # Test-aware async task runner
+  defp safe_async_task(fun) do
+    if Mix.env() == :test do
+      # In tests, run synchronously to avoid database ownership issues
+      try do
+        fun.()
+      rescue
+        e ->
+          Logger.error("Error in sync task: #{Exception.message(e)}")
+      end
+    else
+      # In production, run async as normal
+      Task.async(fun)
+    end
+  end
+
   alias WandererApp.Map.ServerSupervisor
   alias WandererApp.Api.MapSystemSignature
 
@@ -56,14 +73,9 @@ defmodule WandererApp.Map.Manager do
     {:ok, pings_cleanup_timer} =
       :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
 
-    try do
-      Task.async(fn ->
-        start_last_active_maps()
-      end)
-    rescue
-      e ->
-        Logger.error(Exception.message(e))
-    end
+    safe_async_task(fn ->
+      start_last_active_maps()
+    end)
 
     {:ok,
      %{
@@ -85,7 +97,7 @@ defmodule WandererApp.Map.Manager do
     try do
       case not WandererApp.Queue.empty?(@maps_queue) do
         true ->
-          Task.async(fn ->
+          safe_async_task(fn ->
             start_maps()
           end)
 
@@ -161,7 +173,6 @@ defmodule WandererApp.Map.Manager do
 
     case MapSystemSignature.by_deleted_and_updated_before!(true, delete_after_date) do
       {:ok, deleted_signatures} ->
-
         Enum.each(deleted_signatures, fn sig ->
           Ash.destroy!(sig)
         end)
@@ -174,17 +185,16 @@ defmodule WandererApp.Map.Manager do
     end
   end
 
-
-
   defp cleanup_expired_pings() do
     delete_after_date = DateTime.utc_now() |> DateTime.add(-1 * @pings_expire_minutes, :minute)
 
     case WandererApp.MapPingsRepo.get_by_inserted_before(delete_after_date) do
       {:ok, pings} ->
-        Enum.each(pings, fn %{map_id: map_id, type: type} = ping ->
+        Enum.each(pings, fn %{id: ping_id, map_id: map_id, type: type} = ping ->
           {:ok, %{system: system}} = ping |> Ash.load([:system])
 
           WandererApp.Map.Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+            id: ping_id,
             solar_system_id: system.solar_system_id,
             type: type
           })
@@ -223,22 +233,37 @@ defmodule WandererApp.Map.Manager do
 
     WandererApp.Queue.clear(@maps_queue)
 
-    tasks =
+    if Mix.env() == :test do
+      # In tests, run synchronously to avoid database ownership issues
+      Logger.debug(fn -> "Starting maps synchronously in test mode" end)
+
       for chunk <- chunks do
-        task =
-          Task.async(fn ->
-            chunk
-            |> Enum.map(&start_map_server/1)
-          end)
+        chunk
+        |> Enum.each(&start_map_server/1)
 
         :timer.sleep(@maps_start_interval)
-
-        task
       end
 
-    Logger.debug(fn -> "Waiting for maps to start" end)
-    Task.await_many(tasks)
-    Logger.debug(fn -> "All maps started" end)
+      Logger.debug(fn -> "All maps started" end)
+    else
+      # In production, run async as normal
+      tasks =
+        for chunk <- chunks do
+          task =
+            Task.async(fn ->
+              chunk
+              |> Enum.map(&start_map_server/1)
+            end)
+
+          :timer.sleep(@maps_start_interval)
+
+          task
+        end
+
+      Logger.debug(fn -> "Waiting for maps to start" end)
+      Task.await_many(tasks)
+      Logger.debug(fn -> "All maps started" end)
+    end
   end
 
   defp start_map_server(map_id) do

@@ -1,3 +1,6 @@
+import { WindowStoreInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useStoreWidgets.ts';
+import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
+
 export enum AvailableThemes {
   default = 'default',
   pathfinder = 'pathfinder',
@@ -42,4 +45,43 @@ export type RoutesType = {
   avoid_edencom: boolean;
   avoid_triglavian: boolean;
   avoid: number[];
+};
+
+export type LocalWidgetSettings = {
+  compact: boolean;
+  showOffline: boolean;
+  version: number;
+  showShipName: boolean;
+};
+
+export type OnTheMapSettingsType = {
+  hideOffline: boolean;
+  version: number;
+};
+
+export type KillsWidgetSettings = {
+  showAll: boolean;
+  whOnly: boolean;
+  excludedSystems: number[];
+  version: number;
+  timeRange: number;
+};
+
+export type SettingsWithVersion<T> = {
+  version: number;
+  settings: T;
+};
+
+export type MapUserSettings = {
+  widgets: SettingsWithVersion<WindowStoreInfo>;
+  interface: SettingsWithVersion<InterfaceStoredSettings>;
+  onTheMap: SettingsWithVersion<OnTheMapSettingsType>;
+  routes: SettingsWithVersion<RoutesType>;
+  localWidget: SettingsWithVersion<LocalWidgetSettings>;
+  signaturesWidget: SettingsWithVersion<SignatureSettingsType>;
+  killsWidget: SettingsWithVersion<KillsWidgetSettings>;
+};
+
+export type MapUserSettingsStructure = {
+  [mapId: string]: MapUserSettings;
 };

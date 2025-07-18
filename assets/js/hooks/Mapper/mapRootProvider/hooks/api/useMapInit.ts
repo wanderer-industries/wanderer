@@ -27,6 +27,7 @@ export const useMapInit = () => {
         main_character_eve_id,
         following_character_eve_id,
         user_hubs,
+        map_slug,
       } = props;
 
       const updateData: Partial<MapRootData> = {};
@@ -96,6 +97,10 @@ export const useMapInit = () => {
 
       if ('following_character_eve_id' in props) {
         updateData.followingCharacterEveId = following_character_eve_id;
+      }
+
+      if ('map_slug' in props) {
+        updateData.map_slug = map_slug;
       }
 
       update(updateData);

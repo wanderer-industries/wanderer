@@ -2,6 +2,63 @@
 
 <!-- changelog -->
 
+## [v1.74.11](https://github.com/wanderer-industries/wanderer/compare/v1.74.10...v1.74.11) (2025-07-18)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed remove pings for removed systems
+
+## [v1.74.10](https://github.com/wanderer-industries/wanderer/compare/v1.74.9...v1.74.10) (2025-07-15)
+
+
+
+
+## [v1.74.9](https://github.com/wanderer-industries/wanderer/compare/v1.74.8...v1.74.9) (2025-07-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Trying to fix problem with fast forwarding after page are inactive some time.
+
+## [v1.74.8](https://github.com/wanderer-industries/wanderer/compare/v1.74.7...v1.74.8) (2025-07-11)
+
+
+
+
+### Bug Fixes:
+
+* Map: removed comments
+
+* Map: Fixed conflict
+
+* Map: Unified settings. Second part: Import/Export
+
+* Map: Unified settings. First part: add one place for storing settings
+
+## [v1.74.7](https://github.com/wanderer-industries/wanderer/compare/v1.74.6...v1.74.7) (2025-07-09)
+
+
+
+
+## [v1.74.6](https://github.com/wanderer-industries/wanderer/compare/v1.74.5...v1.74.6) (2025-07-09)
+
+
+
+
+## [v1.74.5](https://github.com/wanderer-industries/wanderer/compare/v1.74.4...v1.74.5) (2025-07-09)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add background for Pochven's systems. Changed from Region name to constellation name for pochven systems. Changed connection style for gates (display like common connection). Changed behaviour of connections.
+
 ## [v1.74.4](https://github.com/wanderer-industries/wanderer/compare/v1.74.3...v1.74.4) (2025-07-07)
 
 

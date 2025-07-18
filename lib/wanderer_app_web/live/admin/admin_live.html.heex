@@ -28,7 +28,7 @@
               <span class="text-gray-400 dark:text-gray-400">Wanderer Balance</span>
               <h4 class="my-4 font-medium text-gray-800 text-4xl  dark:text-gray-100">
                 <span class="counter-value">
-                  <%= @total_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                  {@total_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                 </span>
                 ISK
               </h4>
@@ -122,14 +122,12 @@
                   <h3 class="card-title text-center text-md">New Invite</h3>
                 </.link>
               </h4>
-              <.table
-                id="invites"
-                rows={@invites}
-                class="!max-h-[40vh] !overflow-y-auto"
-              >
+              <.table id="invites" rows={@invites} class="!max-h-[40vh] !overflow-y-auto">
                 <:col :let={invite} label="Link">
                   <div class="flex items-center">
-                    <div class="w-[200px] no-wrap truncate"><%= get_invite_link(@uri, invite.token) %></div>
+                    <div class="w-[200px] no-wrap truncate">
+                      {get_invite_link(@uri, invite.token)}
+                    </div>
                     <.button
                       phx-hook="CopyToClipboard"
                       id="copy-to-clipboard"
@@ -144,7 +142,7 @@
                   </div>
                 </:col>
                 <:col :let={invite} label="Type">
-                  <%= invite.type %>
+                  {invite.type}
                 </:col>
                 <:col :let={invite} label="Valid Until">
                   <div>
@@ -171,23 +169,22 @@
         <div class="card dark:bg-zinc-800 dark:border-zinc-600">
           <div class="card-body">
             <div class="col-span-6">
-
               <span class="text-gray-400 dark:text-gray-400">Tracking Pools</span>
-                <.table
-                  id="tracking_pools"
-                  rows={@tracker_stats}
-                  class="!max-h-[40vh] !overflow-y-auto"
-                >
-                  <:col :let={stat} label="Pool">
-                    <div class="w-[200px] no-wrap truncate">{stat.title}</div>
-                  </:col>
-                  <:col :let={stat} label="Active">
-                    <div :if={stat.id == @active_tracking_pool}>true</div>
-                  </:col>
-                  <:col :let={stat} label="Count">
-                    {stat.value}
-                  </:col>
-                </.table>
+              <.table
+                id="tracking_pools"
+                rows={@tracker_stats}
+                class="!max-h-[40vh] !overflow-y-auto"
+              >
+                <:col :let={stat} label="Pool">
+                  <div class="w-[200px] no-wrap truncate">{stat.title}</div>
+                </:col>
+                <:col :let={stat} label="Active">
+                  <div :if={stat.id == @active_tracking_pool}>true</div>
+                </:col>
+                <:col :let={stat} label="Count">
+                  {stat.value}
+                </:col>
+              </.table>
             </div>
           </div>
         </div>
@@ -220,21 +217,21 @@
                               <:col :let={transaction} label="Transaction">
                                 <div>
                                   <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
-                                    <%= transaction.reason_encoded %>
+                                    {transaction.reason_encoded}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
-                                    <%= transaction.date %>
+                                    {transaction.date}
                                   </p>
                                 </div>
                               </:col>
                               <:col :let={transaction} label="Description">
-                                <%= transaction.description %>
+                                {transaction.description}
                               </:col>
                               <:col :let={transaction} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= transaction.amount_encoded
-                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                    {transaction.amount_encoded
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     ISK
@@ -281,17 +278,17 @@
                                     id={"subscription-active-till-#{subscription.id}"}
                                     at={subscription.active_till}
                                   >
-                                    <%= subscription.active_till %>
+                                    {subscription.active_till}
                                   </.local_time>
                                 </:col>
                                 <:col :let={subscription} label="Characters Limit">
-                                  <%= subscription.characters_limit %>
+                                  {subscription.characters_limit}
                                 </:col>
                                 <:col :let={subscription} label="Hubs Limit">
-                                  <%= subscription.hubs_limit %>
+                                  {subscription.hubs_limit}
                                 </:col>
                                 <:col :let={subscription} label="Auto Renew">
-                                  <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+                                  {if subscription.auto_renew?, do: "Yes", else: "No"}
                                 </:col>
                               </.table>
                             </div>
@@ -310,13 +307,12 @@
   </div>
   <.modal
     :if={@live_action in [:add_invite_link]}
-    title={"New Invite"}
+    title="New Invite"
     class="!w-[500px]"
     id="add_invite_link_modal"
     show
     on_cancel={JS.patch(~p"/admin")}
   >
-
     <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action}>
       <.input
         type="select"
@@ -324,7 +320,9 @@
         class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
         wrapper_class="mt-2"
         label="Type"
-        options={Enum.map(@invite_types, fn invite_type -> {invite_type.label, invite_type.id} end)}
+        options={
+          Enum.map(@invite_types, fn invite_type -> {invite_type.label, invite_type.id} end)
+        }
       />
 
       <.input
@@ -335,11 +333,11 @@
         label="Valid"
         options={Enum.map(@valid_types, fn valid_type -> {valid_type.label, valid_type.id} end)}
       />
-
-      <!-- API Key Section with grid layout -->
+      
+<!-- API Key Section with grid layout -->
       <div class="modal-action">
         <.button class="mt-2" type="submit" phx-disable-with="Saving...">
-          <%= (@live_action == :add_invite_link && "Add") || "Save" %>
+          {(@live_action == :add_invite_link && "Add") || "Save"}
         </.button>
       </div>
     </.form>
