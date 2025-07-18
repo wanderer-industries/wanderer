@@ -52,7 +52,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
   def cancel_ping(
         %{map_id: map_id} = state,
         %{
-          solar_system_id: solar_system_id,
+          id: ping_id,
           character_id: character_id,
           user_id: user_id,
           type: type
@@ -60,14 +60,13 @@ defmodule WandererApp.Map.Server.PingsImpl do
       ) do
     {:ok, character} = WandererApp.Character.get_character(character_id)
 
-    system =
-      WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id |> String.to_integer()
-      })
+    {:ok, %{system: %{solar_system_id: solar_system_id}} = ping} =
+      WandererApp.MapPingsRepo.get_by_id(ping_id)
 
-    :ok = WandererApp.MapPingsRepo.destroy(map_id, system.id)
+    :ok = WandererApp.MapPingsRepo.destroy(ping)
 
     Impl.broadcast!(map_id, :ping_cancelled, %{
+      id: ping_id,
       solar_system_id: solar_system_id,
       type: type
     })

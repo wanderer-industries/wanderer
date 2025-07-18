@@ -14,6 +14,11 @@ defmodule WandererApp.Api.MapPing do
     define(:new, action: :new)
     define(:destroy, action: :destroy)
 
+    define(:by_id,
+      get_by: [:id],
+      action: :read
+    )
+
     define(:by_map,
       action: :by_map
     )

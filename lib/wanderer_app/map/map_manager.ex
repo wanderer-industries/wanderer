@@ -178,10 +178,11 @@ defmodule WandererApp.Map.Manager do
 
     case WandererApp.MapPingsRepo.get_by_inserted_before(delete_after_date) do
       {:ok, pings} ->
-        Enum.each(pings, fn %{map_id: map_id, type: type} = ping ->
+        Enum.each(pings, fn %{id: ping_id, map_id: map_id, type: type} = ping ->
           {:ok, %{system: system}} = ping |> Ash.load([:system])
 
           WandererApp.Map.Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+            id: ping_id,
             solar_system_id: system.solar_system_id,
             type: type
           })
