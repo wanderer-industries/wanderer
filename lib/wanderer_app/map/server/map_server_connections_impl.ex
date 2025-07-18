@@ -33,6 +33,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @pochven 25
   # @zarzakh 10100
 
+  @frigate_ship_size 0
+  @large_ship_size 2
+
   @jita 30_000_142
 
   @wh_space [
@@ -357,15 +360,33 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
         {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
 
-        # Set ship size type to medium only for wormhole connections involving C1 systems
+        # Set ship size type based on system classes and special rules
         ship_size_type =
-          if connection_type == @connection_type_wormhole and
-               (source_system_info.system_class == @c1 or
-                  target_system_info.system_class == @c1) do
-            @medium_ship_size
+          if connection_type == @connection_type_wormhole do
+            cond do
+              # C1 systems always get medium
+              source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
+                @medium_ship_size
+
+              # C13 systems always get frigate
+              source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
+                @frigate_ship_size
+
+              # C4 to null gets frigate (unless C4 is shattered)
+              (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
+                 not source_system_info.is_shattered) or
+                  (target_system_info.system_class == @c4 and
+                     source_system_info.system_class == @ns and
+                     not target_system_info.is_shattered) ->
+                @frigate_ship_size
+
+              true ->
+                # Default to large for other wormhole connections
+                @large_ship_size
+            end
           else
-            # Default to large for non-wormhole or non-C1 connections
-            2
+            # Default to large for non-wormhole connections
+            @large_ship_size
           end
 
         {:ok, connection} =
