@@ -92,6 +92,7 @@ defmodule WandererApp.MixProject do
       {:ash_postgres, "~> 2.4"},
       {:exsync, "~> 0.4", only: :dev},
       {:nimble_csv, "~> 1.2.0"},
+      {:ulid, "~> 0.2.0"},
       {:cachex, "~> 3.6"},
       {:live_select, "~> 1.5"},
       {:nebulex, "~> 2.6"},
