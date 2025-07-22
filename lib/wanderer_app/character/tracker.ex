@@ -188,7 +188,6 @@ defmodule WandererApp.Character.Tracker do
 
           _ ->
             # Monitor cache for potential evictions before ESI call
-            log_cache_stats("character_online_check", character_id, "online_forbidden")
 
             case WandererApp.Esi.get_character_online(eve_id,
                    access_token: access_token,
@@ -681,7 +680,6 @@ defmodule WandererApp.Character.Tracker do
 
           _ ->
             # Monitor cache for potential evictions before ESI call
-            log_cache_stats("character_location_check", character_id, "location_forbidden")
 
             case WandererApp.Esi.get_character_location(eve_id,
                    access_token: access_token,
@@ -1379,50 +1377,6 @@ defmodule WandererApp.Character.Tracker do
 
       _ ->
         0
-    end
-  end
-
-  # Add cache monitoring for eviction detection
-  defp log_cache_stats(operation, character_id, cache_key) do
-    try do
-      # Check if critical cache entries are missing (could indicate eviction)
-      critical_keys = [
-        "character:#{character_id}:last_online_time",
-        "character:#{character_id}:online_forbidden",
-        "character:#{character_id}:location_forbidden",
-        "character:#{character_id}:ship_forbidden"
-      ]
-
-      missing_keys =
-        Enum.filter(critical_keys, fn key ->
-          not WandererApp.Cache.has_key?(key)
-        end)
-
-      # Alert if multiple cache keys are missing
-      if length(missing_keys) > 2 do
-        Logger.warning("CACHE_EVICTION_SUSPECTED: Multiple critical cache keys missing",
-          operation: operation,
-          character_id: character_id,
-          cache_key: cache_key,
-          missing_keys: missing_keys,
-          missing_count: length(missing_keys)
-        )
-
-        # Emit telemetry
-        :telemetry.execute(
-          [:wanderer_app, :cache, :eviction_suspected],
-          %{
-            missing_count: length(missing_keys)
-          },
-          %{
-            operation: operation,
-            character_id: character_id
-          }
-        )
-      end
-    rescue
-      # Don't fail character tracking if cache monitoring fails
-      _ -> :ok
     end
   end
 
