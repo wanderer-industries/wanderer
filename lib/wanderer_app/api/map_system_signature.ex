@@ -28,8 +28,12 @@ defmodule WandererApp.Api.MapSystemSignature do
   end
 
   code_interface do
-    define(:create, action: :create)
     define(:all_active, action: :all_active)
+    define(:create, action: :create)
+    define(:update, action: :update)
+    define(:update_linked_system, action: :update_linked_system)
+    define(:update_type, action: :update_type)
+    define(:update_group, action: :update_group)
 
     define(:by_id,
       get_by: [:id],
