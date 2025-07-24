@@ -246,10 +246,17 @@ defmodule WandererAppWeb.MapConnectionAPIController do
       }) do
     with {:ok, source} <- APIUtils.parse_int(src),
          {:ok, target} <- APIUtils.parse_int(tgt),
-         {:ok, conn_struct} <- Operations.get_connection_by_systems(map_id, source, target) do
+         {:ok, conn_struct} when not is_nil(conn_struct) <-
+           Operations.get_connection_by_systems(map_id, source, target) do
       APIUtils.respond_data(conn, APIUtils.connection_to_json(conn_struct))
     else
-      err -> err
+      {:ok, nil} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Connection not found"})
+
+      err ->
+        err
     end
   end
 
@@ -269,7 +276,10 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   )
 
   def create(conn, params) do
-    case Operations.create_connection(conn, params) do
+    # Filter out map_id to prevent external modification
+    filtered_params = Map.drop(params, ["map_id", :map_id])
+
+    case Operations.create_connection(conn, filtered_params) do
       {:ok, conn_struct} when is_map(conn_struct) ->
         conn
         |> APIUtils.respond_data(APIUtils.connection_to_json(conn_struct), :created)
@@ -319,7 +329,10 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   )
 
   def delete(%{assigns: %{map_id: _map_id}} = conn, %{"id" => id}) do
-    delete_connection_id(conn, id)
+    case delete_connection_id(conn, id) do
+      {:ok, _conn_struct} -> send_resp(conn, :no_content, "")
+      error -> error
+    end
   end
 
   def delete(%{assigns: %{map_id: _map_id}} = conn, %{
@@ -332,7 +345,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   # Private helpers for delete/2
 
   defp delete_connection_id(conn, id) do
-    case Operations.get_connection(conn, id) do
+    case Operations.get_connection(conn.assigns.map_id, id) do
       {:ok, conn_struct} ->
         source_id = conn_struct.solar_system_source
         target_id = conn_struct.solar_system_target
@@ -341,6 +354,9 @@ defmodule WandererAppWeb.MapConnectionAPIController do
           :ok -> {:ok, conn_struct}
           error -> error
         end
+
+      {:error, "Connection not found"} ->
+        {:error, :not_found}
 
       _ ->
         {:error, :invalid_id}
@@ -444,7 +460,14 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   )
 
   def update(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
-    allowed_fields = ["mass_status", "ship_size_type", "locked", "custom_info", "type"]
+    allowed_fields = [
+      "mass_status",
+      "ship_size_type",
+      "time_status",
+      "locked",
+      "custom_info",
+      "type"
+    ]
 
     attrs =
       conn.body_params
@@ -459,7 +482,14 @@ defmodule WandererAppWeb.MapConnectionAPIController do
         "solar_system_source" => src,
         "solar_system_target" => tgt
       }) do
-    allowed_fields = ["mass_status", "ship_size_type", "locked", "custom_info", "type"]
+    allowed_fields = [
+      "mass_status",
+      "ship_size_type",
+      "time_status",
+      "locked",
+      "custom_info",
+      "type"
+    ]
 
     attrs =
       conn.body_params

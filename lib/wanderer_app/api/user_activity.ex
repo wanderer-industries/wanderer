@@ -3,7 +3,8 @@ defmodule WandererApp.Api.UserActivity do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   require Ash.Expr
 
@@ -24,9 +25,28 @@ defmodule WandererApp.Api.UserActivity do
     end
   end
 
+  json_api do
+    type "user_activities"
+
+    includes([:character, :user])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    primary_key do
+      keys([:id])
+    end
+
+    routes do
+      base("/user_activities")
+      get(:read)
+      index :read
+    end
+  end
+
   code_interface do
-    define(:new, action: :new)
     define(:read, action: :read)
+    define(:new, action: :new)
   end
 
   actions do
@@ -34,10 +54,9 @@ defmodule WandererApp.Api.UserActivity do
       :entity_id,
       :entity_type,
       :event_type,
-      :event_data
+      :event_data,
+      :user_id
     ]
-
-    defaults [:create, :update, :destroy]
 
     read :read do
       primary?(true)
@@ -54,7 +73,7 @@ defmodule WandererApp.Api.UserActivity do
       accept [:entity_id, :entity_type, :event_type, :event_data]
       primary?(true)
 
-      argument :user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: true
       argument :character_id, :uuid, allow_nil?: true
 
       change manage_relationship(:user_id, :user, on_lookup: :relate, on_no_match: nil)
@@ -79,7 +98,8 @@ defmodule WandererApp.Api.UserActivity do
       constraints(
         one_of: [
           :map,
-          :access_list
+          :access_list,
+          :security_event
         ]
       )
 
@@ -115,7 +135,17 @@ defmodule WandererApp.Api.UserActivity do
           :map_rally_added,
           :map_rally_cancelled,
           :signatures_added,
-          :signatures_removed
+          :signatures_removed,
+          # Security audit events
+          :auth_success,
+          :auth_failure,
+          :permission_denied,
+          :privilege_escalation,
+          :data_access,
+          :admin_action,
+          :config_change,
+          :bulk_operation,
+          :security_alert
         ]
       )
 
@@ -132,12 +162,13 @@ defmodule WandererApp.Api.UserActivity do
     belongs_to :character, WandererApp.Api.Character do
       allow_nil? true
       attribute_writable? true
+      public? true
     end
 
     belongs_to :user, WandererApp.Api.User do
-      primary_key? true
-      allow_nil? false
+      allow_nil? true
       attribute_writable? true
+      public? true
     end
   end
 end

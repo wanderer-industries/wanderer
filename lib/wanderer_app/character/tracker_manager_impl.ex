@@ -207,7 +207,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       on_timeout: :kill_task,
       timeout: :timer.seconds(60)
     )
-    |> Enum.map(fn result ->
+    |> Enum.each(fn result ->
       case result do
         {:ok, {:stop, character_id}} ->
           Process.send_after(self(), {:stop_track, character_id}, 100)
@@ -278,7 +278,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       on_timeout: :kill_task,
       timeout: :timer.seconds(30)
     )
-    |> Enum.map(fn _result -> :ok end)
+    |> Enum.each(fn _result -> :ok end)
 
     state
   end

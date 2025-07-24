@@ -1,7 +1,7 @@
 defmodule WandererAppWeb.AccessListsLive do
-  alias Pathex.Builder.Viewer
   use WandererAppWeb, :live_view
 
+  alias WandererApp.ExternalEvents.AclEventBroadcaster
   require Logger
 
   @impl true
@@ -536,6 +536,16 @@ defmodule WandererAppWeb.AccessListsLive do
       (not is_nil(member) and member.role == :admin)
   end
 
+  defp broadcast_member_added_event(access_list_id, member) do
+    case AclEventBroadcaster.broadcast_member_event(access_list_id, member, :acl_member_added) do
+      :ok ->
+        :ok
+
+      {:error, broadcast_error} ->
+        Logger.warning("Failed to broadcast ACL member added event: #{inspect(broadcast_error)}")
+    end
+  end
+
   defp add_member(
          socket,
          access_list_id,
@@ -549,6 +559,8 @@ defmodule WandererAppWeb.AccessListsLive do
            eve_corporation_id: nil
          }) do
       {:ok, member} ->
+        broadcast_member_added_event(access_list_id, member)
+
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_added, %{
             user_id: socket.assigns.current_user.id,
@@ -580,6 +592,8 @@ defmodule WandererAppWeb.AccessListsLive do
            eve_corporation_id: eve_id
          }) do
       {:ok, member} ->
+        broadcast_member_added_event(access_list_id, member)
+
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_added, %{
             user_id: socket.assigns.current_user.id,
@@ -612,6 +626,8 @@ defmodule WandererAppWeb.AccessListsLive do
            role: :viewer
          }) do
       {:ok, member} ->
+        broadcast_member_added_event(access_list_id, member)
+
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_acl_event(:map_acl_member_added, %{
             user_id: socket.assigns.current_user.id,

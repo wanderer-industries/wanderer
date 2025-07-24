@@ -16,6 +16,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
+
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :character_added, character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
@@ -25,6 +28,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         _error ->
           {:ok, character} = WandererApp.Character.get_character(character_id)
           Impl.broadcast!(map_id, :character_added, character)
+
+          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+          WandererApp.ExternalEvents.broadcast(map_id, :character_added, character)
           :ok
       end
     end)
@@ -37,6 +43,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       with :ok <- WandererApp.Map.remove_character(map_id, character_id),
            {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_removed, character)
+
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :character_removed, character)
 
         :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
 
@@ -300,6 +309,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   defp update_character(map_id, character_id) do
     {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
     Impl.broadcast!(map_id, :character_updated, character)
+
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    WandererApp.ExternalEvents.broadcast(map_id, :character_updated, character)
   end
 
   defp update_location(

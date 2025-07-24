@@ -3,11 +3,20 @@ defmodule WandererApp.Api.ShipTypeInfo do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("ship_type_infos_v1")
+  end
+
+  json_api do
+    type "ship_type_info"
+
+    routes do
+      # No routes - this resource should not be exposed via API
+    end
   end
 
   code_interface do

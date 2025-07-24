@@ -3,17 +3,34 @@ defmodule WandererApp.Api.MapSystemComment do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_comments_v1")
   end
 
-  code_interface do
-    define(:create, action: :create)
-    define(:destroy, action: :destroy)
+  json_api do
+    type "map_system_comments"
 
+    includes([
+      :system,
+      :character
+    ])
+
+    routes do
+      base("/map_system_comments")
+
+      get(:read)
+      index :read
+
+      # Custom route for system-specific comments
+      index :by_system_id, route: "/by_system/:system_id"
+    end
+  end
+
+  code_interface do
     define(:by_id,
       get_by: [:id],
       action: :read
@@ -29,7 +46,7 @@ defmodule WandererApp.Api.MapSystemComment do
       :text
     ]
 
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       primary? true
@@ -68,10 +85,12 @@ defmodule WandererApp.Api.MapSystemComment do
   relationships do
     belongs_to :system, WandererApp.Api.MapSystem do
       attribute_writable? true
+      public? true
     end
 
     belongs_to :character, WandererApp.Api.Character do
       attribute_writable? true
+      public? true
     end
   end
 end

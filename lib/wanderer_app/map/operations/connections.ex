@@ -22,9 +22,12 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # System class constants
   @c1_system_class 1
+  @c4_system_class 4
+  @c13_system_class 13
+  @ns_system_class 9
 
   @doc """
-  Creates a connection between two systems, applying special rules for C1 wormholes.
+  Creates a connection between two systems, applying special rules for C1, C13, and C4 wormholes.
   Handles parsing of input parameters, validates system information, and manages
   unique constraint violations gracefully.
   """
@@ -59,7 +62,8 @@ defmodule WandererApp.Map.Operations.Connections do
         solar_system_target_id: tgt_info.solar_system_id,
         character_id: char_id,
         type: parse_type(attrs["type"]),
-        ship_size_type: resolve_ship_size(attrs, src_info, tgt_info)
+        ship_size_type:
+          resolve_ship_size(attrs["type"], attrs["ship_size_type"], src_info, tgt_info)
       }
 
       case Server.add_connection(map_id, info) do
@@ -83,17 +87,52 @@ defmodule WandererApp.Map.Operations.Connections do
     end
   end
 
-  defp resolve_ship_size(attrs, src_info, tgt_info) do
-    type = parse_type(attrs["type"])
+  @doc """
+  Determines the ship size for a connection, applying wormhole‑specific rules
+  for C1, C13, and C4⇄NS links, falling back to the caller’s provided size or Large.
+  """
+  defp resolve_ship_size(type_val, ship_size_val, src_info, tgt_info) do
+    case parse_type(type_val) do
+      @connection_type_wormhole ->
+        wormhole_ship_size(ship_size_val, src_info, tgt_info)
 
-    if type == @connection_type_wormhole and
-         (src_info.system_class == @c1_system_class or
-            tgt_info.system_class == @c1_system_class) do
-      @medium_ship_size
-    else
-      parse_ship_size(attrs["ship_size_type"], @large_ship_size)
+      _other ->
+        # Stargates and others just use the parsed or default size
+        parse_ship_size(ship_size_val, @large_ship_size)
     end
   end
+
+  # -- Wormhole‑specific sizing rules ----------------------------------------
+
+  defp wormhole_ship_size(ship_size_val, src, tgt) do
+    cond do
+      c1_system?(src, tgt) -> @medium_ship_size
+      c13_system?(src, tgt) -> @small_ship_size
+      c4_to_ns?(src, tgt) -> @small_ship_size
+      true -> parse_ship_size(ship_size_val, @large_ship_size)
+    end
+  end
+
+  defp c1_system?(%{system_class: @c1_system_class}, _), do: true
+  defp c1_system?(_, %{system_class: @c1_system_class}), do: true
+  defp c1_system?(_, _), do: false
+
+  defp c13_system?(%{system_class: @c13_system_class}, _), do: true
+  defp c13_system?(_, %{system_class: @c13_system_class}), do: true
+  defp c13_system?(_, _), do: false
+
+  defp c4_to_ns?(%{system_class: @c4_system_class, is_shattered: false}, %{
+         system_class: @ns_system_class
+       }),
+       do: true
+
+  defp c4_to_ns?(%{system_class: @ns_system_class}, %{
+         system_class: @c4_system_class,
+         is_shattered: false
+       }),
+       do: true
+
+  defp c4_to_ns?(_, _), do: false
 
   defp parse_ship_size(nil, default), do: default
   defp parse_ship_size(val, _default) when is_integer(val), do: val
@@ -190,12 +229,15 @@ defmodule WandererApp.Map.Operations.Connections do
               _allowed_keys = [
                 :mass_status,
                 :ship_size_type,
+                :time_status,
                 :type
               ]
 
               _update_map =
                 attrs
-                |> Enum.filter(fn {k, _v} -> k in ["mass_status", "ship_size_type", "type"] end)
+                |> Enum.filter(fn {k, _v} ->
+                  k in ["mass_status", "ship_size_type", "time_status", "type"]
+                end)
                 |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
                 |> Enum.into(%{})
 
@@ -206,8 +248,18 @@ defmodule WandererApp.Map.Operations.Connections do
                 Logger.error("[update_connection] Exception: #{inspect(error)}")
                 {:error, :exception}
             end),
-         :ok <- result,
-         {:ok, updated_conn} <- MapConnectionRepo.get_by_id(map_id, conn_id) do
+         :ok <- result do
+      # Since GenServer updates are asynchronous, manually apply updates to the current struct
+      # to return the correct data immediately instead of refetching from potentially stale cache
+      updated_attrs =
+        attrs
+        |> Enum.filter(fn {k, _v} ->
+          k in ["mass_status", "ship_size_type", "time_status", "type"]
+        end)
+        |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+        |> Enum.into(%{})
+
+      updated_conn = struct(conn_struct, updated_attrs)
       {:ok, updated_conn}
     else
       {:error, err} -> {:error, err}
@@ -313,6 +365,7 @@ defmodule WandererApp.Map.Operations.Connections do
         case key do
           "mass_status" -> maybe_update_mass_status(map_id, conn, val)
           "ship_size_type" -> maybe_update_ship_size_type(map_id, conn, val)
+          "time_status" -> maybe_update_time_status(map_id, conn, val)
           "type" -> maybe_update_type(map_id, conn, val)
           _ -> :ok
         end
@@ -346,6 +399,16 @@ defmodule WandererApp.Map.Operations.Connections do
       solar_system_source_id: conn.solar_system_source,
       solar_system_target_id: conn.solar_system_target,
       ship_size_type: value
+    })
+  end
+
+  defp maybe_update_time_status(_map_id, _conn, nil), do: :ok
+
+  defp maybe_update_time_status(map_id, conn, value) do
+    Server.update_connection_time_status(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      time_status: value
     })
   end
 

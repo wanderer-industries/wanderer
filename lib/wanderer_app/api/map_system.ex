@@ -3,11 +3,30 @@ defmodule WandererApp.Api.MapSystem do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_v1")
+  end
+
+  json_api do
+    type "map_systems"
+
+    includes([:map])
+
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_systems")
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
   end
 
   code_interface do
@@ -60,10 +79,29 @@ defmodule WandererApp.Api.MapSystem do
       :solar_system_id,
       :position_x,
       :position_y,
-      :status
+      :status,
+      :visible,
+      :locked,
+      :custom_name,
+      :description,
+      :tag,
+      :temporary_name,
+      :labels,
+      :added_at,
+      :linked_sig_eve_id
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :update, :destroy]
+
+    read :read do
+      primary?(true)
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
 
     read :read_all_by_map do
       argument(:map_id, :string, allow_nil?: false)
@@ -209,6 +247,7 @@ defmodule WandererApp.Api.MapSystem do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 

@@ -1,8 +1,9 @@
 defmodule WandererAppWeb.ApiSpec do
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{OpenApi, Info, Paths, Components, SecurityScheme, Server}
+  alias OpenApiSpex.{OpenApi, Info, Paths, Components, SecurityScheme, Server, Schema}
   alias WandererAppWeb.{Endpoint, Router}
+  alias WandererAppWeb.Schemas.ApiSchemas
 
   @impl OpenApiSpex.OpenApi
   def spec do
@@ -23,6 +24,9 @@ defmodule WandererAppWeb.ApiSpec do
             scheme: "bearer",
             bearerFormat: "JWT"
           }
+        },
+        schemas: %{
+          "ErrorResponse" => ApiSchemas.error_response()
         }
       },
       security: [%{"bearerAuth" => []}]

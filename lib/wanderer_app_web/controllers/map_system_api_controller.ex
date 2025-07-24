@@ -15,6 +15,35 @@ defmodule WandererAppWeb.MapSystemAPIController do
 
   action_fallback WandererAppWeb.FallbackController
 
+  # -----------------------------------------------------------------
+  # V1 API Actions (for compatibility with versioned API router)
+  # -----------------------------------------------------------------
+
+  def index_v1(conn, params) do
+    # Delegate to existing index action
+    index(conn, params)
+  end
+
+  def show_v1(conn, params) do
+    # Delegate to existing show action
+    show(conn, params)
+  end
+
+  def create_v1(conn, params) do
+    # Delegate to existing create action
+    create(conn, params)
+  end
+
+  def update_v1(conn, params) do
+    # Delegate to existing update action
+    update(conn, params)
+  end
+
+  def delete_v1(conn, params) do
+    # Delegate to existing delete action
+    delete(conn, params)
+  end
+
   # -- JSON Schemas --
   @map_system_schema %Schema{
     type: :object,
@@ -394,9 +423,18 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
-    with {:ok, system_id} <- APIUtils.parse_int(id),
-         {:ok, system} <- Operations.get_system(map_id, system_id) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid) do
+      # Verify the system belongs to the requested map
+      if system.map_id == map_id do
+        APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+      else
+        {:error, :not_found}
+      end
+    else
+      {:error, %Ash.Error.Query.NotFound{}} -> {:error, :not_found}
+      {:error, _} -> {:error, :not_found}
+      error -> error
     end
   end
 
@@ -450,11 +488,11 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def update(conn, %{"id" => id} = params) do
-    with {:ok, sid} <- APIUtils.parse_int(id),
+    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
+         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
          {:ok, attrs} <- APIUtils.extract_update_params(params),
-         update_attrs = Map.put(attrs, "solar_system_id", sid),
-         {:ok, system} <- Operations.update_system(conn, sid, update_attrs) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+         {:ok, updated_system} <- Ash.update(system, attrs) do
+      APIUtils.respond_data(conn, APIUtils.map_system_to_json(updated_system))
     end
   end
 
