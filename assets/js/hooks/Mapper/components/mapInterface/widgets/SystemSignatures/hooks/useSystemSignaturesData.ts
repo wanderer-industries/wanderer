@@ -76,15 +76,10 @@ export const useSystemSignaturesData = ({
       if (removed.length > 0) {
         await processRemovedSignatures(removed, added, updated);
 
-        // Only show pending deletions if:
-        // 1. Lazy deletion is enabled AND
-        // 2. Deletion timing is not immediate (> 0)
+        // Show pending deletions if lazy deletion is enabled
+        // The deletion timing controls how long the countdown lasts, not whether lazy delete is active
         if (onSignatureDeleted && lazyDeleteValue) {
-          const timeoutMs = getDeletionTimeoutMs(settings);
-
-          if (timeoutMs > 0) {
-            onSignatureDeleted(removed);
-          }
+          onSignatureDeleted(removed);
         }
       }
 
