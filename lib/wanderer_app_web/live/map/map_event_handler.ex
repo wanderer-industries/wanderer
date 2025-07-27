@@ -25,15 +25,20 @@ defmodule WandererAppWeb.MapEventHandler do
     :present_characters_updated,
     :refresh_user_characters,
     :show_tracking,
-    :untrack_character
+    :untrack_character,
+    :ready_characters_updated,
+    :all_ready_characters_cleared
   ]
 
   @map_characters_ui_events [
     "getCharacterInfo",
     "getCharactersTrackingInfo",
+    "getAllReadyCharacters",
+    "clearAllReadyCharacters",
     "updateCharacterTracking",
     "updateFollowingCharacter",
     "updateMainCharacter",
+    "updateReadyCharacters",
     "startTracking"
   ]
 
@@ -316,8 +321,8 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def map_ui_character_stat(nil), do: nil
 
-  def map_ui_character_stat(character),
-    do:
+  def map_ui_character_stat(character) do
+    base_character =
       character
       |> Map.take([
         :eve_id,
@@ -325,8 +330,19 @@ defmodule WandererAppWeb.MapEventHandler do
         :corporation_id,
         :corporation_ticker,
         :alliance_id,
-        :alliance_ticker
+        :alliance_ticker,
+        :ship_name,
+        :solar_system_id,
+        :structure_id,
+        :station_id,
+        :ship,
+        :online
       ])
+
+    # Add ship type information
+    ship_info = WandererApp.Character.get_ship(character)
+    base_character |> Map.put(:ship_info, ship_info)
+  end
 
   def map_ui_connection(
         %{
