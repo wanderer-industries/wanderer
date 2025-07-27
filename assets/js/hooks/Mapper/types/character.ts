@@ -34,11 +34,13 @@ export type CharacterTypeRaw = {
   corporation_name: string;
   corporation_ticker: string;
   tracking_paused: boolean;
+  ready?: boolean;
 };
 
 export interface TrackingCharacter {
   character: CharacterTypeRaw;
   tracked: boolean;
+  ready: boolean;
 }
 
 export type WithIsOwnCharacter = {
