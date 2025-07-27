@@ -62,8 +62,11 @@ function useSignatureUndo(
 
     // determine timeout from settings
     const timeoutMs = getDeletionTimeoutMs(settings);
+    
+    // Ensure a minimum of 1 second for immediate deletion so the UI shows
+    const effectiveTimeoutMs = timeoutMs === 0 ? 1000 : timeoutMs;
 
-    setCountdown(Math.ceil(timeoutMs / 1000));
+    setCountdown(Math.ceil(effectiveTimeoutMs / 1000));
 
     // start new interval
     intervalRef.current = window.setInterval(() => {
