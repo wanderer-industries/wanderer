@@ -45,17 +45,18 @@ defmodule WandererApp.Ueberauth.Strategy.Eve.OAuth do
   """
   def authorize_url!(params \\ [], opts \\ []) do
     opts
+    |> Keyword.put(:redirect_uri, "#{WandererApp.Env.base_url()}/auth/eve/callback")
     |> client
     |> OAuth2.Client.authorize_url!(params)
   end
 
   def get(token, url, headers \\ [], opts \\ []) do
     [token: token]
+    |> Keyword.put(:redirect_uri, "#{WandererApp.Env.base_url()}/auth/eve/callback")
     |> client
     |> put_param("response_type", "code")
     |> put_param("client_id", client().client_id)
     |> put_param("state", "ccp_auth_response")
-    |> put_param("redirect_uri", "#{WandererApp.Env.base_url()}/auth/eve/callback")
     |> OAuth2.Client.get(url, headers, opts)
   end
 
