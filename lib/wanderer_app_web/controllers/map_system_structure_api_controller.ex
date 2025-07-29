@@ -169,8 +169,14 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
 
   def create(conn, params) do
     case MapOperations.create_structure(conn, params) do
-      {:ok, struct} -> conn |> put_status(:created) |> json(%{data: struct})
-      {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
+      {:ok, struct} ->
+        conn |> put_status(:created) |> json(%{data: struct})
+
+      {:error, :not_found} ->
+        conn |> put_status(:not_found) |> json(%{error: "Resource not found"})
+
+      {:error, error} ->
+        conn |> put_status(:unprocessable_entity) |> json(%{error: error})
     end
   end
 
@@ -202,8 +208,14 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
 
   def update(conn, %{"id" => id} = params) do
     case MapOperations.update_structure(conn, id, params) do
-      {:ok, struct} -> json(conn, %{data: struct})
-      {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
+      {:ok, struct} ->
+        json(conn, %{data: struct})
+
+      {:error, :not_found} ->
+        conn |> put_status(:not_found) |> json(%{error: "Structure not found"})
+
+      {:error, error} ->
+        conn |> put_status(:unprocessable_entity) |> json(%{error: error})
     end
   end
 
@@ -233,8 +245,14 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
 
   def delete(conn, %{"id" => id}) do
     case MapOperations.delete_structure(conn, id) do
-      :ok -> send_resp(conn, :no_content, "")
-      {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
+      :ok ->
+        send_resp(conn, :no_content, "")
+
+      {:error, :not_found} ->
+        conn |> put_status(:not_found) |> json(%{error: "Structure not found"})
+
+      {:error, error} ->
+        conn |> put_status(:unprocessable_entity) |> json(%{error: error})
     end
   end
 

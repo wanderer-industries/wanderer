@@ -11,8 +11,6 @@ defmodule WandererApp.Api.MapTransaction do
   end
 
   code_interface do
-    define(:create, action: :create)
-
     define(:by_id,
       get_by: [:id],
       action: :read
@@ -20,6 +18,7 @@ defmodule WandererApp.Api.MapTransaction do
 
     define(:by_map, action: :by_map)
     define(:by_user, action: :by_user)
+    define(:create, action: :create)
   end
 
   actions do
@@ -30,7 +29,19 @@ defmodule WandererApp.Api.MapTransaction do
       :amount
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create]
+
+    read :read do
+      primary?(true)
+
+      pagination offset?: true,
+                 default_limit: 25,
+                 max_page_size: 100,
+                 countable: true,
+                 required?: false
+
+      prepare build(sort: [inserted_at: :desc])
+    end
 
     read :by_map do
       argument(:map_id, :string, allow_nil?: false)
@@ -75,6 +86,7 @@ defmodule WandererApp.Api.MapTransaction do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 end

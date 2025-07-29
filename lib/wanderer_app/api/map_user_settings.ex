@@ -3,11 +3,33 @@ defmodule WandererApp.Api.MapUserSettings do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_user_settings_v1")
+  end
+
+  json_api do
+    type "map_user_settings"
+
+    # Handle composite primary key
+    primary_key do
+      keys([:map_id, :user_id])
+    end
+
+    includes([
+      :map,
+      :user
+    ])
+
+    routes do
+      base("/map_user_settings")
+
+      get(:read)
+      index :read
+    end
   end
 
   code_interface do
@@ -19,10 +41,8 @@ defmodule WandererApp.Api.MapUserSettings do
     )
 
     define(:update_settings, action: :update_settings)
-    define(:update_main_character, action: :update_main_character)
     define(:update_following_character, action: :update_following_character)
-
-    define(:update_hubs, action: :update_hubs)
+    define(:update_main_character, action: :update_main_character)
   end
 
   actions do
@@ -32,7 +52,7 @@ defmodule WandererApp.Api.MapUserSettings do
       :settings
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :read]
 
     update :update_settings do
       accept [:settings]
@@ -74,8 +94,8 @@ defmodule WandererApp.Api.MapUserSettings do
   end
 
   relationships do
-    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false
-    belongs_to :user, WandererApp.Api.User, primary_key?: true, allow_nil?: false
+    belongs_to :map, WandererApp.Api.Map, primary_key?: true, allow_nil?: false, public?: true
+    belongs_to :user, WandererApp.Api.User, primary_key?: true, allow_nil?: false, public?: true
   end
 
   identities do

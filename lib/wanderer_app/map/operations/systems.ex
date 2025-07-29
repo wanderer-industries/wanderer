@@ -47,16 +47,17 @@ defmodule WandererApp.Map.Operations.Systems do
              %{solar_system_id: system_id, coordinates: coords},
              user_id,
              char_id
-           ),
-         {:ok, system} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id) do
-      {:ok, system}
+           ) do
+      # System creation is async, but if add_system returns :ok, 
+      # it means the operation was queued successfully
+      {:ok, %{solar_system_id: system_id}}
     else
       {:error, reason} when is_binary(reason) ->
         Logger.warning("[do_create_system] Expected error: #{inspect(reason)}")
         {:error, :expected_error}
 
-      _ ->
-        Logger.error("[do_create_system] Unexpected error")
+      error ->
+        Logger.error("[do_create_system] Unexpected error: #{inspect(error)}")
         {:error, :unexpected_error}
     end
   end

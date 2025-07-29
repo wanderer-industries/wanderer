@@ -345,6 +345,7 @@ defmodule WandererApp.EveDataService do
 
   defp get_sun_type_id(sun_type_id) do
     case sun_type_id do
+      nil -> 0
       "None" -> 0
       _ -> sun_type_id |> Integer.parse() |> elem(0)
     end
