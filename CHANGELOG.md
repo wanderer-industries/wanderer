@@ -2,6 +2,55 @@
 
 <!-- changelog -->
 
+## [v1.75.0](https://github.com/wanderer-industries/wanderer/compare/v1.74.13...v1.75.0) (2025-07-29)
+
+
+
+
+### Features:
+
+* autoset connection size for c4->null and c13
+
+* apiv1 and tests
+
+* support webhook and sse
+
+* disable webhook/websocket by default
+
+* add websocket and webhooks for events
+
+* Add Jest testing for getState util
+
+### Bug Fixes:
+
+* remove bug with lazy delete
+
+* update broken length and remove verbose logging
+
+* removed old documents
+
+* removed unneeded api, and fixed data comparision bug
+
+* ci comments
+
+* test updates
+
+* properly send sse events
+
+* add test coverage for api
+
+* add more logging around character online and tracking
+
+* clean up SSE warnings
+
+* update env variable usage for sse
+
+* sse cleanup
+
+* remove misleading error
+
+* update killactivity color on nodes
+
 ## [v1.74.13](https://github.com/wanderer-industries/wanderer/compare/v1.74.12...v1.74.13) (2025-07-29)
 
 
