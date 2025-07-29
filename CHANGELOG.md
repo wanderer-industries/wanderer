@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.74.13](https://github.com/wanderer-industries/wanderer/compare/v1.74.12...v1.74.13) (2025-07-29)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed issue with callback url
+
 ## [v1.74.12](https://github.com/wanderer-industries/wanderer/compare/v1.74.11...v1.74.12) (2025-07-22)
 
 
