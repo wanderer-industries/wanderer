@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.75.1](https://github.com/wanderer-industries/wanderer/compare/v1.75.0...v1.75.1) (2025-07-30)
+
+
+
+
+### Bug Fixes:
+
+* unable to cancel ping from right click context menu
+
 ## [v1.75.0](https://github.com/wanderer-industries/wanderer/compare/v1.74.13...v1.75.0) (2025-07-29)
 
 
