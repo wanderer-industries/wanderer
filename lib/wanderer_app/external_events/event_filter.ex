@@ -34,7 +34,10 @@ defmodule WandererApp.ExternalEvents.EventFilter do
     # ACL events
     :acl_member_added,
     :acl_member_removed,
-    :acl_member_updated
+    :acl_member_updated,
+    # Rally point events
+    :rally_point_added,
+    :rally_point_removed
   ]
 
   @type event_type :: atom()

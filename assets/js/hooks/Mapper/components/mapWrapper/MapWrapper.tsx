@@ -183,15 +183,22 @@ export const MapWrapper = () => {
 
   const handleTogglePing = useCallback(async (type: PingType, solar_system_id: string, hasPing: boolean) => {
     if (hasPing) {
+      // Find the ping for this solar system to get its ID
+      const ping = pings.find(p => p.solar_system_id === solar_system_id);
+      if (!ping) {
+        console.error('Cannot find ping for solar system:', solar_system_id);
+        return;
+      }
+      
       await outCommand({
         type: OutCommand.cancelPing,
-        data: { type, solar_system_id: solar_system_id },
+        data: { type, id: ping.id },
       });
       return;
     }
 
     setOpenPing({ type, solar_system_id });
-  }, []);
+  }, [pings, outCommand]);
 
   const handleCustomLabelDialog = useCallback(() => {
     const { systemContextProps } = ref.current;
