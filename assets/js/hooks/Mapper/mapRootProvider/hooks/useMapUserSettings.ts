@@ -13,6 +13,7 @@ import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures'
 import { MapRootData } from '@/hooks/Mapper/mapRootProvider';
 import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/useSettingsValueAndSetter.ts';
 import fastDeepEqual from 'fast-deep-equal';
+import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
 
 // import { actualizeSettings } from '@/hooks/Mapper/mapRootProvider/helpers';
 
@@ -36,32 +37,93 @@ const createDefaultWidgetSettings = (): MapUserSettings => {
   };
 };
 
+// Helper function to validate map settings structure
+const validateMapSettings = (settings: any): boolean => {
+  if (!settings || typeof settings !== 'object') {
+    return false;
+  }
+  
+  // Check for required top-level properties
+  const requiredProps = ['killsWidget', 'localWidget', 'widgets', 'routes', 'onTheMap', 'signaturesWidget', 'interface'];
+  return requiredProps.every(prop => prop in settings);
+};
+
 const EMPTY_OBJ = {};
 
-export const useMapUserSettings = ({ map_slug }: MapRootData) => {
+export const useMapUserSettings = ({ map_slug, outCommand }: MapRootData & { outCommand?: any }) => {
   const [isReady, setIsReady] = useState(false);
   const [hasOldSettings, setHasOldSettings] = useState(false);
+  const [defaultSettingsLoaded, setDefaultSettingsLoaded] = useState(false);
 
   const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>('map-user-settings', {
     defaultValue: EMPTY_OBJ,
   });
 
-  const ref = useRef({ mapUserSettings, setMapUserSettings, map_slug });
-  ref.current = { mapUserSettings, setMapUserSettings, map_slug };
+  const ref = useRef({ mapUserSettings, setMapUserSettings, map_slug, outCommand });
+  ref.current = { mapUserSettings, setMapUserSettings, map_slug, outCommand };
 
   useEffect(() => {
-    const { mapUserSettings, setMapUserSettings } = ref.current;
+    const { mapUserSettings, setMapUserSettings, outCommand } = ref.current;
     if (map_slug === null) {
       return;
     }
 
-    if (!(map_slug in mapUserSettings)) {
-      setMapUserSettings({
-        ...mapUserSettings,
-        [map_slug]: createDefaultWidgetSettings(),
-      });
+    if (!(map_slug in mapUserSettings) && !defaultSettingsLoaded) {
+      // Try to load default settings from server first
+      if (outCommand) {
+        setDefaultSettingsLoaded(true);
+        outCommand({
+          type: 'get_default_settings',
+          data: null,
+        }).then((response: any) => {
+          if (response?.default_settings) {
+            try {
+              const parsedSettings = parseMapUserSettings(response.default_settings);
+              // Additional validation to ensure we have valid settings
+              if (validateMapSettings(parsedSettings)) {
+                setMapUserSettings({
+                  ...mapUserSettings,
+                  [map_slug]: parsedSettings,
+                });
+              } else {
+                // Invalid settings structure, use defaults
+                console.error('Default settings from server have invalid structure');
+                setMapUserSettings({
+                  ...mapUserSettings,
+                  [map_slug]: createDefaultWidgetSettings(),
+                });
+              }
+            } catch (e) {
+              // If parsing fails, use default settings
+              console.error('Failed to parse default settings from server:', e);
+              setMapUserSettings({
+                ...mapUserSettings,
+                [map_slug]: createDefaultWidgetSettings(),
+              });
+            }
+          } else {
+            // No default settings from server, use local defaults
+            setMapUserSettings({
+              ...mapUserSettings,
+              [map_slug]: createDefaultWidgetSettings(),
+            });
+          }
+        }).catch(() => {
+          // Error loading from server, use local defaults
+          setMapUserSettings({
+            ...mapUserSettings,
+            [map_slug]: createDefaultWidgetSettings(),
+          });
+        });
+      } else {
+        // No outCommand available, use local defaults
+        setMapUserSettings({
+          ...mapUserSettings,
+          [map_slug]: createDefaultWidgetSettings(),
+        });
+      }
     }
-  }, [map_slug]);
+  }, [map_slug, defaultSettingsLoaded]);
 
   const [interfaceSettings, setInterfaceSettings] = useSettingsValueAndSetter(
     mapUserSettings,
