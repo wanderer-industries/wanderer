@@ -269,6 +269,8 @@ export enum OutCommand {
   showTracking = 'show_tracking',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
+  saveDefaultSettings = 'save_default_settings',
+  getDefaultSettings = 'get_default_settings',
   unlinkSignature = 'unlink_signature',
   searchSystems = 'search_systems',
   undoDeleteSignatures = 'undo_delete_signatures',

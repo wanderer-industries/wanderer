@@ -28,6 +28,7 @@ defmodule WandererApp.Api do
     resource WandererApp.Api.MapSubscription
     resource WandererApp.Api.MapTransaction
     resource WandererApp.Api.MapUserSettings
+    resource WandererApp.Api.MapDefaultSettings
     resource WandererApp.Api.User
     resource WandererApp.Api.ShipTypeInfo
     resource WandererApp.Api.UserActivity

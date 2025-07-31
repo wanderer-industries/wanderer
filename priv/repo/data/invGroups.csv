@@ -254,7 +254,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 364,23,Mobile Storage,0,0,0,1,0,0
 365,23,Control Tower,0,1,0,1,0,1
 366,2,Warp Gate,0,0,1,0,0,0
-367,7,Ballistic Control system,0,0,0,0,0,1
+367,7,Ballistic Control System,0,0,0,0,0,1
 368,2,Global Warp Disruptor,0,0,1,0,0,0
 369,17,Ship Logs,0,1,0,0,0,1
 370,17,Criminal Tags,0,1,0,0,0,1
@@ -1505,7 +1505,7 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4757,25,Ueganite,15,0,1,0,0,1
 4758,25,Hezorime,15,0,1,0,0,1
 4759,25,Griemeer,15,0,1,0,0,1
-4768,39,Sovereignty Hub Anomaly Detection Upgrades,None,1,0,0,0,1
+4768,39,Sovereignty Hub Site Detection Upgrades,None,1,0,0,0,1
 4769,7,Capital Mobility Modules,None,0,0,0,0,1
 4771,11,Homefront Operations Noncombatant,None,0,0,0,0,0
 4772,39,Sovereignty Hub Service Infrastructure Upgrade,None,1,0,0,0,1
@@ -1533,8 +1533,11 @@ groupID,categoryID,groupName,iconID,useBasePrice,anchored,anchorable,fittableNon
 4825,2,Local Beacon,None,0,1,0,0,0
 4827,17,EDENCOM Data,None,1,0,0,0,1
 4828,2,Pirate Spawners,None,0,0,0,0,0
+4838,39,Sovereignty Hub Colony Resources Management Upgrades,None,1,0,0,0,1
+4839,39,Sovereignty Hub System Effect Generator Upgrades,None,1,0,0,0,1
 4843,17,Limited Rarities,None,1,0,0,0,1
 4857,25,Tyranite,15,0,1,0,0,1
+4900,17,Stability Telemetry,None,1,0,0,0,1
 350858,350001,Infantry Weapons,None,1,0,0,0,0
 351064,350001,Infantry Dropsuits,None,1,0,0,0,0
 351121,350001,Infantry Modules,None,1,0,0,0,0
