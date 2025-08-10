@@ -109,7 +109,7 @@ export const useContextMenuSystemItems = ({
 
       { separator: true },
       {
-        command: () => onTogglePing(PingType.Rally, systemId, hasPing),
+        command: () => onTogglePing(PingType.Rally, systemId, ping?.id, hasPing),
         disabled: !isShowPingBtn,
         template: () => {
           const iconClasses = clsx({

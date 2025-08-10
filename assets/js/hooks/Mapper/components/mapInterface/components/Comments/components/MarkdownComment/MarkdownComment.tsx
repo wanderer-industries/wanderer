@@ -14,6 +14,7 @@ import { PrimeIcons } from 'primereact/api';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
+import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 
 const TOOLTIP_PROPS = { content: 'Remove comment', position: TooltipPosition.top };
 
@@ -28,8 +29,7 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
   const char = useGetCacheCharacter(characterEveId);
   const [hovered, setHovered] = useState(false);
 
-  const cpRemoveBtnRef = useRef<HTMLElement>();
-  const [cpRemoveVisible, setCpRemoveVisible] = useState(false);
+  const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
 
   const { outCommand } = useMapRootState();
   const ref = useRef({ outCommand, id });
@@ -44,9 +44,6 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
 
   const handleMouseEnter = useCallback(() => setHovered(true), []);
   const handleMouseLeave = useCallback(() => setHovered(false), []);
-
-  const handleShowCP = useCallback(() => setCpRemoveVisible(true), []);
-  const handleHideCP = useCallback(() => setCpRemoveVisible(false), []);
 
   return (
     <>
@@ -68,11 +65,11 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
                 {!hovered && <TimeAgo timestamp={time} />}
                 {hovered && (
                   // @ts-ignore
-                  <div ref={cpRemoveBtnRef}>
+                  <div ref={cfRef}>
                     <WdImgButton
                       className={clsx(PrimeIcons.TRASH, 'hover:text-red-400')}
                       tooltip={TOOLTIP_PROPS}
-                      onClick={handleShowCP}
+                      onClick={cfShow}
                     />
                   </div>
                 )}
@@ -85,9 +82,9 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
       </InfoDrawer>
 
       <ConfirmPopup
-        target={cpRemoveBtnRef.current}
-        visible={cpRemoveVisible}
-        onHide={handleHideCP}
+        target={cfRef.current}
+        visible={cfVisible}
+        onHide={cfHide}
         message="Are you sure you want to delete?"
         icon="pi pi-exclamation-triangle"
         accept={handleDelete}

@@ -28,6 +28,9 @@ export const WidgetsSettings = ({}: WidgetsSettingsProps) => {
           />
         ))}
       </div>
+
+      <div className="border-b-2 border-dotted border-stone-700/50 h-px my-3" />
+
       <div className="grid grid-cols-[1fr_auto]">
         <div />
         <Button className="py-[4px]" onClick={resetWidgets} outlined size="small" label="Reset Widgets"></Button>

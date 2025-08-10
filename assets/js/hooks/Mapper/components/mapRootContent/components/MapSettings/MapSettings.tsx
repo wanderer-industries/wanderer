@@ -3,7 +3,7 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
 import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
 import {
   MapSettingsProvider,
@@ -12,7 +12,10 @@ import {
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
 import { SettingsListItem } from './types.ts';
-import { ImportExport } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/ImportExport.tsx';
+import { ImportExport } from './components/ImportExport.tsx';
+import { ServerSettings } from './components/ServerSettings.tsx';
+import { AdminSettings } from './components/AdminSettings.tsx';
+import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 
 export interface MapSettingsProps {
   visible: boolean;
@@ -24,6 +27,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   const { outCommand } = useMapRootState();
 
   const { renderSettingItem, setUserRemoteSettings } = useMapSettings();
+  const isAdmin = useMapCheckPermissions([UserPermission.ADMIN_MAP]);
 
   const refVars = useRef({ outCommand, onHide, visible });
   refVars.current = { outCommand, onHide, visible };
@@ -58,7 +62,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
       header="Map user settings"
       visible
       draggable={false}
-      style={{ width: '550px' }}
+      style={{ width: '600px' }}
       onShow={handleShow}
       onHide={handleHide}
     >
@@ -92,6 +96,16 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
             <TabPanel header="Import/Export" className="h-full" headerClassName={styles.verticalTabHeader}>
               <ImportExport />
             </TabPanel>
+
+            <TabPanel header="Server Settings" className="h-full" headerClassName="color-warn">
+              <ServerSettings />
+            </TabPanel>
+
+            {isAdmin && (
+              <TabPanel header="Admin Settings" className="h-full" headerClassName="color-warn">
+                <AdminSettings />
+              </TabPanel>
+            )}
           </TabView>
         </div>
       </div>

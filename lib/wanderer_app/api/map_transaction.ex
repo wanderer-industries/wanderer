@@ -29,19 +29,7 @@ defmodule WandererApp.Api.MapTransaction do
       :amount
     ]
 
-    defaults [:create]
-
-    read :read do
-      primary?(true)
-
-      pagination offset?: true,
-                 default_limit: 25,
-                 max_page_size: 100,
-                 countable: true,
-                 required?: false
-
-      prepare build(sort: [inserted_at: :desc])
-    end
+    defaults [:create, :read, :update, :destroy]
 
     read :by_map do
       argument(:map_id, :string, allow_nil?: false)

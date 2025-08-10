@@ -13,6 +13,8 @@ import { InputText } from 'primereact/inputtext';
 import { IconField } from 'primereact/iconfield';
 
 const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: VirtualScrollerTemplateOptions) => {
+  const showAllyLogoPlaceholder = options.props.items?.some(x => x.alliance_id != null);
+
   return (
     <div
       className={clsx(classes.CharacterRow, 'w-full box-border px-2 py-1', {
@@ -22,7 +24,15 @@ const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: Virt
       })}
       style={{ height: options.props.itemSize + 'px' }}
     >
-      <CharacterCard showCorporationLogo showAllyLogo showSystem showTicker showShip {...item} />
+      <CharacterCard
+        showCorporationLogo
+        showAllyLogo
+        showAllyLogoPlaceholder={showAllyLogoPlaceholder}
+        showSystem
+        showTicker
+        showShip
+        {...item}
+      />
     </div>
   );
 };
