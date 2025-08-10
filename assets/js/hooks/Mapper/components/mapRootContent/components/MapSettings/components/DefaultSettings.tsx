@@ -4,74 +4,55 @@ import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { Divider } from 'primereact/divider';
+import { callToastError, callToastSuccess, callToastWarn } from '@/hooks/Mapper/helpers';
+
+type SaveDefaultSettingsReturn = { success: boolean; error: string };
 
 export const DefaultSettings = () => {
-  const mapRootState = useMapRootState();
-  const { getSettingsForExport } = mapRootState.storedSettings || {};
-  const { userPermissions } = mapRootState.data || {};
-  const { outCommand } = mapRootState;
+  const {
+    outCommand,
+    storedSettings: { getSettingsForExport },
+    data: { userPermissions },
+  } = useMapRootState();
 
   const [loading, setLoading] = useState(false);
   const toast = useRef<Toast | null>(null);
 
+  const refVars = useRef({ getSettingsForExport, outCommand });
+  refVars.current = { getSettingsForExport, outCommand };
+
   const handleSaveAsDefault = useCallback(async () => {
-    if (!getSettingsForExport) {
-      console.error('DefaultSettings: getSettingsForExport is not available');
-      return;
-    }
-    
-    const settings = getSettingsForExport();
+    const settings = refVars.current.getSettingsForExport();
     if (!settings) {
-      toast.current?.show({
-        severity: 'warn',
-        summary: 'Warning',
-        detail: 'No settings to save',
-        life: 3000,
-      });
+      callToastWarn(toast.current, 'No settings to save');
       return;
     }
 
+    setLoading(true);
+
+    let response: SaveDefaultSettingsReturn;
     try {
-      if (!outCommand) {
-        console.error('DefaultSettings: outCommand is not available');
-        return;
-      }
-      
-      setLoading(true);
-      const response = await outCommand({
+      response = await refVars.current.outCommand({
         type: OutCommand.saveDefaultSettings,
         data: { settings },
       });
-
-      if (response.success) {
-        toast.current?.show({
-          severity: 'success',
-          summary: 'Success',
-          detail: 'Default settings saved successfully',
-          life: 3000,
-        });
-      } else {
-        toast.current?.show({
-          severity: 'error',
-          summary: 'Error',
-          detail: response.error || 'Failed to save default settings',
-          life: 5000,
-        });
-      }
     } catch (error) {
       console.error('Save default settings error:', error);
-      toast.current?.show({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to save default settings',
-        life: 3000,
-      });
-    } finally {
+      callToastError(toast.current, 'Failed to save default settings');
       setLoading(false);
+      return;
     }
-  }, [getSettingsForExport, outCommand]);
 
-  // Only show for map admins
+    if (response.success) {
+      callToastSuccess(toast.current, 'Default settings saved successfully');
+      setLoading(false);
+      return;
+    }
+
+    callToastError(toast.current, response.error || 'Failed to save default settings');
+    setLoading(false);
+  }, []);
+
   if (!userPermissions?.admin_map) {
     return null;
   }
@@ -81,7 +62,7 @@ export const DefaultSettings = () => {
       <Divider />
       <div className="w-full h-full flex flex-col gap-5">
         <h3 className="text-lg font-semibold">Default Settings (Admin Only)</h3>
-        
+
         <div className="flex flex-col gap-1">
           <div>
             <Button
@@ -97,7 +78,8 @@ export const DefaultSettings = () => {
           </div>
 
           <span className="text-stone-500 text-[12px]">
-            *Will save your current settings as the default for all new users of this map. This action will overwrite any existing default settings.
+            *Will save your current settings as the default for all new users of this map. This action will overwrite
+            any existing default settings.
           </span>
         </div>
 

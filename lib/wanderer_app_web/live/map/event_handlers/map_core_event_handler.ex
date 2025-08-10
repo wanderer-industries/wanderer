@@ -242,8 +242,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     if user_permissions.admin_map do
       case save_default_settings(map_id, settings, current_user) do
         {:ok, _default_settings} ->
-          {:reply, %{success: true},
-           socket |> put_flash(:info, "Default settings saved successfully")}
+          {:reply, %{success: true}, socket}
 
         {:error, reason} ->
           Logger.error("Failed to save default settings: #{inspect(reason)}")

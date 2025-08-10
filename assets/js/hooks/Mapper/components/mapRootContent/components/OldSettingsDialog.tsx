@@ -1,7 +1,7 @@
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { ConfirmPopup } from 'primereact/confirmpopup';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { MapUserSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
@@ -15,6 +15,7 @@ import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures.
 import { Toast } from 'primereact/toast';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { saveTextFile } from '@/hooks/Mapper/utils';
+import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
   return {
@@ -24,10 +25,7 @@ const createSettings = function <T>(lsSettings: string | null, defaultValues: T)
 };
 
 export const OldSettingsDialog = () => {
-  const cpRemoveBtnRef = useRef<HTMLElement>();
-  const [cpRemoveVisible, setCpRemoveVisible] = useState(false);
-  const handleShowCP = useCallback(() => setCpRemoveVisible(true), []);
-  const handleHideCP = useCallback(() => setCpRemoveVisible(false), []);
+  const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
   const toast = useRef<Toast | null>(null);
 
   const {
@@ -143,8 +141,8 @@ export const OldSettingsDialog = () => {
           <div className="flex items-center justify-end">
             <Button
               // @ts-ignore
-              ref={cpRemoveBtnRef}
-              onClick={handleShowCP}
+              ref={cfRef}
+              onClick={cfShow}
               icon="pi pi-exclamation-triangle"
               size="small"
               severity="warning"
@@ -192,9 +190,9 @@ export const OldSettingsDialog = () => {
       </Dialog>
 
       <ConfirmPopup
-        target={cpRemoveBtnRef.current}
-        visible={cpRemoveVisible}
-        onHide={handleHideCP}
+        target={cfRef.current}
+        visible={cfVisible}
+        onHide={cfHide}
         message="After click dialog will disappear. Ready?"
         icon="pi pi-exclamation-triangle"
         accept={handleProceed}

@@ -131,6 +131,7 @@ export interface MapRootContextProps {
     hasOldSettings: boolean;
     getSettingsForExport(): string | undefined;
     applySettings(settings: MapUserSettings): boolean;
+    resetSettings(settings: MapUserSettings): void;
     checkOldSettings(): void;
   };
 }
@@ -175,6 +176,7 @@ const MapRootContext = createContext<MapRootContextProps>({
     hasOldSettings: false,
     getSettingsForExport: () => '',
     applySettings: () => false,
+    resetSettings: () => null,
     checkOldSettings: () => null,
   },
 });
@@ -196,7 +198,7 @@ const MapRootHandlers = forwardRef(({ children }: WithChildren, fwdRef: Forwarde
 export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProviderProps) => {
   const { update, ref } = useContextStore<MapRootData>({ ...INITIAL_DATA });
 
-  const storedSettings = useMapUserSettings({ ...ref, outCommand });
+  const storedSettings = useMapUserSettings(ref, outCommand);
 
   const { windowsSettings, toggleWidgetVisibility, updateWidgetSettings, resetWidgets } =
     useStoreWidgets(storedSettings);

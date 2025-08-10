@@ -1,7 +1,7 @@
 .vertical-tabs-container {
   display: flex;
   width: 100%;
-  min-height: 300px;
+  min-height: 400px;
 
   .p-tabview {
     width: 100%;
@@ -67,6 +67,28 @@
           border-right: 4px solid var(--primary-color);
         }
 
+      }
+
+      &.color-warn {
+        @apply bg-yellow-600/5 border-r-yellow-600/20;
+
+        &:hover {
+          @apply bg-yellow-600/10 border-r-yellow-600/40;
+        }
+
+
+        &.p-tabview-selected {
+          @apply bg-yellow-600/10 border-r-yellow-600;
+
+          .p-tabview-nav-link {
+            @apply text-yellow-600;
+          }
+
+          &:hover {
+            @apply bg-yellow-600/10 border-r-yellow-600;
+          }
+
+        }
       }
     }
   }

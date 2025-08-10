@@ -85,3 +85,7 @@ export type MapUserSettings = {
 export type MapUserSettingsStructure = {
   [mapId: string]: MapUserSettings;
 };
+
+export type WdResponse<T> = T;
+
+export type RemoteAdminSettingsResponse = { default_settings?: string };

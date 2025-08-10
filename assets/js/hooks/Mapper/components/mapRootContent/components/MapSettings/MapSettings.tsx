@@ -12,7 +12,9 @@ import {
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
 import { SettingsListItem } from './types.ts';
-import { ImportExport } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/ImportExport.tsx';
+import { ImportExport } from './components/ImportExport.tsx';
+import { ServerSettings } from './components/ServerSettings.tsx';
+import { AdminSettings } from './components/AdminSettings.tsx';
 
 export interface MapSettingsProps {
   visible: boolean;
@@ -58,7 +60,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
       header="Map user settings"
       visible
       draggable={false}
-      style={{ width: '550px' }}
+      style={{ width: '600px' }}
       onShow={handleShow}
       onHide={handleHide}
     >
@@ -91,6 +93,14 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
 
             <TabPanel header="Import/Export" className="h-full" headerClassName={styles.verticalTabHeader}>
               <ImportExport />
+            </TabPanel>
+
+            <TabPanel header="Server Settings" className="h-full" headerClassName="color-warn">
+              <ServerSettings />
+            </TabPanel>
+
+            <TabPanel header="Admin Settings" className="h-full" headerClassName="color-warn">
+              <AdminSettings />
             </TabPanel>
           </TabView>
         </div>
