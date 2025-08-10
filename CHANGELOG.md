@@ -2,6 +2,21 @@
 
 <!-- changelog -->
 
+## [v1.75.2](https://github.com/wanderer-industries/wanderer/compare/v1.75.1...v1.75.2) (2025-08-10)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix indents for ally logos in list "On the map"
+
+* Map: Fix cancelling ping from system context menu
+
+* Map: Hide admin settings tab
+
+* Map: Remote map setting refactoring
+
 ## [v1.75.1](https://github.com/wanderer-industries/wanderer/compare/v1.75.0...v1.75.1) (2025-07-30)
 
 
