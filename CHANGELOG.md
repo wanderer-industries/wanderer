@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.75.3](https://github.com/wanderer-industries/wanderer/compare/v1.75.2...v1.75.3) (2025-08-10)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed character tracking issues
+
 ## [v1.75.2](https://github.com/wanderer-industries/wanderer/compare/v1.75.1...v1.75.2) (2025-08-10)
 
 
