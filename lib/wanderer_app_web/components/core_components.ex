@@ -65,8 +65,7 @@ defmodule WandererAppWeb.CoreComponents do
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
-      class="relative z-50 hidden overflow-visible"
-      class=""
+      class="relative z-[1000] hidden overflow-visible"
     >
       <div id={"#{@id}-bg"} class="overflow-visible p-dialog-resizable" aria-hidden="true" />
       <div

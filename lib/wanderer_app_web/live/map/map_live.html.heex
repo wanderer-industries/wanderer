@@ -51,146 +51,146 @@
       <.icon name="hero-user-group-solid" class="w-6 h-6" />
     </button>
   </.link>
-</div>
 
-<.modal
-  :if={@show_topup}
-  title="Map Subscription Info"
-  class="!min-w-[700px]"
-  id="map-topup-modal"
-  show
-  on_cancel={JS.navigate(~p"/#{@map_slug}")}
->
-  <div class="flex flex-col gap-3">
-    <div class="flex flex-col gap-2">
-      <div class="verticalTabsContainer">
-        <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
-          <div class="p-tabview-nav-container" data-pc-section="navcontainer">
-            <div class="p-tabview-nav-content" data-pc-section="navcontent">
-              <ul class="p-tabview-nav" role="tablist" data-pc-section="nav">
-                <li
-                  class={[
-                    "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_subscription_tab == "balance"
-                    )
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_332_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_subscription_tab"
-                    phx-value-tab="balance"
+  <.modal
+    :if={@show_topup}
+    title="Map Subscription Info"
+    class="!min-w-[700px] !z-[10000]"
+    id="map-topup-modal"
+    show
+    on_cancel={JS.navigate(~p"/#{@map_slug}")}
+  >
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2">
+        <div class="verticalTabsContainer">
+          <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
+            <div class="p-tabview-nav-container" data-pc-section="navcontainer">
+              <div class="p-tabview-nav-content" data-pc-section="navcontent">
+                <ul class="p-tabview-nav" role="tablist" data-pc-section="nav">
+                  <li
+                    class={[
+                      "p-unselectable-text",
+                      classes(
+                        "p-tabview-selected p-highlight": @active_subscription_tab == "balance"
+                      )
+                    ]}
+                    role="presentation"
+                    data-pc-name=""
+                    data-pc-section="header"
                   >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
-                    </span>
-                  </a>
-                </li>
-                <li
-                  :if={@map_subscriptions_enabled?}
-                  class={[
-                    "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_subscription_tab == "subscription"
-                    )
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_334_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_subscription_tab"
-                    phx-value-tab="subscription"
+                    <a
+                      role="tab"
+                      class="p-tabview-nav-link flex p-[10px]"
+                      tabindex="-1"
+                      aria-controls="pr_id_332_content"
+                      aria-selected="false"
+                      aria-disabled="false"
+                      data-pc-section="headeraction"
+                      phx-click="change_subscription_tab"
+                      phx-value-tab="balance"
+                    >
+                      <span class="p-tabview-title" data-pc-section="headertitle">
+                        <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
+                      </span>
+                    </a>
+                  </li>
+                  <li
+                    :if={@map_subscriptions_enabled?}
+                    class={[
+                      "p-unselectable-text",
+                      classes(
+                        "p-tabview-selected p-highlight": @active_subscription_tab == "subscription"
+                      )
+                    ]}
+                    role="presentation"
+                    data-pc-name=""
+                    data-pc-section="header"
                   >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
-                    </span>
-                  </a>
-                </li>
-                <li
-                  class={[
-                    "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": false)
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_332_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="balance"
+                    <a
+                      role="tab"
+                      class="p-tabview-nav-link flex p-[10px]"
+                      tabindex="-1"
+                      aria-controls="pr_id_334_content"
+                      aria-selected="false"
+                      aria-disabled="false"
+                      data-pc-section="headeraction"
+                      phx-click="change_subscription_tab"
+                      phx-value-tab="subscription"
+                    >
+                      <span class="p-tabview-title" data-pc-section="headertitle">
+                        <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
+                      </span>
+                    </a>
+                  </li>
+                  <li
+                    class={[
+                      "p-unselectable-text",
+                      classes("p-tabview-selected p-highlight": false)
+                    ]}
+                    role="presentation"
+                    data-pc-name=""
+                    data-pc-section="header"
                   >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-arrow-up-solid" class="w-4 h-4" />&nbsp;Top Donators
-                      <span class="badge">coming soon</span>
-                    </span>
-                  </a>
-                </li>
-              </ul>
+                    <a
+                      role="tab"
+                      class="p-tabview-nav-link flex p-[10px]"
+                      tabindex="-1"
+                      aria-controls="pr_id_332_content"
+                      aria-selected="false"
+                      aria-disabled="false"
+                      data-pc-section="headeraction"
+                      phx-click="change_settings_tab"
+                      phx-value-tab="balance"
+                    >
+                      <span class="p-tabview-title" data-pc-section="headertitle">
+                        <.icon name="hero-arrow-up-solid" class="w-4 h-4" />&nbsp;Top Donators
+                        <span class="badge">coming soon</span>
+                      </span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
-          <div class="p-tabview-panels" data-pc-section="panelcontainer">
-            <div
-              id="pr_id_330_content"
-              class="p-tabview-panel"
-              role="tabpanel"
-              aria-labelledby="pr_id_33_header_0"
-              data-pc-name=""
-              data-pc-section="content"
-            >
-              <.live_component
-                :if={
-                  @active_subscription_tab == "balance" && not is_nil(assigns |> Map.get(:map_id))
-                }
-                module={WandererAppWeb.Maps.MapBalanceComponent}
-                id="map-balance-component"
-                map_id={@map_id}
-                notify_to={self()}
-                event_name="balance_event"
-                current_user={@current_user}
-              />
+            <div class="p-tabview-panels" data-pc-section="panelcontainer">
+              <div
+                id="pr_id_330_content"
+                class="p-tabview-panel"
+                role="tabpanel"
+                aria-labelledby="pr_id_33_header_0"
+                data-pc-name=""
+                data-pc-section="content"
+              >
+                <.live_component
+                  :if={
+                    @active_subscription_tab == "balance" && not is_nil(assigns |> Map.get(:map_id))
+                  }
+                  module={WandererAppWeb.Maps.MapBalanceComponent}
+                  id="map-balance-component"
+                  map_id={@map_id}
+                  notify_to={self()}
+                  event_name="balance_event"
+                  current_user={@current_user}
+                />
 
-              <.live_component
-                :if={@active_subscription_tab == "subscription"}
-                module={WandererAppWeb.Maps.MapSubscriptionsComponent}
-                id="map-subscriptions-component"
-                map_id={@map_id}
-                notify_to={self()}
-                event_name="subscriptions_event"
-                current_user={@current_user}
-                readonly={
-                  (@user_permissions || %{}) |> Map.get(:delete_map, false) |> Kernel.not()
-                }
-              />
+                <.live_component
+                  :if={@active_subscription_tab == "subscription"}
+                  module={WandererAppWeb.Maps.MapSubscriptionsComponent}
+                  id="map-subscriptions-component"
+                  map_id={@map_id}
+                  notify_to={self()}
+                  event_name="subscriptions_event"
+                  current_user={@current_user}
+                  readonly={
+                    (@user_permissions || %{}) |> Map.get(:delete_map, false) |> Kernel.not()
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="modal-action"></div>
-</.modal>
+    <div class="modal-action"></div>
+  </.modal>
+</div>
