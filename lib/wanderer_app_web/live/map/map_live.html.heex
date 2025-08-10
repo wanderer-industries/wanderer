@@ -99,7 +99,8 @@
                     class={[
                       "p-unselectable-text",
                       classes(
-                        "p-tabview-selected p-highlight": @active_subscription_tab == "subscription"
+                        "p-tabview-selected p-highlight":
+                          @active_subscription_tab == "subscription"
                       )
                     ]}
                     role="presentation"
@@ -162,7 +163,8 @@
               >
                 <.live_component
                   :if={
-                    @active_subscription_tab == "balance" && not is_nil(assigns |> Map.get(:map_id))
+                    @active_subscription_tab == "balance" &&
+                      not is_nil(assigns |> Map.get(:map_id))
                   }
                   module={WandererAppWeb.Maps.MapBalanceComponent}
                   id="map-balance-component"

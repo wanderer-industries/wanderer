@@ -65,7 +65,7 @@ defmodule WandererApp.Api.MapDefaultSettings do
     update :update do
       primary?(true)
       accept [:settings]
-      
+
       # Required for managing relationships
       require_atomic? false
 

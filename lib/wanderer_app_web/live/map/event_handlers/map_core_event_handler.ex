@@ -246,15 +246,20 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
         {:error, reason} ->
           Logger.error("Failed to save default settings: #{inspect(reason)}")
-          error_message = case reason do
-            %Ash.Error.Invalid{} = error ->
-              errors = Ash.Error.to_error_class(error)
-              "Validation error: #{inspect(errors)}"
-            :no_character ->
-              "No character found for user"
-            _ ->
-              "Failed to save default settings: #{inspect(reason)}"
-          end
+
+          error_message =
+            case reason do
+              %Ash.Error.Invalid{} = error ->
+                errors = Ash.Error.to_error_class(error)
+                "Validation error: #{inspect(errors)}"
+
+              :no_character ->
+                "No character found for user"
+
+              _ ->
+                "Failed to save default settings: #{inspect(reason)}"
+            end
+
           {:reply, %{success: false, error: error_message},
            socket |> put_flash(:error, error_message)}
       end
@@ -323,13 +328,19 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     if actor do
       case WandererApp.Api.MapDefaultSettings.get_by_map_id(%{map_id: map_id}) do
         {:ok, [existing | _]} ->
-          result = WandererApp.Api.MapDefaultSettings.update(existing, %{settings: settings}, actor: actor)
+          result =
+            WandererApp.Api.MapDefaultSettings.update(existing, %{settings: settings},
+              actor: actor
+            )
+
           result
 
         error ->
-          result = WandererApp.Api.MapDefaultSettings.create(%{map_id: map_id, settings: settings},
-            actor: actor
-          )
+          result =
+            WandererApp.Api.MapDefaultSettings.create(%{map_id: map_id, settings: settings},
+              actor: actor
+            )
+
           result
       end
     else
