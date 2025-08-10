@@ -21,7 +21,9 @@ import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCoun
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
-  const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(nodeVars.solarSystemId);
+  const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(
+    nodeVars.solarSystemId,
+  );
 
   // console.log('JOipP', `render ${nodeVars.id}`, render++);
 

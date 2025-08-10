@@ -24,6 +24,7 @@ export type CharacterCardProps = {
   useSystemsCache?: boolean;
   showCorporationLogo?: boolean;
   showAllyLogo?: boolean;
+  showAllyLogoPlaceholder?: boolean;
   simpleMode?: boolean;
 } & WithIsOwnCharacter &
   WithClassName;
@@ -47,6 +48,7 @@ export const CharacterCard = ({
   showShipName,
   showCorporationLogo,
   showAllyLogo,
+  showAllyLogoPlaceholder,
   showTicker,
   useSystemsCache,
   className,
@@ -214,6 +216,18 @@ export const CharacterCard = ({
                 type={WdEveEntityPortraitType.alliance}
                 eveId={char.alliance_id?.toString()}
                 size={WdEveEntityPortraitSize.w33}
+              />
+            </WdTooltipWrapper>
+          )}
+
+          {showAllyLogo && showAllyLogoPlaceholder && !char.alliance_id && (
+            <WdTooltipWrapper position={TooltipPosition.top} content="No alliance">
+              <span
+                className={clsx(
+                  'min-w-[33px] min-h-[33px] w-[33px] h-[33px]',
+                  'flex transition-[border-color,opacity] duration-250 rounded-none',
+                  'wd-bg-default',
+                )}
               />
             </WdTooltipWrapper>
           )}
