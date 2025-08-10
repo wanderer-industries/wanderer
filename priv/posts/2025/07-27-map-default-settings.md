@@ -1,7 +1,7 @@
 %{
   title: "New Feature: Map Default Settings",
   author: "Wanderer Team",
-  cover_image_uri: "/images/news/07-27-settings/defaults.png",
+  cover_image_uri: "/images/news/2025/07-27-settings/common_settings.png",
   tags: ~w(feature settings maps customization admin),
   description: "Map administrators can now configure default settings for new users, providing a customized initial experience for each map."
 }
@@ -45,13 +45,12 @@ With Map Default Settings, administrators can now:
 Setting up default settings is simple:
 
 1. Configure your map settings to your preferred state
-2. Open the Settings dialog and navigate to the Import/Export tab
-3. Look for the "Default Settings (Admin Only)" section
+2. Open the Settings dialog and navigate to the 'Admin Settings' tab
 4. Click "Save as Map Default"
 
 That's it! Your current settings are now saved as the default for any new user accessing your map.
 
-![Admin Settings Interface](/images/news/07-27-settings/admin.png)
+![Admin Settings Interface](/images/news/2025/07-27-settings/admin_settings.png)
 
 ### For New Users
 
@@ -64,20 +63,19 @@ When a user accesses your map for the first time:
 
 ---
 
-## Reset to Defaults
+## Sync with Default Settings
 
-We've also added a complementary feature: **Reset to Defaults**. Any user can now reset their settings back to the map's default configuration:
+We've also added a complementary feature: **Sync with Default Settings**. Any user can now reset their settings back to the map's default configuration:
 
-1. Open Settings → Import/Export tab
-2. Click "Reset to Defaults"
+1. Open Settings → Server Settings tab
+2. Click "Sync with Default Settings"
 3. Confirm the action
-4. Settings are restored to either:
+4. Settings are restored to:
    - Admin-configured defaults (if available)
-   - System defaults (if no admin defaults exist)
 
 This is perfect for users who want to start fresh or have accidentally misconfigured their settings.
 
-![Reset Settings Button](/images/news/07-27-settings/defaults.png)
+![Sync with Default Settings Button](/images/news/2025/07-27-settings/server_settings.png)
 
 ---
 
@@ -97,7 +95,7 @@ Map default settings include all user interface preferences:
 
 ## Security and Permissions
 
-- Only map owners and ACL owners can save default settings
+- Only map owners and administrators can save default settings
 - All users can read and apply default settings
 - Settings are validated to ensure they contain only UI preferences
 - No sensitive data is stored in default settings
