@@ -28,7 +28,7 @@ defmodule WandererApp.Character do
             Cachex.put(:character_cache, character_id, character)
             {:ok, character}
 
-          _ ->
+          error ->
             {:error, :not_found}
         end
 
@@ -283,39 +283,44 @@ defmodule WandererApp.Character do
     |> case do
       {:ok, settings} when not is_nil(settings) ->
         character
-        |> Map.put(:online, false)
-        |> Map.merge(settings)
+        |> Map.merge(%{
+          solar_system_id: settings.solar_system_id,
+          structure_id: settings.structure_id,
+          station_id: settings.station_id,
+          ship: settings.ship,
+          ship_name: settings.ship_name,
+          ship_item_id: settings.ship_item_id
+        })
 
       _ ->
         character
-        |> Map.put(:online, false)
         |> Map.merge(@default_character_tracking_data)
     end
-    |> Map.merge(%{tracking_paused: tracking_paused})
+    |> Map.merge(%{online: false, tracking_paused: tracking_paused})
   end
 
   defp prepare_search_results(result) do
     {:ok, characters} =
-      _load_eve_info(Map.get(result, "character"), :get_character_info, &_map_character_info/1)
+      load_eve_info(Map.get(result, "character"), :get_character_info, &map_character_info/1)
 
     {:ok, corporations} =
-      _load_eve_info(
+      load_eve_info(
         Map.get(result, "corporation"),
         :get_corporation_info,
-        &_map_corporation_info/1
+        &map_corporation_info/1
       )
 
     {:ok, alliances} =
-      _load_eve_info(Map.get(result, "alliance"), :get_alliance_info, &_map_alliance_info/1)
+      load_eve_info(Map.get(result, "alliance"), :get_alliance_info, &map_alliance_info/1)
 
     [[characters | corporations] | alliances] |> List.flatten()
   end
 
-  defp _load_eve_info(nil, _, _), do: {:ok, []}
+  defp load_eve_info(nil, _, _), do: {:ok, []}
 
-  defp _load_eve_info([], _, _), do: {:ok, []}
+  defp load_eve_info([], _, _), do: {:ok, []}
 
-  defp _load_eve_info(eve_ids, method, map_function),
+  defp load_eve_info(eve_ids, method, map_function),
     do:
       {:ok,
        Enum.map(eve_ids, fn eve_id ->
@@ -331,7 +336,7 @@ defmodule WandererApp.Character do
        end)
        |> Enum.filter(fn result -> not is_nil(result) end)}
 
-  defp _map_alliance_info(info) do
+  defp map_alliance_info(info) do
     %{
       label: info["name"],
       value: info["eve_id"] |> to_string(),
@@ -339,7 +344,7 @@ defmodule WandererApp.Character do
     }
   end
 
-  defp _map_character_info(info) do
+  defp map_character_info(info) do
     %{
       label: info["name"],
       value: info["eve_id"] |> to_string(),
@@ -347,7 +352,7 @@ defmodule WandererApp.Character do
     }
   end
 
-  defp _map_corporation_info(info) do
+  defp map_corporation_info(info) do
     %{
       label: info["name"],
       value: info["eve_id"] |> to_string(),

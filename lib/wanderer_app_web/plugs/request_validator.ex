@@ -13,7 +13,7 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
 
   import Plug.Conn
 
-  alias WandererApp.SecurityAudit
+  # alias WandererApp.SecurityAudit
 
   # 10MB
   @max_request_size 10 * 1024 * 1024
@@ -344,13 +344,13 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
         # Log security threat
         user_id = get_user_id(conn)
 
-        SecurityAudit.log_event(:security_alert, user_id, %{
-          threats: threats,
-          ip_address: get_peer_ip(conn),
-          user_agent: get_user_agent(conn),
-          request_path: conn.request_path,
-          method: conn.method
-        })
+        # SecurityAudit.log_event(:security_alert, user_id, %{
+        #   threats: threats,
+        #   ip_address: get_peer_ip(conn),
+        #   user_agent: get_user_agent(conn),
+        #   request_path: conn.request_path,
+        #   method: conn.method
+        # })
 
         conn
         |> send_validation_error(400, "Malicious content detected", %{
@@ -504,14 +504,14 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
     # Log the validation error
     user_id = get_user_id(conn)
 
-    SecurityAudit.log_event(:security_alert, user_id, %{
-      error: "validation_error",
-      message: Exception.message(error),
-      ip_address: get_peer_ip(conn),
-      user_agent: get_user_agent(conn),
-      request_path: conn.request_path,
-      method: conn.method
-    })
+    # SecurityAudit.log_event(:security_alert, user_id, %{
+    #   error: "validation_error",
+    #   message: Exception.message(error),
+    #   ip_address: get_peer_ip(conn),
+    #   user_agent: get_user_agent(conn),
+    #   request_path: conn.request_path,
+    #   method: conn.method
+    # })
 
     conn
     |> send_validation_error(500, "Request validation failed", %{

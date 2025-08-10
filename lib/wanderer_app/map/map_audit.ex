@@ -6,7 +6,7 @@ defmodule WandererApp.Map.Audit do
   require Ash.Query
   require Logger
 
-  alias WandererApp.SecurityAudit
+  # alias WandererApp.SecurityAudit
 
   @week_seconds :timer.hours(24 * 7)
   @month_seconds @week_seconds * 4
@@ -105,25 +105,26 @@ defmodule WandererApp.Map.Audit do
   @doc """
   Get security events for a specific map.
   """
-  def get_security_events_for_map(map_id, period \\ "1D") do
-    {from, to} = period |> get_period()
 
-    # Get security events that might be related to this map
-    # This could include data access events, permission denied events, etc.
-    SecurityAudit.get_events_in_range(from, to)
-    |> Enum.filter(fn event ->
-      case Jason.decode(event.event_data || "{}") do
-        {:ok, data} ->
-          # Check if the event data contains references to this map
-          data["resource_id"] == map_id ||
-            data["entity_id"] == map_id ||
-            data["map_id"] == map_id
+  # def get_security_events_for_map(map_id, period \\ "1D") do
+  #   {from, to} = period |> get_period()
 
-        _ ->
-          false
-      end
-    end)
-  end
+  #   # Get security events that might be related to this map
+  #   # This could include data access events, permission denied events, etc.
+  #   SecurityAudit.get_events_in_range(from, to)
+  #   |> Enum.filter(fn event ->
+  #     case Jason.decode(event.event_data || "{}") do
+  #       {:ok, data} ->
+  #         # Check if the event data contains references to this map
+  #         data["resource_id"] == map_id ||
+  #           data["entity_id"] == map_id ||
+  #           data["map_id"] == map_id
+
+  #       _ ->
+  #         false
+  #     end
+  #   end)
+  # end
 
   def track_acl_event(
         event_type,
@@ -159,13 +160,13 @@ defmodule WandererApp.Map.Audit do
 
     # Also log security-relevant map events
     if security_relevant_event?(event_type) do
-      SecurityAudit.log_data_access(
-        "map",
-        map_id,
-        user_id,
-        event_type,
-        metadata
-      )
+      # SecurityAudit.log_data_access(
+      #   "map",
+      #   map_id,
+      #   user_id,
+      #   event_type,
+      #   metadata
+      # )
     end
 
     result

@@ -2,14 +2,14 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   @moduledoc """
   Plug for authenticating JSON:API v1 endpoints.
 
-  Supports both session-based authentication (for web clients) and 
+  Supports both session-based authentication (for web clients) and
   Bearer token authentication (for API clients).
   """
 
   import Plug.Conn
 
   alias WandererApp.Api.User
-  alias WandererApp.SecurityAudit
+  # alias WandererApp.SecurityAudit
 
   def init(opts), do: opts
 
@@ -23,7 +23,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
         # Log successful authentication
         request_details = extract_request_details(conn)
-        SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
+        # SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
 
         # Emit successful authentication event
         :telemetry.execute(
@@ -44,7 +44,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
         # Log successful authentication
         request_details = extract_request_details(conn)
-        SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
+        # SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
 
         # Emit successful authentication event
         :telemetry.execute(
@@ -64,11 +64,11 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         # Log failed authentication
         request_details = extract_request_details(conn)
 
-        SecurityAudit.log_auth_event(
-          :auth_failure,
-          nil,
-          Map.put(request_details, :failure_reason, reason)
-        )
+        # SecurityAudit.log_auth_event(
+        #   :auth_failure,
+        #   nil,
+        #   Map.put(request_details, :failure_reason, reason)
+        # )
 
         # Emit failed authentication event
         :telemetry.execute(

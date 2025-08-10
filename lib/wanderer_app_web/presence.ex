@@ -31,8 +31,6 @@ defmodule WandererAppWeb.Presence do
         character_id
       end)
 
-    WandererApp.Cache.insert("map_#{map_id}:presence_updated", true)
-
     WandererApp.Cache.insert(
       "map_#{map_id}:presence_character_ids",
       presence_tracked_character_ids
@@ -42,6 +40,8 @@ defmodule WandererAppWeb.Presence do
       "map_#{map_id}:presence_data",
       presence_data
     )
+
+    WandererApp.Cache.insert("map_#{map_id}:presence_updated", true)
 
     {:ok, state}
   end

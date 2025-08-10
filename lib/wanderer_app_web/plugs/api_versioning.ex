@@ -12,7 +12,7 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   import Plug.Conn
 
-  alias WandererApp.SecurityAudit
+  # alias WandererApp.SecurityAudit
 
   @supported_versions ["1"]
   @default_version "1"
@@ -261,13 +261,13 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
   defp log_deprecation_usage(conn, version) do
     user_id = get_user_id(conn)
 
-    SecurityAudit.log_event(:deprecated_api_usage, user_id, %{
-      version: version,
-      path: conn.request_path,
-      method: conn.method,
-      user_agent: get_user_agent(conn),
-      ip_address: get_peer_ip(conn)
-    })
+    # SecurityAudit.log_event(:deprecated_api_usage, user_id, %{
+    #   version: version,
+    #   path: conn.request_path,
+    #   method: conn.method,
+    #   user_agent: get_user_agent(conn),
+    #   ip_address: get_peer_ip(conn)
+    # })
 
     conn
   end
@@ -316,12 +316,12 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   # Error handling
   defp handle_version_error(conn, reason, _opts) do
-    SecurityAudit.log_event(:api_version_error, get_user_id(conn), %{
-      reason: reason,
-      path: conn.request_path,
-      method: conn.method,
-      headers: get_version_headers(conn)
-    })
+    # SecurityAudit.log_event(:api_version_error, get_user_id(conn), %{
+    #   reason: reason,
+    #   path: conn.request_path,
+    #   method: conn.method,
+    #   headers: get_version_headers(conn)
+    # })
 
     conn
     |> send_version_error(400, "Invalid API version", %{
