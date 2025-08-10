@@ -40,6 +40,7 @@ defmodule WandererApp.Api.MapUserSettings do
       action: :read
     )
 
+    define(:update_hubs, action: :update_hubs)
     define(:update_settings, action: :update_settings)
     define(:update_following_character, action: :update_following_character)
     define(:update_main_character, action: :update_main_character)
@@ -52,7 +53,7 @@ defmodule WandererApp.Api.MapUserSettings do
       :settings
     ]
 
-    defaults [:create, :read]
+    defaults [:create, :read, :update, :destroy]
 
     update :update_settings do
       accept [:settings]

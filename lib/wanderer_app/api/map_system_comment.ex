@@ -31,6 +31,9 @@ defmodule WandererApp.Api.MapSystemComment do
   end
 
   code_interface do
+    define(:create, action: :create)
+    define(:destroy, action: :destroy)
+
     define(:by_id,
       get_by: [:id],
       action: :read
@@ -46,7 +49,7 @@ defmodule WandererApp.Api.MapSystemComment do
       :text
     ]
 
-    defaults [:read]
+    defaults [:read, :destroy]
 
     create :create do
       primary? true
