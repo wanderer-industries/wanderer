@@ -96,7 +96,7 @@ jobs:
           git config --global user.name 'CI'
           git config --global user.email 'ci@users.noreply.github.com'
           mix git_ops.release --force-patch --yes
-          git commit -am 'chore: [skip ci]'
+          git commit --allow-empty -m 'chore: [skip ci]'
           git push --follow-tags
           echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
