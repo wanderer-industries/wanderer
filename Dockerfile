@@ -28,9 +28,9 @@ COPY lib lib
 
 COPY assets assets
 
-RUN mix compile
-
 RUN mix assets.deploy
+
+RUN mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
