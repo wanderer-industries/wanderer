@@ -186,4 +186,4 @@ jobs:
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          content: ${{ needs.docker.outputs.release-notes }}
+          content: Release notes ${{ needs.docker.outputs.release-notes }}
