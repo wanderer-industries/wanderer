@@ -21,8 +21,9 @@ As part of the Wanderer platform, a public API has been introduced to help users
 ## Authentication
 
 Each request to the Wanderer APIs that being with /api/map must include a valid API key in the `Authorization` header. The format is:
-
-    Authorization: Bearer <YOUR_MAP_API_KEY>
+```
+Authorization: Bearer <YOUR_MAP_API_KEY>
+```
 
 If the API key is missing or incorrect, you'll receive a `401 Unauthorized` response.
 
