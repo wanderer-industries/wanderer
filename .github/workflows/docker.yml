@@ -43,6 +43,11 @@ jobs:
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Get Release Tag
         id: get-latest-tag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
