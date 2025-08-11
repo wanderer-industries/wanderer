@@ -27,5 +27,8 @@ config :swoosh, local: false
 config :logger,
   level: :info
 
+# Enable async security audit processing in production
+config :wanderer_app, WandererApp.SecurityAudit, async: true
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

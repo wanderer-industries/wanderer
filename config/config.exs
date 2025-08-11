@@ -102,6 +102,23 @@ config :error_tracker,
   repo: WandererApp.Repo,
   otp_app: :wanderer_app
 
+# Security Audit Configuration
+config :wanderer_app, WandererApp.SecurityAudit,
+  enabled: true,
+  # Set to true in production for better performance
+  async: false,
+  batch_size: 100,
+  flush_interval: 5000,
+  log_level: :info,
+  threat_detection: %{
+    enabled: true,
+    max_failed_attempts: 5,
+    max_permission_denials: 10,
+    window_seconds: 300,
+    bulk_operation_threshold: 10000
+  },
+  retention_days: 90
+
 config :git_ops,
   mix_project: Mix.Project.get!(),
   changelog_file: "CHANGELOG.md",
