@@ -16,8 +16,9 @@ import { PrimeIcons } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { Toast } from 'primereact/toast';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useRefState from 'react-usestateref';
+import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 
 const PING_PLACEMENT_MAP = {
   [PingsPlacement.rightTop]: 'top-right',
@@ -78,9 +79,7 @@ export interface PingsInterfaceProps {
 export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
   const toast = useRef<Toast>(null);
   const [isShow, setIsShow, isShowRef] = useRefState(false);
-
-  const cpRemoveBtnRef = useRef<HTMLElement>();
-  const [cpRemoveVisible, setCpRemoveVisible] = useState(false);
+  const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
 
   const {
     storedSettings: { interfaceSettings },
@@ -97,9 +96,6 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
   }, [selectedSystems]);
 
   const ping = useMemo(() => (pings.length === 1 ? pings[0] : null), [pings]);
-
-  const handleShowCP = useCallback(() => setCpRemoveVisible(true), []);
-  const handleHideCP = useCallback(() => setCpRemoveVisible(false), []);
 
   const navigateTo = useCallback(() => {
     if (!ping) {
@@ -242,11 +238,11 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
               />
 
               {/*@ts-ignore*/}
-              <div ref={cpRemoveBtnRef}>
+              <div ref={cfRef}>
                 <WdImgButton
                   className={clsx('pi-trash', 'text-red-400 hover:text-red-300')}
                   tooltip={DELETE_TOOLTIP_PROPS}
-                  onClick={handleShowCP}
+                  onClick={cfShow}
                 />
               </div>
               {/* TODO ADD solar system menu*/}
@@ -272,9 +268,9 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
       />
 
       <ConfirmPopup
-        target={cpRemoveBtnRef.current}
-        visible={cpRemoveVisible}
-        onHide={handleHideCP}
+        target={cfRef.current}
+        visible={cfVisible}
+        onHide={cfHide}
         message="Are you sure you want to delete ping?"
         icon="pi pi-exclamation-triangle text-orange-400"
         accept={removePing}

@@ -145,7 +145,12 @@ defmodule WandererApp.Api.UserActivity do
           :admin_action,
           :config_change,
           :bulk_operation,
-          :security_alert
+          :security_alert,
+          # Subscription events
+          :subscription_created,
+          :subscription_updated,
+          :subscription_deleted,
+          :subscription_unknown
         ]
       )
 

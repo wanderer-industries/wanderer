@@ -20,8 +20,7 @@ defmodule WandererApp.Api.Map do
     includes([
       :owner,
       :characters,
-      :acls,
-      :transactions
+      :acls
     ])
 
     # Enable filtering and sorting
@@ -342,7 +341,7 @@ defmodule WandererApp.Api.Map do
     end
 
     has_many :transactions, WandererApp.Api.MapTransaction do
-      public? true
+      public? false
     end
   end
 end

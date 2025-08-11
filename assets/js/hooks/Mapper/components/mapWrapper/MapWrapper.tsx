@@ -181,17 +181,20 @@ export const MapWrapper = () => {
     ref.current.systemContextProps.systemId && setOpenSettings(ref.current.systemContextProps.systemId);
   }, []);
 
-  const handleTogglePing = useCallback(async (type: PingType, solar_system_id: string, hasPing: boolean) => {
-    if (hasPing) {
-      await outCommand({
-        type: OutCommand.cancelPing,
-        data: { type, solar_system_id: solar_system_id },
-      });
-      return;
-    }
+  const handleTogglePing = useCallback(
+    async (type: PingType, solar_system_id: string, ping_id: string | undefined, hasPing: boolean) => {
+      if (hasPing) {
+        await outCommand({
+          type: OutCommand.cancelPing,
+          data: { type, id: ping_id },
+        });
+        return;
+      }
 
-    setOpenPing({ type, solar_system_id });
-  }, []);
+      setOpenPing({ type, solar_system_id });
+    },
+    [],
+  );
 
   const handleCustomLabelDialog = useCallback(() => {
     const { systemContextProps } = ref.current;

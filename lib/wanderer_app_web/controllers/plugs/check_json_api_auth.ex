@@ -2,14 +2,20 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   @moduledoc """
   Plug for authenticating JSON:API v1 endpoints.
 
-  Supports both session-based authentication (for web clients) and 
+  Supports both session-based authentication (for web clients) and
   Bearer token authentication (for API clients).
+
+  Currently, Bearer token authentication only supports map API keys.
+  When a valid map API key is provided, the map owner is set as the
+  authenticated user and the map is made available in conn.assigns.
+
   """
 
   import Plug.Conn
 
   alias WandererApp.Api.User
   alias WandererApp.SecurityAudit
+  alias WandererApp.Audit.RequestContext
 
   def init(opts), do: opts
 
@@ -57,7 +63,8 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         |> assign(:current_user, user)
         |> assign(:current_user_role, get_user_role(user))
 
-      {:error, reason} ->
+      {:error, reason} when is_binary(reason) ->
+        # Legacy error handling for simple string errors
         end_time = System.monotonic_time(:millisecond)
         duration = end_time - start_time
 
@@ -82,6 +89,36 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         |> put_resp_content_type("application/json")
         |> send_resp(401, Jason.encode!(%{error: reason}))
         |> halt()
+
+      {:error, external_message, internal_reason} ->
+        # New error handling with separate internal and external messages
+        end_time = System.monotonic_time(:millisecond)
+        duration = end_time - start_time
+
+        # Log failed authentication with detailed internal reason
+        request_details = extract_request_details(conn)
+
+        SecurityAudit.log_auth_event(
+          :auth_failure,
+          nil,
+          Map.merge(request_details, %{
+            failure_reason: internal_reason,
+            external_message: external_message
+          })
+        )
+
+        # Emit failed authentication event
+        :telemetry.execute(
+          [:wanderer_app, :json_api, :auth],
+          %{count: 1, duration: duration},
+          %{auth_type: get_auth_type(conn), result: "failure"}
+        )
+
+        conn
+        |> put_status(:unauthorized)
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{error: external_message}))
+        |> halt()
     end
   end
 
@@ -103,8 +140,6 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   defp authenticate_bearer_token(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
-        # For now, use a simple approach - validate token format
-        # In the future, this could be extended to support JWT or other token types
         validate_api_token(token)
 
       _ ->
@@ -113,48 +148,23 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp validate_api_token(token) do
-    # For test environment, accept test API keys
-    if Application.get_env(:wanderer_app, :env) == :test and
-         (String.starts_with?(token, "test_") or String.starts_with?(token, "test_api_key_")) do
-      # For test tokens, look up the actual map by API key
-      case find_map_by_api_key(token) do
-        {:ok, map} when not is_nil(map) ->
-          # Use the actual map owner as the user
-          user = %User{
-            id: map.owner_id || Ecto.UUID.generate(),
-            name: "Test User",
-            hash: "test_hash_#{System.unique_integer([:positive])}"
-          }
+    # Look up the map by its public API key
+    case find_map_by_api_key(token) do
+      {:ok, map} when not is_nil(map) ->
+        # Get the actual owner of the map
+        case User.by_id(map.owner_id, load: :characters) do
+          {:ok, user} ->
+            # Return the map owner as the authenticated user
+            {:ok, user, map}
 
-          {:ok, user, map}
+          {:error, _} ->
+            # Return generic error with specific reason for internal logging
+            {:error, "Authentication failed", :map_owner_not_found}
+        end
 
-        _ ->
-          # If no map found with this test token, create a test user without a map
-          user = %User{
-            id: Ecto.UUID.generate(),
-            name: "Test User",
-            hash: "test_hash_#{System.unique_integer([:positive])}"
-          }
-
-          {:ok, user}
-      end
-    else
-      # Look up the map by its public API key
-      case find_map_by_api_key(token) do
-        {:ok, map} when not is_nil(map) ->
-          # Create a user representing API access for this map
-          # In a real implementation, you might want to track the actual user who created the API key
-          user = %User{
-            id: map.owner_id || Ecto.UUID.generate(),
-            name: "API User for #{map.name}",
-            hash: "api_hash_#{map.id}"
-          }
-
-          {:ok, user, map}
-
-        _ ->
-          {:error, "Invalid API key"}
-      end
+      _ ->
+        # Return generic error with specific reason for internal logging
+        {:error, "Authentication failed", :invalid_api_key}
     end
   end
 
@@ -192,50 +202,8 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp extract_request_details(conn) do
-    %{
-      ip_address: get_peer_ip(conn),
-      user_agent: get_user_agent(conn),
-      auth_method: get_auth_type(conn),
-      session_id: get_session_id(conn),
-      request_path: conn.request_path,
-      method: conn.method
-    }
-  end
-
-  defp get_peer_ip(conn) do
-    case get_req_header(conn, "x-forwarded-for") do
-      [forwarded_for] ->
-        forwarded_for
-        |> String.split(",")
-        |> List.first()
-        |> String.trim()
-
-      [] ->
-        case get_req_header(conn, "x-real-ip") do
-          [real_ip] ->
-            real_ip
-
-          [] ->
-            case conn.remote_ip do
-              {a, b, c, d} -> "#{a}.#{b}.#{c}.#{d}"
-              _ -> "unknown"
-            end
-        end
-    end
-  end
-
-  defp get_user_agent(conn) do
-    case get_req_header(conn, "user-agent") do
-      [user_agent] -> user_agent
-      [] -> "unknown"
-    end
-  end
-
-  defp get_session_id(conn) do
-    case get_session(conn, :session_id) do
-      nil -> conn.assigns[:request_id] || "unknown"
-      session_id -> session_id
-    end
+    RequestContext.build_request_details(conn)
+    |> Map.put(:auth_method, get_auth_type(conn))
   end
 
   defp maybe_assign_map(conn, nil), do: conn

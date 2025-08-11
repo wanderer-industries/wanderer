@@ -1,6 +1,6 @@
 import { MapUserSettings, SettingsWithVersion } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
-const REQUIRED_KEYS = [
+export const REQUIRED_KEYS = [
   'widgets',
   'interface',
   'onTheMap',

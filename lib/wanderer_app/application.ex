@@ -45,6 +45,9 @@ defmodule WandererApp.Application do
       Supervisor.child_spec({Cachex, name: :tracked_characters},
         id: :tracked_characters_cache_worker
       ),
+      Supervisor.child_spec({Cachex, name: :wanderer_app_cache},
+        id: :wanderer_app_cache_worker
+      ),
       {Registry, keys: :unique, name: WandererApp.MapRegistry},
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
       {PartitionSupervisor,
@@ -60,6 +63,14 @@ defmodule WandererApp.Application do
       if Application.get_env(:wanderer_app, :environment) == :test do
         []
       else
+        security_audit_children =
+          if Application.get_env(:wanderer_app, WandererApp.SecurityAudit, [])
+             |> Keyword.get(:async, false) do
+            [WandererApp.SecurityAudit.AsyncProcessor]
+          else
+            []
+          end
+
         [
           WandererApp.Esi.InitClientsTask,
           WandererApp.Scheduler,
@@ -68,7 +79,7 @@ defmodule WandererApp.Application do
           {WandererApp.Character.TrackerPoolSupervisor, []},
           WandererApp.Character.TrackerManager,
           WandererApp.Map.Manager
-        ]
+        ] ++ security_audit_children
       end
 
     children =

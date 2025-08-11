@@ -792,7 +792,10 @@ defmodule WandererApp.Esi.ApiClient do
     expires_at_datetime = DateTime.from_unix!(expires_at)
     time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
 
-    Logger.info("TOKEN_REFRESH_SUCCESS: Character token refreshed successfully",
+    Logger.debug(
+      fn ->
+        "TOKEN_REFRESH_SUCCESS: Character token refreshed successfully"
+      end,
       character_id: character_id,
       time_since_expiry_seconds: time_since_expiry,
       new_expires_at: token.expires_at

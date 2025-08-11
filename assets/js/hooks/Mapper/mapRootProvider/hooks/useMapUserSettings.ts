@@ -1,44 +1,16 @@
 import useLocalStorageState from 'use-local-storage-state';
 import { MapUserSettings, MapUserSettingsStructure } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import {
-  DEFAULT_KILLS_WIDGET_SETTINGS,
-  DEFAULT_ON_THE_MAP_SETTINGS,
-  DEFAULT_ROUTES_SETTINGS,
-  DEFAULT_WIDGET_LOCAL_SETTINGS,
-  getDefaultWidgetProps,
-  STORED_INTERFACE_DEFAULT_VALUES,
-} from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures';
 import { MapRootData } from '@/hooks/Mapper/mapRootProvider';
 import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/useSettingsValueAndSetter.ts';
 import fastDeepEqual from 'fast-deep-equal';
-
-// import { actualizeSettings } from '@/hooks/Mapper/mapRootProvider/helpers';
-
-// TODO - we need provide and compare version
-const createWidgetSettingsWithVersion = <T>(settings: T) => {
-  return {
-    version: 0,
-    settings,
-  };
-};
-
-const createDefaultWidgetSettings = (): MapUserSettings => {
-  return {
-    killsWidget: createWidgetSettingsWithVersion(DEFAULT_KILLS_WIDGET_SETTINGS),
-    localWidget: createWidgetSettingsWithVersion(DEFAULT_WIDGET_LOCAL_SETTINGS),
-    widgets: createWidgetSettingsWithVersion(getDefaultWidgetProps()),
-    routes: createWidgetSettingsWithVersion(DEFAULT_ROUTES_SETTINGS),
-    onTheMap: createWidgetSettingsWithVersion(DEFAULT_ON_THE_MAP_SETTINGS),
-    signaturesWidget: createWidgetSettingsWithVersion(DEFAULT_SIGNATURE_SETTINGS),
-    interface: createWidgetSettingsWithVersion(STORED_INTERFACE_DEFAULT_VALUES),
-  };
-};
+import { OutCommandHandler } from '@/hooks/Mapper/types';
+import { useActualizeRemoteMapSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useActualizeRemoteMapSettings.ts';
+import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
 
 const EMPTY_OBJ = {};
 
-export const useMapUserSettings = ({ map_slug }: MapRootData) => {
+export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCommandHandler) => {
   const [isReady, setIsReady] = useState(false);
   const [hasOldSettings, setHasOldSettings] = useState(false);
 
@@ -49,19 +21,25 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
   const ref = useRef({ mapUserSettings, setMapUserSettings, map_slug });
   ref.current = { mapUserSettings, setMapUserSettings, map_slug };
 
-  useEffect(() => {
-    const { mapUserSettings, setMapUserSettings } = ref.current;
-    if (map_slug === null) {
-      return;
+  const applySettings = useCallback((settings: MapUserSettings) => {
+    const { map_slug, mapUserSettings, setMapUserSettings } = ref.current;
+
+    if (map_slug == null) {
+      return false;
     }
 
-    if (!(map_slug in mapUserSettings)) {
-      setMapUserSettings({
-        ...mapUserSettings,
-        [map_slug]: createDefaultWidgetSettings(),
-      });
+    if (fastDeepEqual(settings, mapUserSettings[map_slug])) {
+      return false;
     }
-  }, [map_slug]);
+
+    setMapUserSettings(old => ({
+      ...old,
+      [map_slug]: settings,
+    }));
+    return true;
+  }, []);
+
+  useActualizeRemoteMapSettings({ outCommand, applySettings, mapUserSettings, setMapUserSettings, map_slug });
 
   const [interfaceSettings, setInterfaceSettings] = useSettingsValueAndSetter(
     mapUserSettings,
@@ -178,23 +156,9 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
     return JSON.stringify(ref.current.mapUserSettings[map_slug]);
   }, []);
 
-  const applySettings = useCallback((settings: MapUserSettings) => {
-    const { map_slug, mapUserSettings, setMapUserSettings } = ref.current;
-
-    if (map_slug == null) {
-      return false;
-    }
-
-    if (fastDeepEqual(settings, mapUserSettings[map_slug])) {
-      return false;
-    }
-
-    setMapUserSettings(old => ({
-      ...old,
-      [map_slug]: settings,
-    }));
-    return true;
-  }, []);
+  const resetSettings = useCallback(() => {
+    applySettings(createDefaultWidgetSettings());
+  }, [applySettings]);
 
   return {
     isReady,
@@ -217,6 +181,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData) => {
 
     getSettingsForExport,
     applySettings,
+    resetSettings,
     checkOldSettings,
   };
 };

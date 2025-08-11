@@ -13,6 +13,7 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
   import Plug.Conn
 
   alias WandererApp.SecurityAudit
+  alias WandererApp.Audit.RequestContext
 
   @supported_versions ["1"]
   @default_version "1"
@@ -260,14 +261,13 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   defp log_deprecation_usage(conn, version) do
     user_id = get_user_id(conn)
+    request_details = RequestContext.build_request_details(conn)
 
-    SecurityAudit.log_event(:deprecated_api_usage, user_id, %{
-      version: version,
-      path: conn.request_path,
-      method: conn.method,
-      user_agent: get_user_agent(conn),
-      ip_address: get_peer_ip(conn)
-    })
+    SecurityAudit.log_event(
+      :deprecated_api_usage,
+      user_id,
+      Map.put(request_details, :version, version)
+    )
 
     conn
   end
@@ -316,12 +316,15 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
 
   # Error handling
   defp handle_version_error(conn, reason, _opts) do
-    SecurityAudit.log_event(:api_version_error, get_user_id(conn), %{
-      reason: reason,
-      path: conn.request_path,
-      method: conn.method,
-      headers: get_version_headers(conn)
-    })
+    request_details = RequestContext.build_request_details(conn)
+
+    SecurityAudit.log_event(
+      :api_version_error,
+      get_user_id(conn),
+      request_details
+      |> Map.put(:reason, reason)
+      |> Map.put(:headers, get_version_headers(conn))
+    )
 
     conn
     |> send_version_error(400, "Invalid API version", %{
@@ -376,35 +379,6 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
     end
   end
 
-  defp get_user_agent(conn) do
-    case get_req_header(conn, "user-agent") do
-      [user_agent] -> user_agent
-      [] -> "unknown"
-    end
-  end
-
-  defp get_peer_ip(conn) do
-    case get_req_header(conn, "x-forwarded-for") do
-      [forwarded_for] ->
-        forwarded_for
-        |> String.split(",")
-        |> List.first()
-        |> String.trim()
-
-      [] ->
-        case get_req_header(conn, "x-real-ip") do
-          [real_ip] ->
-            real_ip
-
-          [] ->
-            case conn.remote_ip do
-              {a, b, c, d} -> "#{a}.#{b}.#{c}.#{d}"
-              _ -> "unknown"
-            end
-        end
-    end
-  end
-
   defp get_version_headers(conn) do
     %{
       "api-version" => get_req_header(conn, "api-version"),
@@ -429,8 +403,6 @@ defmodule WandererAppWeb.Plugs.ApiVersioning do
   end
 
   defp get_breaking_changes(from_version, to_version) do
-    # Define breaking changes between versions
-    # Since we've consolidated to v1, most legacy versions are no longer supported
     %{
       {"1.0", "1"} => [
         "All API endpoints now use /api/v1/ prefix",

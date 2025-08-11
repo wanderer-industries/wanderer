@@ -1,7 +1,7 @@
 %{
 title: "API Modernization: JSON:API v1 and Enhanced Developer Experience",
 author: "Wanderer Team",
-cover_image_uri: "/images/news/01-15-api-modernization/api-hero.png",
+cover_image_uri: "/images/news/07-15-api-modernization/api-hero.png",
 tags: ~w(api json-api v1 modernization developer-experience backwards-compatibility ash-framework),
 description: "Introducing Wanderer's new JSON:API v1 endpoints with enhanced developer experience, comprehensive versioning, and enterprise-grade security - all while maintaining 100% backward compatibility."
 }

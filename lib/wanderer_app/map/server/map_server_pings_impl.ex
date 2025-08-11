@@ -75,7 +75,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
       ) do
     {:ok, character} = WandererApp.Character.get_character(character_id)
 
-    {:ok, %{system: %{solar_system_id: solar_system_id}} = ping} =
+    {:ok, %{system: %{id: system_id, name: system_name, solar_system_id: solar_system_id}} = ping} =
       WandererApp.MapPingsRepo.get_by_id(ping_id)
 
     :ok = WandererApp.MapPingsRepo.destroy(ping)
@@ -89,12 +89,13 @@ defmodule WandererApp.Map.Server.PingsImpl do
     # Broadcast rally point removal events to external clients (webhooks/SSE)
     if type == 1 do
       WandererApp.ExternalEvents.broadcast(map_id, :rally_point_removed, %{
+        id: ping_id,
         solar_system_id: solar_system_id,
-        system_id: system.id,
+        system_id: system_id,
         character_id: character_id,
         character_name: character.name,
         character_eve_id: character.eve_id,
-        system_name: system.name
+        system_name: system_name
       })
     end
 
@@ -102,7 +103,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
       character_id: character_id,
       user_id: user_id,
       map_id: map_id,
-      solar_system_id: "#{solar_system_id}"
+      solar_system_id: solar_system_id
     })
 
     state

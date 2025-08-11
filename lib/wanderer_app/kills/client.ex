@@ -112,7 +112,10 @@ defmodule WandererApp.Kills.Client do
   end
 
   def handle_info(:connect, state) do
-    Logger.info("[Client] Initiating connection attempt (retry count: #{state.retry_count})")
+    Logger.debug(fn ->
+      "[Client] Initiating connection attempt (retry count: #{state.retry_count})"
+    end)
+
     state = cancel_retry(state)
     new_state = attempt_connection(%{state | connecting: true})
     {:noreply, new_state}
@@ -214,9 +217,9 @@ defmodule WandererApp.Kills.Client do
           state
 
         :needs_reconnect ->
-          Logger.warning(
+          Logger.debug(fn ->
             "[Client] Connection unhealthy, triggering reconnect (retry count: #{state.retry_count})"
-          )
+          end)
 
           # Don't reset retry count during health check failures
           if state.connected or state.connecting do
@@ -228,9 +231,9 @@ defmodule WandererApp.Kills.Client do
           end
 
         :needs_reconnect_with_timestamp ->
-          Logger.warning(
+          Logger.debug(fn ->
             "[Client] Health check triggering reconnect (retry count: #{state.retry_count})"
-          )
+          end)
 
           new_state = %{state | last_health_reconnect_attempt: System.system_time(:millisecond)}
 
@@ -552,9 +555,9 @@ defmodule WandererApp.Kills.Client do
 
       # Check if we haven't received a message in the configured timeout
       System.system_time(:millisecond) - last_msg_time > @message_timeout ->
-        Logger.warning(
+        Logger.debug(fn ->
           "[Client] Health check: No messages received for 15+ minutes, reconnecting"
-        )
+        end)
 
         :needs_reconnect
 
