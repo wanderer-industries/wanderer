@@ -13,7 +13,8 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
 
   import Plug.Conn
 
-  # alias WandererApp.SecurityAudit
+  alias WandererApp.SecurityAudit
+  alias WandererApp.Audit.RequestContext
 
   # 10MB
   @max_request_size 10 * 1024 * 1024
@@ -344,13 +345,13 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
         # Log security threat
         user_id = get_user_id(conn)
 
-        # SecurityAudit.log_event(:security_alert, user_id, %{
-        #   threats: threats,
-        #   ip_address: get_peer_ip(conn),
-        #   user_agent: get_user_agent(conn),
-        #   request_path: conn.request_path,
-        #   method: conn.method
-        # })
+        request_details = RequestContext.build_request_details(conn)
+
+        SecurityAudit.log_event(
+          :security_alert,
+          user_id,
+          Map.put(request_details, :threats, threats)
+        )
 
         conn
         |> send_validation_error(400, "Malicious content detected", %{
@@ -457,35 +458,6 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
     end
   end
 
-  defp get_peer_ip(conn) do
-    case get_req_header(conn, "x-forwarded-for") do
-      [forwarded_for] ->
-        forwarded_for
-        |> String.split(",")
-        |> List.first()
-        |> String.trim()
-
-      [] ->
-        case get_req_header(conn, "x-real-ip") do
-          [real_ip] ->
-            real_ip
-
-          [] ->
-            case conn.remote_ip do
-              {a, b, c, d} -> "#{a}.#{b}.#{c}.#{d}"
-              _ -> "unknown"
-            end
-        end
-    end
-  end
-
-  defp get_user_agent(conn) do
-    case get_req_header(conn, "user-agent") do
-      [user_agent] -> user_agent
-      [] -> "unknown"
-    end
-  end
-
   defp send_validation_error(conn, status, message, details) do
     error_response = %{
       error: message,
@@ -504,14 +476,15 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
     # Log the validation error
     user_id = get_user_id(conn)
 
-    # SecurityAudit.log_event(:security_alert, user_id, %{
-    #   error: "validation_error",
-    #   message: Exception.message(error),
-    #   ip_address: get_peer_ip(conn),
-    #   user_agent: get_user_agent(conn),
-    #   request_path: conn.request_path,
-    #   method: conn.method
-    # })
+    request_details = RequestContext.build_request_details(conn)
+
+    SecurityAudit.log_event(
+      :security_alert,
+      user_id,
+      request_details
+      |> Map.put(:error, "validation_error")
+      |> Map.put(:message, Exception.message(error))
+    )
 
     conn
     |> send_validation_error(500, "Request validation failed", %{
