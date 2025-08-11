@@ -53,6 +53,7 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
         with:
+          ssh-key: "${{ secrets.COMMIT_KEY }}"
           fetch-depth: 0
       - name: 😅 Cache deps
         id: cache-deps
