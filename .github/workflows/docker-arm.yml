@@ -123,7 +123,7 @@ jobs:
         id: get-content
         with:
           stringToTruncate: |
-            📣 Wanderer **ARM** release available 🎉
+            📣 Wanderer **ARM** (https://hub.docker.com/repository/docker/wandererltd/community-edition-arm/general) release available 🎉
 
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
