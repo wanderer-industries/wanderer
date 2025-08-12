@@ -94,6 +94,10 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             out = { ...out, type: values.type };
           }
 
+          if (values.temporary_name != null) {
+            out = { ...out, temporary_name: values.temporary_name };
+          }
+
           if (signatureData.group !== SignatureGroup.Wormhole) {
             out = { ...out, name: '' };
           }

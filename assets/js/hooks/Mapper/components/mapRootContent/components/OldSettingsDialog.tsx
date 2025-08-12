@@ -1,8 +1,6 @@
-import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
-import { ConfirmPopup } from 'primereact/confirmpopup';
-import { useCallback, useRef } from 'react';
-import { MapUserSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures.ts';
+import { useConfirmPopup } from '@/hooks/Mapper/hooks';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
@@ -11,11 +9,13 @@ import {
   getDefaultWidgetProps,
   STORED_INTERFACE_DEFAULT_VALUES,
 } from '@/hooks/Mapper/mapRootProvider/constants.ts';
-import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures.ts';
-import { Toast } from 'primereact/toast';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { MapUserSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { saveTextFile } from '@/hooks/Mapper/utils';
-import { useConfirmPopup } from '@/hooks/Mapper/hooks';
+import { Button } from 'primereact/button';
+import { ConfirmPopup } from 'primereact/confirmpopup';
+import { Dialog } from 'primereact/dialog';
+import { Toast } from 'primereact/toast';
+import { useCallback, useRef } from 'react';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
   return {
@@ -41,7 +41,7 @@ export const OldSettingsDialog = () => {
       const widgetKills = localStorage.getItem('kills:widget:settings');
       const onTheMapOld = localStorage.getItem('window:onTheMap:settings');
       const widgetsOld = localStorage.getItem('windows:settings:v2');
-      const signatures = localStorage.getItem('wanderer_system_signature_settings_v6_5');
+      const signatures = localStorage.getItem('wanderer_system_signature_settings_v6_6');
 
       const out: MapUserSettings = {
         killsWidget: createSettings(widgetKills, DEFAULT_KILLS_WIDGET_SETTINGS),
@@ -118,7 +118,7 @@ export const OldSettingsDialog = () => {
     localStorage.removeItem('kills:widget:settings');
     localStorage.removeItem('window:onTheMap:settings');
     localStorage.removeItem('windows:settings:v2');
-    localStorage.removeItem('wanderer_system_signature_settings_v6_5');
+    localStorage.removeItem('wanderer_system_signature_settings_v6_6');
 
     checkOldSettings();
   }, [checkOldSettings]);

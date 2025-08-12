@@ -1,18 +1,13 @@
 // import './tailwind.css';
-//@import 'primereact/resources/themes/bootstrap4-dark-blue/theme.css';
-//@import 'primereact/resources/themes/lara-dark-purple/theme.css';
-//@import "prime-fixes";
-@import 'primereact/resources/primereact.min.css';
-//@import 'primeflex/primeflex.css';
-@import 'primeicons/primeicons.css';
-//@import 'primereact/resources/primereact.css';
+@use 'primereact/resources/primereact.min.css';
+@use 'primeicons/primeicons.css';
 
 
-@import "fixes";
-@import "prime-fixes";
-@import "custom-scrollbar";
-@import "tooltip";
-@import "context-menu";
+@use "fixes";
+@use "prime-fixes";
+@use "custom-scrollbar";
+@use "tooltip";
+@use "context-menu";
 
 
 .fixedImportant {

@@ -153,7 +153,7 @@ defmodule WandererAppWeb.MapAuditLive do
     } =
       socket.assigns
 
-    query = WandererApp.Map.Audit.get_activity_query(map_id, period, activity)
+    query = WandererApp.Map.Audit.get_map_activity_query(map_id, period, activity)
 
     AshPagify.validate_and_run(query, params, opts)
     |> case do

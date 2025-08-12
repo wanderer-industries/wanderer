@@ -114,6 +114,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
             deleted_sig,
             Map.take(sig, [
               :name,
+              :temporary_name,
               :description,
               :kind,
               :group,
@@ -239,6 +240,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         system_id: system_id,
         eve_id: sig["eve_id"],
         name: sig["name"],
+        temporary_name: sig["temporary_name"],
         description: Map.get(sig, "description"),
         kind: sig["kind"],
         group: sig["group"],

@@ -97,7 +97,7 @@ defmodule WandererApp.ExternalEvents.Event do
     :locked,
     # ADD
     :temporary_name,
-    # ADD  
+    # ADD
     :labels,
     # ADD
     :description,

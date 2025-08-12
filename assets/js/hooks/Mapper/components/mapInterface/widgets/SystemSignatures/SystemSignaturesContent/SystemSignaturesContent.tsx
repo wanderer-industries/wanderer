@@ -28,12 +28,12 @@ import {
   renderInfoColumn,
   renderUpdatedTimeLeft,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/renders';
+import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
-import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
@@ -157,9 +157,18 @@ export const SystemSignaturesContent = ({
     [onSelect, selectable, setSelectedSignatures, deletedSignatures],
   );
 
-  const { showDescriptionColumn, showUpdatedColumn, showCharacterColumn, showCharacterPortrait } = useMemo(
+  const {
+    showGroupColumn,
+    showDescriptionColumn,
+    showAddedColumn,
+    showUpdatedColumn,
+    showCharacterColumn,
+    showCharacterPortrait,
+  } = useMemo(
     () => ({
+      showGroupColumn: settings[SETTINGS_KEYS.SHOW_GROUP_COLUMN] as boolean,
       showDescriptionColumn: settings[SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN] as boolean,
+      showAddedColumn: settings[SETTINGS_KEYS.SHOW_ADDED_COLUMN] as boolean,
       showUpdatedColumn: settings[SETTINGS_KEYS.SHOW_UPDATED_COLUMN] as boolean,
       showCharacterColumn: settings[SETTINGS_KEYS.SHOW_CHARACTER_COLUMN] as boolean,
       showCharacterPortrait: settings[SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT] as boolean,
@@ -309,15 +318,17 @@ export const SystemSignaturesContent = ({
               style={{ maxWidth: 72, minWidth: 72, width: 72 }}
               sortable
             />
-            <Column
-              field="group"
-              header="Group"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              style={{ maxWidth: 110, minWidth: 110, width: 110 }}
-              body={sig => sig.group ?? ''}
-              hidden={isCompact}
-              sortable
-            />
+            {showGroupColumn && (
+              <Column
+                field="group"
+                header="Group"
+                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                style={{ maxWidth: 110, minWidth: 110, width: 110 }}
+                body={sig => sig.group ?? ''}
+                hidden={isCompact}
+                sortable
+              />
+            )}
             <Column
               field="info"
               header="Info"
@@ -336,15 +347,17 @@ export const SystemSignaturesContent = ({
                 sortable
               />
             )}
-            <Column
-              field="inserted_at"
-              header="Added"
-              dataType="date"
-              body={renderAddedTimeLeft}
-              style={{ minWidth: 70, maxWidth: 80 }}
-              bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
-              sortable
-            />
+            {showAddedColumn && (
+              <Column
+                field="inserted_at"
+                header="Added"
+                dataType="date"
+                body={renderAddedTimeLeft}
+                style={{ minWidth: 70, maxWidth: 80 }}
+                bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
+                sortable
+              />
+            )}
             {showUpdatedColumn && (
               <Column
                 field="updated_at"

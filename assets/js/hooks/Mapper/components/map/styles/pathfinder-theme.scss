@@ -1,10 +1,11 @@
-@import './eve-common-variables';
-@import './eve-common';
+@use "sass:color";
+@use './eve-common-variables';
+@use './eve-common';
 @import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@300;400;700&display=swap');
 
 $homeBase: rgb(197, 253, 67);
 $homeAlpha: rgba(197, 253, 67, 0.32);
-$homeDark30: darken($homeBase, 30%);
+$homeDark30: color.adjust($homeBase, $lightness: -30%);
 
 .pathfinder-theme {
   /* -- Override values from the default theme -- */

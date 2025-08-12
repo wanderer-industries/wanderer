@@ -30,6 +30,7 @@ defmodule WandererApp.Api.MapSystemSignature do
   code_interface do
     define(:all_active, action: :all_active)
     define(:create, action: :create)
+    define(:destroy, action: :destroy)
     define(:update, action: :update)
     define(:update_linked_system, action: :update_linked_system)
     define(:update_type, action: :update_type)
@@ -62,6 +63,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       :eve_id,
       :character_eve_id,
       :name,
+      :temporary_name,
       :description,
       :kind,
       :group,
@@ -101,6 +103,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :eve_id,
         :character_eve_id,
         :name,
+        :temporary_name,
         :description,
         :kind,
         :group,
@@ -120,6 +123,7 @@ defmodule WandererApp.Api.MapSystemSignature do
         :eve_id,
         :character_eve_id,
         :name,
+        :temporary_name,
         :description,
         :kind,
         :group,
@@ -195,6 +199,10 @@ defmodule WandererApp.Api.MapSystemSignature do
       allow_nil? true
     end
 
+    attribute :temporary_name, :string do
+      allow_nil? true
+    end
+
     attribute :type, :string do
       allow_nil? true
     end
@@ -241,6 +249,7 @@ defmodule WandererApp.Api.MapSystemSignature do
              :eve_id,
              :character_eve_id,
              :name,
+             :temporary_name,
              :description,
              :type,
              :linked_system_id,
