@@ -9,8 +9,6 @@ defmodule WandererApp.Map.Audit do
   require Ash.Query
   require Logger
 
-  alias WandererApp.SecurityAudit
-
   @week_seconds :timer.hours(24 * 7)
   @month_seconds @week_seconds * 4
   @audit_expired_seconds @month_seconds * 3
@@ -38,17 +36,14 @@ defmodule WandererApp.Map.Audit do
     :ok
   end
 
-  def get_activity_query(map_id, period, activity) do
-    SecurityAudit.get_map_activity_query(map_id, period, activity)
-  end
+  defdelegate get_map_activity_query(map_id, period, activity),
+    to: WandererApp.SecurityAudit
 
-  def track_acl_event(event_type, metadata) do
-    SecurityAudit.track_acl_event(event_type, metadata)
-  end
+  defdelegate track_acl_event(event_type, metadata),
+    to: WandererApp.SecurityAudit
 
-  def track_map_event(event_type, metadata) do
-    SecurityAudit.track_map_event(event_type, metadata)
-  end
+  defdelegate track_map_event(event_type, metadata),
+    to: WandererApp.SecurityAudit
 
   defp get_expired_at(), do: DateTime.utc_now() |> DateTime.add(-@audit_expired_seconds, :second)
 end

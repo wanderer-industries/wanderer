@@ -1,18 +1,19 @@
+@use "sass:color";
 
 $friendlyBase: #3bbd39;
 $friendlyAlpha: #3bbd3952;
-$friendlyDark20: darken($friendlyBase, 20%);
-$friendlyDark30: darken($friendlyBase, 30%);
-$friendlyDark5:  darken($friendlyBase, 5%);
+$friendlyDark20: color.adjust($friendlyBase, $lightness: -20%);
+$friendlyDark30: color.adjust($friendlyBase, $lightness: -30%);
+$friendlyDark5:  color.adjust($friendlyBase, $lightness: -5%);
 
 $lookingForBase: #43c2fd;
 $lookingForAlpha: rgba(67, 176, 253, 0.48);
-$lookingForDark15: darken($lookingForBase, 15%);
+$lookingForDark15: color.adjust($lookingForBase, $lightness: -15%);
 
 $homeBase: rgb(179, 253, 67);
 $homeAlpha: rgba(186, 248, 48, 0.32);
 $homeBackground: #a0fa5636;
-$homeDark30: darken($homeBase, 30%);
+$homeDark30: color.adjust($homeBase, $lightness: -30%);
 
 :root {
   --pastel-blue: #5a7d9a;

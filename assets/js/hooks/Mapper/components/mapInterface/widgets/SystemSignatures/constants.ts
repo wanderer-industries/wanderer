@@ -1,3 +1,4 @@
+import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -11,7 +12,6 @@ import {
   SignatureKindFR,
   SignatureKindRU,
 } from '@/hooks/Mapper/types';
-import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 export const TIME_ONE_MINUTE = 1000 * 60;
 export const TIME_TEN_MINUTES = TIME_ONE_MINUTE * 10;
@@ -130,6 +130,8 @@ export const SIGNATURE_SETTINGS = {
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COMBAT_SITE, name: 'Show Combat Sites' },
   ],
   uiFlags: [
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_GROUP_COLUMN, name: 'Show Group Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_ADDED_COLUMN, name: 'Show Added Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_UPDATED_COLUMN, name: 'Show Updated Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN, name: 'Show Description Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_CHARACTER_COLUMN, name: 'Show Character Column' },

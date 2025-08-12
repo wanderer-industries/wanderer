@@ -80,25 +80,73 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
             current_user: %{id: current_user_id},
             main_character_id: main_character_id,
             has_tracked_characters?: true,
+            map_user_settings: map_user_settings,
             user_permissions: %{delete_connection: true}
           }
         } =
           socket
       )
       when not is_nil(main_character_id) do
+    solar_system_source_id = solar_system_source_id |> String.to_integer()
+    solar_system_target_id = solar_system_target_id |> String.to_integer()
+
     map_id
     |> WandererApp.Map.Server.delete_connection(%{
-      solar_system_source_id: solar_system_source_id |> String.to_integer(),
-      solar_system_target_id: solar_system_target_id |> String.to_integer()
+      solar_system_source_id: solar_system_source_id,
+      solar_system_target_id: solar_system_target_id
     })
+
+    delete_connection_with_sigs =
+      map_user_settings
+      |> WandererApp.MapUserSettingsRepo.to_form_data!()
+      |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
+
+    if delete_connection_with_sigs do
+      target_system =
+        WandererApp.Map.find_system_by_location(
+          map_id,
+          %{solar_system_id: solar_system_target_id}
+        )
+
+      if not is_nil(target_system.linked_sig_eve_id) do
+        {:ok, signatures} =
+          WandererApp.Api.MapSystemSignature.by_linked_system_id(solar_system_target_id)
+
+        signatures
+        |> Enum.each(fn s ->
+          if not is_nil(s.temporary_name) && s.temporary_name == target_system.temporary_name do
+            map_id
+            |> WandererApp.Map.Server.update_system_temporary_name(%{
+              solar_system_id: solar_system_target_id,
+              temporary_name: nil
+            })
+          end
+
+          map_id
+          |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+            solar_system_id: solar_system_target_id,
+            linked_sig_eve_id: nil
+          })
+
+          s
+          |> WandererApp.Api.MapSystemSignature.destroy!()
+        end)
+
+        WandererApp.Map.Server.Impl.broadcast!(
+          map_id,
+          :signatures_updated,
+          solar_system_source_id
+        )
+      end
+    end
 
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
         character_id: main_character_id,
         user_id: current_user_id,
         map_id: map_id,
-        solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-        solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id
       })
 
     {:noreply, socket}

@@ -1,4 +1,5 @@
-@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
+@use "sass:color";
+@use '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 $pastel-blue: #5a7d9a;
 $pastel-pink: rgb(30, 161, 255);
@@ -34,7 +35,7 @@ $neon-color-3: rgba(27, 132, 236, 0.40);
   color: var(--rf-text-color, #ffffff);
 
   box-shadow: 0 0 5px rgba($dark-bg, 0.5);
-  border: 1px solid darken($pastel-blue, 10%);
+  border: 1px solid color.adjust($pastel-blue, $lightness: -10%);
   border-radius: 5px;
   position: relative;
   z-index: 3;
