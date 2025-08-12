@@ -2,6 +2,21 @@
 
 <!-- changelog -->
 
+## [v1.76.0](https://github.com/wanderer-industries/wanderer/compare/v1.75.23...v1.76.0) (2025-08-12)
+
+
+
+
+### Features:
+
+* Signatures: Sync signature temporary name with system on link signature to system
+
+* Signatures: add support for signature temp names
+
+### Bug Fixes:
+
+* Map: Add Temp name field
+
 ## [v1.75.20](https://github.com/wanderer-industries/wanderer/compare/v1.75.19...v1.75.20) (2025-08-11)
 
 ### Bug Fixes:
