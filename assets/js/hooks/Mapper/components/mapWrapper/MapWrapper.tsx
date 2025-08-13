@@ -1,6 +1,6 @@
 import { Map, MAP_ROOT_ID } from '@/hooks/Mapper/components/map/Map.tsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
+import { CommandSelectSystems, OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OnMapAddSystemCallback, OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
 import isEqual from 'lodash.isequal';
@@ -88,6 +88,18 @@ export const MapWrapper = () => {
 
   useMapEventListener(event => {
     runCommand(event);
+
+    if (event.name === Commands.init) {
+      const { selectedSystems } = ref.current;
+      if (selectedSystems.length === 0) {
+        return;
+      }
+
+      runCommand({
+        name: Commands.selectSystems,
+        data: { systems: selectedSystems } as CommandSelectSystems,
+      });
+    }
   });
 
   const onSelectionChange: OnMapSelectionChange = useCallback(
