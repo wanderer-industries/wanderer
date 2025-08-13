@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.1](https://github.com/wanderer-industries/wanderer/compare/v1.76.0...v1.76.1) (2025-08-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix problem when systems was deselected after change tab
+
 ## [v1.76.0](https://github.com/wanderer-industries/wanderer/compare/v1.75.23...v1.76.0) (2025-08-12)
 
 
