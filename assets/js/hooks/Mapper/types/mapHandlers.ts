@@ -27,6 +27,7 @@ export enum Commands {
   userRoutes = 'user_routes',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
+  selectSystems = 'select_systems',
   linkSignatureToSystem = 'link_signature_to_system',
   signaturesUpdated = 'signatures_updated',
   systemCommentAdded = 'system_comment_added',
@@ -60,6 +61,7 @@ export type Command =
   | Commands.routes
   | Commands.userRoutes
   | Commands.selectSystem
+  | Commands.selectSystems
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
   | Commands.signaturesUpdated
@@ -118,6 +120,10 @@ export type CommandUserRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandDetailedKillsUpdated = Record<string, DetailedKill[]>;
 export type CommandSelectSystem = string | undefined;
+export type CommandSelectSystems = {
+  systems: string[];
+  delay?: number;
+};
 export type CommandCenterSystem = string | undefined;
 export type CommandLinkSignatureToSystem = {
   solar_system_source: number;
@@ -187,6 +193,7 @@ export interface CommandData {
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.detailedKillsUpdated]: CommandDetailedKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
+  [Commands.selectSystems]: CommandSelectSystems;
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
   [Commands.signaturesUpdated]: CommandLinkSignaturesUpdated;

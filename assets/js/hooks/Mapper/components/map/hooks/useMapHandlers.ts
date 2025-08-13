@@ -14,6 +14,7 @@ import {
   CommandRemoveSystems,
   Commands,
   CommandSelectSystem,
+  CommandSelectSystems,
   CommandUpdateConnection,
   CommandUpdateSystems,
   MapHandlers,
@@ -28,7 +29,7 @@ import {
   useMapRemoveSystems,
   useMapUpdateSystems,
   useCenterSystem,
-  useSelectSystem,
+  useSelectSystems,
 } from './api';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
 
@@ -38,7 +39,7 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
   const mapUpdateSystems = useMapUpdateSystems();
   const removeSystems = useMapRemoveSystems(onSelectionChange);
   const centerSystem = useCenterSystem();
-  const selectSystem = useSelectSystem();
+  const selectSystems = useSelectSystems(onSelectionChange);
 
   const selectRef = useRef({ onSelectionChange });
   selectRef.current = { onSelectionChange };
@@ -105,14 +106,11 @@ export const useMapHandlers = (ref: ForwardedRef<MapHandlers>, onSelectionChange
               break;
 
             case Commands.selectSystem:
-              setTimeout(() => {
-                const systemId = `${data}`;
-                selectRef.current.onSelectionChange({
-                  systems: [systemId],
-                  connections: [],
-                });
-                selectSystem(systemId as CommandSelectSystem);
-              }, 500);
+              selectSystems({ systems: [data as string], delay: 500 });
+              break;
+
+            case Commands.selectSystems:
+              selectSystems(data as CommandSelectSystems);
               break;
 
             case Commands.pingAdded:
