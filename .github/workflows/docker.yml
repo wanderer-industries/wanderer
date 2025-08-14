@@ -125,8 +125,6 @@ jobs:
           stringToTruncate: |
             📣 Wanderer new release available 🎉
 
-            **wandererltd/community-edition**
-
             **Version**: ${{ steps.get-latest-tag.outputs.tag }}
 
             ${{ steps.extract-changelog.outputs.body }}
