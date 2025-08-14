@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.4](https://github.com/wanderer-industries/wanderer/compare/v1.76.3...v1.76.4) (2025-08-14)
+
+
+
+
+### Bug Fixes:
+
+* timestamp errors for sse and tracking
+
 ## [v1.76.3](https://github.com/wanderer-industries/wanderer/compare/v1.76.2...v1.76.3) (2025-08-14)
 
 
