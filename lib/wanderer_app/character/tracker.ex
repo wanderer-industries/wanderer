@@ -100,7 +100,7 @@ defmodule WandererApp.Character.Tracker do
         duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
 
         if duration >= timeout do
-          pause_tracking(character_id)
+          # pause_tracking(character_id)
 
           :ok
         else

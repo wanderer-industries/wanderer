@@ -124,7 +124,7 @@ defmodule WandererApp.Character.TrackerPool do
     Process.send_after(self(), :check_online_errors, :timer.seconds(60))
     Process.send_after(self(), :check_ship_errors, :timer.seconds(90))
     Process.send_after(self(), :check_location_errors, :timer.seconds(120))
-    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
+    # Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
     Process.send_after(self(), :update_location, 300)
     Process.send_after(self(), :update_ship, 500)
     Process.send_after(self(), :update_info, 1500)
