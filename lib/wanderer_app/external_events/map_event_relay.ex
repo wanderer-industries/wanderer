@@ -248,6 +248,6 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
   defp datetime_to_ulid(datetime) do
     timestamp = DateTime.to_unix(datetime, :millisecond)
     # Create a ULID with the timestamp (rest will be zeros for comparison)
-    Ulid.generate(timestamp)
+    Ecto.ULID.generate(timestamp)
   end
 end

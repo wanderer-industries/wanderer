@@ -51,7 +51,7 @@ defmodule WandererApp.ExternalEvents.Event do
   def new(map_id, event_type, payload) when is_binary(map_id) and is_map(payload) do
     if valid_event_type?(event_type) do
       %__MODULE__{
-        id: Ulid.generate(System.system_time(:millisecond)),
+        id: Ecto.ULID.generate(System.system_time(:millisecond)),
         map_id: map_id,
         type: event_type,
         payload: payload,

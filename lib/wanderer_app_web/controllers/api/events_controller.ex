@@ -82,7 +82,7 @@ defmodule WandererAppWeb.Api.EventsController do
           send_event(
             conn,
             %{
-              id: Ulid.generate(),
+              id: Ecto.ULID.generate(),
               event: "connected",
               data: %{
                 map_id: map_id,

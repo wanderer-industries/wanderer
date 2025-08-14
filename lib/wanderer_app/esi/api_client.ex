@@ -830,7 +830,8 @@ defmodule WandererApp.Esi.ApiClient do
          expires_at,
          scopes
        ) do
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
+    expires_at_datetime = DateTime.from_unix!(expires_at)
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
 
     Logger.warning("TOKEN_REFRESH_FAILED: Invalid grant error during token refresh",
       character_id: character_id,
@@ -857,7 +858,8 @@ defmodule WandererApp.Esi.ApiClient do
          expires_at,
          scopes
        ) do
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at, :second)
+    expires_at_datetime = DateTime.from_unix!(expires_at)
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
 
     Logger.warning("TOKEN_REFRESH_FAILED: Connection refused during token refresh",
       character_id: character_id,

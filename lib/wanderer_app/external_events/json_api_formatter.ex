@@ -448,7 +448,7 @@ defmodule WandererApp.ExternalEvents.JsonApiFormatter do
       "connected" ->
         %{
           "type" => "connection_status",
-          "id" => event["id"] || Ulid.generate(),
+          "id" => event["id"] || Ecto.ULID.generate(),
           "attributes" => %{
             "status" => "connected",
             "server_time" => payload["server_time"],
@@ -465,7 +465,7 @@ defmodule WandererApp.ExternalEvents.JsonApiFormatter do
         # Use existing payload structure but wrap it in JSON:API format
         %{
           "type" => "events",
-          "id" => event["id"] || Ulid.generate(),
+          "id" => event["id"] || Ecto.ULID.generate(),
           "attributes" => payload,
           "relationships" => %{
             "map" => %{
