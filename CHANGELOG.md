@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.6](https://github.com/wanderer-industries/wanderer/compare/v1.76.5...v1.76.6) (2025-08-15)
+
+
+
+
+### Bug Fixes:
+
+* empty subscriptions for sse
+
 ## [v1.76.5](https://github.com/wanderer-industries/wanderer/compare/v1.76.4...v1.76.5) (2025-08-15)
 
 
