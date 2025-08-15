@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.5](https://github.com/wanderer-industries/wanderer/compare/v1.76.4...v1.76.5) (2025-08-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: fixed tracking paused issues, fixed user activity data
+
 ## [v1.76.4](https://github.com/wanderer-industries/wanderer/compare/v1.76.3...v1.76.4) (2025-08-14)
 
 
