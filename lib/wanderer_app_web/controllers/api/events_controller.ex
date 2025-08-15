@@ -52,11 +52,7 @@ defmodule WandererAppWeb.Api.EventsController do
 
   defp establish_sse_connection(conn, map_id, api_key, params) do
     # Parse event filter if provided
-    event_filter =
-      case Map.get(params, "events") do
-        nil -> :all
-        events -> EventFilter.parse(events)
-      end
+    event_filter = EventFilter.parse(Map.get(params, "events"))
 
     # Parse format parameter
     event_format = Map.get(params, "format", "legacy")
