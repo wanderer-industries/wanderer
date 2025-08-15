@@ -34,10 +34,10 @@ defmodule WandererApp.Character.Tracker do
         }
 
   @pause_tracking_timeout :timer.minutes(60 * 10)
-  @offline_timeout :timer.minutes(5)
-  @online_error_timeout :timer.minutes(2)
-  @ship_error_timeout :timer.minutes(2)
-  @location_error_timeout :timer.minutes(2)
+  @offline_timeout :timer.minutes(10)
+  @online_error_timeout :timer.minutes(10)
+  @ship_error_timeout :timer.minutes(10)
+  @location_error_timeout :timer.minutes(10)
   @online_forbidden_ttl :timer.seconds(7)
   @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(5)
@@ -100,7 +100,8 @@ defmodule WandererApp.Character.Tracker do
         duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
 
         if duration >= timeout do
-          # pause_tracking(character_id)
+          pause_tracking(character_id)
+          WandererApp.Cache.delete("character:#{character_id}:#{type}_error_time")
 
           :ok
         else
@@ -113,15 +114,14 @@ defmodule WandererApp.Character.Tracker do
     if WandererApp.Character.can_pause_tracking?(character_id) &&
          not WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused") do
       # Log character tracking statistics before pausing
-      {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
+      Logger.debug(fn ->
+        {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
 
-      Logger.warning(
-        "CHARACTER_TRACKING_PAUSED: Character tracking paused due to sustained errors",
-        character_id: character_id,
+        "CHARACTER_TRACKING_PAUSED: Character tracking paused due to sustained errors: #{inspect(character_id: character_id,
         active_maps: length(character_state.active_maps),
         is_online: character_state.is_online,
-        tracking_duration_minutes: get_tracking_duration_minutes(character_id)
-      )
+        tracking_duration_minutes: get_tracking_duration_minutes(character_id))}"
+      end)
 
       WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
       WandererApp.Cache.delete("character:#{character_id}:online_error_time")

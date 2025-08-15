@@ -373,6 +373,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     {:ok, character} =
       WandererApp.Character.get_map_character(map_id, character_id, not_present: true)
 
+    WandererApp.Cache.delete("character:#{character.id}:tracking_paused")
+
     add_character(%{map_id: map_id}, character, true)
 
     WandererApp.Character.TrackerManager.update_track_settings(character_id, %{

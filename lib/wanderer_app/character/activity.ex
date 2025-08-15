@@ -49,11 +49,13 @@ defmodule WandererApp.Character.Activity do
   """
   def process_character_activity(map_id, current_user) do
     with {:ok, map_user_settings} <- get_map_user_settings(map_id, current_user.id),
-         raw_activity <- WandererApp.Map.get_character_activity(map_id),
+         {:ok, raw_activity} <- WandererApp.Map.get_character_activity(map_id),
          {:ok, user_characters} <-
            WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
-      result = process_activity_data(raw_activity, map_user_settings, user_characters)
-      result
+      process_activity_data(raw_activity, map_user_settings, user_characters)
+    else
+      _ ->
+        []
     end
   end
 
