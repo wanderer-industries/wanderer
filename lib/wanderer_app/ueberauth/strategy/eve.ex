@@ -195,7 +195,7 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
     tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
 
     base_options = [
-      redirect_uri: callback_url(conn),
+      redirect_uri: "#{WandererApp.Env.base_url()}/auth/eve/callback",
       with_wallet: with_wallet,
       is_admin?: is_admin?,
       tracking_pool: tracking_pool
