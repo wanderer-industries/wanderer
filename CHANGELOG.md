@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.7](https://github.com/wanderer-industries/wanderer/compare/v1.76.6...v1.76.7) (2025-08-16)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed auth redirect URL
+
 ## [v1.76.6](https://github.com/wanderer-industries/wanderer/compare/v1.76.5...v1.76.6) (2025-08-15)
 
 
