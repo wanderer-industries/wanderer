@@ -11,11 +11,13 @@ config :wanderer_app, WandererAppWeb.Endpoint,
 config :wanderer_app, WandererApp.Repo,
   ssl: false,
   stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
+  show_sensitive_data_on_connection_error: false,
   pool_size: 15,
   migration_timestamps: [type: :utc_datetime_usec],
   migration_lock: nil,
-  queue_target: 5000
+  queue_target: 5000,
+  queue_interval: 1000,
+  checkout_timeout: 15000
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: WandererApp.Finch

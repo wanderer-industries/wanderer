@@ -39,7 +39,7 @@ defmodule WandererApp.SecurityAudit do
     }
 
     # Store in database
-    store_audit_entry(audit_entry)
+    # store_audit_entry(audit_entry)
 
     # Send to telemetry for monitoring
     emit_telemetry_event(audit_entry)
@@ -489,11 +489,11 @@ defmodule WandererApp.SecurityAudit do
 
   defp store_audit_entry(audit_entry) do
     # Handle async processing if enabled
-    if async_enabled?() do
-      WandererApp.SecurityAudit.AsyncProcessor.log_event(audit_entry)
-    else
-      do_store_audit_entry(audit_entry)
-    end
+    # if async_enabled?() do
+    #   WandererApp.SecurityAudit.AsyncProcessor.log_event(audit_entry)
+    # else
+    #   do_store_audit_entry(audit_entry)
+    # end
   end
 
   @doc false
