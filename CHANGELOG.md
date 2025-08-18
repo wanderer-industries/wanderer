@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.9](https://github.com/wanderer-industries/wanderer/compare/v1.76.8...v1.76.9) (2025-08-18)
+
+
+
+
+### Bug Fixes:
+
+* default signature types not being shown
+
 ## [v1.76.8](https://github.com/wanderer-industries/wanderer/compare/v1.76.7...v1.76.8) (2025-08-17)
 
 
