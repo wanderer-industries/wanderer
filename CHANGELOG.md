@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.8](https://github.com/wanderer-industries/wanderer/compare/v1.76.7...v1.76.8) (2025-08-17)
+
+
+
+
+### Bug Fixes:
+
+* Core: added DB connection default timeouts
+
 ## [v1.76.7](https://github.com/wanderer-industries/wanderer/compare/v1.76.6...v1.76.7) (2025-08-16)
 
 
