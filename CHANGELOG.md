@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.10](https://github.com/wanderer-industries/wanderer/compare/v1.76.9...v1.76.10) (2025-08-18)
+
+
+
+
+### Bug Fixes:
+
+* Core: Added character trackers start queue
+
 ## [v1.76.9](https://github.com/wanderer-industries/wanderer/compare/v1.76.8...v1.76.9) (2025-08-18)
 
 
