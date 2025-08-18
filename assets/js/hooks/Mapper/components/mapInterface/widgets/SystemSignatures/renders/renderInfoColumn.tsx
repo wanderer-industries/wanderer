@@ -10,6 +10,13 @@ import { renderName } from './renderName.tsx';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
 
+const renderSignatureNameOrGroup = (row: SystemSignature) => {
+  if (row.name && row.name !== 'Unknown') {
+    return renderName(row);
+  }
+  return row.group ? <span title={row.group}>{row.group}</span> : null;
+};
+
 export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
     const customInfo = parseSignatureCustomInfo(row.custom_info);
@@ -18,6 +25,8 @@ export const renderInfoColumn = (row: SystemSignature) => {
 
     return (
       <div className="flex justify-start items-center gap-[4px]">
+        {renderSignatureNameOrGroup(row)}
+
         {customInfo.isEOL && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as EOL">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
@@ -65,7 +74,7 @@ export const renderInfoColumn = (row: SystemSignature) => {
 
   return (
     <div className="flex gap-1 items-center">
-      {renderName(row)}{' '}
+      {renderSignatureNameOrGroup(row)}{' '}
       {row.description && (
         <WdTooltipWrapper content={row.description}>
           <span className={clsx(PrimeIcons.EXCLAMATION_CIRCLE, 'text-[12px]')}></span>
