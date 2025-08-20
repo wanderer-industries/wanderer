@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.76.12](https://github.com/wanderer-industries/wanderer/compare/v1.76.11...v1.76.12) (2025-08-20)
+
+
+
+
+### Bug Fixes:
+
+* Core: Reduced ESI api calls to update character corp/ally info
+
 ## [v1.76.11](https://github.com/wanderer-industries/wanderer/compare/v1.76.10...v1.76.11) (2025-08-20)
 
 
