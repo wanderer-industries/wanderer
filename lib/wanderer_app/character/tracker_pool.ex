@@ -23,7 +23,7 @@ defmodule WandererApp.Character.TrackerPool do
   @check_ship_errors_interval :timer.minutes(1)
   @check_location_errors_interval :timer.minutes(1)
   @update_ship_interval :timer.seconds(2)
-  @update_info_interval :timer.minutes(1)
+  @update_info_interval :timer.minutes(2)
   @update_wallet_interval :timer.minutes(1)
 
   @logger Application.compile_env(:wanderer_app, :logger)

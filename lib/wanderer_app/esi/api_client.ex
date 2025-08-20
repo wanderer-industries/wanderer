@@ -287,8 +287,8 @@ defmodule WandererApp.Esi.ApiClient do
               opts: [ttl: @ttl]
             )
   def get_alliance_info(eve_id, opts \\ []) do
-    case _get_alliance_info(eve_id, "", opts) do
-      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
+    case get_alliance_info(eve_id, "", opts) do
+      {:ok, result} when is_map(result) -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
       error -> error
     end
@@ -309,8 +309,8 @@ defmodule WandererApp.Esi.ApiClient do
               opts: [ttl: @ttl]
             )
   def get_corporation_info(eve_id, opts \\ []) do
-    case _get_corporation_info(eve_id, "", opts) do
-      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
+    case get_corporation_info(eve_id, "", opts) do
+      {:ok, result} when is_map(result) -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
       error -> error
     end
@@ -327,7 +327,7 @@ defmodule WandererApp.Esi.ApiClient do
            opts,
            @cache_opts
          ) do
-      {:ok, result} -> {:ok, result |> Map.put("eve_id", eve_id)}
+      {:ok, result} when is_map(result) -> {:ok, result |> Map.put("eve_id", eve_id)}
       {:error, error} -> {:error, error}
       error -> error
     end
@@ -434,7 +434,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp get_auth_opts(opts), do: [auth: {:bearer, opts[:access_token]}]
 
-  defp _get_alliance_info(alliance_eve_id, info_path, opts),
+  defp get_alliance_info(alliance_eve_id, info_path, opts),
     do:
       get(
         "/alliances/#{alliance_eve_id}/#{info_path}",
@@ -442,7 +442,7 @@ defmodule WandererApp.Esi.ApiClient do
         @cache_opts
       )
 
-  defp _get_corporation_info(corporation_eve_id, info_path, opts),
+  defp get_corporation_info(corporation_eve_id, info_path, opts),
     do:
       get(
         "/corporations/#{corporation_eve_id}/#{info_path}",

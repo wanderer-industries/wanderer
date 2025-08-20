@@ -124,7 +124,7 @@ defmodule WandererApp.Api.Character do
     update :update_corporation do
       require_atomic? false
 
-      accept([:corporation_id, :corporation_name, :corporation_ticker, :alliance_id])
+      accept([:corporation_id, :corporation_name, :corporation_ticker])
     end
 
     update :update_alliance do

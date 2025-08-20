@@ -7,6 +7,7 @@ defmodule WandererApp.Character.Tracker do
   defstruct [
     :character_id,
     :alliance_id,
+    :corporation_id,
     :opts,
     server_online: true,
     start_time: nil,
@@ -21,6 +22,8 @@ defmodule WandererApp.Character.Tracker do
 
   @type t :: %__MODULE__{
           character_id: integer,
+          alliance_id: integer,
+          corporation_id: integer,
           opts: map,
           server_online: boolean,
           start_time: DateTime.t(),
@@ -49,8 +52,15 @@ defmodule WandererApp.Character.Tracker do
   def new(args), do: __struct__(args)
 
   def init(args) do
+    character_id = args[:character_id]
+
+    {:ok, %{corporation_id: corporation_id, alliance_id: alliance_id}} =
+      WandererApp.Character.get_character(character_id)
+
     %{
-      character_id: args[:character_id],
+      character_id: character_id,
+      corporation_id: corporation_id,
+      alliance_id: alliance_id,
       start_time: DateTime.utc_now(),
       opts: args
     }
@@ -193,7 +203,7 @@ defmodule WandererApp.Character.Tracker do
                    access_token: access_token,
                    character_id: character_id
                  ) do
-              {:ok, online} ->
+              {:ok, online} when is_map(online) ->
                 online = get_online(online)
 
                 if online.online == true do
@@ -258,7 +268,7 @@ defmodule WandererApp.Character.Tracker do
                   character_id: character_id
                 })
 
-                Logger.warning("ESI_ERROR: Character online tracking failed",
+                Logger.warning("ESI_ERROR: Character online tracking failed #{inspect(error)}",
                   character_id: character_id,
                   tracking_pool: tracking_pool,
                   error_type: error,
@@ -388,12 +398,21 @@ defmodule WandererApp.Character.Tracker do
         {:ok, %{eve_id: eve_id, tracking_pool: tracking_pool}} =
           WandererApp.Character.get_character(character_id)
 
-        case WandererApp.Esi.get_character_info(eve_id) do
-          {:ok, _info} ->
+        character_eve_id = eve_id |> String.to_integer()
+
+        case WandererApp.Esi.post_characters_affiliation([character_eve_id]) do
+          {:ok, [character_aff_info]} when not is_nil(character_aff_info) ->
             {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
 
-            update = maybe_update_corporation(character_state, eve_id |> String.to_integer())
-            WandererApp.Character.update_character_state(character_id, update)
+            alliance_id = character_aff_info |> Map.get("alliance_id")
+            corporation_id = character_aff_info |> Map.get("corporation_id")
+
+            updated_state =
+              character_state
+              |> maybe_update_corporation(corporation_id)
+              |> maybe_update_alliance(alliance_id)
+
+            WandererApp.Character.update_character_state(character_id, updated_state)
 
             :ok
 
@@ -975,7 +994,38 @@ defmodule WandererApp.Character.Tracker do
     end
   end
 
-  defp update_alliance(%{character_id: character_id} = state, alliance_id) do
+  defp maybe_update_alliance(
+         %{character_id: character_id, alliance_id: old_alliance_id} = state,
+         alliance_id
+       )
+       when old_alliance_id != alliance_id and is_nil(alliance_id) do
+    {:ok, character} = WandererApp.Character.get_character(character_id)
+
+    character_update = %{
+      alliance_id: nil,
+      alliance_name: nil,
+      alliance_ticker: nil
+    }
+
+    {:ok, _character} =
+      Character.update_alliance(character, character_update)
+
+    WandererApp.Character.update_character(character_id, character_update)
+
+    @pubsub_client.broadcast(
+      WandererApp.PubSub,
+      "character:#{character_id}:alliance",
+      {:character_alliance, {character_id, character_update}}
+    )
+
+    state
+  end
+
+  defp maybe_update_alliance(
+         %{character_id: character_id, alliance_id: old_alliance_id} = state,
+         alliance_id
+       )
+       when old_alliance_id != alliance_id do
     (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
        WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
@@ -1015,7 +1065,13 @@ defmodule WandererApp.Character.Tracker do
     end
   end
 
-  defp update_corporation(%{character_id: character_id} = state, corporation_id) do
+  defp maybe_update_alliance(state, _alliance_id), do: state
+
+  defp maybe_update_corporation(
+         %{character_id: character_id, corporation_id: old_corporation_id} = state,
+         corporation_id
+       )
+       when old_corporation_id != corporation_id do
     (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
        WandererApp.Cache.has_key?("character:#{character_id}:tracking_paused"))
     |> case do
@@ -1027,16 +1083,13 @@ defmodule WandererApp.Character.Tracker do
         |> WandererApp.Esi.get_corporation_info()
         |> case do
           {:ok, %{"name" => corporation_name, "ticker" => corporation_ticker} = corporation_info} ->
-            alliance_id = Map.get(corporation_info, "alliance_id")
-
             {:ok, character} =
               WandererApp.Character.get_character(character_id)
 
             character_update = %{
               corporation_id: corporation_id,
               corporation_name: corporation_name,
-              corporation_ticker: corporation_ticker,
-              alliance_id: alliance_id
+              corporation_ticker: corporation_ticker
             }
 
             {:ok, _character} =
@@ -1057,8 +1110,7 @@ defmodule WandererApp.Character.Tracker do
             )
 
             state
-            |> Map.merge(%{alliance_id: alliance_id, corporation_id: corporation_id})
-            |> maybe_update_alliance()
+            |> Map.merge(%{corporation_id: corporation_id})
 
           error ->
             Logger.warning(
@@ -1071,6 +1123,8 @@ defmodule WandererApp.Character.Tracker do
         end
     end
   end
+
+  defp maybe_update_corporation(state, _corporation_id), do: state
 
   defp maybe_update_ship(
          %{
@@ -1152,58 +1206,6 @@ defmodule WandererApp.Character.Tracker do
          solar_system_id != new_solar_system_id ||
            structure_id != new_structure_id ||
            station_id != new_station_id
-
-  defp maybe_update_corporation(
-         state,
-         character_eve_id
-       )
-       when not is_nil(character_eve_id) and is_integer(character_eve_id) do
-    case WandererApp.Esi.post_characters_affiliation([character_eve_id]) do
-      {:ok, [character_aff_info]} when not is_nil(character_aff_info) ->
-        update_corporation(state, character_aff_info |> Map.get("corporation_id"))
-
-      _error ->
-        state
-    end
-  end
-
-  defp maybe_update_corporation(
-         state,
-         _info
-       ),
-       do: state
-
-  defp maybe_update_alliance(
-         %{character_id: character_id, alliance_id: alliance_id} =
-           state
-       ) do
-    case alliance_id do
-      nil ->
-        {:ok, character} = WandererApp.Character.get_character(character_id)
-
-        character_update = %{
-          alliance_id: nil,
-          alliance_name: nil,
-          alliance_ticker: nil
-        }
-
-        {:ok, _character} =
-          Character.update_alliance(character, character_update)
-
-        WandererApp.Character.update_character(character_id, character_update)
-
-        @pubsub_client.broadcast(
-          WandererApp.PubSub,
-          "character:#{character_id}:alliance",
-          {:character_alliance, {character_id, character_update}}
-        )
-
-        state
-
-      _ ->
-        update_alliance(state, alliance_id)
-    end
-  end
 
   defp maybe_update_wallet(
          %{character_id: character_id} =
