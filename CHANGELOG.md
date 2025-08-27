@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.0](https://github.com/wanderer-industries/wanderer/compare/v1.76.13...v1.77.0) (2025-08-27)
+
+
+
+
+### Features:
+
+* Core: Reduced DB calls to check existing system jumps
+
 ## [v1.76.13](https://github.com/wanderer-industries/wanderer/compare/v1.76.12...v1.76.13) (2025-08-27)
 
 
