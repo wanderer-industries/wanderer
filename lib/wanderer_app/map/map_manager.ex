@@ -8,6 +8,19 @@ defmodule WandererApp.Map.Manager do
   require Logger
 
   alias WandererApp.Map.Server
+  alias WandererApp.Map.ServerSupervisor
+  alias WandererApp.Api.MapSystemSignature
+
+  @maps_start_per_second 10
+  @maps_start_interval 1000
+  @maps_queue :maps_queue
+  @garbage_collection_interval :timer.hours(1)
+  @check_maps_queue_interval :timer.seconds(1)
+  @signatures_cleanup_interval :timer.minutes(30)
+  @delete_after_minutes 30
+
+  @pings_cleanup_interval :timer.minutes(10)
+  @pings_expire_minutes 60
 
   # Test-aware async task runner
   defp safe_async_task(fun) do
@@ -24,20 +37,6 @@ defmodule WandererApp.Map.Manager do
       Task.async(fun)
     end
   end
-
-  alias WandererApp.Map.ServerSupervisor
-  alias WandererApp.Api.MapSystemSignature
-
-  @maps_start_per_second 5
-  @maps_start_interval 1000
-  @maps_queue :maps_queue
-  @garbage_collection_interval :timer.hours(1)
-  @check_maps_queue_interval :timer.seconds(1)
-  @signatures_cleanup_interval :timer.minutes(30)
-  @delete_after_minutes 30
-
-  @pings_cleanup_interval :timer.minutes(10)
-  @pings_expire_minutes 60
 
   def start_map(map_id) when is_binary(map_id),
     do: WandererApp.Queue.push_uniq(@maps_queue, map_id)
@@ -247,22 +246,29 @@ defmodule WandererApp.Map.Manager do
       Logger.debug(fn -> "All maps started" end)
     else
       # In production, run async as normal
-      tasks =
-        for chunk <- chunks do
-          task =
-            Task.async(fn ->
-              chunk
-              |> Enum.map(&start_map_server/1)
-            end)
+      chunks
+      |> Task.async_stream(
+        fn chunk ->
+          chunk
+          |> Enum.map(&start_map_server/1)
 
           :timer.sleep(@maps_start_interval)
+        end,
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task,
+        timeout: :timer.seconds(60)
+      )
+      |> Enum.each(fn result ->
+        case result do
+          {:ok, _} ->
+            :ok
 
-          task
+          _ ->
+            :ok
         end
+      end)
 
-      Logger.debug(fn -> "Waiting for maps to start" end)
-      Task.await_many(tasks)
-      Logger.debug(fn -> "All maps started" end)
+      Logger.info(fn -> "All maps started" end)
     end
   end
 
