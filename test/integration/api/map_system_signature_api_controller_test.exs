@@ -100,7 +100,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "creates a new signature with valid parameters", %{conn: conn, map: map} do
       signature_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_142,
         "eve_id" => "ABC-123",
         "character_eve_id" => "123456789",
         "name" => "Test Signature",
@@ -132,7 +132,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "handles signature creation with minimal required fields", %{conn: conn, map: map} do
       minimal_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_143,
         "eve_id" => "XYZ-456",
         "character_eve_id" => "987654321"
       }
@@ -152,7 +152,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "handles signature creation with all optional fields", %{conn: conn, map: map} do
       complete_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_144,
         "eve_id" => "DEF-789",
         "character_eve_id" => "456789123",
         "name" => "Complete Signature",
@@ -181,7 +181,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
       map = Factory.insert(:map)
 
       signature_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_145,
         "eve_id" => "ABC-123",
         "character_eve_id" => "123456789"
       }
@@ -392,11 +392,11 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "validates signature creation with invalid data types", %{conn: conn, map: map} do
       invalid_params = [
-        %{"system_id" => "not-a-uuid", "eve_id" => "ABC", "character_eve_id" => "123"},
-        %{"system_id" => Ecto.UUID.generate(), "eve_id" => 123, "character_eve_id" => "123"},
-        %{"system_id" => Ecto.UUID.generate(), "eve_id" => "ABC", "character_eve_id" => 123},
+        %{"solar_system_id" => "not-an-integer", "eve_id" => "ABC", "character_eve_id" => "123"},
+        %{"solar_system_id" => 30_000_142, "eve_id" => 123, "character_eve_id" => "123"},
+        %{"solar_system_id" => 30_000_142, "eve_id" => "ABC", "character_eve_id" => 123},
         %{
-          "system_id" => Ecto.UUID.generate(),
+          "solar_system_id" => 30_000_142,
           "eve_id" => "ABC",
           "character_eve_id" => "123",
           "linked_system_id" => "not-an-integer"
@@ -426,7 +426,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
       long_string = String.duplicate("a", 1000)
 
       long_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_146,
         "eve_id" => "LONG-123",
         "character_eve_id" => "123456789",
         "name" => long_string,
@@ -448,7 +448,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "handles special characters in signature data", %{conn: conn, map: map} do
       special_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_147,
         "eve_id" => "ABC-123",
         "character_eve_id" => "123456789",
         "name" => "Special chars: àáâãäåæçèéêë",
@@ -470,7 +470,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "handles empty string values", %{conn: conn, map: map} do
       empty_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_148,
         "eve_id" => "",
         "character_eve_id" => "",
         "name" => "",
@@ -537,7 +537,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
           if length(data) > 0 do
             signature = List.first(data)
             assert Map.has_key?(signature, "id")
-            assert Map.has_key?(signature, "system_id")
+            assert Map.has_key?(signature, "solar_system_id")
             assert Map.has_key?(signature, "eve_id")
             assert Map.has_key?(signature, "character_eve_id")
           end
@@ -564,7 +564,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
 
     test "created signature response structure", %{conn: conn, map: map} do
       signature_params = %{
-        "system_id" => Ecto.UUID.generate(),
+        "solar_system_id" => 30_000_149,
         "eve_id" => "TEST-001",
         "character_eve_id" => "123456789",
         "name" => "Test Signature"
@@ -582,7 +582,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
       case response do
         %{"data" => data} ->
           # Should have signature structure
-          assert Map.has_key?(data, "id") or Map.has_key?(data, "system_id")
+          assert Map.has_key?(data, "id") or Map.has_key?(data, "solar_system_id")
 
         %{"error" => _error} ->
           # Error response is also valid

@@ -15,7 +15,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
     type: :object,
     properties: %{
       id: %OpenApiSpex.Schema{type: :string, format: :uuid},
-      system_id: %OpenApiSpex.Schema{type: :string, format: :uuid},
+      solar_system_id: %OpenApiSpex.Schema{type: :integer},
       eve_id: %OpenApiSpex.Schema{type: :string},
       character_eve_id: %OpenApiSpex.Schema{type: :string},
       name: %OpenApiSpex.Schema{type: :string, nullable: true},
@@ -31,13 +31,13 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
     },
     required: [
       :id,
-      :system_id,
+      :solar_system_id,
       :eve_id,
       :character_eve_id
     ],
     example: %{
       id: "sig-uuid-1",
-      system_id: "sys-uuid-1",
+      solar_system_id: 30_000_142,
       eve_id: "ABC-123",
       character_eve_id: "123456789",
       name: "Wormhole K162",
@@ -122,7 +122,15 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
       {:ok, signature} ->
         case WandererApp.Api.MapSystem.by_id(signature.system_id) do
           {:ok, system} when system.map_id == map_id ->
-            json(conn, %{data: signature})
+            # Add solar_system_id and remove system_id
+            # Convert to a plain map to avoid encoder issues
+            signature_data =
+              signature
+              |> Map.from_struct()
+              |> Map.put(:solar_system_id, system.solar_system_id)
+              |> Map.drop([:system_id, :__meta__, :system, :aggregates, :calculations])
+
+            json(conn, %{data: signature_data})
 
           _ ->
             conn |> put_status(:not_found) |> json(%{error: "Signature not found"})

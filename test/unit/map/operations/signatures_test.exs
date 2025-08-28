@@ -8,7 +8,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
   describe "parameter validation" do
     test "validates missing connection assigns for create_signature" do
       conn = %{assigns: %{}}
-      params = %{"solar_system_id" => "30000142"}
+      params = %{"solar_system_id" => 30_000_142}
 
       result = Signatures.create_signature(conn, params)
       assert {:error, :missing_params} = result
@@ -209,7 +209,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       }
 
       # Test with minimal required parameters
-      params = %{"solar_system_id" => "30000142"}
+      params = %{"solar_system_id" => 30_000_142}
 
       MapTestHelpers.expect_map_server_error(fn ->
         result = Signatures.create_signature(conn, params)
@@ -416,7 +416,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         nil
       ]
 
-      params = %{"solar_system_id" => "30000142"}
+      params = %{"solar_system_id" => 30_000_142}
 
       Enum.each(malformed_conns, fn conn ->
         # This should either crash (expected) or return error
@@ -462,17 +462,16 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
       tasks =
         Enum.map(1..3, fn i ->
           Task.async(fn ->
-            MapTestHelpers.expect_map_server_error(fn ->
-              params = %{"solar_system_id" => "3000014#{i}"}
-              Signatures.create_signature(conn, params)
-            end)
+            params = %{"solar_system_id" => 30_000_140 + i}
+            result = Signatures.create_signature(conn, params)
+            # We expect either system_not_found (system doesn't exist in test) 
+            # or the MapTestHelpers would have caught the map server error
+            assert {:error, :system_not_found} = result
           end)
         end)
 
       # All tasks should complete without crashing
-      Enum.each(tasks, fn task ->
-        assert Task.await(task) == :ok
-      end)
+      Enum.each(tasks, &Task.await/1)
     end
   end
 
@@ -669,7 +668,7 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
         }
       ]
 
-      params = %{"solar_system_id" => "30000142"}
+      params = %{"solar_system_id" => 30_000_142}
 
       Enum.each(assign_variations, fn assigns ->
         conn = %{assigns: assigns}

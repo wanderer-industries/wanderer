@@ -13,6 +13,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
   import Plug.Conn
 
+  alias Plug.Crypto
   alias WandererApp.Api.User
   alias WandererApp.SecurityAudit
   alias WandererApp.Audit.RequestContext
@@ -140,43 +141,60 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   defp authenticate_bearer_token(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
-        validate_api_token(token)
+        validate_api_token(conn, token)
 
       _ ->
         {:error, "Missing or invalid authorization header"}
     end
   end
 
-  defp validate_api_token(token) do
-    # Look up the map by its public API key
-    case find_map_by_api_key(token) do
-      {:ok, map} when not is_nil(map) ->
-        # Get the actual owner of the map
-        case User.by_id(map.owner_id, load: :characters) do
-          {:ok, user} ->
-            # Return the map owner as the authenticated user
-            {:ok, user, map}
+  defp validate_api_token(conn, token) do
+    # Check for map identifier in path params
+    # According to PR feedback, routes supply params["map_identifier"]
+    case conn.params["map_identifier"] do
+      nil ->
+        # No map identifier in path - this might be a general API endpoint
+        # For now, we'll return an error since we need to validate against a specific map
+        {:error, "Authentication failed", :no_map_context}
+
+      identifier ->
+        # Resolve the identifier (could be UUID or slug)
+        case resolve_map_identifier(identifier) do
+          {:ok, map} ->
+            # Validate the token matches this specific map's API key
+            if is_binary(map.public_api_key) &&
+                 Crypto.secure_compare(map.public_api_key, token) do
+              # Get the map owner
+              case User.by_id(map.owner_id, load: :characters) do
+                {:ok, user} ->
+                  {:ok, user, map}
+
+                {:error, _} ->
+                  {:error, "Authentication failed", :map_owner_not_found}
+              end
+            else
+              {:error, "Authentication failed", :invalid_token_for_map}
+            end
 
           {:error, _} ->
-            # Return generic error with specific reason for internal logging
-            {:error, "Authentication failed", :map_owner_not_found}
+            {:error, "Authentication failed", :map_not_found}
         end
-
-      _ ->
-        # Return generic error with specific reason for internal logging
-        {:error, "Authentication failed", :invalid_api_key}
     end
   end
 
-  defp find_map_by_api_key(api_key) do
-    # Import necessary modules
-    import Ash.Query
+  # Helper to resolve map by ID or slug
+  defp resolve_map_identifier(identifier) do
     alias WandererApp.Api.Map
-
-    # Query for map with matching public API key
-    Map
-    |> filter(public_api_key == ^api_key)
-    |> Ash.read_one()
+    
+    # Try as UUID first
+    case Map.by_id(identifier) do
+      {:ok, map} -> 
+        {:ok, map}
+      
+      _ ->
+        # Try as slug
+        Map.get_map_by_slug(identifier)
+    end
   end
 
   defp get_user_role(user) do
