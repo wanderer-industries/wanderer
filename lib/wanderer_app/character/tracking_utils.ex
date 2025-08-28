@@ -20,7 +20,7 @@ defmodule WandererApp.Character.TrackingUtils do
       )
       when not is_nil(caller_pid) do
     with {:ok, character} <-
-           WandererApp.Character.get_by_eve_id(character_eve_id),
+           WandererApp.Character.get_by_eve_id("#{character_eve_id}"),
          {:ok, %{tracked: is_tracked}} <-
            do_update_character_tracking(character, map_id, track, caller_pid) do
       # Determine which event to send based on tracking mode and previous state
