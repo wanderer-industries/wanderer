@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.2](https://github.com/wanderer-industries/wanderer/compare/v1.77.1...v1.77.2) (2025-08-28)
+
+
+
+
+### Bug Fixes:
+
+* update system signature api to return correct system id
+
 ## [v1.77.1](https://github.com/wanderer-industries/wanderer/compare/v1.77.0...v1.77.1) (2025-08-28)
 
 
