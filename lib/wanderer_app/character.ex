@@ -263,7 +263,7 @@ defmodule WandererApp.Character do
     end
   end
 
-  defp maybe_merge_map_character_settings(%{id: character_id} = character, map_id, true) do
+  defp maybe_merge_map_character_settings(%{id: character_id} = character, _map_id, true) do
     {:ok, tracking_paused} =
       WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false)
 

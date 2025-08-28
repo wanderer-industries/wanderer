@@ -29,15 +29,24 @@ defmodule WandererApp.Metrics.PromExPlugin do
 
   @impl true
   def event_metrics(_opts) do
-    [
+    base_metrics = [
       user_event_metrics(),
-      character_event_metrics(),
       map_event_metrics(),
-      map_subscription_metrics(),
+      map_subscription_metrics()
+    ]
+
+    advanced_metrics = [
+      character_event_metrics(),
       characters_distribution_event_metrics(),
       esi_event_metrics(),
       json_api_metrics()
     ]
+
+    if WandererApp.Env.base_metrics_only() do
+      base_metrics
+    else
+      base_metrics ++ advanced_metrics
+    end
   end
 
   defp user_event_metrics do
@@ -227,8 +236,8 @@ defmodule WandererApp.Metrics.PromExPlugin do
   defp get_esi_error_tag_values(metadata) do
     %{
       endpoint: Map.get(metadata, :endpoint, "unknown"),
-      error_type: to_string(Map.get(metadata, :error_type, "unknown")),
-      tracking_pool: Map.get(metadata, :tracking_pool, "unknown")
+      error_type: inspect(Map.get(metadata, :error_type, "unknown")),
+      tracking_pool: Map.get(metadata, :tracking_pool, "default")
     }
   end
 

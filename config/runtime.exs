@@ -129,6 +129,8 @@ config :wanderer_app,
   admin_username: System.get_env("WANDERER_ADMIN_USERNAME", "admin"),
   admin_password: System.get_env("WANDERER_ADMIN_PASSWORD"),
   admins: admins,
+  base_metrics_only:
+    System.get_env("WANDERER_BASE_METRICS_ONLY", "false") |> String.to_existing_atom(),
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
   corp_wallet_eve_id: System.get_env("WANDERER_CORP_WALLET_EVE_ID", "-1"),
