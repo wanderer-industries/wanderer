@@ -25,7 +25,7 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @systems_cleanup_timeout :timer.minutes(30)
-  @characters_cleanup_timeout :timer.minutes(1)
+  @characters_cleanup_timeout :timer.minutes(5)
   @connections_cleanup_timeout :timer.minutes(2)
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
@@ -100,7 +100,7 @@ defmodule WandererApp.Map.Server.Impl do
           Process.send_after(self(), :update_presence, @update_presence_timeout)
           Process.send_after(self(), :cleanup_connections, 5_000)
           Process.send_after(self(), :cleanup_systems, 10_000)
-          Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
+          Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
           Process.send_after(self(), :backup_state, @backup_state_timeout)
 
           WandererApp.Cache.insert("map_#{map_id}:started", true)

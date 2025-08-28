@@ -37,24 +37,22 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     |> assign(:page_title, "Characters Tracking")
   end
 
-  defp apply_action(socket, :characters, %{"slug" => map_slug} = _params) do
-    selected_map = socket.assigns.maps |> Enum.find(&(&1.slug == map_slug))
-
-    {:ok, character_settings} =
-      WandererApp.Character.Activity.get_map_character_settings(selected_map.id)
-
-    user_id = socket.assigns.user_id
+  defp apply_action(
+         %{assigns: %{current_user: current_user, maps: maps}} = socket,
+         :characters,
+         %{"slug" => map_slug} = _params
+       ) do
+    selected_map = maps |> Enum.find(&(&1.slug == map_slug))
 
     socket
     |> assign(:active_page, :characters_tracking)
     |> assign(:page_title, "Characters Tracking")
     |> assign(
       selected_map: selected_map,
-      selected_map_slug: map_slug,
-      character_settings: character_settings
+      selected_map_slug: map_slug
     )
     |> assign_async(:characters, fn ->
-      WandererApp.Maps.load_characters(selected_map, character_settings, user_id)
+      WandererApp.Maps.load_characters(selected_map, current_user.id)
     end)
   end
 
@@ -71,55 +69,36 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   end
 
   @impl true
-  def handle_event("toggle_track", %{"character_id" => character_id}, socket) do
+  def handle_event(
+        "toggle_track",
+        %{"character_id" => character_id},
+        %{assigns: %{current_user: current_user}} = socket
+      ) do
     selected_map = socket.assigns.selected_map
-    character_settings = socket.assigns.character_settings
-
-    case character_settings |> Enum.find(&(&1.character_id == character_id)) do
-      nil ->
-        WandererApp.MapCharacterSettingsRepo.create(%{
-          character_id: character_id,
-          map_id: selected_map.id,
-          tracked: true
-        })
-
-        {:noreply, socket}
-
-      character_setting ->
-        case character_setting.tracked do
-          true ->
-            character_setting
-            |> WandererApp.MapCharacterSettingsRepo.untrack!()
-
-            WandererApp.Map.Server.untrack_characters(selected_map.id, [
-              character_setting.character_id
-            ])
-
-          _ ->
-            character_setting
-            |> WandererApp.MapCharacterSettingsRepo.track!()
-        end
-    end
-
     %{result: characters} = socket.assigns.characters
 
-    {:ok, character_settings} =
-      WandererApp.Character.Activity.get_map_character_settings(selected_map.id)
+    case characters |> Enum.find(&(&1.id == character_id)) do
+      %{tracked: false} ->
+        WandererApp.MapCharacterSettingsRepo.track(%{
+          character_id: character_id,
+          map_id: selected_map.id
+        })
 
-    characters =
-      characters
-      |> Enum.map(fn c ->
-        WandererApp.Maps.map_character(
-          c,
-          character_settings |> Enum.find(&(&1.character_id == c.id))
-        )
-      end)
+      %{tracked: true} ->
+        WandererApp.MapCharacterSettingsRepo.untrack(%{
+          character_id: character_id,
+          map_id: selected_map.id
+        })
+
+        WandererApp.Map.Server.untrack_characters(selected_map.id, [
+          character_id
+        ])
+    end
 
     {:noreply,
      socket
-     |> assign(character_settings: character_settings)
      |> assign_async(:characters, fn ->
-       {:ok, %{characters: characters}}
+       WandererApp.Maps.load_characters(selected_map, current_user.id)
      end)}
   end
 
