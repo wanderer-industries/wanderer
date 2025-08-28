@@ -15,30 +15,6 @@ defmodule WandererAppWeb.Endpoint do
     max_age: 24 * 60 * 60 * 180
   ]
 
-  # @impl SiteEncrypt
-  # def certification do
-  #   SiteEncrypt.configure(
-  #     client: :native,
-  #     mode: :auto,
-  #     days_to_renew: 30,
-  #     domains: ["dev.wanderer.deadly-w.space"],
-  #     emails: ["dmitriypopovsamara@gmail.com"],
-  #     db_folder: System.get_env("SITE_ENCRYPT_DB", Path.join("tmp", "site_encrypt_db")),
-  #     backup: Path.join(Path.join("tmp", "site_encrypt_db"), "site_encrypt_backup.tgz"),
-  #     directory_url:
-  #       case System.get_env("CERT_MODE", "local") do
-  #         "local" ->
-  #           {:internal, port: 4001}
-
-  #         "staging" ->
-  #           "https://acme-staging-v02.api.letsencrypt.org/directory"
-
-  #         "production" ->
-  #           "https://acme-v02.api.letsencrypt.org/directory"
-  #       end
-  #   )
-  # end
-
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [compress: true, connect_info: [session: @session_options]]
 

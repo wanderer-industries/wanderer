@@ -527,33 +527,30 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
       when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) do
-    {:ok, known_jumps} =
-      WandererApp.Api.MapSolarSystemJumps.find(%{
-        before_system_id: from_solar_system_id,
-        current_system_id: to_solar_system_id
-      })
-
-    {:ok, from_system_static_info} = get_system_static_info(from_solar_system_id)
-    {:ok, to_system_static_info} = get_system_static_info(to_solar_system_id)
-
-    case scope do
-      :wormholes ->
-        not is_prohibited_system_class?(from_system_static_info.system_class) and
-          not is_prohibited_system_class?(to_system_static_info.system_class) and
-          not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
-          not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
-          known_jumps |> Enum.empty?()
-
-      :stargates ->
-        # For stargates, we need to check:
-        # 1. Both systems are in known space (HS, LS, NS)
-        # 2. There is a known jump between them
-        # 3. Neither system is prohibited
-        from_system_static_info.system_class in @known_space and
-          to_system_static_info.system_class in @known_space and
+    with {:ok, known_jumps} <- find_solar_system_jump(from_solar_system_id, to_solar_system_id),
+         {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
+         {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do
+      case scope do
+        :wormholes ->
           not is_prohibited_system_class?(from_system_static_info.system_class) and
-          not is_prohibited_system_class?(to_system_static_info.system_class) and
-          not (known_jumps |> Enum.empty?())
+            not is_prohibited_system_class?(to_system_static_info.system_class) and
+            not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
+            not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
+            known_jumps |> Enum.empty?()
+
+        :stargates ->
+          # For stargates, we need to check:
+          # 1. Both systems are in known space (HS, LS, NS)
+          # 2. There is a known jump between them
+          # 3. Neither system is prohibited
+          from_system_static_info.system_class in @known_space and
+            to_system_static_info.system_class in @known_space and
+            not is_prohibited_system_class?(from_system_static_info.system_class) and
+            not is_prohibited_system_class?(to_system_static_info.system_class) and
+            not (known_jumps |> Enum.empty?())
+      end
+    else
+      _ -> false
     end
   end
 
@@ -567,6 +564,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
       value ->
         value
+    end
+  end
+
+  defp find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
+    case WandererApp.CachedInfo.get_solar_system_jump(from_solar_system_id, to_solar_system_id) do
+      {:ok, jump} when not is_nil(jump) -> {:ok, [jump]}
+      _ -> {:ok, []}
     end
   end
 
