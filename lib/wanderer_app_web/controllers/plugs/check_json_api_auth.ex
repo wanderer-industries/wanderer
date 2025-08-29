@@ -185,12 +185,12 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   # Helper to resolve map by ID or slug
   defp resolve_map_identifier(identifier) do
     alias WandererApp.Api.Map
-    
+
     # Try as UUID first
     case Map.by_id(identifier) do
-      {:ok, map} -> 
+      {:ok, map} ->
         {:ok, map}
-      
+
       _ ->
         # Try as slug
         Map.get_map_by_slug(identifier)
