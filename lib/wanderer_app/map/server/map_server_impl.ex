@@ -127,6 +127,7 @@ defmodule WandererApp.Map.Server.Impl do
     Logger.debug(fn -> "Stopping map server for #{map_id}" end)
 
     WandererApp.Cache.delete("map_#{map_id}:started")
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
@@ -278,7 +279,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def handle_event({:acl_deleted, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
-    AclsImpl.handle_acl_updated(map_id, acl_id)
+    AclsImpl.handle_acl_deleted(map_id, acl_id)
 
     state
   end

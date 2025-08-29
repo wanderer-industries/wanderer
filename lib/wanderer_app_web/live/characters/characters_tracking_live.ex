@@ -4,7 +4,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   require Logger
 
   @impl true
-  def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
+  def mount(_params, _session, socket) do
     {:ok, maps} = WandererApp.Maps.get_available_maps(socket.assigns.current_user)
 
     {:ok,
@@ -14,7 +14,6 @@ defmodule WandererAppWeb.CharactersTrackingLive do
        characters: [],
        selected_map: nil,
        selected_map_slug: nil,
-       user_id: user_id,
        maps: maps |> Enum.sort_by(& &1.name, :asc)
      )}
   end
