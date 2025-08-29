@@ -2,6 +2,21 @@
 
 <!-- changelog -->
 
+## [v1.77.3](https://github.com/wanderer-industries/wanderer/compare/v1.77.2...v1.77.3) (2025-08-29)
+
+
+
+
+### Bug Fixes:
+
+* Fixed character tracking settings
+
+* Fixed character tracking settings
+
+* Fixed character tracking settings
+
+* Fixed character tracking settings
+
 ## [v1.77.2](https://github.com/wanderer-industries/wanderer/compare/v1.77.1...v1.77.2) (2025-08-28)
 
 
