@@ -422,14 +422,11 @@ defmodule WandererAppWeb.MapCoreEventHandler do
              current_user_characters |> Enum.map(& &1.id)
            ),
          {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
-         {:ok, character_settings} <-
-           WandererApp.Character.Activity.get_map_character_settings(map_id),
          {:ok, %{characters: available_map_characters}} =
-           WandererApp.Maps.load_characters(map, character_settings, current_user_id) do
+           WandererApp.Maps.load_characters(map, current_user_id) do
       tracked_data =
         get_tracked_data(
           available_map_characters,
-          character_settings,
           user_permissions,
           only_tracked_characters
         )
@@ -473,15 +470,13 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
   defp get_tracked_data(
          available_map_characters,
-         character_settings,
          user_permissions,
          only_tracked_characters
        ) do
     tracked_characters =
       available_map_characters
       |> Enum.filter(fn char ->
-        setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        setting != nil && setting.tracked == true
+        char.tracked
       end)
 
     all_tracked? =
@@ -492,7 +487,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       MapCharactersEventHandler.needs_tracking_setup?(
         only_tracked_characters,
         available_map_characters,
-        character_settings,
         user_permissions
       )
 

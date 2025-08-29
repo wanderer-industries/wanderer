@@ -79,8 +79,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
       accept [
         :map_id,
         :character_id,
-        :tracked,
-        :followed
+        :tracked
       ]
 
       argument :map_id, :uuid, allow_nil?: false

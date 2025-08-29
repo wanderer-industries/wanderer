@@ -94,13 +94,22 @@ defmodule WandererApp.Maps do
     end
   end
 
-  def load_characters(map, character_settings, user_id) do
+  def load_characters(map, user_id) do
     {:ok, user_characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
-    characters =
+    map_available_characters =
       map
       |> get_map_available_characters(user_characters)
+
+    {:ok, character_settings} =
+      WandererApp.MapCharacterSettingsRepo.get_by_map_filtered(
+        map.id,
+        map_available_characters |> Enum.map(& &1.id)
+      )
+
+    characters =
+      map_available_characters
       |> Enum.map(fn c ->
         map_character(c, character_settings |> Enum.find(&(&1.character_id == c.id)))
       end)
@@ -176,48 +185,57 @@ defmodule WandererApp.Maps do
         tracked: tracked
       }
 
-  @decorate cacheable(
-              cache: WandererApp.Cache,
-              key: "map_characters-#{map_id}",
-              opts: [ttl: :timer.seconds(2)]
-            )
-  defp _get_map_characters(%{id: map_id} = map) do
-    map_acls =
-      map.acls
-      |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
+  defp get_map_characters(%{id: map_id} = map) do
+    WandererApp.Cache.lookup!("map_characters-#{map_id}")
+    |> case do
+      nil ->
+        map_acls =
+          map.acls
+          |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
 
-    map_acl_owner_ids =
-      map_acls
-      |> Enum.map(fn acl -> acl.owner_id end)
+        map_acl_owner_ids =
+          map_acls
+          |> Enum.map(fn acl -> acl.owner_id end)
 
-    map_members =
-      map_acls
-      |> Enum.map(fn acl -> acl.members end)
-      |> List.flatten()
-      |> Enum.filter(fn member -> member.role != :blocked end)
+        map_members =
+          map_acls
+          |> Enum.map(fn acl -> acl.members end)
+          |> List.flatten()
+          |> Enum.filter(fn member -> member.role != :blocked end)
 
-    map_member_eve_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
-      |> Enum.map(fn member -> member.eve_character_id end)
+        map_member_eve_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
+          |> Enum.map(fn member -> member.eve_character_id end)
 
-    map_member_corporation_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
-      |> Enum.map(fn member -> member.eve_corporation_id end)
+        map_member_corporation_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
+          |> Enum.map(fn member -> member.eve_corporation_id end)
 
-    map_member_alliance_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
-      |> Enum.map(fn member -> member.eve_alliance_id end)
+        map_member_alliance_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
+          |> Enum.map(fn member -> member.eve_alliance_id end)
 
-    {:ok,
-     %{
-       map_acl_owner_ids: map_acl_owner_ids,
-       map_member_eve_ids: map_member_eve_ids,
-       map_member_corporation_ids: map_member_corporation_ids,
-       map_member_alliance_ids: map_member_alliance_ids
-     }}
+        map_characters =
+          %{
+            map_acl_owner_ids: map_acl_owner_ids,
+            map_member_eve_ids: map_member_eve_ids,
+            map_member_corporation_ids: map_member_corporation_ids,
+            map_member_alliance_ids: map_member_alliance_ids
+          }
+
+        WandererApp.Cache.insert(
+          "map_characters-#{map_id}",
+          map_characters
+        )
+
+        {:ok, map_characters}
+
+      map_characters ->
+        {:ok, map_characters}
+    end
   end
 
   defp get_map_available_characters(map, user_characters) do
@@ -227,7 +245,7 @@ defmodule WandererApp.Maps do
        map_member_eve_ids: map_member_eve_ids,
        map_member_corporation_ids: map_member_corporation_ids,
        map_member_alliance_ids: map_member_alliance_ids
-     }} = _get_map_characters(map)
+     }} = get_map_characters(map)
 
     user_characters
     |> Enum.filter(fn c ->

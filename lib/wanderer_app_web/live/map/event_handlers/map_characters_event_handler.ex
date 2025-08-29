@@ -333,21 +333,18 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   def needs_tracking_setup?(
         only_tracked_characters,
         characters,
-        character_settings,
         user_permissions
       ) do
     tracked_count =
       characters
       |> Enum.count(fn char ->
-        setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        setting && setting.tracked
+        char.tracked
       end)
 
     untracked_count =
       characters
       |> Enum.count(fn char ->
-        setting = Enum.find(character_settings, &(&1.character_id == char.id))
-        setting == nil || !setting.tracked
+        !char.tracked
       end)
 
     user_permissions.track_character &&

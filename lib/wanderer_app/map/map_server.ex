@@ -88,11 +88,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.remove_character/2, [character_id]})
 
-  def untrack_characters(map_id, character_ids) when is_binary(map_id),
-    do:
-      map_id
-      |> map_pid!
-      |> GenServer.cast({&Impl.untrack_characters/2, [character_ids]})
+  def untrack_characters(map_id, character_ids) when is_binary(map_id) do
+    map_id
+    |> map_pid()
+    |> case do
+      pid when is_pid(pid) ->
+        GenServer.cast(pid, {&Impl.untrack_characters/2, [character_ids]})
+
+      _ ->
+        WandererApp.Cache.insert("map_#{map_id}:started", false)
+        :ok
+    end
+  end
 
   def add_system(map_id, system_info, user_id, character_id) when is_binary(map_id),
     do:

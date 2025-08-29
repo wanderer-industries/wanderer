@@ -25,7 +25,7 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @systems_cleanup_timeout :timer.minutes(30)
-  @characters_cleanup_timeout :timer.minutes(1)
+  @characters_cleanup_timeout :timer.minutes(5)
   @connections_cleanup_timeout :timer.minutes(2)
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
@@ -100,7 +100,7 @@ defmodule WandererApp.Map.Server.Impl do
           Process.send_after(self(), :update_presence, @update_presence_timeout)
           Process.send_after(self(), :cleanup_connections, 5_000)
           Process.send_after(self(), :cleanup_systems, 10_000)
-          Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
+          Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
           Process.send_after(self(), :backup_state, @backup_state_timeout)
 
           WandererApp.Cache.insert("map_#{map_id}:started", true)
@@ -127,6 +127,7 @@ defmodule WandererApp.Map.Server.Impl do
     Logger.debug(fn -> "Stopping map server for #{map_id}" end)
 
     WandererApp.Cache.delete("map_#{map_id}:started")
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
@@ -278,7 +279,7 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def handle_event({:acl_deleted, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
-    AclsImpl.handle_acl_updated(map_id, acl_id)
+    AclsImpl.handle_acl_deleted(map_id, acl_id)
 
     state
   end

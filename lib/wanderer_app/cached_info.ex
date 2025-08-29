@@ -129,21 +129,23 @@ defmodule WandererApp.CachedInfo do
 
   def get_solar_system_jump(from_solar_system_id, to_solar_system_id) do
     # Create normalized cache key (smaller ID first for bidirectional lookup)
-    {id1, id2} = if from_solar_system_id < to_solar_system_id do
-      {from_solar_system_id, to_solar_system_id}
-    else
-      {to_solar_system_id, from_solar_system_id}
-    end
-    
+    {id1, id2} =
+      if from_solar_system_id < to_solar_system_id do
+        {from_solar_system_id, to_solar_system_id}
+      else
+        {to_solar_system_id, from_solar_system_id}
+      end
+
     cache_key = "jump_#{id1}_#{id2}"
-    
+
     case WandererApp.Cache.lookup(cache_key) do
       {:ok, nil} ->
         # Build jump index if not exists
         build_jump_index()
         WandererApp.Cache.lookup(cache_key)
-      
-      result -> result
+
+      result ->
+        result
     end
   end
 
@@ -152,17 +154,19 @@ defmodule WandererApp.CachedInfo do
       {:ok, jumps} ->
         jumps
         |> Enum.each(fn jump ->
-          {id1, id2} = if jump.from_solar_system_id < jump.to_solar_system_id do
-            {jump.from_solar_system_id, jump.to_solar_system_id}
-          else
-            {jump.to_solar_system_id, jump.from_solar_system_id}
-          end
-          
+          {id1, id2} =
+            if jump.from_solar_system_id < jump.to_solar_system_id do
+              {jump.from_solar_system_id, jump.to_solar_system_id}
+            else
+              {jump.to_solar_system_id, jump.from_solar_system_id}
+            end
+
           cache_key = "jump_#{id1}_#{id2}"
           WandererApp.Cache.put(cache_key, jump)
         end)
-      
-      _ -> :error
+
+      _ ->
+        :error
     end
   end
 

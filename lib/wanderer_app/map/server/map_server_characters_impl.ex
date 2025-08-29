@@ -78,15 +78,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
       characters_to_remove = old_map_tracked_characters -- map_active_tracked_characters
 
-      {:ok, invalidate_character_ids} =
-        WandererApp.Cache.lookup(
-          "map_#{map_id}:invalidate_character_ids",
-          []
-        )
-
-      WandererApp.Cache.insert(
+      WandererApp.Cache.insert_or_update(
         "map_#{map_id}:invalidate_character_ids",
-        (invalidate_character_ids ++ characters_to_remove) |> Enum.uniq()
+        characters_to_remove,
+        fn ids ->
+          (ids ++ characters_to_remove) |> Enum.uniq()
+        end
       )
 
       WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
@@ -126,15 +123,18 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   def cleanup_characters(map_id, owner_id) do
     {:ok, invalidate_character_ids} =
-      WandererApp.Cache.lookup(
+      WandererApp.Cache.get_and_remove(
         "map_#{map_id}:invalidate_character_ids",
         []
       )
 
-    acls =
-      map_id
-      |> WandererApp.Map.get_map!()
-      |> Map.get(:acls, [])
+    {:ok, %{acls: acls}} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
 
     invalidate_character_ids
     |> Task.async_stream(
@@ -186,11 +186,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       {:error, reason} ->
         Logger.error("Error in cleanup_characters: #{inspect(reason)}")
     end)
-
-    WandererApp.Cache.insert(
-      "map_#{map_id}:invalidate_character_ids",
-      []
-    )
   end
 
   defp remove_and_untrack_characters(map_id, character_ids) do

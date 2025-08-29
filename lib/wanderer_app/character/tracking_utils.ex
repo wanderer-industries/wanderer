@@ -20,7 +20,7 @@ defmodule WandererApp.Character.TrackingUtils do
       )
       when not is_nil(caller_pid) do
     with {:ok, character} <-
-           WandererApp.Character.get_by_eve_id(character_eve_id),
+           WandererApp.Character.get_by_eve_id("#{character_eve_id}"),
          {:ok, %{tracked: is_tracked}} <-
            do_update_character_tracking(character, map_id, track, caller_pid) do
       # Determine which event to send based on tracking mode and previous state
@@ -55,15 +55,19 @@ defmodule WandererApp.Character.TrackingUtils do
   Builds tracking data for all characters with access to a map.
   """
   def build_tracking_data(map_id, current_user_id) do
-    with {:ok, map} <- WandererApp.MapRepo.get(map_id, [:acls]),
-         {:ok, character_settings} <-
-           WandererApp.Character.Activity.get_map_character_settings(map_id),
+    with {:ok, map} <-
+           WandererApp.MapRepo.get(map_id,
+             acls: [
+               :owner_id,
+               members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+             ]
+           ),
          {:ok, user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
          {:ok, %{characters: characters_with_access}} <-
-           WandererApp.Maps.load_characters(map, character_settings, current_user_id) do
+           WandererApp.Maps.load_characters(map, current_user_id) do
       # Map characters to tracking data
       {:ok, characters_data} =
-        build_character_tracking_data(characters_with_access, character_settings)
+        build_character_tracking_data(characters_with_access)
 
       {:ok, main_character} =
         get_main_character(user_settings, characters_with_access, characters_with_access)
@@ -98,21 +102,19 @@ defmodule WandererApp.Character.TrackingUtils do
   end
 
   # Helper to build tracking data for each character
-  defp build_character_tracking_data(characters, character_settings) do
+  defp build_character_tracking_data(characters) do
     {:ok,
      Enum.map(characters, fn char ->
-       setting = Enum.find(character_settings, &(&1.character_id == char.id))
-
        %{
          character: char |> WandererAppWeb.MapEventHandler.map_ui_character_stat(),
-         tracked: (setting && setting.tracked) || false
+         tracked: char.tracked
        }
      end)}
   end
 
   # Private implementation of update character tracking
   defp do_update_character_tracking(character, map_id, track, caller_pid) do
-    WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character.id)
+    WandererApp.MapCharacterSettingsRepo.get(map_id, character.id)
     |> case do
       # Untracking flow
       {:ok, %{tracked: true} = existing_settings} ->

@@ -59,6 +59,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
     map_update = %{acls: map.acls, scope: map.scope}
 
     WandererApp.Map.update_map(map_id, map_update)
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     broadcast_acl_updates({:ok, result}, map_id)
 
@@ -66,7 +67,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
   end
 
   def handle_acl_updated(map_id, acl_id) do
-    {:ok, map} =
+    {:ok, %{acls: acls}} =
       WandererApp.MapRepo.get(map_id,
         acls: [
           :owner_id,
@@ -74,8 +75,9 @@ defmodule WandererApp.Map.Server.AclsImpl do
         ]
       )
 
-    if map.acls |> Enum.map(& &1.id) |> Enum.member?(acl_id) do
-      WandererApp.Map.update_map(map_id, %{acls: map.acls})
+    if acls |> Enum.map(& &1.id) |> Enum.member?(acl_id) do
+      WandererApp.Map.update_map(map_id, %{acls: acls})
+      WandererApp.Cache.delete("map_characters-#{map_id}")
 
       :ok =
         acl_id
@@ -85,7 +87,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
   end
 
   def handle_acl_deleted(map_id, _acl_id) do
-    {:ok, map} =
+    {:ok, %{acls: acls}} =
       WandererApp.MapRepo.get(map_id,
         acls: [
           :owner_id,
@@ -93,7 +95,8 @@ defmodule WandererApp.Map.Server.AclsImpl do
         ]
       )
 
-    WandererApp.Map.update_map(map_id, %{acls: map.acls})
+    WandererApp.Map.update_map(map_id, %{acls: acls})
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     character_ids =
       map_id
