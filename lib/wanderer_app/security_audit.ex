@@ -502,13 +502,7 @@ defmodule WandererApp.SecurityAudit do
     event_type = normalize_event_type(audit_entry.event_type)
 
     # Generate unique entity_id to avoid constraint violations
-    entity_id =
-      if audit_entry.session_id do
-        # Include high-resolution timestamp and unique component for guaranteed uniqueness
-        "#{hash_identifier(audit_entry.session_id)}_#{:os.system_time(:microsecond)}_#{System.unique_integer([:positive])}"
-      else
-        generate_entity_id()
-      end
+    entity_id = generate_entity_id(audit_entry.session_id)
 
     attrs = %{
       entity_id: entity_id,
@@ -628,8 +622,13 @@ defmodule WandererApp.SecurityAudit do
   defp convert_datetime(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
   defp convert_datetime(value), do: value
 
-  defp generate_entity_id do
-    "audit_#{:os.system_time(:microsecond)}_#{System.unique_integer([:positive])}"
+  defp generate_entity_id(session_id \\ nil) do
+    if session_id do
+      # Include high-resolution timestamp and unique component for guaranteed uniqueness
+      "#{hash_identifier(session_id)}_#{:os.system_time(:microsecond)}_#{System.unique_integer([:positive])}"
+    else
+      "audit_#{:os.system_time(:microsecond)}_#{System.unique_integer([:positive])}"
+    end
   end
 
   defp async_enabled? do
