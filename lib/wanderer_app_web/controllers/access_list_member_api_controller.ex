@@ -192,11 +192,25 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_added
                    ) do
                 :ok ->
+                  # Also broadcast internal PubSub message for map servers
+                  Phoenix.PubSub.broadcast(
+                    WandererApp.PubSub,
+                    "acls:#{acl_id}",
+                    {:acl_updated, %{acl_id: acl_id}}
+                  )
+
                   json(conn, %{data: member_to_json(new_member)})
 
                 {:error, broadcast_error} ->
                   Logger.warning(
                     "Failed to broadcast ACL member added event: #{inspect(broadcast_error)}"
+                  )
+
+                  # Still broadcast internal message even if external broadcast fails
+                  Phoenix.PubSub.broadcast(
+                    WandererApp.PubSub,
+                    "acls:#{acl_id}",
+                    {:acl_updated, %{acl_id: acl_id}}
                   )
 
                   json(conn, %{data: member_to_json(new_member)})
@@ -300,11 +314,25 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_updated
                    ) do
                 :ok ->
+                  # Also broadcast internal PubSub message for map servers
+                  Phoenix.PubSub.broadcast(
+                    WandererApp.PubSub,
+                    "acls:#{acl_id}",
+                    {:acl_updated, %{acl_id: acl_id}}
+                  )
+
                   json(conn, %{data: member_to_json(updated_membership)})
 
                 {:error, broadcast_error} ->
                   Logger.warning(
                     "Failed to broadcast ACL member updated event: #{inspect(broadcast_error)}"
+                  )
+
+                  # Still broadcast internal message even if external broadcast fails
+                  Phoenix.PubSub.broadcast(
+                    WandererApp.PubSub,
+                    "acls:#{acl_id}",
+                    {:acl_updated, %{acl_id: acl_id}}
                   )
 
                   json(conn, %{data: member_to_json(updated_membership)})
@@ -385,11 +413,25 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                    :acl_member_removed
                  ) do
               :ok ->
+                # Also broadcast internal PubSub message for map servers
+                Phoenix.PubSub.broadcast(
+                  WandererApp.PubSub,
+                  "acls:#{acl_id}",
+                  {:acl_updated, %{acl_id: acl_id}}
+                )
+
                 json(conn, %{ok: true})
 
               {:error, broadcast_error} ->
                 Logger.warning(
                   "Failed to broadcast ACL member removed event: #{inspect(broadcast_error)}"
+                )
+
+                # Still broadcast internal message even if external broadcast fails
+                Phoenix.PubSub.broadcast(
+                  WandererApp.PubSub,
+                  "acls:#{acl_id}",
+                  {:acl_updated, %{acl_id: acl_id}}
                 )
 
                 json(conn, %{ok: true})
