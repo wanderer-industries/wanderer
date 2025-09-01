@@ -192,12 +192,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_added
                    ) do
                 :ok ->
-                  # Also broadcast internal PubSub message for map servers
-                  Phoenix.PubSub.broadcast(
-                    WandererApp.PubSub,
-                    "acls:#{acl_id}",
-                    {:acl_updated, %{acl_id: acl_id}}
-                  )
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(new_member)})
 
@@ -207,11 +202,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                   )
 
                   # Still broadcast internal message even if external broadcast fails
-                  Phoenix.PubSub.broadcast(
-                    WandererApp.PubSub,
-                    "acls:#{acl_id}",
-                    {:acl_updated, %{acl_id: acl_id}}
-                  )
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(new_member)})
               end
@@ -314,12 +305,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_updated
                    ) do
                 :ok ->
-                  # Also broadcast internal PubSub message for map servers
-                  Phoenix.PubSub.broadcast(
-                    WandererApp.PubSub,
-                    "acls:#{acl_id}",
-                    {:acl_updated, %{acl_id: acl_id}}
-                  )
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(updated_membership)})
 
@@ -329,11 +315,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                   )
 
                   # Still broadcast internal message even if external broadcast fails
-                  Phoenix.PubSub.broadcast(
-                    WandererApp.PubSub,
-                    "acls:#{acl_id}",
-                    {:acl_updated, %{acl_id: acl_id}}
-                  )
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(updated_membership)})
               end
@@ -458,6 +440,14 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   # ---------------------------------------------------------------------------
   # Private Helpers
   # ---------------------------------------------------------------------------
+
+  defp broadcast_acl_updated(acl_id) do
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "acls:#{acl_id}",
+      {:acl_updated, %{acl_id: acl_id}}
+    )
+  end
 
   @doc false
   defp member_to_json(member) do
