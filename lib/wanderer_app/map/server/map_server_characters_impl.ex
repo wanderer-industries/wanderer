@@ -332,6 +332,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       _ ->
         if is_nil(start_solar_system_id) || start_solar_system_id == old_location.solar_system_id do
           ConnectionsImpl.is_connection_valid(
+            map_id,
             map.scope,
             old_location.solar_system_id,
             location.solar_system_id

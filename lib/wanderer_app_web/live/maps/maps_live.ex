@@ -77,7 +77,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:active_page, :maps)
         |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
         |> assign(:page_title, "Maps - Create")
-        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(:scopes, ["wormholes", "stargates", "locked and chains", "none", "all"])
         |> assign(
           :form,
           AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
@@ -114,7 +114,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:active_page, :maps)
         |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
         |> assign(:page_title, "Maps - Edit")
-        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(:scopes, ["wormholes", "stargates", "locked and chains", "none", "all"])
         |> assign(:map_slug, map_slug)
         |> assign(
           :characters,
@@ -198,7 +198,7 @@ defmodule WandererAppWeb.MapsLive do
 
   @impl true
   def handle_event("set-default-scope", %{"id" => id}, socket) do
-    send_update(LiveSelect.Component, options: ["wormholes", "stargates", "none", "all"], id: id)
+    send_update(LiveSelect.Component, options: ["wormholes", "stargates", "locked and chains", "none", "all"], id: id)
 
     {:noreply, socket}
   end

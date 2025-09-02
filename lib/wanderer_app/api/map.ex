@@ -284,6 +284,7 @@ defmodule WandererApp.Api.Map do
         one_of: [
           :wormholes,
           :stargates,
+          :"locked and chains",
           :none,
           :all
         ]
