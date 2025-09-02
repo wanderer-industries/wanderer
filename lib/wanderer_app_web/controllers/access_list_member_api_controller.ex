@@ -192,12 +192,17 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_added
                    ) do
                 :ok ->
+                  broadcast_acl_updated(acl_id)
+
                   json(conn, %{data: member_to_json(new_member)})
 
                 {:error, broadcast_error} ->
                   Logger.warning(
                     "Failed to broadcast ACL member added event: #{inspect(broadcast_error)}"
                   )
+
+                  # Still broadcast internal message even if external broadcast fails
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(new_member)})
               end
@@ -300,12 +305,17 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                      :acl_member_updated
                    ) do
                 :ok ->
+                  broadcast_acl_updated(acl_id)
+
                   json(conn, %{data: member_to_json(updated_membership)})
 
                 {:error, broadcast_error} ->
                   Logger.warning(
                     "Failed to broadcast ACL member updated event: #{inspect(broadcast_error)}"
                   )
+
+                  # Still broadcast internal message even if external broadcast fails
+                  broadcast_acl_updated(acl_id)
 
                   json(conn, %{data: member_to_json(updated_membership)})
               end
@@ -385,12 +395,17 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                    :acl_member_removed
                  ) do
               :ok ->
+                broadcast_acl_updated(acl_id)
+
                 json(conn, %{ok: true})
 
               {:error, broadcast_error} ->
                 Logger.warning(
                   "Failed to broadcast ACL member removed event: #{inspect(broadcast_error)}"
                 )
+
+                # Still broadcast internal message even if external broadcast fails
+                broadcast_acl_updated(acl_id)
 
                 json(conn, %{ok: true})
             end
@@ -416,6 +431,14 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   # ---------------------------------------------------------------------------
   # Private Helpers
   # ---------------------------------------------------------------------------
+
+  defp broadcast_acl_updated(acl_id) do
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "acls:#{acl_id}",
+      {:acl_updated, %{acl_id: acl_id}}
+    )
+  end
 
   @doc false
   defp member_to_json(member) do

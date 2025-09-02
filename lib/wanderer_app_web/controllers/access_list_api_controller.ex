@@ -596,10 +596,24 @@ defmodule WandererAppWeb.MapAccessListAPIController do
           acl -> acl.id
         end)
 
-      updated_acls = current_acl_ids ++ [new_acl_id]
+      updated_acls =
+        if new_acl_id in current_acl_ids do
+          current_acl_ids
+        else
+          current_acl_ids ++ [new_acl_id]
+        end
 
       case WandererApp.Api.Map.update_acls(loaded_map, %{acls: updated_acls}) do
         {:ok, updated_map} ->
+          # Only broadcast if we actually added a new ACL
+          unless new_acl_id in current_acl_ids do
+            Phoenix.PubSub.broadcast(
+              WandererApp.PubSub,
+              "maps:#{loaded_map.id}",
+              {:map_acl_updated, [new_acl_id], []}
+            )
+          end
+
           {:ok, updated_map}
 
         {:error, error} ->
