@@ -75,26 +75,10 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     if not must_select? do
       socket
     else
-      # Check if we already selected this exact system for this char:
-      last_selected =
-        WandererApp.Cache.lookup!(
-          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-          nil
-        )
-
-      if last_selected == solar_system_id do
-        # same system => skip
-        socket
-      else
-        # new system => update cache + push event
-        WandererApp.Cache.put(
-          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-          solar_system_id
-        )
-
-        socket
-        |> MapEventHandler.push_map_event("select_system", solar_system_id)
-      end
+      # Always select the system when auto-select is enabled (following or select_on_spash).
+      # The frontend will handle deselecting other systems
+      socket
+      |> MapEventHandler.push_map_event("select_system", solar_system_id)
     end
   end
 
