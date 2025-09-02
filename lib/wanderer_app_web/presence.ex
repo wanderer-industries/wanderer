@@ -24,24 +24,8 @@ defmodule WandererAppWeb.Presence do
         %{character_id: character_id, tracked: any_tracked, from: from}
       end)
 
-    presence_tracked_character_ids =
-      presence_data
-      |> Enum.filter(fn %{tracked: tracked} -> tracked end)
-      |> Enum.map(fn %{character_id: character_id} ->
-        character_id
-      end)
-
-    WandererApp.Cache.insert(
-      "map_#{map_id}:presence_character_ids",
-      presence_tracked_character_ids
-    )
-
-    WandererApp.Cache.insert(
-      "map_#{map_id}:presence_data",
-      presence_data
-    )
-
-    WandererApp.Cache.insert("map_#{map_id}:presence_updated", true)
+    # Delegate all cache operations to the PresenceGracePeriodManager
+    WandererAppWeb.PresenceGracePeriodManager.process_presence_change(map_id, presence_data)
 
     {:ok, state}
   end

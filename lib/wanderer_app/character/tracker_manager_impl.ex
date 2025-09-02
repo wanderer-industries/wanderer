@@ -14,7 +14,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   @check_start_queue_interval :timer.seconds(1)
   @garbage_collection_interval :timer.minutes(15)
-  @untrack_characters_interval :timer.minutes(1)
+  @untrack_characters_interval :timer.minutes(5)
   @inactive_character_timeout :timer.minutes(10)
   @untrack_character_timeout :timer.minutes(10)
 
@@ -54,6 +54,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         true
       )
 
+      Logger.debug(fn -> "Add character to track_characters_queue: #{inspect(character_id)}" end)
+
       WandererApp.Cache.insert_or_update(
         "track_characters_queue",
         [character_id],
@@ -69,28 +71,24 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def stop_tracking(state, character_id) do
     with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
          true <- Enum.member?(characters, character_id),
-         {:ok, %{start_time: start_time}} <-
-           WandererApp.Character.get_character_state(character_id, false) do
+         false <- WandererApp.Cache.has_key?("#{character_id}:track_requested") do
       Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
 
       WandererApp.Cache.delete("character:#{character_id}:last_active_time")
       WandererApp.Character.delete_character_state(character_id)
-
-      tracked_characters =
-        characters |> Enum.reject(fn c_id -> c_id == character_id end)
-
-      WandererApp.Cache.insert("tracked_characters", tracked_characters)
-
       WandererApp.Character.TrackerPoolDynamicSupervisor.stop_tracking(character_id)
-
-      duration = DateTime.diff(DateTime.utc_now(), start_time, :second)
-
-      :telemetry.execute([:wanderer_app, :character, :tracker, :running], %{
-        duration: duration
-      })
 
       :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
     end
+
+    WandererApp.Cache.insert_or_update(
+      "tracked_characters",
+      [],
+      fn tracked_characters ->
+        tracked_characters
+        |> Enum.reject(fn c_id -> c_id == character_id end)
+      end
+    )
 
     state
   end
@@ -129,7 +127,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       "character_untrack_queue",
       [{map_id, character_id}],
       fn untrack_queue ->
-        [{map_id, character_id} | untrack_queue] |> Enum.uniq()
+        [{map_id, character_id} | untrack_queue]
+        |> Enum.uniq_by(fn {map_id, character_id} -> map_id <> character_id end)
       end
     )
   end

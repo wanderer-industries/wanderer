@@ -59,7 +59,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   def update_tracked_characters(map_id) do
     Task.start_link(fn ->
-      {:ok, map_tracked_character_ids} =
+      {:ok, all_map_tracked_character_ids} =
         map_id
         |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all()
         |> case do
@@ -67,16 +67,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           _ -> {:ok, []}
         end
 
-      {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
-
-      map_active_tracked_characters =
-        map_tracked_character_ids
-        |> Enum.filter(fn character -> character in tracked_characters end)
-
-      {:ok, old_map_tracked_characters} =
+      {:ok, actual_map_tracked_characters} =
         WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
 
-      characters_to_remove = old_map_tracked_characters -- map_active_tracked_characters
+      characters_to_remove = actual_map_tracked_characters -- all_map_tracked_character_ids
 
       WandererApp.Cache.insert_or_update(
         "map_#{map_id}:invalidate_character_ids",
@@ -86,8 +80,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         end
       )
 
-      WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
-
       :ok
     end)
   end
@@ -95,7 +87,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def untrack_characters(map_id, character_ids) do
     character_ids
     |> Enum.each(fn character_id ->
-      is_character_map_active?(map_id, character_id)
+      character_map_active = is_character_map_active?(map_id, character_id)
+
+      character_map_active
       |> untrack_character(map_id, character_id)
     end)
   end

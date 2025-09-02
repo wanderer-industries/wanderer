@@ -581,18 +581,27 @@ defmodule WandererApp.Map.Server.Impl do
         {:ok, presence_character_ids} =
           WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-        characters_ids =
-          map_id
-          |> WandererApp.Map.get_map!()
-          |> Map.get(:characters, [])
+        {:ok, old_presence_character_ids} =
+          WandererApp.Cache.lookup("map_#{map_id}:old_presence_character_ids", [])
+
+        new_present_character_ids =
+          presence_character_ids
+          |> Enum.filter(fn character_id ->
+            not Enum.member?(old_presence_character_ids, character_id)
+          end)
 
         not_present_character_ids =
-          characters_ids
+          old_presence_character_ids
           |> Enum.filter(fn character_id ->
             not Enum.member?(presence_character_ids, character_id)
           end)
 
-        CharactersImpl.track_characters(map_id, presence_character_ids)
+        WandererApp.Cache.insert(
+          "map_#{map_id}:old_presence_character_ids",
+          presence_character_ids
+        )
+
+        CharactersImpl.track_characters(map_id, new_present_character_ids)
         CharactersImpl.untrack_characters(map_id, not_present_character_ids)
 
         broadcast!(

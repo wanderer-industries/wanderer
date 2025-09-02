@@ -54,6 +54,7 @@ defmodule WandererApp.Application do
        child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
       {PartitionSupervisor,
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
+      WandererAppWeb.PresenceGracePeriodManager,
       WandererAppWeb.Presence,
       WandererAppWeb.Endpoint
     ]
