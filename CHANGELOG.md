@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.77.4](https://github.com/wanderer-industries/wanderer/compare/v1.77.3...v1.77.4) (2025-09-02)
+
+
+
+
+### Bug Fixes:
+
+* pr feedback
+
+* ensure pub/sub occurs after acl api change
+
 ## [v1.77.3](https://github.com/wanderer-industries/wanderer/compare/v1.77.2...v1.77.3) (2025-08-29)
 
 
