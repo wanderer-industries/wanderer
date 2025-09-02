@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.5](https://github.com/wanderer-industries/wanderer/compare/v1.77.4...v1.77.5) (2025-09-02)
+
+
+
+
+### Bug Fixes:
+
+* resolve tracking issues
+
 ## [v1.77.4](https://github.com/wanderer-industries/wanderer/compare/v1.77.3...v1.77.4) (2025-09-02)
 
 
