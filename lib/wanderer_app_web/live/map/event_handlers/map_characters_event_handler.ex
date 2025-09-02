@@ -244,38 +244,41 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     {:ok, user_settings} =
       WandererApp.MapUserSettingsRepo.create_or_update(map_id, current_user_id, settings)
 
-    {:ok, map_user_settings} =
-      user_settings
-      |> WandererApp.Api.MapUserSettings.update_main_character(%{
-        main_character_eve_id: "#{character_eve_id}"
-      })
+    case Ash.update(user_settings, %{main_character_eve_id: "#{character_eve_id}"},
+           action: :update_main_character
+         ) do
+      {:ok, map_user_settings} ->
+        {:ok, tracking_data} =
+          WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
 
-    {:ok, tracking_data} =
-      WandererApp.Character.TrackingUtils.build_tracking_data(map_id, current_user_id)
+        {main_character_id, main_character_eve_id} =
+          WandererApp.Character.TrackingUtils.get_main_character(
+            map_user_settings,
+            current_user_characters,
+            current_user_characters
+          )
+          |> case do
+            {:ok, main_character} when not is_nil(main_character) ->
+              {main_character.id, main_character.eve_id}
 
-    {main_character_id, main_character_eve_id} =
-      WandererApp.Character.TrackingUtils.get_main_character(
-        map_user_settings,
-        current_user_characters,
-        current_user_characters
-      )
-      |> case do
-        {:ok, main_character} when not is_nil(main_character) ->
-          {main_character.id, main_character.eve_id}
+            _ ->
+              {nil, nil}
+          end
 
-        _ ->
-          {nil, nil}
-      end
+        Process.send_after(self(), %{event: :refresh_user_characters}, 50)
 
-    Process.send_after(self(), %{event: :refresh_user_characters}, 50)
+        {:reply, %{data: tracking_data},
+         socket
+         |> assign(
+           map_user_settings: map_user_settings,
+           main_character_id: main_character_id,
+           main_character_eve_id: main_character_eve_id
+         )}
 
-    {:reply, %{data: tracking_data},
-     socket
-     |> assign(
-       map_user_settings: map_user_settings,
-       main_character_id: main_character_id,
-       main_character_eve_id: main_character_eve_id
-     )}
+      {:error, reason} ->
+        Logger.error("Failed to update main character: #{inspect(reason)}")
+        {:reply, %{error: "Failed to update main character"}, socket}
+    end
   end
 
   def handle_ui_event(
