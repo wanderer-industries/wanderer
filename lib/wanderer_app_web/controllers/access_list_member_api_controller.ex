@@ -395,12 +395,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                    :acl_member_removed
                  ) do
               :ok ->
-                # Also broadcast internal PubSub message for map servers
-                Phoenix.PubSub.broadcast(
-                  WandererApp.PubSub,
-                  "acls:#{acl_id}",
-                  {:acl_updated, %{acl_id: acl_id}}
-                )
+                broadcast_acl_updated(acl_id)
 
                 json(conn, %{ok: true})
 
@@ -410,11 +405,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
                 )
 
                 # Still broadcast internal message even if external broadcast fails
-                Phoenix.PubSub.broadcast(
-                  WandererApp.PubSub,
-                  "acls:#{acl_id}",
-                  {:acl_updated, %{acl_id: acl_id}}
-                )
+                broadcast_acl_updated(acl_id)
 
                 json(conn, %{ok: true})
             end
