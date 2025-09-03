@@ -1,7 +1,7 @@
-import { useReactFlow } from 'reactflow';
-import { useCallback, useRef } from 'react';
-import { CommandSelectSystems } from '@/hooks/Mapper/types';
 import { OnMapSelectionChange } from '@/hooks/Mapper/components/map/map.types.ts';
+import { CommandSelectSystems } from '@/hooks/Mapper/types';
+import { useCallback, useRef } from 'react';
+import { useReactFlow } from 'reactflow';
 
 export const useSelectSystems = (onSelectionChange: OnMapSelectionChange) => {
   const rf = useReactFlow();

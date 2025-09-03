@@ -44,16 +44,24 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
             current_user: current_user,
             tracked_characters: tracked_characters,
             map_id: map_id,
-            map_user_settings: map_user_settings
+            map_user_settings: map_user_settings,
+            main_character_eve_id: main_character_eve_id,
+            following_character_eve_id: following_character_eve_id
           }
         } = socket
       ) do
     character =
-      tracked_characters
-      |> Enum.find(fn tracked_character -> tracked_character.id == character_id end)
+      if is_nil(character_id) do
+        tracked_characters
+        |> Enum.find(fn tracked_character ->
+          tracked_character.eve_id == (following_character_eve_id || main_character_eve_id)
+        end)
+      else
+        tracked_characters
+        |> Enum.find(fn tracked_character -> tracked_character.id == character_id end)
+      end
 
-    is_user_character =
-      not is_nil(character)
+    is_user_character = not is_nil(character)
 
     is_select_on_spash =
       map_user_settings
@@ -61,10 +69,9 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("select_on_spash")
 
     is_following =
-      case WandererApp.MapUserSettingsRepo.get(map_id, current_user.id) do
-        {:ok, %{following_character_eve_id: following_character_eve_id}}
-        when not is_nil(following_character_eve_id) ->
-          is_user_character && following_character_eve_id == character.eve_id
+      case is_user_character && not is_nil(following_character_eve_id) do
+        true ->
+          following_character_eve_id == character.eve_id
 
         _ ->
           false
@@ -77,8 +84,17 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     else
       # Always select the system when auto-select is enabled (following or select_on_spash).
       # The frontend will handle deselecting other systems
+      #
+      select_solar_system_id =
+        if not is_nil(solar_system_id) do
+          "#{solar_system_id}"
+        else
+          {:ok, character} = WandererApp.Character.get_map_character(map_id, character.id)
+          "#{character.solar_system_id}"
+        end
+
       socket
-      |> MapEventHandler.push_map_event("select_system", solar_system_id)
+      |> MapEventHandler.push_map_event("select_system", select_solar_system_id)
     end
   end
 

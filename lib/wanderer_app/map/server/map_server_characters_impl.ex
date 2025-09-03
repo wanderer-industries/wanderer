@@ -216,8 +216,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     {:ok, presence_character_ids} =
       WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-    WandererApp.Cache.lookup!("maps:#{map_id}:tracked_characters", [])
-    |> Enum.filter(fn character_id -> character_id in presence_character_ids end)
+    presence_character_ids
     |> Enum.map(fn character_id ->
       Task.start_link(fn ->
         character_updates =

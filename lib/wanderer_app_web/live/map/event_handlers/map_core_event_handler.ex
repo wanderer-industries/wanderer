@@ -703,6 +703,18 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     Process.send_after(self(), %{event: :load_map_pings}, 200)
 
+    Process.send_after(
+      self(),
+      %{
+        event: :maybe_select_system,
+        payload: %{
+          character_id: main_character_id,
+          solar_system_id: nil
+        }
+      },
+      200
+    )
+
     if needs_tracking_setup do
       Process.send_after(self(), %{event: :show_tracking}, 10)
 

@@ -1,7 +1,8 @@
+import { useEventBuffer } from '@/hooks/Mapper/hooks';
+import usePageVisibility from '@/hooks/Mapper/hooks/usePageVisibility.ts';
+
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { RefObject, useCallback, useEffect, useRef } from 'react';
-import debounce from 'lodash.debounce';
-import usePageVisibility from '@/hooks/Mapper/hooks/usePageVisibility.ts';
 
 // const inIndex = 0;
 // const prevEventTime = +new Date();
@@ -10,9 +11,27 @@ const LAST_VERSION_KEY = 'wandererLastVersion';
 // @ts-ignore
 export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRef: RefObject<any>) => {
   const visible = usePageVisibility();
+
   const wasHiddenOnce = useRef(false);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
+
+  // @ts-ignore
+  const handleBufferedEvent = useCallback(({ type, body }) => {
+    if (!visibleRef.current) {
+      return;
+    }
+
+    handlerRefs.forEach(ref => {
+      if (!ref.current) {
+        return;
+      }
+
+      ref.current?.command(type, body);
+    });
+  }, []);
+
+  const { handleEvent: handleMapEvent } = useEventBuffer<any>(handleBufferedEvent);
 
   // TODO - do not delete THIS code it needs for debug
   // const [record, setRecord] = useLocalStorageState<boolean>('record', {
@@ -53,52 +72,6 @@ export const useMapperHandlers = (handlerRefs: RefObject<MapHandlers>[], hooksRe
     },
     [hooksRef.current],
   );
-
-  // @ts-ignore
-  const eventsBufferRef = useRef<{ type; body }[]>([]);
-
-  const eventTick = useCallback(
-    debounce(() => {
-      if (eventsBufferRef.current.length === 0) {
-        return;
-      }
-
-      const { type, body } = eventsBufferRef.current.shift()!;
-      handlerRefs.forEach(ref => {
-        if (!ref.current) {
-          return;
-        }
-
-        ref.current?.command(type, body);
-      });
-
-      // TODO - do not delete THIS code it needs for debug
-      // console.log('JOipP', `Tick Buff`, eventsBufferRef.current.length);
-
-      if (eventsBufferRef.current.length > 0) {
-        eventTick();
-      }
-    }, 10),
-    [],
-  );
-  const eventTickRef = useRef(eventTick);
-  eventTickRef.current = eventTick;
-
-  // @ts-ignore
-  const handleMapEvent = useCallback(({ type, body }) => {
-    // TODO - do not delete THIS code it needs for debug
-    // const currentTime = +new Date();
-    // const timeDiff = currentTime - prevEventTime;
-    // prevEventTime = currentTime;
-    // console.log('JOipP', `IN [${inIndex++}] [${timeDiff}] ${getFormattedTime()}`, { type, body });
-
-    if (!eventTickRef.current || !visibleRef.current) {
-      return;
-    }
-
-    eventsBufferRef.current.push({ type, body });
-    eventTickRef.current();
-  }, []);
 
   useEffect(() => {
     if (!visible && !wasHiddenOnce.current) {

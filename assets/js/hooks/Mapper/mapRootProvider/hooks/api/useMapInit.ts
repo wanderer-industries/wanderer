@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
-import { CommandInit } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
+import { CommandInit } from '@/hooks/Mapper/types';
+import { useCallback } from 'react';
 
 export const useMapInit = () => {
   const { update } = useMapRootState();
