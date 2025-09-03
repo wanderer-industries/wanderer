@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Node, useOnViewportChange, useReactFlow } from 'reactflow';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 import { SolarSystemRawType } from '@/hooks/Mapper/types';
+import { useCallback, useEffect, useRef } from 'react';
+import { Node, useOnViewportChange, useReactFlow } from 'reactflow';
 
 const useThrottle = () => {
   const throttleSeed = useRef<number | null>(null);

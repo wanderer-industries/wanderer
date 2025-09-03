@@ -1,4 +1,6 @@
 import { MapData, useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
+import { useEventBuffer } from '@/hooks/Mapper/hooks';
+import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { CommandInit } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useCallback, useRef } from 'react';
 import { useReactFlow } from 'reactflow';
@@ -10,6 +12,20 @@ export const useMapInit = () => {
 
   const ref = useRef({ rf, data, update });
   ref.current = { update, data, rf };
+
+  const updateSystems = useCallback((systems: SolarSystemRawType[]) => {
+    const { rf } = ref.current;
+    rf.setNodes(systems.map(convertSystem2Node));
+  }, []);
+
+  const { handleEvent: handleUpdateSystems } = useEventBuffer<any>(updateSystems);
+
+  const updateEdges = useCallback((connections: SolarSystemConnection[]) => {
+    const { rf } = ref.current;
+    rf.setEdges(connections.map(convertConnection2Edge));
+  }, []);
+
+  const { handleEvent: handleUpdateConnections } = useEventBuffer<any>(updateEdges);
 
   return useCallback(
     ({
@@ -24,7 +40,6 @@ export const useMapInit = () => {
       hubs,
     }: CommandInit) => {
       const { update } = ref.current;
-      const { rf } = ref.current;
 
       const updateData: Partial<MapData> = {};
 
@@ -63,11 +78,13 @@ export const useMapInit = () => {
       update(updateData);
 
       if (systems) {
-        rf.setNodes(systems.map(convertSystem2Node));
+        handleUpdateSystems(systems);
+        // rf.setNodes(systems.map(convertSystem2Node));
       }
 
       if (connections) {
-        rf.setEdges(connections.map(convertConnection2Edge));
+        handleUpdateConnections(connections);
+        // rf.setEdges(connections.map(convertConnection2Edge));
       }
     },
     [],

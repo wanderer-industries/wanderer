@@ -1,3 +1,10 @@
+import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
+import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
+import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
+import type { PanelPosition } from '@reactflow/core';
+import clsx from 'clsx';
 import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   Background,
@@ -16,8 +23,6 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import classes from './Map.module.scss';
 import { MapProvider, useMapState } from './MapProvider';
-import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
-import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
   ContextMenuConnection,
   ContextMenuRoot,
@@ -26,14 +31,9 @@ import {
   useContextMenuRootHandlers,
 } from './components';
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
-import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
-import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
-import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
-import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
-import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
-import clsx from 'clsx';
+import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
-import type { PanelPosition } from '@reactflow/core';
+import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
