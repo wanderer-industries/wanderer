@@ -708,7 +708,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       %{
         event: :maybe_select_system,
         payload: %{
-          character_id: main_character_id,
+          character_id: nil,
           solar_system_id: nil
         }
       },
