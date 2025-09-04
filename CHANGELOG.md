@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.10](https://github.com/wanderer-industries/wanderer/compare/v1.77.9...v1.77.10) (2025-09-04)
+
+
+
+
+### Bug Fixes:
+
+* Removed invalid invite options
+
 ## [v1.77.9](https://github.com/wanderer-industries/wanderer/compare/v1.77.8...v1.77.9) (2025-09-04)
 
 
