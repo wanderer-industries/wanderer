@@ -243,7 +243,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           DateTime.diff(DateTime.utc_now(), connection_start_time, :hour) >=
             connection_auto_eol_hours &&
           is_connection_valid(
+            map_id,
             :wormholes,
+            solar_system_source_id,
+            solar_system_target_id
+          ) or is_connection_valid(
+            map_id,
+            :"locked and chains",
             solar_system_source_id,
             solar_system_target_id
           )
@@ -289,7 +295,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         is_connection_valid =
           is_connection_valid(
+            map_id,
             :wormholes,
+            solar_system_source_id,
+            solar_system_target_id
+          ) or is_connection_valid(
+            map_id,
+            :"locked and chains",
             solar_system_source_id,
             solar_system_target_id
           )
@@ -344,6 +356,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       :ok ->
         connection_type =
           is_connection_valid(
+            map_id,
             :stargates,
             old_location.solar_system_id,
             location.solar_system_id
@@ -494,6 +507,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         not is_prohibited_system_class?(system_static_info.system_class) and
           @known_space |> Enum.member?(system_static_info.system_class)
 
+      :"locked and chains" ->
+        not is_prohibited_system_class?(system_static_info.system_class)
+
       :all ->
         not is_prohibited_system_class?(system_static_info.system_class)
 
@@ -521,11 +537,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
         )
 
-  def is_connection_valid(:all, _from_solar_system_id, _to_solar_system_id), do: true
+  def is_connection_valid(_map_id, :all, _from_solar_system_id, _to_solar_system_id), do: true
 
-  def is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
+  def is_connection_valid(_map_id, :none, _from_solar_system_id, _to_solar_system_id), do: false
 
-  def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
+  def is_connection_valid(map_id, scope, from_solar_system_id, to_solar_system_id)
       when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) do
     with {:ok, known_jumps} <- find_solar_system_jump(from_solar_system_id, to_solar_system_id),
          {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
@@ -548,13 +564,41 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             not is_prohibited_system_class?(from_system_static_info.system_class) and
             not is_prohibited_system_class?(to_system_static_info.system_class) and
             not (known_jumps |> Enum.empty?())
+
+        :"locked and chains" ->
+          _is_locked_and_chains_connection_valid(map_id, from_system_static_info, from_solar_system_id, to_system_static_info, to_solar_system_id)
       end
     else
       _ -> false
     end
   end
 
-  def is_connection_valid(_scope, _from_solar_system_id, _to_solar_system_id), do: false
+  def is_connection_valid(_map_id, _scope, _from_solar_system_id, _to_solar_system_id), do: false
+
+  defp _is_locked_and_chains_connection_valid(map_id, from_system_static_info, from_solar_system_id, to_system_static_info, to_solar_system_id) do
+    from_is_w_space = from_system_static_info.system_class in @wh_space
+    from_is_k_space = from_system_static_info.system_class in @known_space
+
+    to_is_w_space = to_system_static_info.system_class in @wh_space
+    to_is_k_space = to_system_static_info.system_class in @known_space
+
+    from_system = WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: from_solar_system_id})
+    to_system = WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: to_solar_system_id})
+
+    from_is_locked = not is_nil(from_system) and from_system.locked
+    to_is_locked = not is_nil(to_system) and to_system.locked
+
+    # 1. Accept wormhole to wormhole (chains)
+    wormhole_to_wormhole_space = from_is_w_space and to_is_w_space
+
+    # 2. Accept wormhole to known space (chain exits)
+    wormhole_to_known_space = (from_is_w_space and to_is_k_space) or (from_is_k_space and to_is_w_space)
+
+    # 3. Accept locked to anywhere (chain entries and direct k-space connections)
+    locked_system_to_anywhere = from_is_locked or to_is_locked
+
+    wormhole_to_wormhole_space or wormhole_to_known_space or locked_system_to_anywhere
+  end
 
   def get_connection_mark_eol_time(map_id, connection_id, default \\ DateTime.utc_now()) do
     WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
