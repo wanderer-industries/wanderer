@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.9](https://github.com/wanderer-industries/wanderer/compare/v1.77.8...v1.77.9) (2025-09-04)
+
+
+
+
+### Bug Fixes:
+
+* Auto select following char system on start
+
 ## [v1.77.8](https://github.com/wanderer-industries/wanderer/compare/v1.77.7...v1.77.8) (2025-09-03)
 
 
