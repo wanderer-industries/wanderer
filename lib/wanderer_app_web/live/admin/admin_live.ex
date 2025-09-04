@@ -318,11 +318,18 @@ defmodule WandererAppWeb.AdminLive do
   end
 
   defp apply_action(socket, :add_invite_link, _params, uri) do
+    invite_types =
+      if socket.assigns.map_subscriptions_enabled? do
+        [%{label: "User", id: :user}, %{label: "Admin", id: :admin}]
+      else
+        [%{label: "User", id: :user}]
+      end
+
     socket
     |> assign(:active_page, :admin)
     |> assign(:uri, URI.parse(uri))
     |> assign(:page_title, "Add Invite Link")
-    |> assign(:invite_types, [%{label: "User", id: :user}, %{label: "Admin", id: :admin}])
+    |> assign(:invite_types, invite_types)
     |> assign(:valid_types, [
       %{label: "1D", id: 1},
       %{label: "1W", id: 7},
