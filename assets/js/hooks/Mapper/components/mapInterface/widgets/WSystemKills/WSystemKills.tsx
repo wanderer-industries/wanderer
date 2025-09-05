@@ -17,8 +17,6 @@ const SystemKillsContent = () => {
 
   const [systemId] = selectedSystems || [];
 
-  const systemStaticInfo = getSystemStaticInfo(systemId)!;
-
   const { kills, isLoading, error } = useSystemKills({
     systemId,
     outCommand,
@@ -30,15 +28,26 @@ const SystemKillsContent = () => {
   const showLoading = isLoading && kills.length === 0;
 
   const filteredKills = useMemo(() => {
-    if (!settingsKills.whOnly || !settingsKills.showAll) return kills;
-    return kills.filter(kill => {
-      if (!systemStaticInfo) {
-        console.warn(`System with id ${kill.solar_system_id} not found.`);
-        return false;
+    if (!settingsKills.whOnly) return kills;
+
+    const whBySystem = new Map<number, boolean>();
+    const wormholeKills = kills.filter(kill => {
+      const id = Number(kill.solar_system_id);
+      let isWH = whBySystem.get(id);
+      if (isWH === undefined) {
+        const info = getSystemStaticInfo(id);
+        if (!info || info.system_class == null) {
+          isWH = false;
+        } else {
+          isWH = isWormholeSpace(Number(info.system_class));
+        }
+        whBySystem.set(id, isWH);
       }
-      return isWormholeSpace(systemStaticInfo.system_class);
+      return isWH;
     });
-  }, [kills, settingsKills.whOnly, systemStaticInfo, settingsKills.showAll]);
+
+    return wormholeKills;
+  }, [kills, settingsKills.whOnly]);
 
   if (!isSubscriptionActive) {
     return (
