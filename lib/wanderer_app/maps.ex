@@ -94,7 +94,7 @@ defmodule WandererApp.Maps do
     end
   end
 
-  def load_characters(map, user_id) do
+  def load_characters(map, user_id) when not is_nil(map) do
     {:ok, user_characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
@@ -116,6 +116,8 @@ defmodule WandererApp.Maps do
 
     {:ok, %{characters: characters}}
   end
+
+  def load_characters(_map, _user_id), do: {:ok, %{characters: []}}
 
   def map_character(
         %{

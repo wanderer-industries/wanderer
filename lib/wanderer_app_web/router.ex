@@ -70,7 +70,8 @@ defmodule WandererAppWeb.Router do
     "'self'",
     "https://api.appzi.io",
     "https://www.googletagmanager.com",
-    "https://www.google-analytics.com"
+    "https://www.google-analytics.com",
+    "https://*.google-analytics.com"
   ]
 
   # Define sandbox values individually to ensure proper spacing
