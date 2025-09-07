@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.13](https://github.com/wanderer-industries/wanderer/compare/v1.77.12...v1.77.13) (2025-09-07)
+
+
+
+
+### Bug Fixes:
+
+* Updated character tracking, added an extra check for offline characters to reduce errors
+
 ## [v1.77.12](https://github.com/wanderer-industries/wanderer/compare/v1.77.11...v1.77.12) (2025-09-07)
 
 
