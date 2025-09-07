@@ -11,7 +11,7 @@ defmodule WandererAppWeb.PresenceGracePeriodManager do
   require Logger
 
   # 30 minutes
-  @grace_period_ms :timer.minutes(30)
+  @grace_period_ms :timer.minutes(10)
   @check_remove_queue_interval :timer.seconds(30)
 
   defstruct pending_removals: %{}, timers: %{}, to_remove: []
