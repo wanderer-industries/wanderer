@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.12](https://github.com/wanderer-industries/wanderer/compare/v1.77.11...v1.77.12) (2025-09-07)
+
+
+
+
+### Bug Fixes:
+
+* Decreased character tracking grace period
+
 ## [v1.77.11](https://github.com/wanderer-industries/wanderer/compare/v1.77.10...v1.77.11) (2025-09-07)
 
 
