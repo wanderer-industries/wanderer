@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.11](https://github.com/wanderer-industries/wanderer/compare/v1.77.10...v1.77.11) (2025-09-07)
+
+
+
+
+### Bug Fixes:
+
+* Fixed CSP errors
+
 ## [v1.77.10](https://github.com/wanderer-industries/wanderer/compare/v1.77.9...v1.77.10) (2025-09-04)
 
 
