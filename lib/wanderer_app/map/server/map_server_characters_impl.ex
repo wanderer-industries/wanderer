@@ -213,85 +213,100 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   def update_characters(%{map_id: map_id} = state) do
-    {:ok, presence_character_ids} =
-      WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
+    try do
+      {:ok, presence_character_ids} =
+        WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-    presence_character_ids
-    |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        character_updates =
-          maybe_update_online(map_id, character_id) ++
-            maybe_update_tracking_status(map_id, character_id) ++
-            maybe_update_location(map_id, character_id) ++
-            maybe_update_ship(map_id, character_id) ++
-            maybe_update_alliance(map_id, character_id) ++
-            maybe_update_corporation(map_id, character_id)
+      presence_character_ids
+      |> Task.async_stream(
+        fn character_id ->
+          character_updates =
+            maybe_update_online(map_id, character_id) ++
+              maybe_update_tracking_status(map_id, character_id) ++
+              maybe_update_location(map_id, character_id) ++
+              maybe_update_ship(map_id, character_id) ++
+              maybe_update_alliance(map_id, character_id) ++
+              maybe_update_corporation(map_id, character_id)
 
-        character_updates
-        |> Enum.filter(fn update -> update != :skip end)
-        |> Enum.map(fn update ->
-          update
-          |> case do
-            {:character_location, location_info, old_location_info} ->
-              update_location(
-                character_id,
-                location_info,
-                old_location_info,
-                state
-              )
+          character_updates
+          |> Enum.filter(fn update -> update != :skip end)
+          |> Enum.map(fn update ->
+            update
+            |> case do
+              {:character_location, location_info, old_location_info} ->
+                update_location(
+                  character_id,
+                  location_info,
+                  old_location_info,
+                  state
+                )
 
-              :broadcast
+                :broadcast
 
-            {:character_ship, _info} ->
-              :broadcast
+              {:character_ship, _info} ->
+                :broadcast
 
-            {:character_online, _info} ->
-              :broadcast
+              {:character_online, _info} ->
+                :broadcast
 
-            {:character_tracking, _info} ->
-              :broadcast
+              {:character_tracking, _info} ->
+                :broadcast
 
-            {:character_alliance, _info} ->
-              WandererApp.Cache.insert_or_update(
-                "map_#{map_id}:invalidate_character_ids",
-                [character_id],
-                fn ids ->
-                  [character_id | ids]
-                end
-              )
+              {:character_alliance, _info} ->
+                WandererApp.Cache.insert_or_update(
+                  "map_#{map_id}:invalidate_character_ids",
+                  [character_id],
+                  fn ids ->
+                    [character_id | ids] |> Enum.uniq()
+                  end
+                )
 
-              :broadcast
+                :broadcast
 
-            {:character_corporation, _info} ->
-              WandererApp.Cache.insert_or_update(
-                "map_#{map_id}:invalidate_character_ids",
-                [character_id],
-                fn ids ->
-                  [character_id | ids]
-                end
-              )
+              {:character_corporation, _info} ->
+                WandererApp.Cache.insert_or_update(
+                  "map_#{map_id}:invalidate_character_ids",
+                  [character_id],
+                  fn ids ->
+                    [character_id | ids] |> Enum.uniq()
+                  end
+                )
 
-              :broadcast
+                :broadcast
 
-            _ ->
-              :skip
-          end
-        end)
-        |> Enum.filter(fn update -> update != :skip end)
-        |> Enum.uniq()
-        |> Enum.each(fn update ->
-          case update do
-            :broadcast ->
-              update_character(map_id, character_id)
+              _ ->
+                :skip
+            end
+          end)
+          |> Enum.filter(fn update -> update != :skip end)
+          |> Enum.uniq()
+          |> Enum.each(fn update ->
+            case update do
+              :broadcast ->
+                update_character(map_id, character_id)
 
-            _ ->
-              :ok
-          end
-        end)
+              _ ->
+                :ok
+            end
+          end)
 
-        :ok
+          :ok
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> Logger.error("Error in update_characters: #{inspect(reason)}")
       end)
-    end)
+    rescue
+      e ->
+        Logger.error("""
+        [Map Server] update_characters => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
   end
 
   defp update_character(map_id, character_id) do

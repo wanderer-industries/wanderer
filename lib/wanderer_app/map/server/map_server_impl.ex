@@ -32,7 +32,7 @@ defmodule WandererApp.Map.Server.Impl do
   @backup_state_timeout :timer.minutes(1)
   @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
-  @update_tracked_characters_timeout :timer.seconds(1)
+  @update_tracked_characters_timeout :timer.minutes(1)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -96,7 +96,13 @@ defmodule WandererApp.Map.Server.Impl do
           )
 
           Process.send_after(self(), :update_characters, @update_characters_timeout)
-          Process.send_after(self(), :update_tracked_characters, 100)
+
+          Process.send_after(
+            self(),
+            :update_tracked_characters,
+            @update_tracked_characters_timeout
+          )
+
           Process.send_after(self(), :update_presence, @update_presence_timeout)
           Process.send_after(self(), :cleanup_connections, 5_000)
           Process.send_after(self(), :cleanup_systems, 10_000)

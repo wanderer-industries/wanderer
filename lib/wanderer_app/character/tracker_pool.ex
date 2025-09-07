@@ -18,7 +18,7 @@ defmodule WandererApp.Character.TrackerPool do
 
   @update_location_interval :timer.seconds(1)
   @update_online_interval :timer.seconds(5)
-  @check_offline_characters_interval :timer.minutes(2)
+  @check_offline_characters_interval :timer.minutes(5)
   @check_online_errors_interval :timer.minutes(1)
   @check_ship_errors_interval :timer.minutes(1)
   @check_location_errors_interval :timer.minutes(1)
@@ -124,7 +124,7 @@ defmodule WandererApp.Character.TrackerPool do
     Process.send_after(self(), :check_online_errors, :timer.seconds(60))
     Process.send_after(self(), :check_ship_errors, :timer.seconds(90))
     Process.send_after(self(), :check_location_errors, :timer.seconds(120))
-    # Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
+    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
     Process.send_after(self(), :update_location, 300)
     Process.send_after(self(), :update_ship, 500)
     Process.send_after(self(), :update_info, 1500)
@@ -176,11 +176,15 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.each(fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
-          character_id
-        ])
-      end)
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.Character.Tracker.update_online(character_id)
+        end,
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task,
+        timeout: :timer.seconds(5)
+      )
+      |> Enum.each(fn _result -> :ok end)
     rescue
       e ->
         Logger.error("""
@@ -234,17 +238,7 @@ defmodule WandererApp.Character.TrackerPool do
       characters
       |> Task.async_stream(
         fn character_id ->
-          if WandererApp.Character.can_pause_tracking?(character_id) do
-            WandererApp.TaskWrapper.start_link(
-              WandererApp.Character.Tracker,
-              :check_offline,
-              [
-                character_id
-              ]
-            )
-          else
-            :ok
-          end
+          WandererApp.Character.Tracker.check_offline(character_id)
         end,
         timeout: :timer.seconds(15),
         max_concurrency: System.schedulers_online(),
@@ -397,11 +391,15 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.each(fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
-          character_id
-        ])
-      end)
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.Character.Tracker.update_location(character_id)
+        end,
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task,
+        timeout: :timer.seconds(5)
+      )
+      |> Enum.each(fn _result -> :ok end)
     rescue
       e ->
         Logger.error("""
@@ -434,11 +432,15 @@ defmodule WandererApp.Character.TrackerPool do
 
     try do
       characters
-      |> Enum.each(fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
-          character_id
-        ])
-      end)
+      |> Task.async_stream(
+        fn character_id ->
+          WandererApp.Character.Tracker.update_ship(character_id)
+        end,
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task,
+        timeout: :timer.seconds(5)
+      )
+      |> Enum.each(fn _result -> :ok end)
     rescue
       e ->
         Logger.error("""
@@ -473,9 +475,7 @@ defmodule WandererApp.Character.TrackerPool do
       characters
       |> Task.async_stream(
         fn character_id ->
-          WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_info, [
-            character_id
-          ])
+          WandererApp.Character.Tracker.update_info(character_id)
         end,
         timeout: :timer.seconds(15),
         max_concurrency: System.schedulers_online(),
@@ -519,9 +519,7 @@ defmodule WandererApp.Character.TrackerPool do
       characters
       |> Task.async_stream(
         fn character_id ->
-          WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_wallet, [
-            character_id
-          ])
+          WandererApp.Character.Tracker.update_wallet(character_id)
         end,
         timeout: :timer.seconds(15),
         max_concurrency: System.schedulers_online(),

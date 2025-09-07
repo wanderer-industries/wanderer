@@ -13,10 +13,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         }
 
   @check_start_queue_interval :timer.seconds(1)
-  @garbage_collection_interval :timer.minutes(15)
+  @garbage_collection_interval :timer.minutes(5)
   @untrack_characters_interval :timer.minutes(5)
-  @inactive_character_timeout :timer.minutes(10)
-  @untrack_character_timeout :timer.minutes(10)
+  @inactive_character_timeout :timer.minutes(5)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -116,13 +115,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def add_to_untrack_queue(map_id, character_id) do
-    if not WandererApp.Cache.has_key?("#{map_id}:#{character_id}:untrack_requested") do
-      WandererApp.Cache.insert(
-        "#{map_id}:#{character_id}:untrack_requested",
-        DateTime.utc_now()
-      )
-    end
-
     WandererApp.Cache.insert_or_update(
       "character_untrack_queue",
       [{map_id, character_id}],
@@ -134,8 +126,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def remove_from_untrack_queue(map_id, character_id) do
-    WandererApp.Cache.delete("#{map_id}:#{character_id}:untrack_requested")
-
     WandererApp.Cache.insert_or_update(
       "character_untrack_queue",
       [],
@@ -239,50 +229,32 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     WandererApp.Cache.lookup!("character_untrack_queue", [])
     |> Task.async_stream(
       fn {map_id, character_id} ->
-        untrack_timeout_reached =
-          if WandererApp.Cache.has_key?("#{map_id}:#{character_id}:untrack_requested") do
-            untrack_requested =
-              WandererApp.Cache.lookup!(
-                "#{map_id}:#{character_id}:untrack_requested",
-                DateTime.utc_now()
-              )
+        remove_from_untrack_queue(map_id, character_id)
 
-            duration = DateTime.diff(DateTime.utc_now(), untrack_requested, :millisecond)
-            duration >= @untrack_character_timeout
-          else
-            false
-          end
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
 
-        Logger.debug(fn -> "Untrack timeout reached: #{inspect(untrack_timeout_reached)}" end)
+        {:ok, character_state} =
+          WandererApp.Character.Tracker.update_settings(character_id, %{
+            map_id: map_id,
+            track: false
+          })
 
-        if untrack_timeout_reached do
-          remove_from_untrack_queue(map_id, character_id)
+        {:ok, character} = WandererApp.Character.get_character(character_id)
 
-          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
-          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
-          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+        {:ok, _updated} =
+          WandererApp.MapCharacterSettingsRepo.update(map_id, character_id, %{
+            ship: character.ship,
+            ship_name: character.ship_name,
+            ship_item_id: character.ship_item_id,
+            solar_system_id: character.solar_system_id,
+            structure_id: character.structure_id,
+            station_id: character.station_id
+          })
 
-          {:ok, character_state} =
-            WandererApp.Character.Tracker.update_settings(character_id, %{
-              map_id: map_id,
-              track: false
-            })
-
-          {:ok, character} = WandererApp.Character.get_character(character_id)
-
-          {:ok, _updated} =
-            WandererApp.MapCharacterSettingsRepo.update(map_id, character_id, %{
-              ship: character.ship,
-              ship_name: character.ship_name,
-              ship_item_id: character.ship_item_id,
-              solar_system_id: character.solar_system_id,
-              structure_id: character.structure_id,
-              station_id: character.station_id
-            })
-
-          WandererApp.Character.update_character_state(character_id, character_state)
-          WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
-        end
+        WandererApp.Character.update_character_state(character_id, character_state)
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
       end,
       max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
