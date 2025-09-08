@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.14](https://github.com/wanderer-industries/wanderer/compare/v1.77.13...v1.77.14) (2025-09-08)
+
+
+
+
+### Bug Fixes:
+
+* Fixed issue with loading connection info
+
 ## [v1.77.13](https://github.com/wanderer-industries/wanderer/compare/v1.77.12...v1.77.13) (2025-09-07)
 
 
