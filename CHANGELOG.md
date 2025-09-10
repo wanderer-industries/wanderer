@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.15](https://github.com/wanderer-industries/wanderer/compare/v1.77.14...v1.77.15) (2025-09-10)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix problem with unnecessary rerenders and loads routes if move/positioning widgets.
+
 ## [v1.77.14](https://github.com/wanderer-industries/wanderer/compare/v1.77.13...v1.77.14) (2025-09-08)
 
 
