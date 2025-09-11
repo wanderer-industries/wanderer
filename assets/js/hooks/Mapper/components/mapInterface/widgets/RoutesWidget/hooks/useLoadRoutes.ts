@@ -3,6 +3,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { LoadRoutesCommand } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
+import { flattenValues } from '@/hooks/Mapper/utils/flattenValues.ts';
 
 function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T>();
@@ -64,12 +65,8 @@ export const useLoadRoutes = ({
     systems?.length,
     connections,
     hubs,
-    routesSettings,
-    ...Object.keys(routesSettings)
-      .sort()
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      .map(x => routesSettings[x]),
+    // we need make it flat recursively
+    ...flattenValues(routesSettings),
     ...deps,
   ]);
 
