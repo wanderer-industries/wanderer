@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.17](https://github.com/wanderer-industries/wanderer/compare/v1.77.16...v1.77.17) (2025-09-11)
+
+
+
+
+### Bug Fixes:
+
+* Updated ACL create/update APIs
+
 ## [v1.77.16](https://github.com/wanderer-industries/wanderer/compare/v1.77.15...v1.77.16) (2025-09-11)
 
 
