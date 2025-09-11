@@ -34,7 +34,7 @@
           </button>
         </:action>
       </.table>
-      <.link class="btn mt-2 w-full btn-neutral rounded-none" patch={~p"/access-lists/new"}>
+      <.link :if={@allow_acl_creation} class="btn mt-2 w-full btn-neutral rounded-none" patch={~p"/access-lists/new"}>
         <.icon name="hero-plus-solid" class="w-6 h-6" />
         <h3 class="card-title text-center text-md">New Access List</h3>
       </.link>
@@ -142,10 +142,10 @@
       placeholder="Select an owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
-    
+
 <!-- Divider between above inputs and the API key section -->
     <hr class="my-4 border-gray-600" />
-    
+
 <!-- API Key Section with grid layout -->
     <div class="mt-2">
       <label class="block text-sm font-medium text-gray-200 mb-1">ACL API key</label>
@@ -195,78 +195,13 @@
 </.modal>
 
 <.modal
-  :if={@live_action in [:add_members]}
+  :if={@live_action in [:add_members] && can_add_members?(@access_list, @current_user)}
   title="Add Member"
   class="!w-[500px]"
   id="add_member"
   show
   on_cancel={JS.patch(~p"/access-lists/#{@selected_acl_id}")}
 >
-  <%!-- <div class="mt-4 mb-2 p-tabmenu p-component " data-pc-section="tabmenu">
-    <ul
-      class="p-tabmenu-nav border-none h-[25px] w-full flex"
-      role="menubar"
-      data-pc-section="menu"
-    >
-      <li
-        id="pr_id_17_0"
-        class="p-tabmenuitem p-highlight"
-        role="presentation"
-        data-p-highlight="true"
-        data-p-disabled="false"
-        data-pc-section="menuitem"
-      >
-        <a
-          href="#"
-          role="menuitem"
-          aria-label="Router Link"
-          tabindex="0"
-          class="p-menuitem-link"
-          data-pc-section="action"
-        >
-          <span class="p-menuitem-text" data-pc-section="label">Character</span>
-        </a>
-      </li>
-      <li
-        id="pr_id_17_1"
-        class="p-tabmenuitem"
-        role="presentation"
-        data-p-highlight="false"
-        data-p-disabled="false"
-        data-pc-section="menuitem"
-      >
-        <a
-          href="#"
-          role="menuitem"
-          aria-label="Programmatic"
-          tabindex="-1"
-          class="p-menuitem-link"
-          data-pc-section="action"
-        >
-          <span class="p-menuitem-text" data-pc-section="label">Corporation</span>
-        </a>
-      </li>
-      <li
-        id="pr_id_17_2"
-        class="p-tabmenuitem"
-        role="presentation"
-        data-p-highlight="false"
-        data-p-disabled="false"
-        data-pc-section="menuitem"
-      >
-        <a
-          href="#"
-          role="menuitem"
-          aria-label="External"
-          tabindex="-1"
-          class="p-menuitem-link"
-          data-pc-section="action"
-        >
-          <span class="p-menuitem-text" data-pc-section="label">Alliance</span>
-        </a>
-      </li>
-    </ul>
-  </div> --%>
   <.form :let={f} for={@member_form} phx-submit={@live_action}>
     <.live_select
       field={f[:member_id]}

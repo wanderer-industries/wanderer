@@ -20,6 +20,7 @@ defmodule WandererAppWeb.AccessListsLive do
      |> assign(
        selected_acl: nil,
        selected_acl_id: "",
+       allow_acl_creation: not WandererApp.Env.restrict_acls_creation?(),
        user_id: user_id,
        access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end),
        characters: characters,
@@ -34,6 +35,7 @@ defmodule WandererAppWeb.AccessListsLive do
      |> assign(
        selected_acl: nil,
        selected_acl_id: "",
+       allow_acl_creation: false,
        access_lists: [],
        characters: [],
        members: []
@@ -188,7 +190,11 @@ defmodule WandererAppWeb.AccessListsLive do
     {:noreply, assign(socket, form: form)}
   end
 
-  def handle_event("create", %{"form" => form}, socket) do
+  def handle_event(
+        "create",
+        %{"form" => form},
+        %{assigns: %{allow_acl_creation: true}} = socket
+      ) do
     case WandererApp.Api.AccessList.new(form) do
       {:ok, _acl} ->
         {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
@@ -408,9 +414,8 @@ defmodule WandererAppWeb.AccessListsLive do
         current_user_has_role?(socket.assigns.current_user, access_list, :admin) ->
           true
 
-        not is_nil(eve_character_id) and
-          (characters_has_role?([eve_character_id], access_list, :admin) or
-             characters_has_role?([eve_character_id], access_list, :manager)) and
+        not is_nil(eve_character_id) &&
+          characters_has_roles?([eve_character_id], access_list, [:admin, :manager]) &&
             not current_user_has_role?(socket.assigns.current_user, access_list, :admin) ->
           false
 
@@ -470,12 +475,12 @@ defmodule WandererAppWeb.AccessListsLive do
          |> put_flash(:info, "Only Characters can have Admin or Manager roles")
          |> push_navigate(to: ~p"/access-lists/#{socket.assigns.selected_acl_id}")
 
-  defp characters_has_role?(character_eve_ids, access_list, role_atom) do
-    access_list.members
-    |> Enum.any?(fn member ->
-      member.eve_character_id in character_eve_ids and member.role == role_atom
-    end)
-  end
+  defp characters_has_roles?(character_eve_ids, %{members: members} = _access_list, role_atoms),
+    do:
+      members
+      |> Enum.any?(fn %{eve_character_id: eve_character_id, role: role} = _member ->
+        eve_character_id in character_eve_ids and role in role_atoms
+      end)
 
   defp current_user_is_owner?(current_user, access_list) do
     character_ids = current_user.characters |> Enum.map(& &1.id)
@@ -486,18 +491,16 @@ defmodule WandererAppWeb.AccessListsLive do
   defp current_user_has_role?(current_user, access_list, role_atom) do
     character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
 
-    characters_has_role?(character_eve_ids, access_list, role_atom)
+    characters_has_roles?(character_eve_ids, access_list, [role_atom])
   end
 
   defp can_add_members?(nil, _current_user), do: false
 
   defp can_add_members?(access_list, current_user) do
-    character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
+    user_character_eve_ids = current_user.characters |> Enum.map(& &1.eve_id)
 
-    member = access_list.members |> Enum.find(&(&1.eve_character_id in character_eve_ids))
-
-    current_user_is_owner?(current_user, access_list) or
-      (not is_nil(member) and member.role in [:admin, :manager])
+    current_user_is_owner?(current_user, access_list) ||
+      characters_has_roles?(user_character_eve_ids, access_list, [:admin, :manager])
   end
 
   defp can_delete_member?(
@@ -512,9 +515,8 @@ defmodule WandererAppWeb.AccessListsLive do
       current_user_has_role?(current_user, access_list, :admin) ->
         true
 
-      not is_nil(eve_character_id) and
-        (characters_has_role?([eve_character_id], access_list, :admin) or
-           characters_has_role?([eve_character_id], access_list, :manager)) and
+      not is_nil(eve_character_id) &&
+        characters_has_roles?([eve_character_id], access_list, [:admin, :manager]) &&
           not current_user_has_role?(current_user, access_list, :admin) ->
         false
 

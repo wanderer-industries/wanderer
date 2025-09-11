@@ -121,6 +121,11 @@ restrict_maps_creation =
   |> get_var_from_path_or_env("WANDERER_RESTRICT_MAPS_CREATION", "false")
   |> String.to_existing_atom()
 
+restrict_acls_creation =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_RESTRICT_ACLS_CREATION", "false")
+  |> String.to_existing_atom()
+
 config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
@@ -150,6 +155,7 @@ config :wanderer_app,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
   wallet_tracking_enabled: wallet_tracking_enabled,
   restrict_maps_creation: restrict_maps_creation,
+  restrict_acls_creation: restrict_acls_creation,
   subscription_settings: %{
     plans: [
       %{

@@ -49,6 +49,12 @@ defmodule WandererApp.Env do
             )
   def restrict_maps_creation?(), do: get_key(:restrict_maps_creation, false)
 
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "restrict_acls_creation"
+            )
+  def restrict_acls_creation?(), do: get_key(:restrict_acls_creation, false)
+
   def sse_enabled?() do
     Application.get_env(@app, :sse, [])
     |> Keyword.get(:enabled, false)
