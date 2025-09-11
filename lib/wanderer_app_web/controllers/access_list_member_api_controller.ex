@@ -159,7 +159,11 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       id_str = to_string(raw_id)
       role = Map.get(member_params, "role", "viewer")
 
-      if type in ["corporation", "alliance"] and role in ["admin", "manager"] do
+      role_atom =
+        [:admin, :manager, :member, :viewer, :blocked]
+        |> Enum.find(fn role_atom -> to_string(role_atom) == role end)
+
+      if type in ["corporation", "alliance"] && role in ["admin", "manager"] do
         conn
         |> put_status(:bad_request)
         |> json(%{
@@ -176,14 +180,13 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         with {:ok, entity_info} <- info_fetcher.(id_str) do
           member_name = Map.get(entity_info, "name")
 
-          new_params =
-            member_params
-            |> Map.drop(["eve_corporation_id", "eve_alliance_id", "eve_character_id"])
-            |> Map.put(key, id_str)
-            |> Map.put("name", member_name)
-            |> Map.put("access_list_id", acl_id)
-
-          case AccessListMember.create(new_params) do
+          case AccessListMember.create(%{
+                 access_list_id: acl_id,
+                 name: member_name,
+                 eve_character_id: Map.get(member_params, "eve_character_id"),
+                 eve_alliance_id: Map.get(member_params, "eve_alliance_id"),
+                 eve_corporation_id: Map.get(member_params, "eve_corporation_id")
+               }) do
             {:ok, new_member} ->
               # Broadcast event to all maps using this ACL
               case AclEventBroadcaster.broadcast_member_event(
@@ -280,6 +283,10 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
       {:ok, [membership]} ->
         new_role = Map.get(member_params, "role", membership.role)
 
+        new_role_atom =
+          [:admin, :manager, :member, :viewer, :blocked]
+          |> Enum.find(fn role_atom -> to_string(role_atom) == new_role end)
+
         member_type =
           cond do
             membership.eve_corporation_id -> "corporation"
@@ -296,7 +303,7 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
               "#{String.capitalize(member_type)} members cannot have an admin or manager role"
           })
         else
-          case AccessListMember.update_role(membership, member_params) do
+          case AccessListMember.update_role(membership, %{role: new_role_atom}) do
             {:ok, updated_membership} ->
               # Broadcast event to all maps using this ACL
               case AclEventBroadcaster.broadcast_member_event(
