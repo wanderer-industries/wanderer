@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.16](https://github.com/wanderer-industries/wanderer/compare/v1.77.15...v1.77.16) (2025-09-11)
+
+
+
+
+### Bug Fixes:
+
+* Fixed issue with ACL add members button for managers. Added WANDERER_RESTRICT_ACLS_CREATION env support.
+
 ## [v1.77.15](https://github.com/wanderer-industries/wanderer/compare/v1.77.14...v1.77.15) (2025-09-10)
 
 
