@@ -10,8 +10,14 @@ export enum MassState {
 }
 
 export enum TimeStatus {
-  default,
-  eol,
+  reserved, // TODO: this reserved for not broke prev solution
+  _1h,
+  _4h,
+  _4h30m,
+  _8h,
+  _16h,
+  _24h,
+  _48h,
 }
 
 export enum ShipSizeStatus {

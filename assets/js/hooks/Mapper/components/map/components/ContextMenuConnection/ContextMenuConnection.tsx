@@ -14,11 +14,12 @@ import {
   SHIP_SIZES_SIZE,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { Edge } from 'reactflow';
+import { LifetimeActions } from '@/hooks/Mapper/components/map/components/ContextMenuConnection/LifetimeActions.tsx';
 
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
   onDeleteConnection(): void;
-  onChangeTimeState(): void;
+  onChangeTimeState(lifetime: TimeStatus): void;
   onChangeMassState(state: MassState): void;
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onToggleMassSave(isLocked: boolean): void;
@@ -48,12 +49,10 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       ...(isWormhole
         ? [
             {
-              label: `EOL`,
-              className: clsx({
-                [classes.ConnectionTimeEOL]: edge.data?.time_status === TimeStatus.eol,
-              }),
-              icon: PrimeIcons.CLOCK,
-              command: onChangeTimeState,
+              className: clsx(classes.FastActions, '!h-[54px]'),
+              template: () => {
+                return <LifetimeActions lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />;
+              },
             },
             {
               label: `Frigate`,
@@ -122,7 +121,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
 
   return (
     <>
-      <ContextMenu model={items} ref={contextMenuRef} onHide={onHide} breakpoint="767px" />
+      <ContextMenu model={items} ref={contextMenuRef} onHide={onHide} breakpoint="767px" className="!w-[250px]" />
     </>
   );
 };

@@ -15,3 +15,14 @@
 .SelectedItem {
   background-color: var(--selected-item-bg);
 }
+
+.FastActions {
+  :global {
+    .p-menuitem-content {
+      background-color: initial !important;
+    }
+    .p-menuitem-content:hover {
+      background-color: initial !important;
+    }
+  }
+}

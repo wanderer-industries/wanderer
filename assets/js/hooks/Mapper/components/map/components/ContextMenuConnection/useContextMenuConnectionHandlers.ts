@@ -30,7 +30,7 @@ export const useContextMenuConnectionHandlers = () => {
     setEdge(undefined);
   };
 
-  const onChangeTimeState = () => {
+  const onChangeTimeState = (lifetime: TimeStatus) => {
     if (!edge || !edge.data) {
       return;
     }
@@ -40,7 +40,7 @@ export const useContextMenuConnectionHandlers = () => {
       data: {
         source: edge.source,
         target: edge.target,
-        value: edge.data.time_status === TimeStatus.default ? TimeStatus.eol : TimeStatus.default,
+        value: lifetime,
       },
     });
     setEdge(undefined);
