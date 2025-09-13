@@ -56,22 +56,53 @@ defmodule WandererAppWeb.CharactersLive do
   @impl true
   def handle_event("authorize", form, socket) do
     track_wallet = form |> Map.get("track_wallet", false)
-    token = UUID.uuid4(:default)
-    WandererApp.Cache.put("invite_#{token}", true, ttl: :timer.minutes(30))
 
-    {:noreply, socket |> push_navigate(to: ~p"/auth/eve?invite=#{token}&w=#{track_wallet}")}
+    active_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
+    {:ok, esi_config} =
+      Cachex.get(
+        :esi_auth_cache,
+        "config_#{active_pool}"
+      )
+
+    WandererApp.Cache.put("invite_#{esi_config.uuid}", true, ttl: :timer.minutes(30))
+
+    {:noreply,
+     socket |> push_navigate(to: ~p"/auth/eve?invite=#{esi_config.uuid}&w=#{track_wallet}")}
   end
 
   @impl true
   def handle_event("delete", %{"character_id" => character_id}, socket) do
-    socket.assigns.characters
-    |> Enum.find(&(&1.id == character_id))
-    |> WandererApp.Api.Character.mark_as_deleted!()
+    WandererApp.Character.TrackerManager.stop_tracking(character_id)
+
+    {:ok, map_character_settings} =
+      WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
+
+    map_character_settings
+    |> Enum.each(fn settings ->
+      {:ok, _} = WandererApp.MapCharacterSettingsRepo.untrack(settings)
+    end)
+
+    {:ok, updated_character} =
+      socket.assigns.characters
+      |> Enum.find(&(&1.id == character_id))
+      |> WandererApp.Api.Character.mark_as_deleted()
+
+    WandererApp.Character.update_character(character_id, updated_character)
 
     {:ok, characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: socket.assigns.user_id})
 
     {:noreply, socket |> assign(characters: characters |> Enum.map(&map_ui_character/1))}
+  end
+
+  @impl true
+  def handle_event(
+        "validate",
+        params,
+        socket
+      ) do
+    {:noreply, assign(socket, form: params)}
   end
 
   @impl true
@@ -135,7 +166,7 @@ defmodule WandererAppWeb.CharactersLive do
     socket
     |> assign(:active_page, :characters)
     |> assign(:page_title, "Authorize Character - Characters")
-    |> assign(:form, to_form(%{"track_wallet" => false}))
+    |> assign(:form, to_form(%{}))
   end
 
   defp map_ui_character(character) do

@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import classes from './SolarSystemEdge.module.scss';
+import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
+import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
+import clsx from 'clsx';
+import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import { PrimeIcons } from 'primereact/api';
+import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 import { SHIP_SIZES_DESCRIPTION, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants.ts';
-import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
-import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
-import clsx from 'clsx';
-import { PrimeIcons } from 'primereact/api';
-import { EdgeLabelRenderer, EdgeProps, getBezierPath, getSmoothStepPath, Position, useStore } from 'reactflow';
-import classes from './SolarSystemEdge.module.scss';
 
 const MAP_TRANSLATES: Record<string, string> = {
   [Position.Top]: 'translate(-48%, 0%)',
@@ -51,11 +51,11 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
   const [hovered, setHovered] = useState(false);
 
   const [path, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos] = useMemo(() => {
-    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode!, targetNode!);
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
-    const method = isWormhole ? getBezierPath : getSmoothStepPath;
+    const method = isWormhole ? getBezierPath : getBezierPath;
 
     const [edgePath, labelX, labelY] = method({
       sourceX: sx - offset.x,

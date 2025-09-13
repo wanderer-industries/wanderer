@@ -2,15 +2,14 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useState } from 'react';
 import { Button } from 'primereact/button';
 import { TabPanel, TabView } from 'primereact/tabview';
-import styles from './SystemSignatureSettingsDialog.module.scss';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import {
   Setting,
   SettingsTypes,
   SIGNATURE_SETTINGS,
-  SignatureSettingsType,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 
 interface SystemSignatureSettingsDialogProps {
   settings: SignatureSettingsType;
@@ -72,26 +71,24 @@ export const SystemSignatureSettingsDialog = ({
     <Dialog header="System Signatures Settings" visible={true} onHide={onCancel} className="w-full max-w-lg h-[500px]">
       <div className="flex flex-col gap-3 justify-between h-full">
         <div className="flex flex-col gap-2">
-          <div className={styles.verticalTabsContainer}>
-            <TabView
-              activeIndex={activeIndex}
-              onTabChange={e => setActiveIndex(e.index)}
-              className={styles.verticalTabView}
-            >
-              <TabPanel header="Filters" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">
-                  {SIGNATURE_SETTINGS.filterFlags.map(renderSetting)}
-                </div>
-              </TabPanel>
-              <TabPanel header="User Interface" headerClassName={styles.verticalTabHeader}>
-                <div className="w-full h-full flex flex-col gap-1">
-                  {SIGNATURE_SETTINGS.uiFlags.map(renderSetting)}
-                  <div className="my-2 border-t border-stone-700/50"></div>
-                  {SIGNATURE_SETTINGS.uiOther.map(renderSetting)}
-                </div>
-              </TabPanel>
-            </TabView>
-          </div>
+          <TabView
+            activeIndex={activeIndex}
+            onTabChange={e => setActiveIndex(e.index)}
+            className="vertical-tabs-container"
+          >
+            <TabPanel header="Filters">
+              <div className="w-full h-full flex flex-col gap-1">
+                {SIGNATURE_SETTINGS.filterFlags.map(renderSetting)}
+              </div>
+            </TabPanel>
+            <TabPanel header="User Interface">
+              <div className="w-full h-full flex flex-col gap-1">
+                {SIGNATURE_SETTINGS.uiFlags.map(renderSetting)}
+                <div className="my-2 border-t border-stone-700/50"></div>
+                {SIGNATURE_SETTINGS.uiOther.map(renderSetting)}
+              </div>
+            </TabPanel>
+          </TabView>
         </div>
 
         <div className="flex gap-2 justify-end">

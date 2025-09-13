@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OutCommand } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import {
-  RoutesType,
-  useRouteProvider,
-} from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
+import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { LoadRoutesCommand } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
+import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
+import { flattenValues } from '@/hooks/Mapper/utils/flattenValues.ts';
 
 function usePrevious<T>(value: T): T | undefined {
   const ref = useRef<T>();
@@ -16,13 +15,25 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
-export const useLoadRoutes = () => {
+type UseLoadRoutesProps = {
+  loadRoutesCommand: LoadRoutesCommand;
+  hubs: string[];
+  routesList: RoutesList | undefined;
+  data: RoutesType;
+  deps?: unknown[];
+};
+
+export const useLoadRoutes = ({
+  data: routesSettings,
+  loadRoutesCommand,
+  hubs,
+  routesList,
+  deps = [],
+}: UseLoadRoutesProps) => {
   const [loading, setLoading] = useState(false);
-  const { data: routesSettings } = useRouteProvider();
 
   const {
-    outCommand,
-    data: { selectedSystems, hubs, systems, connections },
+    data: { selectedSystems, systems, connections },
   } = useMapRootState();
 
   const prevSys = usePrevious(systems);
@@ -31,16 +42,15 @@ export const useLoadRoutes = () => {
 
   const loadRoutes = useCallback(
     (systemId: string, routesSettings: RoutesType) => {
-      outCommand({
-        type: OutCommand.getRoutes,
-        data: {
-          system_id: systemId,
-          routes_settings: routesSettings,
-        },
-      });
+      loadRoutesCommand(systemId, routesSettings);
+      setLoading(true);
     },
-    [outCommand],
+    [loadRoutesCommand],
   );
+
+  useEffect(() => {
+    setLoading(false);
+  }, [routesList]);
 
   useEffect(() => {
     if (selectedSystems.length !== 1) {
@@ -55,13 +65,10 @@ export const useLoadRoutes = () => {
     systems?.length,
     connections,
     hubs,
-    routesSettings,
-    ...Object.keys(routesSettings)
-      .sort()
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      .map(x => routesSettings[x]),
+    // we need make it flat recursively
+    ...flattenValues(routesSettings),
+    ...deps,
   ]);
 
-  return { loading, loadRoutes };
+  return { loading, loadRoutes, setLoading };
 };

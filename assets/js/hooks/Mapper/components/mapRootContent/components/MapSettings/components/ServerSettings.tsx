@@ -1,0 +1,97 @@
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Toast } from 'primereact/toast';
+import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
+import { Button } from 'primereact/button';
+import { OutCommand } from '@/hooks/Mapper/types';
+import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { callToastSuccess } from '@/hooks/Mapper/helpers';
+import { ConfirmPopup } from 'primereact/confirmpopup';
+import { useConfirmPopup } from '@/hooks/Mapper/hooks';
+import { RemoteAdminSettingsResponse } from '@/hooks/Mapper/mapRootProvider/types.ts';
+
+export const ServerSettings = () => {
+  const {
+    storedSettings: { applySettings },
+    outCommand,
+  } = useMapRootState();
+
+  const [hasSettings, setHasSettings] = useState(false);
+  const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
+  const toast = useRef<Toast | null>(null);
+
+  const handleSync = useCallback(async () => {
+    let res: RemoteAdminSettingsResponse | undefined;
+    try {
+      res = await outCommand({ type: OutCommand.getDefaultSettings, data: null });
+    } catch (error) {
+      // do nothing
+    }
+
+    if (res?.default_settings == null) {
+      applySettings(createDefaultWidgetSettings());
+      return;
+    }
+
+    try {
+      applySettings(parseMapUserSettings(res.default_settings));
+      callToastSuccess(toast.current, 'Settings synchronized successfully');
+    } catch (error) {
+      applySettings(createDefaultWidgetSettings());
+    }
+  }, [applySettings, outCommand]);
+
+  useEffect(() => {
+    const load = async () => {
+      let res: RemoteAdminSettingsResponse | undefined;
+      try {
+        res = await outCommand({ type: OutCommand.getDefaultSettings, data: null });
+      } catch (error) {
+        // do nothing
+      }
+
+      if (res?.default_settings == null) {
+        return;
+      }
+
+      setHasSettings(true);
+    };
+
+    load();
+  }, [outCommand]);
+
+  return (
+    <div className="w-full h-full flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <div>
+          <Button
+            // @ts-ignore
+            ref={cfRef}
+            onClick={cfShow}
+            icon="pi pi-file-import"
+            size="small"
+            severity="warning"
+            label="Sync with Default Settings"
+            className="py-[4px]"
+            disabled={!hasSettings}
+          />
+        </div>
+        {!hasSettings && (
+          <span className="text-red-500/70 text-[12px]">*Default settings was not set by map administrator.</span>
+        )}
+        <span className="text-stone-500 text-[12px]">*Will apply admin settings which set as Default for map.</span>
+      </div>
+
+      <Toast ref={toast} />
+
+      <ConfirmPopup
+        target={cfRef.current}
+        visible={cfVisible}
+        onHide={cfHide}
+        message="You lost your current settings. Sure?."
+        icon="pi pi-exclamation-triangle"
+        accept={handleSync}
+      />
+    </div>
+  );
+};

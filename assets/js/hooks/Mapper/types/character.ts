@@ -28,12 +28,18 @@ export type CharacterTypeRaw = {
   ship: ShipTypeRaw | null;
 
   alliance_id: number | null;
-  alliance_name: number | null;
-  alliance_ticker: number | null;
+  alliance_name: string | null;
+  alliance_ticker: string | null;
   corporation_id: number;
   corporation_name: string;
   corporation_ticker: string;
+  tracking_paused: boolean;
 };
+
+export interface TrackingCharacter {
+  character: CharacterTypeRaw;
+  tracked: boolean;
+}
 
 export type WithIsOwnCharacter = {
   isOwn: boolean;
@@ -56,4 +62,11 @@ export interface UseCharactersCacheData {
   loadCharacter: (systemId: string) => Promise<void>;
   characters: Map<string, CharacterCache>;
   lastUpdateKey: number;
+}
+
+export interface ActivitySummary {
+  character: CharacterTypeRaw;
+  passages: number;
+  connections: number;
+  signatures: number;
 }

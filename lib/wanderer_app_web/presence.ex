@@ -10,19 +10,23 @@ defmodule WandererAppWeb.Presence do
   end
 
   def handle_metas(map_id, %{joins: _joins, leaves: _leaves}, presences, state) do
-    presence_character_ids =
+    presence_data =
       presences
-      |> Enum.map(fn {character_id, _} -> character_id end)
+      |> Enum.map(fn {character_id, meta} ->
+        from =
+          meta
+          |> Enum.map(& &1.from)
+          |> Enum.sort(&(DateTime.compare(&1, &2) != :gt))
+          |> List.first()
 
-    WandererApp.Cache.insert("map_#{map_id}:presence_updated", true)
-    WandererApp.Cache.insert("map_#{map_id}:presence_character_ids", presence_character_ids)
+        any_tracked = Enum.any?(meta, fn %{tracked: tracked} -> tracked end)
+
+        %{character_id: character_id, tracked: any_tracked, from: from}
+      end)
+
+    # Delegate all cache operations to the PresenceGracePeriodManager
+    WandererAppWeb.PresenceGracePeriodManager.process_presence_change(map_id, presence_data)
 
     {:ok, state}
-  end
-
-  def presence_character_ids(map_id) do
-    map_id
-    |> list()
-    |> Enum.map(fn {character_id, _} -> character_id end)
   end
 end

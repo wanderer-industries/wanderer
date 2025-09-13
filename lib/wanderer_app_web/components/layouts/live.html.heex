@@ -7,7 +7,7 @@
     class="main flex-1 relative z-0 overflow-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0"
     phx-mounted={JS.remove_class("opacity-0")}
   >
-    <%= @inner_content %>
+    {@inner_content}
   </main>
   <aside class="h-full w-14 left-0 absolute bg-gray-400 bg-opacity-5  text-gray-200 shadow-lg border-r border-stone-800  bg-opacity-70 bg-neutral-900">
     <.sidebar_nav_links
@@ -19,12 +19,13 @@
   <.ping_container rtt_class={@rtt_class} />
   <.donate_container />
   <.feedback_container />
+  <.youtube_container />
   <.new_version_banner app_version={@app_version} enabled={@map_subscriptions_enabled?} />
 </div>
 
-<%= live_render(@socket, WandererAppWeb.ServerStatusLive,
+{live_render(@socket, WandererAppWeb.ServerStatusLive,
   container: {:div, class: ""},
   id: "server-status"
-) %>
+)}
 
 <.live_component module={WandererAppWeb.Alerts} id="notifications" view_flash={@flash} />

@@ -6,7 +6,20 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   alias WandererApp.Api.MapSystem
   alias WandererApp.Structure
 
-  def handle_ui_event("get_structures", %{"system_id" => solar_system_id}, %{assigns: %{map_id: map_id}} = socket) do
+  alias WandererAppWeb.MapCoreEventHandler
+
+  def handle_server_event(%{event: :structures_updated, payload: _solar_system_id}, socket) do
+    socket
+  end
+
+  def handle_server_event(event, socket),
+    do: MapCoreEventHandler.handle_server_event(event, socket)
+
+  def handle_ui_event(
+        "get_structures",
+        %{"system_id" => solar_system_id},
+        %{assigns: %{map_id: map_id, map_loaded?: true}} = socket
+      ) do
     case MapSystem.read_by_map_and_solar_system(%{
            map_id: map_id,
            solar_system_id: String.to_integer(solar_system_id)
@@ -20,6 +33,14 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
   end
 
   def handle_ui_event(
+        "get_structures",
+        _event,
+        socket
+      ) do
+    {:reply, %{structures: []}, socket}
+  end
+
+  def handle_ui_event(
         "update_structures",
         %{
           "system_id" => solar_system_id,
@@ -30,13 +51,15 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            user_characters: user_characters,
+            main_character_id: main_character_id,
+            main_character_eve_id: main_character_eve_id,
+            has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
-    with {:ok, system} <- get_map_system(map_id, solar_system_id),
-         :ok <- ensure_user_has_tracked_character(user_characters) do
+      )
+      when not is_nil(main_character_id) do
+    with {:ok, system} <- get_map_system(map_id, solar_system_id) do
       Logger.debug(fn ->
         "[handle_ui_event:update_structures] loaded map_system =>\n" <>
           inspect(system, pretty: true)
@@ -47,24 +70,23 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
         added_structures,
         updated_structures,
         removed_structures,
-        user_characters
+        main_character_eve_id
       )
 
       broadcast_structures_updated(system, map_id)
 
       {:reply, %{structures: get_system_structures(system.id)}, socket}
     else
-      :no_tracked_character ->
-        {:reply,
-         %{structures: []},
-         put_flash(socket, :error, "You must have at least one tracked character to work with structures.")}
-
       _ ->
         {:noreply, socket}
     end
   end
 
-  def handle_ui_event("get_corporation_names", %{"search" => search}, %{assigns: %{current_user: current_user}} = socket) do
+  def handle_ui_event(
+        "get_corporation_names",
+        %{"search" => search},
+        %{assigns: %{current_user: current_user}} = socket
+      ) do
     user_chars = current_user.characters
 
     case Structure.search_corporation_names(user_chars, search) do
@@ -97,14 +119,6 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
          }) do
       {:ok, system} -> {:ok, system}
       _ -> :error
-    end
-  end
-
-  defp ensure_user_has_tracked_character(user_characters) do
-    if Enum.empty?(user_characters) or is_nil(List.first(user_characters)) do
-      :no_tracked_character
-    else
-      :ok
     end
   end
 

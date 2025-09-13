@@ -79,7 +79,7 @@
       </div>
     </.link>
     <div
-      :for={character <- @characters}
+      :for={character <- @characters |> Enum.sort_by(& &1.name, :asc)}
       class="card rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
     >
       <figure class="avatar">
@@ -100,18 +100,18 @@
               class="loading loading-dots loading-xs"
             />
             <span>
-              <%= character
+              {character
               |> get(
                 path(:corporation_name),
                 ""
-              ) %>
+              )}
             </span>
           </h2>
           <h2 class="absolute w-full flex justify-between px-4 left-0 top-16 text-xs">
             Alliance:
             <span>
-              <%= character
-              |> get(path(:alliance_name), "-") || "-" %>
+              {character
+              |> get(path(:alliance_name), "-") || "-"}
             </span>
           </h2>
           <h2 class="absolute left-0 bottom-12 px-4 text-xs w-full flex justify-between">
@@ -129,8 +129,8 @@
               class="loading loading-dots loading-xs"
             />
             <span>
-              <%= character
-              |> get(path(:location / :solar_system_info / :solar_system_name, :map), "") %>
+              {character
+              |> get(path(:location / :solar_system_info / :solar_system_name, :map), "")}
             </span>
           </h2>
           <h2
@@ -139,22 +139,22 @@
           >
             Balance:
             <span class="blur">
-              ISK <%= (character
-                       |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
-              |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+              ISK {(character
+                    |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
+              |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
             </span>
           </h2>
           <h2 class="absolute w-full flex justify-between px-4 left-0 bottom-2 text-xs">
             Ship:
             <span>
-              <%= character
-              |> get(path(:ship / :ship_type_info / :name, :map), "-") %>
+              {character
+              |> get(path(:ship / :ship_type_info / :name, :map), "-")}
             </span>
           </h2>
         </div>
       </figure>
       <div class="card-body">
-        <h2 class="card-title text-sm"><%= character.name %></h2>
+        <h2 class="card-title text-sm">{character.name}</h2>
         <p></p>
         <div class="card-actions justify-between">
           <div>
@@ -206,29 +206,29 @@
         </figure>
       </:col>
       <:col :let={character} label="Name">
-        <%= character.name %>
+        {character.name}
       </:col>
       <:col :let={character} label="Corporation">
-        <%= character
-        |> get(path(:corporation_name), "-") %>
+        {character
+        |> get(path(:corporation_name), "-")}
       </:col>
       <:col :let={character} label="Alliance">
-        <%= character
-        |> get(path(:alliance_name), "-") || "-" %>
+        {character
+        |> get(path(:alliance_name), "-") || "-"}
       </:col>
       <:col :let={character} label="Location">
-        <%= character
-        |> get(path(:location / :solar_system_info / :solar_system_name, :map), "-") %>
+        {character
+        |> get(path(:location / :solar_system_info / :solar_system_name, :map), "-")}
       </:col>
       <:col :let={character} label="Ship">
-        <%= character
-        |> get(path(:ship / :ship_type_info / :name, :map), "-") %>
+        {character
+        |> get(path(:ship / :ship_type_info / :name, :map), "-")}
       </:col>
       <:col :let={character} :if={@wallet_tracking_enabled?} label="Balance">
         <span :if={character.show_wallet_balance?} class="blur">
-          ISK <%= (character
-                   |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
-          |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+          ISK {(character
+                |> get(path(:eve_wallet_balance, :map), 0.0) || 0.0)
+          |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
         </span>
       </:col>
     </.table>
@@ -242,17 +242,19 @@
     show
     on_cancel={JS.patch(~p"/characters")}
   >
-    <.form :let={f} for={@form} phx-submit="authorize">
-      <div :if={@wallet_tracking_enabled?} class="pb-2 -mt-8">
-        <.input
-          type="checkbox"
-          field={f[:track_wallet]}
-          label="Access to character wallet information"
-        />
-      </div>
-      <div class="modal-action mt-0">
-        <.button type="submit">AUTHORIZE</.button>
-      </div>
-    </.form>
+    <div class="flex flex-col gap-3">
+      <.form :let={f} for={@form} phx-submit="authorize" phx-change="validate">
+        <div :if={@wallet_tracking_enabled?} class="pb-2">
+          <.input
+            type="checkbox"
+            field={f[:track_wallet]}
+            label="Access to character wallet information"
+          />
+        </div>
+        <div class="modal-action mt-0">
+          <.button type="submit">AUTHORIZE</.button>
+        </div>
+      </.form>
+    </div>
   </.modal>
 </main>

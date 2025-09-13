@@ -1,5 +1,5 @@
-@import './eve-common-variables';
-@import './eve-common';
+@use './eve-common-variables';
+@use './eve-common';
 
 .default-theme {
   --rf-bg-color: #0C0A09;

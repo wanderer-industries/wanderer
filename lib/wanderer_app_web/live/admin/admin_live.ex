@@ -15,7 +15,8 @@ defmodule WandererAppWeb.AdminLive do
     corp_wallet_character =
       socket.assigns.current_user.characters
       |> Enum.find(fn character ->
-        WandererApp.Character.can_track_corp_wallet?(character)
+        character.eve_id == WandererApp.Env.corp_wallet_eve_id() &&
+          WandererApp.Character.can_track_corp_wallet?(character)
       end)
 
     Phoenix.PubSub.subscribe(
@@ -58,10 +59,11 @@ defmodule WandererAppWeb.AdminLive do
      socket
      |> assign(
        active_map_subscriptions: active_map_subscriptions,
-       show_invites?: WandererApp.Env.invites(),
        user_character_ids: user_character_ids,
        user_id: user_id,
        invite_link: nil,
+       tracker_stats: [],
+       active_tracking_pool: "default",
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
@@ -75,21 +77,6 @@ defmodule WandererAppWeb.AdminLive do
   @impl true
   def handle_params(params, uri, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params, uri)}
-  end
-
-  def handle_event("generate-invite-link", _params, socket) do
-    uuid = UUID.uuid4(:default)
-    WandererApp.Cache.put("invite_#{uuid}", true, ttl: @invite_link_ttl)
-
-    invite_link =
-      socket.assigns.uri
-      |> Map.put(:path, "/welcome")
-      |> Map.put(:query, URI.encode_query(%{invite: uuid}))
-      |> URI.to_string()
-
-    {:noreply,
-     socket
-     |> assign(invite_link: invite_link)}
   end
 
   @impl true
@@ -224,6 +211,58 @@ defmodule WandererAppWeb.AdminLive do
      |> push_navigate(to: ~p"/maps/new")}
   end
 
+  def handle_event("validate", %{"form" => params}, socket) do
+    form = AshPhoenix.Form.validate(socket.assigns.form, params)
+    {:noreply, assign(socket, form: form)}
+  end
+
+  def handle_event("generate-invite-link", _params, socket) do
+    token = UUID.uuid4()
+    new_params = Map.put(socket.assigns.form.params || %{}, "token", token)
+    form = AshPhoenix.Form.validate(socket.assigns.form, new_params)
+
+    invite_link =
+      socket.assigns.uri
+      |> get_invite_link(token)
+
+    {:noreply, assign(socket, form: form, invite_link: invite_link)}
+  end
+
+  def handle_event(
+        "add_invite_link",
+        %{"form" => %{"type" => type, "valid_until" => valid_until}},
+        socket
+      ) do
+    %{
+      type: type |> String.to_existing_atom(),
+      valid_until: get_valid_until(valid_until),
+      token: UUID.uuid4(),
+      map_id: nil
+    }
+    |> WandererApp.Api.MapInvite.new()
+    |> case do
+      {:ok, _invite} ->
+        {:noreply, socket |> push_patch(to: ~p"/admin")}
+
+      error ->
+        {:noreply, socket |> put_flash(:error, "Failed to add invite. Try again.")}
+    end
+  end
+
+  def handle_event(
+        "delete-invite",
+        %{"id" => id},
+        socket
+      ) do
+    id
+    |> WandererApp.Api.MapInvite.by_id!()
+    |> WandererApp.Api.MapInvite.destroy!()
+
+    {:ok, invites} = WandererApp.Api.MapInvite.read()
+
+    {:noreply, socket |> assign(:invites, invites)}
+  end
+
   @impl true
   def handle_event(event, body, socket) do
     Logger.warning(fn -> "unhandled event: #{event} #{inspect(body)}" end)
@@ -255,6 +294,11 @@ defmodule WandererAppWeb.AdminLive do
   end
 
   defp apply_action(socket, :index, _params, uri) do
+    {:ok, invites} = WandererApp.Api.MapInvite.read()
+
+    {:ok, tracker_stats} = WandererApp.Character.TrackingConfigUtils.load_tracker_stats()
+    active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
     socket
     |> assign(:active_page, :admin)
     |> assign(:uri, URI.parse(uri))
@@ -268,6 +312,57 @@ defmodule WandererAppWeb.AdminLive do
     ])
     |> assign(:form, to_form(%{"amount" => 500_000_000}))
     |> assign(:unlink_character_form, to_form(%{}))
+    |> assign(:invites, invites)
+    |> assign(:tracker_stats, tracker_stats)
+    |> assign(:active_tracking_pool, active_tracking_pool)
+  end
+
+  defp apply_action(socket, :add_invite_link, _params, uri) do
+    invite_types =
+      if socket.assigns.map_subscriptions_enabled? do
+        [%{label: "User", id: :user}, %{label: "Admin", id: :admin}]
+      else
+        [%{label: "User", id: :user}]
+      end
+
+    socket
+    |> assign(:active_page, :admin)
+    |> assign(:uri, URI.parse(uri))
+    |> assign(:page_title, "Add Invite Link")
+    |> assign(:invite_types, invite_types)
+    |> assign(:valid_types, [
+      %{label: "1D", id: 1},
+      %{label: "1W", id: 7},
+      %{label: "1M", id: 30},
+      %{label: "1Y", id: 365}
+    ])
+    |> assign(:unlink_character_form, to_form(%{}))
+    |> assign(:character_search_options, [])
+    |> assign(:amounts, [
+      %{label: "500M", value: 500_000_000},
+      %{label: "1B", value: 1_000_000_000},
+      %{label: "5B", value: 5_000_000_000},
+      %{label: "10B", value: 10_000_000_000}
+    ])
+    |> assign(:form, to_form(%{"amount" => 500_000_000}))
+    |> assign(:invite_token, UUID.uuid4())
+    |> assign(
+      :form,
+      AshPhoenix.Form.for_create(WandererApp.Api.MapInvite, :new,
+        forms: [
+          auto?: true
+        ]
+      )
+      |> to_form()
+    )
+    |> assign(:invites, [])
+  end
+
+  defp get_invite_link(uri, token) do
+    uri
+    |> Map.put(:path, "/auth/eve")
+    |> Map.put(:query, URI.encode_query(%{invite: token}))
+    |> URI.to_string()
   end
 
   defp search(search) do
@@ -290,10 +385,28 @@ defmodule WandererAppWeb.AdminLive do
         </div>
       </div>
       <span :if={@option.value == :loading} <span class="loading loading-spinner loading-xs"></span>
-      &nbsp; <%= @option.label %>
+      &nbsp; {@option.label}
     </div>
     """
   end
+
+  defp get_valid_until("1") do
+    DateTime.utc_now() |> DateTime.add(24 * 3600, :second)
+  end
+
+  defp get_valid_until("7") do
+    DateTime.utc_now() |> DateTime.add(24 * 3600 * 7, :second)
+  end
+
+  defp get_valid_until("30") do
+    DateTime.utc_now() |> DateTime.add(24 * 3600 * 30, :second)
+  end
+
+  defp get_valid_until("365") do
+    DateTime.utc_now() |> DateTime.add(24 * 3600 * 365, :second)
+  end
+
+  defp get_valid_until(_), do: get_valid_until("1")
 
   def search_member_icon_url(%{character: true} = option),
     do: member_icon_url(%{eve_character_id: option.value})

@@ -45,12 +45,13 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             has_tracked_characters?: true,
             map_id: map_id,
             is_subscription_active?: is_subscription_active?,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             user_permissions: %{add_system: true}
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     system =
       WandererApp.Map.find_system_by_location(map_id, %{
         solar_system_id: solar_system_id |> String.to_integer()
@@ -76,7 +77,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             text: text |> String.slice(0..500)
           },
           current_user.id,
-          tracked_character_ids |> List.first()
+          main_character_id
         )
 
         {:noreply, socket}
@@ -99,25 +100,28 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
             current_user: current_user,
             has_tracked_characters?: true,
             map_id: map_id,
-            tracked_character_ids: tracked_character_ids,
             user_permissions: %{add_system: true}
           }
         } =
           socket
       ) do
-    system =
-      WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id |> String.to_integer()
-      })
+    WandererApp.Map.find_system_by_location(map_id, %{
+      solar_system_id: solar_system_id |> String.to_integer()
+    })
+    |> case do
+      %{id: system_id} when not is_nil(system_id) ->
+        {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system_id)
 
-    {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system.id)
+        comments =
+          comments
+          |> Enum.map(fn c -> c |> Ash.load!([:character, :system]) end)
+          |> Enum.map(&map_system_comment/1)
 
-    comments =
-      comments
-      |> Enum.map(fn c -> c |> Ash.load!([:character, :system]) end)
-      |> Enum.map(&map_system_comment/1)
+        {:reply, %{comments: comments}, socket}
 
-    {:reply, %{comments: comments}, socket}
+      _ ->
+        {:reply, %{comments: []}, socket}
+    end
   end
 
   def handle_ui_event(
@@ -127,18 +131,19 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           assigns: %{
             map_id: map_id,
             current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.remove_system_comment(
       comment_id,
       current_user.id,
-      tracked_character_ids |> List.first()
+      main_character_id
     )
 
     {:noreply, socket}

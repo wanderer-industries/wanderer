@@ -1,14 +1,14 @@
-import { ErrorBoundary } from 'react-error-boundary';
 import { PrimeReactProvider } from 'primereact/api';
+import { ErrorBoundary } from 'react-error-boundary';
 
-import { ReactFlowProvider } from 'reactflow';
 import { MapHandlers } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { ErrorInfo, useCallback, useEffect, useRef } from 'react';
+import { ReactFlowProvider } from 'reactflow';
 import { useMapperHandlers } from './useMapperHandlers';
 
-import './common-styles/main.scss';
-import { MapRootProvider } from '@/hooks/Mapper/mapRootProvider';
 import { MapRootContent } from '@/hooks/Mapper/components/mapRootContent/MapRootContent.tsx';
+import { MapRootProvider } from '@/hooks/Mapper/mapRootProvider';
+import './common-styles/main.scss';
 
 const ErrorFallback = () => {
   return <div className="!z-100 absolute w-screen h-screen bg-transparent"></div>;
@@ -20,7 +20,7 @@ export default function MapRoot({ hooks }) {
 
   const mapperHandlerRefs = useRef([providerRef]);
 
-  const { handleCommand, handleMapEvent, handleMapEvents } = useMapperHandlers(mapperHandlerRefs.current, hooksRef);
+  const { handleCommand, handleMapEvent } = useMapperHandlers(mapperHandlerRefs.current, hooksRef);
 
   const logError = useCallback((error: Error, info: ErrorInfo) => {
     if (!hooksRef.current) {
@@ -35,7 +35,6 @@ export default function MapRoot({ hooks }) {
     }
 
     hooksRef.current.handleEvent('map_event', handleMapEvent);
-    hooksRef.current.handleEvent('map_events', handleMapEvents);
   }, []);
 
   return (

@@ -13,8 +13,11 @@ defmodule WandererAppWeb.MapLive do
      |> assign(
        map_slug: map_slug,
        map_loaded?: false,
+       show_topup: false,
+       active_subscription_tab: "balance",
        server_online: false,
-       selected_subscription: nil,
+       map_subscriptions_enabled: WandererApp.Env.map_subscriptions_enabled?(),
+       active_subscription: nil,
        user_permissions: nil
      )
      |> push_event("js-exec", %{
@@ -31,8 +34,10 @@ defmodule WandererAppWeb.MapLive do
      |> assign(
        map_slug: nil,
        map_loaded?: false,
+       show_topup: false,
        server_online: false,
-       selected_subscription: nil,
+       active_subscription: nil,
+       map_subscriptions_enabled: WandererApp.Env.map_subscriptions_enabled?(),
        user_permissions: nil
      )}
   end
@@ -60,6 +65,15 @@ defmodule WandererAppWeb.MapLive do
          "One of your characters has expired token. Please refresh it on characters page."
        )}
 
+  def handle_info(:no_main_character_set, socket),
+    do:
+      {:noreply,
+       socket
+       |> put_flash(
+         :warning,
+         "You don't have main character set, please update it in tracking settings (top right icon)."
+       )}
+
   def handle_info(:no_access, socket),
     do:
       {:noreply,
@@ -85,11 +99,22 @@ defmodule WandererAppWeb.MapLive do
        |> push_navigate(to: ~p"/tracking/#{map_slug}")}
 
   @impl true
+  def handle_info(info, %{assigns: %{map_slug: map_slug}} = socket) do
+    {:noreply,
+     socket
+     |> WandererAppWeb.MapEventHandler.handle_event(info)}
+  end
+
+  @impl true
   def handle_info(info, socket),
     do:
       {:noreply,
        socket
        |> WandererAppWeb.MapEventHandler.handle_event(info)}
+
+  @impl true
+  def handle_event("change_subscription_tab", %{"tab" => tab}, socket),
+    do: {:noreply, socket |> assign(active_subscription_tab: tab)}
 
   @impl true
   def handle_event(event, body, socket) do

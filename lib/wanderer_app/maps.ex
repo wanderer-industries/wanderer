@@ -17,35 +17,52 @@ defmodule WandererApp.Maps do
     :is_shattered
   ]
 
-  def find_routes(map_id, hubs, origin, routes_settings) do
-    {:ok, routes} =
-      WandererApp.Esi.find_routes(
-        map_id,
-        origin,
-        hubs,
-        routes_settings
-      )
+  def find_routes(map_id, hubs, origin, routes_settings, false) do
+    WandererApp.Esi.find_routes(
+      map_id,
+      origin,
+      hubs,
+      routes_settings
+    )
+    |> case do
+      {:ok, routes} ->
+        systems_static_data =
+          routes
+          |> Enum.map(fn route_info -> route_info.systems end)
+          |> List.flatten()
+          |> Enum.uniq()
+          |> Task.async_stream(
+            fn system_id ->
+              case WandererApp.CachedInfo.get_system_static_info(system_id) do
+                {:ok, nil} ->
+                  nil
 
-    systems_static_data =
-      routes
-      |> Enum.map(fn route_info -> route_info.systems end)
-      |> List.flatten()
-      |> Enum.uniq()
-      |> Task.async_stream(
-        fn system_id ->
-          case WandererApp.CachedInfo.get_system_static_info(system_id) do
-            {:ok, nil} ->
-              nil
+                {:ok, system} ->
+                  system |> Map.take(@minimum_route_attrs)
+              end
+            end,
+            max_concurrency: 10
+          )
+          |> Enum.map(fn {:ok, val} -> val end)
 
-            {:ok, system} ->
-              system |> Map.take(@minimum_route_attrs)
-          end
-        end,
-        max_concurrency: 10
-      )
-      |> Enum.map(fn {:ok, val} -> val end)
+        {:ok, %{routes: routes, systems_static_data: systems_static_data}}
 
-    {:ok, %{routes: routes, systems_static_data: systems_static_data}}
+      error ->
+        {:ok, %{routes: [], systems_static_data: []}}
+    end
+  end
+
+  def find_routes(map_id, hubs, origin, routes_settings, true) do
+    origin = origin |> String.to_integer()
+    hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))
+
+    routes =
+      hubs
+      |> Enum.map(fn hub ->
+        %{origin: origin, destination: hub, success: false, systems: [], has_connection: false}
+      end)
+
+    {:ok, %{routes: routes, systems_static_data: []}}
   end
 
   def get_available_maps() do
@@ -77,13 +94,22 @@ defmodule WandererApp.Maps do
     end
   end
 
-  def load_characters(map, character_settings, user_id) do
+  def load_characters(map, user_id) when not is_nil(map) do
     {:ok, user_characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
-    characters =
+    map_available_characters =
       map
       |> get_map_available_characters(user_characters)
+
+    {:ok, character_settings} =
+      WandererApp.MapCharacterSettingsRepo.get_by_map_filtered(
+        map.id,
+        map_available_characters |> Enum.map(& &1.id)
+      )
+
+    characters =
+      map_available_characters
       |> Enum.map(fn c ->
         map_character(c, character_settings |> Enum.find(&(&1.character_id == c.id)))
       end)
@@ -91,8 +117,23 @@ defmodule WandererApp.Maps do
     {:ok, %{characters: characters}}
   end
 
+  def load_characters(_map, _user_id), do: {:ok, %{characters: []}}
+
   def map_character(
-        %{name: name, id: id, eve_id: eve_id, corporation_ticker: corporation_ticker} =
+        %{
+          name: name,
+          id: id,
+          eve_id: eve_id,
+          access_token: access_token,
+          corporation_id: corporation_id,
+          alliance_id: alliance_id,
+          alliance_ticker: alliance_ticker,
+          corporation_ticker: corporation_ticker,
+          solar_system_id: solar_system_id,
+          ship: ship_type_id,
+          ship_name: ship_name,
+          inserted_at: inserted_at
+        } =
           _character,
         nil
       ),
@@ -100,67 +141,103 @@ defmodule WandererApp.Maps do
         name: name,
         id: id,
         eve_id: eve_id,
+        access_token: access_token,
+        corporation_id: corporation_id,
+        alliance_id: alliance_id,
+        alliance_ticker: alliance_ticker,
         corporation_ticker: corporation_ticker,
-        tracked: false,
-        followed: false
+        solar_system_id: solar_system_id,
+        ship: ship_type_id,
+        ship_name: ship_name,
+        inserted_at: inserted_at,
+        tracked: false
       }
 
   def map_character(
-        %{name: name, id: id, eve_id: eve_id, corporation_ticker: corporation_ticker} =
+        %{
+          name: name,
+          id: id,
+          eve_id: eve_id,
+          access_token: access_token,
+          corporation_id: corporation_id,
+          alliance_id: alliance_id,
+          alliance_ticker: alliance_ticker,
+          corporation_ticker: corporation_ticker,
+          solar_system_id: solar_system_id,
+          ship: ship_type_id,
+          ship_name: ship_name,
+          inserted_at: inserted_at
+        } =
           _character,
-        %{tracked: tracked, followed: followed} = _character_settings
+        %{tracked: tracked} = _character_settings
       ),
       do: %{
         name: name,
         id: id,
         eve_id: eve_id,
+        access_token: access_token,
+        corporation_id: corporation_id,
+        alliance_id: alliance_id,
+        alliance_ticker: alliance_ticker,
         corporation_ticker: corporation_ticker,
-        tracked: tracked,
-        followed: followed
+        solar_system_id: solar_system_id,
+        ship: ship_type_id,
+        ship_name: ship_name,
+        inserted_at: inserted_at,
+        tracked: tracked
       }
 
-  @decorate cacheable(
-              cache: WandererApp.Cache,
-              key: "map_characters-#{map_id}",
-              opts: [ttl: :timer.seconds(5)]
-            )
-  defp _get_map_characters(%{id: map_id} = map) do
-    map_acls =
-      map.acls
-      |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
+  defp get_map_characters(%{id: map_id} = map) do
+    WandererApp.Cache.lookup!("map_characters-#{map_id}")
+    |> case do
+      nil ->
+        map_acls =
+          map.acls
+          |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
 
-    map_acl_owner_ids =
-      map_acls
-      |> Enum.map(fn acl -> acl.owner_id end)
+        map_acl_owner_ids =
+          map_acls
+          |> Enum.map(fn acl -> acl.owner_id end)
 
-    map_members =
-      map_acls
-      |> Enum.map(fn acl -> acl.members end)
-      |> List.flatten()
-      |> Enum.filter(fn member -> member.role != :blocked end)
+        map_members =
+          map_acls
+          |> Enum.map(fn acl -> acl.members end)
+          |> List.flatten()
+          |> Enum.filter(fn member -> member.role != :blocked end)
 
-    map_member_eve_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
-      |> Enum.map(fn member -> member.eve_character_id end)
+        map_member_eve_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_character_id) end)
+          |> Enum.map(fn member -> member.eve_character_id end)
 
-    map_member_corporation_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
-      |> Enum.map(fn member -> member.eve_corporation_id end)
+        map_member_corporation_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_corporation_id) end)
+          |> Enum.map(fn member -> member.eve_corporation_id end)
 
-    map_member_alliance_ids =
-      map_members
-      |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
-      |> Enum.map(fn member -> member.eve_alliance_id end)
+        map_member_alliance_ids =
+          map_members
+          |> Enum.filter(fn member -> not is_nil(member.eve_alliance_id) end)
+          |> Enum.map(fn member -> member.eve_alliance_id end)
 
-    {:ok,
-     %{
-       map_acl_owner_ids: map_acl_owner_ids,
-       map_member_eve_ids: map_member_eve_ids,
-       map_member_corporation_ids: map_member_corporation_ids,
-       map_member_alliance_ids: map_member_alliance_ids
-     }}
+        map_characters =
+          %{
+            map_acl_owner_ids: map_acl_owner_ids,
+            map_member_eve_ids: map_member_eve_ids,
+            map_member_corporation_ids: map_member_corporation_ids,
+            map_member_alliance_ids: map_member_alliance_ids
+          }
+
+        WandererApp.Cache.insert(
+          "map_characters-#{map_id}",
+          map_characters
+        )
+
+        {:ok, map_characters}
+
+      map_characters ->
+        {:ok, map_characters}
+    end
   end
 
   defp get_map_available_characters(map, user_characters) do
@@ -170,7 +247,7 @@ defmodule WandererApp.Maps do
        map_member_eve_ids: map_member_eve_ids,
        map_member_corporation_ids: map_member_corporation_ids,
        map_member_alliance_ids: map_member_alliance_ids
-     }} = _get_map_characters(map)
+     }} = get_map_characters(map)
 
     user_characters
     |> Enum.filter(fn c ->

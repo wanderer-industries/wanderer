@@ -1,0 +1,187 @@
+name: Build Docker ARM Image
+
+on:
+  push:
+    tags:
+      - '**'
+
+env:
+  MIX_ENV: prod
+  GH_TOKEN: ${{ github.token }}
+  REGISTRY_IMAGE: wandererltd/community-edition-arm
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  docker:
+    name: 🛠 Build Docker Images
+    runs-on: ubuntu-22.04
+    outputs:
+      release-tag: ${{ steps.get-latest-tag.outputs.tag }}
+      release-notes: ${{ steps.get-content.outputs.string }}
+    permissions:
+      checks: write
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+      pull-requests: write
+      repository-projects: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/arm64
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get Release Tag
+        id: get-latest-tag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: 1.0.0
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.get-latest-tag.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Prepare Changelog
+        run: |
+          yes | cp -rf CHANGELOG.md priv/changelog/CHANGELOG.md
+          sed -i '1i%{title: "Change Log"}\n\n---\n' priv/changelog/CHANGELOG.md
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.WANDERER_DOCKER_USER }}
+          password: ${{ secrets.WANDERER_DOCKER_PASSWORD }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          file: ./Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,"name=${{ env.REGISTRY_IMAGE }}",push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            MIX_ENV=prod
+            BUILD_METADATA=${{ steps.meta.outputs.json }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - uses: markpatterson27/markdown-to-output@v1
+        id: extract-changelog
+        with:
+          filepath: CHANGELOG.md
+
+      - name: Get content
+        uses: 2428392/gh-truncate-string-action@v1.3.0
+        id: get-content
+        with:
+          stringToTruncate: |
+            📣 Wanderer **ARM**  release available 🎉
+
+            **Version**: :${{ steps.get-latest-tag.outputs.tag }}
+
+            ${{ steps.extract-changelog.outputs.body }}
+          maxLength: 500
+          truncationSymbol: "…"
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - docker
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.WANDERER_DOCKER_USER }}
+          password: ${{ secrets.WANDERER_DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=${{ needs.docker.outputs.release-tag }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+
+  notify:
+    name: 🏷 Notify about release
+    runs-on: ubuntu-22.04
+    needs: [docker, merge]
+    steps:
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content: ${{ needs.docker.outputs.release-notes }}

@@ -33,7 +33,7 @@ defmodule WandererAppWeb.CharactersAPIController do
   GET /api/characters
   """
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  operation :index,
+  operation(:index,
     summary: "List Characters",
     description: "Lists ALL characters in the database.",
     responses: [
@@ -43,8 +43,10 @@ defmodule WandererAppWeb.CharactersAPIController do
         @characters_index_response_schema
       }
     ]
+  )
+
   def index(conn, _params) do
-    case WandererApp.Api.read(Character) do
+    case Ash.read(Character) do
       {:ok, characters} ->
         result =
           characters

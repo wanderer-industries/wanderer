@@ -1,23 +1,20 @@
-import { useCallback, useMemo, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
-import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
-import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
   SOLAR_SYSTEM_CLASS_IDS,
   SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
   WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
+import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
-import {
-  SETTINGS_KEYS,
-  SignatureSettingsType,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
+import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
 const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
 
@@ -49,7 +46,9 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
   ref.current = { outCommand };
 
   // Get system info for the target system
-  const { staticInfo: targetSystemInfo } = useSystemInfo({ systemId: `${data.solar_system_target}` });
+  const { staticInfo: targetSystemInfo, dynamicInfo: targetSystemDynamicInfo } = useSystemInfo({
+    systemId: `${data.solar_system_target}`,
+  });
 
   // Get the system class group for the target system
   const targetSystemClassGroup = useMemo(() => {
@@ -144,7 +143,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
       }
 
       const whShipSize = getWhSize(wormholes, signature.type);
-      if (whShipSize) {
+      if (whShipSize !== undefined && whShipSize !== null) {
         await outCommand({
           type: OutCommand.updateConnectionShipSizeType,
           data: {
@@ -159,6 +158,12 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     },
     [data, setVisible, wormholes],
   );
+
+  useEffect(() => {
+    if (!targetSystemDynamicInfo) {
+      handleHide();
+    }
+  }, [targetSystemDynamicInfo]);
 
   return (
     <Dialog

@@ -31,6 +31,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
 
   const handleSave = useCallback(
+    // TODO: need fix
     async (e: any) => {
       e?.preventDefault();
       if (!signatureData) {
@@ -52,6 +53,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
               },
             });
 
+            // TODO: need fix
             if (values.isEOL) {
               await outCommand({
                 type: OutCommand.updateConnectionTimeStatus,
@@ -65,8 +67,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
             if (values.type) {
               const whShipSize = getWhSize(wormholes, values.type);
-              if (whShipSize) {
-                outCommand({
+              if (whShipSize !== undefined && whShipSize !== null) {
+                await outCommand({
                   type: OutCommand.updateConnectionShipSizeType,
                   data: {
                     source: systemId,
@@ -81,13 +83,19 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           out = {
             ...out,
             custom_info: JSON.stringify({
+              // TODO: need fix
               k162Type: values.k162Type,
+              // TODO: need fix
               isEOL: values.isEOL,
             }),
           };
 
           if (values.type != null) {
             out = { ...out, type: values.type };
+          }
+
+          if (values.temporary_name != null) {
+            out = { ...out, temporary_name: values.temporary_name };
           }
 
           if (signatureData.group !== SignatureGroup.Wormhole) {
@@ -145,7 +153,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureForm, onHide, outCommand, signatureData, systemId],
+    [signatureData, signatureForm, outCommand, systemId, onHide, wormholes],
   );
 
   useEffect(() => {
@@ -166,6 +174,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
+      // TODO: need fix
       k162Type: k162Type,
       isEOL: isEOL,
       ...rest,

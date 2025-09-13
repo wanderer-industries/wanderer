@@ -5,22 +5,29 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
+// import { PingType } from '@/hooks/Mapper/types/ping.ts';
 
 interface UseContextMenuSystemHandlersProps {
   hubs: string[];
+  userHubs: string[];
   systems: SolarSystemRawType[];
   outCommand: OutCommandHandler;
 }
 
-export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseContextMenuSystemHandlersProps) => {
+export const useContextMenuSystemHandlers = ({
+  systems,
+  hubs,
+  userHubs,
+  outCommand,
+}: UseContextMenuSystemHandlersProps) => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
 
   const [system, setSystem] = useState<string>();
 
   const { deleteSystems } = useDeleteSystems();
 
-  const ref = useRef({ hubs, system, systems, outCommand, deleteSystems });
-  ref.current = { hubs, system, systems, outCommand, deleteSystems };
+  const ref = useRef({ hubs, userHubs, system, systems, outCommand, deleteSystems });
+  ref.current = { hubs, userHubs, system, systems, outCommand, deleteSystems };
 
   const open = useCallback((ev: any, systemId: string) => {
     setSystem(systemId);
@@ -72,6 +79,37 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     setSystem(undefined);
   }, []);
 
+  const onUserHubToggle = useCallback(() => {
+    const { userHubs, system, outCommand } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    outCommand({
+      type: !userHubs.includes(system) ? OutCommand.addUserHub : OutCommand.deleteUserHub,
+      data: {
+        system_id: system,
+      },
+    });
+    setSystem(undefined);
+  }, []);
+
+  // const onTogglePingRally = useCallback(() => {
+  //   const { userHubs, system, outCommand } = ref.current;
+  //   if (!system) {
+  //     return;
+  //   }
+  //
+  //   outCommand({
+  //     type: OutCommand.openPing,
+  //     data: {
+  //       solar_system_id: system,
+  //       type: PingType.Rally,
+  //     },
+  //   });
+  //   setSystem(undefined);
+  // }, []);
+
   const onSystemTag = useCallback((tag?: string) => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -103,7 +141,6 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     });
     setSystem(undefined);
   }, []);
-
 
   const onSystemStatus = useCallback((status: number) => {
     const { system, outCommand } = ref.current;
@@ -177,6 +214,8 @@ export const useContextMenuSystemHandlers = ({ systems, hubs, outCommand }: UseC
     onDeleteSystem,
     onLockToggle,
     onHubToggle,
+    onUserHubToggle,
+    // onTogglePingRally,
     onSystemTag,
     onSystemTemporaryName,
     onSystemStatus,

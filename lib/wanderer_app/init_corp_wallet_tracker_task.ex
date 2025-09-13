@@ -16,7 +16,7 @@ defmodule WandererApp.StartCorpWalletTrackerTask do
 
       user_hash ->
         user_hash
-        |> _get_user_characters()
+        |> get_user_characters()
         |> maybe_start_corp_wallet_tracker()
     end
   end
@@ -25,7 +25,8 @@ defmodule WandererApp.StartCorpWalletTrackerTask do
     admin_character =
       user_characters
       |> Enum.find(fn character ->
-        WandererApp.Character.can_track_corp_wallet?(character)
+        character.eve_id == WandererApp.Env.corp_wallet_eve_id() &&
+          WandererApp.Character.can_track_corp_wallet?(character)
       end)
 
     if not is_nil(admin_character) do
@@ -41,12 +42,12 @@ defmodule WandererApp.StartCorpWalletTrackerTask do
 
   def maybe_start_corp_wallet_tracker(_), do: :ok
 
-  defp _get_user_characters(user_hash) when not is_nil(user_hash) and is_binary(user_hash) do
+  defp get_user_characters(user_hash) when not is_nil(user_hash) and is_binary(user_hash) do
     case WandererApp.Api.User.by_hash(user_hash, load: :characters) do
       {:ok, user} -> {:ok, user.characters}
       {:error, _} -> {:ok, []}
     end
   end
 
-  defp _get_user_characters(_), do: {:ok, []}
+  defp get_user_characters(_), do: {:ok, []}
 end

@@ -5,15 +5,26 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
-  def handle_server_event(%{event: :add_system, payload: system}, socket),
-    do:
-      socket
-      |> MapEventHandler.push_map_event("add_systems", [MapEventHandler.map_ui_system(system)])
+  def handle_server_event(%{event: :add_system, payload: system}, socket) do
+    # Schedule kill update for the new system after a short delay to allow subscription
+    Process.send_after(
+      self(),
+      %{event: :update_system_kills, payload: system.solar_system_id},
+      2000
+    )
+
+    socket
+    |> MapEventHandler.push_map_event("add_systems", [
+      MapEventHandler.map_ui_system(system)
+    ])
+  end
 
   def handle_server_event(%{event: :update_system, payload: system}, socket),
     do:
       socket
-      |> MapEventHandler.push_map_event("update_systems", [MapEventHandler.map_ui_system(system)])
+      |> MapEventHandler.push_map_event("update_systems", [
+        MapEventHandler.map_ui_system(system, false)
+      ])
 
   def handle_server_event(%{event: :systems_removed, payload: solar_system_ids}, socket),
     do:
@@ -31,65 +42,60 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             current_user: current_user,
+            tracked_characters: tracked_characters,
             map_id: map_id,
-            map_user_settings: map_user_settings
+            map_user_settings: map_user_settings,
+            main_character_eve_id: main_character_eve_id,
+            following_character_eve_id: following_character_eve_id
           }
         } = socket
       ) do
-    is_user_character =
-      current_user.characters
-      |> Enum.map(& &1.id)
-      |> Enum.member?(character_id)
+    character =
+      if is_nil(character_id) do
+        tracked_characters
+        |> Enum.find(fn tracked_character ->
+          tracked_character.eve_id == (following_character_eve_id || main_character_eve_id)
+        end)
+      else
+        tracked_characters
+        |> Enum.find(fn tracked_character -> tracked_character.id == character_id end)
+      end
+
+    is_user_character = not is_nil(character)
 
     is_select_on_spash =
       map_user_settings
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("select_on_spash")
 
-    is_followed =
-      case WandererApp.MapCharacterSettingsRepo.get_by_map(map_id, character_id) do
-        {:ok, setting} -> setting.followed == true
-        _ -> false
+    is_following =
+      case is_user_character && not is_nil(following_character_eve_id) do
+        true ->
+          following_character_eve_id == character.eve_id
+
+        _ ->
+          false
       end
 
-    must_select? = is_user_character && (is_select_on_spash || is_followed)
+    must_select? = is_user_character && (is_select_on_spash || is_following)
 
     if not must_select? do
       socket
     else
-      # Check if we already selected this exact system for this char:
-      last_selected =
-        WandererApp.Cache.lookup!(
-          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-          nil
-        )
+      # Always select the system when auto-select is enabled (following or select_on_spash).
+      # The frontend will handle deselecting other systems
+      #
+      select_solar_system_id =
+        if not is_nil(solar_system_id) do
+          "#{solar_system_id}"
+        else
+          {:ok, character} = WandererApp.Character.get_map_character(map_id, character.id)
+          "#{character.solar_system_id}"
+        end
 
-      if last_selected == solar_system_id do
-        # same system => skip
-        socket
-      else
-        # new system => update cache + push event
-        WandererApp.Cache.put(
-          "char:#{character_id}:map:#{map_id}:last_selected_system_id",
-          solar_system_id
-        )
-
-        socket
-        |> MapEventHandler.push_map_event("select_system", solar_system_id)
-      end
+      socket
+      |> MapEventHandler.push_map_event("select_system", select_solar_system_id)
     end
-  end
-
-  def handle_server_event(%{event: :kills_updated, payload: kills}, socket) do
-    kills =
-      kills
-      |> Enum.map(&MapEventHandler.map_ui_kill/1)
-
-    socket
-    |> MapEventHandler.push_map_event(
-      "kills_updated",
-      kills
-    )
   end
 
   def handle_server_event(event, socket),
@@ -103,12 +109,13 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
             current_user: current_user,
             has_tracked_characters?: true,
             map_id: map_id,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             user_permissions: %{add_system: true}
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     WandererApp.Map.Server.add_system(
       map_id,
       %{
@@ -116,68 +123,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         coordinates: coordinates
       },
       current_user.id,
-      tracked_character_ids |> List.first()
+      main_character_id
     )
-
-    {:noreply, socket}
-  end
-
-  def handle_ui_event(
-        "add_hub",
-        %{"system_id" => solar_system_id} = _event,
-        %{
-          assigns: %{
-            map_id: map_id,
-            current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
-            has_tracked_characters?: true,
-            user_permissions: %{update_system: true}
-          }
-        } =
-          socket
-      ) do
-    map_id
-    |> WandererApp.Map.Server.add_hub(%{
-      solar_system_id: solar_system_id
-    })
-
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:hub_added, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
-        map_id: map_id,
-        solar_system_id: solar_system_id
-      })
-
-    {:noreply, socket}
-  end
-
-  def handle_ui_event(
-        "delete_hub",
-        %{"system_id" => solar_system_id} = _event,
-        %{
-          assigns: %{
-            map_id: map_id,
-            current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
-            has_tracked_characters?: true,
-            user_permissions: %{update_system: true}
-          }
-        } =
-          socket
-      ) do
-    map_id
-    |> WandererApp.Map.Server.remove_hub(%{
-      solar_system_id: solar_system_id
-    })
-
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:hub_removed, %{
-        character_id: tracked_character_ids |> List.first(),
-        user_id: current_user.id,
-        map_id: map_id,
-        solar_system_id: solar_system_id
-      })
 
     {:noreply, socket}
   end
@@ -188,11 +135,13 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> update_system_position(position)
 
@@ -205,11 +154,13 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         %{
           assigns: %{
             map_id: map_id,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
         } = socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> update_system_positions(positions)
 
@@ -223,13 +174,14 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           assigns: %{
             map_id: map_id,
             current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true} = user_permissions
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     method_atom =
       case param do
         "name" -> :update_system_name
@@ -265,7 +217,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
       {:ok, _} =
         WandererApp.User.ActivityTracker.track_map_event(:system_updated, %{
-          character_id: tracked_character_ids |> List.first(),
+          character_id: main_character_id,
           user_id: current_user.id,
           map_id: map_id,
           solar_system_id: "#{solar_system_id}" |> String.to_integer(),
@@ -316,18 +268,19 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
           assigns: %{
             map_id: map_id,
             current_user: current_user,
-            tracked_character_ids: tracked_character_ids,
+            main_character_id: main_character_id,
             has_tracked_characters?: true,
             user_permissions: %{delete_system: true}
           }
         } =
           socket
-      ) do
+      )
+      when not is_nil(main_character_id) do
     map_id
     |> WandererApp.Map.Server.delete_systems(
       solar_system_ids |> Enum.map(&String.to_integer/1),
       current_user.id,
-      tracked_character_ids |> List.first()
+      main_character_id
     )
 
     {:noreply, socket}
@@ -370,7 +323,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   defp update_system_position(map_id, %{
          "position" => %{"x" => x, "y" => y},
          "solar_system_id" => solar_system_id
-       }),
+       })
+       when not is_nil(x) and not is_nil(y) and not is_nil(solar_system_id),
        do:
          map_id
          |> WandererApp.Map.Server.update_system_position(%{
@@ -378,4 +332,6 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
            position_x: x,
            position_y: y
          })
+
+  defp update_system_position(_map_id, _position), do: :ok
 end

@@ -1,8 +1,8 @@
-import classes from './LocalCharactersItemTemplate.module.scss';
-import clsx from 'clsx';
-import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
 import { CharItemProps } from '@/hooks/Mapper/components/mapInterface/widgets/LocalCharacters/components';
+import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
+import clsx from 'clsx';
 import { VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
+import classes from './LocalCharactersItemTemplate.module.scss';
 
 export type LocalCharactersItemTemplateProps = { showShipName: boolean } & CharItemProps &
   VirtualScrollerTemplateOptions;
@@ -22,7 +22,7 @@ export const LocalCharactersItemTemplate = ({ showShipName, ...options }: LocalC
       )}
       style={{ height: `${options.props.itemSize}px` }}
     >
-      <CharacterCard showShipName={showShipName} {...options} />
+      <CharacterCard showShipName={showShipName} showTicker showShip {...options} />
     </div>
   );
 };

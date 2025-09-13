@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
-import { CommandInit } from '@/hooks/Mapper/types';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
+import { CommandInit } from '@/hooks/Mapper/types';
+import { useCallback } from 'react';
 
 export const useMapInit = () => {
   const { update } = useMapRootState();
@@ -9,20 +9,27 @@ export const useMapInit = () => {
   const { addSystemStatic } = useLoadSystemStatic({ systems: [] });
 
   return useCallback(
-    ({
-      systems,
-      connections,
-      effects,
-      wormholes,
-      system_static_infos,
-      characters,
-      user_characters,
-      present_characters,
-      hubs,
-      user_permissions,
-      options,
-      is_subscription_active,
-    }: CommandInit) => {
+    (props: CommandInit) => {
+      const {
+        systems,
+        system_signatures,
+        connections,
+        effects,
+        wormholes,
+        system_static_infos,
+        characters,
+        user_characters,
+        present_characters,
+        hubs,
+        user_permissions,
+        options,
+        is_subscription_active,
+        main_character_eve_id,
+        following_character_eve_id,
+        user_hubs,
+        map_slug,
+      } = props;
+
       const updateData: Partial<MapRootData> = {};
 
       if (wormholes) {
@@ -50,6 +57,10 @@ export const useMapInit = () => {
         updateData.systems = systems;
       }
 
+      if (system_signatures) {
+        updateData.systemSignatures = system_signatures;
+      }
+
       if (connections) {
         updateData.connections = connections;
       }
@@ -62,16 +73,34 @@ export const useMapInit = () => {
         updateData.hubs = hubs;
       }
 
+      if (user_hubs) {
+        updateData.userHubs = user_hubs;
+      }
+
       if (options) {
         updateData.options = options;
       }
 
-      updateData.isSubscriptionActive = is_subscription_active;
+      if (is_subscription_active) {
+        updateData.isSubscriptionActive = is_subscription_active;
+      }
 
       if (system_static_infos) {
         system_static_infos.forEach(static_info => {
           addSystemStatic(static_info);
         });
+      }
+
+      if (main_character_eve_id) {
+        updateData.mainCharacterEveId = main_character_eve_id;
+      }
+
+      if ('following_character_eve_id' in props) {
+        updateData.followingCharacterEveId = following_character_eve_id;
+      }
+
+      if ('map_slug' in props) {
+        updateData.map_slug = map_slug;
       }
 
       update(updateData);

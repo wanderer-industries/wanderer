@@ -1,3 +1,5 @@
+import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+
 export enum SESSION_KEY {
   viewPort = 'viewPort',
   windows = 'windows',
@@ -31,6 +33,7 @@ export enum Regions {
   Solitude = 10000044,
   TashMurkon = 10000020,
   VergeVendor = 10000068,
+  Pochven = 10000070,
 }
 
 export enum Spaces {
@@ -38,6 +41,7 @@ export enum Spaces {
   'Gallente' = 'Gallente',
   'Matar' = 'Matar',
   'Amarr' = 'Amarr',
+  'Pochven' = 'Pochven',
 }
 
 export const REGIONS_MAP: Record<number, Spaces> = {
@@ -64,6 +68,7 @@ export const REGIONS_MAP: Record<number, Spaces> = {
   [Regions.Solitude]: Spaces.Gallente,
   [Regions.TashMurkon]: Spaces.Amarr,
   [Regions.VergeVendor]: Spaces.Gallente,
+  [Regions.Pochven]: Spaces.Pochven,
 };
 
 export type K162Type = {
@@ -139,3 +144,10 @@ export const K162_TYPES_MAP: { [key: string]: K162Type } = K162_TYPES.reduce(
   (acc, x) => ({ ...acc, [x.value]: x }),
   {},
 );
+
+export const MINIMAP_PLACEMENT_MAP = {
+  [PingsPlacement.rightTop]: 'top-right',
+  [PingsPlacement.leftTop]: 'top-left',
+  [PingsPlacement.rightBottom]: 'bottom-right',
+  [PingsPlacement.leftBottom]: 'bottom-left',
+};

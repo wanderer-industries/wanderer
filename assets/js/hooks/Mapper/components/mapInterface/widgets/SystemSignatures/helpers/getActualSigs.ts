@@ -1,5 +1,5 @@
-import { SystemSignature } from '@/hooks/Mapper/types';
 import { GROUPS_LIST } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
+import { SystemSignature } from '@/hooks/Mapper/types';
 import { getState } from './getState';
 
 /**
@@ -22,6 +22,7 @@ export const getActualSigs = (
 
   oldSignatures.forEach(oldSig => {
     const newSig = newSignatures.find(s => s.eve_id === oldSig.eve_id);
+
     if (newSig) {
       const needUpgrade = getState(GROUPS_LIST, newSig) > getState(GROUPS_LIST, oldSig);
       const mergedSig = { ...oldSig };

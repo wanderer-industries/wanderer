@@ -8,13 +8,16 @@ defmodule WandererAppWeb.AuthController do
   require Logger
 
   def callback(%{assigns: %{ueberauth_auth: auth, current_user: user} = _assigns} = conn, _params) do
+    active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
     character_data = %{
       eve_id: "#{auth.info.email}",
       name: auth.info.name,
       access_token: auth.credentials.token,
       refresh_token: auth.credentials.refresh_token,
       expires_at: auth.credentials.expires_at,
-      scopes: auth.credentials.scopes
+      scopes: auth.credentials.scopes,
+      tracking_pool: active_tracking_pool
     }
 
     %{
@@ -25,10 +28,12 @@ defmodule WandererAppWeb.AuthController do
       case WandererApp.Api.Character.by_eve_id(character_data.eve_id) do
         {:ok, character} ->
           character_update = %{
+            name: auth.info.name,
             access_token: auth.credentials.token,
             refresh_token: auth.credentials.refresh_token,
             expires_at: auth.credentials.expires_at,
-            scopes: auth.credentials.scopes
+            scopes: auth.credentials.scopes,
+            tracking_pool: active_tracking_pool
           }
 
           {:ok, character} =
@@ -77,6 +82,8 @@ defmodule WandererAppWeb.AuthController do
 
     maybe_update_character_user_id(character, user_id)
 
+    WandererApp.Character.TrackingConfigUtils.update_active_tracking_pool()
+
     conn
     |> put_session(:user_id, user_id)
     |> redirect(to: "/characters")
@@ -94,7 +101,15 @@ defmodule WandererAppWeb.AuthController do
   end
 
   def maybe_update_character_user_id(character, user_id) when not is_nil(user_id) do
-    WandererApp.Api.Character.assign_user!(character, %{user_id: user_id})
+    # First try to load the character by ID to ensure it exists and is valid
+    case WandererApp.Api.Character.by_id(character.id) do
+      {:ok, loaded_character} ->
+        WandererApp.Api.Character.assign_user!(loaded_character, %{user_id: user_id})
+
+      {:error, _} ->
+        raise Ash.Error.Invalid,
+          errors: [%Ash.Error.Query.NotFound{resource: WandererApp.Api.Character}]
+    end
   end
 
   def maybe_update_character_user_id(_character, _user_id), do: :ok

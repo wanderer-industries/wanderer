@@ -11,11 +11,12 @@ defmodule WandererAppWeb.MapsLive do
   @impl true
   def mount(
         _params,
-        %{"user_id" => user_id} = _session,
+        _session,
         %{assigns: %{current_user: current_user}} = socket
       )
-      when not is_nil(user_id) and is_connected?(socket) do
-    {:ok, active_characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
+      when not is_nil(current_user) and is_connected?(socket) do
+    {:ok, active_characters} =
+      WandererApp.Api.Character.active_by_user(%{user_id: current_user.id})
 
     user_characters =
       active_characters
@@ -33,7 +34,7 @@ defmodule WandererAppWeb.MapsLive do
        is_version_valid?: false
      )
      |> assign_async(:maps, fn ->
-       _load_maps(current_user)
+       load_maps(current_user)
      end)}
   end
 
@@ -42,10 +43,10 @@ defmodule WandererAppWeb.MapsLive do
     {:ok,
      socket
      |> assign(
-       maps: [],
        characters: [],
        location: nil,
-       is_version_valid?: false
+       is_version_valid?: false,
+       restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
   end
 
@@ -102,7 +103,8 @@ defmodule WandererAppWeb.MapsLive do
          :edit,
          %{"slug" => map_slug} = _params,
          url
-       ) do
+       )
+       when not is_nil(current_user) do
     WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
@@ -136,7 +138,8 @@ defmodule WandererAppWeb.MapsLive do
          :settings,
          %{"slug" => map_slug} = _params,
          _url
-       ) do
+       )
+       when not is_nil(current_user) do
     WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
@@ -244,7 +247,12 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply, socket |> assign(form: form)}
   end
 
-  def handle_event("create", %{"form" => form}, socket) do
+  def handle_event(
+        "create",
+        %{"form" => form},
+        %{assigns: %{current_user: current_user}} = socket
+      )
+      when not is_nil(current_user) do
     scope =
       form
       |> Map.get("scope")
@@ -260,12 +268,10 @@ defmodule WandererAppWeb.MapsLive do
         :telemetry.execute([:wanderer_app, :map, :created], %{count: 1})
         maybe_create_default_acl(form, new_map)
 
-        current_user = socket.assigns.current_user
-
         {:noreply,
          socket
          |> assign_async(:maps, fn ->
-           _load_maps(current_user)
+           load_maps(current_user)
          end)
          |> push_patch(to: ~p"/maps")}
 
@@ -419,7 +425,7 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply,
      socket
      |> assign_async(:maps, fn ->
-       _load_maps(current_user)
+       load_maps(current_user)
      end)
      |> push_patch(to: ~p"/maps")}
   end
@@ -509,19 +515,19 @@ defmodule WandererAppWeb.MapsLive do
           {:ok, tmp_file_path}
         end)
 
-      Task.async(fn ->
-        {:ok, data} =
-          WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
+      # Task.async(fn ->
+      #   {:ok, data} =
+      #     WandererApp.Utils.JSONUtil.read_json(uploaded_file_path)
 
-        WandererApp.Map.Manager.start_map(map_id)
+      #   WandererApp.Map.Manager.start_map(map_id)
 
-        :timer.sleep(1000)
+      #   :timer.sleep(1000)
 
-        map_id
-        |> WandererApp.Map.Server.import_settings(data, current_user.id)
+      #   map_id
+      #   |> WandererApp.Map.Server.import_settings(data, current_user.id)
 
-        :imported
-      end)
+      #   :imported
+      # end)
 
       {:noreply,
        socket
@@ -537,7 +543,7 @@ defmodule WandererAppWeb.MapsLive do
          selected_subscription
        ) do
     %{
-      extra_characters_100: extra_characters_100,
+      extra_characters_50: extra_characters_50,
       extra_hubs_10: extra_hubs_10
     } = WandererApp.Env.subscription_settings()
 
@@ -552,7 +558,7 @@ defmodule WandererAppWeb.MapsLive do
       case characters_limit > sub_characters_limit do
         true ->
           additional_price +
-            (characters_limit - sub_characters_limit) / 100 * extra_characters_100
+            (characters_limit - sub_characters_limit) / 50 * extra_characters_50
 
         _ ->
           additional_price
@@ -625,7 +631,7 @@ defmodule WandererAppWeb.MapsLive do
          target: "#{solar_system_target}"
        }
 
-  defp _load_maps(current_user) do
+  defp load_maps(current_user) do
     {:ok, maps} = WandererApp.Maps.get_available_maps(current_user)
 
     maps =

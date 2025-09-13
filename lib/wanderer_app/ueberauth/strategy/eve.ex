@@ -20,17 +20,9 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
     is_admin? = Map.get(params, "admin", "false") in ~w(true 1)
     invite_token = Map.get(params, "invite", nil)
 
-    invite_token_valid =
-      case WandererApp.Env.invites() do
-        true ->
-          case invite_token do
-            nil -> false
-            token -> WandererApp.Cache.lookup!("invite_#{token}", false)
-          end
+    {invite_token_valid, invite_type} = check_invite_valid(invite_token)
 
-        _ ->
-          true
-      end
+    is_admin? = is_admin? || invite_type == :admin
 
     case invite_token_valid do
       true ->
@@ -200,10 +192,13 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
   end
 
   defp oauth_client_options_from_conn(conn, with_wallet, is_admin?) do
+    tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
+
     base_options = [
-      redirect_uri: callback_url(conn),
+      redirect_uri: "#{WandererApp.Env.base_url()}/auth/eve/callback",
       with_wallet: with_wallet,
-      is_admin?: is_admin?
+      is_admin?: is_admin?,
+      tracking_pool: tracking_pool
     ]
 
     request_options = conn.private[:ueberauth_request_options].options
@@ -217,5 +212,34 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
 
   defp option(conn, key) do
     Keyword.get(options(conn), key, Keyword.get(default_options(), key))
+  end
+
+  defp check_invite_valid(invite_token) do
+    case invite_token do
+      token when not is_nil(token) and token != "" ->
+        check_token_valid(token)
+
+      _ ->
+        {not WandererApp.Env.invites(), :user}
+    end
+  end
+
+  defp check_token_valid(token) do
+    WandererApp.Cache.lookup!("invite_#{token}", false)
+    |> case do
+      true -> {true, :user}
+      _ -> check_map_token_valid(token)
+    end
+  end
+
+  def check_map_token_valid(token) do
+    {:ok, invites} = WandererApp.Api.MapInvite.read()
+
+    invites
+    |> Enum.find(fn invite -> invite.token == token end)
+    |> case do
+      nil -> {false, nil}
+      invite -> {true, invite.type}
+    end
   end
 end

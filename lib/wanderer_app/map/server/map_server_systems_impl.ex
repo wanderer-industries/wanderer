@@ -134,7 +134,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           no_active_characters? =
             map_id |> WandererApp.Map.get_system_characters(solar_system_id) |> Enum.empty?()
 
-          no_active_connections? and no_active_characters?
+          no_active_pings? =
+            map_id |> WandererApp.MapPingsRepo.get_by_map_and_system!(system_id) |> Enum.empty?()
+
+          no_active_connections? and no_active_characters? and no_active_pings?
         else
           false
         end
@@ -266,31 +269,47 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       |> Enum.filter(fn system -> not is_nil(system) && not system.locked end)
       |> Enum.map(&{&1.solar_system_id, &1.id})
 
-    solar_system_ids_to_remove =
-      filtered_ids
-      |> Enum.map(fn {solar_system_id, _} -> solar_system_id end)
-
-    system_ids_to_remove =
-      filtered_ids
-      |> Enum.map(fn {_, system_id} -> system_id end)
-
-    connections_to_remove =
-      solar_system_ids_to_remove
-      |> Enum.map(fn solar_system_id ->
-        WandererApp.Map.find_connections(map_id, solar_system_id)
-      end)
-      |> List.flatten()
-      |> Enum.uniq_by(& &1.id)
-
-    :ok = WandererApp.Map.remove_connections(map_id, connections_to_remove)
-    :ok = WandererApp.Map.remove_systems(map_id, solar_system_ids_to_remove)
-
-    solar_system_ids_to_remove
-    |> Enum.each(fn solar_system_id ->
+    filtered_ids
+    |> Enum.each(fn {solar_system_id, system_id} ->
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
         {:ok, _} ->
+          :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
+          @ddrt.delete([solar_system_id], rtree_name)
+          Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
+
+          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+          Logger.debug(fn ->
+            "SystemsImpl.delete_systems calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+          end)
+
+          # For consistency, include basic fields even for deleted systems
+          WandererApp.ExternalEvents.broadcast(map_id, :deleted_system, %{
+            solar_system_id: solar_system_id,
+            # System is deleted, name not available
+            name: nil,
+            position_x: nil,
+            position_y: nil
+          })
+
+          track_systems_removed(map_id, user_id, character_id, [solar_system_id])
+          remove_system_connections(map_id, [solar_system_id])
+
+          try do
+            cleanup_linked_signatures(map_id, [solar_system_id])
+          rescue
+            e ->
+              Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
+          end
+
+          try do
+            cleanup_linked_system_sig_eve_ids(state, [system_id])
+          rescue
+            e ->
+              Logger.error("Failed to cleanup system linked sig eve ids: #{inspect(e)}")
+          end
+
           :ok
 
         {:error, error} ->
@@ -299,25 +318,68 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       end
     end)
 
+    state
+  end
+
+  defp track_systems_removed(map_id, user_id, character_id, removed_solar_system_ids)
+       when not is_nil(user_id) and not is_nil(character_id) do
+    WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
+      character_id: character_id,
+      user_id: user_id,
+      map_id: map_id,
+      solar_system_ids: removed_solar_system_ids
+    })
+    |> case do
+      {:ok, _} -> :ok
+      error -> Logger.error("Failed to track systems removed: #{inspect(error)}")
+    end
+  end
+
+  defp track_systems_removed(_map_id, _user_id, _character_id, _removed_solar_system_ids), do: :ok
+
+  defp remove_system_connections(map_id, solar_system_ids_to_remove) do
+    connections_to_remove =
+      solar_system_ids_to_remove
+      |> Enum.map(fn solar_system_id ->
+        WandererApp.Map.find_connections(map_id, solar_system_id)
+      end)
+      |> List.flatten()
+      |> Enum.uniq_by(& &1.id)
+
     connections_to_remove
     |> Enum.each(fn connection ->
-      Logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
-      WandererApp.MapConnectionRepo.destroy(map_id, connection)
+      try do
+        Logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
+        :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
+        :ok = WandererApp.Map.remove_connection(map_id, connection)
+        Impl.broadcast!(map_id, :remove_connections, [connection])
+      rescue
+        e ->
+          Logger.error("Failed to remove connection: #{inspect(e)}")
+      end
     end)
+  end
 
-    solar_system_ids_to_remove
+  defp cleanup_linked_signatures(map_id, removed_solar_system_ids) do
+    removed_solar_system_ids
     |> Enum.map(fn solar_system_id ->
       WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
     end)
     |> List.flatten()
     |> Enum.uniq_by(& &1.system_id)
     |> Enum.each(fn s ->
-      {:ok, %{system: system}} = s |> Ash.load([:system])
-      Ash.destroy!(s)
-
-      Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+      try do
+        {:ok, %{system: system}} = s |> Ash.load([:system])
+        :ok = Ash.destroy!(s)
+        Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+      rescue
+        e ->
+          Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
+      end
     end)
+  end
 
+  defp cleanup_linked_system_sig_eve_ids(state, system_ids_to_remove) do
     linked_system_ids =
       system_ids_to_remove
       |> Enum.map(fn system_id ->
@@ -335,34 +397,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         linked_sig_eve_id: nil
       })
     end)
-
-    @ddrt.delete(solar_system_ids_to_remove, rtree_name)
-
-    Impl.broadcast!(map_id, :remove_connections, connections_to_remove)
-    Impl.broadcast!(map_id, :systems_removed, solar_system_ids_to_remove)
-
-    case not is_nil(user_id) do
-      true ->
-        {:ok, _} =
-          WandererApp.User.ActivityTracker.track_map_event(:systems_removed, %{
-            character_id: character_id,
-            user_id: user_id,
-            map_id: map_id,
-            solar_system_ids: solar_system_ids_to_remove
-          })
-
-        :telemetry.execute(
-          [:wanderer_app, :map, :systems, :remove],
-          %{count: solar_system_ids_to_remove |> Enum.count()}
-        )
-
-        :ok
-
-      _ ->
-        :ok
-    end
-
-    state
   end
 
   def maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
@@ -406,6 +440,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             WandererApp.Map.add_system(map_id, updated_system)
 
             Impl.broadcast!(map_id, :add_system, updated_system)
+
+            # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+            WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+              solar_system_id: updated_system.solar_system_id,
+              name: updated_system.name,
+              position_x: updated_system.position_x,
+              position_y: updated_system.position_y
+            })
+
             :ok
 
           _ ->
@@ -435,6 +478,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
                 WandererApp.Map.add_system(map_id, new_system)
                 Impl.broadcast!(map_id, :add_system, new_system)
+
+                # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+                WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+                  solar_system_id: new_system.solar_system_id,
+                  name: new_system.name,
+                  position_x: new_system.position_x,
+                  position_y: new_system.position_y
+                })
 
                 :ok
 
@@ -542,6 +593,18 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     Impl.broadcast!(map_id, :add_system, system)
 
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    Logger.debug(fn ->
+      "SystemsImpl._add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+    end)
+
+    WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+      solar_system_id: system.solar_system_id,
+      name: system.name,
+      position_x: system.position_x,
+      position_y: system.position_y
+    })
+
     {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
         character_id: character_id,
@@ -605,5 +668,19 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     )
 
     Impl.broadcast!(map_id, :update_system, updated_system)
+
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    WandererApp.ExternalEvents.broadcast(map_id, :system_metadata_changed, %{
+      solar_system_id: updated_system.solar_system_id,
+      name: updated_system.name,
+      # ADD
+      temporary_name: updated_system.temporary_name,
+      # ADD
+      labels: updated_system.labels,
+      # ADD
+      description: updated_system.description,
+      # ADD
+      status: updated_system.status
+    })
   end
 end

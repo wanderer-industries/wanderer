@@ -38,8 +38,6 @@ defmodule WandererAppWeb.UserAuth do
             {:halt, redirect_require_login(socket)}
 
           %User{characters: characters} ->
-            :ok = track_characters(characters)
-
             {:cont, new_socket}
         end
 

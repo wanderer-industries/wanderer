@@ -28,7 +28,7 @@
               <span class="text-gray-400 dark:text-gray-400">Wanderer Balance</span>
               <h4 class="my-4 font-medium text-gray-800 text-4xl  dark:text-gray-100">
                 <span class="counter-value">
-                  <%= @total_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                  {@total_balance |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                 </span>
                 ISK
               </h4>
@@ -112,35 +112,79 @@
           </div>
         </div>
 
-        <div :if={@show_invites?} class="card dark:bg-zinc-800 dark:border-zinc-600">
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
           <div class="card-body">
             <div class="col-span-6">
-              <span class="text-gray-400 dark:text-gray-400">Invite Link</span>
+              <span class="text-gray-400 dark:text-gray-400">Invites</span>
               <h4 class="my-4 font-medium text-gray-800 text-4xl  dark:text-gray-100">
-                <.button class="btn btn-primary" phx-click="generate-invite-link">
-                  Generate
-                </.button>
-
-                <div :if={not is_nil(@invite_link)} class="join">
-                  <input
-                    class="input input-bordered join-item"
-                    readonly
-                    type="text"
-                    value={@invite_link}
-                  />
-                  <.button
-                    phx-hook="CopyToClipboard"
-                    id="copy-to-clipboard"
-                    class="copy-link btn join-item rounded-r-full"
-                    data-url={@invite_link}
-                  >
-                    Copy
-                    <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
-                      Link copied
-                    </div>
-                  </.button>
-                </div>
+                <.link class="btn mt-2 w-full btn-neutral rounded-none" patch={~p"/admin/invite"}>
+                  <.icon name="hero-plus-solid" class="w-6 h-6" />
+                  <h3 class="card-title text-center text-md">New Invite</h3>
+                </.link>
               </h4>
+              <.table id="invites" rows={@invites} class="!max-h-[40vh] !overflow-y-auto">
+                <:col :let={invite} label="Link">
+                  <div class="flex items-center">
+                    <div class="w-[200px] no-wrap truncate">
+                      {get_invite_link(@uri, invite.token)}
+                    </div>
+                    <.button
+                      phx-hook="CopyToClipboard"
+                      id="copy-to-clipboard"
+                      class="copy-link btn btn-neutral rounded-none"
+                      data-url={get_invite_link(@uri, invite.token)}
+                    >
+                      Copy
+                      <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
+                        Link copied
+                      </div>
+                    </.button>
+                  </div>
+                </:col>
+                <:col :let={invite} label="Type">
+                  {invite.type}
+                </:col>
+                <:col :let={invite} label="Valid Until">
+                  <div>
+                    <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
+                      <.local_time id={invite.id} at={invite.valid_until} />
+                    </p>
+                  </div>
+                </:col>
+                <:action :let={invite}>
+                  <.button
+                    phx-click="delete-invite"
+                    phx-value-id={invite.id}
+                    data={[confirm: "Please confirm to delete invite!"]}
+                    class="hover:text-white"
+                  >
+                    <.icon name="hero-trash-solid" class="w-4 h-4" />
+                  </.button>
+                </:action>
+              </.table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <div class="col-span-6">
+              <span class="text-gray-400 dark:text-gray-400">Tracking Pools</span>
+              <.table
+                id="tracking_pools"
+                rows={@tracker_stats}
+                class="!max-h-[40vh] !overflow-y-auto"
+              >
+                <:col :let={stat} label="Pool">
+                  <div class="w-[200px] no-wrap truncate">{stat.title}</div>
+                </:col>
+                <:col :let={stat} label="Active">
+                  <div :if={stat.id == @active_tracking_pool}>true</div>
+                </:col>
+                <:col :let={stat} label="Count">
+                  {stat.value}
+                </:col>
+              </.table>
             </div>
           </div>
         </div>
@@ -173,21 +217,21 @@
                               <:col :let={transaction} label="Transaction">
                                 <div>
                                   <h5 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-100">
-                                    <%= transaction.reason_encoded %>
+                                    {transaction.reason_encoded}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
-                                    <%= transaction.date %>
+                                    {transaction.date}
                                   </p>
                                 </div>
                               </:col>
                               <:col :let={transaction} label="Description">
-                                <%= transaction.description %>
+                                {transaction.description}
                               </:col>
                               <:col :let={transaction} label="">
                                 <div class="text-end">
                                   <h5 class="mb-0 text-sm text-gray-500 dark:text-zinc-100">
-                                    <%= transaction.amount_encoded
-                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"]) %>
+                                    {transaction.amount_encoded
+                                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
                                   </h5>
                                   <p class="mb-0 text-xs text-gray-600 dark:text-zinc-100 whitespace-nowrap">
                                     ISK
@@ -234,17 +278,17 @@
                                     id={"subscription-active-till-#{subscription.id}"}
                                     at={subscription.active_till}
                                   >
-                                    <%= subscription.active_till %>
+                                    {subscription.active_till}
                                   </.local_time>
                                 </:col>
                                 <:col :let={subscription} label="Characters Limit">
-                                  <%= subscription.characters_limit %>
+                                  {subscription.characters_limit}
                                 </:col>
                                 <:col :let={subscription} label="Hubs Limit">
-                                  <%= subscription.hubs_limit %>
+                                  {subscription.hubs_limit}
                                 </:col>
                                 <:col :let={subscription} label="Auto Renew">
-                                  <%= if subscription.auto_renew?, do: "Yes", else: "No" %>
+                                  {if subscription.auto_renew?, do: "Yes", else: "No"}
                                 </:col>
                               </.table>
                             </div>
@@ -261,4 +305,41 @@
       </div>
     </div>
   </div>
+  <.modal
+    :if={@live_action in [:add_invite_link]}
+    title="New Invite"
+    class="!w-[500px]"
+    id="add_invite_link_modal"
+    show
+    on_cancel={JS.patch(~p"/admin")}
+  >
+    <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action}>
+      <.input
+        type="select"
+        field={f[:type]}
+        class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+        wrapper_class="mt-2"
+        label="Type"
+        options={
+          Enum.map(@invite_types, fn invite_type -> {invite_type.label, invite_type.id} end)
+        }
+      />
+
+      <.input
+        type="select"
+        field={f[:valid_until]}
+        class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+        wrapper_class="mt-2"
+        label="Valid"
+        options={Enum.map(@valid_types, fn valid_type -> {valid_type.label, valid_type.id} end)}
+      />
+      
+<!-- API Key Section with grid layout -->
+      <div class="modal-action">
+        <.button class="mt-2" type="submit" phx-disable-with="Saving...">
+          {(@live_action == :add_invite_link && "Add") || "Save"}
+        </.button>
+      </div>
+    </.form>
+  </.modal>
 </main>

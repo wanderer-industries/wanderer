@@ -16,7 +16,7 @@ export enum SOLAR_SYSTEM_CLASS_IDS {
   thera = 12,
   c13 = 13,
   sentinel = 14,
-  baribican = 15,
+  barbican = 15,
   vidette = 16,
   conflux = 17,
   redoubt = 18,
@@ -82,7 +82,7 @@ export const SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS = {
   thera: SOLAR_SYSTEM_CLASS_GROUPS.thera,
   c13: SOLAR_SYSTEM_CLASS_GROUPS.c13,
   sentinel: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
-  baribican: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
+  barbican: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
   vidette: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
   conflux: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
   redoubt: SOLAR_SYSTEM_CLASS_GROUPS.drifter,
@@ -217,7 +217,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 14,
     effectPower: 2,
     title: 'Class 14 (Sentinel Drifter)',
-    shortTitle: 'Sentinel',
+    shortTitle: 'Sentinel MZ',
   },
   {
     id: 'barbican',
@@ -225,7 +225,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 15,
     effectPower: 2,
     title: 'Class 15 (Barbican Drifter)',
-    shortTitle: 'Barbican',
+    shortTitle: 'Liberated Barbican',
   },
   {
     id: 'vidette',
@@ -233,7 +233,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 16,
     effectPower: 2,
     title: 'Class 16 (Vidette Drifter)',
-    shortTitle: 'Vidette',
+    shortTitle: 'Sanctified Vidette',
   },
   {
     id: 'conflux',
@@ -241,7 +241,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 17,
     effectPower: 2,
     title: 'Class 17 (Conflux Drifter)',
-    shortTitle: 'Conflux',
+    shortTitle: 'Conflux Eyrie',
   },
   {
     id: 'redoubt',
@@ -249,7 +249,7 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     wormholeClassID: 18,
     effectPower: 2,
     title: 'Class 18 (Redoubt Drifter)',
-    shortTitle: 'Redoubt',
+    shortTitle: 'Azdaja Redoubt',
   },
   {
     id: 'a1',

@@ -20,6 +20,18 @@ defmodule WandererApp.MapSystemRepo do
     WandererApp.Api.MapSystem.read_all_by_map(%{map_id: map_id})
   end
 
+  def get_all_by_maps(map_ids) when is_list(map_ids) do
+    # Since there's no bulk query, we need to query each map individually
+    map_ids
+    |> Enum.flat_map(fn map_id ->
+      case get_all_by_map(map_id) do
+        {:ok, systems} -> systems
+        _ -> []
+      end
+    end)
+    |> Enum.uniq_by(& &1.solar_system_id)
+  end
+
   def get_visible_by_map(map_id) do
     WandererApp.Api.MapSystem.read_visible_by_map(%{map_id: map_id})
   end

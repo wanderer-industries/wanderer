@@ -9,7 +9,8 @@ defmodule WandererApp.Map.Server.Impl do
     CharactersImpl,
     ConnectionsImpl,
     SystemsImpl,
-    SignaturesImpl
+    SignaturesImpl,
+    PingsImpl
   }
 
   @enforce_keys [
@@ -24,14 +25,14 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @systems_cleanup_timeout :timer.minutes(30)
-  @characters_cleanup_timeout :timer.minutes(1)
+  @characters_cleanup_timeout :timer.minutes(5)
   @connections_cleanup_timeout :timer.minutes(2)
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
   @backup_state_timeout :timer.minutes(1)
-  @update_presence_timeout :timer.seconds(1)
+  @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
-  @update_tracked_characters_timeout :timer.seconds(1)
+  @update_tracked_characters_timeout :timer.minutes(1)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -81,31 +82,50 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def start_map(%__MODULE__{map: map, map_id: map_id} = state) do
-    with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
-      @pubsub_client.subscribe(
-        WandererApp.PubSub,
-        "maps:#{map_id}"
-      )
+    # Check if map was loaded successfully
+    case map do
+      nil ->
+        Logger.error("Cannot start map #{map_id}: map not loaded")
+        {:error, :map_not_loaded}
 
-      Process.send_after(self(), :update_characters, @update_characters_timeout)
-      Process.send_after(self(), :update_tracked_characters, 100)
-      Process.send_after(self(), :update_presence, @update_presence_timeout)
-      Process.send_after(self(), :cleanup_connections, 5_000)
-      Process.send_after(self(), :cleanup_systems, 10_000)
-      Process.send_after(self(), :cleanup_characters, :timer.minutes(5))
-      Process.send_after(self(), :backup_state, @backup_state_timeout)
+      map ->
+        with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
+          @pubsub_client.subscribe(
+            WandererApp.PubSub,
+            "maps:#{map_id}"
+          )
 
-      WandererApp.Cache.insert("map_#{map_id}:started", true)
+          Process.send_after(self(), :update_characters, @update_characters_timeout)
 
-      broadcast!(map_id, :map_server_started)
+          Process.send_after(
+            self(),
+            :update_tracked_characters,
+            @update_tracked_characters_timeout
+          )
 
-      :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
+          Process.send_after(self(), :update_presence, @update_presence_timeout)
+          Process.send_after(self(), :cleanup_connections, 5_000)
+          Process.send_after(self(), :cleanup_systems, 10_000)
+          Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
+          Process.send_after(self(), :backup_state, @backup_state_timeout)
 
-      state
-    else
-      error ->
-        Logger.error("Failed to start map: #{inspect(error, pretty: true)}")
-        state
+          WandererApp.Cache.insert("map_#{map_id}:started", true)
+
+          # Initialize zkb cache structure to prevent timing issues
+          cache_key = "map:#{map_id}:zkb:detailed_kills"
+          WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
+
+          broadcast!(map_id, :map_server_started)
+          @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
+
+          :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
+
+          state
+        else
+          error ->
+            Logger.error("Failed to start map: #{inspect(error, pretty: true)}")
+            state
+        end
     end
   end
 
@@ -113,6 +133,7 @@ defmodule WandererApp.Map.Server.Impl do
     Logger.debug(fn -> "Stopping map server for #{map_id}" end)
 
     WandererApp.Cache.delete("map_#{map_id}:started")
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
@@ -121,8 +142,6 @@ defmodule WandererApp.Map.Server.Impl do
   end
 
   def get_map(%{map: map} = _state), do: {:ok, map}
-
-  defdelegate get_characters(state), to: CharactersImpl
 
   defdelegate add_character(state, character, track_character), to: CharactersImpl
 
@@ -173,6 +192,10 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate add_hub(state, hub_info), to: SystemsImpl
 
   defdelegate remove_hub(state, hub_info), to: SystemsImpl
+
+  defdelegate add_ping(state, ping_info), to: PingsImpl
+
+  defdelegate cancel_ping(state, ping_info), to: PingsImpl
 
   defdelegate add_connection(state, connection_info), to: ConnectionsImpl
 
@@ -261,6 +284,12 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
+  def handle_event({:acl_deleted, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
+    AclsImpl.handle_acl_deleted(map_id, acl_id)
+
+    state
+  end
+
   def handle_event(:cleanup_connections, state) do
     Process.send_after(self(), :cleanup_connections, @connections_cleanup_timeout)
 
@@ -299,7 +328,7 @@ defmodule WandererApp.Map.Server.Impl do
     %{state | map_opts: map_options(options)}
   end
 
-  def handle_event({ref, _result}, %{map_id: _map_id} = state) do
+  def handle_event({ref, _result}, %{map_id: _map_id} = state) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
     state
@@ -313,7 +342,10 @@ defmodule WandererApp.Map.Server.Impl do
 
   def broadcast!(map_id, event, payload \\ nil) do
     if can_broadcast?(map_id) do
-      @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{event: event, payload: payload})
+      @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
+        event: event,
+        payload: payload
+      })
     end
 
     :ok
@@ -555,18 +587,27 @@ defmodule WandererApp.Map.Server.Impl do
         {:ok, presence_character_ids} =
           WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-        characters_ids =
-          map_id
-          |> WandererApp.Map.get_map!()
-          |> Map.get(:characters, [])
+        {:ok, old_presence_character_ids} =
+          WandererApp.Cache.lookup("map_#{map_id}:old_presence_character_ids", [])
+
+        new_present_character_ids =
+          presence_character_ids
+          |> Enum.filter(fn character_id ->
+            not Enum.member?(old_presence_character_ids, character_id)
+          end)
 
         not_present_character_ids =
-          characters_ids
+          old_presence_character_ids
           |> Enum.filter(fn character_id ->
             not Enum.member?(presence_character_ids, character_id)
           end)
 
-        CharactersImpl.track_characters(map_id, presence_character_ids)
+        WandererApp.Cache.insert(
+          "map_#{map_id}:old_presence_character_ids",
+          presence_character_ids
+        )
+
+        CharactersImpl.track_characters(map_id, new_present_character_ids)
         CharactersImpl.untrack_characters(map_id, not_present_character_ids)
 
         broadcast!(

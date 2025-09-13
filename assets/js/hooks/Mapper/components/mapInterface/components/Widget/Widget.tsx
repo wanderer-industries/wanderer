@@ -2,14 +2,15 @@ import React from 'react';
 
 import classes from './Widget.module.scss';
 import clsx from 'clsx';
+import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
-export interface WidgetProps {
+export type WidgetProps = {
   label: React.ReactNode | string;
   windowId?: string;
-  children?: React.ReactNode;
-}
+  contentClassName?: string;
+} & WithChildren;
 
-export const Widget = ({ label, children, windowId }: WidgetProps) => {
+export const Widget = ({ label, children, windowId, contentClassName }: WidgetProps) => {
   return (
     <div
       data-window-id={windowId}
@@ -34,7 +35,7 @@ export const Widget = ({ label, children, windowId }: WidgetProps) => {
         {label}
       </div>
       <div
-        className={clsx(classes.Content, 'overflow-auto', 'bg-opacity-5  custom-scrollbar')}
+        className={clsx(classes.Content, 'overflow-auto', 'bg-opacity-5 custom-scrollbar', contentClassName)}
         style={{ flexGrow: 1 }}
         onContextMenu={e => {
           e.preventDefault();

@@ -1,4 +1,3 @@
-import { ForwardedRef, useImperativeHandle } from 'react';
 import {
   CommandAddConnections,
   CommandAddSystems,
@@ -8,36 +7,41 @@ import {
   CommandCharactersUpdated,
   CommandCharacterUpdated,
   CommandCommentAdd,
+  CommandCommentRemoved,
   CommandInit,
   CommandLinkSignatureToSystem,
   CommandMapUpdated,
+  CommandPingAdded,
+  CommandPingCancelled,
   CommandPresentCharacters,
   CommandRemoveConnections,
   CommandRemoveSystems,
   CommandRoutes,
+  Commands,
   CommandSignaturesUpdated,
   CommandTrackingCharactersData,
   CommandUpdateConnection,
   CommandUpdateSystems,
   CommandUserSettingsUpdated,
-  Commands,
   MapHandlers,
-  CommandCommentRemoved,
 } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { ForwardedRef, useImperativeHandle } from 'react';
 
 import {
   useCommandComments,
+  useCommandPings,
   useCommandsCharacters,
   useCommandsConnections,
   useCommandsSystems,
   useMapInit,
   useMapUpdated,
   useRoutes,
+  useUserRoutes,
 } from './api';
 
-import { useCommandsActivity } from './api/useCommandsActivity';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 import { DetailedKill } from '../../types/kills';
+import { useCommandsActivity } from './api/useCommandsActivity';
 
 export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapInit = useMapInit();
@@ -54,7 +58,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
     useCommandsCharacters();
   const mapUpdated = useMapUpdated();
   const mapRoutes = useRoutes();
+  const mapUserRoutes = useUserRoutes();
   const { addComment, removeComment } = useCommandComments();
+  const { pingAdded, pingCancelled } = useCommandPings();
   const { characterActivityData, trackingCharactersData, userSettingsUpdated } = useCommandsActivity();
 
   useImperativeHandle(ref, () => {
@@ -102,6 +108,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
             break;
           case Commands.routes:
             mapRoutes(data as CommandRoutes);
+            break;
+          case Commands.userRoutes:
+            mapUserRoutes(data as CommandRoutes);
             break;
 
           case Commands.signaturesUpdated: // USED
@@ -154,6 +163,14 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
 
           case Commands.systemCommentRemoved:
             removeComment(data as CommandCommentRemoved);
+            break;
+
+          case Commands.pingAdded:
+            pingAdded(data as CommandPingAdded);
+            break;
+
+          case Commands.pingCancelled:
+            pingCancelled(data as CommandPingCancelled);
             break;
 
           default:

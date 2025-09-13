@@ -31,9 +31,7 @@ defmodule WandererApp.Character.TrackerManager do
   def init(args) do
     Logger.info("#{__MODULE__} started")
 
-    {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
-
-    {:ok, Impl.init(args |> Keyword.merge(characters: tracked_characters)), {:continue, :start}}
+    {:ok, Impl.init(args), {:continue, :start}}
   end
 
   @impl true

@@ -1,12 +1,10 @@
-import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
+import { CommentType, PingData, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
+import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
-import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
-import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
-import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
-import { ActivitySummary } from '../components/mapRootContent/components/CharacterActivity';
-import { TrackingCharacter } from '../components/mapRootContent/components/TrackAndFollow/types';
-import { CommentType, UserPermissions } from '@/hooks/Mapper/types';
+import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
+import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
+import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 
 export enum Commands {
   init = 'init',
@@ -26,8 +24,10 @@ export enum Commands {
   killsUpdated = 'kills_updated',
   detailedKillsUpdated = 'detailed_kills_updated',
   routes = 'routes',
+  userRoutes = 'user_routes',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
+  selectSystems = 'select_systems',
   linkSignatureToSystem = 'link_signature_to_system',
   signaturesUpdated = 'signatures_updated',
   systemCommentAdded = 'system_comment_added',
@@ -37,6 +37,9 @@ export enum Commands {
   updateActivity = 'update_activity',
   updateTracking = 'update_tracking',
   userSettingsUpdated = 'user_settings_updated',
+  showTracking = 'show_tracking',
+  pingAdded = 'ping_added',
+  pingCancelled = 'ping_cancelled',
 }
 
 export type Command =
@@ -56,34 +59,47 @@ export type Command =
   | Commands.killsUpdated
   | Commands.detailedKillsUpdated
   | Commands.routes
+  | Commands.userRoutes
   | Commands.selectSystem
+  | Commands.selectSystems
   | Commands.centerSystem
   | Commands.linkSignatureToSystem
   | Commands.signaturesUpdated
   | Commands.systemCommentAdded
   | Commands.systemCommentRemoved
+  | Commands.systemCommentsUpdated
   | Commands.characterActivityData
   | Commands.trackingCharactersData
   | Commands.userSettingsUpdated
   | Commands.updateActivity
-  | Commands.updateTracking;
+  | Commands.updateTracking
+  | Commands.showTracking
+  | Commands.pingAdded
+  | Commands.pingCancelled;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
+  system_signatures: Record<string, SystemSignature[]>;
   kills: Kill[];
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
   wormholes: WormholeDataRaw[];
+
+  // TODO WHY HERE ANY?!!?!?
   effects: any[];
   characters: CharacterTypeRaw[];
   present_characters: string[];
   user_characters: string[];
   user_permissions: UserPermissions;
   hubs: string[];
+  user_hubs: string[];
   routes: RoutesList;
   options: Record<string, string | boolean>;
   reset?: boolean;
   is_subscription_active?: boolean;
+  main_character_eve_id?: string | null;
+  following_character_eve_id?: string | null;
+  map_slug?: string;
 };
 
 export type CommandAddSystems = SolarSystemRawType[];
@@ -100,9 +116,14 @@ export type CommandUpdateConnection = SolarSystemConnection;
 export type CommandSignaturesUpdated = string;
 export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
+export type CommandUserRoutes = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandDetailedKillsUpdated = Record<string, DetailedKill[]>;
 export type CommandSelectSystem = string | undefined;
+export type CommandSelectSystems = {
+  systems: string[];
+  delay?: number;
+};
 export type CommandCenterSystem = string | undefined;
 export type CommandLinkSignatureToSystem = {
   solar_system_source: number;
@@ -123,14 +144,7 @@ export type CommandUserSettingsUpdated = {
   settings: UserSettings;
 };
 
-export type CommandShowActivity = null;
-export type CommandHideActivity = null;
 export type CommandShowTracking = null;
-export type CommandHideTracking = null;
-export type CommandUiLoaded = { version: string | null };
-export type CommandLogMapError = { error: string; componentStack: string };
-export type CommandMapEvent = { type: Command; data: unknown };
-export type CommandMapEvents = Array<{ type: Command; data: unknown }>;
 export type CommandUpdateActivity = {
   characterId: number;
   systemId: number;
@@ -142,6 +156,8 @@ export type CommandUpdateTracking = {
   track: boolean;
   follow: boolean;
 };
+export type CommandPingAdded = PingData[];
+export type CommandPingCancelled = Pick<PingData, 'type' | 'id'>;
 
 export interface UserSettings {
   primaryCharacterId?: string;
@@ -173,9 +189,11 @@ export interface CommandData {
   [Commands.updateConnection]: CommandUpdateConnection;
   [Commands.mapUpdated]: CommandMapUpdated;
   [Commands.routes]: CommandRoutes;
+  [Commands.userRoutes]: CommandUserRoutes;
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.detailedKillsUpdated]: CommandDetailedKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
+  [Commands.selectSystems]: CommandSelectSystems;
   [Commands.centerSystem]: CommandCenterSystem;
   [Commands.linkSignatureToSystem]: CommandLinkSignatureToSystem;
   [Commands.signaturesUpdated]: CommandLinkSignaturesUpdated;
@@ -186,6 +204,10 @@ export interface CommandData {
   [Commands.updateTracking]: CommandUpdateTracking;
   [Commands.systemCommentAdded]: CommandCommentAdd;
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
+  [Commands.systemCommentsUpdated]: unknown;
+  [Commands.showTracking]: CommandShowTracking;
+  [Commands.pingAdded]: CommandPingAdded;
+  [Commands.pingCancelled]: CommandPingCancelled;
 }
 
 export interface MapHandlers {
@@ -195,12 +217,16 @@ export interface MapHandlers {
 export enum OutCommand {
   addHub = 'add_hub',
   deleteHub = 'delete_hub',
+  addUserHub = 'add_user_hub',
+  deleteUserHub = 'delete_user_hub',
   getRoutes = 'get_routes',
+  getUserRoutes = 'get_user_routes',
   getCharacterJumps = 'get_character_jumps',
   getStructures = 'get_structures',
   getSignatures = 'get_signatures',
   getSystemStaticInfos = 'get_system_static_infos',
   getConnectionInfo = 'get_connection_info',
+  loadSignatures = 'load_signatures',
   updateConnectionTimeStatus = 'update_connection_time_status',
   updateConnectionType = 'update_connection_type',
   updateConnectionMassStatus = 'update_connection_mass_status',
@@ -234,9 +260,15 @@ export enum OutCommand {
   addSystemComment = 'addSystemComment',
   deleteSystemComment = 'deleteSystemComment',
   getSystemComments = 'getSystemComments',
-  toggleTrack = 'toggle_track',
   toggleFollow = 'toggle_follow',
   getCharacterInfo = 'getCharacterInfo',
+  getCharactersTrackingInfo = 'getCharactersTrackingInfo',
+  updateCharacterTracking = 'updateCharacterTracking',
+  updateFollowingCharacter = 'updateFollowingCharacter',
+  updateMainCharacter = 'updateMainCharacter',
+  addPing = 'add_ping',
+  cancelPing = 'cancel_ping',
+  startTracking = 'startTracking',
 
   // Only UI commands
   openSettings = 'open_settings',
@@ -244,9 +276,11 @@ export enum OutCommand {
   showTracking = 'show_tracking',
   getUserSettings = 'get_user_settings',
   updateUserSettings = 'update_user_settings',
+  saveDefaultSettings = 'save_default_settings',
+  getDefaultSettings = 'get_default_settings',
   unlinkSignature = 'unlink_signature',
   searchSystems = 'search_systems',
+  undoDeleteSignatures = 'undo_delete_signatures',
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OutCommandHandler = <T = any>(event: { type: OutCommand; data: any }) => Promise<T>;
+export type OutCommandHandler = <T = unknown>(event: { type: OutCommand; data: unknown }) => Promise<T>;

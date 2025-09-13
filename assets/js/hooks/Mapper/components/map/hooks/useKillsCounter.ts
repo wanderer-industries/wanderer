@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useSystemKills } from '../../mapInterface/widgets/SystemKills/hooks/useSystemKills';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useSystemKills } from '@/hooks/Mapper/components/mapInterface/widgets/WSystemKills/hooks/useSystemKills.ts';
 
 interface UseKillsCounterProps {
   realSystemId: string;
@@ -22,6 +22,7 @@ export function useKillsCounter({ realSystemId }: UseKillsCounterProps) {
     systemId: realSystemId,
     outCommand,
     showAllVisible: false,
+    sinceHours: 1,
   });
 
   const filteredKills = useMemo(() => {

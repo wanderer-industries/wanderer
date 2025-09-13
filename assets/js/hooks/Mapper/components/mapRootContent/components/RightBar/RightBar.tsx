@@ -1,40 +1,32 @@
 import classes from './RightBar.module.scss';
 import clsx from 'clsx';
-import { useCallback } from 'react';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { ReactNode, useCallback } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+// import { DebugComponent } from '@/hooks/Mapper/components/mapRootContent/components/RightBar/DebugComponent.tsx';
 
 interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
+  onShowTrackingDialog?: () => void;
+  additionalContent?: ReactNode;
 }
 
-export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) => {
-  const { outCommand, interfaceSettings, setInterfaceSettings } = useMapRootState();
+export const RightBar = ({
+  onShowOnTheMap,
+  onShowMapSettings,
+  onShowTrackingDialog,
+  additionalContent,
+}: RightBarProps) => {
+  const {
+    storedSettings: { interfaceSettings, setInterfaceSettings },
+  } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
-
-  const isShowMinimap = interfaceSettings.isShowMinimap === undefined ? true : interfaceSettings.isShowMinimap;
-
-  const handleShowTracking = useCallback(() => {
-    // Use the OutCommand pattern for showing the tracking dialog
-    outCommand({
-      type: OutCommand.showTracking,
-      data: {},
-    });
-  }, [outCommand]);
-
-  const toggleMinimap = useCallback(() => {
-    setInterfaceSettings(x => ({
-      ...x,
-      isShowMinimap: !x.isShowMinimap,
-    }));
-  }, [setInterfaceSettings]);
 
   const toggleKSpace = useCallback(() => {
     setInterfaceSettings(x => ({
@@ -60,19 +52,19 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
       )}
     >
       <div className="flex flex-col gap-2 items-center mt-1">
-        <WdTooltipWrapper content="Tracking status" position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={handleShowTracking}
-            id="show-tracking-button"
-          >
-            <i className="pi pi-user-plus"></i>
-          </button>
-        </WdTooltipWrapper>
-
         {canTrackCharacters && (
           <>
+            <WdTooltipWrapper content="Tracking status" position={TooltipPosition.left}>
+              <button
+                className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                type="button"
+                onClick={onShowTrackingDialog}
+                id="show-tracking-button"
+              >
+                <i className="pi pi-user-plus"></i>
+              </button>
+            </WdTooltipWrapper>
+
             <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
               <button
                 className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
@@ -84,9 +76,13 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
             </WdTooltipWrapper>
           </>
         )}
+        {additionalContent}
       </div>
 
       <div className="flex flex-col items-center mb-2 gap-1">
+        {/* TODO - do not delete this code needs for debug */}
+        {/*<DebugComponent />*/}
+
         <WdTooltipWrapper content="Map user settings" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
@@ -109,16 +105,6 @@ export const RightBar = ({ onShowOnTheMap, onShowMapSettings }: RightBarProps) =
             onClick={toggleKSpace}
           >
             <i className={interfaceSettings.isShowKSpace ? 'hero-cloud-solid' : 'hero-cloud'}></i>
-          </button>
-        </WdTooltipWrapper>
-
-        <WdTooltipWrapper content={isShowMinimap ? 'Hide minimap' : 'Show minimap'} position={TooltipPosition.left}>
-          <button
-            className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-            type="button"
-            onClick={toggleMinimap}
-          >
-            <i className={isShowMinimap ? 'pi pi-eye' : 'pi pi-eye-slash'}></i>
           </button>
         </WdTooltipWrapper>
 

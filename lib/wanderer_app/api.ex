@@ -1,7 +1,13 @@
 defmodule WandererApp.Api do
   @moduledoc false
 
-  use Ash.Domain
+  use Ash.Domain,
+    extensions: [AshJsonApi.Domain]
+
+  json_api do
+    prefix "/api/v1"
+    log_errors?(true)
+  end
 
   resources do
     resource WandererApp.Api.AccessList
@@ -22,11 +28,15 @@ defmodule WandererApp.Api do
     resource WandererApp.Api.MapSubscription
     resource WandererApp.Api.MapTransaction
     resource WandererApp.Api.MapUserSettings
+    resource WandererApp.Api.MapDefaultSettings
     resource WandererApp.Api.User
     resource WandererApp.Api.ShipTypeInfo
     resource WandererApp.Api.UserActivity
     resource WandererApp.Api.UserTransaction
     resource WandererApp.Api.CorpWalletTransaction
     resource WandererApp.Api.License
+    resource WandererApp.Api.MapPing
+    resource WandererApp.Api.MapInvite
+    resource WandererApp.Api.MapWebhookSubscription
   end
 end

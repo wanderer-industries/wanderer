@@ -97,7 +97,7 @@ defmodule WandererApp.Map.SubscriptionManager do
       ) do
     %{
       plans: plans,
-      extra_characters_100: extra_characters_100,
+      extra_characters_50: extra_characters_50,
       extra_hubs_10: extra_hubs_10
     } = WandererApp.Env.subscription_settings()
 
@@ -113,7 +113,7 @@ defmodule WandererApp.Map.SubscriptionManager do
       case characters_limit > plan_characters_limit do
         true ->
           estimated_price +
-            (characters_limit - plan_characters_limit) / 100 * extra_characters_100
+            (characters_limit - plan_characters_limit) / 50 * extra_characters_50
 
         _ ->
           estimated_price
@@ -137,7 +137,7 @@ defmodule WandererApp.Map.SubscriptionManager do
     total_price = estimated_price * period
 
     {:ok, discount} =
-      _calc_discount(
+      calc_discount(
         period,
         total_price,
         current_plan,
@@ -147,7 +147,73 @@ defmodule WandererApp.Map.SubscriptionManager do
     {:ok, total_price, discount}
   end
 
-  defp _calc_discount(
+  def calc_additional_price(
+        %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit},
+        selected_subscription
+      ) do
+    %{
+      plans: plans,
+      extra_characters_50: extra_characters_50,
+      extra_hubs_10: extra_hubs_10
+    } = WandererApp.Env.subscription_settings()
+
+    current_plan = plans |> Enum.find(fn p -> p.id == "omega" end)
+
+    additional_price = 0
+
+    characters_limit = characters_limit |> String.to_integer()
+    hubs_limit = hubs_limit |> String.to_integer()
+    sub_characters_limit = selected_subscription.characters_limit
+    sub_hubs_limit = selected_subscription.hubs_limit
+
+    additional_price =
+      case characters_limit > sub_characters_limit do
+        true ->
+          additional_price +
+            (characters_limit - sub_characters_limit) / 50 * extra_characters_50
+
+        _ ->
+          additional_price
+      end
+
+    additional_price =
+      case hubs_limit > sub_hubs_limit do
+        true ->
+          additional_price + (hubs_limit - sub_hubs_limit) / 10 * extra_hubs_10
+
+        _ ->
+          additional_price
+      end
+
+    period = get_active_months(selected_subscription)
+
+    total_price = additional_price * period
+
+    {:ok, discount} =
+      calc_discount(
+        period,
+        total_price,
+        current_plan,
+        false
+      )
+
+    {:ok, total_price, discount}
+  end
+
+  defp get_active_months(subscription) do
+    months =
+      subscription.active_till
+      |> Timex.shift(days: 5)
+      |> Timex.diff(Timex.now(), :months)
+
+    if months == 0 do
+      1
+    else
+      months
+    end
+  end
+
+  defp calc_discount(
          period,
          _total_price,
          _current_plan,
@@ -156,29 +222,7 @@ defmodule WandererApp.Map.SubscriptionManager do
        when period <= 1 or renew?,
        do: {:ok, 0.0}
 
-  defp _calc_discount(
-         period,
-         total_price,
-         %{
-           month_3_discount: month_3_discount
-         },
-         _renew?
-       )
-       when period == 3,
-       do: {:ok, round(total_price * month_3_discount)}
-
-  defp _calc_discount(
-         period,
-         total_price,
-         %{
-           month_6_discount: month_6_discount
-         },
-         _renew?
-       )
-       when period == 6,
-       do: {:ok, round(total_price * month_6_discount)}
-
-  defp _calc_discount(
+  defp calc_discount(
          period,
          total_price,
          %{
@@ -186,8 +230,30 @@ defmodule WandererApp.Map.SubscriptionManager do
          },
          _renew?
        )
-       when period == 12,
+       when period >= 12,
        do: {:ok, round(total_price * month_12_discount)}
+
+  defp calc_discount(
+         period,
+         total_price,
+         %{
+           month_6_discount: month_6_discount
+         },
+         _renew?
+       )
+       when period >= 6,
+       do: {:ok, round(total_price * month_6_discount)}
+
+  defp calc_discount(
+         period,
+         total_price,
+         %{
+           month_3_discount: month_3_discount
+         },
+         _renew?
+       )
+       when period >= 3,
+       do: {:ok, round(total_price * month_3_discount)}
 
   def get_balance(map) do
     map
@@ -282,7 +348,7 @@ defmodule WandererApp.Map.SubscriptionManager do
                   end)
 
                 {:error, :no_active_subscription} ->
-                  Logger.warn(
+                  Logger.warning(
                     "Cannot create license for map #{map.id}: No active subscription found"
                   )
 

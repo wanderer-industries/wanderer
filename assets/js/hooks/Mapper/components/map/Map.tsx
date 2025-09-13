@@ -1,3 +1,10 @@
+import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
+import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
+import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
+import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
+import type { PanelPosition } from '@reactflow/core';
+import clsx from 'clsx';
 import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   Background,
@@ -16,8 +23,6 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import classes from './Map.module.scss';
 import { MapProvider, useMapState } from './MapProvider';
-import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
-import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import {
   ContextMenuConnection,
   ContextMenuRoot,
@@ -26,13 +31,9 @@ import {
   useContextMenuRootHandlers,
 } from './components';
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
-import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
-import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
-import { SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
-import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
-import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
-import clsx from 'clsx';
+import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
+import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 
 const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
 
@@ -95,6 +96,9 @@ interface MapCompProps {
   isShowBackgroundPattern?: boolean;
   isSoftBackground?: boolean;
   theme?: string;
+  pings: PingData[];
+  minimapPlacement?: PanelPosition;
+  localShowShipName?: boolean;
 }
 
 const MapComp = ({
@@ -112,6 +116,9 @@ const MapComp = ({
   isSoftBackground,
   theme,
   onAddSystem,
+  pings,
+  minimapPlacement = 'bottom-right',
+  localShowShipName = false,
 }: MapCompProps) => {
   const { getNodes } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -206,8 +213,10 @@ const MapComp = ({
       ...x,
       showKSpaceBG: showKSpaceBG,
       isThickConnections: isThickConnections,
+      pings,
+      localShowShipName,
     }));
-  }, [showKSpaceBG, isThickConnections, update]);
+  }, [showKSpaceBG, isThickConnections, pings, update, localShowShipName]);
 
   return (
     <>
@@ -270,7 +279,9 @@ const MapComp = ({
           // onlyRenderVisibleElements
           selectionMode={SelectionMode.Partial}
         >
-          {isShowMinimap && <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} />}
+          {isShowMinimap && (
+            <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} position={minimapPlacement} />
+          )}
           {isShowBackgroundPattern && <Background variant={variant} gap={gap} size={size} color={color} />}
         </ReactFlow>
         {/* <button className="z-auto btn btn-primary absolute top-20 right-20" onClick={handleGetPassages}>

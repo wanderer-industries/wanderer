@@ -28,6 +28,10 @@ defmodule WandererApp.MapUserSettingsRepo do
     end
   end
 
+  def create_or_update(map_id, user_id, nil) do
+    create_or_update(map_id, user_id, @default_form_data |> Jason.encode!())
+  end
+
   def create_or_update(map_id, user_id, settings) do
     get!(map_id, user_id)
     |> case do
@@ -41,6 +45,33 @@ defmodule WandererApp.MapUserSettingsRepo do
           user_id: user_id,
           settings: settings
         })
+    end
+  end
+
+  def get_hubs(map_id, user_id) do
+    case WandererApp.MapUserSettingsRepo.get(map_id, user_id) do
+      {:ok, user_settings} when not is_nil(user_settings) ->
+        {:ok, Map.get(user_settings, :hubs, [])}
+
+      _ ->
+        {:ok, []}
+    end
+  end
+
+  def update_hubs(map_id, user_id, hubs) do
+    get!(map_id, user_id)
+    |> case do
+      user_settings when not is_nil(user_settings) ->
+        user_settings
+        |> WandererApp.Api.MapUserSettings.update_hubs(%{hubs: hubs})
+
+      _ ->
+        WandererApp.Api.MapUserSettings.create!(%{
+          map_id: map_id,
+          user_id: user_id,
+          settings: @default_form_data |> Jason.encode!()
+        })
+        |> WandererApp.Api.MapUserSettings.update_hubs(%{hubs: hubs})
     end
   end
 

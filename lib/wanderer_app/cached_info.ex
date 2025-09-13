@@ -39,40 +39,52 @@ defmodule WandererApp.CachedInfo do
   def get_system_static_info(solar_system_id) do
     case Cachex.get(:system_static_info_cache, solar_system_id) do
       {:ok, nil} ->
-        {:ok, systems} = WandererApp.Api.MapSolarSystem.read()
+        case WandererApp.Api.MapSolarSystem.read() do
+          {:ok, systems} ->
+            systems
+            |> Enum.each(fn system ->
+              Cachex.put(
+                :system_static_info_cache,
+                system.solar_system_id,
+                Map.take(system, [
+                  :solar_system_id,
+                  :region_id,
+                  :constellation_id,
+                  :solar_system_name,
+                  :solar_system_name_lc,
+                  :constellation_name,
+                  :region_name,
+                  :system_class,
+                  :security,
+                  :type_description,
+                  :class_title,
+                  :is_shattered,
+                  :effect_name,
+                  :effect_power,
+                  :statics,
+                  :wandering,
+                  :triglavian_invasion_status,
+                  :sun_type_id
+                ])
+              )
+            end)
 
-        systems
-        |> Enum.each(fn system ->
-          Cachex.put(
-            :system_static_info_cache,
-            system.solar_system_id,
-            Map.take(system, [
-              :solar_system_id,
-              :region_id,
-              :constellation_id,
-              :solar_system_name,
-              :solar_system_name_lc,
-              :constellation_name,
-              :region_name,
-              :system_class,
-              :security,
-              :type_description,
-              :class_title,
-              :is_shattered,
-              :effect_name,
-              :effect_power,
-              :statics,
-              :wandering,
-              :triglavian_invasion_status,
-              :sun_type_id
-            ])
-          )
-        end)
+            case Cachex.get(:system_static_info_cache, solar_system_id) do
+              {:ok, nil} -> {:error, :not_found}
+              result -> result
+            end
 
-        Cachex.get(:system_static_info_cache, solar_system_id)
+          {:error, reason} ->
+            Logger.error("Failed to read solar systems from API: #{inspect(reason)}")
+            {:error, :api_error}
+        end
 
       {:ok, system_static_info} ->
         {:ok, system_static_info}
+
+      {:error, reason} ->
+        Logger.error("Failed to get system static info from cache: #{inspect(reason)}")
+        {:error, :cache_error}
     end
   end
 
@@ -98,6 +110,63 @@ defmodule WandererApp.CachedInfo do
 
       {:ok, wormhole_types} ->
         {:ok, wormhole_types}
+    end
+  end
+
+  def get_solar_system_jumps() do
+    case WandererApp.Cache.lookup(:solar_system_jumps) do
+      {:ok, nil} ->
+        data = WandererApp.EveDataService.get_solar_system_jumps_data()
+
+        cache_items(data, :solar_system_jumps)
+
+        {:ok, data}
+
+      {:ok, data} ->
+        {:ok, data}
+    end
+  end
+
+  def get_solar_system_jump(from_solar_system_id, to_solar_system_id) do
+    # Create normalized cache key (smaller ID first for bidirectional lookup)
+    {id1, id2} =
+      if from_solar_system_id < to_solar_system_id do
+        {from_solar_system_id, to_solar_system_id}
+      else
+        {to_solar_system_id, from_solar_system_id}
+      end
+
+    cache_key = "jump_#{id1}_#{id2}"
+
+    case WandererApp.Cache.lookup(cache_key) do
+      {:ok, nil} ->
+        # Build jump index if not exists
+        build_jump_index()
+        WandererApp.Cache.lookup(cache_key)
+
+      result ->
+        result
+    end
+  end
+
+  defp build_jump_index() do
+    case get_solar_system_jumps() do
+      {:ok, jumps} ->
+        jumps
+        |> Enum.each(fn jump ->
+          {id1, id2} =
+            if jump.from_solar_system_id < jump.to_solar_system_id do
+              {jump.from_solar_system_id, jump.to_solar_system_id}
+            else
+              {jump.to_solar_system_id, jump.from_solar_system_id}
+            end
+
+          cache_key = "jump_#{id1}_#{id2}"
+          WandererApp.Cache.put(cache_key, jump)
+        end)
+
+      _ ->
+        :error
     end
   end
 

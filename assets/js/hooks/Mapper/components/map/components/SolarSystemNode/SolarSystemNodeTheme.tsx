@@ -12,43 +12,52 @@ import {
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
-import { LocalCounter } from './SolarSystemLocalCounter';
-import { KillsCounter } from './SolarSystemKillsCounter';
+import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
+import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
+import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
 
+// let render = 0;
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
   const { localCounterCharacters } = useLocalCounter(nodeVars);
-  const localKillsCount = useNodeKillsCount(nodeVars.solarSystemId, nodeVars.killsCount);
+  const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(
+    nodeVars.solarSystemId,
+  );
+
+  // console.log('JOipP', `render ${nodeVars.id}`, render++);
 
   return (
     <>
       {nodeVars.visible && (
         <div className={classes.Bookmarks}>
+          {nodeVars.isShattered && (
+            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered, '!pr-[2px]')}>
+              <WdTooltipWrapper content="Shattered" position={TooltipPosition.top}>
+                <span className={clsx('block w-[10px] h-[10px]', classes.ShatteredIcon)} />
+              </WdTooltipWrapper>
+            </div>
+          )}
+
+          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && localKillsActivityType && (
+            <KillsCounter
+              killsCount={localKillsCount}
+              systemId={nodeVars.solarSystemId}
+              size={TooltipSize.lg}
+              killsActivityType={localKillsActivityType}
+              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[localKillsActivityType])}
+            >
+              <div className={clsx(classes.BookmarkWithIcon)}>
+                <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
+                <span className={clsx(classes.text)}>{localKillsCount}</span>
+              </div>
+            </KillsCounter>
+          )}
+
           {nodeVars.labelCustom !== '' && (
             <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.custom)}>
               <span className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">{nodeVars.labelCustom}</span>
             </div>
-          )}
-
-          {nodeVars.isShattered && (
-            <div className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES.shattered)}>
-              <span className={clsx('pi pi-chart-pie', classes.icon)} />
-            </div>
-          )}
-
-          {localKillsCount && localKillsCount > 0 && nodeVars.solarSystemId && (
-            <KillsCounter
-              killsCount={localKillsCount}
-              systemId={nodeVars.solarSystemId}
-              size="lg"
-              killsActivityType={nodeVars.killsActivityType}
-              className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[nodeVars.killsActivityType!])}
-            >
-              <div className={clsx(classes.BookmarkWithIcon)}>
-                <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
-                <span className={clsx(classes.text)}>{nodeVars.killsCount}</span>
-              </div>
-            </KillsCounter>
           )}
 
           {nodeVars.labelsInfo.map(x => (
@@ -64,7 +73,10 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
           classes.RootCustomNode,
           nodeVars.regionClass && classes[nodeVars.regionClass],
           nodeVars.status !== undefined ? classes[STATUS_CLASSES[nodeVars.status]] : '',
-          { [classes.selected]: nodeVars.selected },
+          {
+            [classes.selected]: nodeVars.selected,
+            [classes.rally]: nodeVars.isRally,
+          },
         )}
         onMouseDownCapture={e => nodeVars.dbClick(e)}
       >
@@ -109,23 +121,13 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
 
             <div className={clsx(classes.BottomRow, 'flex items-center justify-between')}>
               {nodeVars.customName && (
-                <div
-                  className={clsx(
-                    classes.CustomName,
-                    '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] whitespace-nowrap overflow-hidden text-ellipsis mr-0.5',
-                  )}
-                >
+                <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
                   {nodeVars.customName}
                 </div>
               )}
 
               {!nodeVars.isWormhole && !nodeVars.customName && (
-                <div
-                  className={clsx(
-                    classes.RegionName,
-                    '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] whitespace-nowrap overflow-hidden text-ellipsis mr-0.5',
-                  )}
-                >
+                <div className="[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] whitespace-nowrap overflow-hidden text-ellipsis mr-0.5">
                   {nodeVars.regionName}
                 </div>
               )}

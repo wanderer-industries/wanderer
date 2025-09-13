@@ -1,29 +1,20 @@
 import classes from './OnTheMap.module.scss';
 import { Sidebar } from 'primereact/sidebar';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { sortCharacters } from '@/hooks/Mapper/components/mapInterface/helpers/sortCharacters.ts';
 import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
 import clsx from 'clsx';
 import { CharacterTypeRaw, WithIsOwnCharacter } from '@/hooks/Mapper/types';
-import { CharacterCard, WdCheckbox } from '@/hooks/Mapper/components/ui-kit';
-import useLocalStorageState from 'use-local-storage-state';
+import { CharacterCard, TooltipPosition, WdCheckbox, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { useMapCheckPermissions, useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
-
-type WindowLocalSettingsType = {
-  compact: boolean;
-  hideOffline: boolean;
-  version: number;
-};
-
-const STORED_DEFAULT_VALUES: WindowLocalSettingsType = {
-  compact: true,
-  hideOffline: false,
-  version: 0,
-};
+import { InputText } from 'primereact/inputtext';
+import { IconField } from 'primereact/iconfield';
 
 const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: VirtualScrollerTemplateOptions) => {
+  const showAllyLogoPlaceholder = options.props.items?.some(x => x.alliance_id != null);
+
   return (
     <div
       className={clsx(classes.CharacterRow, 'w-full box-border px-2 py-1', {
@@ -33,7 +24,15 @@ const itemTemplate = (item: CharacterTypeRaw & WithIsOwnCharacter, options: Virt
       })}
       style={{ height: options.props.itemSize + 'px' }}
     >
-      <CharacterCard showSystem {...item} />
+      <CharacterCard
+        showCorporationLogo
+        showAllyLogo
+        showAllyLogoPlaceholder={showAllyLogoPlaceholder}
+        showSystem
+        showTicker
+        showShip
+        {...item}
+      />
     </div>
   );
 };
@@ -46,11 +45,10 @@ export interface OnTheMapProps {
 export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
   const {
     data: { characters, userCharacters },
+    storedSettings: { settingsOnTheMap, settingsOnTheMapUpdate },
   } = useMapRootState();
 
-  const [settings, setSettings] = useLocalStorageState<WindowLocalSettingsType>('window:onTheMap:settings', {
-    defaultValue: STORED_DEFAULT_VALUES,
-  });
+  const [searchVal, setSearchVal] = useState('');
 
   const restrictOfflineShowing = useMapGetOption('restrict_offline_showing');
   const isAdminOrManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
@@ -61,13 +59,54 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
   );
 
   const sorted = useMemo(() => {
-    const out = characters.map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id) })).sort(sortCharacters);
-    if (showOffline && !settings.hideOffline) {
+    let out = characters.map(x => ({ ...x, isOwn: userCharacters.includes(x.eve_id) })).sort(sortCharacters);
+
+    if (searchVal !== '') {
+      out = out.filter(x => {
+        const normalized = searchVal.toLowerCase();
+
+        if (x.name.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.corporation_name.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.alliance_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.corporation_ticker.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.alliance_ticker?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_type_info.name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        if (x.ship?.ship_type_info.group_name?.toLowerCase().includes(normalized)) {
+          return true;
+        }
+
+        return false;
+      });
+    }
+
+    if (showOffline && !settingsOnTheMap.hideOffline) {
       return out;
     }
 
     return out.filter(x => x.online);
-  }, [showOffline, characters, settings.hideOffline, userCharacters]);
+  }, [showOffline, searchVal, characters, settingsOnTheMap.hideOffline, userCharacters]);
 
   return (
     <Sidebar
@@ -79,15 +118,40 @@ export const OnTheMap = ({ show, onHide }: OnTheMapProps) => {
       icons={<></>}
     >
       <div className={clsx(classes.SidebarContent, '')}>
-        <div className={'flex justify-end items-center gap-2 px-3'}>
+        <div className={'flex justify-between items-center gap-2 px-2 pt-1'}>
+          <IconField>
+            {searchVal.length > 0 && (
+              <WdImgButton
+                className="pi pi-trash"
+                textSize={WdImageSize.large}
+                tooltip={{
+                  content: 'Clear',
+                  className: 'pi p-input-icon',
+                  position: TooltipPosition.top,
+                }}
+                onClick={() => setSearchVal('')}
+              />
+            )}
+            <InputText
+              id="label"
+              aria-describedby="label"
+              autoComplete="off"
+              value={searchVal}
+              placeholder="Type to search"
+              onChange={e => setSearchVal(e.target.value)}
+            />
+          </IconField>
+
           {showOffline && (
             <WdCheckbox
               size="m"
               labelSide="left"
               label={'Hide offline'}
-              value={settings.hideOffline}
+              value={settingsOnTheMap.hideOffline}
               classNameLabel="text-stone-400 hover:text-stone-200 transition duration-300"
-              onChange={() => setSettings(() => ({ ...settings, hideOffline: !settings.hideOffline }))}
+              onChange={() =>
+                settingsOnTheMapUpdate(() => ({ ...settingsOnTheMap, hideOffline: !settingsOnTheMap.hideOffline }))
+              }
             />
           )}
         </div>

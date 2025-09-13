@@ -72,6 +72,9 @@ defmodule WandererApp.Map do
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 50)}
 
+  def get_hubs_limit(map_id),
+    do: {:ok, map_id |> get_map!() |> Map.get(:hubs_limit, 20)}
+
   def is_subscription_active?(map_id),
     do: is_subscription_active?(map_id, WandererApp.Env.map_subscriptions_enabled?())
 
@@ -93,7 +96,9 @@ defmodule WandererApp.Map do
       map_id
       |> get_map!()
       |> Map.get(:characters, [])
-      |> Enum.map(&WandererApp.Character.get_character!(&1))
+      |> Enum.map(fn character_id ->
+        WandererApp.Character.get_map_character!(map_id, character_id)
+      end)
 
   def list_systems(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:systems, Map.new()) |> Map.values()}
@@ -105,10 +110,14 @@ defmodule WandererApp.Map do
 
   def list_hubs(map_id) do
     {:ok, map} = map_id |> get_map()
-    hubs = map |> Map.get(:hubs, [])
-    hubs_limit = map |> Map.get(:hubs_limit, 20)
 
-    {:ok, hubs |> _maybe_limit_list(hubs_limit)}
+    {:ok, map |> Map.get(:hubs, [])}
+  end
+
+  def list_hubs(map_id, hubs) do
+    {:ok, map} = map_id |> get_map()
+
+    {:ok, hubs}
   end
 
   def list_connections(map_id),
@@ -129,59 +138,75 @@ defmodule WandererApp.Map do
   def add_characters!(map, []), do: map
 
   def add_characters!(%{map_id: map_id} = map, [character | rest]) do
-    case add_character(map_id, character) do
-      :ok ->
-        add_characters!(map, rest)
-
-      {:error, :already_exists} ->
-        add_characters!(map, rest)
-    end
+    add_character(map_id, character)
+    add_characters!(map, rest)
   end
 
   def add_character(
         map_id,
         %{
-          id: character_id,
-          alliance_id: alliance_id,
-          corporation_id: corporation_id,
-          solar_system_id: solar_system_id,
-          ship: ship_type_id,
-          ship_name: ship_name
+          id: character_id
         } = _character
       ) do
     characters = map_id |> get_map!() |> Map.get(:characters, [])
 
     case not (characters |> Enum.member?(character_id)) do
       true ->
-        map_id
-        |> update_map(%{characters: [character_id | characters]})
+        WandererApp.Character.get_map_character(map_id, character_id)
+        |> case do
+          {:ok,
+           %{
+             alliance_id: alliance_id,
+             corporation_id: corporation_id,
+             solar_system_id: solar_system_id,
+             structure_id: structure_id,
+             station_id: station_id,
+             ship: ship_type_id,
+             ship_name: ship_name
+           }} ->
+            map_id
+            |> update_map(%{characters: [character_id | characters]})
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:alliance_id",
-          alliance_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:alliance_id",
+            #   alliance_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:corporation_id",
-          corporation_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:corporation_id",
+            #   corporation_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:solar_system_id",
+            #   solar_system_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:ship_type_id",
-          ship_type_id
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:structure_id",
+            #   structure_id
+            # )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:ship_name",
-          ship_name
-        )
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:station_id",
+            #   station_id
+            # )
 
-        :ok
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:ship_type_id",
+            #   ship_type_id
+            # )
+
+            # WandererApp.Cache.insert(
+            #   "map:#{map_id}:character:#{character_id}:ship_name",
+            #   ship_name
+            # )
+
+            :ok
+
+          error ->
+            error
+        end
 
       _ ->
         {:error, :already_exists}
@@ -264,14 +289,16 @@ defmodule WandererApp.Map do
     map_id
     |> update_map(%{characters_limit: characters_limit, hubs_limit: hubs_limit})
 
-    map
+    map_id
+    |> get_map!()
   end
 
   def update_options!(%{map_id: map_id} = map, options) do
     map_id
     |> update_map(%{options: options})
 
-    map
+    map_id
+    |> get_map!()
   end
 
   def add_systems!(map, []), do: map
@@ -521,39 +548,41 @@ defmodule WandererApp.Map do
     end
   end
 
-  defp _maybe_limit_list(list, nil), do: list
-  defp _maybe_limit_list(list, limit), do: Enum.take(list, limit)
-
   @doc """
   Returns the raw activity data that can be processed by WandererApp.Character.Activity.
   Only includes characters that are on the map's ACL.
   If days parameter is provided, filters activity to that time period.
   """
   def get_character_activity(map_id, days \\ nil) do
-    {:ok, map} = WandererApp.Api.Map.by_id(map_id)
-    _map_with_acls = Ash.load!(map, :acls)
+    with {:ok, map} <- WandererApp.Api.Map.by_id(map_id) do
+      _map_with_acls = Ash.load!(map, :acls)
 
-    # Calculate cutoff date if days is provided
-    cutoff_date = if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
+      # Calculate cutoff date if days is provided
+      cutoff_date =
+        if days, do: DateTime.utc_now() |> DateTime.add(-days * 24 * 3600, :second), else: nil
 
-    # Get activity data
-    passages_activity = get_passages_activity(map_id, cutoff_date)
-    connections_activity = get_connections_activity(map_id, cutoff_date)
-    signatures_activity = get_signatures_activity(map_id, cutoff_date)
+      # Get activity data
+      passages_activity = get_passages_activity(map_id, cutoff_date)
+      connections_activity = get_connections_activity(map_id, cutoff_date)
+      signatures_activity = get_signatures_activity(map_id, cutoff_date)
 
-    # Return activity data
-    passages_activity
-    |> Enum.map(fn passage ->
-      %{
-        character: passage.character,
-        passages: passage.count,
-        connections: Map.get(connections_activity, passage.character.id, 0),
-        signatures: Map.get(signatures_activity, passage.character.id, 0),
-        timestamp: DateTime.utc_now(),
-        character_id: passage.character.id,
-        user_id: passage.character.user_id
-      }
-    end)
+      # Return activity data
+      result =
+        passages_activity
+        |> Enum.map(fn passage ->
+          %{
+            character: passage.character,
+            passages: passage.count,
+            connections: Map.get(connections_activity, passage.character.id, 0),
+            signatures: Map.get(signatures_activity, passage.character.id, 0),
+            timestamp: DateTime.utc_now(),
+            character_id: passage.character.id,
+            user_id: passage.character.user_id
+          }
+        end)
+
+      {:ok, result}
+    end
   end
 
   defp get_passages_activity(map_id, nil) do

@@ -1,11 +1,8 @@
-/* Основной класс диалога */
 body .p-dialog {
   display: flex;
   flex-direction: column;
-  //position: absolute;
   top: 0;
   left: 0;
-  //visibility: hidden;
   overflow: hidden;
   border-radius: 2px;
   box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
@@ -29,12 +26,10 @@ body .p-dialog {
   }
 }
 
-/* Стиль видимого диалога */
 .p-dialog-visible {
   visibility: visible;
 }
 
-/* Анимации */
 .p-dialog-enter {
   opacity: 0;
 }
@@ -53,31 +48,27 @@ body .p-dialog {
   transition: opacity 0.3s;
 }
 
-/* Заголовок диалога */
 .p-dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
   background: #f4f4f4;
-  //border-bottom: 1px solid #ddd;
+  height: 40px;
 }
 
-/* Содержимое диалога */
 .p-dialog-content {
   padding: 0.5rem;
   overflow-y: auto;
   flex: 1;
 }
 
-/* Подвал диалога */
 .p-dialog-footer {
-  padding: 1rem;
-  border-top: 1px solid #ddd;
-  background: #f4f4f4;
+  padding: .75rem 1rem;
+  border-top: none !important;
+  //background: #f4f4f4;
 }
 
-/* Кнопка закрытия диалога */
 .p-dialog-header-close {
   display: flex;
   align-items: center;
@@ -92,4 +83,13 @@ body .p-dialog {
 
 .p-dialog-header-close .pi {
   font-size: 1.25rem;
+}
+
+.p-dialog {
+  .p-dialog-title {
+    font-size: 1rem !important;
+  }
+  .p-dialog-header-icons {
+    align-self: initial !important;
+  }
 }

@@ -1,17 +1,9 @@
 <div>
-  <div class="flex mt-20px max-h-[calc(100vh-50px)] max-w-[100vw] flex-col items-center justify-start xl:flex-row xl:items-start xl:justify-between">
-    <div class="shrink xl:w-1/2">
-      <div class="flex min-h-[calc(100vh-100px)] items-center justify-center px-2 py-10 text-center xl:justify-start xl:pe-0 xl:ps-10 xl:text-start">
+  <div class="flex mt-20px max-h-[calc(100vh-50px)] max-w-[100vw] flex-col items-center">
+    <div class="shrink">
+      <div class="flex min-h-[calc(100vh-100px)] items-center justify-center px-2 py-10 text-center xl:pe-0 xl:ps-10">
         <div>
-          <div class="flex flex-col items-center gap-6 xl:flex-row">
-            <div class="tooltip tooltip-accent" data-tip="copy">
-              <button class="btn btn-sm cursor-copy rounded-full font-mono font-light">
-                <pre><code>From: Wanderer Team</code></pre>
-              </button>
-            </div>
-          </div>
-          <div class="h-3"></div>
-          <h1 class="font-title text-center text-[clamp(2rem,6vw,4.2rem)] font-black leading-[1.1] [word-break:auto-phrase] xl:w-[115%] xl:text-start [:root[dir=rtl]_&amp;]:leading-[1.35]">
+          <h1 class="text-center text-[clamp(2rem,6vw,4rem)] font-black leading-[1.1] [word-break:auto-phrase] xl:w-[115%] xl:text-start [:root[dir=rtl]_&amp;]:leading-[1.35]">
             <span class="[&amp;::selection]:text-base-content brightness-150 contrast-150 [&amp;::selection]:bg-blue-700/20">
               Join or support us!
               <!---->
@@ -19,7 +11,7 @@
           </h1>
           <div class="h-10"></div>
           <div>
-            <div class="inline-flex w-full flex-col items-stretch justify-center gap-2 px-4 md:flex-row xl:justify-start xl:px-0">
+            <div class="inline-flex w-full items-stretch justify-center gap-2 px-4 flex-col">
               <.link
                 href="https://discord.gg/cafERvDD2k"
                 class="btn md:btn-lg group shrink-0 rounded-full [@media(min-width:768px)]:px-10 bg-[oklch(64.74%_0.124_270.62)] border-[oklch(64.74%_0.124_270.62)] hover:bg-[oklch(60%_0.124_270.62)] hover:border-[oklch(60%_0.124_270.62)]"
@@ -218,6 +210,52 @@
                   height="24"
                   viewBox="0 0 24 24"
                   class="inline-block absolute w-6 fill-black transition-all scale-90 group-hover:scale-100 opacity-0 group-hover:opacity-100"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M19,14 L19,19 C19,20.1045695 18.1045695,21 17,21 L5,21 C3.8954305,21 3,20.1045695 3,19 L3,7 C3,5.8954305 3.8954305,5 5,5 L10,5 L10,7 L5,7 L5,19 L17,19 L17,14 L19,14 Z M18.9971001,6.41421356 L11.7042068,13.7071068 L10.2899933,12.2928932 L17.5828865,5 L12.9971001,5 L12.9971001,3 L20.9971001,3 L20.9971001,11 L18.9971001,11 L18.9971001,6.41421356 Z"
+                  >
+                  </path>
+                </svg>
+              </a>
+              <a
+                href="https://www.youtube.com/@wanderer_ltd"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                class="btn md:btn-lg group shrink-0 rounded-full [@media(min-width:768px)]:px-10 bg-[#ff0033] border-[#ff0033] hover:bg-[#ff0033] hover:border-[#ff0033] text-white"
+              >
+                <svg
+                  width="48px"
+                  height="48px"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="transition-opacity opacity-100 group-hover:opacity-0"
+                >
+                  <path
+                    d="M20.5245 6.00694C20.3025 5.81544 20.0333 5.70603 19.836 5.63863C19.6156 5.56337 19.3637 5.50148 19.0989 5.44892C18.5677 5.34348 17.9037 5.26005 17.1675 5.19491C15.6904 5.06419 13.8392 5 12 5C10.1608 5 8.30956 5.06419 6.83246 5.1949C6.09632 5.26005 5.43231 5.34348 4.9011 5.44891C4.63628 5.50147 4.38443 5.56337 4.16403 5.63863C3.96667 5.70603 3.69746 5.81544 3.47552 6.00694C3.26514 6.18846 3.14612 6.41237 3.07941 6.55976C3.00507 6.724 2.94831 6.90201 2.90314 7.07448C2.81255 7.42043 2.74448 7.83867 2.69272 8.28448C2.58852 9.18195 2.53846 10.299 2.53846 11.409C2.53846 12.5198 2.58859 13.6529 2.69218 14.5835C2.74378 15.047 2.81086 15.4809 2.89786 15.8453C2.97306 16.1603 3.09841 16.5895 3.35221 16.9023C3.58757 17.1925 3.92217 17.324 4.08755 17.3836C4.30223 17.461 4.55045 17.5218 4.80667 17.572C5.32337 17.6733 5.98609 17.7527 6.72664 17.8146C8.2145 17.9389 10.1134 18 12 18C13.8865 18 15.7855 17.9389 17.2733 17.8146C18.0139 17.7527 18.6766 17.6733 19.1933 17.572C19.4495 17.5218 19.6978 17.461 19.9124 17.3836C20.0778 17.324 20.4124 17.1925 20.6478 16.9023C20.9016 16.5895 21.0269 16.1603 21.1021 15.8453C21.1891 15.4809 21.2562 15.047 21.3078 14.5835C21.4114 13.6529 21.4615 12.5198 21.4615 11.409C21.4615 10.299 21.4115 9.18195 21.3073 8.28448C21.2555 7.83868 21.1874 7.42043 21.0969 7.07448C21.0517 6.90201 20.9949 6.72401 20.9206 6.55976C20.8539 6.41236 20.7349 6.18846 20.5245 6.00694Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M14.5385 11.5L10.0962 14.3578L10.0962 8.64207L14.5385 11.5Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span class="text-lg font-bold transition-opacity opacity-100 group-hover:opacity-0 ml-2">
+                  YouTube
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  class="inline-block absolute w-6 fill-white transition-all scale-90 group-hover:scale-100 opacity-0 group-hover:opacity-100"
                 >
                   <path
                     fill-rule="evenodd"

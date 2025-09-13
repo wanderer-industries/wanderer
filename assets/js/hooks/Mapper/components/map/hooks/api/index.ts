@@ -6,5 +6,5 @@ export * from './useCommandsCharacters';
 export * from './useCommandsConnections';
 export * from './useCommandsConnections';
 export * from './useCenterSystem';
-export * from './useSelectSystem';
+export * from './useSelectSystems';
 export * from './useMapCommands';

@@ -58,10 +58,14 @@ character_api_disabled =
   |> get_var_from_path_or_env("WANDERER_CHARACTER_API_DISABLED", "true")
   |> String.to_existing_atom()
 
-zkill_preload_disabled =
+wanderer_kills_service_enabled =
   config_dir
-  |> get_var_from_path_or_env("WANDERER_ZKILL_PRELOAD_DISABLED", "false")
+  |> get_var_from_path_or_env("WANDERER_KILLS_SERVICE_ENABLED", "false")
   |> String.to_existing_atom()
+
+wanderer_kills_base_url =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_KILLS_BASE_URL", "ws://wanderer-kills:4004")
 
 map_subscriptions_enabled =
   config_dir
@@ -80,9 +84,9 @@ map_subscription_base_price =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_BASE_PRICE", 100_000_000)
 
-map_subscription_extra_characters_100_price =
+map_subscription_extra_characters_50_price =
   config_dir
-  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_CHARACTERS_100_PRICE", 50_000_000)
+  |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_CHARACTERS_50_PRICE", 50_000_000)
 
 map_subscription_extra_hubs_10_price =
   config_dir
@@ -117,6 +121,11 @@ restrict_maps_creation =
   |> get_var_from_path_or_env("WANDERER_RESTRICT_MAPS_CREATION", "false")
   |> String.to_existing_atom()
 
+restrict_acls_creation =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_RESTRICT_ACLS_CREATION", "false")
+  |> String.to_existing_atom()
+
 config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
@@ -125,17 +134,28 @@ config :wanderer_app,
   admin_username: System.get_env("WANDERER_ADMIN_USERNAME", "admin"),
   admin_password: System.get_env("WANDERER_ADMIN_PASSWORD"),
   admins: admins,
+  base_metrics_only:
+    System.get_env("WANDERER_BASE_METRICS_ONLY", "false") |> String.to_existing_atom(),
   corp_id: System.get_env("WANDERER_CORP_ID", "-1") |> String.to_integer(),
   corp_wallet: System.get_env("WANDERER_CORP_WALLET", ""),
+  corp_wallet_eve_id: System.get_env("WANDERER_CORP_WALLET_EVE_ID", "-1"),
   public_api_disabled: public_api_disabled,
+  active_tracking_pool: System.get_env("WANDERER_ACTIVE_TRACKING_POOL", "default"),
+  tracking_pool_max_size:
+    System.get_env("WANDERER_TRACKING_POOL_MAX_SIZE", "300") |> String.to_integer(),
+  character_tracking_pause_disabled:
+    System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
+    |> String.to_existing_atom(),
   character_api_disabled: character_api_disabled,
-  zkill_preload_disabled: zkill_preload_disabled,
+  wanderer_kills_service_enabled: wanderer_kills_service_enabled,
+  wanderer_kills_base_url: wanderer_kills_base_url,
   map_subscriptions_enabled: map_subscriptions_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
   wallet_tracking_enabled: wallet_tracking_enabled,
   restrict_maps_creation: restrict_maps_creation,
+  restrict_acls_creation: restrict_acls_creation,
   subscription_settings: %{
     plans: [
       %{
@@ -155,7 +175,7 @@ config :wanderer_app,
         month_12_discount: 0.5
       }
     ],
-    extra_characters_100: map_subscription_extra_characters_100_price,
+    extra_characters_50: map_subscription_extra_characters_50_price,
     extra_hubs_10: map_subscription_extra_hubs_10_price
   }
 
@@ -178,11 +198,31 @@ config :ueberauth, WandererApp.Ueberauth.Strategy.Eve.OAuth,
   client_id: {WandererApp.Ueberauth, :client_id},
   client_secret: {WandererApp.Ueberauth, :client_secret},
   client_id_default: System.get_env("EVE_CLIENT_ID", "<EVE_CLIENT_ID>"),
+  client_id_1: System.get_env("EVE_CLIENT_ID_1", ""),
+  client_id_2: System.get_env("EVE_CLIENT_ID_2", ""),
+  client_id_3: System.get_env("EVE_CLIENT_ID_3", ""),
+  client_id_4: System.get_env("EVE_CLIENT_ID_4", ""),
+  client_id_5: System.get_env("EVE_CLIENT_ID_5", ""),
+  client_id_6: System.get_env("EVE_CLIENT_ID_6", ""),
+  client_id_7: System.get_env("EVE_CLIENT_ID_7", ""),
+  client_id_8: System.get_env("EVE_CLIENT_ID_8", ""),
+  client_id_9: System.get_env("EVE_CLIENT_ID_9", ""),
+  client_id_10: System.get_env("EVE_CLIENT_ID_10", ""),
   client_id_with_wallet:
     System.get_env("EVE_CLIENT_WITH_WALLET_ID", "<EVE_CLIENT_WITH_WALLET_ID>"),
   client_id_with_corp_wallet:
     System.get_env("EVE_CLIENT_WITH_CORP_WALLET_ID", "<EVE_CLIENT_WITH_CORP_WALLET_ID>"),
   client_secret_default: System.get_env("EVE_CLIENT_SECRET", "<EVE_CLIENT_SECRET>"),
+  client_secret_1: System.get_env("EVE_CLIENT_SECRET_1", ""),
+  client_secret_2: System.get_env("EVE_CLIENT_SECRET_2", ""),
+  client_secret_3: System.get_env("EVE_CLIENT_SECRET_3", ""),
+  client_secret_4: System.get_env("EVE_CLIENT_SECRET_4", ""),
+  client_secret_5: System.get_env("EVE_CLIENT_SECRET_5", ""),
+  client_secret_6: System.get_env("EVE_CLIENT_SECRET_6", ""),
+  client_secret_7: System.get_env("EVE_CLIENT_SECRET_7", ""),
+  client_secret_8: System.get_env("EVE_CLIENT_SECRET_8", ""),
+  client_secret_9: System.get_env("EVE_CLIENT_SECRET_9", ""),
+  client_secret_10: System.get_env("EVE_CLIENT_SECRET_10", ""),
   client_secret_with_wallet:
     System.get_env("EVE_CLIENT_WITH_WALLET_SECRET", "<EVE_CLIENT_WITH_WALLET_SECRET>"),
   client_secret_with_corp_wallet:
@@ -358,3 +398,26 @@ end
 config :wanderer_app, :license_manager,
   api_url: System.get_env("LM_API_URL", "http://localhost:4000"),
   auth_key: System.get_env("LM_AUTH_KEY")
+
+# SSE Configuration
+config :wanderer_app, :sse,
+  enabled:
+    config_dir
+    |> get_var_from_path_or_env("WANDERER_SSE_ENABLED", "true")
+    |> String.to_existing_atom(),
+  max_connections_total:
+    config_dir |> get_int_from_path_or_env("WANDERER_SSE_MAX_CONNECTIONS", 1000),
+  max_connections_per_map:
+    config_dir |> get_int_from_path_or_env("SSE_MAX_CONNECTIONS_PER_MAP", 50),
+  max_connections_per_api_key:
+    config_dir |> get_int_from_path_or_env("SSE_MAX_CONNECTIONS_PER_API_KEY", 10),
+  keepalive_interval: config_dir |> get_int_from_path_or_env("SSE_KEEPALIVE_INTERVAL", 30000),
+  connection_timeout: config_dir |> get_int_from_path_or_env("SSE_CONNECTION_TIMEOUT", 300_000)
+
+# External Events Configuration
+config :wanderer_app, :external_events,
+  webhooks_enabled:
+    config_dir
+    |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "true")
+    |> String.to_existing_atom(),
+  webhook_timeout_ms: config_dir |> get_int_from_path_or_env("WANDERER_WEBHOOK_TIMEOUT_MS", 15000)

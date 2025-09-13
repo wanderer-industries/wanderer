@@ -2,17 +2,11 @@ defmodule WandererAppWeb.MapAuditAPIController do
   use WandererAppWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import Ash.Query, only: [filter: 2]
   require Logger
 
   alias WandererApp.Api
-  alias WandererApp.Api.Character
-  alias WandererApp.MapSystemRepo
-  alias WandererApp.MapCharacterSettingsRepo
 
-  alias WandererApp.Zkb.KillsProvider.KillsCache
-
-  alias WandererAppWeb.UtilAPIController, as: Util
+  alias WandererAppWeb.Helpers.APIUtils
 
   # -----------------------------------------------------------------
   # Inline Schemas
@@ -117,11 +111,11 @@ defmodule WandererAppWeb.MapAuditAPIController do
   )
 
   def index(conn, params) do
-    with {:ok, map_id} <- Util.fetch_map_id(params),
-         {:ok, period} <- Util.require_param(params, "period"),
-         query <- WandererApp.Map.Audit.get_activity_query(map_id, period, "all"),
+    with {:ok, map_id} <- APIUtils.fetch_map_id(params),
+         {:ok, period} <- APIUtils.require_param(params, "period"),
+         query <- WandererApp.Map.Audit.get_map_activity_query(map_id, period, "all"),
          {:ok, data} <-
-           Api.read(query) do
+           Ash.read(query) do
       data = Enum.map(data, &map_audit_event_to_json/1)
       json(conn, %{data: data})
     else
@@ -157,16 +151,5 @@ defmodule WandererAppWeb.MapAuditAPIController do
         Jason.decode!(event_data) |> Map.drop(["character_id"])
       )
     )
-  end
-
-  defp get_original_system_name(solar_system_id) do
-    # Fetch the original system name from the MapSolarSystem resource
-    case WandererApp.Api.MapSolarSystem.by_solar_system_id(solar_system_id) do
-      {:ok, system} ->
-        system.solar_system_name
-
-      _error ->
-        "Unknown System"
-    end
   end
 end

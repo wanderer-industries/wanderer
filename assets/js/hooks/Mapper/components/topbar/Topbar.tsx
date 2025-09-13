@@ -1,9 +1,9 @@
-import Characters from '../characters/Characters';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useMemo } from 'react';
-import clsx from 'clsx';
 import { sortOnlineFunc } from '@/hooks/Mapper/components/hooks/useGetOwnOnlineCharacters.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
+import clsx from 'clsx';
+import { useMemo } from 'react';
+import { Characters } from '../characters/Characters';
 
 const Topbar = ({ children }: WithChildren) => {
   const {
@@ -24,7 +24,10 @@ const Topbar = ({ children }: WithChildren) => {
     >
       <span className="flex-1"></span>
       <span className="mr-2"></span>
-      <Characters data={charsToShow} />
+      <div className="flex gap-1 items-center">
+        <Characters data={charsToShow} />
+      </div>
+
       {children}
     </nav>
   );

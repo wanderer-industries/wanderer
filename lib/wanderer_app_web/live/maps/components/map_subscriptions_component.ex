@@ -31,8 +31,8 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     subscription_form = %{
       "plan" => "omega",
       "period" => "1",
-      "characters_limit" => "100",
-      "hubs_limit" => "10",
+      "characters_limit" => "50",
+      "hubs_limit" => "20",
       "auto_renew?" => true
     }
 
@@ -75,12 +75,19 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
       "auto_renew?" => selected_subscription.auto_renew?
     }
 
+    {:ok, additional_price, discount} =
+      WandererApp.Map.SubscriptionManager.calc_additional_price(
+        subscription_form,
+        selected_subscription
+      )
+
     {:noreply,
      socket
      |> assign(
        is_adding_subscription?: true,
        selected_subscription: selected_subscription,
-       additional_price: calc_additional_price(subscription_form, selected_subscription),
+       additional_price: additional_price,
+       discount: discount,
        subscription_form: subscription_form |> to_form()
      )}
   end
@@ -144,7 +151,13 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           |> assign(estimated_price: estimated_price, discount: discount)
 
         _ ->
-          socket |> assign(additional_price: calc_additional_price(params, selected_subscription))
+          {:ok, additional_price, discount} =
+            WandererApp.Map.SubscriptionManager.calc_additional_price(
+              params,
+              selected_subscription
+            )
+
+          socket |> assign(additional_price: additional_price, discount: discount)
       end
 
     {:noreply, assign(socket, subscription_form: params)}
@@ -252,16 +265,21 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           }
         } = socket
       ) do
-    additional_price = calc_additional_price(subscription_form, selected_subscription)
+    {:ok, additional_price, discount} =
+      WandererApp.Map.SubscriptionManager.calc_additional_price(
+        subscription_form,
+        selected_subscription
+      )
+
     {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
 
-    case map_balance >= additional_price do
+    case map_balance >= additional_price - discount do
       true ->
         {:ok, _t} =
           WandererApp.Api.MapTransaction.create(%{
             map_id: map_id,
             user_id: current_user.id,
-            amount: additional_price,
+            amount: additional_price - discount,
             type: :out
           })
 
@@ -286,7 +304,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
         :telemetry.execute([:wanderer_app, :map, :subscription, :update], %{count: 1}, %{
           map_id: map_id,
-          amount: additional_price
+          amount: additional_price - discount
         })
 
         # Check if a license exists, if not create one, otherwise update its expiration
@@ -388,44 +406,6 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     end
   end
 
-  defp calc_additional_price(
-         %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit},
-         selected_subscription
-       ) do
-    %{
-      extra_characters_100: extra_characters_100,
-      extra_hubs_10: extra_hubs_10
-    } = WandererApp.Env.subscription_settings()
-
-    additional_price = 0
-
-    characters_limit = characters_limit |> String.to_integer()
-    hubs_limit = hubs_limit |> String.to_integer()
-    sub_characters_limit = selected_subscription.characters_limit
-    sub_hubs_limit = selected_subscription.hubs_limit
-
-    additional_price =
-      case characters_limit > sub_characters_limit do
-        true ->
-          additional_price +
-            (characters_limit - sub_characters_limit) / 100 * extra_characters_100
-
-        _ ->
-          additional_price
-      end
-
-    additional_price =
-      case hubs_limit > sub_hubs_limit do
-        true ->
-          additional_price + (hubs_limit - sub_hubs_limit) / 10 * extra_hubs_10
-
-        _ ->
-          additional_price
-      end
-
-    additional_price
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -439,7 +419,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         }
       >
         <.button
-          :if={not @is_adding_subscription?}
+          :if={not @readonly && not @is_adding_subscription?}
           type="button"
           disabled={
             @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
@@ -482,7 +462,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           {if subscription.auto_renew?, do: "Yes", else: "No"}
         </:col>
         <:action :let={subscription}>
-          <div class="tooltip tooltip-left" data-tip="Edit subscription">
+          <div :if={not @readonly} class="tooltip tooltip-left" data-tip="Edit subscription">
             <button
               :if={subscription.status == :active && subscription.plan != :alpha}
               phx-click="edit-subscription"
@@ -494,7 +474,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           </div>
         </:action>
         <:action :let={subscription}>
-          <div class="tooltip tooltip-left" data-tip="Cancel subscription">
+          <div :if={not @readonly} class="tooltip tooltip-left" data-tip="Cancel subscription">
             <button
               :if={subscription.status == :active && subscription.plan != :alpha}
               phx-click="cancel-subscription"
@@ -508,7 +488,10 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         </:action>
       </.table>
 
-      <.header :if={@is_adding_subscription?} class="bordered border-1 flex flex-col gap-4">
+      <.header
+        :if={not @readonly && @is_adding_subscription?}
+        class="bordered border-1 flex flex-col gap-4"
+      >
         <div :if={is_nil(@selected_subscription)}>
           Add subscription
         </div>
@@ -539,9 +522,9 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
             label="Characters limit"
             show_value={true}
             type="range"
-            min="100"
+            min="50"
             max="5000"
-            step="100"
+            step="50"
             class="range range-xs"
           />
           <.input
@@ -597,12 +580,23 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
                   Update
                 </.button>
               </div>
-              <div class="stat-title">Additional price (mounthly)</div>
-              <div class="stat-value text-white">
-                ISK {@additional_price
-                |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+              <div class="flex gap-8">
+                <div>
+                  <div class="stat-title">Additional price</div>
+                  <div class="stat-value text-white">
+                    ISK {(@additional_price - @discount)
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+                  </div>
+                </div>
+                <div :if={@discount > 0}>
+                  <div class="stat-title">Discount</div>
+                  <div class="stat-value text-white relative">
+                    ISK {@discount
+                    |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
+                    <span class="absolute top-0 right-0 text-xs text-white discount" />
+                  </div>
+                </div>
               </div>
-              <div class="stat-actions text-end"></div>
             </div>
           </div>
         </.form>

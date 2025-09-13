@@ -3,11 +3,31 @@ defmodule WandererApp.Api.MapSubscription do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_subscriptions_v1")
+  end
+
+  json_api do
+    type "map_subscriptions"
+
+    includes([
+      :map
+    ])
+
+    # Enable automatic filtering and sorting
+    derive_filter?(true)
+    derive_sort?(true)
+
+    routes do
+      base("/map_subscriptions")
+
+      get(:read)
+      index :read
+    end
   end
 
   code_interface do
@@ -158,6 +178,7 @@ defmodule WandererApp.Api.MapSubscription do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
     end
   end
 end

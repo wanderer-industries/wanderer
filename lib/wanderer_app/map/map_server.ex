@@ -32,6 +32,7 @@ defmodule WandererApp.Map.Server do
         map_id
 
       nil ->
+        WandererApp.Cache.insert("map_#{map_id}:started", false)
         throw("Map server not started")
     end
   end
@@ -87,11 +88,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.remove_character/2, [character_id]})
 
-  def untrack_characters(map_id, character_ids) when is_binary(map_id),
-    do:
-      map_id
-      |> map_pid!
-      |> GenServer.cast({&Impl.untrack_characters/2, [character_ids]})
+  def untrack_characters(map_id, character_ids) when is_binary(map_id) do
+    map_id
+    |> map_pid()
+    |> case do
+      pid when is_pid(pid) ->
+        GenServer.cast(pid, {&Impl.untrack_characters/2, [character_ids]})
+
+      _ ->
+        WandererApp.Cache.insert("map_#{map_id}:started", false)
+        :ok
+    end
+  end
 
   def add_system(map_id, system_info, user_id, character_id) when is_binary(map_id),
     do:
@@ -177,6 +185,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.remove_hub/2, [hub_info]})
 
+  def add_ping(map_id, ping_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.add_ping/2, [ping_info]})
+
+  def cancel_ping(map_id, ping_info) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.cancel_ping/2, [ping_info]})
+
   def delete_systems(map_id, solar_system_ids, user_id, character_id) when is_binary(map_id),
     do:
       map_id
@@ -199,7 +219,7 @@ defmodule WandererApp.Map.Server do
     do:
       map_id
       |> map_pid!
-      |> GenServer.call({&Impl.update_subscription_settings/2, [settings]})
+      |> GenServer.cast({&Impl.update_subscription_settings/2, [settings]})
 
   def delete_connection(map_id, connection_info) when is_binary(map_id),
     do:
@@ -263,9 +283,6 @@ defmodule WandererApp.Map.Server do
   def handle_continue(:start_map, state), do: {:noreply, state |> Impl.start_map()}
 
   @impl true
-  def handle_call(:stop, _from, state), do: {:stop, :normal, :ok, state |> Impl.stop_map()}
-
-  @impl true
   def handle_call(
         {impl_function, args},
         _from,
@@ -273,6 +290,9 @@ defmodule WandererApp.Map.Server do
       )
       when is_function(impl_function),
       do: WandererApp.GenImpl.apply_call(impl_function, state, args)
+
+  @impl true
+  def handle_cast(:stop, state), do: {:stop, :normal, state |> Impl.stop_map()}
 
   @impl true
   def handle_cast({impl_function, args}, state)

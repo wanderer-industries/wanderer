@@ -2,16 +2,16 @@ import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import {
   LayoutEventBlocker,
-  SystemViewStandalone,
+  LoadingWrapper,
+  SystemView,
   TooltipPosition,
   WdCheckbox,
   WdImgButton,
 } from '@/hooks/Mapper/components/ui-kit';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getSystemById } from '@/hooks/Mapper/helpers/getSystemById.ts';
+
+import { forwardRef, MouseEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classes from './RoutesWidget.module.scss';
-import { useLoadRoutes } from './hooks';
 import { RoutesList } from './RoutesList';
 import clsx from 'clsx';
 import { Route } from '@/hooks/Mapper/types/routes.ts';
@@ -25,7 +25,10 @@ import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
-import { OutCommand } from '@/hooks/Mapper/types';
+import {
+  RoutesImperativeHandle,
+  RoutesWidgetProps,
+} from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/types.ts';
 
 const sortByDist = (a: Route, b: Route) => {
   const distA = a.has_connection ? a.systems?.length || 0 : Infinity;
@@ -36,45 +39,31 @@ const sortByDist = (a: Route, b: Route) => {
 
 export const RoutesWidgetContent = () => {
   const {
-    data: { selectedSystems, hubs = [], systems, routes },
-    outCommand,
+    data: { selectedSystems, systems, isSubscriptionActive },
   } = useMapRootState();
+  const { hubs = [], routesList, isRestricted, loading } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
-  const { loading } = useLoadRoutes();
-
-  const { systems: systemStatics, loadSystems, lastUpdateKey } = useLoadSystemStatic({ systems: hubs ?? [] });
-  const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers({
-    outCommand,
-    hubs,
-  });
-
-  const preparedHubs = useMemo(() => {
-    return hubs.map(x => {
-      const sys = getSystemById(systems, x.toString());
-
-      return { ...systemStatics.get(parseInt(x))!, ...(sys && { customName: sys.name ?? '' }) };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hubs, systems, systemStatics, lastUpdateKey]);
+  const { systems: systemStatics, loadSystems } = useLoadSystemStatic({ systems: hubs ?? [] });
+  const { open, ...systemCtxProps } = useContextMenuSystemInfoHandlers();
 
   const preparedRoutes: Route[] = useMemo(() => {
     return (
-      routes?.routes
+      routesList?.routes
         .sort(sortByDist)
-        .filter(x => x.destination.toString() !== systemId)
+        // .filter(x => x.destination.toString() !== systemId)
         .map(route => ({
           ...route,
           mapped_systems:
             route.systems?.map(solar_system_id =>
-              routes?.systems_static_data.find(
+              routesList?.systems_static_data.find(
                 system_static_data => system_static_data.solar_system_id === solar_system_id,
               ),
             ) ?? [],
         })) ?? []
     );
-  }, [routes?.routes, routes?.systems_static_data, systemId]);
+  }, [routesList?.routes, routesList?.systems_static_data, systemId]);
 
   const refData = useRef({ open, loadSystems, preparedRoutes });
   refData.current = { open, loadSystems, preparedRoutes };
@@ -97,9 +86,13 @@ export const RoutesWidgetContent = () => {
     [handleClick],
   );
 
-  if (loading) {
+  if (isRestricted && !isSubscriptionActive) {
     return (
-      <div className="w-full h-full flex justify-center items-center select-none text-center">Loading routes...</div>
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="select-none text-center text-stone-400/80 text-sm">
+          User Routes available with &#39;Active&#39; map subscription only (contact map administrators)
+        </span>
+      </div>
     );
   }
 
@@ -117,12 +110,10 @@ export const RoutesWidgetContent = () => {
 
   return (
     <>
-      {systemId !== undefined && routes && (
+      <LoadingWrapper loading={loading}>
         <div className={clsx(classes.RoutesGrid, 'px-2 py-2')}>
           {preparedRoutes.map(route => {
-            const sys = preparedHubs.find(x => x.solar_system_id === route.destination)!;
-
-            // TODO do not delte this console log
+            // TODO do not delete this console log
             // eslint-disable-next-line no-console
             // console.log('JOipP', `Check sys [${route.destination}]:`, sys);
 
@@ -132,15 +123,19 @@ export const RoutesWidgetContent = () => {
                   <WdImgButton
                     className={clsx(PrimeIcons.BARS, classes.RemoveBtn)}
                     onClick={e => handleClick(e, route.destination.toString())}
-                    tooltip={{ content: 'Click here to open system menu', position: TooltipPosition.top, offset: 10 }}
+                    tooltip={{
+                      content: 'Click here to open system menu',
+                      position: TooltipPosition.top,
+                      offset: 10,
+                    }}
                   />
 
-                  <SystemViewStandalone
-                    key={route.destination}
+                  <SystemView
+                    systemId={route.destination.toString()}
                     className={clsx('select-none text-center cursor-context-menu')}
                     hideRegion
                     compact
-                    {...sys}
+                    showCustomName
                   />
                 </div>
                 <div className="text-right pl-1">{route.has_connection ? route.systems?.length ?? 2 : ''}</div>
@@ -151,7 +146,7 @@ export const RoutesWidgetContent = () => {
             );
           })}
         </div>
-      )}
+      </LoadingWrapper>
 
       <ContextMenuSystemInfo
         hubs={hubs}
@@ -165,15 +160,13 @@ export const RoutesWidgetContent = () => {
   );
 };
 
-export const RoutesWidgetComp = () => {
-  const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
-  const { data, update } = useRouteProvider();
-  const {
-    data: { hubs = [] },
-    outCommand,
-  } = useMapRootState();
+type RoutesWidgetCompProps = {
+  title: ReactNode | string;
+};
 
-  const preparedHubs = useMemo(() => hubs.map(x => parseInt(x)), [hubs]);
+export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
+  const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
+  const { data, update, addHubCommand } = useRouteProvider();
 
   const isSecure = data.path_type === 'secure';
   const handleSecureChange = useCallback(() => {
@@ -190,24 +183,15 @@ export const RoutesWidgetComp = () => {
   const onAddSystem = useCallback(() => setOpenAddSystem(true), []);
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
-    async item => {
-      if (preparedHubs.includes(item.value)) {
-        return;
-      }
-
-      await outCommand({
-        type: OutCommand.addHub,
-        data: { system_id: item.value },
-      });
-    },
-    [hubs, outCommand],
+    async item => addHubCommand(item.value.toString()),
+    [addHubCommand],
   );
 
   return (
     <Widget
       label={
         <div className="flex justify-between items-center text-xs w-full" ref={ref}>
-          <span className="select-none">Routes</span>
+          <span className="select-none">{title}</span>
           <LayoutEventBlocker className="flex items-center gap-2">
             <WdImgButton
               className={PrimeIcons.PLUS_CIRCLE}
@@ -231,6 +215,7 @@ export const RoutesWidgetComp = () => {
               className={PrimeIcons.SLIDERS_H}
               onClick={() => setRouteSettingsVisible(true)}
               tooltip={{
+                position: TooltipPosition.top,
                 content: 'Click here to open Routes settings',
               }}
             />
@@ -251,10 +236,13 @@ export const RoutesWidgetComp = () => {
   );
 };
 
-export const RoutesWidget = () => {
-  return (
-    <RoutesProvider>
-      <RoutesWidgetComp />
-    </RoutesProvider>
-  );
-};
+export const RoutesWidget = forwardRef<RoutesImperativeHandle, RoutesWidgetProps & RoutesWidgetCompProps>(
+  ({ title, ...props }, ref) => {
+    return (
+      <RoutesProvider {...props} ref={ref}>
+        <RoutesWidgetComp title={title} />
+      </RoutesProvider>
+    );
+  },
+);
+RoutesWidget.displayName = 'RoutesWidget';

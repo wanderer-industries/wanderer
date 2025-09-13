@@ -1,10 +1,23 @@
-@import '@/hooks/Mapper/components/map/styles/eve-common-variables';
+@use "sass:color";
+@use '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 $pastel-blue: #5a7d9a;
-$pastel-pink: #d291bc;
+$pastel-pink: rgb(30, 161, 255);
 $dark-bg: #2d2d2d;
 $text-color: #ffffff;
 $tooltip-bg: #202020;
+
+$neon-color-1: rgb(27, 132, 236);
+$neon-color-3: rgba(27, 132, 236, 0.40);
+
+@keyframes move-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 30px 0;
+  }
+}
 
 .RootCustomNode {
   display: flex;
@@ -22,17 +35,18 @@ $tooltip-bg: #202020;
   color: var(--rf-text-color, #ffffff);
 
   box-shadow: 0 0 5px rgba($dark-bg, 0.5);
-  border: 1px solid darken($pastel-blue, 10%);
+  border: 1px solid color.adjust($pastel-blue, $lightness: -10%);
   border-radius: 5px;
   position: relative;
   z-index: 3;
   overflow: hidden;
 
+  &.Pochven,
   &.Mataria,
   &.Amarria,
   &.Gallente,
   &.Caldaria {
-    &::before {
+    &::after {
       content: '';
       position: absolute;
       top: 0;
@@ -48,7 +62,7 @@ $tooltip-bg: #202020;
   }
 
   &.Mataria {
-    &::before {
+    &::after {
       background-image: url('/images/mataria-180.png');
       opacity: 0.6;
       background-position-x: 1px;
@@ -57,7 +71,7 @@ $tooltip-bg: #202020;
   }
 
   &.Caldaria {
-    &::before {
+    &::after {
       background-image: url('/images/caldaria-180.png');
       opacity: 0.6;
       background-position-x: 1px;
@@ -66,7 +80,7 @@ $tooltip-bg: #202020;
   }
 
   &.Amarria {
-    &::before {
+    &::after {
       opacity: 0.45;
       background-image: url('/images/amarr-180.png');
       background-position-x: 0;
@@ -75,7 +89,7 @@ $tooltip-bg: #202020;
   }
 
   &.Gallente {
-    &::before {
+    &::after {
       opacity: 0.5;
       background-image: url('/images/gallente-180.png');
       background-position-x: 1px;
@@ -83,9 +97,41 @@ $tooltip-bg: #202020;
     }
   }
 
+  &.Pochven {
+    &::after {
+      opacity: 0.8;
+      background-image: url('/images/pochven.webp');
+      background-position-x: 0;
+      background-position-y: -13px;
+    }
+  }
+
   &.selected {
     border-color: $pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
+  }
+
+  &.rally {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+
+      border-color: $neon-color-1;
+      background: repeating-linear-gradient(
+          45deg,
+          $neon-color-3 0px,
+          $neon-color-3 8px,
+          transparent 8px,
+          transparent 21px
+      );
+      background-size: 30px 30px;
+      animation: move-stripes 3s linear infinite;
+    }
   }
 
   &.eve-system-status-home {
@@ -354,4 +400,16 @@ $tooltip-bg: #202020;
       left: -3px;
     }
   }
+}
+
+.ShatteredIcon {
+  position: relative;
+  //top: -1px;
+  left: -1px;
+
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  background-image: url(/images/chart-network-svgrepo-com.svg)
 }

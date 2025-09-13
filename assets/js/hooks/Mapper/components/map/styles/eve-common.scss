@@ -1,4 +1,4 @@
-@import './eve-common-variables';
+@use './eve-common-variables';
 
 
 .eve-wh-effect-color-pulsar {
@@ -542,48 +542,32 @@
   background-color: #d10600;
 }
 
-.react-flow {
-  color: var(--text-color);
 
-  &__pane {
-    cursor: auto;
-  }
+.react-flow__minimap-node {
+  fill: #ffb03a;
+}
 
-  &__minimap {
-    background-color: rgba(66, 66, 66, 1);
-    opacity: 0.7;
-    border: 1px solid #2f2f2f;
-    border-radius: 4px;
-    overflow: hidden;
-  }
+.react-flow__minimap {
+  border: 1px solid #282828;
+  border-radius: 4px;
+  background-color: rgb(47 37 37) !important;
+  overflow: hidden;
+}
 
-  &__minimap-mask {
-    fill: rgba(28, 28, 28, 0.75);
-  }
+.react-flow__minimap-mask {
+  stroke-width: 2px;
+  fill: rgba(0, 0, 0, 0.5);
+  mix-blend-mode: overlay;
+}
 
-  &__controls {
-    filter: brightness(1.5);
-  }
-
-  &__minimap-node {
-    fill: #ffb03a;
-  }
+.react-flow__minimap-mask {
+  stroke-width: 2px;
+  fill: rgb(0 0 0 / 50%) !important;
+  mix-blend-mode: inherit;
+  opacity: 1;
+  stroke: #fff;
 }
 
 .context-menu-active {
   background-color: rgba(131, 131, 131, 0.33);
-}
-
-.p-dialog {
-  .p-dialog-header {
-    height: 40px;
-    padding: 1rem;
-    padding-right: 10px !important;
-  }
-  .p-dialog-title {
-    font-size: 1rem !important;
-  }
-  .p-dialog-header-icons {
-    align-self: initial !important;
-  }
 }

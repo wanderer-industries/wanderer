@@ -27,7 +27,11 @@ config :wanderer_app,
   generators: [timestamp_type: :utc_datetime],
   ddrt: DDRT,
   logger: Logger,
-  pubsub_client: Phoenix.PubSub
+  pubsub_client: Phoenix.PubSub,
+  wanderer_kills_base_url:
+    System.get_env("WANDERER_KILLS_BASE_URL", "ws://host.docker.internal:4004"),
+  wanderer_kills_service_enabled:
+    System.get_env("WANDERER_KILLS_SERVICE_ENABLED", "false") == "true"
 
 config :wanderer_app, WandererAppWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
@@ -68,11 +72,11 @@ config :wanderer_app,
 config :phoenix_ddos,
   protections: [
     # ip rate limit
-    {PhoenixDDoS.IpRateLimit, allowed: 500, period: {2, :minutes}},
-    {PhoenixDDoS.IpRateLimit, allowed: 10_000, period: {1, :hour}},
+    {PhoenixDDoS.IpRateLimit, allowed: 10_000, period: {1, :minute}},
+    {PhoenixDDoS.IpRateLimit, allowed: 1_000_000, period: {1, :hour}},
     # ip rate limit on specific request_path
     {PhoenixDDoS.IpRateLimitPerRequestPath,
-     request_paths: ["/auth/eve"], allowed: 20, period: {1, :minute}}
+     request_paths: ["/auth/eve"], allowed: 100, period: {1, :minute}}
   ]
 
 config :ash_pagify,
@@ -97,6 +101,23 @@ config :phoenix, :json_library, Jason
 config :error_tracker,
   repo: WandererApp.Repo,
   otp_app: :wanderer_app
+
+# Security Audit Configuration
+config :wanderer_app, WandererApp.SecurityAudit,
+  enabled: true,
+  # Set to true in production for better performance
+  async: false,
+  batch_size: 100,
+  flush_interval: 5000,
+  log_level: :info,
+  threat_detection: %{
+    enabled: true,
+    max_failed_attempts: 5,
+    max_permission_denials: 10,
+    window_seconds: 300,
+    bulk_operation_threshold: 10000
+  },
+  retention_days: 90
 
 config :git_ops,
   mix_project: Mix.Project.get!(),

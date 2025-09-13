@@ -3,8 +3,6 @@ defmodule WandererApp.Map.Server.AclsImpl do
 
   require Logger
 
-  alias WandererApp.Map.Server.Impl
-
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def handle_map_acl_updated(%{map_id: map_id, map: old_map} = state, added_acls, removed_acls) do
@@ -61,6 +59,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
     map_update = %{acls: map.acls, scope: map.scope}
 
     WandererApp.Map.update_map(map_id, map_update)
+    WandererApp.Cache.delete("map_characters-#{map_id}")
 
     broadcast_acl_updates({:ok, result}, map_id)
 
@@ -68,7 +67,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
   end
 
   def handle_acl_updated(map_id, acl_id) do
-    {:ok, map} =
+    {:ok, %{acls: acls}} =
       WandererApp.MapRepo.get(map_id,
         acls: [
           :owner_id,
@@ -76,14 +75,35 @@ defmodule WandererApp.Map.Server.AclsImpl do
         ]
       )
 
-    if map.acls |> Enum.map(& &1.id) |> Enum.member?(acl_id) do
-      WandererApp.Map.update_map(map_id, %{acls: map.acls})
+    if acls |> Enum.map(& &1.id) |> Enum.member?(acl_id) do
+      WandererApp.Map.update_map(map_id, %{acls: acls})
+      WandererApp.Cache.delete("map_characters-#{map_id}")
 
       :ok =
         acl_id
         |> update_acl()
         |> broadcast_acl_updates(map_id)
     end
+  end
+
+  def handle_acl_deleted(map_id, _acl_id) do
+    {:ok, %{acls: acls}} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
+
+    WandererApp.Map.update_map(map_id, %{acls: acls})
+    WandererApp.Cache.delete("map_characters-#{map_id}")
+
+    character_ids =
+      map_id
+      |> WandererApp.Map.get_map!()
+      |> Map.get(:characters, [])
+
+    WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
   end
 
   def track_acls([]), do: :ok

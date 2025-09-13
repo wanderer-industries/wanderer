@@ -10,6 +10,7 @@ export type MapData = MapUnionTypes & {
   showKSpaceBG: boolean;
   isThickConnections: boolean;
   linkedSigEveId: string;
+  localShowShipName: boolean;
 };
 
 interface MapProviderProps {
@@ -38,6 +39,11 @@ const INITIAL_DATA: MapData = {
   systemSignatures: {} as Record<string, SystemSignature[]>,
   options: {} as Record<string, string | boolean>,
   isSubscriptionActive: false,
+  mainCharacterEveId: null,
+  followingCharacterEveId: null,
+  userHubs: [],
+  pings: [],
+  localShowShipName: false,
 };
 
 export interface MapContextProps {

@@ -7,15 +7,15 @@ defmodule WandererApp.Structure do
   alias WandererApp.Api.MapSystemStructure
   alias WandererApp.Character
 
-  def update_structures(system, added, updated, removed, user_characters) do
-    first_char_eve_id = List.first(user_characters)
+  def update_structures(system, added, updated, removed, main_character_eve_id, user_id \\ nil) do
+    Logger.info("[Structure] update_structures called by user_id=#{inspect(user_id)}")
 
     added_structs =
-      parse_structures(added, first_char_eve_id, system)
+      parse_structures(added, main_character_eve_id, system)
       |> Enum.map(&Map.delete(&1, :id))
 
-    updated_structs = parse_structures(updated, first_char_eve_id, system)
-    removed_structs = parse_structures(removed, first_char_eve_id, system)
+    updated_structs = parse_structures(updated, main_character_eve_id, system)
+    removed_structs = parse_structures(removed, main_character_eve_id, system)
 
     remove_structures(system.id, Enum.map(removed_structs, & &1.id))
     update_structures_in_db(system.id, updated_structs, Enum.map(updated_structs, & &1.id))
@@ -40,11 +40,9 @@ defmodule WandererApp.Structure do
     Enum.map(list_of_maps, fn item ->
       %{
         id: Map.get(item, "id"),
-
         system_id: system.id,
         solar_system_id: system.solar_system_id,
         solar_system_name: system.name,
-
         structure_type_id: Map.get(item, "structureTypeId") || "???",
         structure_type: Map.get(item, "structureType"),
         character_eve_id: character_eve_id,
@@ -54,15 +52,15 @@ defmodule WandererApp.Structure do
         owner_ticker: Map.get(item, "ownerTicker"),
         owner_id: Map.get(item, "ownerId"),
         status: Map.get(item, "status"),
-
         end_time: parse_end_time(Map.get(item, "endTime"))
       }
     end)
   end
 
   defp parse_end_time(str) when is_binary(str) do
-    Logger.debug(fn -> "[parse_end_time] raw input => #{inspect(str)} (length=#{String.length(str)})" end)
-
+    Logger.debug(fn ->
+      "[parse_end_time] raw input => #{inspect(str)} (length=#{String.length(str)})"
+    end)
 
     if String.trim(str) == "" do
       nil
@@ -73,7 +71,10 @@ defmodule WandererApp.Structure do
           dt
 
         {:error, reason} ->
-          Logger.error("[parse_end_time] Invalid ISO string: #{inspect(str)}, reason: #{inspect(reason)}")
+          Logger.error(
+            "[parse_end_time] Invalid ISO string: #{inspect(str)}, reason: #{inspect(reason)}"
+          )
+
           nil
       end
     end
@@ -83,7 +84,6 @@ defmodule WandererApp.Structure do
     Logger.error("[parse_end_time] Received non-string => #{inspect(other)}. Returning nil.")
     nil
   end
-
 
   defp remove_structures(system_id, removed_ids) do
     MapSystemStructure.by_system_id!(system_id)
@@ -104,9 +104,44 @@ defmodule WandererApp.Structure do
               inspect(updated_data, pretty: true)
           end)
 
-          updated_data = Map.delete(updated_data, :id)  # remove PK so Ash doesn't treat it as a new record
+          # remove PK so Ash doesn't treat it as a new record
+          updated_data = Map.delete(updated_data, :id)
 
-          new_record = MapSystemStructure.update(existing, updated_data)
+          # Merge update data with existing record to avoid nil required fields
+          merged_data =
+            Map.merge(Map.from_struct(existing), updated_data, fn _k, v1, v2 ->
+              if is_nil(v2), do: v1, else: v2
+            end)
+
+          # Only keep fields accepted by Ash update action
+          allowed_keys = [
+            :system_id,
+            :solar_system_name,
+            :solar_system_id,
+            :structure_type_id,
+            :structure_type,
+            :character_eve_id,
+            :name,
+            :notes,
+            :owner_name,
+            :owner_ticker,
+            :owner_id,
+            :status,
+            :end_time
+          ]
+
+          filtered_data = Map.take(merged_data, allowed_keys)
+
+          Logger.debug(fn ->
+            "[Structure] update_structures_in_db: calling update for id=#{existing.id} with: #{inspect(filtered_data)}"
+          end)
+
+          new_record = MapSystemStructure.update(existing, filtered_data)
+
+          Logger.debug(fn ->
+            "[Structure] update_structures_in_db: update result for id=#{existing.id}: #{inspect(new_record)}"
+          end)
+
           Logger.debug(fn ->
             "[Structure] updated record =>\n" <> inspect(new_record, pretty: true)
           end)

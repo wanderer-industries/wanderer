@@ -135,6 +135,8 @@ defmodule WandererAppWeb.MapAuditLive do
       {"Connection Added", :map_connection_added},
       {"Connection Updated", :map_connection_updated},
       {"Connection Removed", :map_connection_removed},
+      {"Rally Point Added", :map_rally_added},
+      {"Rally Point Cancelled", :map_rally_cancelled},
       {"Signatures Added", :signatures_added},
       {"Signatures Removed", :signatures_removed}
     ])
@@ -151,7 +153,7 @@ defmodule WandererAppWeb.MapAuditLive do
     } =
       socket.assigns
 
-    query = WandererApp.Map.Audit.get_activity_query(map_id, period, activity)
+    query = WandererApp.Map.Audit.get_map_activity_query(map_id, period, activity)
 
     AshPagify.validate_and_run(query, params, opts)
     |> case do

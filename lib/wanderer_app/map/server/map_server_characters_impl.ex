@@ -5,27 +5,32 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   alias WandererApp.Map.Server.{Impl, ConnectionsImpl, SystemsImpl}
 
-  def get_characters(%{map_id: map_id} = _state),
-    do: {:ok, map_id |> WandererApp.Map.list_characters()}
-
   def add_character(%{map_id: map_id} = state, %{id: character_id} = character, track_character) do
     Task.start_link(fn ->
       with :ok <- map_id |> WandererApp.Map.add_character(character),
-           {:ok, _} <-
+           {:ok, _settings} <-
              WandererApp.MapCharacterSettingsRepo.create(%{
                character_id: character_id,
                map_id: map_id,
-               tracked: track_character,
-               followed: false
+               tracked: track_character
              }),
            {:ok, character} <- WandererApp.Character.get_character(character_id) do
         Impl.broadcast!(map_id, :character_added, character)
+
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :character_added, character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
+        {:error, :not_found} ->
+          :ok
+
         _error ->
           {:ok, character} = WandererApp.Character.get_character(character_id)
           Impl.broadcast!(map_id, :character_added, character)
+
+          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+          WandererApp.ExternalEvents.broadcast(map_id, :character_added, character)
           :ok
       end
     end)
@@ -36,8 +41,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def remove_character(map_id, character_id) do
     Task.start_link(fn ->
       with :ok <- WandererApp.Map.remove_character(map_id, character_id),
-           {:ok, character} <- WandererApp.Character.get_character(character_id) do
+           {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
         Impl.broadcast!(map_id, :character_removed, character)
+
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :character_removed, character)
 
         :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
 
@@ -51,7 +59,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   def update_tracked_characters(map_id) do
     Task.start_link(fn ->
-      {:ok, map_tracked_character_ids} =
+      {:ok, all_map_tracked_character_ids} =
         map_id
         |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all()
         |> case do
@@ -59,39 +67,68 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           _ -> {:ok, []}
         end
 
-      {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
+      {:ok, actual_map_tracked_characters} =
+        WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
 
-      map_active_tracked_characters =
-        map_tracked_character_ids
-        |> Enum.filter(fn character -> character in tracked_characters end)
+      characters_to_remove = actual_map_tracked_characters -- all_map_tracked_character_ids
 
-      WandererApp.Cache.insert("maps:#{map_id}:tracked_characters", map_active_tracked_characters)
+      WandererApp.Cache.insert_or_update(
+        "map_#{map_id}:invalidate_character_ids",
+        characters_to_remove,
+        fn ids ->
+          (ids ++ characters_to_remove) |> Enum.uniq()
+        end
+      )
 
       :ok
     end)
   end
 
-  def untrack_characters(map_id, character_ids),
-    do:
-      character_ids
-      |> Enum.each(fn character_id ->
-        WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-          map_id: map_id,
-          track: false
-        })
-      end)
+  def untrack_characters(map_id, character_ids) do
+    character_ids
+    |> Enum.each(fn character_id ->
+      character_map_active = is_character_map_active?(map_id, character_id)
+
+      character_map_active
+      |> untrack_character(map_id, character_id)
+    end)
+  end
+
+  def untrack_character(true, map_id, character_id) do
+    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+      map_id: map_id,
+      track: false
+    })
+  end
+
+  def untrack_character(_is_character_map_active, _map_id, character_id) do
+    :ok
+  end
+
+  def is_character_map_active?(map_id, character_id) do
+    case WandererApp.Character.get_character_state(character_id) do
+      {:ok, %{active_maps: active_maps}} ->
+        map_id in active_maps
+
+      _ ->
+        false
+    end
+  end
 
   def cleanup_characters(map_id, owner_id) do
     {:ok, invalidate_character_ids} =
-      WandererApp.Cache.lookup(
+      WandererApp.Cache.get_and_remove(
         "map_#{map_id}:invalidate_character_ids",
         []
       )
 
-    acls =
-      map_id
-      |> WandererApp.Map.get_map!()
-      |> Map.get(:acls, [])
+    {:ok, %{acls: acls}} =
+      WandererApp.MapRepo.get(map_id,
+        acls: [
+          :owner_id,
+          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+        ]
+      )
 
     invalidate_character_ids
     |> Task.async_stream(
@@ -99,6 +136,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         character_id
         |> WandererApp.Character.get_character()
         |> case do
+          {:ok, %{user_id: nil}} ->
+            {:remove_character, character_id}
+
           {:ok, character} ->
             [character_permissions] =
               WandererApp.Permissions.check_characters_access([character], acls)
@@ -140,11 +180,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       {:error, reason} ->
         Logger.error("Error in cleanup_characters: #{inspect(reason)}")
     end)
-
-    WandererApp.Cache.insert(
-      "map_#{map_id}:invalidate_character_ids",
-      []
-    )
   end
 
   defp remove_and_untrack_characters(map_id, character_ids) do
@@ -178,83 +213,108 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   def update_characters(%{map_id: map_id} = state) do
-    WandererApp.Cache.lookup!("maps:#{map_id}:tracked_characters", [])
-    |> Enum.map(fn character_id ->
-      Task.start_link(fn ->
-        character_updates =
-          maybe_update_online(map_id, character_id) ++
-            maybe_update_location(map_id, character_id) ++
-            maybe_update_ship(map_id, character_id) ++
-            maybe_update_alliance(map_id, character_id) ++
-            maybe_update_corporation(map_id, character_id)
+    try do
+      {:ok, presence_character_ids} =
+        WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-        character_updates
-        |> Enum.filter(fn update -> update != :skip end)
-        |> Enum.map(fn update ->
-          update
-          |> case do
-            {:character_location, location_info, old_location_info} ->
-              update_location(
-                character_id,
-                location_info,
-                old_location_info,
-                state
-              )
+      presence_character_ids
+      |> Task.async_stream(
+        fn character_id ->
+          character_updates =
+            maybe_update_online(map_id, character_id) ++
+              maybe_update_tracking_status(map_id, character_id) ++
+              maybe_update_location(map_id, character_id) ++
+              maybe_update_ship(map_id, character_id) ++
+              maybe_update_alliance(map_id, character_id) ++
+              maybe_update_corporation(map_id, character_id)
 
-              :broadcast
+          character_updates
+          |> Enum.filter(fn update -> update != :skip end)
+          |> Enum.map(fn update ->
+            update
+            |> case do
+              {:character_location, location_info, old_location_info} ->
+                update_location(
+                  character_id,
+                  location_info,
+                  old_location_info,
+                  state
+                )
 
-            {:character_ship, _info} ->
-              :broadcast
+                :broadcast
 
-            {:character_online, _info} ->
-              :broadcast
+              {:character_ship, _info} ->
+                :broadcast
 
-            {:character_alliance, _info} ->
-              WandererApp.Cache.insert_or_update(
-                "map_#{map_id}:invalidate_character_ids",
-                [character_id],
-                fn ids ->
-                  [character_id | ids]
-                end
-              )
+              {:character_online, _info} ->
+                :broadcast
 
-              :broadcast
+              {:character_tracking, _info} ->
+                :broadcast
 
-            {:character_corporation, _info} ->
-              WandererApp.Cache.insert_or_update(
-                "map_#{map_id}:invalidate_character_ids",
-                [character_id],
-                fn ids ->
-                  [character_id | ids]
-                end
-              )
+              {:character_alliance, _info} ->
+                WandererApp.Cache.insert_or_update(
+                  "map_#{map_id}:invalidate_character_ids",
+                  [character_id],
+                  fn ids ->
+                    [character_id | ids] |> Enum.uniq()
+                  end
+                )
 
-              :broadcast
+                :broadcast
 
-            _ ->
-              :skip
-          end
-        end)
-        |> Enum.filter(fn update -> update != :skip end)
-        |> Enum.uniq()
-        |> Enum.each(fn update ->
-          case update do
-            :broadcast ->
-              update_character(map_id, character_id)
+              {:character_corporation, _info} ->
+                WandererApp.Cache.insert_or_update(
+                  "map_#{map_id}:invalidate_character_ids",
+                  [character_id],
+                  fn ids ->
+                    [character_id | ids] |> Enum.uniq()
+                  end
+                )
 
-            _ ->
-              :ok
-          end
-        end)
+                :broadcast
 
-        :ok
+              _ ->
+                :skip
+            end
+          end)
+          |> Enum.filter(fn update -> update != :skip end)
+          |> Enum.uniq()
+          |> Enum.each(fn update ->
+            case update do
+              :broadcast ->
+                update_character(map_id, character_id)
+
+              _ ->
+                :ok
+            end
+          end)
+
+          :ok
+        end,
+        timeout: :timer.seconds(15),
+        max_concurrency: System.schedulers_online(),
+        on_timeout: :kill_task
+      )
+      |> Enum.each(fn
+        {:ok, _result} -> :ok
+        {:error, reason} -> Logger.error("Error in update_characters: #{inspect(reason)}")
       end)
-    end)
+    rescue
+      e ->
+        Logger.error("""
+        [Map Server] update_characters => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+    end
   end
 
   defp update_character(map_id, character_id) do
-    {:ok, character} = WandererApp.Character.get_character(character_id)
+    {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
     Impl.broadcast!(map_id, :character_updated, character)
+
+    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    WandererApp.ExternalEvents.broadcast(map_id, :character_updated, character)
   end
 
   defp update_location(
@@ -263,32 +323,47 @@ defmodule WandererApp.Map.Server.CharactersImpl do
          old_location,
          %{map: map, map_id: map_id, rtree_name: rtree_name, map_opts: map_opts} = _state
        ) do
+    start_solar_system_id =
+      WandererApp.Cache.take("map:#{map_id}:character:#{character_id}:start_solar_system_id")
+
     case is_nil(old_location.solar_system_id) and
+           is_nil(start_solar_system_id) and
            ConnectionsImpl.can_add_location(map.scope, location.solar_system_id) do
       true ->
         :ok = SystemsImpl.maybe_add_system(map_id, location, nil, rtree_name, map_opts)
 
       _ ->
-        ConnectionsImpl.is_connection_valid(
-          map.scope,
-          old_location.solar_system_id,
-          location.solar_system_id
-        )
-        |> case do
-          true ->
-            :ok =
-              SystemsImpl.maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
-
-            :ok =
-              SystemsImpl.maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
-
-            if is_character_in_space?(location) do
+        if is_nil(start_solar_system_id) || start_solar_system_id == old_location.solar_system_id do
+          ConnectionsImpl.is_connection_valid(
+            map.scope,
+            old_location.solar_system_id,
+            location.solar_system_id
+          )
+          |> case do
+            true ->
               :ok =
-                ConnectionsImpl.maybe_add_connection(map_id, location, old_location, character_id)
-            end
+                SystemsImpl.maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
 
-          _ ->
-            :ok
+              :ok =
+                SystemsImpl.maybe_add_system(map_id, old_location, location, rtree_name, map_opts)
+
+              if is_character_in_space?(location) do
+                :ok =
+                  ConnectionsImpl.maybe_add_connection(
+                    map_id,
+                    location,
+                    old_location,
+                    character_id,
+                    false
+                  )
+              end
+
+            _ ->
+              :ok
+          end
+        else
+          # skip adding connection or system if character just started tracking on the map
+          :ok
         end
     end
   end
@@ -297,15 +372,23 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     is_nil(structure_id) and is_nil(station_id)
   end
 
-  defp track_character(map_id, character_id),
-    do:
-      WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-        map_id: map_id,
-        track: true,
-        track_online: true,
-        track_location: true,
-        track_ship: true
-      })
+  defp track_character(map_id, character_id) do
+    {:ok, character} =
+      WandererApp.Character.get_map_character(map_id, character_id, not_present: true)
+
+    WandererApp.Cache.delete("character:#{character.id}:tracking_paused")
+
+    add_character(%{map_id: map_id}, character, true)
+
+    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+      map_id: map_id,
+      track: true,
+      track_online: true,
+      track_location: true,
+      track_ship: true,
+      solar_system_id: character.solar_system_id
+    })
+  end
 
   defp maybe_update_online(map_id, character_id) do
     with {:ok, old_online} <-
@@ -331,12 +414,39 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end
   end
 
+  defp maybe_update_tracking_status(map_id, character_id) do
+    with {:ok, old_tracking_paused} <-
+           WandererApp.Cache.lookup(
+             "map:#{map_id}:character:#{character_id}:tracking_paused",
+             false
+           ),
+         {:ok, tracking_paused} <-
+           WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false) do
+      case old_tracking_paused != tracking_paused do
+        true ->
+          WandererApp.Cache.insert(
+            "map:#{map_id}:character:#{character_id}:tracking_paused",
+            tracking_paused
+          )
+
+          [{:character_tracking, %{tracking_paused: tracking_paused}}]
+
+        _ ->
+          [:skip]
+      end
+    else
+      error ->
+        Logger.error("Failed to update character_tracking: #{inspect(error, pretty: true)}")
+        [:skip]
+    end
+  end
+
   defp maybe_update_ship(map_id, character_id) do
     with {:ok, old_ship_type_id} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_type_id"),
          {:ok, old_ship_name} <-
            WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_name"),
-         {:ok, %{ship: ship_type_id, ship_name: ship_name}} <-
+         {:ok, %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}} <-
            WandererApp.Character.get_character(character_id) do
       case old_ship_type_id != ship_type_id or
              old_ship_name != ship_name do
@@ -351,7 +461,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             ship_name
           )
 
-          [{:character_ship, %{ship: ship_type_id, ship_name: ship_name}}]
+          [
+            {:character_ship,
+             %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}}
+          ]
 
         _ ->
           [:skip]
@@ -364,65 +477,45 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp maybe_update_location(map_id, character_id) do
-    WandererApp.Cache.lookup!(
-      "character:#{character_id}:location_started",
-      false
+    {:ok, old_solar_system_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
+
+    {:ok, old_station_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:station_id")
+
+    {:ok, old_structure_id} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:structure_id")
+
+    {:ok, %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
+      WandererApp.Character.get_character(character_id)
+
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:solar_system_id",
+      solar_system_id
     )
-    |> case do
-      true ->
-        {:ok, old_solar_system_id} =
-          WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
 
-        {:ok,
-         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
-          WandererApp.Character.get_character(character_id)
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:station_id",
+      station_id
+    )
 
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:structure_id",
+      structure_id
+    )
 
-        case solar_system_id != old_solar_system_id do
-          true ->
-            [
-              {:character_location,
-               %{
-                 solar_system_id: solar_system_id,
-                 structure_id: structure_id,
-                 station_id: station_id
-               }, %{solar_system_id: old_solar_system_id}}
-            ]
-
-          _ ->
-            [:skip]
-        end
-
-      false ->
-        {:ok, old_solar_system_id} =
-          WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
-
-        {:ok,
-         %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id} =
-           _character} =
-          WandererApp.Character.get_character(character_id)
-
-        WandererApp.Cache.insert(
-          "map:#{map_id}:character:#{character_id}:solar_system_id",
-          solar_system_id
-        )
-
-        if is_nil(old_solar_system_id) or solar_system_id != old_solar_system_id do
-          [
-            {:character_location,
-             %{
-               solar_system_id: solar_system_id,
-               structure_id: structure_id,
-               station_id: station_id
-             }, %{solar_system_id: nil}}
-          ]
-        else
-          [:skip]
-        end
+    if solar_system_id != old_solar_system_id || structure_id != old_structure_id ||
+         station_id != old_station_id do
+      [
+        {:character_location,
+         %{
+           solar_system_id: solar_system_id,
+           structure_id: structure_id,
+           station_id: station_id
+         }, %{solar_system_id: old_solar_system_id}}
+      ]
+    else
+      [:skip]
     end
   end
 

@@ -9,28 +9,44 @@ import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/compone
 import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings';
 import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
-import { TrackAndFollow } from '@/hooks/Mapper/components/mapRootContent/components/TrackAndFollow/TrackAndFollow';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
-import { useTrackAndFollowHandlers } from './hooks/useTrackAndFollowHandlers';
+import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
+import { useMapEventListener } from '@/hooks/Mapper/events';
+import { Commands } from '@/hooks/Mapper/types';
+import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
+import { OldSettingsDialog } from '@/hooks/Mapper/components/mapRootContent/components/OldSettingsDialog.tsx';
 
 export interface MapRootContentProps {}
 
 // eslint-disable-next-line no-empty-pattern
 export const MapRootContent = ({}: MapRootContentProps) => {
-  const { interfaceSettings, data } = useMapRootState();
+  const {
+    storedSettings: { interfaceSettings, isReady, hasOldSettings },
+    data,
+  } = useMapRootState();
   const { isShowMenu } = interfaceSettings;
-  const { showCharacterActivity, showTrackAndFollow } = data;
+  const { showCharacterActivity } = data;
   const { handleHideCharacterActivity } = useCharacterActivityHandlers();
-  const { handleHideTracking } = useTrackAndFollowHandlers();
 
   const themeClass = `${interfaceSettings.theme ?? 'default'}-theme`;
 
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
-  const mapInterface = <MapInterface />;
+  const [showTrackingDialog, setShowTrackingDialog] = useState(false);
+
+  /* Important Notice - this solution needs for use one instance of MapInterface */
+  const mapInterface = isReady ? <MapInterface /> : null;
 
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
+  const handleShowTrackingDialog = useCallback(() => setShowTrackingDialog(true), []);
+
+  useMapEventListener(event => {
+    if (event.name === Commands.showTracking) {
+      setShowTrackingDialog(true);
+      return true;
+    }
+  });
 
   useSkipContextMenu();
 
@@ -44,13 +60,25 @@ export const MapRootContent = ({}: MapRootContentProps) => {
               {mapInterface}
             </div>
             <div className="absolute top-0 right-0 w-14 h-[calc(100%+3.5rem)] pointer-events-auto">
-              <RightBar onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+              <RightBar
+                onShowOnTheMap={handleShowOnTheMap}
+                onShowMapSettings={handleShowMapSettings}
+                onShowTrackingDialog={handleShowTrackingDialog}
+                additionalContent={<PingsInterface hasLeftOffset />}
+              />
             </div>
           </div>
         ) : (
           <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
             <Topbar>
-              <MapContextMenu onShowOnTheMap={handleShowOnTheMap} onShowMapSettings={handleShowMapSettings} />
+              <div className="flex items-center ml-1">
+                <PingsInterface />
+                <MapContextMenu
+                  onShowOnTheMap={handleShowOnTheMap}
+                  onShowMapSettings={handleShowMapSettings}
+                  onShowTrackingDialog={handleShowTrackingDialog}
+                />
+              </div>
             </Topbar>
             {mapInterface}
           </div>
@@ -60,7 +88,11 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         {showCharacterActivity && (
           <CharacterActivity visible={showCharacterActivity} onHide={handleHideCharacterActivity} />
         )}
-        {showTrackAndFollow && <TrackAndFollow visible={showTrackAndFollow} onHide={handleHideTracking} />}
+        {showTrackingDialog && (
+          <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
+        )}
+
+        {hasOldSettings && <OldSettingsDialog />}
       </Layout>
     </div>
   );

@@ -1,139 +1,205 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 import { SystemSignaturesContent } from './SystemSignaturesContent';
 import { SystemSignatureSettingsDialog } from './SystemSignatureSettingsDialog';
-import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useHotkey } from '@/hooks/Mapper/hooks';
 import { SystemSignaturesHeader } from './SystemSignatureHeader';
-import useLocalStorageState from 'use-local-storage-state';
-import {
-  SETTINGS_KEYS,
-  SETTINGS_VALUES,
-  SIGNATURE_DELETION_TIMEOUTS,
-  SIGNATURE_SETTING_STORE_KEY,
-  SIGNATURE_WINDOW_ID,
-  SIGNATURES_DELETION_TIMING,
-  SignatureSettingsType,
-} from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
-import { calculateTimeRemaining } from './helpers';
+import { useHotkey } from '@/hooks/Mapper/hooks/useHotkey';
+import { getDeletionTimeoutMs } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers';
+import { ExtendedSystemSignature } from '@/hooks/Mapper/types';
+import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
-export const SystemSignatures = () => {
-  const [visible, setVisible] = useState(false);
-  const [sigCount, setSigCount] = useState<number>(0);
-  const [pendingSigs, setPendingSigs] = useState<SystemSignature[]>([]);
-  const [pendingTimeRemaining, setPendingTimeRemaining] = useState<number | undefined>();
-  const undoPendingFnRef = useRef<() => void>(() => {});
+/**
+ * Custom hook for managing pending signature deletions and undo countdown.
+ */
+function useSignatureUndo(
+  systemId: string | undefined,
+  settings: SignatureSettingsType,
+  outCommand: OutCommandHandler,
+) {
+  const [countdown, setCountdown] = useState<number>(0);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [deletedSignatures, setDeletedSignatures] = useState<ExtendedSystemSignature[]>([]);
+  const intervalRef = useRef<number | null>(null);
 
-  const {
-    data: { selectedSystems },
-  } = useMapRootState();
-
-  const [currentSettings, setCurrentSettings] = useLocalStorageState(SIGNATURE_SETTING_STORE_KEY, {
-    defaultValue: SETTINGS_VALUES,
-  });
-
-  const handleSigCountChange = useCallback((count: number) => {
-    setSigCount(count);
+  const addDeleted = useCallback((signatures: ExtendedSystemSignature[]) => {
+    const newIds = signatures.map(sig => sig.eve_id);
+    setPendingIds(prev => {
+      const next = new Set(prev);
+      newIds.forEach(id => next.add(id));
+      return next;
+    });
+    setDeletedSignatures(prev => [...prev, ...signatures]);
   }, []);
 
-  const [systemId] = selectedSystems;
-  const isNotSelectedSystem = selectedSystems.length !== 1;
-
-  const handleSettingsChange = useCallback((newSettings: SignatureSettingsType) => {
-    setCurrentSettings(newSettings);
-    setVisible(false);
-  }, []);
-
-  const handleLazyDeleteChange = useCallback((value: boolean) => {
-    setCurrentSettings(prev => ({ ...prev, [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: value }));
-  }, []);
-
-  useHotkey(true, ['z'], event => {
-    if (pendingSigs.length > 0) {
-      event.preventDefault();
-      event.stopPropagation();
-      undoPendingFnRef.current();
-      setPendingSigs([]);
-      setPendingTimeRemaining(undefined);
-    }
-  });
-
-  const handleUndoClick = useCallback(() => {
-    undoPendingFnRef.current();
-    setPendingSigs([]);
-    setPendingTimeRemaining(undefined);
-  }, []);
-
-  const handleSettingsButtonClick = useCallback(() => {
-    setVisible(true);
-  }, []);
-
-  const handlePendingChange = useCallback(
-    (pending: React.MutableRefObject<Record<string, ExtendedSystemSignature>>, newUndo: () => void) => {
-      setPendingSigs(() => {
-        return Object.values(pending.current).filter(sig => sig.pendingDeletion);
-      });
-      undoPendingFnRef.current = newUndo;
-    },
-    [],
-  );
-
-  // Calculate the minimum time remaining for any pending signature
+  // Clear deleted signatures when system changes
   useEffect(() => {
-    if (pendingSigs.length === 0) {
-      setPendingTimeRemaining(undefined);
+    if (systemId) {
+      setDeletedSignatures([]);
+      setPendingIds(new Set());
+      setCountdown(0);
+      if (intervalRef.current != null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+  }, [systemId]);
+
+  // kick off or clear countdown whenever pendingIds changes
+  useEffect(() => {
+    // clear any existing timer
+    if (intervalRef.current != null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (pendingIds.size === 0) {
+      setCountdown(0);
+      setDeletedSignatures([]);
       return;
     }
 
-    const calculate = () => {
-      setPendingTimeRemaining(() => calculateTimeRemaining(pendingSigs));
-    };
+    // determine timeout from settings
+    const timeoutMs = getDeletionTimeoutMs(settings);
+    
+    // Ensure a minimum of 1 second for immediate deletion so the UI shows
+    const effectiveTimeoutMs = timeoutMs === 0 ? 1000 : timeoutMs;
 
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, [pendingSigs]);
+    setCountdown(Math.ceil(effectiveTimeoutMs / 1000));
+
+    // start new interval
+    intervalRef.current = window.setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          setPendingIds(new Set());
+          setDeletedSignatures([]);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current != null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [pendingIds, settings]);
+
+  // undo handler
+  const handleUndo = useCallback(async () => {
+    if (!systemId || pendingIds.size === 0) return;
+    await outCommand({
+      type: OutCommand.undoDeleteSignatures,
+      data: { system_id: systemId, eve_ids: Array.from(pendingIds) },
+    });
+    setPendingIds(new Set());
+    setDeletedSignatures([]);
+    setCountdown(0);
+    if (intervalRef.current != null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, [systemId, pendingIds, outCommand]);
+
+  return {
+    pendingIds,
+    countdown,
+    deletedSignatures,
+    addDeleted,
+    handleUndo,
+  };
+}
+
+export const SystemSignatures = () => {
+  const [visible, setVisible] = useState(false);
+  const [sigCount, setSigCount] = useState(0);
+
+  const {
+    data: { selectedSystems },
+    outCommand,
+    storedSettings: { settingsSignatures, settingsSignaturesUpdate },
+  } = useMapRootState();
+
+  const [systemId] = selectedSystems;
+  const isSystemSelected = useMemo(() => selectedSystems.length === 1, [selectedSystems.length]);
+  const { pendingIds, countdown, deletedSignatures, addDeleted, handleUndo } = useSignatureUndo(
+    systemId,
+    settingsSignatures,
+    outCommand,
+  );
+
+  useHotkey(true, ['z', 'Z'], (event: KeyboardEvent) => {
+    if (pendingIds.size > 0 && countdown > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleUndo();
+    }
+  });
+
+  const handleCountChange = useCallback((count: number) => {
+    setSigCount(count);
+  }, []);
+
+  const handleSettingsSave = useCallback(
+    (newSettings: SignatureSettingsType) => {
+      settingsSignaturesUpdate(newSettings);
+      setVisible(false);
+    },
+    [settingsSignaturesUpdate],
+  );
+
+  const handleLazyDeleteToggle = useCallback(
+    (value: boolean) => {
+      settingsSignaturesUpdate(prev => ({
+        ...prev,
+        [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: value,
+      }));
+    },
+    [settingsSignaturesUpdate],
+  );
+
+  const openSettings = useCallback(() => setVisible(true), []);
 
   return (
     <Widget
       label={
         <SystemSignaturesHeader
           sigCount={sigCount}
-          lazyDeleteValue={currentSettings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
-          pendingCount={pendingSigs.length}
-          pendingTimeRemaining={pendingTimeRemaining}
-          onLazyDeleteChange={handleLazyDeleteChange}
-          onUndoClick={handleUndoClick}
-          onSettingsClick={handleSettingsButtonClick}
+          lazyDeleteValue={settingsSignatures[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean}
+          pendingCount={pendingIds.size}
+          undoCountdown={countdown}
+          onLazyDeleteChange={handleLazyDeleteToggle}
+          onUndoClick={handleUndo}
+          onSettingsClick={openSettings}
         />
       }
       windowId={SIGNATURE_WINDOW_ID}
     >
-      {isNotSelectedSystem ? (
+      {!isSystemSelected ? (
         <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
           System is not selected
         </div>
       ) : (
         <SystemSignaturesContent
           systemId={systemId}
-          settings={currentSettings}
-          deletionTiming={
-            SIGNATURE_DELETION_TIMEOUTS[
-              (currentSettings[SETTINGS_KEYS.DELETION_TIMING] as keyof typeof SIGNATURE_DELETION_TIMEOUTS) ||
-                SIGNATURES_DELETION_TIMING.DEFAULT
-            ] as number
-          }
-          onLazyDeleteChange={handleLazyDeleteChange}
-          onCountChange={handleSigCountChange}
-          onPendingChange={handlePendingChange}
+          settings={settingsSignatures}
+          deletedSignatures={deletedSignatures}
+          onLazyDeleteChange={handleLazyDeleteToggle}
+          onCountChange={handleCountChange}
+          onSignatureDeleted={addDeleted}
         />
       )}
+
       {visible && (
         <SystemSignatureSettingsDialog
-          settings={currentSettings}
+          settings={settingsSignatures}
           onCancel={() => setVisible(false)}
-          onSave={handleSettingsChange}
+          onSave={handleSettingsSave}
         />
       )}
     </Widget>

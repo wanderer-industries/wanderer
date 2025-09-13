@@ -1,22 +1,21 @@
 <nav class="fixed top-0 z-100 px-6 pl-20 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-stone-800  bg-opacity-70 bg-neutral-900">
   <span className="w-full font-medium text-sm">
     <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
-      <%= @map_name %>
+      {@map_name}
     </.link>
-    - Characters [<%= @characters_count %>]
+    - Active Characters [{@characters_count}]
   </span>
 </nav>
 <main
   id="map-character-list"
   class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
 >
-
-<div class="mb-6 p-4 border rounded-md flex gap-2 items-center">
-  <.icon name="hero-information-circle-mini" class="h-5 w-5" />
-  <p>
-  'Untrack' characters leading to completely remove them from the map, required manually enable the tracking by users later.
-  </p>
-</div>
+  <div class="mb-6 p-4 border rounded-md flex gap-2 items-center">
+    <.icon name="hero-information-circle-mini" class="h-5 w-5" />
+    <p>
+      'Untrack' characters leading to completely remove them from the map, required manually enable the tracking by users later.
+    </p>
+  </div>
 
   <div class="flex flex-col gap-4 w-full">
     <.live_component
@@ -24,7 +23,6 @@
       id="map-characters"
       notify_to={self()}
       groups={@groups}
-      character_settings={@character_settings}
       event_name="character_event"
     />
   </div>

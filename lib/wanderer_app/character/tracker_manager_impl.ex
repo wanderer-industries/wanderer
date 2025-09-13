@@ -4,23 +4,16 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   defstruct [
     :characters,
-    :opts,
-    server_online: true
+    :opts
   ]
 
   @type t :: %__MODULE__{
           characters: [integer],
-          opts: map,
-          server_online: boolean
+          opts: map
         }
 
-  @update_location_interval :timer.seconds(2)
-  @update_online_interval :timer.seconds(5)
-  @check_online_errors_interval :timer.seconds(30)
-  @update_ship_interval :timer.seconds(5)
-  @update_info_interval :timer.minutes(1)
-  @update_wallet_interval :timer.minutes(5)
-  @garbage_collection_interval :timer.minutes(15)
+  @check_start_queue_interval :timer.seconds(1)
+  @garbage_collection_interval :timer.minutes(5)
   @untrack_characters_interval :timer.minutes(5)
   @inactive_character_timeout :timer.minutes(5)
 
@@ -30,6 +23,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def new(args), do: __struct__(args)
 
   def init(args) do
+    Process.send_after(self(), :check_start_queue, @check_start_queue_interval)
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
@@ -40,71 +34,62 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     |> new()
   end
 
-  def start(%{opts: opts} = state) do
-    Phoenix.PubSub.subscribe(
-      WandererApp.PubSub,
-      "server_status"
+  def start(state) do
+    {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
+    WandererApp.Cache.insert("tracked_characters", [])
+
+    tracked_characters
+    |> Enum.each(fn character_id ->
+      start_tracking(state, character_id, %{})
+    end)
+
+    state
+  end
+
+  def start_tracking(state, character_id, opts) do
+    if not WandererApp.Cache.has_key?("#{character_id}:track_requested") do
+      WandererApp.Cache.insert(
+        "#{character_id}:track_requested",
+        true
+      )
+
+      Logger.debug(fn -> "Add character to track_characters_queue: #{inspect(character_id)}" end)
+
+      WandererApp.Cache.insert_or_update(
+        "track_characters_queue",
+        [character_id],
+        fn existing ->
+          [character_id | existing] |> Enum.uniq()
+        end
+      )
+    end
+
+    state
+  end
+
+  def stop_tracking(state, character_id) do
+    with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
+         true <- Enum.member?(characters, character_id),
+         false <- WandererApp.Cache.has_key?("#{character_id}:track_requested") do
+      Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
+
+      WandererApp.Cache.delete("character:#{character_id}:last_active_time")
+      WandererApp.Character.delete_character_state(character_id)
+      WandererApp.Character.TrackerPoolDynamicSupervisor.stop_tracking(character_id)
+
+      :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
+    end
+
+    WandererApp.Cache.insert_or_update(
+      "tracked_characters",
+      [],
+      fn tracked_characters ->
+        tracked_characters
+        |> Enum.reject(fn c_id -> c_id == character_id end)
+      end
     )
 
-    Process.send_after(self(), :update_online, 100)
-    Process.send_after(self(), :check_online_errors, @check_online_errors_interval)
-    Process.send_after(self(), :update_location, 300)
-    Process.send_after(self(), :update_ship, 500)
-    Process.send_after(self(), :update_info, 1500)
-
-    if WandererApp.Env.wallet_tracking_enabled?() do
-      Process.send_after(self(), :update_wallet, 1000)
-    end
-
-    opts[:characters]
-    |> Enum.reduce(state, fn character_id, acc ->
-      start_tracking(acc, character_id, %{})
-    end)
-  end
-
-  def start_tracking(%__MODULE__{characters: characters} = state, character_id, opts) do
-    case Enum.member?(characters, character_id) do
-      true ->
-        state
-
-      false ->
-        Logger.debug(fn -> "Start character tracker: #{inspect(character_id)}" end)
-
-        WandererApp.TaskWrapper.start_link(WandererApp.Character, :update_character_state, [
-          character_id,
-          %{opts: opts}
-        ])
-
-        tracked_characters = [character_id | state.characters] |> Enum.uniq()
-        WandererApp.Cache.insert("tracked_characters", tracked_characters)
-
-        %{state | characters: tracked_characters}
-    end
-  end
-
-  def stop_tracking(%__MODULE__{} = state, character_id) do
-    {:ok, character_state} = WandererApp.Character.get_character_state(character_id, false)
-
-    case character_state do
-      nil ->
-        state
-
-      %{start_time: start_time} ->
-        duration = DateTime.diff(DateTime.utc_now(), start_time, :second)
-        :telemetry.execute([:wanderer_app, :character, :tracker, :running], %{duration: duration})
-        :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
-        Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
-
-        WandererApp.Cache.delete("character:#{character_id}:location_started")
-        WandererApp.Cache.delete("character:#{character_id}:start_solar_system_id")
-        WandererApp.Character.delete_character_state(character_id)
-
-        tracked_characters = state.characters |> Enum.reject(fn c_id -> c_id == character_id end)
-
-        WandererApp.Cache.insert("tracked_characters", tracked_characters)
-
-        %{state | characters: tracked_characters}
-    end
+    state
   end
 
   def update_track_settings(
@@ -116,39 +101,48 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         } = track_settings
       ) do
     if track do
-      WandererApp.Cache.insert_or_update(
-        "character_untrack_queue",
-        [],
-        fn untrack_queue ->
-          untrack_queue
-          |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
-        end
-      )
+      remove_from_untrack_queue(map_id, character_id)
 
       {:ok, character_state} =
-        WandererApp.Character.Tracker.update_track_settings(character_id, track_settings)
+        WandererApp.Character.Tracker.update_settings(character_id, track_settings)
 
       WandererApp.Character.update_character_state(character_id, character_state)
     else
-      WandererApp.Cache.insert_or_update(
-        "character_untrack_queue",
-        [{map_id, character_id}],
-        fn untrack_queue ->
-          [{map_id, character_id} | untrack_queue] |> Enum.uniq()
-        end
-      )
+      add_to_untrack_queue(map_id, character_id)
     end
 
     state
   end
 
+  def add_to_untrack_queue(map_id, character_id) do
+    WandererApp.Cache.insert_or_update(
+      "character_untrack_queue",
+      [{map_id, character_id}],
+      fn untrack_queue ->
+        [{map_id, character_id} | untrack_queue]
+        |> Enum.uniq_by(fn {map_id, character_id} -> map_id <> character_id end)
+      end
+    )
+  end
+
+  def remove_from_untrack_queue(map_id, character_id) do
+    WandererApp.Cache.insert_or_update(
+      "character_untrack_queue",
+      [],
+      fn untrack_queue ->
+        untrack_queue
+        |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
+      end
+    )
+  end
+
   def get_characters(
-        %{
-          characters: characters
-        } = state,
+        state,
         _opts \\ []
-      ),
-      do: {characters, state}
+      ) do
+    {:ok, characters} = WandererApp.Cache.lookup("tracked_characters", [])
+    {characters, state}
+  end
 
   def handle_event({ref, result}, state) do
     Process.demonitor(ref, [:flush])
@@ -169,208 +163,28 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     end
   end
 
-  def handle_info({:server_status, status}, state),
-    do: %{state | server_online: not status.vip}
-
   def handle_info(
-        :update_online,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_online, @update_online_interval)
-
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_online, [
-        character_id
-      ])
-    end)
-
-    state
-  end
-
-  def handle_info(
-        :update_online,
+        :check_start_queue,
         state
       ) do
-    Process.send_after(self(), :update_online, @update_online_interval)
+    Process.send_after(self(), :check_start_queue, @check_start_queue_interval)
+    {:ok, track_characters_queue} = WandererApp.Cache.lookup("track_characters_queue", [])
 
-    state
-  end
-
-  def handle_info(
-        :check_online_errors,
-        %{
-          characters: characters
-        } =
-          state
-      ) do
-    Process.send_after(self(), :check_online_errors, @check_online_errors_interval)
-
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :check_online_errors, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in check_online_errors: #{inspect(reason)}")
+    track_characters_queue
+    |> Enum.each(fn character_id ->
+      track_character(character_id, %{})
     end)
-
-    state
-  end
-
-  def handle_info(
-        :update_location,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_location, @update_location_interval)
-
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_location, [
-        character_id
-      ])
-    end)
-
-    state
-  end
-
-  def handle_info(
-        :update_location,
-        state
-      ) do
-    Process.send_after(self(), :update_location, @update_location_interval)
-
-    state
-  end
-
-  def handle_info(
-        :update_ship,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_ship, @update_ship_interval)
-
-    characters
-    |> Enum.map(fn character_id ->
-      WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_ship, [
-        character_id
-      ])
-    end)
-
-    state
-  end
-
-  def handle_info(
-        :update_ship,
-        state
-      ) do
-    Process.send_after(self(), :update_ship, @update_ship_interval)
-
-    state
-  end
-
-  def handle_info(
-        :update_info,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_info, @update_info_interval)
-
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_info, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in update_info: #{inspect(reason)}")
-    end)
-
-    state
-  end
-
-  def handle_info(
-        :update_info,
-        state
-      ) do
-    Process.send_after(self(), :update_info, @update_info_interval)
-
-    state
-  end
-
-  def handle_info(
-        :update_wallet,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_wallet, @update_wallet_interval)
-
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        WandererApp.TaskWrapper.start_link(WandererApp.Character.Tracker, :update_wallet, [
-          character_id
-        ])
-      end,
-      timeout: :timer.seconds(15),
-      max_concurrency: System.schedulers_online(),
-      on_timeout: :kill_task
-    )
-    |> Enum.each(fn
-      {:ok, _result} -> :ok
-      {:error, reason} -> @logger.error("Error in update_wallet: #{inspect(reason)}")
-    end)
-
-    state
-  end
-
-  def handle_info(
-        :update_wallet,
-        state
-      ) do
-    Process.send_after(self(), :update_wallet, @update_wallet_interval)
 
     state
   end
 
   def handle_info(
         :garbage_collect,
-        %{
-          characters: characters
-        } =
-          state
+        state
       ) do
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
+
+    {:ok, characters} = WandererApp.Cache.lookup("tracked_characters", [])
 
     characters
     |> Task.async_stream(
@@ -391,9 +205,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       end,
       max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
-      timeout: :timer.seconds(15)
+      timeout: :timer.seconds(60)
     )
-    |> Enum.map(fn result ->
+    |> Enum.each(fn result ->
       case result do
         {:ok, {:stop, character_id}} ->
           Process.send_after(self(), {:stop_track, character_id}, 100)
@@ -412,44 +226,111 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       ) do
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
-    WandererApp.Cache.get_and_remove!("character_untrack_queue", [])
+    WandererApp.Cache.lookup!("character_untrack_queue", [])
     |> Task.async_stream(
       fn {map_id, character_id} ->
-        WandererApp.Cache.delete("map_#{map_id}:character_#{character_id}:tracked")
+        remove_from_untrack_queue(map_id, character_id)
+
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
 
         {:ok, character_state} =
-          WandererApp.Character.Tracker.update_track_settings(character_id, %{
+          WandererApp.Character.Tracker.update_settings(character_id, %{
             map_id: map_id,
             track: false
           })
 
+        {:ok, character} = WandererApp.Character.get_character(character_id)
+
+        {:ok, _updated} =
+          WandererApp.MapCharacterSettingsRepo.update(map_id, character_id, %{
+            ship: character.ship,
+            ship_name: character.ship_name,
+            ship_item_id: character.ship_item_id,
+            solar_system_id: character.solar_system_id,
+            structure_id: character.structure_id,
+            station_id: character.station_id
+          })
+
         WandererApp.Character.update_character_state(character_id, character_state)
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
       end,
       max_concurrency: System.schedulers_online(),
       on_timeout: :kill_task,
       timeout: :timer.seconds(30)
     )
-    |> Enum.map(fn _result -> :ok end)
+    |> Enum.each(fn _result -> :ok end)
 
     state
   end
 
   def handle_info({:stop_track, character_id}, state) do
-    WandererApp.Cache.has_key?("character:#{character_id}:is_stop_tracking")
-    |> case do
-      false ->
-        WandererApp.Cache.insert("character:#{character_id}:is_stop_tracking", true)
-        Logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
-        state = state |> stop_tracking(character_id)
-        WandererApp.Cache.delete("character:#{character_id}:is_stop_tracking")
+    if not WandererApp.Cache.has_key?("character:#{character_id}:is_stop_tracking") do
+      WandererApp.Cache.insert("character:#{character_id}:is_stop_tracking", true)
+      Logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
+      stop_tracking(state, character_id)
+      WandererApp.Cache.delete("character:#{character_id}:is_stop_tracking")
+    end
 
-        state
+    state
+  end
 
+  def track_character(character_id, opts) do
+    with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
+         false <- Enum.member?(characters, character_id) do
+      Logger.debug(fn -> "Start character tracker: #{inspect(character_id)}" end)
+
+      WandererApp.Cache.insert_or_update(
+        "tracked_characters",
+        [character_id],
+        fn existing ->
+          [character_id | existing] |> Enum.uniq()
+        end
+      )
+
+      WandererApp.Cache.insert_or_update(
+        "track_characters_queue",
+        [],
+        fn existing ->
+          existing
+          |> Enum.reject(fn c_id -> c_id == character_id end)
+        end
+      )
+
+      WandererApp.Cache.delete("#{character_id}:track_requested")
+
+      WandererApp.Character.update_character(character_id, %{online: false})
+
+      WandererApp.Character.update_character_state(character_id, %{
+        is_online: false
+      })
+
+      WandererApp.Character.TrackerPoolDynamicSupervisor.start_tracking(character_id)
+
+      WandererApp.TaskWrapper.start_link(WandererApp.Character, :update_character_state, [
+        character_id,
+        %{opts: opts}
+      ])
+    else
       _ ->
-        state
+        WandererApp.Cache.insert_or_update(
+          "track_characters_queue",
+          [],
+          fn existing ->
+            existing
+            |> Enum.reject(fn c_id -> c_id == character_id end)
+          end
+        )
+
+        WandererApp.Cache.delete("#{character_id}:track_requested")
     end
   end
 
-  def handle_info(_event, state),
-    do: state
+  def character_is_present(map_id, character_id) do
+    {:ok, presence_character_ids} =
+      WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
+
+    Enum.member?(presence_character_ids, character_id)
+  end
 end

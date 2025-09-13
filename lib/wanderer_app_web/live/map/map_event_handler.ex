@@ -13,7 +13,8 @@ defmodule WandererAppWeb.MapEventHandler do
     MapSystemsEventHandler,
     MapSystemCommentsEventHandler,
     MapStructuresEventHandler,
-    MapKillsEventHandler
+    MapKillsEventHandler,
+    MapPingsEventHandler
   }
 
   @map_characters_events [
@@ -22,28 +23,28 @@ defmodule WandererAppWeb.MapEventHandler do
     :character_updated,
     :characters_updated,
     :present_characters_updated,
-    :tracking_characters_data,
-    :refresh_user_characters
+    :refresh_user_characters,
+    :show_tracking,
+    :untrack_character
   ]
 
   @map_characters_ui_events [
-    "toggle_track",
-    "toggle_follow",
-    "show_tracking",
-    "getCharacterInfo"
+    "getCharacterInfo",
+    "getCharactersTrackingInfo",
+    "updateCharacterTracking",
+    "updateFollowingCharacter",
+    "updateMainCharacter",
+    "startTracking"
   ]
 
   @map_system_events [
     :add_system,
     :update_system,
     :systems_removed,
-    :maybe_select_system,
-    :kills_updated
+    :maybe_select_system
   ]
 
   @map_system_ui_events [
-    "add_hub",
-    "delete_hub",
     "delete_systems",
     "get_system_static_infos",
     "manual_add_system",
@@ -98,12 +99,19 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_routes_events [
-    :routes
+    :routes,
+    :user_routes
   ]
 
   @map_routes_ui_events [
     "get_routes",
-    "set_autopilot_waypoint"
+    "get_user_routes",
+    "set_autopilot_waypoint",
+    "add_hub",
+    "delete_hub",
+    "get_user_hubs",
+    "add_user_hub",
+    "delete_user_hub"
   ]
 
   @map_signatures_events [
@@ -112,10 +120,12 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_signatures_ui_events [
+    "load_signatures",
     "update_signatures",
     "get_signatures",
     "link_signature_to_system",
-    "unlink_signature"
+    "unlink_signature",
+    "undo_delete_signatures"
   ]
 
   @map_structures_events [
@@ -130,14 +140,26 @@ defmodule WandererAppWeb.MapEventHandler do
   ]
 
   @map_kills_events [
-    :fetch_new_system_kills,
+    :init_kills,
+    :kills_updated,
     :detailed_kills_updated,
-    :fetch_new_map_kills
+    :update_system_kills
   ]
 
   @map_kills_ui_events [
     "get_system_kills",
     "get_systems_kills"
+  ]
+
+  @map_pings_events [
+    :load_map_pings,
+    :ping_added,
+    :ping_cancelled
+  ]
+
+  @map_pings_ui_events [
+    "add_ping",
+    "cancel_ping"
   ]
 
   def handle_event(socket, %{event: event_name} = event)
@@ -166,33 +188,19 @@ defmodule WandererAppWeb.MapEventHandler do
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_structures_events,
-      do: MapSignaturesEventHandler.handle_server_event(event, socket)
+      do: MapStructuresEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_signatures_events,
       do: MapSignaturesEventHandler.handle_server_event(event, socket)
 
-  def handle_event(
-        %{
-          assigns: %{
-            is_subscription_active?: true
-          }
-        } = socket,
-        %{event: event_name} = event
-      )
+  def handle_event(socket, %{event: event_name} = event)
       when event_name in @map_kills_events,
       do: MapKillsEventHandler.handle_server_event(event, socket)
 
-  def handle_event(
-        %{
-          assigns: %{
-            is_subscription_active?: false
-          }
-        } = socket,
-        %{event: event_name} = _event
-      )
-      when event_name in @map_kills_events,
-      do: socket
+  def handle_event(socket, %{event: event_name} = event)
+      when event_name in @map_pings_events,
+      do: MapPingsEventHandler.handle_server_event(event, socket)
 
   def handle_event(socket, {ref, result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
@@ -201,12 +209,6 @@ defmodule WandererAppWeb.MapEventHandler do
       {:map_error, map_error} ->
         Process.send_after(self(), map_error, 100)
         socket
-
-      {:activity_data, activity_data} ->
-        MapActivityEventHandler.handle_server_event(
-          %{event: :character_activity_data, payload: activity_data},
-          socket
-        )
 
       {event, payload} ->
         Process.send_after(
@@ -226,11 +228,6 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, {:DOWN, ref, :process, _pid, reason}) when is_reference(ref) do
     # Task failed, log the error and update the client
     Logger.error("Task failed: #{inspect(reason)}")
-
-    MapActivityEventHandler.handle_server_event(
-      %{event: :character_activity_data, payload: []},
-      socket
-    )
   end
 
   def handle_event(socket, event),
@@ -267,6 +264,10 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_ui_event(event, body, socket)
       when event in @map_activity_ui_events,
       do: MapActivityEventHandler.handle_ui_event(event, body, socket)
+
+  def handle_ui_event(event, body, socket)
+      when event in @map_pings_ui_events,
+      do: MapPingsEventHandler.handle_ui_event(event, body, socket)
 
   def handle_ui_event(
         event,
@@ -312,6 +313,8 @@ defmodule WandererAppWeb.MapEventHandler do
   end
 
   def push_map_event(socket, _type, _body), do: socket
+
+  def map_ui_character_stat(nil), do: nil
 
   def map_ui_character_stat(character),
     do:
@@ -363,17 +366,8 @@ defmodule WandererAppWeb.MapEventHandler do
           status: status,
           visible: visible
         } = _system,
-        _include_static_data? \\ true
+        include_static_data? \\ true
       ) do
-    system_static_info = get_system_static_info(solar_system_id)
-
-    system_signatures =
-      system_id
-      |> WandererAppWeb.MapSignaturesEventHandler.get_system_signatures()
-      |> Enum.filter(fn signature ->
-        is_nil(signature.linked_system) && signature.group == "Wormhole"
-      end)
-
     comments_count =
       system_id
       |> WandererApp.Maps.get_system_comments_activity()
@@ -385,22 +379,30 @@ defmodule WandererAppWeb.MapEventHandler do
           0
       end
 
-    %{
-      id: "#{solar_system_id}",
-      position: %{x: position_x, y: position_y},
-      description: description,
-      name: name,
-      system_static_info: system_static_info,
-      system_signatures: system_signatures,
-      labels: labels,
-      locked: locked,
-      linked_sig_eve_id: linked_sig_eve_id,
-      status: status,
-      tag: tag,
-      temporary_name: temporary_name,
-      comments_count: comments_count,
-      visible: visible
-    }
+    system_info =
+      %{
+        id: "#{solar_system_id}",
+        position: %{x: position_x, y: position_y},
+        description: description,
+        name: name,
+        labels: labels,
+        locked: locked,
+        linked_sig_eve_id: linked_sig_eve_id,
+        status: status,
+        tag: tag,
+        temporary_name: temporary_name,
+        comments_count: comments_count,
+        visible: visible
+      }
+
+    system_info =
+      if include_static_data? do
+        system_info |> Map.merge(%{system_static_info: get_system_static_info(solar_system_id)})
+      else
+        system_info
+      end
+
+    system_info
   end
 
   def map_ui_system_static_info(nil), do: %{}
@@ -428,9 +430,4 @@ defmodule WandererAppWeb.MapEventHandler do
         :triglavian_invasion_status,
         :sun_type_id
       ])
-
-  def map_ui_kill({solar_system_id, kills}),
-    do: %{solar_system_id: solar_system_id, kills: kills}
-
-  def map_ui_kill(_kill), do: %{}
 end
