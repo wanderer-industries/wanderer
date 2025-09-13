@@ -14,8 +14,8 @@ export enum TimeStatus {
   _1h,
   _4h,
   _4h30m,
-  _8h,
   _16h,
+  _12h,
   _24h,
   _48h,
 }

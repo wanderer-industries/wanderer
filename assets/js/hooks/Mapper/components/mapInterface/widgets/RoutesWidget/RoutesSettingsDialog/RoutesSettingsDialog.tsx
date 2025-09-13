@@ -1,11 +1,9 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
-import {
-  RoutesType,
-  useRouteProvider,
-} from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
+import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 interface RoutesSettingsDialog {
   visible: boolean;
@@ -83,7 +81,7 @@ export const RoutesSettingsDialog = ({ visible, setVisible }: RoutesSettingsDial
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button onClick={handleSave} outlined size="small" label="Apply"></Button>
+          <WdButton onClick={handleSave} outlined size="small" label="Apply"></WdButton>
         </div>
       </div>
     </Dialog>

@@ -7,8 +7,7 @@ import {
 import { useMapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/MapSettingsProvider.tsx';
 import { SettingsListItem } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/types.ts';
 import { useCallback } from 'react';
-import { Button } from 'primereact/button';
-import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipPosition, WdButton, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 
@@ -42,7 +41,7 @@ export const CommonSettings = () => {
       <div className="grid grid-cols-[1fr_auto]">
         <div />
         <WdTooltipWrapper content="This dangerous action. And can not be undone" position={TooltipPosition.top}>
-          <Button
+          <WdButton
             // @ts-ignore
             ref={cfRef}
             className="py-[4px]"

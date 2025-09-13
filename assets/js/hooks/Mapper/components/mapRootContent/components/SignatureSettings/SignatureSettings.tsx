@@ -1,6 +1,6 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useEffect } from 'react';
-import { OutCommand, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import { OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import {
   SignatureGroupContent,
@@ -8,10 +8,14 @@ import {
 } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components';
 import { InputText } from 'primereact/inputtext';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
-import { Button } from 'primereact/button';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
-type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & { linked_system: string };
+type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
+  linked_system: string;
+  k162Type: string;
+  time_status: TimeStatus;
+};
 
 export interface MapSettingsProps {
   systemId: string;
@@ -53,10 +57,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           out = {
             ...out,
             custom_info: JSON.stringify({
-              // TODO: need fix
               k162Type: values.k162Type,
-              // TODO: need fix
-              isEOL: values.isEOL,
+              time_status: values.time_status,
             }),
           };
 
@@ -135,18 +137,17 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     const { linked_system, custom_info, ...rest } = signatureData;
 
     let k162Type = null;
-    let isEOL = false;
+    let time_status = TimeStatus._24h;
     if (custom_info) {
       const customInfo = JSON.parse(custom_info);
       k162Type = customInfo.k162Type;
-      isEOL = customInfo.isEOL;
+      time_status = customInfo.time_status;
     }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
-      // TODO: need fix
       k162Type: k162Type,
-      isEOL: isEOL,
+      time_status: time_status,
       ...rest,
     });
   }, [signatureForm, signatureData]);
@@ -156,6 +157,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       header={`Signature Edit [${signatureData?.eve_id}]`}
       visible={show}
       draggable={false}
+      resizable={false}
       style={{ width: '390px' }}
       onShow={handleShow}
       onHide={() => {
@@ -190,8 +192,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                 </label>
               </div>
 
-              <div className="flex gap-2 justify-end">
-                <Button onClick={handleSave} outlined size="small" label="Save"></Button>
+              <div className="flex gap-2 justify-end px-[0.75rem] pb-[0.5rem]">
+                <WdButton type="submit" outlined size="small" label="Save" />
               </div>
             </div>
           </form>

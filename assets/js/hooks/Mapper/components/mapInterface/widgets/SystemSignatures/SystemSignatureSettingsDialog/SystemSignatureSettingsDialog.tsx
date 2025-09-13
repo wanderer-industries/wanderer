@@ -1,6 +1,5 @@
 import { Dialog } from 'primereact/dialog';
 import { useCallback, useState } from 'react';
-import { Button } from 'primereact/button';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
@@ -10,6 +9,7 @@ import {
   SIGNATURE_SETTINGS,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 interface SystemSignatureSettingsDialogProps {
   settings: SignatureSettingsType;
@@ -92,7 +92,7 @@ export const SystemSignatureSettingsDialog = ({
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button onClick={handleSave} outlined size="small" label="Save"></Button>
+          <WdButton onClick={handleSave} outlined size="small" label="Save" />
         </div>
       </div>
     </Dialog>

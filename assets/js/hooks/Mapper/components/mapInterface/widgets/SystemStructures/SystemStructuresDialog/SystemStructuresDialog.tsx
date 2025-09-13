@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Calendar } from 'primereact/calendar';
 import clsx from 'clsx';
 
-import { StructureItem, StructureStatus, statusesRequiringTimer, formatToISO } from '../helpers';
+import { formatToISO, statusesRequiringTimer, StructureItem, StructureStatus } from '../helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 interface StructuresEditDialogProps {
   visible: boolean;
@@ -54,14 +54,13 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
 
       // If user typed more text but we have partial match in prevResults
       if (newQuery.startsWith(prevQuery) && prevResults.length > 0) {
-        const filtered = prevResults.filter(item =>
-          item.label.toLowerCase().includes(newQuery.toLowerCase()),
-        );
+        const filtered = prevResults.filter(item => item.label.toLowerCase().includes(newQuery.toLowerCase()));
         setOwnerSuggestions(filtered);
         return;
       }
 
       try {
+        // TODO fix it
         const { results = [] } = await outCommand({
           type: OutCommand.getCorporationNames,
           data: { search: newQuery },
@@ -96,9 +95,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
   // when user picks a corp from auto-complete
   const handleSelectOwner = (selected: { label: string; value: string }) => {
     setOwnerInput(selected.label);
-    setEditData(prev =>
-      prev ? { ...prev, ownerName: selected.label, ownerId: selected.value } : null,
-    );
+    setEditData(prev => (prev ? { ...prev, ownerName: selected.label, ownerId: selected.value } : null));
   };
 
   const handleStatusChange = (val: string) => {
@@ -125,6 +122,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
     // fetch corporation ticker if we have an ownerId
     if (editData.ownerId) {
       try {
+        // TODO fix it
         const { ticker } = await outCommand({
           type: OutCommand.getCorporationTicker,
           data: { corp_id: editData.ownerId },
@@ -157,11 +155,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
       <div className="flex flex-col gap-2 text-[14px]">
         <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
           <span>Type:</span>
-          <input
-            readOnly
-            className="p-inputtext p-component cursor-not-allowed"
-            value={editData.structureType ?? ''}
-          />
+          <input readOnly className="p-inputtext p-component cursor-not-allowed" value={editData.structureType ?? ''} />
         </label>
         <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
           <span>Name:</span>
@@ -204,10 +198,12 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
 
         {statusesRequiringTimer.includes(editData.status) && (
           <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
-            <span>Timer <br /> (Eve Time):</span>
+            <span>
+              Timer <br /> (Eve Time):
+            </span>
             <Calendar
               value={editData.endTime ? new Date(editData.endTime) : undefined}
-              onChange={(e) => handleChange('endTime', e.value ?? '')}
+              onChange={e => handleChange('endTime', e.value ?? '')}
               showTime
               hourFormat="24"
               dateFormat="yy-mm-dd"
@@ -227,8 +223,8 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
       </div>
 
       <div className="flex justify-end items-center gap-2 mt-4">
-        <Button label="Delete" severity="danger" className="p-button-sm" onClick={handleDeleteClick} />
-        <Button label="Save" className="p-button-sm" onClick={handleSaveClick} />
+        <WdButton label="Delete" severity="danger" className="p-button-sm" onClick={handleDeleteClick} />
+        <WdButton label="Save" className="p-button-sm" onClick={handleSaveClick} />
       </div>
     </Dialog>
   );

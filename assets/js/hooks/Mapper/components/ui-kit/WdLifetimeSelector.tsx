@@ -1,7 +1,7 @@
-import { LayoutEventBlocker } from '@/hooks/Mapper/components/ui-kit';
-import { Button } from 'primereact/button';
 import clsx from 'clsx';
 import { TimeStatus } from '@/hooks/Mapper/types';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit/WdButton.tsx';
+import { BUILT_IN_TOOLTIP_OPTIONS } from './constants.ts';
 
 const LIFE_TIME = [
   {
@@ -9,58 +9,74 @@ const LIFE_TIME = [
     label: '1H',
     className: 'bg-purple-400 hover:!bg-purple-400',
     inactiveClassName: 'bg-purple-400/30',
+    description: 'Less than one 1 hours remaining',
   },
   {
     id: TimeStatus._4h,
     label: '4H',
     className: 'bg-purple-300 hover:!bg-purple-300',
     inactiveClassName: 'bg-purple-300/30',
+    description: 'Less than one 4 hours remaining',
   },
   {
     id: TimeStatus._4h30m,
     label: '4.5H',
     className: 'bg-indigo-300 hover:!bg-indigo-300',
     inactiveClassName: 'bg-indigo-300/30',
+    description: 'Less than one 4.5 hours remaining. All small holes have such lifetime.',
   },
+  // TODO: we will skip it.
+  // {
+  //   id: TimeStatus._12h,
+  //   label: '12H',
+  //   className: 'bg-orange-300 hover:!bg-orange-300',
+  //   inactiveClassName: 'bg-orange-400/30',
+  //   description: 'Less than one 12 hours remaining. C729 hole have such lifetime.',
+  // },
   {
-    id: TimeStatus._8h,
+    id: TimeStatus._16h,
     label: '16H',
     className: 'bg-orange-300 hover:!bg-orange-300',
     inactiveClassName: 'bg-orange-400/30',
-  },
-  {
-    id: TimeStatus._16h,
-    label: '24H',
-    className: 'bg-orange-300 hover:!bg-orange-300',
-    inactiveClassName: 'bg-orange-400/30',
+    description: 'Less than one 16 hours remaining',
   },
   {
     id: TimeStatus._24h,
+    label: '24H',
+    className: 'bg-orange-300 hover:!bg-orange-300',
+    inactiveClassName: 'bg-orange-400/30',
+    description: 'Less than one 24 hours remaining',
+  },
+  {
+    id: TimeStatus._48h,
     label: '48H',
     className: 'bg-orange-300 hover:!bg-orange-300',
     inactiveClassName: 'bg-orange-400/30',
+    description: 'Less than one 24 hours remaining. Related only with C6. B041, B520, U319, C391.',
   },
 ];
 
-// const active = 1;
-
-interface LifetimeActionsProps {
+export interface WdLifetimeSelectorProps {
   lifetime?: TimeStatus;
   onChangeLifetime(lifetime: TimeStatus): void;
+  className?: string;
 }
 
-export const LifetimeActions = ({ lifetime = TimeStatus._24h, onChangeLifetime }: LifetimeActionsProps) => {
+export const WdLifetimeSelector = ({
+  lifetime = TimeStatus._24h,
+  onChangeLifetime,
+  className,
+}: WdLifetimeSelectorProps) => {
   return (
-    <LayoutEventBlocker className="flex flex-col gap-1 w-[100%] h-full px-2 pt-[4px]">
-      <div className="text-[12px] text-stone-500 font-semibold">Life time:</div>
-
-      <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-1">
+    <form>
+      <div className={clsx('grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr] gap-1', className)}>
         {LIFE_TIME.map(x => (
-          <Button
-            outlined={false}
-            // severity="help"
+          <WdButton
             key={x.id}
+            outlined={false}
             value={x.label}
+            tooltip={x.description}
+            tooltipOptions={BUILT_IN_TOOLTIP_OPTIONS}
             size="small"
             className={clsx(
               `py-[1px] justify-center min-w-auto w-auto border-0 text-[12px] font-bold leading-[20px]`,
@@ -68,12 +84,11 @@ export const LifetimeActions = ({ lifetime = TimeStatus._24h, onChangeLifetime }
               x.className,
             )}
             onClick={() => onChangeLifetime(x.id)}
-            // onClick={() => system?.tag !== x && onSystemTag(x)}
           >
             {x.label}
-          </Button>
+          </WdButton>
         ))}
       </div>
-    </LayoutEventBlocker>
+    </form>
   );
 };

@@ -18,5 +18,28 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     "linebreak-style": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "primereact/button",
+            "importNames": ["Button"],
+            "message": "Use WdButton instead Button"
+          }
+        ]
+      }
+    ],
+    "react/forbid-elements": [
+      "error",
+      {
+        "forbid": [
+          {
+            "element": "Button",
+            "message": "Use WdButton instead Button"
+          }
+        ]
+      }
+    ]
   },
 };

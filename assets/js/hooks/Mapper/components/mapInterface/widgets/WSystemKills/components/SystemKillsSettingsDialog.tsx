@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
-import { WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { SystemView, TooltipPosition, WdButton, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { PrimeIcons } from 'primereact/api';
 import {
   AddSystemDialog,
   SearchOnSubmitCallback,
 } from '@/hooks/Mapper/components/mapInterface/components/AddSystemDialog';
-import { SystemView, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 interface KillsSettingsDialogProps {
@@ -158,7 +156,7 @@ export const KillsSettingsDialog: React.FC<KillsSettingsDialogProps> = ({ visibl
         </div>
 
         <div className="flex gap-2 justify-end mt-4">
-          <Button onClick={handleApply} label="Apply" outlined size="small" />
+          <WdButton onClick={handleApply} label="Apply" outlined size="small" />
         </div>
       </div>
 

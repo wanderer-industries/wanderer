@@ -1,7 +1,6 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
-import { Button } from 'primereact/button';
 import { callToastError, callToastSuccess, callToastWarn } from '@/hooks/Mapper/helpers';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { ConfirmPopup } from 'primereact/confirmpopup';
@@ -10,6 +9,7 @@ import { MapUserSettings, RemoteAdminSettingsResponse } from '@/hooks/Mapper/map
 import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
 import fastDeepEqual from 'fast-deep-equal';
 import { useDetectSettingsChanged } from '@/hooks/Mapper/components/hooks';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 export const AdminSettings = () => {
   const {
@@ -92,7 +92,7 @@ export const AdminSettings = () => {
     <div className="w-full h-full flex flex-col gap-5">
       <div className="flex flex-col gap-1">
         <div>
-          <Button
+          <WdButton
             // @ts-ignore
             ref={cfRef}
             onClick={cfShow}
