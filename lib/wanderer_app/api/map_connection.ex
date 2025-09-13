@@ -147,8 +147,13 @@ defmodule WandererApp.Api.MapConnection do
       allow_nil?(true)
     end
 
-    # where 0 - normal
-    # where 1 - end of life
+    # 0 - normal (env settings)
+    # 1 - EOL 1h
+    # 2 - EOL 4h
+    # 3 - EOL 4.5h
+    # 4 - EOL 16h
+    # 5 - EOL 24h
+    # 6 - EOL 48h
     attribute :time_status, :integer do
       default(0)
 
