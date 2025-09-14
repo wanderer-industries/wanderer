@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.77.19](https://github.com/wanderer-industries/wanderer/compare/v1.77.18...v1.77.19) (2025-09-14)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed for all Large wormholes jump mass from 300 to 375. Fixed jump mass and total mass for N290, K329. Fixed static for J005663 was H296 now Y790. Added J492 wormhole. Change lifetime for E587 from 16 to 48
+
 ## [v1.77.18](https://github.com/wanderer-industries/wanderer/compare/v1.77.17...v1.77.18) (2025-09-13)
 
 
