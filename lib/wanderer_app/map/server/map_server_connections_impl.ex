@@ -69,7 +69,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   # this class of systems will guaranty that no one real class will take that place
   # @unknown 100_100
   #
-  @connection_time_status_eol 1
+  @connection_time_status_normal 0
+  @connection_time_status_eol_4hr 1
+  @connection_time_status_eol_1hr 2
   @connection_type_wormhole 0
   @connection_type_stargate 1
   @medium_ship_size 1
@@ -175,17 +177,38 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       do:
         update_connection(state, :update_time_status, [:time_status], connection_update, fn
           %{time_status: old_time_status}, %{id: connection_id, time_status: time_status} ->
-            case time_status == @connection_time_status_eol do
-              true ->
-                if old_time_status != @connection_time_status_eol do
+            cond do
+              # Defensive clause: reject unknown time_status values
+              time_status not in [@connection_time_status_normal, @connection_time_status_eol_4hr, @connection_time_status_eol_1hr] ->
+                require Logger
+                Logger.warning("Ignoring unknown time_status value: #{inspect(time_status)} for connection #{connection_id}")
+                # Return without making any changes
+                nil
+              # Setting to 4hr EOL
+              time_status == @connection_time_status_eol_4hr ->
+                if old_time_status == @connection_time_status_normal do
                   WandererApp.Cache.put(
                     "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
                     DateTime.utc_now()
                   )
+                  # Clear start time when marking as EOL
+                  WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:start_time")
                 end
 
-              _ ->
-                if old_time_status == @connection_time_status_eol do
+              # Setting to 1hr EOL
+              time_status == @connection_time_status_eol_1hr ->
+                if old_time_status != @connection_time_status_eol_1hr do
+                  WandererApp.Cache.put(
+                    "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
+                    DateTime.utc_now()
+                  )
+                  # Clear start time when marking as EOL
+                  WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:start_time")
+                end
+
+              # Setting back to normal
+              true ->
+                if old_time_status != @connection_time_status_normal do
                   WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
                   set_start_time(map_id, connection_id, DateTime.utc_now())
                 end
@@ -223,7 +246,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       do: update_connection(state, :update_custom_info, [:custom_info], connection_update)
 
   def cleanup_connections(%{map_id: map_id} = state) do
-    connection_auto_expire_hours = get_connection_auto_expire_hours()
+    _connection_auto_expire_hours = get_connection_auto_expire_hours()
     connection_auto_eol_hours = get_connection_auto_eol_hours()
     connection_eol_expire_timeout_hours = get_eol_expire_timeout_mins() / 60
 
@@ -232,7 +255,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       |> WandererApp.Map.list_connections!()
       |> Enum.filter(fn %{
                           id: connection_id,
-                          inserted_at: inserted_at,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
                           type: type
@@ -257,7 +279,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         |> update_connection_time_status(%{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id,
-          time_status: @connection_time_status_eol
+          time_status: @connection_time_status_eol_4hr
         })
       end)
 
@@ -268,7 +290,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                           id: connection_id,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
-                          type: type
+                          type: type,
+                          time_status: time_status
                         } ->
         connection_mark_eol_time =
           get_connection_mark_eol_time(map_id, connection_id)
@@ -294,11 +317,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             solar_system_target_id
           )
 
+        # Calculate expiration based on EOL status
+        # - Normal connections: never expire based on EOL time
+        # - 4hr EOL: expire after 4 hours (standard EOL timeout)
+        # - 1hr EOL: expire after 1 hour 
+        eol_expiration_hours = case time_status do
+          @connection_time_status_eol_1hr -> 1
+          @connection_time_status_eol_4hr -> connection_eol_expire_timeout_hours
+          _ -> nil
+        end
+
         not is_connection_exist ||
-          (type != @connection_type_stargate && is_connection_valid &&
-             DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
-               connection_auto_expire_hours - connection_auto_eol_hours +
-                 +connection_eol_expire_timeout_hours)
+          (type != @connection_type_stargate && is_connection_valid && not is_nil(eol_expiration_hours) &&
+             DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >= eol_expiration_hours)
       end)
       |> Enum.reduce(state, fn %{
                                  solar_system_source: solar_system_source_id,

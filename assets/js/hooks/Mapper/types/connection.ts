@@ -10,8 +10,9 @@ export enum MassState {
 }
 
 export enum TimeStatus {
-  default,
-  eol,
+  default = 0,
+  eol_4hr = 1,
+  eol_1hr = 2,
 }
 
 export enum ShipSizeStatus {

@@ -18,7 +18,7 @@ import { Edge } from 'reactflow';
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
   onDeleteConnection(): void;
-  onChangeTimeState(): void;
+  onChangeTimeState(status?: TimeStatus): void;
   onChangeMassState(state: MassState): void;
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onToggleMassSave(isLocked: boolean): void;
@@ -50,10 +50,32 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
             {
               label: `EOL`,
               className: clsx({
-                [classes.ConnectionTimeEOL]: edge.data?.time_status === TimeStatus.eol,
+                [classes.ConnectionTimeEOL]:
+                  edge.data?.time_status === TimeStatus.eol_4hr || edge.data?.time_status === TimeStatus.eol_1hr,
               }),
               icon: PrimeIcons.CLOCK,
-              command: onChangeTimeState,
+              items: [
+                {
+                  label: '< 4 hours',
+                  className: clsx({
+                    [classes.SelectedItem]: edge.data?.time_status === TimeStatus.eol_4hr,
+                  }),
+                  command: () =>
+                    onChangeTimeState(
+                      edge.data?.time_status === TimeStatus.eol_4hr ? TimeStatus.default : TimeStatus.eol_4hr,
+                    ),
+                },
+                {
+                  label: '< 1 hour',
+                  className: clsx({
+                    [classes.SelectedItem]: edge.data?.time_status === TimeStatus.eol_1hr,
+                  }),
+                  command: () =>
+                    onChangeTimeState(
+                      edge.data?.time_status === TimeStatus.eol_1hr ? TimeStatus.default : TimeStatus.eol_1hr,
+                    ),
+                },
+              ],
             },
             {
               label: `Frigate`,

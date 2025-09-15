@@ -30,9 +30,15 @@ export const useContextMenuConnectionHandlers = () => {
     setEdge(undefined);
   };
 
-  const onChangeTimeState = () => {
+  const onChangeTimeState = (status?: TimeStatus) => {
     if (!edge || !edge.data) {
       return;
+    }
+
+    // Use provided status, or toggle between default and eol_4hr for backwards compatibility
+    let newStatus = status;
+    if (newStatus === undefined) {
+      newStatus = edge.data.time_status === TimeStatus.default ? TimeStatus.eol_4hr : TimeStatus.default;
     }
 
     outCommand({
@@ -40,7 +46,7 @@ export const useContextMenuConnectionHandlers = () => {
       data: {
         source: edge.source,
         target: edge.target,
-        value: edge.data.time_status === TimeStatus.default ? TimeStatus.eol : TimeStatus.default,
+        value: newStatus,
       },
     });
     setEdge(undefined);
