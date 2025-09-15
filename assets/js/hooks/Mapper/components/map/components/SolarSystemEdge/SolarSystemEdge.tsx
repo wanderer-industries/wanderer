@@ -79,7 +79,8 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         id={`back_${id}`}
         className={clsx(classes.EdgePathBack, {
           [classes.Tick]: isThickConnections,
-          [classes.TimeCrit]: isWormhole && data.time_status === TimeStatus.eol,
+          [classes.TimeEol4hr]: isWormhole && data.time_status === TimeStatus.eol_4hr,
+          [classes.TimeEol1hr]: isWormhole && data.time_status === TimeStatus.eol_1hr,
           [classes.Hovered]: hovered,
           [classes.Gate]: !isWormhole,
         })}

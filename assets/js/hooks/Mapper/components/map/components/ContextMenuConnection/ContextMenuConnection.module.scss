@@ -1,7 +1,7 @@
 @use '@/hooks/Mapper/components/map/styles/eve-common-variables';
 
 .ConnectionTimeEOL {
-  background-image: linear-gradient(207deg, transparent, var(--conn-time-eol));
+  background-image: linear-gradient(207deg, transparent, var(--conn-time-eol-4hr));
 }
 
 .ConnectionFrigate {

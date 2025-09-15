@@ -5,24 +5,37 @@
   stroke: #80a5c5;
   stroke-width: 3px;
 
-  &.TimeCrit {
-    stroke: #f11ab2;
+  &.TimeEol4hr {
+    stroke: var(--conn-time-eol-4hr);
     stroke-width: 4px;
+  }
+
+  &.TimeEol1hr {
+    stroke: var(--conn-time-eol-1hr);
+    stroke-width: 5px;
   }
 
   &.Hovered {
     stroke: #b5c8d9;
 
-    &.TimeCrit {
-      stroke: #ef7dce;
+    &.TimeEol4hr {
+      stroke: #9d7ce3;
+    }
+
+    &.TimeEol1hr {
+      stroke: #ff7777;
     }
   }
 
   &.Tick {
     stroke-width: 5px;
 
-    &.TimeCrit {
+    &.TimeEol4hr {
       stroke-width: 6px;
+    }
+
+    &.TimeEol1hr {
+      stroke-width: 7px;
     }
   }
 

@@ -116,7 +116,8 @@ $homeDark30: color.adjust($homeBase, $lightness: -30%);
   --eve-solar-system-status-dangerous: #d54040;
   --eve-solar-system-status-color-dangerous: #d54040;
 
-  --conn-time-eol: #7452c3e3;
+  --conn-time-eol-4hr: #7452c3e3;
+  --conn-time-eol-1hr: #ff4444e3;
   --conn-frigate: #325d88;
   --conn-save: rgba(155, 102, 45, 0.85);
   --selected-item-bg: rgba(98, 98, 98, 0.33);
