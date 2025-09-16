@@ -42,5 +42,5 @@ export const SystemView = ({ systemId, systemInfo: customSystemInfo, showCustomN
     return <SystemViewStandalone {...rest} {...systemInfo} />;
   }
 
-  return <SystemViewStandalone customName={mapSystemInfo.name ?? undefined} {...rest} {...systemInfo} />;
+  return <SystemViewStandalone customName={mapSystemInfo.temporary_name ?? mapSystemInfo.name ?? undefined} {...rest} {...systemInfo} />;
 };
