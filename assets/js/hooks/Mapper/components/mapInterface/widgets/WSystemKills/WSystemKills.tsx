@@ -16,6 +16,21 @@ const SystemKillsContent = () => {
   } = useMapRootState();
 
   const [systemId] = selectedSystems || [];
+  const whCacheRef = useMemo(() => new Map<number, boolean>(), []);
+
+  const isWormholeSystem = useCallback(
+    (systemId: number): boolean => {
+      const cached = whCacheRef.get(systemId);
+      if (cached !== undefined) return cached;
+
+      const info = getSystemStaticInfo(systemId);
+      const isWH = info?.system_class != null ? isWormholeSpace(Number(info.system_class)) : false;
+
+      whCacheRef.set(systemId, isWH);
+      return isWH;
+    },
+    [whCacheRef],
+  );
 
   const { kills, isLoading, error } = useSystemKills({
     systemId,
@@ -30,24 +45,10 @@ const SystemKillsContent = () => {
   const filteredKills = useMemo(() => {
     if (!settingsKills.whOnly) return kills;
 
-    const whBySystem = new Map<number, boolean>();
-    const wormholeKills = kills.filter(kill => {
-      const id = Number(kill.solar_system_id);
-      let isWH = whBySystem.get(id);
-      if (isWH === undefined) {
-        const info = getSystemStaticInfo(id);
-        if (!info || info.system_class == null) {
-          isWH = false;
-        } else {
-          isWH = isWormholeSpace(Number(info.system_class));
-        }
-        whBySystem.set(id, isWH);
-      }
-      return isWH;
-    });
+    const wormholeKills = kills.filter(kill => isWormholeSystem(Number(kill.solar_system_id)));
 
     return wormholeKills;
-  }, [kills, settingsKills.whOnly]);
+  }, [kills, settingsKills.whOnly, isWormholeSystem]);
 
   if (!isSubscriptionActive) {
     return (
