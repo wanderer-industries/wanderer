@@ -716,12 +716,12 @@ export const STATUS_CLASSES: Record<number, string> = {
   [STATUSES.dangerous]: 'eve-system-status-dangerous',
 };
 
-export const TYPE_NAMES_ORDER = [ConnectionType.wormhole, ConnectionType.gate, ConnectionType.jumpgate];
+export const TYPE_NAMES_ORDER = [ConnectionType.wormhole, ConnectionType.gate, ConnectionType.bridge];
 
 export const TYPE_NAMES = {
   [ConnectionType.wormhole]: 'Wormhole',
   [ConnectionType.gate]: 'Gate',
-  [ConnectionType.jumpgate]: 'Jumpgate',
+  [ConnectionType.bridge]: 'Jumpgate',
 };
 
 export const MASS_STATE_NAMES_ORDER = [MassState.verge, MassState.half, MassState.normal];

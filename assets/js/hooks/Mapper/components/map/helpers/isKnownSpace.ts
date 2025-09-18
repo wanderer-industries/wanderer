@@ -15,3 +15,12 @@ export const isKnownSpace = (wormholeClassID: number) => {
 export const isPossibleSpace = (spaces: number[], wormholeClassID: number) => {
   return spaces.includes(wormholeClassID);
 };
+
+export const isNullsecSpace = (wormholeClassID: number) => {
+  switch (wormholeClassID) {
+    case SOLAR_SYSTEM_CLASS_IDS.ns:
+      return true;
+  }
+
+  return false;
+};

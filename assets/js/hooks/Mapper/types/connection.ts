@@ -1,7 +1,7 @@
 export enum ConnectionType {
   wormhole,
   gate,
-  jumpgate,
+  bridge,
 }
 
 export enum MassState {

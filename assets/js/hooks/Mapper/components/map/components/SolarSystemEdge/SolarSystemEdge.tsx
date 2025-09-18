@@ -9,6 +9,7 @@ import { PrimeIcons } from 'primereact/api';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
 import { SHIP_SIZES_DESCRIPTION, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants.ts';
+import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 const MAP_TRANSLATES: Record<string, string> = {
   [Position.Top]: 'translate(-48%, 0%)',
@@ -43,6 +44,8 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
   const sourceNode = useStore(useCallback(store => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback(store => store.nodeInternals.get(target), [target]));
   const isWormhole = data?.type === ConnectionType.wormhole;
+  const isGate = data?.type === ConnectionType.gate;
+  const isBridge = data?.type === ConnectionType.bridge;
 
   const {
     data: { isThickConnections },
@@ -55,9 +58,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
-    const method = isWormhole ? getBezierPath : getBezierPath;
-
-    const [edgePath, labelX, labelY] = method({
+    const [edgePath, labelX, labelY] = getBezierPath({
       sourceX: sx - offset.x,
       sourceY: sy - offset.y,
       sourcePosition: sourcePos,
@@ -67,7 +68,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
     });
 
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
-  }, [isThickConnections, sourceNode, targetNode, isWormhole]);
+  }, [isThickConnections, sourceNode, targetNode]);
 
   if (!sourceNode || !targetNode || !data) {
     return null;
@@ -81,7 +82,8 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.Tick]: isThickConnections,
           [classes.TimeCrit]: isWormhole && data.time_status === TimeStatus.eol,
           [classes.Hovered]: hovered,
-          [classes.Gate]: !isWormhole,
+          [classes.Gate]: isGate,
+          [classes.Bridge]: isBridge,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -95,7 +97,8 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.MassVerge]: isWormhole && data.mass_status === MassState.verge,
           [classes.MassHalf]: isWormhole && data.mass_status === MassState.half,
           [classes.Frigate]: isWormhole && data.ship_size_type === ShipSizeStatus.small,
-          [classes.Gate]: !isWormhole,
+          [classes.Gate]: isGate,
+          [classes.Bridge]: isBridge,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -144,6 +147,19 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
               )}
             >
               <span className={clsx(PrimeIcons.LOCK, classes.icon)} />
+            </WdTooltipWrapper>
+          )}
+
+          {isBridge && (
+            <WdTooltipWrapper
+              content="Ansiblex Jump Bridge"
+              position={TooltipPosition.top}
+              className={clsx(
+                classes.LinkLabel,
+                'pointer-events-auto bg-lime-300 rounded opacity-100 cursor-auto text-neutral-900',
+              )}
+            >
+              B
             </WdTooltipWrapper>
           )}
 
