@@ -44,10 +44,7 @@ const SystemKillsContent = () => {
 
   const filteredKills = useMemo(() => {
     if (!settingsKills.whOnly) return kills;
-
-    const wormholeKills = kills.filter(kill => isWormholeSystem(Number(kill.solar_system_id)));
-
-    return wormholeKills;
+    return kills.filter(kill => isWormholeSystem(Number(kill.solar_system_id)));
   }, [kills, settingsKills.whOnly, isWormholeSystem]);
 
   if (!isSubscriptionActive) {
