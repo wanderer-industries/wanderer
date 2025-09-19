@@ -185,7 +185,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     <Dialog
       header={`Signature Edit [${signatureData?.eve_id}]`}
       visible={show}
-      draggable={false}
+      draggable={true}
       style={{ width: '390px' }}
       onShow={handleShow}
       onHide={() => {
