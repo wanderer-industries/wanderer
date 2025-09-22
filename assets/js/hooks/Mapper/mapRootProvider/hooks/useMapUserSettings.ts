@@ -7,6 +7,7 @@ import fastDeepEqual from 'fast-deep-equal';
 import { OutCommandHandler } from '@/hooks/Mapper/types';
 import { useActualizeRemoteMapSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useActualizeRemoteMapSettings.ts';
 import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { applyMigrations, migrations } from '@/hooks/Mapper/mapRootProvider/migrations';
 
 const EMPTY_OBJ = {};
 
@@ -104,32 +105,15 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
       return;
     }
 
-    // TODO !!!! FROM this date 06.07.2025 - we must work only with migrations
-    // actualizeSettings(STORED_INTERFACE_DEFAULT_VALUES, interfaceSettings, setInterfaceSettings);
-    // actualizeSettings(DEFAULT_ROUTES_SETTINGS, settingsRoutes, settingsRoutesUpdate);
-    // actualizeSettings(DEFAULT_WIDGET_LOCAL_SETTINGS, settingsLocal, settingsLocalUpdate);
-    // actualizeSettings(DEFAULT_SIGNATURE_SETTINGS, settingsSignatures, settingsSignaturesUpdate);
-    // actualizeSettings(DEFAULT_ON_THE_MAP_SETTINGS, settingsOnTheMap, settingsOnTheMapUpdate);
-    // actualizeSettings(DEFAULT_KILLS_WIDGET_SETTINGS, settingsKills, settingsKillsUpdate);
+    const migratedResult = applyMigrations(map_slug, migrations);
+    if (!migratedResult) {
+      return;
+    }
+
+    setMapUserSettings(migratedResult);
 
     setIsReady(true);
-  }, [
-    map_slug,
-    mapUserSettings,
-    interfaceSettings,
-    setInterfaceSettings,
-    settingsRoutes,
-    settingsRoutesUpdate,
-    settingsLocal,
-    settingsLocalUpdate,
-    settingsSignatures,
-    settingsSignaturesUpdate,
-    settingsOnTheMap,
-    settingsOnTheMapUpdate,
-    settingsKills,
-    settingsKillsUpdate,
-    isReady,
-  ]);
+  }, [isReady, mapUserSettings, map_slug, setMapUserSettings]);
 
   const checkOldSettings = useCallback(() => {
     const interfaceSettings = localStorage.getItem('window:interface:settings');

@@ -10,6 +10,7 @@ type ExtractSettings<S extends keyof MapUserSettings> =
 
 type Setter<S extends keyof MapUserSettings> = (
   value: Partial<ExtractSettings<S>> | ((prev: ExtractSettings<S>) => Partial<ExtractSettings<S>>),
+  version?: number,
 ) => void;
 
 type GenerateSettingsReturn<S extends keyof MapUserSettings> = [ExtractSettings<S>, Setter<S>];
@@ -30,7 +31,7 @@ export const useSettingsValueAndSetter = <S extends keyof MapUserSettings>(
   const refData = useRef({ mapId, setting, setSettings });
   refData.current = { mapId, setting, setSettings };
 
-  const setter = useCallback<Setter<S>>(value => {
+  const setter = useCallback<Setter<S>>((value, v) => {
     const { mapId, setting, setSettings } = refData.current;
 
     if (!mapId) return;
@@ -38,7 +39,7 @@ export const useSettingsValueAndSetter = <S extends keyof MapUserSettings>(
     setSettings(all => {
       const currentMap = all[mapId];
       const prev = currentMap[setting].settings as ExtractSettings<S>;
-      const version = currentMap[setting].version;
+      const version = v != null ? v : currentMap[setting].version;
 
       const patch =
         typeof value === 'function' ? (value as (p: ExtractSettings<S>) => Partial<ExtractSettings<S>>)(prev) : value;

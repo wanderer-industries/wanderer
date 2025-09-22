@@ -50,20 +50,17 @@ export type RoutesType = {
 export type LocalWidgetSettings = {
   compact: boolean;
   showOffline: boolean;
-  version: number;
   showShipName: boolean;
 };
 
 export type OnTheMapSettingsType = {
   hideOffline: boolean;
-  version: number;
 };
 
 export type KillsWidgetSettings = {
   showAll: boolean;
   whOnly: boolean;
   excludedSystems: number[];
-  version: number;
   timeRange: number;
 };
 
@@ -89,3 +86,20 @@ export type MapUserSettingsStructure = {
 export type WdResponse<T> = T;
 
 export type RemoteAdminSettingsResponse = { default_settings?: string };
+
+export enum MigrationTypes {
+  killsWidget = 'killsWidget',
+  localWidget = 'localWidget',
+  widgets = 'widgets',
+  routes = 'routes',
+  onTheMap = 'onTheMap',
+  signaturesWidget = 'signaturesWidget',
+  interface = 'interface',
+}
+
+export type MigrationFunc = (prev: any) => any;
+export type MigrationStructure = {
+  to: number;
+  type: MigrationTypes;
+  run: MigrationFunc;
+};
