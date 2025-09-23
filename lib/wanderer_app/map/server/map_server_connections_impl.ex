@@ -72,7 +72,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @connection_time_status_eol 1
   @connection_type_wormhole 0
   @connection_type_stargate 1
-  @connection_type_jumpgate 2
+  @connection_type_bridge 2
   @medium_ship_size 1
 
   def get_connection_auto_expire_hours(), do: WandererApp.Env.map_connection_auto_expire_hours()
@@ -156,16 +156,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         } = _connection_info,
         type
       ) do
-    # :ok =
-    #   maybe_add_connection(
-    #     map_id,
-    #     %{solar_system_id: solar_system_target_id},
-    #     %{
-    #       solar_system_id: solar_system_source_id
-    #     },
-    #     character_id
-    #   )
-
     state
   end
 
