@@ -2,8 +2,7 @@ import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/compon
 import { WIDGETS_CHECKBOXES_PROPS, WidgetsIds } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback } from 'react';
-
-import { Button } from 'primereact/button';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 export interface WidgetsSettingsProps {}
 
@@ -33,7 +32,7 @@ export const WidgetsSettings = ({}: WidgetsSettingsProps) => {
 
       <div className="grid grid-cols-[1fr_auto]">
         <div />
-        <Button className="py-[4px]" onClick={resetWidgets} outlined size="small" label="Reset Widgets"></Button>
+        <WdButton className="py-[4px]" onClick={resetWidgets} outlined size="small" label="Reset Widgets" />
       </div>
     </div>
   );

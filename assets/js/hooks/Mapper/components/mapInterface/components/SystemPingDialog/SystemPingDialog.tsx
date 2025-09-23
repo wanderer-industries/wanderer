@@ -2,10 +2,9 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { Dialog } from 'primereact/dialog';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { PingType } from '@/hooks/Mapper/types/ping.ts';
-import { SystemView } from '@/hooks/Mapper/components/ui-kit';
+import { SystemView, WdButton } from '@/hooks/Mapper/components/ui-kit';
 import clsx from 'clsx';
 
 const PING_TITLES = {
@@ -92,7 +91,7 @@ export const SystemPingDialog = ({ systemId, type, visible, setVisible }: System
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button onClick={handleSave} size="small" severity="danger" label="Ping!"></Button>
+            <WdButton onClick={handleSave} size="small" severity="danger" label="Ping!" />
           </div>
         </div>
       </form>

@@ -14,7 +14,7 @@ import {
   SHIP_SIZES_SIZE,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { Edge } from 'reactflow';
-import { LifetimeActions } from '@/hooks/Mapper/components/map/components/ContextMenuConnection/LifetimeActions.tsx';
+import { LifetimeActionsWrapper } from '@/hooks/Mapper/components/map/components/ContextMenuConnection/LifetimeActionsWrapper.tsx';
 
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
@@ -51,7 +51,9 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
             {
               className: clsx(classes.FastActions, '!h-[54px]'),
               template: () => {
-                return <LifetimeActions lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />;
+                return (
+                  <LifetimeActionsWrapper lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />
+                );
               },
             },
             {

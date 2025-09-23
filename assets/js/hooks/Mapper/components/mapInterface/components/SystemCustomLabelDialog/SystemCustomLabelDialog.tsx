@@ -3,11 +3,10 @@ import { Dialog } from 'primereact/dialog';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { IconField } from 'primereact/iconfield';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
-import { WdImageSize, WdImgButton, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipPosition, WdButton, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 
 interface SystemCustomLabelDialog {
   systemId: string;
@@ -126,7 +125,7 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button onClick={handleSave} outlined size="small" label="Save"></Button>
+            <WdButton onClick={handleSave} outlined size="small" label="Save"></WdButton>
           </div>
         </div>
       </form>

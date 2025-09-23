@@ -4,6 +4,7 @@ import {
   SystemView,
   TimeAgo,
   TooltipPosition,
+  WdButton,
   WdImgButton,
   WdImgButtonTooltip,
 } from '@/hooks/Mapper/components/ui-kit';
@@ -13,7 +14,6 @@ import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { Commands, OutCommand, PingType } from '@/hooks/Mapper/types';
 import clsx from 'clsx';
 import { PrimeIcons } from 'primereact/api';
-import { Button } from 'primereact/button';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { Toast } from 'primereact/toast';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -256,7 +256,7 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
         )}
       ></Toast>
 
-      <Button
+      <WdButton
         icon="pi pi-bell"
         severity="warning"
         aria-label="Notification"
