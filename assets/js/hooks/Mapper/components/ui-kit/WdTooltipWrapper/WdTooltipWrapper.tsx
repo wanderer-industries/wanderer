@@ -8,13 +8,26 @@ export type WdTooltipWrapperProps = {
   content?: (() => ReactNode) | ReactNode;
   size?: TooltipSize;
   interactive?: boolean;
+  smallPaddings?: boolean;
   tooltipClassName?: string;
 } & Omit<HTMLProps<HTMLDivElement>, 'content' | 'size'> &
   Omit<TooltipProps, 'content'>;
 
 export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperProps>(
   (
-    { className, children, content, offset, position, targetSelector, interactive, size, tooltipClassName, ...props },
+    {
+      className,
+      children,
+      content,
+      offset,
+      position,
+      targetSelector,
+      interactive,
+      smallPaddings,
+      size,
+      tooltipClassName,
+      ...props
+    },
     forwardedRef,
   ) => {
     const suffix = useMemo(() => Math.random().toString(36).slice(2, 7), []);
@@ -31,6 +44,7 @@ export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperPr
           position={position}
           content={content}
           interactive={interactive}
+          smallPaddings={smallPaddings}
           targetSelector={finalTargetSelector}
           className={clsx(size && sizeClass(size), tooltipClassName)}
         />

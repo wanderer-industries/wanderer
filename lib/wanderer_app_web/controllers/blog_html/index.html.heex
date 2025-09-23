@@ -1,4 +1,4 @@
-<section class="prose prose-lg max-w-full w-full leading-normal tracking-normal text-indigo-400 bg-cover bg-fixed flex items-center justify-center">
+  <section class="prose prose-lg max-w-full w-full leading-normal tracking-normal text-indigo-400 bg-cover bg-fixed flex items-center justify-center">
   <canvas id="bg-canvas"></canvas>
   <div class="h-full w-full flex flex-col items-center">
     <!--Main-->
@@ -26,23 +26,71 @@
         </div>
       </div>
     </div>
-    <div class="carousel carousel-center bg-neutral rounded-box max-w-[80%] space-x-4 p-4">
-      <%= for post <- @posts do %>
-        <.link class="group carousel-item relative" navigate={~p"/news/#{post.id}"}>
-          <div class="artboard-horizontal phone-1 relative hover:text-white mt-10">
-            <img
-              class="rounded-lg shadow-lg block !w-[400px] !h-[200px] opacity-75"
-              src={post.cover_image_uri}
-            />
-            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300">
+    <div id="posts-container" class="bg-neutral rounded-box max-w-[90%] p-4 max-h-[60vh] overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <%= for post <- @posts do %>
+          <.link class="group carousel-item relative" navigate={~p"/news/#{post.id}"}>
+            <div class="artboard-horizontal phone-1 relative hover:text-white">
+              <img
+                class="rounded-lg shadow-lg block !w-[300px] !h-[180px] opacity-75"
+                src={post.cover_image_uri}
+              />
+              <div class="absolute rounded-lg top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300">
+              </div>
+              <h3 class="absolute bottom-4 left-14 !text-md font-bold break-normal pt-6 pb-2 ccp-font text-white">
+                {post.title}
+              </h3>
             </div>
-            <h3 class="absolute bottom-4 left-14 font-bold break-normal pt-6 pb-2 ccp-font text-white">
-              {post.title}
-            </h3>
-          </div>
-        </.link>
-      <% end %>
+          </.link>
+        <% end %>
+      </div>
     </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const postsContainer = document.getElementById('posts-container');
+        if (!postsContainer) return;
+
+        let scrollSpeed = 0.5; // pixels per frame
+        let isScrolling = true;
+        let scrollDirection = 1; // 1 for down, -1 for up
+
+        function autoScroll() {
+          if (!isScrolling) return;
+
+          const maxScroll = postsContainer.scrollHeight - postsContainer.clientHeight;
+
+          if (maxScroll <= 0) return; // No need to scroll if content fits
+
+          postsContainer.scrollTop += scrollSpeed * scrollDirection;
+
+          // Reverse direction when reaching top or bottom
+          if (postsContainer.scrollTop >= maxScroll) {
+            scrollDirection = -1;
+          } else if (postsContainer.scrollTop <= 0) {
+            scrollDirection = 1;
+          }
+
+          requestAnimationFrame(autoScroll);
+        }
+
+        // Pause scrolling on hover
+        postsContainer.addEventListener('mouseenter', () => {
+          isScrolling = false;
+        });
+
+        // Resume scrolling when mouse leaves
+        postsContainer.addEventListener('mouseleave', () => {
+          isScrolling = true;
+          requestAnimationFrame(autoScroll);
+        });
+
+        // Start autoscroll after a delay
+        setTimeout(() => {
+          requestAnimationFrame(autoScroll);
+        }, 2000);
+      });
+    </script>
     <%!-- <div class="carousel carousel-center !bg-neutral rounded-box max-w-4xl space-x-6 p-4">
 
     </div> --%>

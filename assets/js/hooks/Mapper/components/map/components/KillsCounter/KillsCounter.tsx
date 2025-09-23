@@ -56,7 +56,8 @@ export const KillsCounter = ({
       className={className}
       tooltipClassName="!px-0"
       size={size}
-      interactive={true}
+      interactive
+      smallPaddings
     >
       {children}
     </WdTooltipWrapper>
