@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.78.0](https://github.com/wanderer-industries/wanderer/compare/v1.77.19...v1.78.0) (2025-09-23)
+
+
+
+
+### Features:
+
+* Core: added support for jumpgates connection type
+
+### Bug Fixes:
+
+* Map: Add support for Bridge. Made all tooltips left and right paddings.
+
 ## [v1.77.19](https://github.com/wanderer-industries/wanderer/compare/v1.77.18...v1.77.19) (2025-09-14)
 
 
