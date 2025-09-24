@@ -58,6 +58,7 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
           </InfoDrawer>
         </div>
       }
+      smallPaddings
     >
       <div className={clsx(classes.Box, whClassStyle)}>
         <svg width="13" height="8" viewBox="0 0 13 8" xmlns="http://www.w3.org/2000/svg">

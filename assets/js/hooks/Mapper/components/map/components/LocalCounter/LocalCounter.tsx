@@ -46,7 +46,13 @@ export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIc
         [classes.Pathfinder]: theme === AvailableThemes.pathfinder,
       })}
     >
-      <WdTooltipWrapper content={pilotTooltipContent} position={TooltipPosition.right} offset={0} interactive={true}>
+      <WdTooltipWrapper
+        content={pilotTooltipContent}
+        position={TooltipPosition.right}
+        offset={0}
+        interactive={true}
+        smallPaddings
+      >
         <div className={clsx(classes.hoverTarget)}>
           <div
             className={clsx(classes.localCounter, {
