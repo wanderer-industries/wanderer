@@ -83,9 +83,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       {
         className: clsx(classes.FastActions, '!h-[54px]'),
         template: () => {
-          return (
-            <LifetimeActionsWrapper lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />
-          );
+          return <LifetimeActionsWrapper lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />;
         },
       },
       {
@@ -109,20 +107,19 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       },
       ...(!isFrigateSize
         ? [
-          {
-            label: `Mass status`,
-            icon: PrimeIcons.CHART_PIE,
-            items: MASS_STATE_NAMES_ORDER.map(x => ({
-              label: MASS_STATE_NAMES[x],
-              className: clsx({
-                [classes.SelectedItem]: edge.data?.mass_status === x,
-              }),
-              command: () => onChangeMassState(x),
-            })),
-          },
-        ]
+            {
+              label: `Mass status`,
+              icon: PrimeIcons.CHART_PIE,
+              items: MASS_STATE_NAMES_ORDER.map(x => ({
+                label: MASS_STATE_NAMES[x],
+                className: clsx({
+                  [classes.SelectedItem]: edge.data?.mass_status === x,
+                }),
+                command: () => onChangeMassState(x),
+              })),
+            },
+          ]
         : []),
-
       {
         label: `Ship Size`,
         icon: PrimeIcons.CLOUD,
@@ -145,12 +142,12 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       },
       ...(bothNullsec
         ? [
-          {
-            label: `Set as Bridge`,
-            icon: 'pi hero-forward',
-            command: () => onChangeType(ConnectionType.bridge),
-          },
-        ]
+            {
+              label: `Set as Bridge`,
+              icon: 'pi hero-forward',
+              command: () => onChangeType(ConnectionType.bridge),
+            },
+          ]
         : []),
       {
         label: 'Disconnect',
