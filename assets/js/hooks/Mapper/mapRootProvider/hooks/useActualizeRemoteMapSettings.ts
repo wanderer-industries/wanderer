@@ -6,7 +6,7 @@ import {
   RemoteAdminSettingsResponse,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
-import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
+import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
 
 interface UseActualizeRemoteMapSettingsProps {
   outCommand: OutCommandHandler;
@@ -42,7 +42,7 @@ export const useActualizeRemoteMapSettings = ({
     }
 
     try {
-      applySettings(parseMapUserSettings(res.default_settings));
+      applySettings(applyMigrations(JSON.parse(res.default_settings)));
     } catch (error) {
       applySettings(createDefaultWidgetSettings());
     }

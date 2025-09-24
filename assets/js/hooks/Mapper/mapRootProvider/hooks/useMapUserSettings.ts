@@ -7,7 +7,8 @@ import fastDeepEqual from 'fast-deep-equal';
 import { OutCommandHandler } from '@/hooks/Mapper/types';
 import { useActualizeRemoteMapSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useActualizeRemoteMapSettings.ts';
 import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
-import { applyMigrations, migrations } from '@/hooks/Mapper/mapRootProvider/migrations';
+import { applyMigrations, extractData } from '@/hooks/Mapper/mapRootProvider/migrations';
+import { LS_KEY, LS_KEY_LEGASY } from '@/hooks/Mapper/mapRootProvider/version.ts';
 
 const EMPTY_OBJ = {};
 
@@ -15,7 +16,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
   const [isReady, setIsReady] = useState(false);
   const [hasOldSettings, setHasOldSettings] = useState(false);
 
-  const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>('map-user-settings', {
+  const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>(LS_KEY, {
     defaultValue: EMPTY_OBJ,
   });
 
@@ -101,18 +102,27 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
       return;
     }
 
-    if (mapUserSettings[map_slug] == null) {
+    const currentMapUserSettings = mapUserSettings[map_slug];
+    if (currentMapUserSettings == null) {
       return;
     }
 
-    const migratedResult = applyMigrations(map_slug, migrations);
-    if (!migratedResult) {
-      return;
+    try {
+      // INFO: after migrations migratedFromOld always will be true
+      const migratedResult = applyMigrations(
+        !currentMapUserSettings.migratedFromOld ? extractData(LS_KEY_LEGASY) : currentMapUserSettings,
+      );
+
+      if (!migratedResult) {
+        setIsReady(true);
+        return;
+      }
+
+      setMapUserSettings({ ...mapUserSettings, [map_slug]: migratedResult });
+      setIsReady(true);
+    } catch (error) {
+      setIsReady(true);
     }
-
-    setMapUserSettings(migratedResult);
-
-    setIsReady(true);
   }, [isReady, mapUserSettings, map_slug, setMapUserSettings]);
 
   const checkOldSettings = useCallback(() => {

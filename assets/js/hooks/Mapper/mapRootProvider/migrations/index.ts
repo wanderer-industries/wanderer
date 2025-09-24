@@ -1,18 +1,4 @@
-import m_interface from './interface';
-import killsWidget from './killsWidget';
-import localWidget from './localWidget';
-import onTheMap from './onTheMap';
-import routes from './routes';
-import signaturesWidget from './signaturesWidget';
-import widgets from './widgets';
+import list from './list';
 export * from './applyMigrations.ts';
 
-export const migrations = [
-  ...m_interface,
-  ...killsWidget,
-  ...localWidget,
-  ...onTheMap,
-  ...routes,
-  ...signaturesWidget,
-  ...widgets,
-];
+export const migrations = [...list];
