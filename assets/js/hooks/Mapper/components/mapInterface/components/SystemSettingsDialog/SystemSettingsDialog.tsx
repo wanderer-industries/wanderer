@@ -113,7 +113,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
     <Dialog
       header="System settings"
       visible={visible}
-      draggable={false}
+      draggable={true}
       style={{ width: '450px' }}
       onShow={onShow}
       onHide={() => {

@@ -39,6 +39,13 @@
   &.Gate {
     stroke: #9aff40;
   }
+
+  &.Bridge {
+    stroke: #9aff40;
+
+    stroke-dasharray: 10 5;
+    stroke-linecap: round;
+  }
 }
 
 .EdgePathFront {

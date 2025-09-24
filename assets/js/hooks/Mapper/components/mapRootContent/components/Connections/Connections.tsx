@@ -1,22 +1,21 @@
-import classes from './Connections.module.scss';
-import { Sidebar } from 'primereact/sidebar';
-import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
-import clsx from 'clsx';
 import {
-  ConnectionType,
-  ConnectionOutput,
   ConnectionInfoOutput,
+  ConnectionOutput,
+  ConnectionType,
   OutCommand,
   Passage,
   SolarSystemConnection,
 } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
+import { Sidebar } from 'primereact/sidebar';
+import { VirtualScroller, VirtualScrollerTemplateOptions } from 'primereact/virtualscroller';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import classes from './Connections.module.scss';
 
-import { PassageCard } from './PassageCard';
-import { InfoDrawer, SystemView } from '@/hooks/Mapper/components/ui-kit';
+import { InfoDrawer, SystemView, TimeAgo } from '@/hooks/Mapper/components/ui-kit';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
-import { TimeAgo } from '@/hooks/Mapper/components/ui-kit';
+import { PassageCard } from './PassageCard';
 
 const sortByDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
 
@@ -78,7 +77,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
   }, [connections, selectedConnection]);
 
   const isWormhole = useMemo(() => {
-    return cnInfo?.type !== ConnectionType.gate;
+    return cnInfo?.type === ConnectionType.wormhole;
   }, [cnInfo]);
 
   const [passages, setPassages] = useState<Passage[]>([]);

@@ -173,6 +173,7 @@ defmodule WandererApp.Api.MapConnection do
 
     # where 0 - Wormhole
     # where 1 - Gate
+    # where 2 - Bridge
     attribute :type, :integer do
       default(0)
 
