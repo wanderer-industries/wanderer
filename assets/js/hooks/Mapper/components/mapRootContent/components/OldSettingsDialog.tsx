@@ -18,10 +18,7 @@ import { Toast } from 'primereact/toast';
 import { useCallback, useRef } from 'react';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
-  return {
-    version: -1,
-    settings: lsSettings ? JSON.parse(lsSettings) : defaultValues,
-  };
+  return lsSettings ? JSON.parse(lsSettings) : defaultValues;
 };
 
 export const OldSettingsDialog = () => {
@@ -44,6 +41,8 @@ export const OldSettingsDialog = () => {
       const signatures = localStorage.getItem('wanderer_system_signature_settings_v6_6');
 
       const out: MapUserSettings = {
+        version: 0,
+        migratedFromOld: false,
         killsWidget: createSettings(widgetKills, DEFAULT_KILLS_WIDGET_SETTINGS),
         localWidget: createSettings(widgetLocal, DEFAULT_WIDGET_LOCAL_SETTINGS),
         widgets: createSettings(widgetsOld, getDefaultWidgetProps()),
