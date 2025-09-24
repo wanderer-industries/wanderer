@@ -20,7 +20,7 @@ const renderLinkedSystemItem = (option: { value: string }) => {
 
   return (
     <div className="flex gap-2 items-center">
-      <SystemView systemId={value} className={classes.SystemView} />
+      <SystemView systemId={value} className={classes.SystemView} showCustomName={true} />
     </div>
   );
 };
@@ -37,7 +37,7 @@ const renderLinkedSystemValue = (option: { value: string }) => {
 
   return (
     <div className="flex gap-2 items-center">
-      <SystemView systemId={option.value} className={classes.SystemView} />
+      <SystemView systemId={option.value} className={classes.SystemView} showCustomName={true} />
     </div>
   );
 };
