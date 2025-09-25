@@ -1,7 +1,7 @@
 %{
   title: "Guide: Systems and Connections API",
   author: "Wanderer Team",
-  cover_image_uri: "/images/news/05-07-systems/api-endpoints.png",
+  cover_image_uri: "/images/news/03-05-api/swagger-ui.png",
   tags: ~w(api map systems connections documentation),
   description: "Detailed guide for Wanderer's systems and connections API endpoints, including batch operations, updates, and deletions."
 }
@@ -912,4 +912,4 @@ If you have questions about these endpoints or need assistance, please reach out
 Fly safe,
 **The Wanderer Team**
 
----- 
+----

@@ -18,6 +18,7 @@ export interface TooltipProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   content: (() => React.ReactNode) | React.ReactNode;
   targetSelector?: string;
   interactive?: boolean;
+  smallPaddings?: boolean;
 }
 
 export interface OffsetPosition {
@@ -47,6 +48,7 @@ export const WdTooltip = forwardRef(
       position: tPosition = TooltipPosition.default,
       offset = 5,
       interactive = false,
+      smallPaddings = false,
       className,
       ...restProps
     }: TooltipProps,
@@ -264,10 +266,14 @@ export const WdTooltip = forwardRef(
         ref={tooltipRef}
         className={clsx(
           classes.tooltip,
-          interactive ? 'pointer-events-auto' : 'pointer-events-none',
-          'absolute px-1 py-1',
+          'absolute px-2 py-1',
           'border rounded-sm border-green-300 border-opacity-10 bg-stone-900 bg-opacity-90',
-          pos == null && 'invisible',
+          {
+            'pointer-events-auto': interactive,
+            'pointer-events-none': !interactive,
+            invisible: pos == null,
+            '!px-1': smallPaddings,
+          },
           className,
         )}
         style={{
