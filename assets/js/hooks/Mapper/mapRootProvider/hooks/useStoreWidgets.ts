@@ -6,7 +6,6 @@ import { getDefaultWidgetProps } from '@/hooks/Mapper/mapRootProvider/constants.
 
 export type StoredWindowProps = Omit<WindowProps, 'content'>;
 export type WindowStoreInfo = {
-  version: number;
   windows: StoredWindowProps[];
   visible: WidgetsIds[];
   viewPort?: { w: number; h: number } | undefined;
@@ -26,9 +25,8 @@ export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStor
   const updateWidgetSettings: WindowsManagerOnChange = useCallback(({ windows, viewPort }) => {
     const { setWindowsSettings } = ref.current;
 
-    setWindowsSettings(({ version, visible /*, windows*/ }: WindowStoreInfo) => {
+    setWindowsSettings(({ visible /*, windows*/ }: WindowStoreInfo) => {
       return {
-        version,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         windows: DEFAULT_WIDGETS.map(({ content, ...x }) => {
           const windowProp = windows.find(j => j.id === x.id);
