@@ -1,6 +1,6 @@
-import clsx from 'clsx';
-import { TimeStatus } from '@/hooks/Mapper/types';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit/WdButton.tsx';
+import { TimeStatus } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
 import { BUILT_IN_TOOLTIP_OPTIONS } from './constants.ts';
 
 const LIFE_TIME = [
@@ -25,14 +25,6 @@ const LIFE_TIME = [
     inactiveClassName: 'bg-indigo-300/30',
     description: 'Less than one 4.5 hours remaining. All small holes have such lifetime.',
   },
-  // TODO: we will skip it.
-  // {
-  //   id: TimeStatus._12h,
-  //   label: '12H',
-  //   className: 'bg-orange-300 hover:!bg-orange-300',
-  //   inactiveClassName: 'bg-orange-400/30',
-  //   description: 'Less than one 12 hours remaining. C729 hole have such lifetime.',
-  // },
   {
     id: TimeStatus._16h,
     label: '16H',

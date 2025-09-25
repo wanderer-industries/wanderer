@@ -68,8 +68,35 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   # this class of systems will guaranty that no one real class will take that place
   # @unknown 100_100
-  #
+
+  # default (env) setting, not EOL
+  @connection_time_status_default 0
+  # EOL 1h
   @connection_time_status_eol 1
+  # EOL 4h
+  @connection_time_status_eol_4 2
+  # EOL 4.5h
+  @connection_time_status_eol_4_5 3
+  # EOL 16h
+  @connection_time_status_eol_16 4
+  # EOL 24h
+  @connection_time_status_eol_24 5
+  # EOL 48h
+  @connection_time_status_eol_48 6
+
+  # EOL 1h
+  @connection_eol_minutes 60
+  # EOL 4h
+  @connection_eol_4_minutes 4 * 60
+  # EOL 4.5h
+  @connection_eol_4_5_minutes 4.5 * 60
+  # EOL 16h
+  @connection_eol_16_minutes 16 * 60
+  # EOL 24h
+  @connection_eol_24_minutes 24 * 60
+  # EOL 48h
+  @connection_eol_48_minutes 48 * 60
+
   @connection_type_wormhole 0
   @connection_type_stargate 1
   @connection_type_bridge 2
@@ -195,6 +222,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                     "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
                     DateTime.utc_now()
                   )
+
+                  set_start_time(map_id, connection_id, DateTime.utc_now())
                 end
 
               _ ->
@@ -243,35 +272,38 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     state =
       map_id
       |> WandererApp.Map.list_connections!()
-      |> Enum.filter(fn %{
-                          id: connection_id,
-                          inserted_at: inserted_at,
-                          solar_system_source: solar_system_source_id,
-                          solar_system_target: solar_system_target_id,
-                          type: type
-                        } ->
-        connection_start_time = get_start_time(map_id, connection_id)
-
-        type == @connection_type_wormhole &&
-          DateTime.diff(DateTime.utc_now(), connection_start_time, :hour) >=
-            connection_auto_eol_hours &&
-          is_connection_valid(
-            :wormholes,
-            solar_system_source_id,
-            solar_system_target_id
-          )
-      end)
       |> Enum.reduce(state, fn %{
+                                 id: connection_id,
                                  solar_system_source: solar_system_source_id,
-                                 solar_system_target: solar_system_target_id
+                                 solar_system_target: solar_system_target_id,
+                                 time_status: time_status,
+                                 type: type
                                },
                                state ->
-        state
-        |> update_connection_time_status(%{
-          solar_system_source_id: solar_system_source_id,
-          solar_system_target_id: solar_system_target_id,
-          time_status: @connection_time_status_eol
-        })
+        if type == @connection_type_wormhole do
+          connection_start_time = get_start_time(map_id, connection_id)
+          new_time_status = get_new_time_status(connection_start_time, time_status)
+
+          if new_time_status != time_status &&
+               is_connection_valid(
+                 :wormholes,
+                 solar_system_source_id,
+                 solar_system_target_id
+               ) do
+            set_start_time(map_id, connection_id, DateTime.utc_now())
+
+            state
+            |> update_connection_time_status(%{
+              solar_system_source_id: solar_system_source_id,
+              solar_system_target_id: solar_system_target_id,
+              time_status: new_time_status
+            })
+          else
+            state
+          end
+        else
+          state
+        end
       end)
 
     state =
@@ -281,37 +313,38 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                           id: connection_id,
                           solar_system_source: solar_system_source_id,
                           solar_system_target: solar_system_target_id,
+                          time_status: time_status,
                           type: type
                         } ->
-        connection_mark_eol_time =
-          get_connection_mark_eol_time(map_id, connection_id)
-
-        reverse_connection =
-          WandererApp.Map.get_connection(
-            map_id,
-            solar_system_target_id,
-            solar_system_source_id
-          )
-
         is_connection_exist =
           is_connection_exist(
             map_id,
             solar_system_source_id,
             solar_system_target_id
-          ) || not is_nil(reverse_connection)
-
-        is_connection_valid =
-          is_connection_valid(
-            :wormholes,
-            solar_system_source_id,
-            solar_system_target_id
-          )
+          ) ||
+            not is_nil(
+              WandererApp.Map.get_connection(
+                map_id,
+                solar_system_target_id,
+                solar_system_source_id
+              )
+            )
 
         not is_connection_exist ||
-          (type == @connection_type_wormhole && is_connection_valid &&
-             DateTime.diff(DateTime.utc_now(), connection_mark_eol_time, :hour) >=
+          (type == @connection_type_wormhole &&
+             time_status == @connection_time_status_eol &&
+             is_connection_valid(
+               :wormholes,
+               solar_system_source_id,
+               solar_system_target_id
+             ) &&
+             DateTime.diff(
+               DateTime.utc_now(),
+               get_connection_mark_eol_time(map_id, connection_id),
+               :hour
+             ) >=
                connection_auto_expire_hours - connection_auto_eol_hours +
-                 +connection_eol_expire_timeout_hours)
+                 connection_eol_expire_timeout_hours)
       end)
       |> Enum.reduce(state, fn %{
                                  solar_system_source: solar_system_source_id,
@@ -331,28 +364,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
              location.solar_system_id != old_location.solar_system_id do
-    if not is_manual do
-      character_id
-      |> WandererApp.Character.get_character!()
-      |> case do
-        nil ->
-          :ok
-
-        character ->
-          :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
-
-          {:ok, _} =
-            WandererApp.Api.MapChainPassages.new(%{
-              map_id: map_id,
-              character_id: character_id,
-              ship_type_id: character.ship,
-              ship_name: character.ship_name,
-              solar_system_source_id: old_location.solar_system_id,
-              solar_system_target_id: location.solar_system_id
-            })
-      end
-    end
-
     case WandererApp.Map.check_connection(map_id, location, old_location) do
       :ok ->
         connection_type =
@@ -369,37 +380,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
               @connection_type_wormhole
           end
 
-        # Check if either system is C1 before creating the connection
-        {:ok, source_system_info} = get_system_static_info(old_location.solar_system_id)
-        {:ok, target_system_info} = get_system_static_info(location.solar_system_id)
-
         # Set ship size type based on system classes and special rules
         ship_size_type =
+          get_ship_size_type(
+            old_location.solar_system_id,
+            location.solar_system_id,
+            connection_type
+          )
+
+        time_status =
           if connection_type == @connection_type_wormhole do
-            cond do
-              # C1 systems always get medium
-              source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
-                @medium_ship_size
-
-              # C13 systems always get frigate
-              source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
-                @frigate_ship_size
-
-              # C4 to null gets frigate (unless C4 is shattered)
-              (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
-                 not source_system_info.is_shattered) or
-                  (target_system_info.system_class == @c4 and
-                     source_system_info.system_class == @ns and
-                     not target_system_info.is_shattered) ->
-                @frigate_ship_size
-
-              true ->
-                # Default to large for other wormhole connections
-                @large_ship_size
-            end
+            @connection_time_status_eol_24
           else
-            # Default to large for non-wormhole connections
-            @large_ship_size
+            @connection_time_status_default
           end
 
         {:ok, connection} =
@@ -408,7 +401,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             solar_system_source: old_location.solar_system_id,
             solar_system_target: location.solar_system_id,
             type: connection_type,
-            ship_size_type: ship_size_type
+            ship_size_type: ship_size_type,
+            time_status: time_status
           })
 
         if connection_type == @connection_type_wormhole do
@@ -436,6 +430,20 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         {:ok, character} = WandererApp.Character.get_character(character_id)
+
+        if not is_manual do
+          :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
+
+          {:ok, _} =
+            WandererApp.Api.MapChainPassages.new(%{
+              map_id: map_id,
+              character_id: character_id,
+              ship_type_id: character.ship,
+              ship_name: character.ship_name,
+              solar_system_source_id: old_location.solar_system_id,
+              solar_system_target_id: location.solar_system_id
+            })
+        end
 
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
@@ -483,12 +491,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     end
   end
 
-  def set_start_time(map_id, connection_id, start_time) do
-    WandererApp.Cache.put(
-      "map_#{map_id}:conn_#{connection_id}:start_time",
-      start_time
-    )
-  end
+  def set_start_time(map_id, connection_id, start_time),
+    do:
+      WandererApp.Cache.put(
+        "map_#{map_id}:conn_#{connection_id}:start_time",
+        start_time
+      )
 
   def can_add_location(_scope, nil), do: false
 
@@ -681,4 +689,79 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         state
     end
   end
+
+  defp get_ship_size_type(
+         source_solar_system_id,
+         target_solar_system_id,
+         @connection_type_wormhole
+       ) do
+    # Check if either system is C1 before creating the connection
+    {:ok, source_system_info} = get_system_static_info(source_solar_system_id)
+    {:ok, target_system_info} = get_system_static_info(target_solar_system_id)
+
+    cond do
+      # C1 systems always get medium
+      source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
+        @medium_ship_size
+
+      # C13 systems always get frigate
+      source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
+        @frigate_ship_size
+
+      # C4 to null gets frigate (unless C4 is shattered)
+      (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
+         not source_system_info.is_shattered) or
+          (target_system_info.system_class == @c4 and
+             source_system_info.system_class == @ns and
+             not target_system_info.is_shattered) ->
+        @frigate_ship_size
+
+      true ->
+        # Default to large for other wormhole connections
+        @large_ship_size
+    end
+  end
+
+  # Default to large for non-wormhole connections
+  defp get_ship_size_type(_source_solar_system_id, _target_solar_system_id, _connection_type),
+    do: @large_ship_size
+
+  defp get_new_time_status(_start_time, @connection_time_status_default),
+    do: @connection_time_status_eol_24
+
+  defp get_new_time_status(start_time, old_time_status) do
+    left_minutes =
+      get_time_status_minutes(old_time_status) -
+        DateTime.diff(DateTime.utc_now(), start_time, :minute)
+
+    cond do
+      left_minutes <= @connection_eol_minutes ->
+        @connection_time_status_eol
+
+      left_minutes <= @connection_eol_4_minutes ->
+        @connection_time_status_eol_4
+
+      left_minutes <= @connection_eol_4_5_minutes ->
+        @connection_time_status_eol_4_5
+
+      left_minutes <= @connection_eol_16_minutes ->
+        @connection_time_status_eol_16
+
+      left_minutes <= @connection_eol_24_minutes ->
+        @connection_time_status_eol_24
+
+      left_minutes <= @connection_eol_48_minutes ->
+        @connection_time_status_eol_48
+
+      true ->
+        @connection_time_status_default
+    end
+  end
+
+  defp get_time_status_minutes(@connection_time_status_eol), do: @connection_eol_minutes
+  defp get_time_status_minutes(@connection_time_status_eol_4), do: @connection_eol_4_minutes
+  defp get_time_status_minutes(@connection_time_status_eol_4_5), do: @connection_eol_4_5_minutes
+  defp get_time_status_minutes(@connection_time_status_eol_16), do: @connection_eol_16_minutes
+  defp get_time_status_minutes(@connection_time_status_eol_24), do: @connection_eol_24_minutes
+  defp get_time_status_minutes(@connection_time_status_eol_48), do: @connection_eol_48_minutes
 end
