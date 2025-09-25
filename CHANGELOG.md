@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.78.1](https://github.com/wanderer-industries/wanderer/compare/v1.78.0...v1.78.1) (2025-09-24)
+
+
+
+
+### Bug Fixes:
+
+* pr feedback
+
+* removed wormhole only logic error
+
 ## [v1.78.0](https://github.com/wanderer-industries/wanderer/compare/v1.77.19...v1.78.0) (2025-09-23)
 
 

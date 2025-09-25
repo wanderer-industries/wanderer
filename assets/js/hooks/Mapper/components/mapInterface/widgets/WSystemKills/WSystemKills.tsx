@@ -16,8 +16,21 @@ const SystemKillsContent = () => {
   } = useMapRootState();
 
   const [systemId] = selectedSystems || [];
+  const whCacheRef = useMemo(() => new Map<number, boolean>(), []);
 
-  const systemStaticInfo = getSystemStaticInfo(systemId)!;
+  const isWormholeSystem = useCallback(
+    (systemId: number): boolean => {
+      const cached = whCacheRef.get(systemId);
+      if (cached !== undefined) return cached;
+
+      const info = getSystemStaticInfo(systemId);
+      const isWH = info?.system_class != null ? isWormholeSpace(Number(info.system_class)) : false;
+
+      whCacheRef.set(systemId, isWH);
+      return isWH;
+    },
+    [whCacheRef],
+  );
 
   const { kills, isLoading, error } = useSystemKills({
     systemId,
@@ -30,15 +43,9 @@ const SystemKillsContent = () => {
   const showLoading = isLoading && kills.length === 0;
 
   const filteredKills = useMemo(() => {
-    if (!settingsKills.whOnly || !settingsKills.showAll) return kills;
-    return kills.filter(kill => {
-      if (!systemStaticInfo) {
-        console.warn(`System with id ${kill.solar_system_id} not found.`);
-        return false;
-      }
-      return isWormholeSpace(systemStaticInfo.system_class);
-    });
-  }, [kills, settingsKills.whOnly, systemStaticInfo, settingsKills.showAll]);
+    if (!settingsKills.whOnly) return kills;
+    return kills.filter(kill => isWormholeSystem(Number(kill.solar_system_id)));
+  }, [kills, settingsKills.whOnly, isWormholeSystem]);
 
   if (!isSubscriptionActive) {
     return (
