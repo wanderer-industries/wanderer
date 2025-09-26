@@ -4,7 +4,7 @@ import 'phoenix_html';
 import './live_reload.css';
 
 const animateBg = function (bgCanvas) {
-  const { TweenMax, _ } = window;
+  const { TweenMax } = window;
   /**
    * Utility function for returning a random integer in a given range
    * @param {Int} max
