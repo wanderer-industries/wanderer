@@ -5,10 +5,9 @@ import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { IconField } from 'primereact/iconfield';
-import { TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipPosition, WdButton, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
@@ -226,7 +225,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button onClick={handleSave} outlined size="small" label="Save"></Button>
+            <WdButton onClick={handleSave} outlined size="small" label="Save" />
           </div>
         </div>
       </form>

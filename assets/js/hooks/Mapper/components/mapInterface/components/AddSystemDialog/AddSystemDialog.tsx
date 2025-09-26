@@ -1,11 +1,10 @@
 import { Dialog } from 'primereact/dialog';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
 import { IconField } from 'primereact/iconfield';
 import { AutoComplete } from 'primereact/autocomplete';
 import { OutCommand, SearchSystemItem } from '@/hooks/Mapper/types';
-import { SystemViewStandalone, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
+import { SystemViewStandalone, WdButton, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
 import classes from './AddSystemDialog.module.scss';
 
 import clsx from 'clsx';
@@ -34,6 +33,7 @@ export const AddSystemDialog = ({
     data: { wormholesData },
   } = useMapRootState();
 
+  // TODO fix it
   const inputRef = useRef<any>();
   const onShow = useCallback(() => {
     inputRef.current?.focus();
@@ -62,6 +62,7 @@ export const AddSystemDialog = ({
             },
           });
 
+          // TODO fix it
           let prepared = (result.systems as SearchSystemItem[]).sort((a, b) => {
             const amatch = a.label.indexOf(query);
             const bmatch = b.label.indexOf(query);
@@ -189,7 +190,7 @@ export const AddSystemDialog = ({
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button
+          <WdButton
             onClick={handleSubmit}
             outlined
             disabled={!selectedItem || selectedItem.length !== 1}

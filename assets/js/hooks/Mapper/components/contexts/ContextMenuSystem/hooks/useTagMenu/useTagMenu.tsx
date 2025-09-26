@@ -5,8 +5,7 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import clsx from 'clsx';
 import { GRADIENT_MENU_ACTIVE_CLASSES } from '@/hooks/Mapper/constants.ts';
-import { LayoutEventBlocker } from '@/hooks/Mapper/components/ui-kit';
-import { Button } from 'primereact/button';
+import { LayoutEventBlocker, WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 const AVAILABLE_TAGS = [
   'A',
@@ -61,7 +60,7 @@ export const useTagMenu = (
               <LayoutEventBlocker className="flex flex-col gap-1 w-[200px] h-full px-2">
                 <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-1">
                   {AVAILABLE_TAGS.map(x => (
-                    <Button
+                    <WdButton
                       outlined={system?.tag !== x}
                       severity="warning"
                       key={x}
@@ -71,9 +70,9 @@ export const useTagMenu = (
                       onClick={() => system?.tag !== x && onSystemTag(x)}
                     >
                       {x}
-                    </Button>
+                    </WdButton>
                   ))}
-                  <Button
+                  <WdButton
                     disabled={!isSelectedTag}
                     icon="pi pi-ban"
                     size="small"
@@ -81,7 +80,7 @@ export const useTagMenu = (
                     outlined
                     severity="help"
                     onClick={() => onSystemTag()}
-                  ></Button>
+                  ></WdButton>
                 </div>
               </LayoutEventBlocker>
             );

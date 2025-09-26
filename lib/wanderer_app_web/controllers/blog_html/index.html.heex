@@ -1,4 +1,4 @@
-  <section class="prose prose-lg max-w-full w-full leading-normal tracking-normal text-indigo-400 bg-cover bg-fixed flex items-center justify-center">
+<section class="prose prose-lg max-w-full w-full leading-normal tracking-normal text-indigo-400 bg-cover bg-fixed flex items-center justify-center">
   <canvas id="bg-canvas"></canvas>
   <div class="h-full w-full flex flex-col items-center">
     <!--Main-->
@@ -26,7 +26,10 @@
         </div>
       </div>
     </div>
-    <div id="posts-container" class="bg-neutral rounded-box max-w-[90%] p-4 max-h-[60vh] overflow-y-auto">
+    <div
+      id="posts-container"
+      class="bg-neutral rounded-box max-w-[90%] p-4 max-h-[60vh] overflow-y-auto"
+    >
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <%= for post <- @posts do %>
           <.link class="group carousel-item relative" navigate={~p"/news/#{post.id}"}>

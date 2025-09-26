@@ -13,6 +13,7 @@ import { ContextMenu } from 'primereact/contextmenu';
 import { MenuItem } from 'primereact/menuitem';
 import React, { RefObject, useMemo } from 'react';
 import { Edge } from 'reactflow';
+import { LifetimeActionsWrapper } from '@/hooks/Mapper/components/map/components/ContextMenuConnection/LifetimeActionsWrapper.tsx';
 import classes from './ContextMenuConnection.module.scss';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
 import { isNullsecSpace } from '@/hooks/Mapper/components/map/helpers/isKnownSpace.ts';
@@ -20,7 +21,7 @@ import { isNullsecSpace } from '@/hooks/Mapper/components/map/helpers/isKnownSpa
 export interface ContextMenuConnectionProps {
   contextMenuRef: RefObject<ContextMenu>;
   onDeleteConnection(): void;
-  onChangeTimeState(): void;
+  onChangeTimeState(lifetime: TimeStatus): void;
   onChangeMassState(state: MassState): void;
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onChangeType(type: ConnectionType): void;
@@ -80,12 +81,10 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
 
     return [
       {
-        label: `EOL`,
-        className: clsx({
-          [classes.ConnectionTimeEOL]: edge.data?.time_status === TimeStatus.eol,
-        }),
-        icon: PrimeIcons.CLOCK,
-        command: onChangeTimeState,
+        className: clsx(classes.FastActions, '!h-[54px]'),
+        template: () => {
+          return <LifetimeActionsWrapper lifetime={edge.data?.time_status} onChangeLifetime={onChangeTimeState} />;
+        },
       },
       {
         label: `Frigate`,
@@ -121,7 +120,6 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
             },
           ]
         : []),
-
       {
         label: `Ship Size`,
         icon: PrimeIcons.CLOUD,
@@ -169,7 +167,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
 
   return (
     <>
-      <ContextMenu model={items} ref={contextMenuRef} onHide={onHide} breakpoint="767px" />
+      <ContextMenu model={items} ref={contextMenuRef} onHide={onHide} breakpoint="767px" className="!w-[250px]" />
     </>
   );
 };

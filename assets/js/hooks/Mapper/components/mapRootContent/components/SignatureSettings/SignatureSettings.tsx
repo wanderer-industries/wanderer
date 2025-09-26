@@ -8,11 +8,14 @@ import {
 } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components';
 import { InputText } from 'primereact/inputtext';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
-import { Button } from 'primereact/button';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
-type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & { linked_system: string };
+type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
+  linked_system: string;
+  k162Type: string;
+  time_status: TimeStatus;
+};
 
 export interface MapSettingsProps {
   systemId: string;
@@ -22,10 +25,7 @@ export interface MapSettingsProps {
 }
 
 export const SignatureSettings = ({ systemId, show, onHide, signatureData }: MapSettingsProps) => {
-  const {
-    outCommand,
-    data: { wormholes },
-  } = useMapRootState();
+  const { outCommand } = useMapRootState();
 
   const handleShow = async () => {};
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
@@ -52,41 +52,13 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                 solar_system_target: values.linked_system,
               },
             });
-
-            // TODO: need fix
-            if (values.isEOL) {
-              await outCommand({
-                type: OutCommand.updateConnectionTimeStatus,
-                data: {
-                  source: systemId,
-                  target: values.linked_system,
-                  value: TimeStatus.eol,
-                },
-              });
-            }
-
-            if (values.type) {
-              const whShipSize = getWhSize(wormholes, values.type);
-              if (whShipSize !== undefined && whShipSize !== null) {
-                await outCommand({
-                  type: OutCommand.updateConnectionShipSizeType,
-                  data: {
-                    source: systemId,
-                    target: values.linked_system,
-                    value: whShipSize,
-                  },
-                });
-              }
-            }
           }
 
           out = {
             ...out,
             custom_info: JSON.stringify({
-              // TODO: need fix
               k162Type: values.k162Type,
-              // TODO: need fix
-              isEOL: values.isEOL,
+              time_status: values.time_status,
             }),
           };
 
@@ -153,7 +125,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureData, signatureForm, outCommand, systemId, onHide, wormholes],
+    [signatureData, signatureForm, outCommand, systemId, onHide],
   );
 
   useEffect(() => {
@@ -165,18 +137,17 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     const { linked_system, custom_info, ...rest } = signatureData;
 
     let k162Type = null;
-    let isEOL = false;
+    let time_status = TimeStatus._24h;
     if (custom_info) {
       const customInfo = JSON.parse(custom_info);
       k162Type = customInfo.k162Type;
-      isEOL = customInfo.isEOL;
+      time_status = customInfo.time_status;
     }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
-      // TODO: need fix
       k162Type: k162Type,
-      isEOL: isEOL,
+      time_status: time_status,
       ...rest,
     });
   }, [signatureForm, signatureData]);
@@ -185,7 +156,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     <Dialog
       header={`Signature Edit [${signatureData?.eve_id}]`}
       visible={show}
-      draggable={true}
+      draggable
+      resizable={false}
       style={{ width: '390px' }}
       onShow={handleShow}
       onHide={() => {
@@ -220,8 +192,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                 </label>
               </div>
 
-              <div className="flex gap-2 justify-end">
-                <Button onClick={handleSave} outlined size="small" label="Save"></Button>
+              <div className="flex gap-2 justify-end px-[0.75rem] pb-[0.5rem]">
+                <WdButton type="submit" outlined size="small" label="Save" />
               </div>
             </div>
           </form>

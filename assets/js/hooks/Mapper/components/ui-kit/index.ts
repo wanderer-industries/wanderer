@@ -21,3 +21,5 @@ export * from './LoadingWrapper';
 export * from './WdMenuItem';
 export * from './MenuItemWithInfo';
 export * from './MarkdownTextViewer.tsx';
+export * from './WdButton.tsx';
+export * from './constants.ts';
