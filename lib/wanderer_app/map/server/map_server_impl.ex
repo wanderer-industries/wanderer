@@ -26,7 +26,7 @@ defmodule WandererApp.Map.Server.Impl do
 
   @systems_cleanup_timeout :timer.minutes(30)
   @characters_cleanup_timeout :timer.minutes(5)
-  @connections_cleanup_timeout :timer.minutes(10)
+  @connections_cleanup_timeout :timer.minutes(1)
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
   @backup_state_timeout :timer.minutes(1)
