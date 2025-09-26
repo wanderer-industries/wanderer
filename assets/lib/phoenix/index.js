@@ -212,12 +212,6 @@ const animateBg = function (bgCanvas) {
     };
   }
   window.myJump = new JumpToHyperspace(bgCanvas);
-  window.addEventListener(
-    'resize',
-    _.debounce(() => {
-      window.myJump.reset();
-    }, 250),
-  );
 };
 
 document.addEventListener('DOMContentLoaded', function () {
