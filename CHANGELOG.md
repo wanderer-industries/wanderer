@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.79.3](https://github.com/wanderer-industries/wanderer/compare/v1.79.2...v1.79.3) (2025-09-27)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed connection passages count
+
 ## [v1.79.2](https://github.com/wanderer-industries/wanderer/compare/v1.79.1...v1.79.2) (2025-09-26)
 
 
