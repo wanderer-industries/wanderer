@@ -364,6 +364,22 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
              location.solar_system_id != old_location.solar_system_id do
+    {:ok, character} = WandererApp.Character.get_character(character_id)
+
+    if not is_manual do
+      :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
+
+      {:ok, _} =
+        WandererApp.Api.MapChainPassages.new(%{
+          map_id: map_id,
+          character_id: character_id,
+          ship_type_id: character.ship,
+          ship_name: character.ship_name,
+          solar_system_source_id: old_location.solar_system_id,
+          solar_system_target_id: location.solar_system_id
+        })
+    end
+
     case WandererApp.Map.check_connection(map_id, location, old_location) do
       :ok ->
         connection_type =
@@ -428,22 +444,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           mass_status: connection.mass_status,
           time_status: connection.time_status
         })
-
-        {:ok, character} = WandererApp.Character.get_character(character_id)
-
-        if not is_manual do
-          :telemetry.execute([:wanderer_app, :map, :character, :jump], %{count: 1}, %{})
-
-          {:ok, _} =
-            WandererApp.Api.MapChainPassages.new(%{
-              map_id: map_id,
-              character_id: character_id,
-              ship_type_id: character.ship,
-              ship_name: character.ship_name,
-              solar_system_source_id: old_location.solar_system_id,
-              solar_system_target_id: location.solar_system_id
-            })
-        end
 
         {:ok, _} =
           WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
