@@ -15,17 +15,17 @@ export type ToggleWidgetVisibility = (widgetId: WidgetsIds) => void;
 
 interface UseStoreWidgetsProps {
   windowsSettings: WindowStoreInfo;
-  setWindowsSettings: Dispatch<SetStateAction<WindowStoreInfo>>;
+  windowsSettingsUpdate: Dispatch<SetStateAction<WindowStoreInfo>>;
 }
 
-export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStoreWidgetsProps) => {
-  const ref = useRef({ windowsSettings, setWindowsSettings });
-  ref.current = { windowsSettings, setWindowsSettings };
+export const useStoreWidgets = ({ windowsSettings, windowsSettingsUpdate }: UseStoreWidgetsProps) => {
+  const ref = useRef({ windowsSettings, windowsSettingsUpdate });
+  ref.current = { windowsSettings, windowsSettingsUpdate };
 
   const updateWidgetSettings: WindowsManagerOnChange = useCallback(({ windows, viewPort }) => {
-    const { setWindowsSettings } = ref.current;
+    const { windowsSettingsUpdate } = ref.current;
 
-    setWindowsSettings(({ visible /*, windows*/ }: WindowStoreInfo) => {
+    windowsSettingsUpdate(({ visible /*, windows*/ }: WindowStoreInfo) => {
       return {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         windows: DEFAULT_WIDGETS.map(({ content, ...x }) => {
@@ -43,9 +43,9 @@ export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStor
   }, []);
 
   const toggleWidgetVisibility: ToggleWidgetVisibility = useCallback(widgetId => {
-    const { setWindowsSettings } = ref.current;
+    const { windowsSettingsUpdate } = ref.current;
 
-    setWindowsSettings(({ visible, windows, ...x }) => {
+    windowsSettingsUpdate(({ visible, windows, ...x }) => {
       const isCheckedPrev = visible.includes(widgetId);
       if (!isCheckedPrev) {
         const maxZIndex = Math.max(...windows.map(w => w.zIndex));
@@ -70,7 +70,7 @@ export const useStoreWidgets = ({ windowsSettings, setWindowsSettings }: UseStor
     });
   }, []);
 
-  const resetWidgets = useCallback(() => ref.current.setWindowsSettings(getDefaultWidgetProps()), []);
+  const resetWidgets = useCallback(() => ref.current.windowsSettingsUpdate(getDefaultWidgetProps()), []);
 
   return {
     windowsSettings,

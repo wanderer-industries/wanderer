@@ -10,3 +10,5 @@ export type OnMapSelectionChange = (event: {
 }) => void;
 
 export type OnMapAddSystemCallback = (props: { coordinates: XYPosition | null }) => void;
+
+export type MapViewport = { zoom: 1; x: 0; y: 0 };

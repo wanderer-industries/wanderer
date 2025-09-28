@@ -1,6 +1,7 @@
 import { MapUserSettings, SettingsTypes, SettingsWrapper } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_MAP_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
   DEFAULT_ROUTES_SETTINGS,
   DEFAULT_WIDGET_LOCAL_SETTINGS,
@@ -15,7 +16,7 @@ export const createWidgetSettings = <T>(settings: T) => {
   return settings;
 };
 
-export const createDefaultWidgetSettings = (): MapUserSettings => {
+export const createDefaultStoredSettings = (): MapUserSettings => {
   return {
     version: STORED_SETTINGS_VERSION,
     migratedFromOld: true,
@@ -26,6 +27,7 @@ export const createDefaultWidgetSettings = (): MapUserSettings => {
     onTheMap: createWidgetSettings(DEFAULT_ON_THE_MAP_SETTINGS),
     signaturesWidget: createWidgetSettings(DEFAULT_SIGNATURE_SETTINGS),
     interface: createWidgetSettings(STORED_INTERFACE_DEFAULT_VALUES),
+    map: createWidgetSettings(DEFAULT_MAP_SETTINGS),
   };
 };
 
@@ -47,5 +49,7 @@ export const getDefaultSettingsByType = (type: SettingsTypes): SettingsWrapper<a
       return createWidgetSettings(DEFAULT_SIGNATURE_SETTINGS);
     case SettingsTypes.interface:
       return createWidgetSettings(STORED_INTERFACE_DEFAULT_VALUES);
+    case SettingsTypes.map:
+      return createWidgetSettings(DEFAULT_MAP_SETTINGS);
   }
 };

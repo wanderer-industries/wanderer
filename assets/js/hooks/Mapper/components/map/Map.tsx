@@ -1,11 +1,10 @@
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
-import { SESSION_KEY } from '@/hooks/Mapper/constants.ts';
 import { PingData, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import type { PanelPosition } from '@reactflow/core';
 import clsx from 'clsx';
-import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo } from 'react';
+import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import ReactFlow, {
   Background,
   Edge,
@@ -33,19 +32,9 @@ import {
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
 import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
-import { OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
-
-const DEFAULT_VIEW_PORT = { zoom: 1, x: 0, y: 0 };
-
-const getViewPortFromStore = () => {
-  const restored = localStorage.getItem(SESSION_KEY.viewPort);
-
-  if (!restored) {
-    return { ...DEFAULT_VIEW_PORT };
-  }
-
-  return JSON.parse(restored);
-};
+import { MapViewport, OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
+import type { Viewport } from '@reactflow/core/dist/esm/types';
+import { usePrevious } from 'primereact/hooks';
 
 const initialNodes: Node<SolarSystemRawType>[] = [
   // {
@@ -88,6 +77,7 @@ interface MapCompProps {
   onConnectionInfoClick?(e: SolarSystemConnection): void;
   onAddSystem?: OnMapAddSystemCallback;
   onSelectionContextMenu?: NodeSelectionMouseHandler;
+  onChangeViewport?: (viewport: MapViewport) => void;
   minimapClasses?: string;
   isShowMinimap?: boolean;
   onSystemContextMenu: (event: MouseEvent<Element>, systemId: string) => void;
@@ -99,6 +89,7 @@ interface MapCompProps {
   pings: PingData[];
   minimapPlacement?: PanelPosition;
   localShowShipName?: boolean;
+  defaultViewport?: Viewport;
 }
 
 const MapComp = ({
@@ -119,18 +110,24 @@ const MapComp = ({
   pings,
   minimapPlacement = 'bottom-right',
   localShowShipName = false,
+  onChangeViewport,
+  defaultViewport,
 }: MapCompProps) => {
-  const { getNodes } = useReactFlow();
+  const { getNodes, setViewport } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState<Edge<SolarSystemConnection>>(initialEdges);
 
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
+
   const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
   const { variant, gap, size, color } = useBackgroundVars(theme);
   const { isPanAndDrag, nodeComponent, connectionMode } = getBehaviorForTheme(theme || 'default');
+
+  const refVars = useRef({ onChangeViewport });
+  refVars.current = { onChangeViewport };
 
   const nodeTypes = useMemo(() => {
     return {
@@ -187,9 +184,13 @@ const MapComp = ({
     [onSelectionChange],
   );
 
-  const handleMoveEnd: OnMoveEnd = (_, viewport) => {
-    localStorage.setItem(SESSION_KEY.viewPort, JSON.stringify(viewport));
-  };
+  const handleMoveEnd: OnMoveEnd = useCallback((_, viewport) => {
+    // @ts-ignore
+    refVars.current.onChangeViewport?.(viewport);
+  }, []);
+
+  // eslint-disable-next-line no-console
+  console.log('JOipP', `defaultViewport`, defaultViewport);
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -218,6 +219,19 @@ const MapComp = ({
     }));
   }, [showKSpaceBG, isThickConnections, pings, update, localShowShipName]);
 
+  const prevViewport = usePrevious(defaultViewport);
+  useEffect(() => {
+    if (defaultViewport == null) {
+      return;
+    }
+
+    if (prevViewport == null) {
+      return;
+    }
+
+    setViewport(defaultViewport);
+  }, [defaultViewport, prevViewport, setViewport]);
+
   return (
     <>
       <div
@@ -232,7 +246,7 @@ const MapComp = ({
           onConnect={onConnect}
           // TODO we need save into session all of this
           //      and on any action do either
-          defaultViewport={getViewPortFromStore()}
+          defaultViewport={defaultViewport}
           edgeTypes={edgeTypes}
           nodeTypes={nodeTypes}
           connectionMode={connectionMode}

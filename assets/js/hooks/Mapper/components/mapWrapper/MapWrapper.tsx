@@ -14,7 +14,7 @@ import { Connections } from '@/hooks/Mapper/components/mapRootContent/components
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { Node, useReactFlow, XYPosition } from 'reactflow';
+import { Node, useReactFlow, Viewport, XYPosition } from 'reactflow';
 
 import { useCommandsSystems } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { emitMapEvent, useMapEventListener } from '@/hooks/Mapper/events';
@@ -48,7 +48,7 @@ export const MapWrapper = () => {
       linkSignatureToSystem,
       systemSignatures,
     },
-    storedSettings: { interfaceSettings, settingsLocal },
+    storedSettings: { interfaceSettings, settingsLocal, mapSettings, mapSettingsUpdate },
   } = useMapRootState();
 
   const {
@@ -83,8 +83,17 @@ export const MapWrapper = () => {
     systems,
     systemSignatures,
     deleteSystems,
+    mapSettingsUpdate,
   });
-  ref.current = { selectedConnections, selectedSystems, systemContextProps, systems, systemSignatures, deleteSystems };
+  ref.current = {
+    selectedConnections,
+    selectedSystems,
+    systemContextProps,
+    systems,
+    systemSignatures,
+    deleteSystems,
+    mapSettingsUpdate,
+  };
 
   useMapEventListener(event => {
     runCommand(event);
@@ -120,6 +129,10 @@ export const MapWrapper = () => {
     },
     [update],
   );
+
+  const handleChangeViewport = useCallback((viewport: Viewport) => {
+    ref.current.mapSettingsUpdate({ viewport });
+  }, []);
 
   const handleCommand: OutCommandHandler = useCallback(
     event => {
@@ -259,6 +272,7 @@ export const MapWrapper = () => {
         onConnectionInfoClick={handleConnectionDbClick}
         onSystemContextMenu={handleSystemContextMenu}
         onSelectionContextMenu={handleSystemMultipleContext}
+        onChangeViewport={handleChangeViewport}
         minimapClasses={minimapClasses}
         isShowMinimap={showMinimap}
         showKSpaceBG={isShowKSpace}
@@ -270,6 +284,7 @@ export const MapWrapper = () => {
         onAddSystem={onAddSystem}
         minimapPlacement={minimapPosition}
         localShowShipName={settingsLocal.showShipName}
+        defaultViewport={mapSettings.viewport}
       />
 
       {openSettings != null && (

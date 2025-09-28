@@ -3,6 +3,7 @@ import {
   InterfaceStoredSettings,
   KillsWidgetSettings,
   LocalWidgetSettings,
+  MapSettings,
   MiniMapPlacement,
   OnTheMapSettingsType,
   PingsPlacement,
@@ -51,6 +52,10 @@ export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
   whOnly: true,
   excludedSystems: [],
   timeRange: 4,
+};
+
+export const DEFAULT_MAP_SETTINGS: MapSettings = {
+  viewport: { zoom: 1, x: 0, y: 0 },
 };
 
 export const getDefaultWidgetProps = () => ({

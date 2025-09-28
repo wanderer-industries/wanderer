@@ -6,7 +6,7 @@ import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/
 import fastDeepEqual from 'fast-deep-equal';
 import { OutCommandHandler } from '@/hooks/Mapper/types';
 import { useActualizeRemoteMapSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useActualizeRemoteMapSettings.ts';
-import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 import { applyMigrations, extractData } from '@/hooks/Mapper/mapRootProvider/migrations';
 import { LS_KEY, LS_KEY_LEGASY } from '@/hooks/Mapper/mapRootProvider/version.ts';
 
@@ -85,11 +85,18 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     'killsWidget',
   );
 
-  const [windowsSettings, setWindowsSettings] = useSettingsValueAndSetter(
+  const [windowsSettings, windowsSettingsUpdate] = useSettingsValueAndSetter(
     mapUserSettings,
     setMapUserSettings,
     map_slug,
     'widgets',
+  );
+
+  const [mapSettings, mapSettingsUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'map',
   );
 
   // HERE we MUST work with migrations
@@ -151,7 +158,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
   }, []);
 
   const resetSettings = useCallback(() => {
-    applySettings(createDefaultWidgetSettings());
+    applySettings(createDefaultStoredSettings());
   }, [applySettings]);
 
   return {
@@ -171,7 +178,9 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     settingsKills,
     settingsKillsUpdate,
     windowsSettings,
-    setWindowsSettings,
+    windowsSettingsUpdate,
+    mapSettings,
+    mapSettingsUpdate,
 
     getSettingsForExport,
     applySettings,

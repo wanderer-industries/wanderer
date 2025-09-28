@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
-import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 import { callToastSuccess } from '@/hooks/Mapper/helpers';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
@@ -29,7 +29,7 @@ export const ServerSettings = () => {
     }
 
     if (res?.default_settings == null) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
       return;
     }
 
@@ -38,7 +38,7 @@ export const ServerSettings = () => {
       applySettings(applyMigrations(JSON.parse(res.default_settings)));
       callToastSuccess(toast.current, 'Settings synchronized successfully');
     } catch (error) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
     }
   }, [applySettings, outCommand]);
 

@@ -64,6 +64,12 @@ export type KillsWidgetSettings = {
   timeRange: number;
 };
 
+export type MapViewPort = { zoom: number; x: number; y: number };
+
+export type MapSettings = {
+  viewport: MapViewPort;
+};
+
 export type SettingsWrapper<T> = T;
 
 export type MapUserSettings = {
@@ -76,6 +82,7 @@ export type MapUserSettings = {
   localWidget: SettingsWrapper<LocalWidgetSettings>;
   signaturesWidget: SettingsWrapper<SignatureSettingsType>;
   killsWidget: SettingsWrapper<KillsWidgetSettings>;
+  map: SettingsWrapper<MapSettings>;
 };
 
 export type MapUserSettingsStructure = {
@@ -94,11 +101,11 @@ export enum SettingsTypes {
   onTheMap = 'onTheMap',
   signaturesWidget = 'signaturesWidget',
   interface = 'interface',
+  map = 'map',
 }
 
 export type MigrationFunc = (prev: any) => any;
 export type MigrationStructure = {
   to: number;
   up: MigrationFunc;
-  down: MigrationFunc;
 };

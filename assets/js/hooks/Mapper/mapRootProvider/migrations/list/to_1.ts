@@ -7,9 +7,4 @@ export const to_1: MigrationStructure = {
       return { ...acc, [k]: prev[k].settings };
     }, Object.create(null));
   },
-  down: (prev: any) => {
-    return Object.keys(prev).reduce((acc, k) => {
-      return { ...acc, [k]: { version: 0, settings: prev[k] } };
-    }, Object.create(null));
-  },
 };

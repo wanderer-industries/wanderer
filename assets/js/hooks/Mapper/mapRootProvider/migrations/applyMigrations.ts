@@ -1,6 +1,7 @@
 import { MapUserSettingsStructure } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { STORED_SETTINGS_VERSION } from '@/hooks/Mapper/mapRootProvider/version.ts';
 import { migrations } from '@/hooks/Mapper/mapRootProvider/migrations/index.ts';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 
 export const extractData = (localStoreKey = 'map-user-settings'): MapUserSettingsStructure | null => {
   const val = localStorage.getItem(localStoreKey);
@@ -28,28 +29,29 @@ export const applyMigrations = (mapSettings: any) => {
     return;
   }
 
-  // Upgrade
-  if (direction > 0) {
-    const preparedMigrations = migrations.sort((a, b) => a.to - b.to).filter(x => x.to <= STORED_SETTINGS_VERSION);
+  const cmVersion = currentMapSettings.version || 0;
 
-    for (const migration of preparedMigrations) {
-      const { to, up } = migration;
-
-      const next = up(currentMapSettings);
-      currentMapSettings = { ...next, version: to, migratedFromOld: true };
+  // downgrade
+  // INFO: when we downgrading - if diff between >= 1 it means was major version
+  if (direction < 0) {
+    // If was minor version - we do nothing
+    if (Math.abs(direction) < 1) {
+      return currentMapSettings;
     }
 
-    return currentMapSettings;
+    // if was major version - we set default settings
+    return createDefaultStoredSettings();
   }
 
-  // DOWNGRADE
-  const preparedMigrations = migrations.sort((a, b) => b.to - a.to).filter(x => x.to - 1 >= STORED_SETTINGS_VERSION);
+  const preparedMigrations = migrations
+    .sort((a, b) => a.to - b.to)
+    .filter(x => x.to > cmVersion && x.to <= STORED_SETTINGS_VERSION);
 
   for (const migration of preparedMigrations) {
-    const { to, down } = migration;
+    const { to, up } = migration;
 
-    const next = down(currentMapSettings);
-    currentMapSettings = { ...next, version: to - 1, migratedFromOld: true };
+    const next = up(currentMapSettings);
+    currentMapSettings = { ...next, version: to, migratedFromOld: true };
   }
 
   return currentMapSettings;
