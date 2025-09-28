@@ -1,10 +1,10 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
-import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { Divider } from 'primereact/divider';
 import { callToastError, callToastSuccess, callToastWarn } from '@/hooks/Mapper/helpers';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 type SaveDefaultSettingsReturn = { success: boolean; error: string };
 
@@ -65,7 +65,7 @@ export const DefaultSettings = () => {
 
         <div className="flex flex-col gap-1">
           <div>
-            <Button
+            <WdButton
               onClick={handleSaveAsDefault}
               icon="pi pi-save"
               size="small"

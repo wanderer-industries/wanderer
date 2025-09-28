@@ -2,6 +2,42 @@
 
 <!-- changelog -->
 
+## [v1.79.3](https://github.com/wanderer-industries/wanderer/compare/v1.79.2...v1.79.3) (2025-09-27)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed connection passages count
+
+## [v1.79.2](https://github.com/wanderer-industries/wanderer/compare/v1.79.1...v1.79.2) (2025-09-26)
+
+
+
+
+## [v1.79.1](https://github.com/wanderer-industries/wanderer/compare/v1.79.0...v1.79.1) (2025-09-26)
+
+
+
+
+## [v1.79.0](https://github.com/wanderer-industries/wanderer/compare/v1.78.1...v1.79.0) (2025-09-26)
+
+
+
+
+### Features:
+
+* Core: Updated connections EOL logic
+
+### Bug Fixes:
+
+* Map: Fixed eslint problems
+
+* Map: Update lifetime design and buttons
+
+* Map: Update wormhole lifetime UI and removed unnecessary code
+
 ## [v1.78.1](https://github.com/wanderer-industries/wanderer/compare/v1.78.0...v1.78.1) (2025-09-24)
 
 

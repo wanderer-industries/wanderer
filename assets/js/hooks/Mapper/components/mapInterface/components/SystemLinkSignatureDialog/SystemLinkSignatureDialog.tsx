@@ -9,10 +9,9 @@ import {
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
-import { getWhSize } from '@/hooks/Mapper/helpers/getWhSize';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
@@ -116,14 +115,14 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
   );
 
   const handleSelect = useCallback(
-    async (signature: SystemSignature) => {
+    (signature: SystemSignature) => {
       if (!signature) {
         return;
       }
 
       const { outCommand } = ref.current;
 
-      await outCommand({
+      outCommand({
         type: OutCommand.linkSignatureToSystem,
         data: {
           ...data,
@@ -131,32 +130,9 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         },
       });
 
-      if (parseSignatureCustomInfo(signature.custom_info).isEOL === true) {
-        await outCommand({
-          type: OutCommand.updateConnectionTimeStatus,
-          data: {
-            source: data.solar_system_source,
-            target: data.solar_system_target,
-            value: TimeStatus.eol,
-          },
-        });
-      }
-
-      const whShipSize = getWhSize(wormholes, signature.type);
-      if (whShipSize !== undefined && whShipSize !== null) {
-        await outCommand({
-          type: OutCommand.updateConnectionShipSizeType,
-          data: {
-            source: data.solar_system_source,
-            target: data.solar_system_target,
-            value: whShipSize,
-          },
-        });
-      }
-
       setVisible(false);
     },
-    [data, setVisible, wormholes],
+    [data, setVisible],
   );
 
   useEffect(() => {

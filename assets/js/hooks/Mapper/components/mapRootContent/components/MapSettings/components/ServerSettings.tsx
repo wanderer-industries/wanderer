@@ -1,7 +1,6 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
-import { Button } from 'primereact/button';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 import { callToastSuccess } from '@/hooks/Mapper/helpers';
@@ -9,6 +8,7 @@ import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 import { RemoteAdminSettingsResponse } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 export const ServerSettings = () => {
   const {
@@ -65,7 +65,7 @@ export const ServerSettings = () => {
     <div className="w-full h-full flex flex-col gap-5">
       <div className="flex flex-col gap-1">
         <div>
-          <Button
+          <WdButton
             // @ts-ignore
             ref={cfRef}
             onClick={cfShow}

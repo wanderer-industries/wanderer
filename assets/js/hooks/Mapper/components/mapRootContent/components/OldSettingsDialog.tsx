@@ -2,11 +2,11 @@ import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { MapUserSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { saveTextFile } from '@/hooks/Mapper/utils';
-import { Button } from 'primereact/button';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { useCallback, useRef } from 'react';
+import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
   return lsSettings ? JSON.parse(lsSettings) : defaultValues;
@@ -129,7 +129,7 @@ export const OldSettingsDialog = () => {
         className="w-[640px] h-[400px] text-text-color min-h-0"
         footer={
           <div className="flex items-center justify-end">
-            <Button
+            <WdButton
               // @ts-ignore
               ref={cfRef}
               onClick={cfShow}
@@ -158,7 +158,7 @@ export const OldSettingsDialog = () => {
           <div className="h-[30px]"></div>
 
           <div className="flex items-center gap-3">
-            <Button
+            <WdButton
               onClick={handleExportClipboard}
               icon="pi pi-copy"
               size="small"
@@ -166,7 +166,7 @@ export const OldSettingsDialog = () => {
               label="Export to Clipboard"
             />
 
-            <Button
+            <WdButton
               onClick={handleExportAsFile}
               icon="pi pi-download"
               size="small"

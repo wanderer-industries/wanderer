@@ -4,7 +4,7 @@ import 'phoenix_html';
 import './live_reload.css';
 
 const animateBg = function (bgCanvas) {
-  const { TweenMax, _ } = window;
+  const { TweenMax } = window;
   /**
    * Utility function for returning a random integer in a given range
    * @param {Int} max
@@ -212,12 +212,6 @@ const animateBg = function (bgCanvas) {
     };
   }
   window.myJump = new JumpToHyperspace(bgCanvas);
-  window.addEventListener(
-    'resize',
-    _.debounce(() => {
-      window.myJump.reset();
-    }, 250),
-  );
 };
 
 document.addEventListener('DOMContentLoaded', function () {
