@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.79.4](https://github.com/wanderer-industries/wanderer/compare/v1.79.3...v1.79.4) (2025-09-30)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed updating connection time status based on linked signature data. Fixed FR gas sites parsing.
+
 ## [v1.79.3](https://github.com/wanderer-industries/wanderer/compare/v1.79.2...v1.79.3) (2025-09-27)
 
 
