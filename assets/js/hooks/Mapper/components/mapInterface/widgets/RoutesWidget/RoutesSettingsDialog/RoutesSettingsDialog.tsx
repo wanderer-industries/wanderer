@@ -1,9 +1,9 @@
-import { Dialog } from 'primereact/dialog';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { Dialog } from 'primereact/dialog';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface RoutesSettingsDialog {
   visible: boolean;

@@ -1,12 +1,12 @@
-import { InputText } from 'primereact/inputtext';
-import { Dialog } from 'primereact/dialog';
+import { TooltipPosition, WdButton, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { OutCommand } from '@/hooks/Mapper/types';
-import { IconField } from 'primereact/iconfield';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
-import { TooltipPosition, WdButton, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { Dialog } from 'primereact/dialog';
+import { IconField } from 'primereact/iconfield';
+import { InputText } from 'primereact/inputtext';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SystemCustomLabelDialog {
   systemId: string;
@@ -125,7 +125,7 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
           </div>
 
           <div className="flex gap-2 justify-end">
-            <WdButton onClick={handleSave} outlined size="small" label="Save"></WdButton>
+            <WdButton type="submit" onClick={handleSave} outlined size="small" label="Save"></WdButton>
           </div>
         </div>
       </form>
