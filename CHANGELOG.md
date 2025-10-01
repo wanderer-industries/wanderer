@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.79.6](https://github.com/wanderer-industries/wanderer/compare/v1.79.5...v1.79.6) (2025-10-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed modals auto-save on Enter.
+
 ## [v1.79.5](https://github.com/wanderer-industries/wanderer/compare/v1.79.4...v1.79.5) (2025-10-01)
 
 
