@@ -19,7 +19,7 @@ defmodule WandererAppWeb do
 
   def static_paths,
     do:
-      ~w(assets fonts images icons favicon.ico site.webmanifest apple-touch-icon.png web-app-manifest-192x192.png web-app-manifest-512x512.png robots.txt woff woff2 lottie)
+      ~w(assets fonts images icons favicon.ico site.webmanifest apple-touch-icon.png web-app-manifest-192x192.png web-app-manifest-512x512.png web-app-manifest.webp web-app-manifest-wide.webp robots.txt woff woff2 lottie)
 
   def router do
     quote do
