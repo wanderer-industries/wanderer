@@ -24,7 +24,7 @@ defmodule WandererApp.Character.TrackerPool do
   @check_location_errors_interval :timer.minutes(1)
   @update_ship_interval :timer.seconds(2)
   @update_info_interval :timer.minutes(2)
-  @update_wallet_interval :timer.minutes(1)
+  @update_wallet_interval :timer.minutes(10)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -246,7 +246,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> @logger.error("Error in check_offline: #{inspect(reason)}")
+        error -> @logger.error("Error in check_offline: #{inspect(error)}")
       end)
     rescue
       e ->
@@ -286,7 +286,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> @logger.error("Error in check_online_errors: #{inspect(reason)}")
+        error -> @logger.error("Error in check_online_errors: #{inspect(error)}")
       end)
     rescue
       e ->
@@ -326,7 +326,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> @logger.error("Error in check_ship_errors: #{inspect(reason)}")
+        error -> @logger.error("Error in check_ship_errors: #{inspect(error)}")
       end)
     rescue
       e ->
@@ -366,7 +366,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> @logger.error("Error in check_location_errors: #{inspect(reason)}")
+        error -> @logger.error("Error in check_location_errors: #{inspect(error)}")
       end)
     rescue
       e ->
@@ -483,7 +483,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> Logger.error("Error in update_info: #{inspect(reason)}")
+        error -> Logger.error("Error in update_info: #{inspect(error)}")
       end)
     rescue
       e ->
@@ -521,13 +521,13 @@ defmodule WandererApp.Character.TrackerPool do
         fn character_id ->
           WandererApp.Character.Tracker.update_wallet(character_id)
         end,
-        timeout: :timer.seconds(15),
+        timeout: :timer.minutes(5),
         max_concurrency: System.schedulers_online(),
         on_timeout: :kill_task
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        {:error, reason} -> Logger.error("Error in update_wallet: #{inspect(reason)}")
+        error -> Logger.error("Error in update_wallet: #{inspect(error)}")
       end)
     rescue
       e ->
