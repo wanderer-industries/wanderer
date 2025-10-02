@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.80.0](https://github.com/wanderer-industries/wanderer/compare/v1.79.6...v1.80.0) (2025-10-02)
+
+
+
+
+### Features:
+
+* Core: Added PWA web manifest
+
 ## [v1.79.6](https://github.com/wanderer-industries/wanderer/compare/v1.79.5...v1.79.6) (2025-10-01)
 
 
