@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.0](https://github.com/wanderer-industries/wanderer/compare/v1.80.0...v1.81.0) (2025-10-02)
+
+
+
+
+### Features:
+
+* core: fix pwa icons + add screen in manifest
+
 ## [v1.80.0](https://github.com/wanderer-industries/wanderer/compare/v1.79.6...v1.80.0) (2025-10-02)
 
 
