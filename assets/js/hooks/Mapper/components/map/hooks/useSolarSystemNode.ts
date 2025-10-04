@@ -34,6 +34,7 @@ export interface SolarSystemNodeVars {
   dbClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   sortedStatics: Array<string | number>;
   effectName: string | null;
+  effectPower?: number | null;
   regionName: string | null;
   solarSystemId: string;
   solarSystemName: string | null;
@@ -101,6 +102,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     class_title,
     statics,
     effect_name,
+    effect_power,
     region_name,
     region_id,
     is_shattered,
@@ -217,6 +219,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     dbClick,
     sortedStatics,
     effectName: effect_name,
+    effectPower: effect_power,
     solarSystemId: solar_system_id.toString(),
     locked,
     hubs: hubsAsStrings,
