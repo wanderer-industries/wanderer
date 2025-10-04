@@ -24,6 +24,7 @@ export interface WHClassViewProps {
   highlightName?: boolean;
   className?: string;
   classNameWh?: string;
+  showRigRow?: boolean;
 }
 
 export const WHClassView = ({
@@ -36,6 +37,7 @@ export const WHClassView = ({
   highlightName,
   className,
   classNameWh,
+  showRigRow = false,
 }: WHClassViewProps) => {
   const {
     data: { wormholesData },
@@ -58,12 +60,27 @@ export const WHClassView = ({
           mouseTrackTop={30}
           className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-90 "
         >
+          {showRigRow && (
+            <div className="flex gap-3 mb-1">
+              <div className="flex flex-col gap-1 basis-1/2 shrink-0">
+                <InfoDrawer title="Signature">{whClassName}</InfoDrawer>
+              </div>
+              <div className="flex flex-col gap-1 basis-1/2 shrink-0">
+                <InfoDrawer title="Class">
+                  <span className={clsx(classes.WHClassName, whClassStyle, classNameWh)}>
+                    {useShortTitle ? whClass.shortTitle : whClass.shortName}
+                  </span>
+                </InfoDrawer>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 basis-1/2 shrink-0">
               <InfoDrawer title="Total mass">{prepareMass(whData.total_mass)}</InfoDrawer>
               <InfoDrawer title="Jump mass">{prepareMass(whData.max_mass_per_jump)}</InfoDrawer>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 basis-1/2 shrink-0">
               <InfoDrawer title="Lifetime">{whData.lifetime}h</InfoDrawer>
               <InfoDrawer title="Mass regen">{prepareMass(whData.mass_regen)}</InfoDrawer>
             </div>

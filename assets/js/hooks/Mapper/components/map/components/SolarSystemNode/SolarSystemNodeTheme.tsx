@@ -10,12 +10,13 @@ import {
   MARKER_BOOKMARK_BG_STYLES,
   STATUS_CLASSES,
 } from '@/hooks/Mapper/components/map/constants';
-import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
-import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { FixedTooltip, TooltipPosition, WdTooltipWrapper, WHClassView } from '@/hooks/Mapper/components/ui-kit';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { EffectRaw } from '@/hooks/Mapper/types/effect';
 
 // let render = 0;
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
@@ -25,7 +26,23 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
     nodeVars.solarSystemId,
   );
 
-  // console.log('JOipP', `render ${nodeVars.id}`, render++);
+  const {
+    data: { effects },
+  } = useMapRootState();
+
+  const prepareEffects = (effectsMap: Record<string, EffectRaw>, effectName: string, effectPower: number) => {
+    const effect = effectsMap[effectName];
+    if (!effect) return [] as { name: string; power: string; positive: boolean }[];
+    const out: { name: string; power: string; positive: boolean }[] = [];
+    effect.modifiers.map(mod => {
+      const modPower = mod.power[effectPower - 1];
+      out.push({ name: mod.name, power: modPower, positive: mod.positive });
+    });
+    out.sort((a, b) => (a.positive === b.positive ? 0 : a.positive ? -1 : 1));
+    return out;
+  };
+
+  const targetClass = `wh-effect-node-${nodeVars.id}`;
 
   return (
     <>
@@ -109,13 +126,47 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
               {nodeVars.isWormhole && (
                 <div className={classes.statics}>
                   {nodeVars.sortedStatics.map(whClass => (
-                    <WormholeClassComp key={String(whClass)} id={String(whClass)} />
+                    <WHClassView key={String(whClass)} whClassName={String(whClass)} hideWhClassName />
                   ))}
                 </div>
               )}
 
               {nodeVars.effectName !== null && nodeVars.isWormhole && (
-                <div className={clsx(classes.effect, EFFECT_BACKGROUND_STYLES[nodeVars.effectName])} />
+                <>
+                  {nodeVars.effectPower ? (
+                    <FixedTooltip
+                      target={`.${targetClass}`}
+                      position="right"
+                      mouseTrack
+                      mouseTrackLeft={20}
+                      mouseTrackTop={30}
+                    >
+                      <div className={clsx('grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-xs p-1')}>
+                        {prepareEffects(effects, nodeVars.effectName, nodeVars.effectPower).map(
+                          ({ name, power, positive }) => (
+                            <>
+                              <span key={name + '-n'}>{name}</span>
+                              <span
+                                key={name + '-p'}
+                                className={clsx({ 'text-green-500': positive, 'text-red-500': !positive })}
+                              >
+                                {power}
+                              </span>
+                            </>
+                          ),
+                        )}
+                      </div>
+                    </FixedTooltip>
+                  ) : null}
+                  <div
+                    className={clsx(
+                      classes.effect,
+                      EFFECT_BACKGROUND_STYLES[nodeVars.effectName],
+                      targetClass,
+                      'cursor-help',
+                    )}
+                  />
+                </>
               )}
             </div>
 
