@@ -47,7 +47,7 @@ export const WHClassView = ({
   const whClass = useMemo(() => WORMHOLES_ADDITIONAL_INFO[whData.dest], [whData.dest]);
   const whClassStyle = WORMHOLE_CLASS_STYLES[whClass?.wormholeClassID] ?? '';
 
-  const uid = useMemo(() => new Date().getTime().toString(), []);
+  const uid = useMemo(() => Math.random().toString(36).slice(2, 7), []);
 
   return (
     <div className={clsx(classes.WHClassViewRoot, className)}>
@@ -58,7 +58,7 @@ export const WHClassView = ({
           mouseTrack
           mouseTrackLeft={20}
           mouseTrackTop={30}
-          className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-90 "
+          className="border border-green-300 rounded border-opacity-10 bg-stone-900 bg-opacity-75 "
         >
           {showRigRow && (
             <div className="flex gap-3 mb-1">
