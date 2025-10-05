@@ -12,12 +12,10 @@ import {
 } from '@/hooks/Mapper/components/map/constants';
 import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
-import { FixedTooltip, TooltipPosition, WdTooltipWrapper, WHClassView } from '@/hooks/Mapper/components/ui-kit';
+import { TooltipPosition, WdTooltipWrapper, WHClassView, EffectsTooltip } from '@/hooks/Mapper/components/ui-kit';
 import { Tag } from 'primereact/tag';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { EffectRaw } from '@/hooks/Mapper/types/effect';
 
 // let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
@@ -26,45 +24,6 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
   const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(
     nodeVars.solarSystemId,
   );
-
-  const {
-    data: { effects },
-  } = useMapRootState();
-
-  const prepareEffects = (effectsMap: Record<string, EffectRaw>, effectName: string, effectPower: number) => {
-    const effect = effectsMap[effectName];
-    if (!effect) return [] as { name: string; power: string; positive: boolean }[];
-    const out: { name: string; power: string; positive: boolean }[] = [];
-    effect.modifiers.map(mod => {
-      const modPower = mod.power[effectPower - 1];
-      out.push({ name: mod.name, power: modPower, positive: mod.positive });
-    });
-    out.sort((a, b) => (a.positive === b.positive ? 0 : a.positive ? -1 : 1));
-    return out;
-  };
-
-  const targetClass = `wh-effect-node-${nodeVars.id}`;
-
-  const renderEffectTooltip = () => {
-    if (!nodeVars.effectName || !nodeVars.isWormhole || !nodeVars.effectPower) {
-      return null;
-    }
-
-    return (
-      <FixedTooltip target={`.${targetClass}`} position="right" mouseTrack mouseTrackLeft={20} mouseTrackTop={30}>
-        <div className={clsx('grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-xs p-1')}>
-          {prepareEffects(effects, nodeVars.effectName, nodeVars.effectPower).map(({ name, power, positive }) => (
-            <>
-              <span key={name + '-n'}>{name}</span>
-              <span key={name + '-p'} className={clsx({ 'text-green-500': positive, 'text-red-500': !positive })}>
-                {power}
-              </span>
-            </>
-          ))}
-        </div>
-      </FixedTooltip>
-    );
-  };
 
   return (
     <>
@@ -157,18 +116,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
                 </div>
               )}
 
-              {nodeVars.effectName !== null && nodeVars.isWormhole && (
-                <div
-                  className={clsx(
-                    classes.effect,
-                    EFFECT_BACKGROUND_STYLES[nodeVars.effectName],
-                    targetClass,
-                    'cursor-help',
-                  )}
-                />
+              {nodeVars.effectName !== null && nodeVars.isWormhole && nodeVars.effectPower && (
+                <EffectsTooltip effectName={nodeVars.effectName} effectPower={nodeVars.effectPower}>
+                  <div className={clsx(classes.effect, EFFECT_BACKGROUND_STYLES[nodeVars.effectName])} />
+                </EffectsTooltip>
               )}
-
-              {renderEffectTooltip()}
             </div>
 
             <div className={clsx(classes.BottomRow, 'flex items-center justify-between')}>

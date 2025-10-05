@@ -1,8 +1,10 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { useMemo } from 'react';
+import clsx from 'clsx';
 import { getSystemById, sortWHClasses } from '@/hooks/Mapper/helpers';
-import { InfoDrawer, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
+import { InfoDrawer, WHClassView, EffectsTooltip } from '@/hooks/Mapper/components/ui-kit';
+import { EFFECT_FOREGROUND_STYLES } from '@/hooks/Mapper/components/map/constants.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 interface SystemInfoContentProps {
@@ -37,9 +39,16 @@ export const SystemInfoContent = ({ systemId }: SystemInfoContentProps) => {
         </InfoDrawer>
       )}
 
-      {isWH && effect_name && (
+      {isWH && effect_name && effect_power && (
         <InfoDrawer title="Effect">
-          <WHEffectView effectName={effect_name} effectPower={effect_power} />
+          <EffectsTooltip
+            effectName={effect_name}
+            effectPower={effect_power}
+          >
+            <div className={clsx("font-bold select-none w-min-content", EFFECT_FOREGROUND_STYLES[effect_name])}>
+              {effect_name}
+            </div>
+          </EffectsTooltip>
         </InfoDrawer>
       )}
 
