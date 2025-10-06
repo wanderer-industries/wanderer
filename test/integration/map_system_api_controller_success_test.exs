@@ -127,6 +127,31 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
       assert updated_system["position_y"] == 400.0
     end
 
+    test "UPDATE: successfully updates custom_name", %{conn: conn, map: map} do
+      system =
+        insert(:map_system, %{
+          map_id: map.id,
+          solar_system_id: 30_000_142,
+          name: "Jita",
+          position_x: 100,
+          position_y: 200
+        })
+
+      update_params = %{
+        "custom_name" => "My Trade Hub"
+      }
+
+      conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
+
+      response = json_response(conn, 200)
+
+      assert %{
+               "data" => updated_system
+             } = response
+
+      assert updated_system["custom_name"] == "My Trade Hub"
+    end
+
     test "DELETE: successfully deletes a system", %{conn: conn, map: map} do
       system =
         insert(:map_system, %{

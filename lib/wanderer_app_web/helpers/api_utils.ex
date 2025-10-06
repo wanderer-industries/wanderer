@@ -118,6 +118,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
 
     optional = [
       "solar_system_name",
+      "custom_name",
       "position_x",
       "position_y",
       "coordinates",
@@ -151,6 +152,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   def extract_update_params(params) when is_map(params) do
     allowed = [
       "solar_system_name",
+      "custom_name",
       "position_x",
       "position_y",
       "coordinates",
