@@ -339,7 +339,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
           destination_id
         )
       end,
-      max_concurrency: System.schedulers_online(),
+      max_concurrency: System.schedulers_online() * 4,
       on_timeout: :kill_task,
       timeout: :timer.minutes(1)
     )

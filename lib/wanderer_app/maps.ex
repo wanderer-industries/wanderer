@@ -41,7 +41,7 @@ defmodule WandererApp.Maps do
                   system |> Map.take(@minimum_route_attrs)
               end
             end,
-            max_concurrency: 10
+            max_concurrency: System.schedulers_online() * 4
           )
           |> Enum.map(fn {:ok, val} -> val end)
 

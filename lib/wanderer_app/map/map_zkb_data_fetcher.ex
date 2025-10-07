@@ -49,7 +49,7 @@ defmodule WandererApp.Map.ZkbDataFetcher do
               @logger.error(Exception.message(e))
           end
         end,
-        max_concurrency: 10,
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn _ -> :ok end)

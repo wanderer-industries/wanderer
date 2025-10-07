@@ -180,7 +180,7 @@ defmodule WandererApp.Character.TrackerPool do
         fn character_id ->
           WandererApp.Character.Tracker.update_online(character_id)
         end,
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task,
         timeout: :timer.seconds(5)
       )
@@ -241,7 +241,7 @@ defmodule WandererApp.Character.TrackerPool do
           WandererApp.Character.Tracker.check_offline(character_id)
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
@@ -281,7 +281,7 @@ defmodule WandererApp.Character.TrackerPool do
           )
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
@@ -321,7 +321,7 @@ defmodule WandererApp.Character.TrackerPool do
           )
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
@@ -361,7 +361,7 @@ defmodule WandererApp.Character.TrackerPool do
           )
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
@@ -395,7 +395,7 @@ defmodule WandererApp.Character.TrackerPool do
         fn character_id ->
           WandererApp.Character.Tracker.update_location(character_id)
         end,
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task,
         timeout: :timer.seconds(5)
       )
@@ -436,7 +436,7 @@ defmodule WandererApp.Character.TrackerPool do
         fn character_id ->
           WandererApp.Character.Tracker.update_ship(character_id)
         end,
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task,
         timeout: :timer.seconds(5)
       )
@@ -478,7 +478,7 @@ defmodule WandererApp.Character.TrackerPool do
           WandererApp.Character.Tracker.update_info(character_id)
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
@@ -522,7 +522,7 @@ defmodule WandererApp.Character.TrackerPool do
           WandererApp.Character.Tracker.update_wallet(character_id)
         end,
         timeout: :timer.minutes(5),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn
