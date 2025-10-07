@@ -62,7 +62,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
       header="Map user settings"
       visible
       draggable={false}
-      style={{ width: '600px' }}
+      className="w-[600px] h-[400px]"
       onShow={handleShow}
       onHide={handleHide}
     >
