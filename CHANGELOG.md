@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.3](https://github.com/wanderer-industries/wanderer/compare/v1.81.2...v1.81.3) (2025-10-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed cancel ping errors
+
 ## [v1.81.2](https://github.com/wanderer-industries/wanderer/compare/v1.81.1...v1.81.2) (2025-10-07)
 
 
