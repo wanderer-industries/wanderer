@@ -4,7 +4,7 @@ import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeTheme.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useLocalCounter, useNodeKillsCount, useSolarSystemNode } from '../../hooks';
+import { useNodeKillsCount, useSolarSystemNode } from '../../hooks';
 import {
   EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,
@@ -16,6 +16,7 @@ import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
+import { useLocalCounter } from '@/hooks/Mapper/components/hooks/useLocalCounter.ts';
 
 // let render = 0;
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {

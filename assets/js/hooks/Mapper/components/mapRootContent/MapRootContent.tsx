@@ -15,6 +15,7 @@ import { useMapEventListener } from '@/hooks/Mapper/events';
 import { Commands } from '@/hooks/Mapper/types';
 import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
 import { OldSettingsDialog } from '@/hooks/Mapper/components/mapRootContent/components/OldSettingsDialog.tsx';
+import { TopSearch } from '@/hooks/Mapper/components/mapRootContent/components/TopSearch';
 
 export interface MapRootContentProps {}
 
@@ -72,6 +73,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
           <div className="absolute top-0 left-14 w-[calc(100%-3.5rem)] h-[calc(100%-3.5rem)] pointer-events-none">
             <Topbar>
               <div className="flex items-center ml-1">
+                <TopSearch />
                 <PingsInterface />
                 <MapContextMenu
                   onShowOnTheMap={handleShowOnTheMap}

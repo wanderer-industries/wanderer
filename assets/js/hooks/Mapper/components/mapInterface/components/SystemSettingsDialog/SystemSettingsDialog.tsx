@@ -125,7 +125,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
       }}
     >
       <form onSubmit={handleSave}>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-2">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">
               <label htmlFor="username">Custom name</label>

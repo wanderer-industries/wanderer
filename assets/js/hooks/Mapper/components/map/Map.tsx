@@ -189,9 +189,6 @@ const MapComp = ({
     refVars.current.onChangeViewport?.(viewport);
   }, []);
 
-  // eslint-disable-next-line no-console
-  console.log('JOipP', `defaultViewport`, defaultViewport);
-
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       // prevents single node deselection on background / same node click

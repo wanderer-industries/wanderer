@@ -151,3 +151,12 @@ export const MINIMAP_PLACEMENT_MAP = {
   [PingsPlacement.rightBottom]: 'bottom-right',
   [PingsPlacement.leftBottom]: 'bottom-left',
 };
+
+
+export const SPACE_TO_CLASS: Record<string, string> = {
+  [Spaces.Caldari]: 'Caldaria',
+  [Spaces.Matar]: 'Mataria',
+  [Spaces.Amarr]: 'Amarria',
+  [Spaces.Gallente]: 'Gallente',
+  [Spaces.Pochven]: 'Pochven',
+};

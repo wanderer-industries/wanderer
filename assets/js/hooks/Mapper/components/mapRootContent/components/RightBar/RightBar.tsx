@@ -7,6 +7,7 @@ import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+import { TopSearch } from '@/hooks/Mapper/components/mapRootContent/components/TopSearch';
 // import { DebugComponent } from '@/hooks/Mapper/components/mapRootContent/components/RightBar/DebugComponent.tsx';
 
 interface RightBarProps {
@@ -48,7 +49,7 @@ export const RightBar = ({
         classes.RightBarRoot,
         'w-full h-full',
         'text-gray-200 shadow-lg border-l border-zinc-800 border-opacity-70 bg-opacity-70 bg-neutral-900',
-        'flex flex-col items-center justify-between',
+        'flex flex-col items-center justify-between pt-1',
       )}
     >
       <div className="flex flex-col gap-2 items-center mt-1">
@@ -65,15 +66,31 @@ export const RightBar = ({
               </button>
             </WdTooltipWrapper>
 
-            <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
-              <button
-                className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
-                type="button"
-                onClick={onShowOnTheMap}
-              >
-                <i className="pi pi-hashtag"></i>
-              </button>
-            </WdTooltipWrapper>
+            <div className="flex flex-col gap-1">
+              <TopSearch
+                customBtn={open => (
+                  <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
+                    <button
+                      className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                      type="button"
+                      onClick={open}
+                    >
+                      <i className="pi pi-search"></i>
+                    </button>
+                  </WdTooltipWrapper>
+                )}
+              />
+
+              <WdTooltipWrapper content="Show on the map" position={TooltipPosition.left}>
+                <button
+                  className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                  type="button"
+                  onClick={onShowOnTheMap}
+                >
+                  <i className="pi pi-hashtag"></i>
+                </button>
+              </WdTooltipWrapper>
+            </div>
           </>
         )}
         {additionalContent}

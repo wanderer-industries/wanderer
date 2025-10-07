@@ -13,9 +13,19 @@ interface LocalCounterProps {
   localCounterCharacters: Array<CharItemProps>;
   hasUserCharacters: boolean;
   showIcon?: boolean;
+  disableInteractive?: boolean;
+  className?: string;
+  contentClassName?: string;
 }
 
-export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIcon = true }: LocalCounterProps) => {
+export const LocalCounter = ({
+  className,
+  contentClassName,
+  localCounterCharacters,
+  hasUserCharacters,
+  showIcon = true,
+  disableInteractive,
+}: LocalCounterProps) => {
   const {
     data: { localShowShipName },
   } = useMapState();
@@ -42,22 +52,30 @@ export const LocalCounter = ({ localCounterCharacters, hasUserCharacters, showIc
 
   return (
     <div
-      className={clsx(classes.TooltipActive, {
-        [classes.Pathfinder]: theme === AvailableThemes.pathfinder,
-      })}
+      className={clsx(
+        classes.TooltipActive,
+        {
+          [classes.Pathfinder]: theme === AvailableThemes.pathfinder,
+        },
+        className,
+      )}
     >
       <WdTooltipWrapper
         content={pilotTooltipContent}
         position={TooltipPosition.right}
         offset={0}
-        interactive={true}
+        interactive={!disableInteractive}
         smallPaddings
       >
         <div className={clsx(classes.hoverTarget)}>
           <div
-            className={clsx(classes.localCounter, {
-              [classes.hasUserCharacters]: hasUserCharacters,
-            })}
+            className={clsx(
+              classes.localCounter,
+              {
+                [classes.hasUserCharacters]: hasUserCharacters,
+              },
+              contentClassName,
+            )}
           >
             {showIcon && <i className="pi pi-users" />}
             <span>{localCounterCharacters.length}</span>

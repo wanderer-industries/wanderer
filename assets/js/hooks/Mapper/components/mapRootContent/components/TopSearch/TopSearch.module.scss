@@ -1,0 +1,170 @@
+@use "sass:color";
+@use '@/hooks/Mapper/components/map/styles/eve-common-variables';
+@import '@/hooks/Mapper/components/map/styles/solar-system-node';
+
+:root {
+  --rf-has-user-characters: #ffc75d;
+}
+
+.Sidebar {
+  :global {
+    .p-sidebar-header {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .p-sidebar-content {
+      padding-left: 0px;
+      padding-right: 0px;
+    }
+  }
+}
+
+.Content {
+  position: relative;
+  overflow: hidden;
+
+  &.Pochven,
+  &.Mataria,
+  &.Amarria,
+  &.Gallente,
+  &.Caldaria {
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: 50% 50%;
+      z-index: -1;
+      background-repeat: no-repeat;
+      border-radius: 3px;
+    }
+  }
+
+  &.Mataria {
+    &::after {
+      background-image: url('/images/mataria-180.png');
+      opacity: 0.6;
+      //background-position-x: 52px;
+      //background-position-y: -83px;
+      background-position-x: 331px;
+      background-position-y: -77px;
+      transform: scale(-1);
+    }
+  }
+
+  &.Caldaria {
+    &::after {
+      background-image: url('/images/caldaria-180.png');
+      opacity: 0.6;
+      //background-position-x: 41px;
+      //background-position-y: -45px;
+
+      background-position-x: 360px;
+      background-position-y: -16px;
+      background-size: 30%;
+      transform: rotate(180deg);
+    }
+  }
+
+  &.Amarria {
+    &::after {
+      opacity: 0.45;
+      background-image: url('/images/amarr-small.png');
+      //background-position-x: 23px;
+      //background-position-y: -74px;
+
+      background-position-x: -1px;
+      background-position-y: -75px;
+      background-origin: border-box;
+      background-size: auto;
+      transform: scale(1, -1);
+    }
+  }
+
+  &.Gallente {
+    &::after {
+      opacity: 0.5;
+      background-image: url('/images/gallente-180.png');
+      //background-position-x: 1px;
+      //background-position-y: -55px;
+
+      background-position-x: 294px;
+      background-position-y: -53px;
+      transform: scale(-1);
+    }
+  }
+
+  &.Pochven {
+    &::after {
+      opacity: 0.8;
+      background-image: url('/images/pochven.webp');
+      background-position-x: 0;
+      background-position-y: -88px;
+    }
+  }
+
+  &.selected {
+    border-color: $pastel-pink;
+    box-shadow: 0 0 10px #9a1af1c2;
+  }
+
+  &.rally {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+
+      border-color: $neon-color-1;
+      background: repeating-linear-gradient(
+          45deg,
+          $neon-color-3 0px,
+          $neon-color-3 8px,
+          transparent 8px,
+          transparent 21px
+      );
+      background-size: 30px 30px;
+      animation: move-stripes 3s linear infinite;
+    }
+  }
+
+  &.eve-system-status-home {
+    background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
+    &.selected {
+      border-color: var(--eve-solar-system-status-color-home);
+    }
+  }
+
+  &.eve-system-status-friendly {
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
+    &.selected {
+      border-color: var(--eve-solar-system-status-color-friendly-dark5);
+    }
+  }
+
+  &.eve-system-status-lookingFor {
+    background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
+    &.selected {
+      border-color: $pastel-pink;
+    }
+  }
+
+  &.eve-system-status-warning {
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
+  }
+
+  &.eve-system-status-dangerous {
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
+  }
+
+  &.eve-system-status-target {
+    background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
+  }
+}
