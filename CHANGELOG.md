@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.2](https://github.com/wanderer-industries/wanderer/compare/v1.81.1...v1.81.2) (2025-10-07)
+
+
+
+
+### Bug Fixes:
+
+* api dropping custom name
+
 ## [v1.81.1](https://github.com/wanderer-industries/wanderer/compare/v1.81.0...v1.81.1) (2025-10-02)
 
 
