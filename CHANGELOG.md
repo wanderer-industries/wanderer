@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.4](https://github.com/wanderer-industries/wanderer/compare/v1.81.3...v1.81.4) (2025-10-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed signature to system link issues
+
 ## [v1.81.3](https://github.com/wanderer-industries/wanderer/compare/v1.81.2...v1.81.3) (2025-10-07)
 
 
