@@ -52,6 +52,7 @@ export interface SolarSystemNodeVars {
   temporaryName?: string | null;
   description: string | null;
   comments_count: number | null;
+  systemHighlighted: string | undefined;
 }
 
 export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars => {
@@ -108,6 +109,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
       showKSpaceBG,
       isThickConnections,
       pings,
+      systemHighlighted,
     },
     outCommand,
   } = useMapState();
@@ -217,6 +219,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     isRally,
     description,
     comments_count,
+    systemHighlighted,
   };
 
   return nodeVars;
