@@ -7,6 +7,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   alias WandererApp.Character
   alias WandererApp.User.ActivityTracker
   alias WandererApp.Map.Server.{Impl, ConnectionsImpl, SystemsImpl}
+  alias WandererApp.Utils.EVEUtil
 
   @doc """
   Public entrypoint for updating signatures on a map system.
@@ -221,6 +222,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
          ) do
       {:ok, updated} ->
         maybe_update_connection_time_status(state, existing, updated)
+        maybe_update_connection_mass_status(state, existing, updated)
         :ok
 
       {:error, reason} ->
@@ -250,6 +252,29 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   end
 
   defp maybe_update_connection_time_status(_state, _old_sig, _updated_sig), do: :ok
+
+  defp maybe_update_connection_mass_status(
+         state,
+         %{type: old_type} = old_sig,
+         %{type: new_type, system_id: system_id, linked_system_id: linked_system_id} =
+           updated_sig
+       )
+       when not is_nil(linked_system_id) do
+    if old_type != new_type do
+      {:ok, source_system} = MapSystem.by_id(system_id)
+      signature_ship_size_type = EVEUtil.get_wh_size(new_type)
+
+      if not is_nil(signature_ship_size_type) do
+        ConnectionsImpl.update_connection_ship_size_type(state, %{
+          solar_system_source_id: source_system.solar_system_id,
+          solar_system_target_id: linked_system_id,
+          ship_size_type: signature_ship_size_type
+        })
+      end
+    end
+  end
+
+  defp maybe_update_connection_mass_status(_state, _old_sig, _updated_sig), do: :ok
 
   defp track_activity(event, map_id, solar_system_id, user_id, character_id, signatures) do
     ActivityTracker.track_map_event(event, %{
