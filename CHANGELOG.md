@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.5](https://github.com/wanderer-industries/wanderer/compare/v1.81.4...v1.81.5) (2025-10-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Update connection ship size based on linked signature type
+
 ## [v1.81.4](https://github.com/wanderer-industries/wanderer/compare/v1.81.3...v1.81.4) (2025-10-09)
 
 
