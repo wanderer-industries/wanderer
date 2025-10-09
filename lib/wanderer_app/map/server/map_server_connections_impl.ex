@@ -4,6 +4,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   require Logger
 
   alias WandererApp.Map.Server.Impl
+  alias WandererApp.Map.Server.SignaturesImpl
 
   # @ccp1 -1
   @c1 1
@@ -214,7 +215,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       ),
       do:
         update_connection(state, :update_time_status, [:time_status], connection_update, fn
-          %{time_status: old_time_status}, %{id: connection_id, time_status: time_status} ->
+          %{time_status: old_time_status},
+          %{id: connection_id, time_status: time_status} = updated_connection ->
             case time_status == @connection_time_status_eol do
               true ->
                 if old_time_status != @connection_time_status_eol do
@@ -231,6 +233,10 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                   WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
                   set_start_time(map_id, connection_id, DateTime.utc_now())
                 end
+            end
+
+            if time_status != old_time_status do
+              maybe_update_linked_signature_time_status(map_id, updated_connection)
             end
         end)
 
@@ -358,6 +364,85 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       end)
 
     state
+  end
+
+  defp maybe_update_linked_signature_time_status(
+         map_id,
+         %{
+           time_status: time_status,
+           solar_system_source: solar_system_source,
+           solar_system_target: solar_system_target
+         } = updated_connection
+       ) do
+    source_system =
+      WandererApp.Map.find_system_by_location(
+        map_id,
+        %{solar_system_id: solar_system_source}
+      )
+
+    target_system =
+      WandererApp.Map.find_system_by_location(
+        map_id,
+        %{solar_system_id: solar_system_target}
+      )
+
+    source_linked_signatures =
+      find_linked_signatures(source_system, target_system)
+
+    target_linked_signatures = find_linked_signatures(target_system, source_system)
+
+    update_signatures_time_status(
+      map_id,
+      source_system.solar_system_id,
+      source_linked_signatures,
+      time_status
+    )
+
+    update_signatures_time_status(
+      map_id,
+      target_system.solar_system_id,
+      target_linked_signatures,
+      time_status
+    )
+  end
+
+  defp find_linked_signatures(
+         %{id: source_system_id} = _source_system,
+         %{solar_system_id: solar_system_id, linked_sig_eve_id: linked_sig_eve_id} =
+           _target_system
+       )
+       when not is_nil(linked_sig_eve_id) do
+    {:ok, signatures} =
+      WandererApp.Api.MapSystemSignature.by_linked_system_id(solar_system_id)
+
+    signatures |> Enum.filter(fn sig -> sig.system_id == source_system_id end)
+  end
+
+  defp find_linked_signatures(_source_system, _target_system), do: []
+
+  defp update_signatures_time_status(_map_id, _solar_system_id, [], _time_status), do: :ok
+
+  defp update_signatures_time_status(map_id, solar_system_id, signatures, time_status) do
+    signatures
+    |> Enum.each(fn %{custom_info: custom_info_json} = sig ->
+      update_params =
+        if not is_nil(custom_info_json) do
+          updated_custom_info =
+            custom_info_json
+            |> Jason.decode!()
+            |> Map.merge(%{"time_status" => time_status})
+            |> Jason.encode!()
+
+          %{custom_info: updated_custom_info}
+        else
+          updated_custom_info = Jason.encode!(%{"time_status" => time_status})
+          %{custom_info: updated_custom_info}
+        end
+
+      SignaturesImpl.apply_update_signature(%{map_id: map_id}, sig, update_params)
+    end)
+
+    Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
   end
 
   def maybe_add_connection(map_id, location, old_location, character_id, is_manual)

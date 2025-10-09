@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererApp.Map.Operations.Connections
 
   def handle_server_event(
         %{
@@ -231,6 +232,17 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             time_status: signature_time_status
           })
         end
+
+        signature_ship_size_type = get_wh_size(signature.type)
+
+        if not is_nil(signature_ship_size_type) do
+          map_id
+          |> WandererApp.Map.Server.update_connection_ship_size_type(%{
+            solar_system_source_id: solar_system_source,
+            solar_system_target_id: solar_system_target,
+            ship_size_type: signature_ship_size_type
+          })
+        end
       end
 
       WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_source)
@@ -357,4 +369,28 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   defp get_integer(nil), do: nil
   defp get_integer(value) when is_binary(value), do: String.to_integer(value)
   defp get_integer(value), do: value
+
+  defp get_wh_size(nil), do: nil
+  defp get_wh_size("K162"), do: nil
+
+  defp get_wh_size(wh_type_name) do
+    {:ok, wormhole_types} = WandererApp.CachedInfo.get_wormhole_types()
+
+    wormhole_types
+    |> Enum.find(fn wh_type_data -> wh_type_data.name == wh_type_name end)
+    |> case do
+      %{max_mass_per_jump: max_mass_per_jump} when not is_nil(max_mass_per_jump) ->
+        get_connection_size_status(max_mass_per_jump)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_connection_size_status(5_000_000), do: Connections.small_ship_size()
+  defp get_connection_size_status(62_000_000), do: Connections.medium_ship_size()
+  defp get_connection_size_status(375_000_000), do: Connections.large_ship_size()
+  defp get_connection_size_status(1_000_000_000), do: Connections.freight_ship_size()
+  defp get_connection_size_status(2_000_000_000), do: Connections.capital_ship_size()
+  defp get_connection_size_status(_max_mass_per_jump), do: Connections.large_ship_size()
 end
