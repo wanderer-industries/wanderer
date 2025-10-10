@@ -122,7 +122,7 @@ export enum SignatureGroupRU {
 export enum SignatureGroupFR {
   CosmicSignature = 'Signature cosmique (groupe)',
   Wormhole = 'Trou de ver',
-  GasSite = 'Site de gaz',
+  GasSite = 'Site de collecte de gaz',
   RelicSite = 'Site de reliques',
   DataSite = 'Site de données',
   OreSite = 'Site de minerai',

@@ -19,6 +19,7 @@ defmodule WandererApp.Map.Operations.Connections do
   @medium_ship_size 1
   @large_ship_size 2
   @xlarge_ship_size 3
+  @capital_ship_size 4
 
   # System class constants
   @c1_system_class 1
@@ -34,6 +35,12 @@ defmodule WandererApp.Map.Operations.Connections do
   def create(attrs, map_id, char_id) do
     do_create(attrs, map_id, char_id)
   end
+
+  def small_ship_size(), do: @small_ship_size
+  def medium_ship_size(), do: @medium_ship_size
+  def large_ship_size(), do: @large_ship_size
+  def freight_ship_size(), do: @xlarge_ship_size
+  def capital_ship_size(), do: @capital_ship_size
 
   defp do_create(attrs, map_id, char_id) do
     with {:ok, source} <- parse_int(attrs["solar_system_source"], "solar_system_source"),

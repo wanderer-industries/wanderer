@@ -253,7 +253,7 @@ defmodule WandererApp.Esi.ApiClient do
          fn destination ->
            get_routes(origin, destination, params, opts)
          end,
-         max_concurrency: 20,
+         max_concurrency: System.schedulers_online() * 4,
          timeout: :timer.seconds(30),
          on_timeout: :kill_task
        )

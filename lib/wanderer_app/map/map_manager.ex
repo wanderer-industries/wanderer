@@ -254,7 +254,7 @@ defmodule WandererApp.Map.Manager do
 
           :timer.sleep(@maps_start_interval)
         end,
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task,
         timeout: :timer.seconds(60)
       )

@@ -1,11 +1,11 @@
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dialog } from 'primereact/dialog';
+import { SystemView, WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useCallback, useRef, useState } from 'react';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { PingType } from '@/hooks/Mapper/types/ping.ts';
-import { SystemView, WdButton } from '@/hooks/Mapper/components/ui-kit';
 import clsx from 'clsx';
+import { Dialog } from 'primereact/dialog';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { useCallback, useRef, useState } from 'react';
 
 const PING_TITLES = {
   [PingType.Rally]: 'RALLY',
@@ -62,7 +62,7 @@ export const SystemPingDialog = ({ systemId, type, visible, setVisible }: System
         </div>
       }
       visible={visible}
-      draggable={false}
+      draggable={true}
       style={{ width: '450px' }}
       onShow={onShow}
       onHide={() => {
@@ -91,7 +91,7 @@ export const SystemPingDialog = ({ systemId, type, visible, setVisible }: System
           </div>
 
           <div className="flex gap-2 justify-end">
-            <WdButton onClick={handleSave} size="small" severity="danger" label="Ping!" />
+            <WdButton type="submit" onClick={handleSave} size="small" severity="danger" label="Ping!" />
           </div>
         </div>
       </form>

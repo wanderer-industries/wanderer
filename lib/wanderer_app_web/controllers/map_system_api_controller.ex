@@ -80,6 +80,11 @@ defmodule WandererAppWeb.MapSystemAPIController do
     properties: %{
       solar_system_id: %Schema{type: :integer, description: "EVE solar system ID"},
       solar_system_name: %Schema{type: :string, description: "EVE solar system name"},
+      custom_name: %Schema{
+        type: :string,
+        nullable: true,
+        description: "Custom name for the system"
+      },
       position_x: %Schema{type: :integer, description: "X coordinate"},
       position_y: %Schema{type: :integer, description: "Y coordinate"},
       status: %Schema{
@@ -98,6 +103,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     example: %{
       solar_system_id: 30_000_142,
       solar_system_name: "Jita",
+      custom_name: "Trade Hub",
       position_x: 100,
       position_y: 200,
       visible: true,
@@ -112,6 +118,11 @@ defmodule WandererAppWeb.MapSystemAPIController do
         type: :string,
         description: "EVE solar system name",
         nullable: true
+      },
+      custom_name: %Schema{
+        type: :string,
+        nullable: true,
+        description: "Custom name for the system"
       },
       position_x: %Schema{type: :integer, description: "X coordinate", nullable: true},
       position_y: %Schema{type: :integer, description: "Y coordinate", nullable: true},
@@ -130,6 +141,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     },
     example: %{
       solar_system_name: "Jita",
+      custom_name: "Trade Hub",
       position_x: 101,
       position_y: 202,
       visible: false,

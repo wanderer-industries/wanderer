@@ -122,14 +122,22 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         []
       )
 
-    {:ok, %{acls: acls}} =
-      WandererApp.MapRepo.get(map_id,
-        acls: [
-          :owner_id,
-          members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
-        ]
-      )
+    if Enum.empty?(invalidate_character_ids) do
+      :ok
+    else
+      {:ok, %{acls: acls}} =
+        WandererApp.MapRepo.get(map_id,
+          acls: [
+            :owner_id,
+            members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+          ]
+        )
 
+      process_invalidate_characters(invalidate_character_ids, map_id, owner_id, acls)
+    end
+  end
+
+  defp process_invalidate_characters(invalidate_character_ids, map_id, owner_id, acls) do
     invalidate_character_ids
     |> Task.async_stream(
       fn character_id ->
@@ -166,20 +174,24 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         end
       end,
       timeout: :timer.seconds(60),
-      max_concurrency: System.schedulers_online(),
+      max_concurrency: System.schedulers_online() * 4,
       on_timeout: :kill_task
     )
-    |> Enum.each(fn
-      {:ok, {:remove_character, character_id}} ->
-        remove_and_untrack_characters(map_id, [character_id])
-        :ok
+    |> Enum.reduce([], fn
+      {:ok, {:remove_character, character_id}}, acc ->
+        [character_id | acc]
 
-      {:ok, _result} ->
-        :ok
+      {:ok, _result}, acc ->
+        acc
 
-      {:error, reason} ->
+      {:error, reason}, acc ->
         Logger.error("Error in cleanup_characters: #{inspect(reason)}")
+        acc
     end)
+    |> case do
+      [] -> :ok
+      character_ids_to_remove -> remove_and_untrack_characters(map_id, character_ids_to_remove)
+    end
   end
 
   defp remove_and_untrack_characters(map_id, character_ids) do
@@ -293,7 +305,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           :ok
         end,
         timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online(),
+        max_concurrency: System.schedulers_online() * 4,
         on_timeout: :kill_task
       )
       |> Enum.each(fn

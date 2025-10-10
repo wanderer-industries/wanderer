@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(
         %{
@@ -178,44 +179,69 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           }
         } = socket
       )
-      when not is_nil(main_character_id) do
+      when not is_nil(main_character_id) and not is_nil(solar_system_source) and
+             not is_nil(solar_system_target) do
     with solar_system_source <- get_integer(solar_system_source),
          solar_system_target <- get_integer(solar_system_target),
-         {:ok, source_system} <-
-           WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-             map_id: map_id,
-             solar_system_id: solar_system_source
-           }),
-         signature <-
+         source_system when not is_nil(source_system) <-
+           WandererApp.Map.find_system_by_location(
+             map_id,
+             %{solar_system_id: solar_system_source}
+           ),
+         signature when not is_nil(signature) <-
            WandererApp.Api.MapSystemSignature.by_system_id!(source_system.id)
            |> Enum.find(fn s -> s.eve_id == signature_eve_id end),
-         target_system <-
+         target_system when not is_nil(target_system) <-
            WandererApp.Map.find_system_by_location(
              map_id,
              %{solar_system_id: solar_system_target}
            ) do
-      if not is_nil(signature) do
-        signature
-        |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
-        |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
-          linked_system_id: solar_system_target
+      signature
+      |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
+      |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
+        linked_system_id: solar_system_target
+      })
+
+      if is_nil(target_system.linked_sig_eve_id) do
+        map_id
+        |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+          solar_system_id: solar_system_target,
+          linked_sig_eve_id: signature_eve_id
         })
 
-        if not is_nil(target_system) &&
-             is_nil(target_system.linked_sig_eve_id) do
+        if not is_nil(signature.temporary_name) do
           map_id
-          |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
+          |> WandererApp.Map.Server.update_system_temporary_name(%{
             solar_system_id: solar_system_target,
-            linked_sig_eve_id: signature_eve_id
+            temporary_name: signature.temporary_name
           })
+        end
 
-          if not is_nil(signature.temporary_name) do
-            map_id
-            |> WandererApp.Map.Server.update_system_temporary_name(%{
-              solar_system_id: solar_system_target,
-              temporary_name: signature.temporary_name
-            })
+        signature_time_status =
+          if not is_nil(signature.custom_info) do
+            signature.custom_info |> Jason.decode!() |> Map.get("time_status")
+          else
+            nil
           end
+
+        if not is_nil(signature_time_status) do
+          map_id
+          |> WandererApp.Map.Server.update_connection_time_status(%{
+            solar_system_source_id: solar_system_source,
+            solar_system_target_id: solar_system_target,
+            time_status: signature_time_status
+          })
+        end
+
+        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
+
+        if not is_nil(signature_ship_size_type) do
+          map_id
+          |> WandererApp.Map.Server.update_connection_ship_size_type(%{
+            solar_system_source_id: solar_system_source,
+            solar_system_target_id: solar_system_target,
+            ship_size_type: signature_ship_size_type
+          })
         end
       end
 

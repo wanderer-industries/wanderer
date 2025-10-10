@@ -1,6 +1,6 @@
-import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
 import { InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
 import { AvailableThemes, MiniMapPlacement, PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
 
 export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
@@ -51,7 +51,7 @@ export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
 export const CONNECTIONS_CHECKBOXES_PROPS: SettingsListItem[] = [
   {
     prop: UserSettingsRemoteProps.delete_connection_with_sigs,
-    label: 'Delete connections to linked signatures',
+    label: 'Delete connections with linked signatures',
     type: 'checkbox',
   },
   {

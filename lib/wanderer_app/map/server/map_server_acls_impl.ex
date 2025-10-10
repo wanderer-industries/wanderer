@@ -22,7 +22,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
         fn acl_id ->
           update_acl(acl_id)
         end,
-        max_concurrency: 10,
+        max_concurrency: System.schedulers_online() * 4,
         timeout: :timer.seconds(15)
       )
       |> Enum.reduce(

@@ -203,7 +203,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
             end
         end
       end,
-      max_concurrency: System.schedulers_online(),
+      max_concurrency: System.schedulers_online() * 4,
       on_timeout: :kill_task,
       timeout: :timer.seconds(60)
     )
@@ -256,7 +256,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         WandererApp.Character.update_character_state(character_id, character_state)
         WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
       end,
-      max_concurrency: System.schedulers_online(),
+      max_concurrency: System.schedulers_online() * 4,
       on_timeout: :kill_task,
       timeout: :timer.seconds(30)
     )

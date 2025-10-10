@@ -2,6 +2,96 @@
 
 <!-- changelog -->
 
+## [v1.81.5](https://github.com/wanderer-industries/wanderer/compare/v1.81.4...v1.81.5) (2025-10-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Update connection ship size based on linked signature type
+
+## [v1.81.4](https://github.com/wanderer-industries/wanderer/compare/v1.81.3...v1.81.4) (2025-10-09)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed signature to system link issues
+
+## [v1.81.3](https://github.com/wanderer-industries/wanderer/compare/v1.81.2...v1.81.3) (2025-10-07)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed cancel ping errors
+
+## [v1.81.2](https://github.com/wanderer-industries/wanderer/compare/v1.81.1...v1.81.2) (2025-10-07)
+
+
+
+
+### Bug Fixes:
+
+* api dropping custom name
+
+## [v1.81.1](https://github.com/wanderer-industries/wanderer/compare/v1.81.0...v1.81.1) (2025-10-02)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed characters tracking updates.
+
+## [v1.81.0](https://github.com/wanderer-industries/wanderer/compare/v1.80.0...v1.81.0) (2025-10-02)
+
+
+
+
+### Features:
+
+* core: fix pwa icons + add screen in manifest
+
+## [v1.80.0](https://github.com/wanderer-industries/wanderer/compare/v1.79.6...v1.80.0) (2025-10-02)
+
+
+
+
+### Features:
+
+* Core: Added PWA web manifest
+
+## [v1.79.6](https://github.com/wanderer-industries/wanderer/compare/v1.79.5...v1.79.6) (2025-10-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed modals auto-save on Enter.
+
+## [v1.79.5](https://github.com/wanderer-industries/wanderer/compare/v1.79.4...v1.79.5) (2025-10-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed system details modal auto-save on Enter.
+
+## [v1.79.4](https://github.com/wanderer-industries/wanderer/compare/v1.79.3...v1.79.4) (2025-09-30)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed updating connection time status based on linked signature data. Fixed FR gas sites parsing.
+
 ## [v1.79.3](https://github.com/wanderer-industries/wanderer/compare/v1.79.2...v1.79.3) (2025-09-27)
 
 
