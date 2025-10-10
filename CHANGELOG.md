@@ -2,6 +2,31 @@
 
 <!-- changelog -->
 
+## [v1.81.6](https://github.com/wanderer-industries/wanderer/compare/v1.81.5...v1.81.6) (2025-10-10)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with a lot unnecessary loads zkb data on resize map
+
+* Map: Added ability to see focused element
+
+* Map: Removed unnecessary vertical scroller in Character Tracking dialog. Main always first in list of tracking characters, following next after main, another characters sorting by name
+
+* Map: Added Search tool for systems what on the map
+
+* Map: Added migration mechanism
+
+* Map: Remove settings some default values if migration from very old settings system
+
+* Map: MIGRATION: support from old store settings import
+
+* Map: Add common migration mechanism. ATTENTION! This is a non-reversible stored map settings commit â it means we do not guarantee that settings will work if you check out back. Weâve tried to migrate old settings, but it may not work well or may NOT work at all.
+
+* Map: Add front-end migrations for local store settings
+
 ## [v1.81.5](https://github.com/wanderer-industries/wanderer/compare/v1.81.4...v1.81.5) (2025-10-09)
 
 
