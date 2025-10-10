@@ -5,3 +5,4 @@ export * from './useHotkey';
 export * from './usePageVisibility';
 export * from './useSkipContextMenu';
 export * from './useThrottle';
+export * from './useStableValue';

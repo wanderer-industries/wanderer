@@ -1,14 +1,5 @@
-import { DEFAULT_SIGNATURE_SETTINGS } from '@/hooks/Mapper/constants/signatures.ts';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import {
-  DEFAULT_KILLS_WIDGET_SETTINGS,
-  DEFAULT_ON_THE_MAP_SETTINGS,
-  DEFAULT_ROUTES_SETTINGS,
-  DEFAULT_WIDGET_LOCAL_SETTINGS,
-  getDefaultWidgetProps,
-  STORED_INTERFACE_DEFAULT_VALUES,
-} from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { MapUserSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { saveTextFile } from '@/hooks/Mapper/utils';
 import { ConfirmPopup } from 'primereact/confirmpopup';
@@ -18,10 +9,7 @@ import { useCallback, useRef } from 'react';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
-  return {
-    version: -1,
-    settings: lsSettings ? JSON.parse(lsSettings) : defaultValues,
-  };
+  return lsSettings ? JSON.parse(lsSettings) : defaultValues;
 };
 
 export const OldSettingsDialog = () => {
@@ -44,13 +32,15 @@ export const OldSettingsDialog = () => {
       const signatures = localStorage.getItem('wanderer_system_signature_settings_v6_6');
 
       const out: MapUserSettings = {
-        killsWidget: createSettings(widgetKills, DEFAULT_KILLS_WIDGET_SETTINGS),
-        localWidget: createSettings(widgetLocal, DEFAULT_WIDGET_LOCAL_SETTINGS),
-        widgets: createSettings(widgetsOld, getDefaultWidgetProps()),
-        routes: createSettings(widgetRoutes, DEFAULT_ROUTES_SETTINGS),
-        onTheMap: createSettings(onTheMapOld, DEFAULT_ON_THE_MAP_SETTINGS),
-        signaturesWidget: createSettings(signatures, DEFAULT_SIGNATURE_SETTINGS),
-        interface: createSettings(interfaceSettings, STORED_INTERFACE_DEFAULT_VALUES),
+        version: 0,
+        migratedFromOld: false,
+        killsWidget: createSettings(widgetKills, {}),
+        localWidget: createSettings(widgetLocal, {}),
+        widgets: createSettings(widgetsOld, {}),
+        routes: createSettings(widgetRoutes, {}),
+        onTheMap: createSettings(onTheMapOld, {}),
+        signaturesWidget: createSettings(signatures, {}),
+        interface: createSettings(interfaceSettings, {}),
       };
 
       if (asFile) {

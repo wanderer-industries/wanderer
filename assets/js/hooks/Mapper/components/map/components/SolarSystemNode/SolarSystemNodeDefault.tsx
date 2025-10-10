@@ -4,7 +4,7 @@ import { Handle, NodeProps, Position } from 'reactflow';
 import clsx from 'clsx';
 import classes from './SolarSystemNodeDefault.module.scss';
 import { PrimeIcons } from 'primereact/api';
-import { useLocalCounter, useNodeKillsCount, useSolarSystemNode } from '../../hooks';
+import { useNodeKillsCount, useSolarSystemNode } from '../../hooks';
 import {
   EFFECT_BACKGROUND_STYLES,
   MARKER_BOOKMARK_BG_STYLES,
@@ -17,10 +17,12 @@ import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-
 import { Tag } from 'primereact/tag';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
+import { useLocalCounter } from '@/hooks/Mapper/components/hooks/useLocalCounter.ts';
 
 // let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
   const nodeVars = useSolarSystemNode(props);
+
   const { localCounterCharacters } = useLocalCounter(nodeVars);
   const { killsCount: localKillsCount, killsActivityType: localKillsActivityType } = useNodeKillsCount(
     nodeVars.solarSystemId,
@@ -139,11 +141,25 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
 
               {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
-              <div className="flex items-center gap-1 justify-end">
-                <div className={clsx('flex items-center gap-1')}>
+              <div className="flex items-center gap-0.5 justify-end">
+                <div className={clsx('flex items-center gap-0.5')}>
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
+                  )}
+                  {nodeVars.description != null && nodeVars.description !== '' && (
+                    <WdTooltipWrapper
+                      className="h-[15px] transform -translate-y-[6%]"
+                      position={TooltipPosition.top}
+                      content={`System have description`}
+                    >
+                      <i
+                        className={clsx(
+                          'pi hero-chat-bubble-bottom-center-text w-[10px] h-[10px]',
+                          'text-[8px] relative top-[1px]',
+                        )}
+                      />
+                    </WdTooltipWrapper>
                   )}
                 </div>
 
@@ -175,6 +191,17 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
             </div>
           )}
         </>
+      )}
+
+      {nodeVars.systemHighlighted === nodeVars.solarSystemId && (
+        <div
+          className={clsx('absolute top-[-4px] left-[-4px]', 'w-[calc(100%+8px)] h-[calc(100%+8px)]', 'animate-pulse')}
+        >
+          <div className="absolute left-0 top-0 w-3 h-2 border-t-2 border-l-2 border-sky-300"></div>
+          <div className="absolute right-0 top-0 w-3 h-2 border-t-2 border-r-2 border-sky-300"></div>
+          <div className="absolute left-0 bottom-0 w-3 h-2 border-b-2 border-l-2 border-sky-300"></div>
+          <div className="absolute right-0 bottom-0 w-3 h-2 border-b-2 border-r-2 border-sky-300"></div>
+        </div>
       )}
 
       <div className={classes.Handlers}>

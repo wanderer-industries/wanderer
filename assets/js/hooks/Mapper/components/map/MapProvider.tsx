@@ -11,6 +11,7 @@ export type MapData = MapUnionTypes & {
   isThickConnections: boolean;
   linkedSigEveId: string;
   localShowShipName: boolean;
+  systemHighlighted: string | undefined;
 };
 
 interface MapProviderProps {
@@ -44,6 +45,7 @@ const INITIAL_DATA: MapData = {
   userHubs: [],
   pings: [],
   localShowShipName: false,
+  systemHighlighted: undefined,
 };
 
 export interface MapContextProps {

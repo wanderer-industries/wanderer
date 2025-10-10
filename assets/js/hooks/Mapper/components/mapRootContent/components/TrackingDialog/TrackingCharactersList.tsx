@@ -1,13 +1,13 @@
 import { Column } from 'primereact/column';
 import { CharacterCard } from '@/hooks/Mapper/components/ui-kit';
 import { DataTable } from 'primereact/datatable';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrackingCharacter } from '@/hooks/Mapper/types';
 import { useTracking } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog/TrackingProvider.tsx';
 
 export const TrackingCharactersList = () => {
   const [selected, setSelected] = useState<TrackingCharacter[]>([]);
-  const { trackingCharacters, updateTracking } = useTracking();
+  const { trackingCharacters, main, following, updateTracking } = useTracking();
   const refVars = useRef({ trackingCharacters });
   refVars.current = { trackingCharacters };
 
@@ -20,9 +20,31 @@ export const TrackingCharactersList = () => {
     [updateTracking],
   );
 
+  const items = useMemo(() => {
+    let out = trackingCharacters;
+
+    out = out.sort((a, b) => {
+      const aId = a.character.eve_id;
+      const bId = b.character.eve_id;
+
+      // 1. main always first
+      if (aId === main && bId !== main) return -1;
+      if (bId === main && aId !== main) return 1;
+
+      // 2. following after main
+      if (aId === following && bId !== following) return -1;
+      if (bId === following && aId !== following) return 1;
+
+      // 3. sort by name
+      return a.character.name.localeCompare(b.character.name);
+    });
+
+    return out;
+  }, [trackingCharacters, main, following]);
+
   return (
     <DataTable
-      value={trackingCharacters}
+      value={items}
       size="small"
       selectionMode={null}
       selection={selected}

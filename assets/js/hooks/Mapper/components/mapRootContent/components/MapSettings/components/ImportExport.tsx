@@ -5,6 +5,8 @@ import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
 import { saveTextFile } from '@/hooks/Mapper/utils/saveToFile.ts';
 import { SplitButton } from 'primereact/splitbutton';
 import { loadTextFile } from '@/hooks/Mapper/utils';
+import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 
 export const ImportExport = () => {
   const {
@@ -22,8 +24,9 @@ export const ImportExport = () => {
     }
 
     try {
+      // INFO: WE NOT SUPPORT MIGRATIONS FOR OLD FILES AND Clipboard
       const parsed = parseMapUserSettings(text);
-      if (applySettings(parsed)) {
+      if (applySettings(applyMigrations(parsed) || createDefaultStoredSettings())) {
         toast.current?.show({
           severity: 'success',
           summary: 'Import',
@@ -59,8 +62,9 @@ export const ImportExport = () => {
     try {
       const text = await loadTextFile();
 
+      // INFO: WE NOT SUPPORT MIGRATIONS FOR OLD FILES AND Clipboard
       const parsed = parseMapUserSettings(text);
-      if (applySettings(parsed)) {
+      if (applySettings(applyMigrations(parsed))) {
         toast.current?.show({
           severity: 'success',
           summary: 'Import',

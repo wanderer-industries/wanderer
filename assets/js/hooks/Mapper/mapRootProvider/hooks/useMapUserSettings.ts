@@ -6,7 +6,9 @@ import { useSettingsValueAndSetter } from '@/hooks/Mapper/mapRootProvider/hooks/
 import fastDeepEqual from 'fast-deep-equal';
 import { OutCommandHandler } from '@/hooks/Mapper/types';
 import { useActualizeRemoteMapSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useActualizeRemoteMapSettings.ts';
-import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
+import { applyMigrations, extractData } from '@/hooks/Mapper/mapRootProvider/migrations';
+import { LS_KEY, LS_KEY_LEGASY } from '@/hooks/Mapper/mapRootProvider/version.ts';
 
 const EMPTY_OBJ = {};
 
@@ -14,7 +16,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
   const [isReady, setIsReady] = useState(false);
   const [hasOldSettings, setHasOldSettings] = useState(false);
 
-  const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>('map-user-settings', {
+  const [mapUserSettings, setMapUserSettings] = useLocalStorageState<MapUserSettingsStructure>(LS_KEY, {
     defaultValue: EMPTY_OBJ,
   });
 
@@ -83,11 +85,18 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     'killsWidget',
   );
 
-  const [windowsSettings, setWindowsSettings] = useSettingsValueAndSetter(
+  const [windowsSettings, windowsSettingsUpdate] = useSettingsValueAndSetter(
     mapUserSettings,
     setMapUserSettings,
     map_slug,
     'widgets',
+  );
+
+  const [mapSettings, mapSettingsUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'map',
   );
 
   // HERE we MUST work with migrations
@@ -100,36 +109,28 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
       return;
     }
 
-    if (mapUserSettings[map_slug] == null) {
+    const currentMapUserSettings = mapUserSettings[map_slug];
+    if (currentMapUserSettings == null) {
       return;
     }
 
-    // TODO !!!! FROM this date 06.07.2025 - we must work only with migrations
-    // actualizeSettings(STORED_INTERFACE_DEFAULT_VALUES, interfaceSettings, setInterfaceSettings);
-    // actualizeSettings(DEFAULT_ROUTES_SETTINGS, settingsRoutes, settingsRoutesUpdate);
-    // actualizeSettings(DEFAULT_WIDGET_LOCAL_SETTINGS, settingsLocal, settingsLocalUpdate);
-    // actualizeSettings(DEFAULT_SIGNATURE_SETTINGS, settingsSignatures, settingsSignaturesUpdate);
-    // actualizeSettings(DEFAULT_ON_THE_MAP_SETTINGS, settingsOnTheMap, settingsOnTheMapUpdate);
-    // actualizeSettings(DEFAULT_KILLS_WIDGET_SETTINGS, settingsKills, settingsKillsUpdate);
+    try {
+      // INFO: after migrations migratedFromOld always will be true
+      const migratedResult = applyMigrations(
+        !currentMapUserSettings.migratedFromOld ? extractData(LS_KEY_LEGASY) : currentMapUserSettings,
+      );
 
-    setIsReady(true);
-  }, [
-    map_slug,
-    mapUserSettings,
-    interfaceSettings,
-    setInterfaceSettings,
-    settingsRoutes,
-    settingsRoutesUpdate,
-    settingsLocal,
-    settingsLocalUpdate,
-    settingsSignatures,
-    settingsSignaturesUpdate,
-    settingsOnTheMap,
-    settingsOnTheMapUpdate,
-    settingsKills,
-    settingsKillsUpdate,
-    isReady,
-  ]);
+      if (!migratedResult) {
+        setIsReady(true);
+        return;
+      }
+
+      setMapUserSettings({ ...mapUserSettings, [map_slug]: migratedResult });
+      setIsReady(true);
+    } catch (error) {
+      setIsReady(true);
+    }
+  }, [isReady, mapUserSettings, map_slug, setMapUserSettings]);
 
   const checkOldSettings = useCallback(() => {
     const interfaceSettings = localStorage.getItem('window:interface:settings');
@@ -157,7 +158,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
   }, []);
 
   const resetSettings = useCallback(() => {
-    applySettings(createDefaultWidgetSettings());
+    applySettings(createDefaultStoredSettings());
   }, [applySettings]);
 
   return {
@@ -177,7 +178,9 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     settingsKills,
     settingsKillsUpdate,
     windowsSettings,
-    setWindowsSettings,
+    windowsSettingsUpdate,
+    mapSettings,
+    mapSettingsUpdate,
 
     getSettingsForExport,
     applySettings,

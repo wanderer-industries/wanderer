@@ -1,4 +1,4 @@
-import { MapUserSettings, SettingsWithVersion } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { MapUserSettings, SettingsWrapper } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const REQUIRED_KEYS = [
   'widgets',
@@ -19,11 +19,8 @@ export class MapUserSettingsParseError extends Error {
   }
 }
 
-const isNumber = (v: unknown): v is number => typeof v === 'number' && !Number.isNaN(v);
-
-/** Minimal check that an object matches SettingsWithVersion<*> */
-const isSettingsWithVersion = (v: unknown): v is SettingsWithVersion<unknown> =>
-  typeof v === 'object' && v !== null && isNumber((v as any).version) && 'settings' in (v as any);
+/** Minimal check that an object matches SettingsWrapper<*> */
+const isSettings = (v: unknown): v is SettingsWrapper<unknown> => typeof v === 'object' && v !== null;
 
 /** Ensure every required key is present */
 const hasAllRequiredKeys = (v: unknown): v is Record<RequiredKeys, unknown> =>
@@ -52,8 +49,8 @@ export const parseMapUserSettings = (json: unknown): MapUserSettings => {
   }
 
   for (const key of REQUIRED_KEYS) {
-    if (!isSettingsWithVersion((data as any)[key])) {
-      throw new MapUserSettingsParseError(`"${key}" must match SettingsWithVersion<T>`);
+    if (!isSettings((data as any)[key])) {
+      throw new MapUserSettingsParseError(`"${key}" must match SettingsWrapper<T>`);
     }
   }
 

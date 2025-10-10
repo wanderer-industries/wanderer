@@ -7,6 +7,8 @@ export enum SESSION_KEY {
   routes = 'routes',
 }
 
+export const SYSTEM_FOCUSED_LIFETIME = 10000;
+
 export const GRADIENT_MENU_ACTIVE_CLASSES = 'bg-gradient-to-br from-transparent/10 to-fuchsia-300/10';
 
 export enum Regions {
@@ -150,4 +152,12 @@ export const MINIMAP_PLACEMENT_MAP = {
   [PingsPlacement.leftTop]: 'top-left',
   [PingsPlacement.rightBottom]: 'bottom-right',
   [PingsPlacement.leftBottom]: 'bottom-left',
+};
+
+export const SPACE_TO_CLASS: Record<string, string> = {
+  [Spaces.Caldari]: 'Caldaria',
+  [Spaces.Matar]: 'Mataria',
+  [Spaces.Amarr]: 'Amarria',
+  [Spaces.Gallente]: 'Gallente',
+  [Spaces.Pochven]: 'Pochven',
 };

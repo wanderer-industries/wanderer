@@ -23,12 +23,14 @@ import {
   InterfaceStoredSettings,
   KillsWidgetSettings,
   LocalWidgetSettings,
+  MapSettings,
   MapUserSettings,
   OnTheMapSettingsType,
   RoutesType,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_MAP_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
   DEFAULT_ROUTES_SETTINGS,
   DEFAULT_WIDGET_LOCAL_SETTINGS,
@@ -127,6 +129,8 @@ export interface MapRootContextProps {
     settingsOnTheMapUpdate: Dispatch<SetStateAction<OnTheMapSettingsType>>;
     settingsKills: KillsWidgetSettings;
     settingsKillsUpdate: Dispatch<SetStateAction<KillsWidgetSettings>>;
+    mapSettings: MapSettings;
+    mapSettingsUpdate: Dispatch<SetStateAction<MapSettings>>;
     isReady: boolean;
     hasOldSettings: boolean;
     getSettingsForExport(): string | undefined;
@@ -172,6 +176,8 @@ const MapRootContext = createContext<MapRootContextProps>({
     settingsOnTheMapUpdate: () => null,
     settingsKills: DEFAULT_KILLS_WIDGET_SETTINGS,
     settingsKillsUpdate: () => null,
+    mapSettings: DEFAULT_MAP_SETTINGS,
+    mapSettingsUpdate: () => null,
     isReady: false,
     hasOldSettings: false,
     getSettingsForExport: () => '',

@@ -1,13 +1,13 @@
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
-import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
 import { OutCommand } from '@/hooks/Mapper/types';
-import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 import { callToastSuccess } from '@/hooks/Mapper/helpers';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
 import { RemoteAdminSettingsResponse } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 export const ServerSettings = () => {
@@ -29,15 +29,16 @@ export const ServerSettings = () => {
     }
 
     if (res?.default_settings == null) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
       return;
     }
 
     try {
-      applySettings(parseMapUserSettings(res.default_settings));
+      //INFO: INSTEAD CHECK WE WILL TRY TO APPLY MIGRATION
+      applySettings(applyMigrations(JSON.parse(res.default_settings)));
       callToastSuccess(toast.current, 'Settings synchronized successfully');
     } catch (error) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
     }
   }, [applySettings, outCommand]);
 

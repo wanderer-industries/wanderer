@@ -5,8 +5,8 @@ import {
   MapUserSettingsStructure,
   RemoteAdminSettingsResponse,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { createDefaultWidgetSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultWidgetSettings.ts';
-import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
+import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
+import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
 
 interface UseActualizeRemoteMapSettingsProps {
   outCommand: OutCommandHandler;
@@ -37,14 +37,14 @@ export const useActualizeRemoteMapSettings = ({
     }
 
     if (res?.default_settings == null) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
       return;
     }
 
     try {
-      applySettings(parseMapUserSettings(res.default_settings));
+      applySettings(applyMigrations(JSON.parse(res.default_settings)));
     } catch (error) {
-      applySettings(createDefaultWidgetSettings());
+      applySettings(createDefaultStoredSettings());
     }
   }, [outCommand]);
 

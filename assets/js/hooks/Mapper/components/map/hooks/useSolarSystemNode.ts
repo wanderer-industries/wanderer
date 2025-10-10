@@ -5,7 +5,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider';
 import { useDoubleClick } from '@/hooks/Mapper/hooks/useDoubleClick';
-import { Regions, REGIONS_MAP, Spaces } from '@/hooks/Mapper/constants';
+import { Regions, REGIONS_MAP, SPACE_TO_CLASS } from '@/hooks/Mapper/constants';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
@@ -50,27 +50,9 @@ export interface SolarSystemNodeVars {
   isRally: boolean;
   classTitle: string | null;
   temporaryName?: string | null;
-}
-
-const SpaceToClass: Record<string, string> = {
-  [Spaces.Caldari]: 'Caldaria',
-  [Spaces.Matar]: 'Mataria',
-  [Spaces.Amarr]: 'Amarria',
-  [Spaces.Gallente]: 'Gallente',
-  [Spaces.Pochven]: 'Pochven',
-};
-
-export function useLocalCounter(nodeVars: SolarSystemNodeVars) {
-  const localCounterCharacters = useMemo(() => {
-    return nodeVars.charactersInSystem
-      .map(char => ({
-        ...char,
-        compact: true,
-        isOwn: nodeVars.userCharacters.includes(char.eve_id),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [nodeVars.charactersInSystem, nodeVars.userCharacters]);
-  return { localCounterCharacters };
+  description: string | null;
+  comments_count: number | null;
+  systemHighlighted: string | undefined;
 }
 
 export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars => {
@@ -84,6 +66,8 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     labels,
     temporary_name,
     linked_sig_eve_id: linkedSigEveId = '',
+    description,
+    comments_count,
   } = data;
 
   const {
@@ -125,6 +109,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
       showKSpaceBG,
       isThickConnections,
       pings,
+      systemHighlighted,
     },
     outCommand,
   } = useMapState();
@@ -169,7 +154,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
   const showHandlers = isConnecting || hoverNodeId === id;
 
   const space = showKSpaceBG ? REGIONS_MAP[region_id] : '';
-  const regionClass = showKSpaceBG ? SpaceToClass[space] || null : null;
+  const regionClass = showKSpaceBG ? SPACE_TO_CLASS[space] || null : null;
 
   const { systemName, computedTemporaryName, customName } = useSystemName({
     isTempSystemNameEnabled,
@@ -232,6 +217,9 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     regionName,
     solarSystemName: solar_system_name,
     isRally,
+    description,
+    comments_count,
+    systemHighlighted,
   };
 
   return nodeVars;

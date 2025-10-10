@@ -14,6 +14,7 @@ export type SystemViewStandaloneStatic = Pick<
 export type SystemViewStandaloneProps = {
   hideRegion?: boolean;
   customName?: string;
+  nameClassName?: string;
   compact?: boolean;
   onContextMenu?(e: MouseEvent, systemId: string): void;
 } & WithClassName &
@@ -23,6 +24,7 @@ export type SystemViewStandaloneProps = {
 
 export const SystemViewStandalone = ({
   className,
+  nameClassName,
   hideRegion,
   customName,
   class_title,
@@ -57,10 +59,14 @@ export const SystemViewStandalone = ({
     >
       <span className={clsx(classTitleColor)}>{class_title}</span>
       <span
-        className={clsx('text-gray-200 whitespace-nowrap', {
-          ['overflow-hidden text-ellipsis']: compact,
-          [classes.CompactName]: compact,
-        })}
+        className={clsx(
+          'text-gray-200 whitespace-nowrap',
+          {
+            ['overflow-hidden text-ellipsis']: compact,
+            [classes.CompactName]: compact,
+          },
+          nameClassName,
+        )}
       >
         {customName ?? solar_system_name}
       </span>
