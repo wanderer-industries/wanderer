@@ -40,6 +40,7 @@ export enum Commands {
   showTracking = 'show_tracking',
   pingAdded = 'ping_added',
   pingCancelled = 'ping_cancelled',
+  showWormholeSignatures = 'show_wormhole_signatures',
 }
 
 export type Command =
@@ -75,7 +76,8 @@ export type Command =
   | Commands.updateTracking
   | Commands.showTracking
   | Commands.pingAdded
-  | Commands.pingCancelled;
+  | Commands.pingCancelled
+  | Commands.showWormholeSignatures;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -158,6 +160,7 @@ export type CommandUpdateTracking = {
 };
 export type CommandPingAdded = PingData[];
 export type CommandPingCancelled = Pick<PingData, 'type' | 'id'>;
+export type CommandShowWormholeSignatures = null;
 
 export interface UserSettings {
   primaryCharacterId?: string;
@@ -208,6 +211,7 @@ export interface CommandData {
   [Commands.showTracking]: CommandShowTracking;
   [Commands.pingAdded]: CommandPingAdded;
   [Commands.pingCancelled]: CommandPingCancelled;
+  [Commands.showWormholeSignatures]: CommandShowWormholeSignatures;
 }
 
 export interface MapHandlers {
