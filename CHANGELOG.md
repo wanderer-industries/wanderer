@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.7](https://github.com/wanderer-industries/wanderer/compare/v1.81.6...v1.81.7) (2025-10-10)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with rendering dropdown classes in signatures
+
 ## [v1.81.6](https://github.com/wanderer-industries/wanderer/compare/v1.81.5...v1.81.6) (2025-10-10)
 
 
