@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.8](https://github.com/wanderer-industries/wanderer/compare/v1.81.7...v1.81.8) (2025-10-11)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix problem with restoring settings on widgets
+
 ## [v1.81.7](https://github.com/wanderer-industries/wanderer/compare/v1.81.6...v1.81.7) (2025-10-10)
 
 
