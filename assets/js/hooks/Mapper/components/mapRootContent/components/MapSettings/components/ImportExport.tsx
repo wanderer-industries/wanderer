@@ -64,7 +64,7 @@ export const ImportExport = () => {
 
       // INFO: WE NOT SUPPORT MIGRATIONS FOR OLD FILES AND Clipboard
       const parsed = parseMapUserSettings(text);
-      if (applySettings(applyMigrations(parsed))) {
+      if (applySettings(applyMigrations(parsed) || createDefaultStoredSettings())) {
         toast.current?.show({
           severity: 'success',
           summary: 'Import',

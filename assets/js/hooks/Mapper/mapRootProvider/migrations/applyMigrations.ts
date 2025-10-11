@@ -26,7 +26,7 @@ export const applyMigrations = (mapSettings: any) => {
       return { ...currentMapSettings, version: STORED_SETTINGS_VERSION, migratedFromOld: true };
     }
 
-    return;
+    return currentMapSettings;
   }
 
   const cmVersion = currentMapSettings.version || 0;

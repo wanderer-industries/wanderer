@@ -35,7 +35,7 @@ export const ServerSettings = () => {
 
     try {
       //INFO: INSTEAD CHECK WE WILL TRY TO APPLY MIGRATION
-      applySettings(applyMigrations(JSON.parse(res.default_settings)));
+      applySettings(applyMigrations(JSON.parse(res.default_settings)) || createDefaultStoredSettings());
       callToastSuccess(toast.current, 'Settings synchronized successfully');
     } catch (error) {
       applySettings(createDefaultStoredSettings());
