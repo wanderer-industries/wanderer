@@ -102,6 +102,12 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
 
     if delete_connection_with_sigs do
+      source_system =
+        WandererApp.Map.find_system_by_location(
+          map_id,
+          %{solar_system_id: solar_system_source_id}
+        )
+
       target_system =
         WandererApp.Map.find_system_by_location(
           map_id,
@@ -113,6 +119,9 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           WandererApp.Api.MapSystemSignature.by_linked_system_id(solar_system_target_id)
 
         signatures
+        |> Enum.filter(fn s ->
+          s.system_id == source_system.id
+        end)
         |> Enum.each(fn s ->
           if not is_nil(s.temporary_name) && s.temporary_name == target_system.temporary_name do
             map_id

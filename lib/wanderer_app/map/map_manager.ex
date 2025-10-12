@@ -17,7 +17,7 @@ defmodule WandererApp.Map.Manager do
   @garbage_collection_interval :timer.hours(1)
   @check_maps_queue_interval :timer.seconds(1)
   @signatures_cleanup_interval :timer.minutes(30)
-  @delete_after_minutes 30
+  @delete_after_minutes 60 * 24 * 4
 
   @pings_cleanup_interval :timer.minutes(10)
   @pings_expire_minutes 60
@@ -173,6 +173,8 @@ defmodule WandererApp.Map.Manager do
     case MapSystemSignature.by_deleted_and_updated_before!(true, delete_after_date) do
       {:ok, deleted_signatures} ->
         Enum.each(deleted_signatures, fn sig ->
+          Logger.warning("[cleanup_deleted_signatures]: #{inspect(sig.eve_id)}")
+
           Ash.destroy!(sig)
         end)
 

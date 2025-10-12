@@ -369,8 +369,13 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     |> Enum.uniq_by(& &1.system_id)
     |> Enum.each(fn s ->
       try do
-        {:ok, %{system: system}} = s |> Ash.load([:system])
+        {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
         :ok = Ash.destroy!(s)
+
+        Logger.warning(
+          "[cleanup_linked_signatures] for system #{system.solar_system_id}: #{inspect(eve_id)}"
+        )
+
         Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
       rescue
         e ->
