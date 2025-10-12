@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.9](https://github.com/wanderer-industries/wanderer/compare/v1.81.8...v1.81.9) (2025-10-12)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fixed issue with wrong linked signatures deletions
+
 ## [v1.81.8](https://github.com/wanderer-industries/wanderer/compare/v1.81.7...v1.81.8) (2025-10-11)
 
 
