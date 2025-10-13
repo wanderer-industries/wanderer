@@ -9,11 +9,12 @@ import {
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import { useSystemSignaturesData } from '../../widgets/SystemSignatures/hooks/useSystemSignaturesData';
 
 const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
 
@@ -135,6 +136,11 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     [data, setVisible],
   );
 
+  const { signatures } = useSystemSignaturesData({
+    systemId: `${data.solar_system_source}`,
+    settings: LINK_SIGNTATURE_SETTINGS,
+  });
+
   useEffect(() => {
     if (!targetSystemDynamicInfo) {
       handleHide();
@@ -152,10 +158,12 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     >
       <SystemSignaturesContent
         systemId={`${data.solar_system_source}`}
-        hideLinkedSignatures
+        signatures={signatures}
+        hasUnsupportedLanguage={false}
         settings={LINK_SIGNTATURE_SETTINGS}
+        hideLinkedSignatures
+        selectable
         onSelect={handleSelect}
-        selectable={true}
         filterSignature={filterSignature}
       />
     </Dialog>

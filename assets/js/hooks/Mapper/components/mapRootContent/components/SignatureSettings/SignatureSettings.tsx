@@ -1,15 +1,15 @@
-import { Dialog } from 'primereact/dialog';
-import { useCallback, useEffect } from 'react';
-import { OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
 import {
   SignatureGroupContent,
   SignatureGroupSelect,
 } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components';
-import { InputText } from 'primereact/inputtext';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import { useCallback, useEffect } from 'react';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   linked_system: string;
@@ -119,6 +119,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           added: [],
           updated: [out],
           removed: [],
+          deleteTimeout: 0,
         },
       });
 

@@ -110,23 +110,6 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         nil ->
           MapSystemSignature.create!(sig)
 
-        %MapSystemSignature{deleted: true} = deleted_sig ->
-          MapSystemSignature.update!(
-            deleted_sig,
-            Map.take(sig, [
-              :name,
-              :temporary_name,
-              :description,
-              :kind,
-              :group,
-              :type,
-              :character_eve_id,
-              :custom_info,
-              :deleted,
-              :update_forced_at
-            ])
-          )
-
         _ ->
           :noop
       end
@@ -206,8 +189,8 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       })
     end
 
-    # mark as deleted
-    MapSystemSignature.update!(sig, %{deleted: true})
+    sig
+    |> MapSystemSignature.destroy!()
   end
 
   def apply_update_signature(

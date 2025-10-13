@@ -1,14 +1,14 @@
-import { PrimeIcons } from 'primereact/api';
-import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { SystemViewStandalone, TooltipPosition, WHClassView } from '@/hooks/Mapper/components/ui-kit';
+import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import { PrimeIcons } from 'primereact/api';
 
 import { renderK162Type } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
-import clsx from 'clsx';
-import { renderName } from './renderName.tsx';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
+import clsx from 'clsx';
+import { renderName } from './renderName.tsx';
 
 export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
@@ -18,6 +18,8 @@ export const renderInfoColumn = (row: SystemSignature) => {
 
     return (
       <div className="flex justify-start items-center gap-[4px]">
+        {row.temporary_name && <span className={clsx('text-[12px]')}>{row.temporary_name}</span>}
+
         {customInfo.isEOL && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as EOL">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>

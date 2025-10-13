@@ -9,15 +9,12 @@ defmodule WandererApp.Map.Manager do
 
   alias WandererApp.Map.Server
   alias WandererApp.Map.ServerSupervisor
-  alias WandererApp.Api.MapSystemSignature
 
   @maps_start_per_second 10
   @maps_start_interval 1000
   @maps_queue :maps_queue
   @garbage_collection_interval :timer.hours(1)
   @check_maps_queue_interval :timer.seconds(1)
-  @signatures_cleanup_interval :timer.minutes(30)
-  @delete_after_minutes 60 * 24 * 4
 
   @pings_cleanup_interval :timer.minutes(10)
   @pings_expire_minutes 60
@@ -66,9 +63,6 @@ defmodule WandererApp.Map.Manager do
     {:ok, garbage_collector_timer} =
       :timer.send_interval(@garbage_collection_interval, :garbage_collect)
 
-    {:ok, signatures_cleanup_timer} =
-      :timer.send_interval(@signatures_cleanup_interval, :cleanup_signatures)
-
     {:ok, pings_cleanup_timer} =
       :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
 
@@ -80,7 +74,6 @@ defmodule WandererApp.Map.Manager do
      %{
        garbage_collector_timer: garbage_collector_timer,
        check_maps_queue_timer: check_maps_queue_timer,
-       signatures_cleanup_timer: signatures_cleanup_timer,
        pings_cleanup_timer: pings_cleanup_timer
      }}
   end
@@ -144,18 +137,6 @@ defmodule WandererApp.Map.Manager do
   end
 
   @impl true
-  def handle_info(:cleanup_signatures, state) do
-    try do
-      cleanup_deleted_signatures()
-      {:noreply, state}
-    rescue
-      e ->
-        Logger.error("Failed to cleanup signatures: #{inspect(e)}")
-        {:noreply, state}
-    end
-  end
-
-  @impl true
   def handle_info(:cleanup_pings, state) do
     try do
       cleanup_expired_pings()
@@ -164,25 +145,6 @@ defmodule WandererApp.Map.Manager do
       e ->
         Logger.error("Failed to cleanup pings: #{inspect(e)}")
         {:noreply, state}
-    end
-  end
-
-  defp cleanup_deleted_signatures() do
-    delete_after_date = DateTime.utc_now() |> DateTime.add(-1 * @delete_after_minutes, :minute)
-
-    case MapSystemSignature.by_deleted_and_updated_before!(true, delete_after_date) do
-      {:ok, deleted_signatures} ->
-        Enum.each(deleted_signatures, fn sig ->
-          Logger.warning("[cleanup_deleted_signatures]: #{inspect(sig.eve_id)}")
-
-          Ash.destroy!(sig)
-        end)
-
-        :ok
-
-      {:error, error} ->
-        Logger.error("Failed to fetch deleted signatures: #{inspect(error)}")
-        {:error, error}
     end
   end
 

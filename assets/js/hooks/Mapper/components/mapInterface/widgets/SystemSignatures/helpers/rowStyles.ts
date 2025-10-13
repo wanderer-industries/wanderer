@@ -1,5 +1,5 @@
-import clsx from 'clsx';
 import { ExtendedSystemSignature, SignatureGroup } from '@/hooks/Mapper/types';
+import clsx from 'clsx';
 import { getRowBackgroundColor } from './getRowBackgroundColor';
 import classes from './rowStyles.module.scss';
 
@@ -20,7 +20,7 @@ export function getSignatureRowClass(
     return clsx([...baseCls, 'bg-violet-400/40 hover:bg-violet-300/40']);
   }
 
-  if (row.pendingDeletion) {
+  if (row.deleted) {
     return clsx([...baseCls, 'bg-red-400/40 hover:bg-red-400/50']);
   }
 

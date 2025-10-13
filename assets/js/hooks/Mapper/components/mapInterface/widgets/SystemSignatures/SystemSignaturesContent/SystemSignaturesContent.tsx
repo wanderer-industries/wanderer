@@ -33,34 +33,39 @@ import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
-import { useSystemSignaturesData } from '../hooks/useSystemSignaturesData';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
 interface SystemSignaturesContentProps {
   systemId: string;
+  signatures: ExtendedSystemSignature[];
+  selectedSignatures?: ExtendedSystemSignature[];
+  onSelectSignatures?: (s: ExtendedSystemSignature[]) => void;
+  onDeleteSelected?: () => Promise<void>;
+  onSelectAll?: () => void;
+  onPaste?: (clipboardString: string) => void;
   settings: SignatureSettingsType;
   hideLinkedSignatures?: boolean;
+  hasUnsupportedLanguage?: boolean;
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
-  onLazyDeleteChange?: (value: boolean) => void;
-  onCountChange?: (count: number) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
-  onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
-  deletedSignatures?: ExtendedSystemSignature[];
 }
 
 export const SystemSignaturesContent = ({
   systemId,
+  signatures,
+  selectedSignatures,
+  onSelectSignatures,
+  onDeleteSelected,
+  onSelectAll,
+  onPaste,
   settings,
   hideLinkedSignatures,
+  hasUnsupportedLanguage,
   selectable,
   onSelect,
-  onLazyDeleteChange,
-  onCountChange,
   filterSignature,
-  onSignatureDeleted,
-  deletedSignatures = [],
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -79,32 +84,18 @@ export const SystemSignaturesContent = ({
 
   const { clipboardContent, setClipboardContent } = useClipboard();
 
-  const {
-    signatures,
-    selectedSignatures,
-    setSelectedSignatures,
-    handleDeleteSelected,
-    handleSelectAll,
-    handlePaste,
-    hasUnsupportedLanguage,
-  } = useSystemSignaturesData({
-    systemId,
-    settings,
-    onCountChange,
-    onLazyDeleteChange,
-    onSignatureDeleted,
-  });
+  const deletedSignatures = useMemo(() => signatures.filter(s => s.deleted), [signatures]);
 
   useEffect(() => {
     if (selectable) return;
     if (!clipboardContent?.text) return;
 
-    handlePaste(clipboardContent.text);
+    onPaste?.(clipboardContent.text);
 
     setClipboardContent(null);
-  }, [selectable, clipboardContent, handlePaste, setClipboardContent]);
+  }, [selectable, clipboardContent, onPaste, setClipboardContent]);
 
-  useHotkey(true, ['a'], handleSelectAll);
+  useHotkey(true, ['a'], () => onSelectAll?.());
 
   useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${SIGNATURE_WINDOW_ID}"]`);
@@ -117,7 +108,7 @@ export const SystemSignaturesContent = ({
     event.stopPropagation();
 
     // Delete key should always immediately delete, never show pending deletions
-    handleDeleteSelected();
+    onDeleteSelected?.();
   });
 
   const handleResize = useCallback(() => {
@@ -152,9 +143,9 @@ export const SystemSignaturesContent = ({
 
       selectable
         ? onSelect?.(selectableSignatures[0])
-        : setSelectedSignatures(selectableSignatures as ExtendedSystemSignature[]);
+        : onSelectSignatures?.(selectableSignatures as ExtendedSystemSignature[]);
     },
-    [onSelect, selectable, setSelectedSignatures, deletedSignatures],
+    [onSelect, selectable, onSelectSignatures, deletedSignatures],
   );
 
   const {
@@ -177,9 +168,6 @@ export const SystemSignaturesContent = ({
   );
 
   const filteredSignatures = useMemo<ExtendedSystemSignature[]>(() => {
-    // Get the set of deleted signature IDs for quick lookup
-    const deletedIds = new Set(deletedSignatures.map(sig => sig.eve_id));
-
     // Common filter function
     const shouldShowSignature = (sig: ExtendedSystemSignature): boolean => {
       if (filterSignature && !filterSignature(sig)) {
@@ -213,24 +201,8 @@ export const SystemSignaturesContent = ({
       return settings[sig.kind] as boolean;
     };
 
-    // Filter active signatures, excluding any that are in the deleted list
-    const activeSignatures = signatures.filter(sig => {
-      // Skip if this signature is in the deleted list
-      if (deletedIds.has(sig.eve_id)) {
-        return false;
-      }
-
-      return shouldShowSignature(sig);
-    });
-
-    // Add deleted signatures with pending deletion flag, applying the same filters
-    const deletedWithPendingFlag = deletedSignatures.filter(shouldShowSignature).map(sig => ({
-      ...sig,
-      pendingDeletion: true,
-    }));
-
-    return [...activeSignatures, ...deletedWithPendingFlag];
-  }, [signatures, hideLinkedSignatures, settings, filterSignature, deletedSignatures]);
+    return signatures.filter(sig => shouldShowSignature(sig));
+  }, [signatures, hideLinkedSignatures, settings, filterSignature]);
 
   const onRowMouseEnter = useCallback((e: DataTableRowMouseEvent) => {
     setHoveredSignature(e.data as SystemSignature);
@@ -253,20 +225,18 @@ export const SystemSignaturesContent = ({
 
     return getSignatureRowClass(
       rowData as ExtendedSystemSignature,
-      refVars.current.selectedSignatures,
+      refVars.current.selectedSignatures || [],
       refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
     );
   }, []);
 
-  const handleSortSettings = useCallback(
-    (e: DataTableStateEvent) =>
-      refVars.current.settingsSignaturesUpdate({
-        ...refVars.current.settingsSignatures,
-        [SETTINGS_KEYS.SORT_FIELD]: e.sortField,
-        [SETTINGS_KEYS.SORT_ORDER]: e.sortOrder,
-      }),
-    [],
-  );
+  const handleSortSettings = useCallback((e: DataTableStateEvent) => {
+    refVars.current.settingsSignaturesUpdate({
+      ...refVars.current.settingsSignatures,
+      [SETTINGS_KEYS.SORT_FIELD]: e.sortField,
+      [SETTINGS_KEYS.SORT_ORDER]: e.sortOrder,
+    });
+  }, []);
 
   return (
     <div ref={tableRef} className="h-full">
@@ -287,7 +257,7 @@ export const SystemSignaturesContent = ({
             value={filteredSignatures}
             size="small"
             selectionMode="multiple"
-            selection={selectedSignatures}
+            selection={selectedSignatures || []}
             metaKeySelection
             onSelectionChange={handleSelectSignatures}
             dataKey="eve_id"
@@ -336,6 +306,8 @@ export const SystemSignaturesContent = ({
               style={{ maxWidth: nameColumnWidth }}
               hidden={isCompact || isMedium}
               body={renderInfoColumn}
+              sortable
+              sortField="name"
             />
             {showDescriptionColumn && (
               <Column
