@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.10](https://github.com/wanderer-industries/wanderer/compare/v1.81.9...v1.81.10) (2025-10-13)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Rework for lazy signatures deletion
+
 ## [v1.81.9](https://github.com/wanderer-industries/wanderer/compare/v1.81.8...v1.81.9) (2025-10-12)
 
 
