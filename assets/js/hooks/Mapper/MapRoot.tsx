@@ -9,6 +9,7 @@ import { useMapperHandlers } from './useMapperHandlers';
 import { MapRootContent } from '@/hooks/Mapper/components/mapRootContent/MapRootContent.tsx';
 import { MapRootProvider } from '@/hooks/Mapper/mapRootProvider';
 import './common-styles/main.scss';
+import { ToastProvider } from '@/hooks/Mapper/ToastProvider.tsx';
 
 const ErrorFallback = () => {
   return <div className="!z-100 absolute w-screen h-screen bg-transparent"></div>;
@@ -39,13 +40,15 @@ export default function MapRoot({ hooks }) {
 
   return (
     <PrimeReactProvider>
-      <MapRootProvider fwdRef={providerRef} outCommand={handleCommand}>
-        <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
-          <ReactFlowProvider>
-            <MapRootContent />
-          </ReactFlowProvider>
-        </ErrorBoundary>
-      </MapRootProvider>
+      <ToastProvider>
+        <MapRootProvider fwdRef={providerRef} outCommand={handleCommand}>
+          <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
+            <ReactFlowProvider>
+              <MapRootContent />
+            </ReactFlowProvider>
+          </ErrorBoundary>
+        </MapRootProvider>
+      </ToastProvider>
     </PrimeReactProvider>
   );
 }
