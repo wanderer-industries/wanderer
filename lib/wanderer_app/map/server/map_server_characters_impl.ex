@@ -366,7 +366,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                     location,
                     old_location,
                     character_id,
-                    false
+                    false,
+                    nil
                   )
               end
 

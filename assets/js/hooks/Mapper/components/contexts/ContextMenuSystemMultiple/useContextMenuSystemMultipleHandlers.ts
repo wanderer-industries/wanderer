@@ -6,27 +6,34 @@ import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { NodeSelectionMouseHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { useDeleteSystems } from '@/hooks/Mapper/components/contexts/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { encodeJsonToUriBase64 } from '@/hooks/Mapper/utils';
+import { useToast } from '@/hooks/Mapper/ToastProvider.tsx';
 
 export const useContextMenuSystemMultipleHandlers = () => {
   const {
-    data: { pings },
+    data: { pings, connections },
   } = useMapRootState();
+
+  const { show } = useToast();
 
   const contextMenuRef = useRef<ContextMenu | null>(null);
   const [systems, setSystems] = useState<Node<SolarSystemRawType>[]>();
 
   const { deleteSystems } = useDeleteSystems();
-
   const ping = useMemo(() => (pings.length === 1 ? pings[0] : undefined), [pings]);
+  const refVars = useRef({ systems, ping, connections, deleteSystems });
+  refVars.current = { systems, ping, connections, deleteSystems };
 
-  const handleSystemMultipleContext: NodeSelectionMouseHandler = (ev, systems_) => {
+  const handleSystemMultipleContext = useCallback<NodeSelectionMouseHandler>((ev, systems_) => {
     setSystems(systems_);
     ev.preventDefault();
     ctxManager.next('ctxSysMult', contextMenuRef.current);
     contextMenuRef.current?.show(ev);
-  };
+  }, []);
 
   const onDeleteSystems = useCallback(() => {
+    const { systems, ping, deleteSystems } = refVars.current;
+
     if (!systems) {
       return;
     }
@@ -41,11 +48,34 @@ export const useContextMenuSystemMultipleHandlers = () => {
     }
 
     deleteSystems(sysToDel);
-  }, [deleteSystems, systems, ping]);
+  }, []);
+
+  const onCopySystems = useCallback(async () => {
+    const { systems, connections } = refVars.current;
+    if (!systems) {
+      return;
+    }
+
+    const connectionToCopy = connections.filter(
+      c => systems.filter(s => [c.target, c.source].includes(s.id)).length == 2,
+    );
+
+    await navigator.clipboard.writeText(
+      encodeJsonToUriBase64({ systems: systems.map(x => x.data), connections: connectionToCopy }),
+    );
+
+    show({
+      severity: 'success',
+      summary: 'Copied to clipboard',
+      detail: `Successfully copied to clipboard - [${systems.length}] systems and [${connectionToCopy.length}] connections`,
+      life: 3000,
+    });
+  }, [show]);
 
   return {
     handleSystemMultipleContext,
     contextMenuRef,
     onDeleteSystems,
+    onCopySystems,
   };
 };

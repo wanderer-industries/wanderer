@@ -107,6 +107,18 @@ defmodule WandererApp.Map.Server do
       |> map_pid!
       |> GenServer.cast({&Impl.add_system/4, [system_info, user_id, character_id]})
 
+  def paste_connections(map_id, connections, user_id, character_id) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.paste_connections/4, [connections, user_id, character_id]})
+
+  def paste_systems(map_id, systems, user_id, character_id) when is_binary(map_id),
+    do:
+      map_id
+      |> map_pid!
+      |> GenServer.cast({&Impl.paste_systems/4, [systems, user_id, character_id]})
+
   def add_system_comment(map_id, comment_info, user_id, character_id) when is_binary(map_id),
     do:
       map_id

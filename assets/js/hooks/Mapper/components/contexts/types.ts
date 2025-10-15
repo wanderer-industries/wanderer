@@ -8,6 +8,4 @@ export type WaypointSetContextHandlerProps = {
   destination: string;
 };
 export type WaypointSetContextHandler = (props: WaypointSetContextHandlerProps) => void;
-export type NodeSelectionMouseHandler =
-  | ((event: React.MouseEvent<Element, MouseEvent>, nodes: Node[]) => void)
-  | undefined;
+export type NodeSelectionMouseHandler = (event: React.MouseEvent<Element, MouseEvent>, nodes: Node[]) => void;

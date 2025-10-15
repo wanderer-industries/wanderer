@@ -247,6 +247,7 @@ export enum OutCommand {
   deleteSystems = 'delete_systems',
   manualAddSystem = 'manual_add_system',
   manualAddConnection = 'manual_add_connection',
+  manualPasteSystemsAndConnections = 'manual_paste_systems_and_connections',
   manualDeleteConnection = 'manual_delete_connection',
   setAutopilotWaypoint = 'set_autopilot_waypoint',
   addSystem = 'add_system',

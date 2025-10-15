@@ -57,6 +57,36 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end
   end
 
+  def paste_systems(
+        %{map_id: map_id} = state,
+        systems,
+        user_id,
+        character_id
+      ) do
+    systems
+    |> Enum.each(fn %{
+                      "id" => solar_system_id,
+                      "position" => coordinates
+                    } = system ->
+      solar_system_id = solar_system_id |> String.to_integer()
+
+      case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
+        {:ok, _location} ->
+          state
+          |> _add_system(
+            %{solar_system_id: solar_system_id, coordinates: coordinates, extra_info: system},
+            user_id,
+            character_id
+          )
+
+        {:error, :already_exists} ->
+          :ok
+      end
+    end)
+
+    state
+  end
+
   def add_system_comment(
         %{map_id: map_id} = state,
         %{
@@ -517,6 +547,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
          user_id,
          character_id
        ) do
+    extra_info = system_info |> Map.get(:extra_info)
+
     %{"x" => x, "y" => y} =
       coordinates
       |> case do
@@ -563,6 +595,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             |> WandererApp.MapSystemRepo.cleanup_tags!()
             |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
             |> WandererApp.MapSystemRepo.cleanup_linked_sig_eve_id!()
+            |> maybe_update_extra_info(extra_info)
             |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
           end
 
@@ -620,6 +653,127 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     state
   end
+
+  defp maybe_update_extra_info(system, nil), do: system
+
+  defp maybe_update_extra_info(
+         system,
+         %{
+           "description" => description,
+           "labels" => labels,
+           "name" => name,
+           "status" => status,
+           "tag" => tag,
+           "temporary_name" => temporary_name
+         }
+       ) do
+    system
+    |> maybe_update_name(name)
+    |> maybe_update_description(description)
+    |> maybe_update_labels(labels)
+    |> maybe_update_status(status)
+    |> maybe_update_tag(tag)
+    |> maybe_update_temporary_name(temporary_name)
+  end
+
+  defp maybe_update_description(
+         %{description: old_description} = system,
+         description
+       )
+       when not is_nil(description) and old_description != description do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_description(%{description: description})
+
+    updated_system
+  end
+
+  defp maybe_update_description(system, _description), do: system
+
+  defp maybe_update_name(
+         %{name: old_name} = system,
+         name
+       )
+       when not is_nil(name) and old_name != name do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_name(%{name: name})
+
+    updated_system
+  end
+
+  defp maybe_update_name(system, _name), do: system
+
+  defp maybe_update_labels(
+         %{name: old_labels} = system,
+         labels
+       )
+       when not is_nil(labels) and old_labels != labels do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_labels(%{labels: labels})
+
+    updated_system
+  end
+
+  defp maybe_update_labels(system, _labels), do: system
+
+  defp maybe_update_labels(
+         %{name: old_labels} = system,
+         labels
+       )
+       when not is_nil(labels) and old_labels != labels do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_labels(%{labels: labels})
+
+    updated_system
+  end
+
+  defp maybe_update_labels(system, _labels), do: system
+
+  defp maybe_update_status(
+         %{name: old_status} = system,
+         status
+       )
+       when not is_nil(status) and old_status != status do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_status(%{status: status})
+
+    updated_system
+  end
+
+  defp maybe_update_status(system, _status), do: system
+
+  defp maybe_update_tag(
+         %{name: old_tag} = system,
+         tag
+       )
+       when not is_nil(tag) and old_tag != tag do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_tag(%{tag: tag})
+
+    updated_system
+  end
+
+  defp maybe_update_tag(system, _labels), do: system
+
+  defp maybe_update_temporary_name(
+         %{name: old_temporary_name} = system,
+         temporary_name
+       )
+       when not is_nil(temporary_name) and old_temporary_name != temporary_name do
+    {:ok, updated_system} =
+      system
+      |> WandererApp.MapSystemRepo.update_temporary_name(%{temporary_name: temporary_name})
+
+    updated_system
+  end
+
+  defp maybe_update_temporary_name(system, _temporary_name),
+    do: system
 
   defp calc_new_system_position(map_id, old_location, rtree_name, opts),
     do:

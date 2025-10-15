@@ -120,7 +120,7 @@ const MapComp = ({
   useMapHandlers(refn, onSelectionChange);
   useUpdateNodes(nodes);
 
-  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem });
+  const { handleRootContext, ...rootCtxProps } = useContextMenuRootHandlers({ onAddSystem, onCommand });
   const { handleConnectionContext, ...connectionCtxProps } = useContextMenuConnectionHandlers();
   const { update } = useMapState();
   const { variant, gap, size, color } = useBackgroundVars(theme);
