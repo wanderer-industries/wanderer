@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.14](https://github.com/wanderer-industries/wanderer/compare/v1.81.13...v1.81.14) (2025-10-15)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem with commit - for correct restore deprecated data
+
 ## [v1.81.13](https://github.com/wanderer-industries/wanderer/compare/v1.81.12...v1.81.13) (2025-10-15)
 
 
