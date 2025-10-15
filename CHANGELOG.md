@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.81.12](https://github.com/wanderer-industries/wanderer/compare/v1.81.11...v1.81.12) (2025-10-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed map events buffering on tab switch
+
+## [v1.81.11](https://github.com/wanderer-industries/wanderer/compare/v1.81.10...v1.81.11) (2025-10-15)
+
+
+
+
+### Bug Fixes:
+
+* Signatures: Fixed EOL indication for un-splashed and signatures list
+
 ## [v1.81.10](https://github.com/wanderer-industries/wanderer/compare/v1.81.9...v1.81.10) (2025-10-13)
 
 

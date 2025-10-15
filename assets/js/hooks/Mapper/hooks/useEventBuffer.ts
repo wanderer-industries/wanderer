@@ -28,14 +28,17 @@ export const useEventBuffer = <T>(handler: UseEventBufferHandler<T>) => {
   eventTickRef.current = eventTick;
 
   // @ts-ignore
-  const handleEvent = useCallback(event => {
-    if (!eventTickRef.current) {
-      return;
-    }
+  const handleEvent = useCallback(
+    event => {
+      if (!eventTickRef.current) {
+        return;
+      }
 
-    eventsBufferRef.current.push(event);
-    eventTickRef.current();
-  }, []);
+      eventsBufferRef.current.push(event);
+      eventTickRef.current();
+    },
+    [eventTickRef.current],
+  );
 
   return { handleEvent };
 };
