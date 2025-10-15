@@ -1,11 +1,11 @@
-import { useReactFlow, XYPosition } from 'reactflow';
-import React, { useCallback, useRef, useState } from 'react';
-import { ContextMenu } from 'primereact/contextmenu';
-import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import { OnMapAddSystemCallback } from '@/hooks/Mapper/components/map/map.types.ts';
-import { decodeUriBase64ToJson } from '@/hooks/Mapper/utils';
-import { OutCommand, OutCommandHandler, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
 import { recenterSystemsByBounds } from '@/hooks/Mapper/helpers/recenterSystems.ts';
+import { OutCommand, OutCommandHandler, SolarSystemConnection, SolarSystemRawType } from '@/hooks/Mapper/types';
+import { decodeUriBase64ToJson } from '@/hooks/Mapper/utils';
+import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
+import { ContextMenu } from 'primereact/contextmenu';
+import React, { useCallback, useRef, useState } from 'react';
+import { useReactFlow, XYPosition } from 'reactflow';
 
 export type PasteSystemsAndConnections = {
   systems: SolarSystemRawType[];
@@ -58,7 +58,7 @@ export const useContextMenuRootHandlers = ({ onAddSystem, onCommand }: UseContex
       type: OutCommand.manualPasteSystemsAndConnections,
       data: {
         systems: systems.map(({ position: srcPos, ...rest }) => ({
-          position: { x: srcPos.x + position.x, y: srcPos.y + position.y },
+          position: { x: Math.round(srcPos.x + position.x), y: Math.round(srcPos.y + position.y) },
           ...rest,
         })),
         connections: pasteSystemsAndConnections.connections,

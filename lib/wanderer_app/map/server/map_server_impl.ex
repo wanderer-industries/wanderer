@@ -159,6 +159,8 @@ defmodule WandererApp.Map.Server.Impl do
 
   defdelegate add_system(state, system_info, user_id, character_id), to: SystemsImpl
 
+  defdelegate paste_systems(state, systems, user_id, character_id), to: SystemsImpl
+
   defdelegate add_system_comment(state, comment_info, user_id, character_id), to: SystemsImpl
 
   defdelegate remove_system_comment(state, comment_id, user_id, character_id), to: SystemsImpl
@@ -202,6 +204,8 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate delete_connection(state, connection_info), to: ConnectionsImpl
 
   defdelegate get_connection_info(state, connection_info), to: ConnectionsImpl
+
+  defdelegate paste_connections(state, connections, user_id, character_id), to: ConnectionsImpl
 
   defdelegate update_connection_time_status(state, connection_update), to: ConnectionsImpl
 

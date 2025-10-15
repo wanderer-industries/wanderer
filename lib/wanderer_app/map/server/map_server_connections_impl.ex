@@ -144,7 +144,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id,
           character_id: character_id
-        } = _connection_info
+        } = connection_info
       ) do
     :ok =
       maybe_add_connection(
@@ -154,8 +154,35 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_id: solar_system_source_id
         },
         character_id,
-        true
+        true,
+        connection_info |> Map.get(:extra_info)
       )
+
+    state
+  end
+
+  def paste_connections(
+        %{map_id: map_id} = state,
+        connections,
+        _user_id,
+        character_id
+      ) do
+    connections
+    |> Enum.each(fn %{
+                      "source" => source,
+                      "target" => target
+                    } = connection ->
+      solar_system_source_id = source |> String.to_integer()
+      solar_system_target_id = target |> String.to_integer()
+
+      state
+      |> add_connection(%{
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id,
+        character_id: character_id,
+        extra_info: connection
+      })
+    end)
 
     state
   end
@@ -445,7 +472,14 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
   end
 
-  def maybe_add_connection(map_id, location, old_location, character_id, is_manual)
+  def maybe_add_connection(
+        map_id,
+        location,
+        old_location,
+        character_id,
+        is_manual,
+        extra_info
+      )
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
              location.solar_system_id != old_location.solar_system_id do
@@ -496,6 +530,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             @connection_time_status_default
           end
 
+        connection_type = get_extra_info(extra_info, "type", connection_type)
+        ship_size_type = get_extra_info(extra_info, "ship_size_type", ship_size_type)
+        time_status = get_extra_info(extra_info, "time_status", time_status)
+        mass_status = get_extra_info(extra_info, "mass_status", 0)
+        locked = get_extra_info(extra_info, "locked", false)
+
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
             map_id: map_id,
@@ -503,7 +543,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             solar_system_target: location.solar_system_id,
             type: connection_type,
             ship_size_type: ship_size_type,
-            time_status: time_status
+            time_status: time_status,
+            mass_status: mass_status,
+            locked: locked
           })
 
         if connection_type == @connection_type_wormhole do
@@ -563,7 +605,19 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     end
   end
 
-  def maybe_add_connection(_map_id, _location, _old_location, _character_id, _is_manual), do: :ok
+  def maybe_add_connection(
+        _map_id,
+        _location,
+        _old_location,
+        _character_id,
+        _is_manual,
+        _connection_extra_info
+      ),
+      do: :ok
+
+  defp get_extra_info(nil, _key, default_value), do: default_value
+
+  defp get_extra_info(extra_info, key, default_value), do: Map.get(extra_info, key, default_value)
 
   def get_start_time(map_id, connection_id) do
     case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:start_time") do
