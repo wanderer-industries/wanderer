@@ -19,7 +19,7 @@ export const createWidgetSettings = <T>(settings: T) => {
 export const createDefaultStoredSettings = (): MapUserSettings => {
   return {
     version: STORED_SETTINGS_VERSION,
-    migratedFromOld: true,
+    migratedFromOld: false,
     killsWidget: createWidgetSettings(DEFAULT_KILLS_WIDGET_SETTINGS),
     localWidget: createWidgetSettings(DEFAULT_WIDGET_LOCAL_SETTINGS),
     widgets: createWidgetSettings(getDefaultWidgetProps()),

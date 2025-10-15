@@ -115,10 +115,15 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     }
 
     try {
+      // here we try to restore settings
+      let oldMapData;
+      if (!currentMapUserSettings.migratedFromOld) {
+        const allData = extractData(LS_KEY_LEGASY);
+        oldMapData = allData?.[map_slug];
+      }
+
       // INFO: after migrations migratedFromOld always will be true
-      const migratedResult = applyMigrations(
-        !currentMapUserSettings.migratedFromOld ? extractData(LS_KEY_LEGASY) : currentMapUserSettings,
-      );
+      const migratedResult = applyMigrations(oldMapData ? oldMapData : currentMapUserSettings);
 
       if (!migratedResult) {
         setIsReady(true);
