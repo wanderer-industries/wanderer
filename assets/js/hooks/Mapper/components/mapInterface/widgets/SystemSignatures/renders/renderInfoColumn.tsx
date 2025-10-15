@@ -1,5 +1,5 @@
 import { SystemViewStandalone, TooltipPosition, WHClassView } from '@/hooks/Mapper/components/ui-kit';
-import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import { SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 
 import { renderK162Type } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
@@ -20,7 +20,7 @@ export const renderInfoColumn = (row: SystemSignature) => {
       <div className="flex justify-start items-center gap-[4px]">
         {row.temporary_name && <span className={clsx('text-[12px]')}>{row.temporary_name}</span>}
 
-        {customInfo.isEOL && (
+        {customInfo.time_status === TimeStatus._1h && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as EOL">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
           </WdTooltipWrapper>

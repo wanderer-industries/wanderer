@@ -29,7 +29,7 @@ export type GroupType = {
 
 export type SignatureCustomInfo = {
   k162Type?: string;
-  isEOL?: boolean;
+  time_status?: number;
   isCrit?: boolean;
 };
 
