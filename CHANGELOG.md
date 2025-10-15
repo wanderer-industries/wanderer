@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.81.13](https://github.com/wanderer-industries/wanderer/compare/v1.81.12...v1.81.13) (2025-10-15)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed system select after tab switch
+
 ## [v1.81.12](https://github.com/wanderer-industries/wanderer/compare/v1.81.11...v1.81.12) (2025-10-15)
 
 
