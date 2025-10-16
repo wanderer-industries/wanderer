@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.82.0](https://github.com/wanderer-industries/wanderer/compare/v1.81.15...v1.82.0) (2025-10-15)
+
+
+
+
+### Features:
+
+* Core: Added an ability to copy/paste selected map area between maps
+
+### Bug Fixes:
+
+* Map: Add ability to copy and past systems (UI part)
+
 ## [v1.81.15](https://github.com/wanderer-industries/wanderer/compare/v1.81.14...v1.81.15) (2025-10-15)
 
 
