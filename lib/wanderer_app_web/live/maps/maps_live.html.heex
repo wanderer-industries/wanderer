@@ -417,6 +417,22 @@
                     field={f[:restrict_offline_showing]}
                     label="Show offline characters to admins & managers only"
                   />
+                  <.input
+                    type="select"
+                    field={f[:allowed_copy_for]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Copy map data allowed for"
+                    placeholder="Select role to allow map data copy"
+                    options={@allowed_copy_for_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:allowed_paste_for]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Paste map data allowed for"
+                    placeholder="Select role to allow map data paste"
+                    options={@allowed_paste_for_options}
+                  />
                 </.form>
               </div>
 
