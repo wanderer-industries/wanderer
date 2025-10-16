@@ -18,37 +18,43 @@ defmodule WandererApp.Maps do
   ]
 
   def find_routes(map_id, hubs, origin, routes_settings, false) do
-    WandererApp.Esi.find_routes(
-      map_id,
-      origin,
-      hubs,
-      routes_settings
-    )
-    |> case do
-      {:ok, routes} ->
-        systems_static_data =
-          routes
-          |> Enum.map(fn route_info -> route_info.systems end)
-          |> List.flatten()
-          |> Enum.uniq()
-          |> Task.async_stream(
-            fn system_id ->
-              case WandererApp.CachedInfo.get_system_static_info(system_id) do
-                {:ok, nil} ->
-                  nil
+    origin_int = origin |> String.to_integer()
 
-                {:ok, system} ->
-                  system |> Map.take(@minimum_route_attrs)
-              end
-            end,
-            max_concurrency: System.schedulers_online() * 4
-          )
-          |> Enum.map(fn {:ok, val} -> val end)
+    if origin_int > 0 do
+      WandererApp.Esi.find_routes(
+        map_id,
+        origin,
+        hubs,
+        routes_settings
+      )
+      |> case do
+        {:ok, routes} ->
+          systems_static_data =
+            routes
+            |> Enum.map(fn route_info -> route_info.systems end)
+            |> List.flatten()
+            |> Enum.uniq()
+            |> Task.async_stream(
+              fn system_id ->
+                case WandererApp.CachedInfo.get_system_static_info(system_id) do
+                  {:ok, nil} ->
+                    nil
 
-        {:ok, %{routes: routes, systems_static_data: systems_static_data}}
+                  {:ok, system} ->
+                    system |> Map.take(@minimum_route_attrs)
+                end
+              end,
+              max_concurrency: System.schedulers_online() * 4
+            )
+            |> Enum.map(fn {:ok, val} -> val end)
 
-      error ->
-        {:ok, %{routes: [], systems_static_data: []}}
+          {:ok, %{routes: routes, systems_static_data: systems_static_data}}
+
+        error ->
+          {:ok, %{routes: [], systems_static_data: []}}
+      end
+    else
+      {:ok, %{routes: [], systems_static_data: []}}
     end
   end
 

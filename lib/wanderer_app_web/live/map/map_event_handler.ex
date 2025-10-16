@@ -127,7 +127,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "get_signatures",
     "link_signature_to_system",
     "unlink_signature",
-    "undo_delete_signatures"
+    "undo_delete_signatures",
+    "unsplash_signature"
   ]
 
   @map_structures_events [

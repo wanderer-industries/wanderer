@@ -19,7 +19,13 @@ import {
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
 import { TooltipPosition, WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
-import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+import {
+  ExtendedSystemSignature,
+  OutCommand,
+  SignatureGroup,
+  SignatureKind,
+  SystemSignature,
+} from '@/hooks/Mapper/types';
 
 import {
   renderAddedTimeLeft,
@@ -73,6 +79,7 @@ export const SystemSignaturesContent = ({
   const [hoveredSignature, setHoveredSignature] = useState<SystemSignature | null>(null);
 
   const {
+    outCommand,
     storedSettings: { settingsSignatures, settingsSignaturesUpdate },
   } = useMapRootState();
 
@@ -238,6 +245,16 @@ export const SystemSignaturesContent = ({
     });
   }, []);
 
+  const handleUnsplash = useCallback(
+    async (row: SystemSignature) => {
+      await outCommand({
+        type: OutCommand.unsplashSignature,
+        data: { system_id: systemId, eve_id: row.eve_id },
+      });
+    },
+    [outCommand],
+  );
+
   return (
     <div ref={tableRef} className="h-full">
       {filteredSignatures.length === 0 ? (
@@ -354,8 +371,11 @@ export const SystemSignaturesContent = ({
             {!selectable && (
               <Column
                 header=""
-                body={() => (
+                body={(row: SystemSignature) => (
                   <div className="flex justify-end items-center gap-2 mr-[4px]">
+                    <WdTooltipWrapper content="Unsplash signature">
+                      <span className={PrimeIcons.SHARE_ALT + ' text-[10px]'} onClick={() => handleUnsplash(row)} />
+                    </WdTooltipWrapper>
                     <WdTooltipWrapper content="Double-click a row to edit signature">
                       <span className={PrimeIcons.PENCIL + ' text-[10px]'} />
                     </WdTooltipWrapper>

@@ -1,5 +1,6 @@
 defmodule WandererApp.CachedInfo do
   require Logger
+  use(Nebulex.Caching)
 
   def run(_arg) do
     :ok = cache_trig_systems()
@@ -39,7 +40,7 @@ defmodule WandererApp.CachedInfo do
   def get_system_static_info(solar_system_id) do
     case Cachex.get(:system_static_info_cache, solar_system_id) do
       {:ok, nil} ->
-        case WandererApp.Api.MapSolarSystem.read() do
+        case get_solar_systems() do
           {:ok, systems} ->
             systems
             |> Enum.each(fn system ->
@@ -70,8 +71,24 @@ defmodule WandererApp.CachedInfo do
             end)
 
             case Cachex.get(:system_static_info_cache, solar_system_id) do
-              {:ok, nil} -> {:error, :not_found}
-              result -> result
+              {:ok, nil} ->
+                system_static_info = %{
+                  solar_system_id: solar_system_id,
+                  solar_system_name: "Unsplashed",
+                  region_name: "Unknown",
+                  system_class: 5
+                }
+
+                Cachex.put(
+                  :system_static_info_cache,
+                  solar_system_id,
+                  system_static_info
+                )
+
+                {:ok, system_static_info}
+
+              result ->
+                result
             end
 
           {:error, reason} ->
@@ -98,6 +115,24 @@ defmodule WandererApp.CachedInfo do
         nil
     end
   end
+
+  def get_random_solar_system_id() do
+    result = -:rand.uniform(1_000_000_000)
+
+    case Cachex.exists?(:system_static_info_cache, result) do
+      {:ok, true} ->
+        get_random_solar_system_id()
+
+      _ ->
+        result
+    end
+  end
+
+  @decorate cacheable(
+              cache: WandererApp.Cache,
+              key: "solar_systems"
+            )
+  def get_solar_systems(), do: WandererApp.Api.MapSolarSystem.read()
 
   def get_wormhole_types() do
     case WandererApp.Cache.lookup(:wormhole_types) do

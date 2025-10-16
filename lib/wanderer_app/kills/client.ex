@@ -312,7 +312,10 @@ defmodule WandererApp.Kills.Client do
   @impl true
   def handle_cast({:subscribe_systems, system_ids}, state) do
     {updated_systems, to_subscribe} =
-      Manager.subscribe_systems(state.subscribed_systems, system_ids)
+      Manager.subscribe_systems(
+        state.subscribed_systems,
+        system_ids |> Enum.filter(fn id -> id > 0 end)
+      )
 
     # Log subscription details
     if length(to_subscribe) > 0 do
@@ -635,7 +638,7 @@ defmodule WandererApp.Kills.Client do
     @impl true
     def handle_connected(transport, state) do
       join_params = %{
-        systems: state.subscribed_systems,
+        systems: state.subscribed_systems |> Enum.filter(fn id -> id > 0 end),
         client_identifier: "wanderer_app"
       }
 
@@ -710,7 +713,9 @@ defmodule WandererApp.Kills.Client do
 
     @impl true
     def handle_info({:subscribe_systems, system_ids}, transport, state) do
-      case push_to_channel(transport, "subscribe_systems", %{"systems" => system_ids}) do
+      case push_to_channel(transport, "subscribe_systems", %{
+             "systems" => system_ids |> Enum.filter(fn id -> id > 0 end)
+           }) do
         :ok ->
           Logger.debug(fn -> "[Handler] Successfully pushed subscribe_systems event" end)
 
@@ -723,7 +728,9 @@ defmodule WandererApp.Kills.Client do
 
     @impl true
     def handle_info({:unsubscribe_systems, system_ids}, transport, state) do
-      case push_to_channel(transport, "unsubscribe_systems", %{"systems" => system_ids}) do
+      case push_to_channel(transport, "unsubscribe_systems", %{
+             "systems" => system_ids |> Enum.filter(fn id -> id > 0 end)
+           }) do
         :ok ->
           Logger.debug(fn -> "[Handler] Successfully pushed unsubscribe_systems event" end)
 
@@ -796,7 +803,10 @@ defmodule WandererApp.Kills.Client do
 
   @spec validate_system_ids(list()) :: {:ok, [integer()]} | {:error, :invalid_system_ids}
   defp validate_system_ids(system_ids) when is_list(system_ids) do
-    results = Enum.map(system_ids, &validate_system_id/1)
+    results =
+      system_ids
+      |> Enum.filter(fn id -> id > 0 end)
+      |> Enum.map(&validate_system_id/1)
 
     case Enum.all?(results, &match?({:ok, _}, &1)) do
       true ->

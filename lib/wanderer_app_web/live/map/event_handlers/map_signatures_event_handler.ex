@@ -400,6 +400,36 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
      )}
   end
 
+  def handle_ui_event(
+        "unsplash_signature",
+        %{"system_id" => solar_system_id, "eve_id" => eve_id} = payload,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user,
+            main_character_id: main_character_id,
+            user_permissions: %{update_system: true}
+          }
+        } = socket
+      )
+      when not is_nil(main_character_id) do
+    {:ok, system} =
+      WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id)
+
+    WandererApp.Map.Server.add_system(
+      map_id,
+      %{
+        solar_system_id: WandererApp.CachedInfo.get_random_solar_system_id(),
+        coordinates: nil,
+        extra_info: %{position_x: system.position_x, position_y: system.position_y}
+      },
+      current_user.id,
+      main_character_id
+    )
+
+    {:noreply, socket}
+  end
+
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 

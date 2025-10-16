@@ -557,7 +557,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
         _ ->
           %{x: x, y: y} =
-            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
+            WandererApp.Map.PositionCalculator.get_new_system_position(
+              extra_info,
+              rtree_name,
+              map_opts
+            )
 
           %{"x" => x, "y" => y}
       end
