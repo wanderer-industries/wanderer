@@ -116,7 +116,7 @@ defmodule WandererApp.CachedInfo do
   def get_solar_system_jumps() do
     case WandererApp.Cache.lookup(:solar_system_jumps) do
       {:ok, nil} ->
-        data = WandererApp.EveDataService.get_solar_system_jumps_data()
+        {:ok, data} = WandererApp.Api.MapSolarSystemJumps.read()
 
         cache_items(data, :solar_system_jumps)
 
