@@ -10,9 +10,9 @@ import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 interface StructuresOwnersEditDialogProps {
   visible: boolean;
-  structures?: StructureItem[];
+  structures: StructureItem[];
   onClose: () => void;
-  onSave: (updatedItem: StructureItem) => void;
+  onSave: (updatedStuctures: StructureItem[]) => void;
 }
 
 export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogProps> = ({
@@ -21,7 +21,6 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
   onClose,
   onSave,
 }) => {
-  console.log("RENDERING OWNERS DIALOG")
   const [ownerInput, setOwnerInput] = useState('');
   const [ownerSuggestions, setOwnerSuggestions] = useState<{ label: string; value: string }[]>([]);
 
@@ -29,6 +28,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
 
   const [prevQuery, setPrevQuery] = useState('');
   const [prevResults, setPrevResults] = useState<{ label: string; value: string }[]>([]);
+  const [editData, setEditData] = useState<StructureItem[]>(structures)
 
   // Searching corporation owners via auto-complete
   const searchOwners = useCallback(
@@ -64,44 +64,37 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
   );
 
 
-  // // when user picks a corp from auto-complete
-  // const handleSelectOwner = (selected: { label: string; value: string }) => {
-  //   setOwnerInput(selected.label);
-  //   setEditData(prev => (prev ? { ...prev, ownerName: selected.label, ownerId: selected.value } : null));
-  // };
-  //
-  // const handleSaveClick = async () => {
-  //   if (!editData) return;
-  //
-  //   // If status doesn't require a timer, clear endTime
-  //   if (!statusesRequiringTimer.includes(editData.status)) {
-  //     editData.endTime = '';
-  //   } else if (editData.endTime) {
-  //     // convert to full ISO if not already
-  //     editData.endTime = formatToISO(editData.endTime);
-  //   }
-  //
-  //   // fetch corporation ticker if we have an ownerId
-  //   if (editData.ownerId) {
-  //     try {
-  //       // TODO fix it
-  //       const { ticker } = await outCommand({
-  //         type: OutCommand.getCorporationTicker,
-  //         data: { corp_id: editData.ownerId },
-  //       });
-  //       editData.ownerTicker = ticker ?? '';
-  //     } catch (err) {
-  //       console.error('Failed to fetch ticker:', err);
-  //       editData.ownerTicker = '';
-  //     }
-  //   }
-  //
-  //   onSave(editData);
-  // };
+  // when user picks a corp from auto-complete
+  const handleSelectOwner = (selected: { label: string; value: string }) => {
+    setOwnerInput(selected.label);
 
-  // if (!editData) return null;
+    setEditData(structures.map(item => {
+      return { ...item, ownerName: selected.label, ownerId: selected.value }
+    }))
+  };
 
-  console.log("Just before return statement")
+  const handleSaveClick = async () => {
+    if (!editData) return;
+
+    // fetch corporation ticker if we have an ownerId
+    for (const structure of editData) {
+      if (structure.ownerId) {
+        try {
+          // TODO fix it
+          const { ticker } = await outCommand({
+            type: OutCommand.getCorporationTicker,
+            data: { corp_id: structure.ownerId },
+          });
+          structure.ownerTicker = ticker ?? '';
+        } catch (err) {
+          console.error('Failed to fetch ticker:', err);
+          structure.ownerTicker = '';
+        }
+      }
+    }
+    onSave(editData);
+    onClose()
+  };
 
   return (
     <Dialog
@@ -144,7 +137,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
               field="label"
               placeholder="Corporation name..."
               onChange={e => setOwnerInput(e.value)}
-            // onSelect={e => handleSelectOwner(e.value)}
+              onSelect={e => handleSelectOwner(e.value)}
             />
           </label>
         </div>
@@ -152,7 +145,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
       </div>
 
       <div className="flex justify-end items-center gap-2 mt-4">
-        <WdButton label="Save" className="p-button-sm" onClick={() => { console.log("save button clicked") }} />
+        <WdButton label="Save" className="p-button-sm" onClick={handleSaveClick} />
       </div>
     </Dialog>
   );

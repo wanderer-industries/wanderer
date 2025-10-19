@@ -13,7 +13,7 @@ import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 
 import { SystemStructuresContent } from './SystemStructuresContent/SystemStructuresContent';
 import { useSystemStructures } from './hooks/useSystemStructures';
-import { processSnippetText } from './helpers';
+import { processSnippetText, StructureItem } from './helpers';
 import { SystemStructuresOwnersDialog } from './SystemStructuresOwnersDialog/SystemStructuresOwnersDialog';
 
 export const SystemStructures: React.FC = () => {
@@ -25,7 +25,6 @@ export const SystemStructures: React.FC = () => {
   const isNotSelectedSystem = selectedSystems.length !== 1;
 
   const { structures, handleUpdateStructures } = useSystemStructures({ systemId, outCommand });
-  // const [editingItems, setEditingItems] = useState<StructureItem[] | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   const labelRef = useRef<HTMLDivElement>(null);
@@ -47,15 +46,9 @@ export const SystemStructures: React.FC = () => {
     [processClipboard],
   );
 
-  const handleSave = () => {
-    // TODO: Add some save logic
-    console.log("Should be saving here!")
-  }
-
-  const handleClick = () => {
-    // TODO: handle the click dumbass
-    console.log("button clicked!!")
-    setShowEditDialog(true)
+  const handleSave = (updatedStructures: StructureItem[]) => {
+    console.log("calling handleUpdateStructures now")
+    handleUpdateStructures(updatedStructures)
   }
 
   const handlePasteTimer = useCallback(async () => {
@@ -81,15 +74,17 @@ export const SystemStructures: React.FC = () => {
         </div>
 
         <LayoutEventBlocker className="flex gap-2.5">
-          <WdImgButton
-            className={`${PrimeIcons.USER_EDIT} text-sky-400 hover:text-sky-200 transition duration-300`}
-            onClick={() => handleClick()}
-            tooltip={{
-              position: TooltipPosition.left,
-              // @ts-ignore
-              content: 'Update all structure owners',
-            }}
-          />
+          {structures.length > 1 && (
+            <WdImgButton
+              className={`${PrimeIcons.USER_EDIT} text-sky-400 hover:text-sky-200 transition duration-300`}
+              onClick={() => setShowEditDialog(true)}
+              tooltip={{
+                position: TooltipPosition.left,
+                // @ts-ignore
+                content: 'Update all structure owners',
+              }}
+            />
+          )}
           <WdImgButton
             className={`${PrimeIcons.CLOCK} text-sky-400 hover:text-sky-200 transition duration-300`}
             onClick={handlePasteTimer}
