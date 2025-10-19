@@ -171,14 +171,14 @@ defmodule WandererAppWeb.MapsLive do
             {"Top To Bottom", "top_to_bottom"}
           ],
           allowed_copy_for_options: [
-            {"Administrators", "admin"},
-            {"Managers", "manager"},
-            {"Members", "member"}
+            {"Administrators", "admin_map"},
+            {"Managers", "manage_map"},
+            {"Members", "add_system"}
           ],
           allowed_paste_for_options: [
-            {"Members", "member"},
-            {"Administrators", "admin"},
-            {"Managers", "manager"}
+            {"Members", "add_system"},
+            {"Administrators", "admin_map"},
+            {"Managers", "manage_map"}
           ]
         )
         |> allow_upload(:settings,
