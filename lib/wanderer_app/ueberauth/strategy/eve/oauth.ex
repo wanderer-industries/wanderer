@@ -45,14 +45,14 @@ defmodule WandererApp.Ueberauth.Strategy.Eve.OAuth do
   """
   def authorize_url!(params \\ [], opts \\ []) do
     opts
-    |> Keyword.put(:redirect_uri, "#{WandererApp.Env.base_url()}/auth/eve/callback")
+    |> Keyword.put(:redirect_uri, "http://localhost:4444/auth/eve/callback/")
     |> client
     |> OAuth2.Client.authorize_url!(params)
   end
 
   def get(token, url, headers \\ [], opts \\ []) do
     [token: token]
-    |> Keyword.put(:redirect_uri, "#{WandererApp.Env.base_url()}/auth/eve/callback")
+    |> Keyword.put(:redirect_uri, "http://localhost:4444/auth/eve/callback/")
     |> client
     |> put_param("response_type", "code")
     |> put_param("client_id", client().client_id)
