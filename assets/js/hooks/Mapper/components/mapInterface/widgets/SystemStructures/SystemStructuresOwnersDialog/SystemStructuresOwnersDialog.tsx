@@ -107,30 +107,52 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
     <Dialog
       visible={visible}
       onHide={onClose}
-      // header={`Edit Structures - ${editData.name ?? ''}`}
       header={'Update All Structure Owners'}
       className={clsx('myStructuresOwnersDialog', 'text-stone-200 w-full max-w-md')}
     >
       <div className="flex flex-col gap-2 text-[14px]">
-        <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
-          <span>Owner:</span>
-          <AutoComplete
-            id="owner"
-            value={ownerInput}
-            suggestions={ownerSuggestions}
-            completeMethod={searchOwners}
-            minLength={3}
-            delay={400}
-            field="label"
-            placeholder="Corporation name..."
-            onChange={e => setOwnerInput(e.value)}
+        <div className="flex gap-2">
+          Updating the corporation name below will update all structures currently
+          saved within the system.
+        </div>
+
+        <hr />
+
+        <div className="flex flex-col gap-2">
+          <label className="grid grid-cols-[100px_1fr] gap-2 items-start mt-2">
+            <span className="mt-1">Structures to update:</span>
+            <ul>
+              {structures && structures.map((item, i) => (
+                <li key={i}>{item.structureType || 'Unknown Type'} - {item.name}</li>
+              ))}
+            </ul>
+          </label>
+        </div>
+
+        <hr />
+
+        <div>
+          <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center">
+            <span>Owner:</span>
+            <AutoComplete
+              id="owner"
+              value={ownerInput}
+              suggestions={ownerSuggestions}
+              completeMethod={searchOwners}
+              minLength={3}
+              delay={400}
+              field="label"
+              placeholder="Corporation name..."
+              onChange={e => setOwnerInput(e.value)}
             // onSelect={e => handleSelectOwner(e.value)}
-          />
-        </label>
+            />
+          </label>
+        </div>
+
       </div>
 
       <div className="flex justify-end items-center gap-2 mt-4">
-        <WdButton label="Save" className="p-button-sm" onClick={() => {console.log("save button clicked")}} />
+        <WdButton label="Save" className="p-button-sm" onClick={() => { console.log("save button clicked") }} />
       </div>
     </Dialog>
   );
