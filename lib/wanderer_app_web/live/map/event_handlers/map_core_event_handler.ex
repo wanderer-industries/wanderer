@@ -557,7 +557,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           # in case user has not tracked any character track his main character as viewer
           track_character && not has_tracked_characters? ->
             main_character = Enum.find(current_user.characters, &(&1.id == main_character_id))
-            events ++ [{:track_characters, [main_character], false}]
+
+            if main_character do
+              events ++ [{:track_characters, [main_character], false}]
+            else
+              events
+            end
 
           track_character && not character_limit_reached? ->
             events ++ [{:track_characters, tracked_characters, track_character}]
@@ -568,7 +573,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           # in case user has view only permissions track his main character as viewer
           not track_character ->
             main_character = Enum.find(current_user.characters, &(&1.id == main_character_id))
-            events ++ [{:track_characters, [main_character], track_character}]
+
+            if main_character do
+              events ++ [{:track_characters, [main_character], track_character}]
+            else
+              events
+            end
 
           true ->
             events
