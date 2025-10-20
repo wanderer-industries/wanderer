@@ -118,7 +118,11 @@ export const useContextMenuSystemItems = ({
           });
 
           if (isShowPingBtn) {
-            return <WdMenuItem icon={iconClasses}>{!hasPing ? 'Ping: RALLY' : 'Cancel: RALLY'}</WdMenuItem>;
+            return (
+              <WdMenuItem icon={iconClasses} className="!ml-[-2px]">
+                {!hasPing ? 'Ping: RALLY' : 'Cancel: RALLY'}
+              </WdMenuItem>
+            );
           }
 
           return (
@@ -126,7 +130,7 @@ export const useContextMenuSystemItems = ({
               infoTitle="Locked. Ping can be set only for one system."
               infoClass="pi-lock text-stone-500 mr-[12px]"
             >
-              <WdMenuItem disabled icon={iconClasses}>
+              <WdMenuItem disabled icon={iconClasses} className="!ml-[-2px]">
                 {!hasPing ? 'Ping: RALLY' : 'Cancel: RALLY'}
               </WdMenuItem>
             </MenuItemWithInfo>

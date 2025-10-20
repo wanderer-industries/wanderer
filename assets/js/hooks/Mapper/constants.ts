@@ -1,11 +1,5 @@
 import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
-
-export enum SESSION_KEY {
-  viewPort = 'viewPort',
-  windows = 'windows',
-  windowsVisible = 'windowsVisible',
-  routes = 'routes',
-}
+import { UserPermission } from '@/hooks/Mapper/types';
 
 export const SYSTEM_FOCUSED_LIFETIME = 10000;
 
@@ -160,4 +154,10 @@ export const SPACE_TO_CLASS: Record<string, string> = {
   [Spaces.Amarr]: 'Amarria',
   [Spaces.Gallente]: 'Gallente',
   [Spaces.Pochven]: 'Pochven',
+};
+
+export const PERMISSIONS_POWER_MAP = {
+  [UserPermission.ADD_SYSTEM]: [UserPermission.ADD_SYSTEM, UserPermission.MANAGE_MAP, UserPermission.ADMIN_MAP],
+  [UserPermission.MANAGE_MAP]: [UserPermission.MANAGE_MAP, UserPermission.ADMIN_MAP],
+  [UserPermission.ADMIN_MAP]: [UserPermission.ADMIN_MAP],
 };

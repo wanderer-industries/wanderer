@@ -10,6 +10,7 @@ export type WdTooltipWrapperProps = {
   interactive?: boolean;
   smallPaddings?: boolean;
   tooltipClassName?: string;
+  wrapperClassName?: string;
 } & Omit<HTMLProps<HTMLDivElement>, 'content' | 'size'> &
   Omit<TooltipProps, 'content'>;
 
@@ -26,6 +27,7 @@ export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperPr
       smallPaddings,
       size,
       tooltipClassName,
+      wrapperClassName,
       ...props
     },
     forwardedRef,
@@ -36,7 +38,7 @@ export const WdTooltipWrapper = forwardRef<WdTooltipHandlers, WdTooltipWrapperPr
 
     return (
       <div className={clsx(classes.WdTooltipWrapperRoot, className)} {...props}>
-        {targetSelector ? <>{children}</> : <div className={autoClass}>{children}</div>}
+        {targetSelector ? <>{children}</> : <div className={clsx(autoClass, wrapperClassName)}>{children}</div>}
 
         <WdTooltip
           ref={forwardedRef}

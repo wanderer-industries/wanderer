@@ -9,3 +9,4 @@ export * from './connectionPassages';
 export * from './permissions';
 export * from './comment';
 export * from './ping';
+export * from './options';

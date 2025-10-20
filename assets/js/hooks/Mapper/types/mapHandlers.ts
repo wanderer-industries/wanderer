@@ -1,4 +1,4 @@
-import { CommentType, PingData, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
+import { CommentType, MapOptions, PingData, SystemSignature, UserPermissions } from '@/hooks/Mapper/types';
 import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Mapper/types/character.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
@@ -94,7 +94,7 @@ export type CommandInit = {
   hubs: string[];
   user_hubs: string[];
   routes: RoutesList;
-  options: Record<string, string | boolean>;
+  options: MapOptions;
   reset?: boolean;
   is_subscription_active?: boolean;
   main_character_eve_id?: string | null;
