@@ -173,12 +173,11 @@ defmodule WandererApp.Character.TrackingUtils do
          %{
            id: character_id,
            eve_id: eve_id
-         },
+         } = _character,
          map_id,
          is_track_allowed,
          caller_pid
-       )
-       when not is_nil(caller_pid) do
+       ) do
     WandererAppWeb.Presence.update(caller_pid, map_id, character_id, %{
       tracked: is_track_allowed,
       from: DateTime.utc_now()
@@ -217,13 +216,16 @@ defmodule WandererApp.Character.TrackingUtils do
   end
 
   defp track_character(
-         _character,
+         character,
          _map_id,
          _is_track_allowed,
          _caller_pid
        ) do
-    Logger.error("caller_pid is required for tracking characters")
-    {:error, "caller_pid is required"}
+    Logger.error(
+      "Invalid character data for tracking - character must have :id and :eve_id fields, got: #{inspect(character)}"
+    )
+
+    {:error, "Invalid character data"}
   end
 
   def untrack(characters, map_id, caller_pid) do
@@ -243,7 +245,7 @@ defmodule WandererApp.Character.TrackingUtils do
       :ok
     else
       true ->
-        Logger.error("caller_pid is required for untracking characters")
+        Logger.error("caller_pid is required for untracking characters 2")
         {:error, "caller_pid is required"}
     end
   end

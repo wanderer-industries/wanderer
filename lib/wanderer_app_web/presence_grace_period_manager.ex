@@ -73,11 +73,7 @@ defmodule WandererAppWeb.PresenceGracePeriodManager do
     # Update cache with final character IDs (includes grace period logic)
     WandererApp.Cache.insert("map_#{map_id}:presence_character_ids", final_character_ids)
 
-    # Only update presence_data if the character IDs actually changed
-    if final_character_ids != previous_tracked_character_ids do
-      WandererApp.Cache.insert("map_#{map_id}:presence_data", presence_data)
-    end
-
+    WandererApp.Cache.insert("map_#{map_id}:presence_data", presence_data)
     WandererApp.Cache.insert("map_#{map_id}:presence_updated", true)
 
     {:noreply, state}
