@@ -365,15 +365,19 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   end
 
   defp handle_tracking_event({:track_characters, map_characters, track_character}, socket, map_id) do
-    :ok =
-      WandererApp.Character.TrackingUtils.track(
-        map_characters,
-        map_id,
-        track_character,
-        self()
-      )
+    case WandererApp.Character.TrackingUtils.track(
+           map_characters,
+           map_id,
+           track_character,
+           self()
+         ) do
+      :ok ->
+        socket
 
-    socket
+      {:error, reason} ->
+        Logger.error("Failed to track characters: #{inspect(reason)}")
+        socket
+    end
   end
 
   defp handle_tracking_event(:invalid_token_message, socket, _map_id) do
