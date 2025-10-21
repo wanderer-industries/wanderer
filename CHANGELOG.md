@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.82.3](https://github.com/wanderer-industries/wanderer/compare/v1.82.2...v1.82.3) (2025-10-21)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix system static info - add source region for U319 from Null-sec
+
 ## [v1.82.2](https://github.com/wanderer-industries/wanderer/compare/v1.82.1...v1.82.2) (2025-10-21)
 
 
