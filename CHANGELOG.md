@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.83.1](https://github.com/wanderer-industries/wanderer/compare/v1.83.0...v1.83.1) (2025-10-21)
+
+
+
+
+### Bug Fixes:
+
+* Kills: Fixed zkb links (added following '/').
+
 ## [v1.83.0](https://github.com/wanderer-industries/wanderer/compare/v1.82.3...v1.83.0) (2025-10-21)
 
 
