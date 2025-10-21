@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.82.2](https://github.com/wanderer-industries/wanderer/compare/v1.82.1...v1.82.2) (2025-10-21)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fix system static info - for J012635 add D382; for J015092 - changed from J244, Z060 to N110, J244; for J000487 removed C008
+
 ## [v1.82.1](https://github.com/wanderer-industries/wanderer/compare/v1.82.0...v1.82.1) (2025-10-20)
 
 
