@@ -1,10 +1,10 @@
-import { useCallback, useRef } from 'react';
 import { LayoutEventBlocker, TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
+import { useCallback, useRef } from 'react';
 
-import classes from './FastSystemActions.module.scss';
 import clsx from 'clsx';
 import { PrimeIcons } from 'primereact/api';
+import classes from './FastSystemActions.module.scss';
 
 export interface FastSystemActionsProps {
   systemId: string;
@@ -27,7 +27,7 @@ export const FastSystemActions = ({
   ref.current = { systemId, systemName, regionName, isWH };
 
   const handleOpenZKB = useCallback(
-    () => window.open(`https://zkillboard.com/system/${ref.current.systemId}`, '_blank'),
+    () => window.open(`https://zkillboard.com/system/${ref.current.systemId}/`, '_blank'),
     [],
   );
 

@@ -304,7 +304,7 @@ const formatters = {
         { name: "Ship", value: event.payload.victim.ship, inline: true },
         { name: "Value", value: `${(event.payload.value / 1000000).toFixed(1)}M ISK`, inline: true }
       ],
-      url: `https://zkillboard.com/kill/${event.payload.killmail_id}`,
+      url: `https://zkillboard.com/kill/${event.payload.killmail_id}/`,
       timestamp: event.ts
     }]
   }),

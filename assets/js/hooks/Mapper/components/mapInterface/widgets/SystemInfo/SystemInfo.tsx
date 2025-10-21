@@ -1,12 +1,12 @@
 import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { SystemSettingsDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemSettingsDialog/SystemSettingsDialog.tsx';
 import { LayoutEventBlocker, SystemView, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
-import { SystemInfoContent } from './SystemInfoContent';
+import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { PrimeIcons } from 'primereact/api';
 import { useCallback, useState } from 'react';
-import { SystemSettingsDialog } from '@/hooks/Mapper/components/mapInterface/components/SystemSettingsDialog/SystemSettingsDialog.tsx';
-import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
-import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { SystemInfoContent } from './SystemInfoContent';
 
 export const SystemInfo = () => {
   const [visible, setVisible] = useState(false);
@@ -48,7 +48,7 @@ export const SystemInfo = () => {
             </div>
 
             <LayoutEventBlocker className="flex gap-1 items-center">
-              <a href={`https://zkillboard.com/system/${systemId}`} rel="noreferrer" target="_blank">
+              <a href={`https://zkillboard.com/system/${systemId}/`} rel="noreferrer" target="_blank">
                 <img src={ZKB_ICON} width="14" height="14" className="external-icon" />
               </a>
               <a href={`http://anoik.is/systems/${solarSystemName}`} rel="noreferrer" target="_blank">
