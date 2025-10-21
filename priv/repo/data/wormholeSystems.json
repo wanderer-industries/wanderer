@@ -32562,7 +32562,8 @@
 		"solarSystemID": 31002522,
 		"statics": [
 			"A239",
-			"B274"
+			"B274",
+			"D382"
 		],
 		"systemName": "J012635",
 		"effectName": null
@@ -33100,8 +33101,8 @@
 		],
 		"solarSystemID": 31002505,
 		"statics": [
-			"J244",
-			"Z060"
+			"N110",
+			"J244"
 		],
 		"systemName": "J015092",
 		"effectName": "Black Hole"
@@ -36792,7 +36793,6 @@
 		"wanderers": [],
 		"solarSystemID": 31002581,
 		"statics": [
-			"C008",
 			"Q003",
 			"Z006"
 		],
