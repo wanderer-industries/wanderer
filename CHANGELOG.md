@@ -2,6 +2,27 @@
 
 <!-- changelog -->
 
+## [v1.83.0](https://github.com/wanderer-industries/wanderer/compare/v1.82.3...v1.83.0) (2025-10-21)
+
+
+
+
+### Features:
+
+* Core: Added map roles settings for copy/paste
+
+* Core: Added map roles settings for copy/paste
+
+### Bug Fixes:
+
+* Map: Copy-Paste restriction: support from FE side - fixed problem with incorrect disabling copy and paste buttons
+
+* Map: Copy-Paste restriction: support from FE side - removed unnecessary constant
+
+* Map: Copy-Paste restriction: support from FE side
+
+* Core: Added Eve data downloaded files cleanup logic
+
 ## [v1.82.3](https://github.com/wanderer-industries/wanderer/compare/v1.82.2...v1.82.3) (2025-10-21)
 
 
