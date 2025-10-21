@@ -7,7 +7,9 @@ defmodule WandererApp.MapRepo do
     "show_linked_signature_id" => "false",
     "show_linked_signature_id_temp_name" => "false",
     "show_temp_system_name" => "false",
-    "restrict_offline_showing" => "false"
+    "restrict_offline_showing" => "false",
+    "allowed_copy_for" => "admin_map",
+    "allowed_paste_for" => "add_system"
   }
 
   def get(map_id, relationships \\ []) do
@@ -57,7 +59,7 @@ defmodule WandererApp.MapRepo do
       |> WandererApp.Api.Map.update_options(%{options: Jason.encode!(options)})
 
   def options_to_form_data(%{options: options} = _map_options) when not is_nil(options),
-    do: {:ok, Jason.decode!(options)}
+    do: {:ok, @default_map_options |> Map.merge(Jason.decode!(options))}
 
   def options_to_form_data(_), do: {:ok, @default_map_options}
 

@@ -1,12 +1,5 @@
 import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
-export enum SESSION_KEY {
-  viewPort = 'viewPort',
-  windows = 'windows',
-  windowsVisible = 'windowsVisible',
-  routes = 'routes',
-}
-
 export const SYSTEM_FOCUSED_LIFETIME = 10000;
 
 export const GRADIENT_MENU_ACTIVE_CLASSES = 'bg-gradient-to-br from-transparent/10 to-fuchsia-300/10';

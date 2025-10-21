@@ -38,6 +38,8 @@ export const useMapInit = () => {
       user_characters,
       present_characters,
       hubs,
+      options,
+      user_permissions,
     }: CommandInit) => {
       const { update } = ref.current;
 
@@ -61,6 +63,14 @@ export const useMapInit = () => {
 
       if (hubs) {
         updateData.hubs = hubs;
+      }
+
+      if (options) {
+        updateData.options = options;
+      }
+
+      if (options) {
+        updateData.userPermissions = user_permissions;
       }
 
       if (systems) {

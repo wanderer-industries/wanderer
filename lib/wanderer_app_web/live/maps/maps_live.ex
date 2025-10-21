@@ -169,6 +169,16 @@ defmodule WandererAppWeb.MapsLive do
           layout_options: [
             {"Left To Right", "left_to_right"},
             {"Top To Bottom", "top_to_bottom"}
+          ],
+          allowed_copy_for_options: [
+            {"Administrators", "admin_map"},
+            {"Managers", "manage_map"},
+            {"Members", "add_system"}
+          ],
+          allowed_paste_for_options: [
+            {"Members", "add_system"},
+            {"Administrators", "admin_map"},
+            {"Managers", "manage_map"}
           ]
         )
         |> allow_upload(:settings,
@@ -443,7 +453,9 @@ defmodule WandererAppWeb.MapsLive do
         "show_linked_signature_id",
         "show_linked_signature_id_temp_name",
         "show_temp_system_name",
-        "restrict_offline_showing"
+        "restrict_offline_showing",
+        "allowed_copy_for",
+        "allowed_paste_for"
       ])
 
     {:ok, updated_map} = WandererApp.MapRepo.update_options(map, options)
