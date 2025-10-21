@@ -41,6 +41,14 @@ export const ContextMenuRoot: React.FC<ContextMenuRootProps> = ({
               disabled: !allowPaste,
               command: onPasteSystemsAnsConnections,
               template: () => {
+                if (allowPaste) {
+                  return (
+                    <WdMenuItem icon="pi pi-clipboard">
+                      Paste
+                    </WdMenuItem>
+                  );
+                }
+
                 return (
                   <MenuItemWithInfo
                     infoTitle="Action is blocked because you don’t have permission to Paste."

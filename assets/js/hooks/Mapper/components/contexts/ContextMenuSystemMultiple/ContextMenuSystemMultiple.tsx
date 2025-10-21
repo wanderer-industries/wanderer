@@ -24,7 +24,6 @@ export const ContextMenuSystemMultiple: React.FC<ContextMenuSystemMultipleProps>
 
   const items: MenuItem[] = useMemo(() => {
     const allowCopy = checkPermissions(userPermissions, options.allowed_copy_for);
-
     return [
       {
         label: 'Delete',
@@ -38,6 +37,10 @@ export const ContextMenuSystemMultiple: React.FC<ContextMenuSystemMultipleProps>
         command: onCopySystems,
         disabled: !allowCopy,
         template: () => {
+          if (allowCopy) {
+            return <WdMenuItem icon="pi pi-copy">Copy</WdMenuItem>;
+          }
+
           return (
             <MenuItemWithInfo
               infoTitle="Action is blocked because you don’t have permission to Copy."
