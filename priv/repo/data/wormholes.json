@@ -827,7 +827,7 @@
   {
     "mass_regen": 0,
     "dest": "pochven",
-    "src": [],
+    "src": ["ns"],
     "static": false,
     "max_mass_per_jump": 375000000,
     "lifetime": "16",
