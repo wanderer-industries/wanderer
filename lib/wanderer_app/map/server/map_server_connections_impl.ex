@@ -525,7 +525,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         time_status =
           if connection_type == @connection_type_wormhole do
-            @connection_time_status_eol_24
+            get_time_status(
+              old_location.solar_system_id,
+              location.solar_system_id,
+              ship_size_type
+            )
           else
             @connection_time_status_default
           end
@@ -864,6 +868,41 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   # Default to large for non-wormhole connections
   defp get_ship_size_type(_source_solar_system_id, _target_solar_system_id, _connection_type),
     do: @large_ship_size
+
+  defp get_time_status(
+         _source_solar_system_id,
+         _target_solar_system_id,
+         @frigate_ship_size
+       ),
+       do: @connection_time_status_eol_4_5
+
+  defp get_time_status(
+         source_solar_system_id,
+         target_solar_system_id,
+         _ship_size_type
+       ) do
+    # Check if either system is C1 before creating the connection
+    {:ok, source_system_info} = get_system_static_info(source_solar_system_id)
+    {:ok, target_system_info} = get_system_static_info(target_solar_system_id)
+
+    cond do
+      # C1/2/3/4 systems always get eol_16
+      source_system_info.system_class in [@c1, @c2, @c3, @c4] or
+          target_system_info.system_class in [@c1, @c2, @c3, @c4] ->
+        @connection_time_status_eol_16
+
+      # C5/6 systems always get eol_24
+      source_system_info.system_class in [@c5, @c6] or
+          target_system_info.system_class in [@c5, @c6] ->
+        @connection_time_status_eol_24
+
+      true ->
+        @connection_time_status_default
+    end
+  end
+
+  defp get_time_status(_source_solar_system_id, _target_solar_system_id, _ship_size_type),
+    do: @connection_time_status_default
 
   defp get_new_time_status(_start_time, @connection_time_status_default),
     do: @connection_time_status_eol_24
