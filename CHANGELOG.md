@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.83.2](https://github.com/wanderer-industries/wanderer/compare/v1.83.1...v1.83.2) (2025-10-22)
+
+
+
+
+### Bug Fixes:
+
+* Connections: Set new connection time status based on to/from system class
+
 ## [v1.83.1](https://github.com/wanderer-industries/wanderer/compare/v1.83.0...v1.83.1) (2025-10-21)
 
 
