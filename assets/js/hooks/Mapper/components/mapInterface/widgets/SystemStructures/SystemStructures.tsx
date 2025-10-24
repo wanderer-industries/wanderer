@@ -15,6 +15,7 @@ import { SystemStructuresContent } from './SystemStructuresContent/SystemStructu
 import { useSystemStructures } from './hooks/useSystemStructures';
 import { processSnippetText, StructureItem } from './helpers';
 import { SystemStructuresOwnersDialog } from './SystemStructuresOwnersDialog/SystemStructuresOwnersDialog';
+import clsx from 'clsx';
 
 export const SystemStructures: React.FC = () => {
   const {
@@ -47,9 +48,16 @@ export const SystemStructures: React.FC = () => {
   );
 
   const handleSave = (updatedStructures: StructureItem[]) => {
-    console.log("calling handleUpdateStructures now")
     handleUpdateStructures(updatedStructures)
   }
+
+  const handleOpenDialog = useCallback(() => {
+    setShowEditDialog(true)
+  }, [])
+
+  const handleCloseDialog = useCallback(() => {
+    setShowEditDialog(false)
+    }, [])
 
   const handlePasteTimer = useCallback(async () => {
     try {
@@ -76,8 +84,8 @@ export const SystemStructures: React.FC = () => {
         <LayoutEventBlocker className="flex gap-2.5">
           {structures.length > 1 && (
             <WdImgButton
-              className={`${PrimeIcons.USER_EDIT} text-sky-400 hover:text-sky-200 transition duration-300`}
-              onClick={() => setShowEditDialog(true)}
+              className={clsx(PrimeIcons.USER_EDIT, 'text-sky-400 hover:text-sky-200 transition duration-300')}
+              onClick={handleOpenDialog}
               tooltip={{
                 position: TooltipPosition.left,
                 // @ts-ignore
@@ -86,7 +94,7 @@ export const SystemStructures: React.FC = () => {
             />
           )}
           <WdImgButton
-            className={`${PrimeIcons.CLOCK} text-sky-400 hover:text-sky-200 transition duration-300`}
+            className={clsx(PrimeIcons.CLOCK, 'text-sky-400 hover:text-sky-200 transition duration-300')}
             onClick={handlePasteTimer}
             tooltip={{
               position: TooltipPosition.left,
@@ -136,7 +144,7 @@ export const SystemStructures: React.FC = () => {
         <SystemStructuresOwnersDialog
           visible={showEditDialog}
           structures={structures}
-          onClose={() => setShowEditDialog(false)}
+          onClose={handleCloseDialog}
           onSave={handleSave}
         />
       )}

@@ -7,6 +7,7 @@ import { StructureItem } from '../helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { useToast } from '@/hooks/Mapper/ToastProvider';
 
 interface StructuresOwnersEditDialogProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
   const [ownerSuggestions, setOwnerSuggestions] = useState<{ label: string; value: string }[]>([]);
 
   const { outCommand } = useMapRootState();
+  const { show } = useToast();
 
   const [prevQuery, setPrevQuery] = useState('');
   const [prevResults, setPrevResults] = useState<{ label: string; value: string }[]>([]);
@@ -56,8 +58,12 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
         setPrevQuery(newQuery);
         setPrevResults(results);
       } catch (err) {
-        console.error('Failed to fetch owners:', err);
-        setOwnerSuggestions([]);
+        show({
+          severity: 'error',
+          summary: 'Failed to fetch owners',
+          detail: `${err}`,
+          life: 10000,
+        })
       }
     },
     [prevQuery, prevResults, outCommand],
