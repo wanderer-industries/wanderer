@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.83.3](https://github.com/wanderer-industries/wanderer/compare/v1.83.2...v1.83.3) (2025-10-27)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed old map API for systems & added small QOL improvements
+
 ## [v1.83.2](https://github.com/wanderer-industries/wanderer/compare/v1.83.1...v1.83.2) (2025-10-22)
 
 
