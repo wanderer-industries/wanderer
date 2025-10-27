@@ -16,6 +16,17 @@ defmodule WandererApp.Api.MapSystem do
 
     includes([:map])
 
+    default_fields([
+      :name,
+      :solar_system_id,
+      :status,
+      :custom_name,
+      :description,
+      :tag,
+      :temporary_name,
+      :labels
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 

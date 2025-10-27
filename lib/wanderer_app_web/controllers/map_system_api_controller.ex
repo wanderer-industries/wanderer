@@ -97,7 +97,12 @@ defmodule WandererAppWeb.MapSystemAPIController do
       tag: %Schema{type: :string, nullable: true, description: "Custom tag"},
       locked: %Schema{type: :boolean, description: "Lock flag"},
       temporary_name: %Schema{type: :string, nullable: true, description: "Temporary name"},
-      labels: %Schema{type: :string, description: "Comma-separated list of labels"}
+      labels: %Schema{type: :string, description: "Comma-separated list of labels"},
+      update_existing: %Schema{
+        type: :boolean,
+        nullable: true,
+        description: "Update existing system"
+      }
     },
     required: ~w(solar_system_id)a,
     example: %{
@@ -107,7 +112,8 @@ defmodule WandererAppWeb.MapSystemAPIController do
       position_x: 100,
       position_y: 200,
       visible: true,
-      labels: "market,hub"
+      labels: "market,hub",
+      update_existing: false
     }
   }
 
@@ -508,7 +514,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     end
   end
 
-  operation(:delete,
+  operation(:delete_batch,
     summary: "Batch Delete Systems and Connections",
     parameters: [
       map_identifier: [
@@ -523,7 +529,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     responses: ResponseSchemas.standard_responses(@batch_delete_response_schema)
   )
 
-  def delete(conn, params) do
+  def delete_batch(conn, params) do
     system_ids = Map.get(params, "system_ids", [])
     connection_ids = Map.get(params, "connection_ids", [])
 
@@ -560,7 +566,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     end
   end
 
-  operation(:delete_single,
+  operation(:delete,
     summary: "Delete a single Map System",
     parameters: [
       map_identifier: [
@@ -580,7 +586,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
     responses: ResponseSchemas.standard_responses(@delete_response_schema)
   )
 
-  def delete_single(conn, %{"id" => id}) do
+  def delete(conn, %{"id" => id}) do
     with {:ok, sid} <- APIUtils.parse_int(id),
          {:ok, _} <- Operations.delete_system(conn, sid) do
       APIUtils.respond_data(conn, %{deleted: true})
@@ -599,7 +605,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
           reason: reason
         })
 
-      _ ->
+      error ->
         conn
         |> put_status(:bad_request)
         |> APIUtils.respond_data(%{deleted: false, error: "Invalid system ID format"})

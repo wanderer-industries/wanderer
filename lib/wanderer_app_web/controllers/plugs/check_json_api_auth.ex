@@ -165,11 +165,11 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
             if is_binary(map.public_api_key) &&
                  Crypto.secure_compare(map.public_api_key, token) do
               # Get the map owner
-              case User.by_id(map.owner_id, load: :characters) do
+              case User.by_id(map.owner.user_id, load: :characters) do
                 {:ok, user} ->
                   {:ok, user, map}
 
-                {:error, _} ->
+                {:error, _error} ->
                   {:error, "Authentication failed", :map_owner_not_found}
               end
             else
@@ -184,16 +184,14 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
   # Helper to resolve map by ID or slug
   defp resolve_map_identifier(identifier) do
-    alias WandererApp.Api.Map
-
     # Try as UUID first
-    case Map.by_id(identifier) do
+    case WandererApp.Api.Map.by_id(identifier, load: :owner) do
       {:ok, map} ->
         {:ok, map}
 
       _ ->
         # Try as slug
-        Map.get_map_by_slug(identifier)
+        WandererApp.Api.Map.get_map_by_slug(identifier, load: :owner)
     end
   end
 

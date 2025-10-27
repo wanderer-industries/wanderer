@@ -35,20 +35,37 @@ defmodule WandererApp.Map.Operations.Systems do
 
   # Private helper for batch upsert
   defp create_system_batch(%{map_id: map_id, user_id: user_id, char_id: char_id}, params) do
-    do_create_system(map_id, user_id, char_id, params)
+    {:ok, solar_system_id} = fetch_system_id(params)
+    update_existing = fetch_update_existing(params, false)
+
+    map_id
+    |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
+    |> case do
+      {:ok, _location} ->
+        do_create_system(map_id, user_id, char_id, params)
+
+      {:error, :already_exists} ->
+        if update_existing do
+          do_update_system(map_id, user_id, char_id, solar_system_id, params)
+        else
+          :ok
+        end
+    end
   end
 
   defp do_create_system(map_id, user_id, char_id, params) do
     with {:ok, system_id} <- fetch_system_id(params),
+         update_existing <- fetch_update_existing(params, false),
          coords <- normalize_coordinates(params),
          :ok <-
            Server.add_system(
              map_id,
-             %{solar_system_id: system_id, coordinates: coords},
+             %{solar_system_id: system_id, coordinates: coords, extra: params},
              user_id,
-             char_id
+             char_id,
+             update_existing: update_existing
            ) do
-      # System creation is async, but if add_system returns :ok, 
+      # System creation is async, but if add_system returns :ok,
       # it means the operation was queued successfully
       {:ok, %{solar_system_id: system_id}}
     else
@@ -63,15 +80,26 @@ defmodule WandererApp.Map.Operations.Systems do
   end
 
   @spec update_system(Plug.Conn.t(), integer(), map()) :: {:ok, map()} | {:error, atom()}
-  def update_system(%{assigns: %{map_id: map_id}} = _conn, system_id, attrs) do
-    with {:ok, current} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id),
-         x_raw <- Map.get(attrs, "position_x", Map.get(attrs, :position_x, current.position_x)),
-         y_raw <- Map.get(attrs, "position_y", Map.get(attrs, :position_y, current.position_y)),
+  def update_system(
+        %{assigns: %{map_id: map_id, owner_character_id: char_id, owner_user_id: user_id}} =
+          _conn,
+        solar_system_id,
+        attrs
+      ) do
+    do_update_system(map_id, user_id, char_id, solar_system_id, attrs)
+  end
+
+  def update_system(_conn, _solar_system_id, _attrs), do: {:error, :missing_params}
+
+  defp do_update_system(map_id, user_id, char_id, solar_system_id, params) do
+    with {:ok, current} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id),
+         x_raw <- Map.get(params, "position_x", Map.get(params, :position_x, current.position_x)),
+         y_raw <- Map.get(params, "position_y", Map.get(params, :position_y, current.position_y)),
          {:ok, x} <- parse_int(x_raw, "position_x"),
          {:ok, y} <- parse_int(y_raw, "position_y"),
          coords = %{x: x, y: y},
-         :ok <- apply_system_updates(map_id, system_id, attrs, coords),
-         {:ok, system} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id) do
+         :ok <- apply_system_updates(map_id, solar_system_id, params, coords),
+         {:ok, system} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
       {:ok, system}
     else
       {:error, reason} when is_binary(reason) ->
@@ -83,8 +111,6 @@ defmodule WandererApp.Map.Operations.Systems do
         {:error, :unexpected_error}
     end
   end
-
-  def update_system(_conn, _system_id, _attrs), do: {:error, :missing_params}
 
   @spec delete_system(Plug.Conn.t(), integer()) :: {:ok, integer()} | {:error, atom()}
   def delete_system(
@@ -147,6 +173,15 @@ defmodule WandererApp.Map.Operations.Systems do
     do: parse_int(id, "solar_system_id")
 
   defp fetch_system_id(_), do: {:error, "Missing system identifier (id)"}
+
+  defp fetch_update_existing(%{"update_existing" => update_existing}, _default),
+    do: update_existing
+
+  defp fetch_update_existing(%{update_existing: update_existing}, _default)
+       when not is_nil(update_existing),
+       do: update_existing
+
+  defp fetch_update_existing(_, default), do: default
 
   defp parse_int(val, _field) when is_integer(val), do: {:ok, val}
 
@@ -230,6 +265,15 @@ defmodule WandererApp.Map.Operations.Systems do
         Server.update_system_labels(map_id, %{
           solar_system_id: system_id,
           labels: Enum.join(labels, ",")
+        })
+
+      "custom_name" ->
+        {:ok, solar_system_info} =
+          WandererApp.CachedInfo.get_system_static_info(system_id)
+
+        Server.update_system_name(map_id, %{
+          solar_system_id: system_id,
+          name: val || solar_system_info.solar_system_name
         })
 
       "temporary_name" ->

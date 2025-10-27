@@ -46,11 +46,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           solar_system_id: solar_system_id
         } = system_info,
         user_id,
-        character_id
+        character_id,
+        opts
       ) do
     case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
       {:ok, _location} ->
-        state |> _add_system(system_info, user_id, character_id)
+        state |> do_add_system(system_info, user_id, character_id)
 
       {:error, :already_exists} ->
         state
@@ -61,7 +62,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         %{map_id: map_id} = state,
         systems,
         user_id,
-        character_id
+        character_id,
+        opts
       ) do
     systems
     |> Enum.each(fn %{
@@ -72,15 +74,23 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
       case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
         {:ok, _location} ->
-          state
-          |> _add_system(
-            %{solar_system_id: solar_system_id, coordinates: coordinates, extra_info: system},
-            user_id,
-            character_id
-          )
+          if opts |> Keyword.get(:add_not_existing, true) do
+            state
+            |> do_add_system(
+              %{solar_system_id: solar_system_id, coordinates: coordinates, extra_info: system},
+              user_id,
+              character_id
+            )
+          else
+            :ok
+          end
 
         {:error, :already_exists} ->
-          :ok
+          if opts |> Keyword.get(:update_existing, false) do
+            :ok
+          else
+            :ok
+          end
       end
     end)
 
@@ -304,7 +314,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
-        {:ok, _} ->
+        {:ok, result} ->
           :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
           @ddrt.delete([solar_system_id], rtree_name)
           Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
@@ -538,7 +548,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   def maybe_add_system(_map_id, _location, _old_location, _rtree_name, _map_opts), do: :ok
 
-  defp _add_system(
+  defp do_add_system(
          %{map_id: map_id, map_opts: map_opts, rtree_name: rtree_name} = state,
          %{
            solar_system_id: solar_system_id,
@@ -633,7 +643,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
     Logger.debug(fn ->
-      "SystemsImpl._add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+      "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
     end)
 
     WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{

@@ -287,7 +287,7 @@ defmodule WandererAppWeb.Router do
 
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
-    delete "/systems", MapSystemAPIController, :delete
+    delete "/systems", MapSystemAPIController, :delete_batch
     resources "/systems", MapSystemAPIController, only: [:index, :show, :create, :update, :delete]
 
     resources "/connections", MapConnectionAPIController,

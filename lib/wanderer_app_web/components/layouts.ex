@@ -128,76 +128,92 @@ defmodule WandererAppWeb.Layouts do
 
   def sidebar_nav_links(assigns) do
     ~H"""
-    <ul class="text-center flex flex-col w-full">
-      <div class="dropdown dropdown-right">
-        <div tabindex="0" role="button">
-          <li class="flex-1 w-full h-14 block text-gray-400 hover:text-white p-3">
-            <.icon name="hero-bars-3-solid" class="w-6 h-6" />
-          </li>
+    <ul class="text-center flex flex-col w-full h-full justify-between">
+      <div>
+        <div class="dropdown dropdown-right">
+          <div tabindex="0" role="button">
+            <li class="flex-1 w-full h-14 block text-gray-400 hover:text-white p-3">
+              <.icon name="hero-bars-3-solid" class="w-6 h-6" />
+            </li>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+          >
+            <li><a href="/changelog">Changelog</a></li>
+            <li><a href="/news">News</a></li>
+            <li><a href="/license">License</a></li>
+            <li><a href="/contacts">Contact Us</a></li>
+          </ul>
         </div>
-        <ul
-          tabindex="0"
-          class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
-        >
-          <li><a href="/changelog">Changelog</a></li>
-          <li><a href="/news">News</a></li>
-          <li><a href="/license">License</a></li>
-          <li><a href="/contacts">Contact Us</a></li>
-        </ul>
+        <div :if={@show_sidebar}>
+          <.nav_link
+            href="/last"
+            active={@active_tab == :map}
+            icon="hero-viewfinder-circle-solid"
+            tip="Map"
+          />
+          <.nav_link href="/maps" active={@active_tab == :maps} icon="hero-map-solid" tip="Maps" />
+          <.nav_link
+            href="/access-lists"
+            active={@active_tab == :access_lists}
+            icon="hero-user-group-solid"
+            tip="Access Lists"
+          />
+          <.nav_link
+            href="/characters"
+            active={@active_tab == :characters}
+            icon="hero-user-plus-solid"
+            tip="Characters"
+          />
+          <.nav_link
+            href="/tracking"
+            active={@active_tab == :characters_tracking}
+            icon="hero-signal-solid"
+            tip="Characters Tracking"
+          />
+        </div>
       </div>
-
-      <.nav_link
-        href="/last"
-        active={@active_tab == :map}
-        icon="hero-viewfinder-circle-solid"
-        tip="Map"
-      />
-      <.nav_link href="/maps" active={@active_tab == :maps} icon="hero-map-solid" tip="Maps" />
-      <.nav_link
-        href="/access-lists"
-        active={@active_tab == :access_lists}
-        icon="hero-user-group-solid"
-        tip="Access Lists"
-      />
-      <.nav_link
-        href="/characters"
-        active={@active_tab == :characters}
-        icon="hero-user-plus-solid"
-        tip="Characters"
-      />
-      <.nav_link
-        href="/tracking"
-        active={@active_tab == :characters_tracking}
-        icon="hero-signal-solid"
-        tip="Characters Tracking"
-      />
-
-      <div class="absolute bottom-0 left-0 border-t border-gray-600 dropdown dropdown-right dropdown-end">
-        <div tabindex="0" role="button" class="h-full w-full text-gray-400 hover:text-white block p-4">
-          <.icon name="hero-user-solid" class="w-6 h-6" />
+      <div>
+        <div
+          :if={@show_sidebar}
+          class="bottom-0 left-0 border-t border-gray-600 dropdown dropdown-right dropdown-end"
+        >
+          <div
+            tabindex="0"
+            role="button"
+            class="h-full w-full text-gray-400 hover:text-white block p-4"
+          >
+            <.icon name="hero-user-solid" class="w-6 h-6" />
+          </div>
+          <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+            <li :if={@show_admin}>
+              <.link navigate="/admin">
+                Admin
+              </.link>
+            </li>
+            <li :if={@show_admin}>
+              <.link navigate="/admin/errors">
+                Errors
+              </.link>
+            </li>
+            <li :if={@map_subscriptions_enabled}>
+              <.link navigate="/profile">
+                Profile
+              </.link>
+            </li>
+            <li>
+              <.link navigate="/auth/signout">
+                Logout
+              </.link>
+            </li>
+          </ul>
         </div>
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
-          <li :if={@show_admin}>
-            <.link navigate="/admin">
-              Admin
-            </.link>
-          </li>
-          <li :if={@show_admin}>
-            <.link navigate="/admin/errors">
-              Errors
-            </.link>
-          </li>
-          <li :if={@map_subscriptions_enabled}>
-            <.link navigate="/profile">
-              Profile
-            </.link>
-          </li>
-          <li>
-            <.link navigate="/auth/signout">
-              Logout
-            </.link>
-          </li>
-        </ul>
+        <div
+          phx-click="toggle_sidebar"
+          class="z-10 flex-1 absolute bottom-0 left-0 w-full h-2 block text-gray-400 hover:bg-[#444]"
+        >
+        </div>
       </div>
     </ul>
     """

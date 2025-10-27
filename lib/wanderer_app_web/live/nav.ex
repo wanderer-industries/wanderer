@@ -21,19 +21,24 @@ defmodule WandererAppWeb.Nav do
      |> attach_hook(:active_tab, :handle_params, &set_active_tab/3)
      |> attach_hook(:ping, :handle_event, &handle_event/3)
      |> assign(
-       rtt_class: _rtt_class(),
+       rtt_class: rtt_class(),
        show_admin: show_admin,
+       show_sidebar: true,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        app_version: WandererApp.Env.vsn()
      )}
   end
 
   defp handle_event("ping", %{"rtt" => rtt}, socket) do
-    {:halt,
+    {:cont,
      socket
      |> rate_limited_ping_broadcast(socket.assigns.current_user, rtt)
      |> push_event("pong", %{})
-     |> assign(:rtt_class, _rtt_class(rtt))}
+     |> assign(:rtt_class, rtt_class(rtt))}
+  end
+
+  defp handle_event("toggle_sidebar", _, socket) do
+    {:cont, socket |> assign(:show_sidebar, not socket.assigns.show_sidebar)}
   end
 
   defp handle_event(_, _, socket), do: {:cont, socket}
@@ -79,9 +84,9 @@ defmodule WandererAppWeb.Nav do
 
   defp rate_limited_ping_broadcast(socket, _user, _rtt), do: socket
 
-  defp _rtt_class(rtt \\ 0)
+  defp rtt_class(rtt \\ 0)
 
-  defp _rtt_class(rtt) when is_integer(rtt) do
+  defp rtt_class(rtt) when is_integer(rtt) do
     cond do
       rtt < 100 -> ""
       rtt < 200 -> "text-yellow-500"
@@ -89,5 +94,5 @@ defmodule WandererAppWeb.Nav do
     end
   end
 
-  defp _rtt_class(_), do: ""
+  defp rtt_class(_), do: ""
 end

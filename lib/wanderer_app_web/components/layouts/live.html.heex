@@ -9,23 +9,30 @@
   >
     {@inner_content}
   </main>
-  <aside class="h-full w-14 left-0 absolute bg-gray-400 bg-opacity-5  text-gray-200 shadow-lg border-r border-stone-800  bg-opacity-70 bg-neutral-900">
+  <aside class={[
+    "h-12 w-14 left-0 absolute bg-gray-400 bg-opacity-5  text-gray-200 shadow-lg border-r border-b border-stone-800  bg-opacity-70 bg-neutral-900",
+    classes("h-full": @show_sidebar)
+  ]}>
     <.sidebar_nav_links
       active_tab={@active_tab}
       show_admin={@show_admin}
+      show_sidebar={@show_sidebar}
       map_subscriptions_enabled={@map_subscriptions_enabled?}
     />
+    <.ping_container :if={@show_sidebar} rtt_class={@rtt_class} />
+    <.donate_container :if={@show_sidebar} />
+    <.feedback_container :if={@show_sidebar} />
+    <.youtube_container :if={@show_sidebar} />
+    <div :if={@show_sidebar}>
+      {live_render(@socket, WandererAppWeb.ServerStatusLive,
+        container: {:div, class: ""},
+        id: "server-status"
+      )}
+    </div>
   </aside>
-  <.ping_container rtt_class={@rtt_class} />
-  <.donate_container />
-  <.feedback_container />
-  <.youtube_container />
+
   <.new_version_banner app_version={@app_version} enabled={@map_subscriptions_enabled?} />
 </div>
 
-{live_render(@socket, WandererAppWeb.ServerStatusLive,
-  container: {:div, class: ""},
-  id: "server-status"
-)}
 
 <.live_component module={WandererAppWeb.Alerts} id="notifications" view_flash={@flash} />

@@ -157,9 +157,9 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  defdelegate add_system(state, system_info, user_id, character_id), to: SystemsImpl
+  defdelegate add_system(state, system_info, user_id, character_id, opts \\ []), to: SystemsImpl
 
-  defdelegate paste_systems(state, systems, user_id, character_id), to: SystemsImpl
+  defdelegate paste_systems(state, systems, user_id, character_id, opts), to: SystemsImpl
 
   defdelegate add_system_comment(state, comment_info, user_id, character_id), to: SystemsImpl
 
