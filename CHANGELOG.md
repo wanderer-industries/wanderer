@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.0](https://github.com/wanderer-industries/wanderer/compare/v1.83.4...v1.84.0) (2025-10-29)
+
+
+
+
+### Features:
+
+* Core: ESI API rate limits support
+
 ## [v1.83.4](https://github.com/wanderer-industries/wanderer/compare/v1.83.3...v1.83.4) (2025-10-29)
 
 
