@@ -107,5 +107,10 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   end
 
   @impl true
+  def handle_event(_, _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info(_event, socket), do: {:noreply, socket}
 end

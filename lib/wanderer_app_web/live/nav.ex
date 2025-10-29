@@ -30,7 +30,7 @@ defmodule WandererAppWeb.Nav do
   end
 
   defp handle_event("ping", %{"rtt" => rtt}, socket) do
-    {:cont,
+    {:halt,
      socket
      |> rate_limited_ping_broadcast(socket.assigns.current_user, rtt)
      |> push_event("pong", %{})
@@ -38,7 +38,7 @@ defmodule WandererAppWeb.Nav do
   end
 
   defp handle_event("toggle_sidebar", _, socket) do
-    {:cont, socket |> assign(:show_sidebar, not socket.assigns.show_sidebar)}
+    {:halt, socket |> assign(:show_sidebar, not socket.assigns.show_sidebar)}
   end
 
   defp handle_event(_, _, socket), do: {:cont, socket}
