@@ -244,7 +244,7 @@ defmodule WandererAppWeb.AdminLive do
       {:ok, _invite} ->
         {:noreply, socket |> push_patch(to: ~p"/admin")}
 
-      error ->
+      _error ->
         {:noreply, socket |> put_flash(:error, "Failed to add invite. Try again.")}
     end
   end

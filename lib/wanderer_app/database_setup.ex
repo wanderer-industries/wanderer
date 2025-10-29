@@ -14,8 +14,6 @@ defmodule WandererApp.DatabaseSetup do
   alias WandererApp.Repo
   alias Ecto.Adapters.SQL
 
-  @test_db_name "wanderer_test"
-
   @doc """
   Sets up the test database from scratch.
   Creates the database, runs migrations, and sets up initial data.

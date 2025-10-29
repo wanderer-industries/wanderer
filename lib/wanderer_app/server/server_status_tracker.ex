@@ -102,7 +102,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
   defp get_server_status(retries) do
     case WandererApp.Esi.get_server_status() do
       {:ok, result} ->
-        {:status, _get_status(result)}
+        {:status, extract_status(result)}
 
       {:error, :timeout} ->
         if retries > 0 do
@@ -125,7 +125,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
     end
   end
 
-  defp _get_status(%{
+  defp extract_status(%{
          "players" => 0,
          "server_version" => server_version,
          "start_time" => start_time,
@@ -134,7 +134,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
     %{players: 0, server_version: server_version, start_time: start_time, vip: true}
   end
 
-  defp _get_status(%{
+  defp extract_status(%{
          "players" => players,
          "server_version" => server_version,
          "start_time" => start_time,
@@ -143,7 +143,7 @@ defmodule WandererApp.Server.ServerStatusTracker do
     %{players: players, server_version: server_version, start_time: start_time, vip: vip}
   end
 
-  defp _get_status(%{
+  defp extract_status(%{
          "players" => players,
          "server_version" => server_version,
          "start_time" => start_time

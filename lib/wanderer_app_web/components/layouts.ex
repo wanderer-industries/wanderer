@@ -124,6 +124,7 @@ defmodule WandererAppWeb.Layouts do
   attr :id, :string
   attr :active_tab, :atom
   attr :show_admin, :boolean
+  attr :show_sidebar, :boolean
   attr :map_subscriptions_enabled, :boolean
 
   def sidebar_nav_links(assigns) do
