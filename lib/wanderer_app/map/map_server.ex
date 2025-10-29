@@ -70,12 +70,6 @@ defmodule WandererApp.Map.Server do
     end
   end
 
-  def get_characters(map_id) when is_binary(map_id),
-    do:
-      map_id
-      |> map_pid!
-      |> GenServer.call({&Impl.get_characters/1, []}, :timer.minutes(1))
-
   def add_character(map_id, character, track_character \\ false) when is_binary(map_id),
     do:
       map_id

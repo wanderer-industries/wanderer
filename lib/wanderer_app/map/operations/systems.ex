@@ -91,7 +91,7 @@ defmodule WandererApp.Map.Operations.Systems do
 
   def update_system(_conn, _solar_system_id, _attrs), do: {:error, :missing_params}
 
-  defp do_update_system(map_id, user_id, char_id, solar_system_id, params) do
+  defp do_update_system(map_id, _user_id, _char_id, solar_system_id, params) do
     with {:ok, current} <- MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id),
          x_raw <- Map.get(params, "position_x", Map.get(params, :position_x, current.position_x)),
          y_raw <- Map.get(params, "position_y", Map.get(params, :position_y, current.position_y)),

@@ -3,9 +3,6 @@ defmodule WandererAppWeb.MapsLive do
 
   require Logger
 
-  alias BetterNumber, as: Number
-  alias WandererAppWeb.Maps.LicenseComponent
-
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   @impl true
@@ -548,44 +545,6 @@ defmodule WandererAppWeb.MapsLive do
     else
       {:noreply, socket}
     end
-  end
-
-  defp _additional_price(
-         %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit},
-         selected_subscription
-       ) do
-    %{
-      extra_characters_50: extra_characters_50,
-      extra_hubs_10: extra_hubs_10
-    } = WandererApp.Env.subscription_settings()
-
-    additional_price = 0
-
-    characters_limit = characters_limit |> String.to_integer()
-    hubs_limit = hubs_limit |> String.to_integer()
-    sub_characters_limit = selected_subscription.characters_limit
-    sub_hubs_limit = selected_subscription.hubs_limit
-
-    additional_price =
-      case characters_limit > sub_characters_limit do
-        true ->
-          additional_price +
-            (characters_limit - sub_characters_limit) / 50 * extra_characters_50
-
-        _ ->
-          additional_price
-      end
-
-    additional_price =
-      case hubs_limit > sub_hubs_limit do
-        true ->
-          additional_price + (hubs_limit - sub_hubs_limit) / 10 * extra_hubs_10
-
-        _ ->
-          additional_price
-      end
-
-    additional_price
   end
 
   defp _get_export_map_data(map) do

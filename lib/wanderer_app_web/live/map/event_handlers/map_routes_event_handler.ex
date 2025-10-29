@@ -68,7 +68,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
     Task.async(fn ->
       {:ok, routes} =
-        WandererApp.Maps.find_routes(
+        WandererApp.Map.Routes.find(
           map_id,
           route_hubs,
           solar_system_id,
@@ -113,7 +113,7 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
     Task.async(fn ->
       if is_subscription_active? do
         {:ok, routes} =
-          WandererApp.Maps.find_routes(
+          WandererApp.Map.Routes.find(
             map_id,
             hubs,
             solar_system_id,

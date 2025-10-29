@@ -17,7 +17,7 @@ defmodule WandererApp.Character.TrackerPool do
   @unique_registry :unique_tracker_pool_registry
 
   @update_location_interval :timer.seconds(1)
-  @update_online_interval :timer.seconds(5)
+  @update_online_interval :timer.seconds(30)
   @check_offline_characters_interval :timer.minutes(5)
   @check_online_errors_interval :timer.minutes(1)
   @check_ship_errors_interval :timer.minutes(1)
@@ -580,9 +580,5 @@ defmodule WandererApp.Character.TrackerPool do
       error ->
         Logger.debug("Failed to monitor message queue: #{inspect(error)}")
     end
-  end
-
-  defp via_tuple(uuid) do
-    {:via, Registry, {@unique_registry, Module.concat(__MODULE__, uuid)}}
   end
 end

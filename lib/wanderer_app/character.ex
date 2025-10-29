@@ -28,7 +28,7 @@ defmodule WandererApp.Character do
             Cachex.put(:character_cache, character_id, character)
             {:ok, character}
 
-          error ->
+          _error ->
             {:error, :not_found}
         end
 
@@ -192,7 +192,7 @@ defmodule WandererApp.Character do
             {:ok, []}
         end
 
-      error ->
+      _error ->
         {:ok, []}
     end
   end

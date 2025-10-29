@@ -337,7 +337,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
     end
   end
 
-  defp pick_name(%{temporary_name: t, custom_name: c, name: n, solar_system_id: id} = system) do
+  defp pick_name(%{temporary_name: t, custom_name: c, name: n, solar_system_id: id} = _system) do
     original = get_original_name(id)
 
     cond do

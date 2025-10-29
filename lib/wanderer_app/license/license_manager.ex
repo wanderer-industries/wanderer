@@ -147,25 +147,6 @@ defmodule WandererApp.License.LicenseManager do
   end
 
   @doc """
-  Checks if a license is expired.
-  """
-  defp expired?(license) do
-    case license.expire_at do
-      nil -> false
-      expire_at -> DateTime.compare(expire_at, DateTime.utc_now()) == :lt
-    end
-  end
-
-  @doc """
-  Generates a random string of specified length.
-  """
-  defp generate_random_string(length) do
-    :crypto.strong_rand_bytes(length)
-    |> Base.encode16(case: :upper)
-    |> binary_part(0, length)
-  end
-
-  @doc """
   Formats a datetime as YYYY-MM-DD.
   """
   defp format_date(datetime) do

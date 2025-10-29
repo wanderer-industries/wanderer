@@ -148,7 +148,6 @@ defmodule WandererAppWeb.MapAuditLive do
       activity: activity,
       map_id: map_id,
       map_slug: map_slug,
-      map_subscription_active: map_subscription_active,
       period: period
     } =
       socket.assigns

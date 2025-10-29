@@ -6,65 +6,6 @@ defmodule WandererApp.Maps do
   import Ecto.Query
   require Logger
 
-  @minimum_route_attrs [
-    :system_class,
-    :class_title,
-    :security,
-    :triglavian_invasion_status,
-    :solar_system_id,
-    :solar_system_name,
-    :region_name,
-    :is_shattered
-  ]
-
-  def find_routes(map_id, hubs, origin, routes_settings, false) do
-    WandererApp.Esi.find_routes(
-      map_id,
-      origin,
-      hubs,
-      routes_settings
-    )
-    |> case do
-      {:ok, routes} ->
-        systems_static_data =
-          routes
-          |> Enum.map(fn route_info -> route_info.systems end)
-          |> List.flatten()
-          |> Enum.uniq()
-          |> Task.async_stream(
-            fn system_id ->
-              case WandererApp.CachedInfo.get_system_static_info(system_id) do
-                {:ok, nil} ->
-                  nil
-
-                {:ok, system} ->
-                  system |> Map.take(@minimum_route_attrs)
-              end
-            end,
-            max_concurrency: System.schedulers_online() * 4
-          )
-          |> Enum.map(fn {:ok, val} -> val end)
-
-        {:ok, %{routes: routes, systems_static_data: systems_static_data}}
-
-      error ->
-        {:ok, %{routes: [], systems_static_data: []}}
-    end
-  end
-
-  def find_routes(map_id, hubs, origin, routes_settings, true) do
-    origin = origin |> String.to_integer()
-    hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))
-
-    routes =
-      hubs
-      |> Enum.map(fn hub ->
-        %{origin: origin, destination: hub, success: false, systems: [], has_connection: false}
-      end)
-
-    {:ok, %{routes: routes, systems_static_data: []}}
-  end
-
   def get_available_maps() do
     case WandererApp.Api.Map.available() do
       {:ok, maps} -> {:ok, maps}
