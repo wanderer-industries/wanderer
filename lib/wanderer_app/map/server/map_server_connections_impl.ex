@@ -942,4 +942,5 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   defp get_time_status_minutes(@connection_time_status_eol_16), do: @connection_eol_16_minutes
   defp get_time_status_minutes(@connection_time_status_eol_24), do: @connection_eol_24_minutes
   defp get_time_status_minutes(@connection_time_status_eol_48), do: @connection_eol_48_minutes
+  defp get_time_status_minutes(_), do: @connection_eol_24_minutes
 end
