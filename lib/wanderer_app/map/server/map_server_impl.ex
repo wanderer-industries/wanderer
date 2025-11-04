@@ -72,8 +72,6 @@ defmodule WandererApp.Map.Server.Impl do
         systems,
         connections
       )
-      |> SystemsImpl.init_map_systems(systems)
-      |> init_map_cache()
     else
       error ->
         Logger.error("Failed to load map state: #{inspect(error, pretty: true)}")
@@ -112,8 +110,7 @@ defmodule WandererApp.Map.Server.Impl do
           WandererApp.Cache.insert("map_#{map_id}:started", true)
 
           # Initialize zkb cache structure to prevent timing issues
-          cache_key = "map:#{map_id}:zkb:detailed_kills"
-          WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
+          WandererApp.Cache.insert("map:#{map_id}:zkb:detailed_kills", %{}, ttl: :timer.hours(24))
 
           broadcast!(map_id, :map_server_started)
           @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
@@ -129,7 +126,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  def stop_map(%{map_id: map_id} = state) do
+  def stop_map(%{map_id: map_id, rtree_name: rtree_name} = state) do
     Logger.debug(fn -> "Stopping map server for #{map_id}" end)
 
     WandererApp.Cache.delete("map_#{map_id}:started")
@@ -137,8 +134,9 @@ defmodule WandererApp.Map.Server.Impl do
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
+    maybe_stop_rtree(rtree_name)
+
     state
-    |> maybe_stop_rtree()
   end
 
   def get_map(%{map: map} = _state), do: {:ok, map}
@@ -268,9 +266,9 @@ defmodule WandererApp.Map.Server.Impl do
     state
   end
 
-  def handle_event(:backup_state, state) do
+  def handle_event(:backup_state, %{map_id: map_id} = state) do
     Process.send_after(self(), :backup_state, @backup_state_timeout)
-    {:ok, _map_state} = state |> save_map_state()
+    {:ok, _map_state} = save_map_state(map_id)
 
     state
   end
@@ -332,14 +330,14 @@ defmodule WandererApp.Map.Server.Impl do
     %{state | map_opts: map_options(options)}
   end
 
-  def handle_event({ref, _result}, %{map_id: _map_id} = state) when is_reference(ref) do
+  def handle_event({ref, _result}, state) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
     state
   end
 
   def handle_event(msg, state) do
-    Logger.warning("Unhandled event: #{inspect(msg)}")
+    Logger.debug("Unhandled event: #{inspect(msg)}")
 
     state
   end
@@ -387,7 +385,7 @@ defmodule WandererApp.Map.Server.Impl do
     ]
   end
 
-  defp save_map_state(%{map_id: map_id} = _state) do
+  defp save_map_state(map_id) do
     systems_last_activity =
       map_id
       |> WandererApp.Map.list_systems!()
@@ -432,7 +430,7 @@ defmodule WandererApp.Map.Server.Impl do
     })
   end
 
-  defp maybe_stop_rtree(%{rtree_name: rtree_name} = state) do
+  defp maybe_stop_rtree(rtree_name) do
     case Process.whereis(rtree_name) do
       nil ->
         :ok
@@ -440,11 +438,9 @@ defmodule WandererApp.Map.Server.Impl do
       pid when is_pid(pid) ->
         GenServer.stop(pid, :normal)
     end
-
-    state
   end
 
-  defp init_map_cache(%__MODULE__{map_id: map_id} = state) do
+  defp init_map_cache(map_id) do
     case WandererApp.Api.MapState.by_map_id(map_id) do
       {:ok,
        %{
@@ -456,15 +452,13 @@ defmodule WandererApp.Map.Server.Impl do
         ConnectionsImpl.init_eol_cache(map_id, connections_eol_time)
         ConnectionsImpl.init_start_cache(map_id, connections_start_time)
 
-        state
-
       _ ->
-        state
+        :ok
     end
   end
 
   defp init_map(
-         state,
+         %{rtree_name: rtree_name} = state,
          %{id: map_id, characters: characters} = initial_map,
          subscription_settings,
          systems,
@@ -481,10 +475,14 @@ defmodule WandererApp.Map.Server.Impl do
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
 
+    SystemsImpl.init_map_systems(map_id, rtree_name, systems)
+
     character_ids =
       map_id
       |> WandererApp.Map.get_map!()
       |> Map.get(:characters, [])
+
+    init_map_cache(map_id)
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 

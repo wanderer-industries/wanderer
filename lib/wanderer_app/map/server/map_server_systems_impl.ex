@@ -20,9 +20,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
-  def init_map_systems(state, [] = _systems), do: state
+  def init_map_systems(_map_id, _rtree_name, [] = _systems), do: :ok
 
-  def init_map_systems(%{map_id: map_id, rtree_name: rtree_name} = state, systems) do
+  def init_map_systems(map_id, rtree_name, systems) do
     systems
     |> Enum.each(fn %{id: system_id, solar_system_id: solar_system_id} = system ->
       @ddrt.insert(
@@ -36,8 +36,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         ttl: @system_inactive_timeout
       )
     end)
-
-    state
   end
 
   def add_system(

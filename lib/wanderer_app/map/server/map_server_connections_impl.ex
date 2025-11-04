@@ -189,18 +189,24 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   def delete_connection(
         %{map_id: map_id} = state,
+        connection_info
+      ) do
+    :ok = do_delete_connection(map_id, connection_info)
+
+    state
+  end
+
+  def do_delete_connection(
+        map_id,
         %{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id
         } = _connection_info
-      ) do
-    :ok =
-      maybe_remove_connection(map_id, %{solar_system_id: solar_system_target_id}, %{
-        solar_system_id: solar_system_source_id
-      })
-
-    state
-  end
+      ),
+      do:
+        maybe_remove_connection(map_id, %{solar_system_id: solar_system_target_id}, %{
+          solar_system_id: solar_system_source_id
+        })
 
   def update_connection_type(
         %{map_id: map_id} = state,
@@ -239,9 +245,18 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   def update_connection_time_status(
         %{map_id: map_id} = state,
         connection_update
+      ) do
+    do_update_connection_time_status(map_id, connection_update)
+
+    state
+  end
+
+  def do_update_connection_time_status(
+        map_id,
+        connection_update
       ),
       do:
-        update_connection(state, :update_time_status, [:time_status], connection_update, fn
+        update_connection(map_id, :update_time_status, [:time_status], connection_update, fn
           %{time_status: old_time_status},
           %{id: connection_id, time_status: time_status} = updated_connection ->
             case time_status == @connection_time_status_eol do
@@ -268,130 +283,137 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         end)
 
   def update_connection_type(
-        state,
+        %{map_id: map_id} = state,
         connection_update
-      ),
-      do: update_connection(state, :update_type, [:type], connection_update)
+      ) do
+    update_connection(map_id, :update_type, [:type], connection_update)
+
+    state
+  end
 
   def update_connection_mass_status(
-        state,
+        %{map_id: map_id} = state,
         connection_update
-      ),
-      do: update_connection(state, :update_mass_status, [:mass_status], connection_update)
+      ) do
+    update_connection(map_id, :update_mass_status, [:mass_status], connection_update)
+
+    state
+  end
 
   def update_connection_ship_size_type(
-        state,
+        %{map_id: map_id} = state,
         connection_update
-      ),
-      do: update_connection(state, :update_ship_size_type, [:ship_size_type], connection_update)
+      ) do
+    update_connection(map_id, :update_ship_size_type, [:ship_size_type], connection_update)
+    state
+  end
 
   def update_connection_locked(
-        state,
+        %{map_id: map_id} = state,
         connection_update
-      ),
-      do: update_connection(state, :update_locked, [:locked], connection_update)
+      ) do
+    update_connection(map_id, :update_locked, [:locked], connection_update)
+    state
+  end
 
   def update_connection_custom_info(
-        state,
+        %{map_id: map_id} = state,
         connection_update
-      ),
-      do: update_connection(state, :update_custom_info, [:custom_info], connection_update)
+      ) do
+    update_connection(map_id, :update_custom_info, [:custom_info], connection_update)
+    state
+  end
 
   def cleanup_connections(%{map_id: map_id} = state) do
     connection_auto_expire_hours = get_connection_auto_expire_hours()
     connection_auto_eol_hours = get_connection_auto_eol_hours()
     connection_eol_expire_timeout_hours = get_eol_expire_timeout_mins() / 60
 
-    state =
-      map_id
-      |> WandererApp.Map.list_connections!()
-      |> Enum.reduce(state, fn %{
-                                 id: connection_id,
-                                 solar_system_source: solar_system_source_id,
-                                 solar_system_target: solar_system_target_id,
-                                 time_status: time_status,
-                                 type: type
-                               },
-                               state ->
-        if type == @connection_type_wormhole do
-          connection_start_time = get_start_time(map_id, connection_id)
-          new_time_status = get_new_time_status(connection_start_time, time_status)
+    map_id
+    |> WandererApp.Map.list_connections!()
+    |> Enum.each(fn connection ->
+      maybe_update_connection_time_status(map_id, connection)
+    end)
 
-          if new_time_status != time_status &&
-               is_connection_valid(
-                 :wormholes,
-                 solar_system_source_id,
-                 solar_system_target_id
-               ) do
-            set_start_time(map_id, connection_id, DateTime.utc_now())
-
-            state
-            |> update_connection_time_status(%{
-              solar_system_source_id: solar_system_source_id,
-              solar_system_target_id: solar_system_target_id,
-              time_status: new_time_status
-            })
-          else
-            state
-          end
-        else
-          state
-        end
-      end)
-
-    state =
-      map_id
-      |> WandererApp.Map.list_connections!()
-      |> Enum.filter(fn %{
-                          id: connection_id,
-                          solar_system_source: solar_system_source_id,
-                          solar_system_target: solar_system_target_id,
-                          time_status: time_status,
-                          type: type
-                        } ->
-        is_connection_exist =
-          is_connection_exist(
-            map_id,
-            solar_system_source_id,
-            solar_system_target_id
-          ) ||
-            not is_nil(
-              WandererApp.Map.get_connection(
-                map_id,
-                solar_system_target_id,
-                solar_system_source_id
-              )
+    map_id
+    |> WandererApp.Map.list_connections!()
+    |> Enum.filter(fn %{
+                        id: connection_id,
+                        solar_system_source: solar_system_source_id,
+                        solar_system_target: solar_system_target_id,
+                        time_status: time_status,
+                        type: type
+                      } ->
+      is_connection_exist =
+        is_connection_exist(
+          map_id,
+          solar_system_source_id,
+          solar_system_target_id
+        ) ||
+          not is_nil(
+            WandererApp.Map.get_connection(
+              map_id,
+              solar_system_target_id,
+              solar_system_source_id
             )
+          )
 
-        not is_connection_exist ||
-          (type == @connection_type_wormhole &&
-             time_status == @connection_time_status_eol &&
-             is_connection_valid(
-               :wormholes,
-               solar_system_source_id,
-               solar_system_target_id
-             ) &&
-             DateTime.diff(
-               DateTime.utc_now(),
-               get_connection_mark_eol_time(map_id, connection_id),
-               :hour
-             ) >=
-               connection_auto_expire_hours - connection_auto_eol_hours +
-                 connection_eol_expire_timeout_hours)
-      end)
-      |> Enum.reduce(state, fn %{
-                                 solar_system_source: solar_system_source_id,
-                                 solar_system_target: solar_system_target_id
-                               },
-                               state ->
-        delete_connection(state, %{
-          solar_system_source_id: solar_system_source_id,
-          solar_system_target_id: solar_system_target_id
-        })
-      end)
+      not is_connection_exist ||
+        (type == @connection_type_wormhole &&
+           time_status == @connection_time_status_eol &&
+           is_connection_valid(
+             :wormholes,
+             solar_system_source_id,
+             solar_system_target_id
+           ) &&
+           DateTime.diff(
+             DateTime.utc_now(),
+             get_connection_mark_eol_time(map_id, connection_id),
+             :hour
+           ) >=
+             connection_auto_expire_hours - connection_auto_eol_hours +
+               connection_eol_expire_timeout_hours)
+    end)
+    |> Enum.each(fn %{
+                      solar_system_source: solar_system_source_id,
+                      solar_system_target: solar_system_target_id
+                    } ->
+      do_delete_connection(map_id, %{
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id
+      })
+    end)
 
     state
   end
+
+  defp maybe_update_connection_time_status(map_id, %{
+         id: connection_id,
+         solar_system_source: solar_system_source_id,
+         solar_system_target: solar_system_target_id,
+         time_status: time_status,
+         type: @connection_type_wormhole
+       }) do
+    connection_start_time = get_start_time(map_id, connection_id)
+    new_time_status = get_new_time_status(connection_start_time, time_status)
+
+    if new_time_status != time_status &&
+         is_connection_valid(
+           :wormholes,
+           solar_system_source_id,
+           solar_system_target_id
+         ) do
+      set_start_time(map_id, connection_id, DateTime.utc_now())
+
+      do_update_connection_time_status(map_id, %{
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id,
+        time_status: new_time_status
+      })
+    end
+  end
+
+  defp maybe_update_connection_time_status(_map_id, _connection), do: :ok
 
   defp maybe_update_linked_signature_time_status(
          map_id,
@@ -779,7 +801,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   defp maybe_remove_connection(_map_id, _location, _old_location), do: :ok
 
   defp update_connection(
-         %{map_id: map_id} = state,
+         map_id,
          update_method,
          attributes,
          %{
@@ -824,12 +846,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         custom_info: updated_connection.custom_info
       })
 
-      state
+      :ok
     else
       {:error, error} ->
         Logger.error("Failed to update connection: #{inspect(error, pretty: true)}")
 
-        state
+        :ok
     end
   end
 
