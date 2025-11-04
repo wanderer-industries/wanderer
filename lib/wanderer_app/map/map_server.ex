@@ -315,5 +315,12 @@ defmodule WandererApp.Map.Server do
   @impl true
   def handle_info(event, state), do: {:noreply, Impl.handle_event(event, state)}
 
+  @impl true
+  def terminate(_reason, state) do
+    # Clean up R-tree cache when map server shuts down
+    WandererApp.Map.CacheRTree.clear_tree(state.rtree_name)
+    :ok
+  end
+
   defp _via(map_id), do: {:via, Registry, {WandererApp.MapRegistry, map_id}}
 end

@@ -46,7 +46,7 @@ defmodule WandererApp.Map.Server.Impl do
 
     %{
       map_id: map_id,
-      rtree_name: Module.concat([map_id, DDRT.DynamicRtree])
+      rtree_name: "rtree_#{map_id}"
     }
     |> new()
   end
@@ -134,7 +134,7 @@ defmodule WandererApp.Map.Server.Impl do
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
 
-    maybe_stop_rtree(rtree_name)
+    WandererApp.Map.CacheRTree.clear_tree(rtree_name)
 
     state
   end
@@ -428,16 +428,6 @@ defmodule WandererApp.Map.Server.Impl do
       connections_eol_time: connections_eol_time,
       connections_start_time: connections_start_time
     })
-  end
-
-  defp maybe_stop_rtree(rtree_name) do
-    case Process.whereis(rtree_name) do
-      nil ->
-        :ok
-
-      pid when is_pid(pid) ->
-        GenServer.stop(pid, :normal)
-    end
   end
 
   defp init_map_cache(map_id) do
