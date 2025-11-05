@@ -24,12 +24,10 @@ defmodule WandererApp.Map.Server.Impl do
     map_opts: []
   ]
 
-  @systems_cleanup_timeout :timer.minutes(30)
-  @characters_cleanup_timeout :timer.minutes(5)
+  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
   @connections_cleanup_timeout :timer.minutes(1)
 
-  @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
-  @backup_state_timeout :timer.minutes(1)
   @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
   @update_tracked_characters_timeout :timer.minutes(1)
@@ -37,21 +35,16 @@ defmodule WandererApp.Map.Server.Impl do
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
 
-  def init(args) do
-    map_id = args[:map_id]
-    Logger.info("Starting map server for #{map_id}")
+  def do_init_state(opts) do
+    map_id = opts[:map_id]
 
-    ErrorTracker.set_context(%{map_id: map_id})
-    WandererApp.Cache.insert("map_#{map_id}:started", false)
+    initial_state =
+      %{
+        map_id: map_id,
+        rtree_name: "rtree_#{map_id}"
+      }
+      |> new()
 
-    %{
-      map_id: map_id,
-      rtree_name: Module.concat([map_id, DDRT.DynamicRtree])
-    }
-    |> new()
-  end
-
-  def load_state(%__MODULE__{map_id: map_id} = state) do
     with {:ok, map} <-
            WandererApp.MapRepo.get(map_id, [
              :owner,
@@ -65,23 +58,23 @@ defmodule WandererApp.Map.Server.Impl do
          {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id),
          {:ok, subscription_settings} <-
            WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id) do
-      state
+      initial_state
       |> init_map(
         map,
         subscription_settings,
         systems,
         connections
       )
-      |> SystemsImpl.init_map_systems(systems)
-      |> init_map_cache()
     else
       error ->
         Logger.error("Failed to load map state: #{inspect(error, pretty: true)}")
-        state
+        initial_state
     end
   end
 
-  def start_map(%__MODULE__{map: map, map_id: map_id} = state) do
+  def start_map(%__MODULE__{map: map, map_id: map_id} = _state) do
+    WandererApp.Cache.insert("map_#{map_id}:started", false)
+
     # Check if map was loaded successfully
     case map do
       nil ->
@@ -95,253 +88,299 @@ defmodule WandererApp.Map.Server.Impl do
             "maps:#{map_id}"
           )
 
-          Process.send_after(self(), :update_characters, @update_characters_timeout)
+          WandererApp.Map.CacheRTree.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
+          Process.send_after(self(), {:update_characters, map_id}, @update_characters_timeout)
 
           Process.send_after(
             self(),
-            :update_tracked_characters,
+            {:update_tracked_characters, map_id},
             @update_tracked_characters_timeout
           )
 
-          Process.send_after(self(), :update_presence, @update_presence_timeout)
-          Process.send_after(self(), :cleanup_connections, @connections_cleanup_timeout)
-          Process.send_after(self(), :cleanup_systems, 10_000)
-          Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
-          Process.send_after(self(), :backup_state, @backup_state_timeout)
+          Process.send_after(self(), {:update_presence, map_id}, @update_presence_timeout)
 
           WandererApp.Cache.insert("map_#{map_id}:started", true)
 
           # Initialize zkb cache structure to prevent timing issues
-          cache_key = "map:#{map_id}:zkb:detailed_kills"
-          WandererApp.Cache.insert(cache_key, %{}, ttl: :timer.hours(24))
+          WandererApp.Cache.insert("map:#{map_id}:zkb:detailed_kills", %{}, ttl: :timer.hours(24))
 
           broadcast!(map_id, :map_server_started)
           @pubsub_client.broadcast!(WandererApp.PubSub, "maps", :map_server_started)
 
           :telemetry.execute([:wanderer_app, :map, :started], %{count: 1})
-
-          state
         else
           error ->
             Logger.error("Failed to start map: #{inspect(error, pretty: true)}")
-            state
         end
     end
   end
 
-  def stop_map(%{map_id: map_id} = state) do
+  def stop_map(map_id) do
     Logger.debug(fn -> "Stopping map server for #{map_id}" end)
+
+    @pubsub_client.unsubscribe(
+      WandererApp.PubSub,
+      "maps:#{map_id}"
+    )
 
     WandererApp.Cache.delete("map_#{map_id}:started")
     WandererApp.Cache.delete("map_characters-#{map_id}")
+    WandererApp.Map.CacheRTree.clear_tree("rtree_#{map_id}")
+    WandererApp.Map.delete_map_state(map_id)
+
+    WandererApp.Cache.insert_or_update(
+      "started_maps",
+      [],
+      fn started_maps ->
+        started_maps
+        |> Enum.reject(fn started_map_id -> started_map_id == map_id end)
+      end
+    )
 
     :telemetry.execute([:wanderer_app, :map, :stopped], %{count: 1})
-
-    state
-    |> maybe_stop_rtree()
   end
 
-  def get_map(%{map: map} = _state), do: {:ok, map}
+  defdelegate cleanup_systems(map_id), to: SystemsImpl
+  defdelegate cleanup_connections(map_id), to: ConnectionsImpl
+  defdelegate cleanup_characters(map_id), to: CharactersImpl
 
-  defdelegate add_character(state, character, track_character), to: CharactersImpl
+  defdelegate untrack_characters(map_id, characters_ids), to: CharactersImpl
 
-  def remove_character(%{map_id: map_id} = state, character_id) do
-    CharactersImpl.remove_character(map_id, character_id)
+  defdelegate add_system(map_id, system_info, user_id, character_id, opts \\ []), to: SystemsImpl
 
-    state
-  end
+  defdelegate paste_connections(map_id, connections, user_id, character_id), to: ConnectionsImpl
 
-  def untrack_characters(%{map_id: map_id} = state, characters_ids) do
-    CharactersImpl.untrack_characters(map_id, characters_ids)
+  defdelegate paste_systems(map_id, systems, user_id, character_id, opts), to: SystemsImpl
 
-    state
-  end
+  defdelegate add_system_comment(map_id, comment_info, user_id, character_id), to: SystemsImpl
 
-  defdelegate add_system(state, system_info, user_id, character_id, opts \\ []), to: SystemsImpl
-
-  defdelegate paste_systems(state, systems, user_id, character_id, opts), to: SystemsImpl
-
-  defdelegate add_system_comment(state, comment_info, user_id, character_id), to: SystemsImpl
-
-  defdelegate remove_system_comment(state, comment_id, user_id, character_id), to: SystemsImpl
+  defdelegate remove_system_comment(map_id, comment_id, user_id, character_id), to: SystemsImpl
 
   defdelegate delete_systems(
-                state,
+                map_id,
                 removed_ids,
                 user_id,
                 character_id
               ),
               to: SystemsImpl
 
-  defdelegate update_system_name(state, update), to: SystemsImpl
+  defdelegate update_system_name(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_description(state, update), to: SystemsImpl
+  defdelegate update_system_description(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_status(state, update), to: SystemsImpl
+  defdelegate update_system_status(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_tag(state, update), to: SystemsImpl
+  defdelegate update_system_tag(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_temporary_name(state, update), to: SystemsImpl
+  defdelegate update_system_temporary_name(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_locked(state, update), to: SystemsImpl
+  defdelegate update_system_locked(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_labels(state, update), to: SystemsImpl
+  defdelegate update_system_labels(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_linked_sig_eve_id(state, update), to: SystemsImpl
+  defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl
 
-  defdelegate update_system_position(state, update), to: SystemsImpl
+  defdelegate update_system_position(map_id, update), to: SystemsImpl
 
-  defdelegate add_hub(state, hub_info), to: SystemsImpl
+  defdelegate add_hub(map_id, hub_info), to: SystemsImpl
 
-  defdelegate remove_hub(state, hub_info), to: SystemsImpl
+  defdelegate remove_hub(map_id, hub_info), to: SystemsImpl
 
-  defdelegate add_ping(state, ping_info), to: PingsImpl
+  defdelegate add_ping(map_id, ping_info), to: PingsImpl
 
-  defdelegate cancel_ping(state, ping_info), to: PingsImpl
+  defdelegate cancel_ping(map_id, ping_info), to: PingsImpl
 
-  defdelegate add_connection(state, connection_info), to: ConnectionsImpl
+  defdelegate add_connection(map_id, connection_info), to: ConnectionsImpl
 
-  defdelegate delete_connection(state, connection_info), to: ConnectionsImpl
+  defdelegate delete_connection(map_id, connection_info), to: ConnectionsImpl
 
-  defdelegate get_connection_info(state, connection_info), to: ConnectionsImpl
+  defdelegate get_connection_info(map_id, connection_info), to: ConnectionsImpl
 
-  defdelegate paste_connections(state, connections, user_id, character_id), to: ConnectionsImpl
+  defdelegate update_connection_time_status(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_time_status(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_type(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_type(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_mass_status(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_mass_status(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_ship_size_type(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_ship_size_type(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_locked(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_locked(state, connection_update), to: ConnectionsImpl
+  defdelegate update_connection_custom_info(map_id, connection_update), to: ConnectionsImpl
 
-  defdelegate update_connection_custom_info(state, signatures_update), to: ConnectionsImpl
+  defdelegate update_signatures(map_id, signatures_update), to: SignaturesImpl
 
-  defdelegate update_signatures(state, signatures_update), to: SignaturesImpl
-
-  def import_settings(%{map_id: map_id} = state, settings, user_id) do
+  def import_settings(map_id, settings, user_id) do
     WandererApp.Cache.put(
       "map_#{map_id}:importing",
       true
     )
 
-    state =
-      state
-      |> maybe_import_systems(settings, user_id, nil)
-      |> maybe_import_connections(settings, user_id)
-      |> maybe_import_hubs(settings, user_id)
+    maybe_import_systems(map_id, settings, user_id, nil)
+    maybe_import_connections(map_id, settings, user_id)
+    maybe_import_hubs(map_id, settings, user_id)
 
     WandererApp.Cache.take("map_#{map_id}:importing")
-
-    state
   end
 
-  def update_subscription_settings(%{map: map} = state, subscription_settings),
-    do: %{
-      state
-      | map: map |> WandererApp.Map.update_subscription_settings!(subscription_settings)
-    }
+  def save_map_state(map_id) do
+    systems_last_activity =
+      map_id
+      |> WandererApp.Map.list_systems!()
+      |> Enum.reduce(%{}, fn %{id: system_id} = _system, acc ->
+        case WandererApp.Cache.get("map_#{map_id}:system_#{system_id}:last_activity") do
+          nil ->
+            acc
 
-  def handle_event(:update_characters, state) do
-    Process.send_after(self(), :update_characters, @update_characters_timeout)
+          value ->
+            acc |> Map.put_new(system_id, value)
+        end
+      end)
 
-    CharactersImpl.update_characters(state)
+    connections =
+      map_id
+      |> WandererApp.Map.list_connections!()
 
-    state
+    connections_eol_time =
+      connections
+      |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
+        case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time") do
+          nil ->
+            acc
+
+          value ->
+            acc |> Map.put_new(connection_id, value)
+        end
+      end)
+
+    connections_start_time =
+      connections
+      |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
+        connection_start_time = ConnectionsImpl.get_start_time(map_id, connection_id)
+        acc |> Map.put_new(connection_id, connection_start_time)
+      end)
+
+    WandererApp.Api.MapState.create(%{
+      map_id: map_id,
+      systems_last_activity: systems_last_activity,
+      connections_eol_time: connections_eol_time,
+      connections_start_time: connections_start_time
+    })
   end
 
-  def handle_event(:update_tracked_characters, %{map_id: map_id} = state) do
-    Process.send_after(self(), :update_tracked_characters, @update_tracked_characters_timeout)
+  def handle_event({:update_characters, map_id} = event) do
+    Process.send_after(self(), event, @update_characters_timeout)
+
+    CharactersImpl.update_characters(map_id)
+  end
+
+  def handle_event({:update_tracked_characters, map_id} = event) do
+    Process.send_after(
+      self(),
+      event,
+      @update_tracked_characters_timeout
+    )
 
     CharactersImpl.update_tracked_characters(map_id)
-
-    state
   end
 
-  def handle_event(:update_presence, %{map_id: map_id} = state) do
-    Process.send_after(self(), :update_presence, @update_presence_timeout)
+  def handle_event({:update_presence, map_id} = event) do
+    Process.send_after(self(), event, @update_presence_timeout)
 
     update_presence(map_id)
-
-    state
   end
 
-  def handle_event(:backup_state, state) do
-    Process.send_after(self(), :backup_state, @backup_state_timeout)
-    {:ok, _map_state} = state |> save_map_state()
-
-    state
+  def handle_event({:map_acl_updated, map_id, added_acls, removed_acls}) do
+    AclsImpl.handle_map_acl_updated(map_id, added_acls, removed_acls)
   end
 
-  def handle_event(
-        {:map_acl_updated, added_acls, removed_acls},
-        state
-      ) do
-    state |> AclsImpl.handle_map_acl_updated(added_acls, removed_acls)
+  def handle_event({:acl_updated, %{acl_id: acl_id}}) do
+    # Find all maps that use this ACL
+    case Ash.read(
+           WandererApp.Api.MapAccessList
+           |> Ash.Query.for_read(:read_by_acl, %{acl_id: acl_id})
+         ) do
+      {:ok, map_acls} ->
+        Logger.debug(fn ->
+          "Found #{length(map_acls)} maps using ACL #{acl_id}: #{inspect(Enum.map(map_acls, & &1.map_id))}"
+        end)
+
+        # Broadcast to each map
+        Enum.each(map_acls, fn %{map_id: map_id} ->
+          Logger.debug(fn -> "Broadcasting acl_updated to map #{map_id}" end)
+          AclsImpl.handle_acl_updated(map_id, acl_id)
+        end)
+
+        Logger.debug(fn ->
+          "Successfully broadcast acl_updated event to #{length(map_acls)} maps"
+        end)
+
+      {:error, error} ->
+        Logger.error("Failed to find maps for ACL #{acl_id}: #{inspect(error)}")
+        :ok
+    end
   end
 
-  def handle_event({:acl_updated, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
-    AclsImpl.handle_acl_updated(map_id, acl_id)
+  def handle_event({:acl_deleted, %{acl_id: acl_id}}) do
+    case Ash.read(
+           WandererApp.Api.MapAccessList
+           |> Ash.Query.for_read(:read_by_acl, %{acl_id: acl_id})
+         ) do
+      {:ok, map_acls} ->
+        Logger.debug(fn ->
+          "Found #{length(map_acls)} maps using ACL #{acl_id}: #{inspect(Enum.map(map_acls, & &1.map_id))}"
+        end)
 
-    state
+        # Broadcast to each map
+        Enum.each(map_acls, fn %{map_id: map_id} ->
+          Logger.debug(fn -> "Broadcasting acl_deleted to map #{map_id}" end)
+          AclsImpl.handle_acl_deleted(map_id, acl_id)
+        end)
+
+        Logger.debug(fn ->
+          "Successfully broadcast acl_deleted event to #{length(map_acls)} maps"
+        end)
+
+      {:error, error} ->
+        Logger.error("Failed to find maps for ACL #{acl_id}: #{inspect(error)}")
+        :ok
+    end
   end
 
-  def handle_event({:acl_deleted, %{acl_id: acl_id}}, %{map_id: map_id} = state) do
-    AclsImpl.handle_acl_deleted(map_id, acl_id)
-
-    state
-  end
-
-  def handle_event(:cleanup_connections, state) do
-    Process.send_after(self(), :cleanup_connections, @connections_cleanup_timeout)
-
-    state |> ConnectionsImpl.cleanup_connections()
-  end
-
-  def handle_event(:cleanup_characters, %{map_id: map_id, map: %{owner_id: owner_id}} = state) do
-    Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
-
-    CharactersImpl.cleanup_characters(map_id, owner_id)
-
-    state
-  end
-
-  def handle_event(:cleanup_systems, state) do
-    Process.send_after(self(), :cleanup_systems, @systems_cleanup_timeout)
-
-    state |> SystemsImpl.cleanup_systems()
-  end
-
-  def handle_event(:subscription_settings_updated, %{map: map, map_id: map_id} = state) do
+  def handle_event({:subscription_settings_updated, map_id}) do
     {:ok, subscription_settings} =
       WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id)
 
-    %{
-      state
-      | map:
-          map
-          |> WandererApp.Map.update_subscription_settings!(subscription_settings)
-    }
+    update_subscription_settings(map_id, subscription_settings)
   end
 
-  def handle_event({:options_updated, options}, %{map: map} = state) do
-    map |> WandererApp.Map.update_options!(options)
-
-    %{state | map_opts: map_options(options)}
+  def handle_event({:options_updated, map_id, options}) do
+    update_options(map_id, options)
   end
 
-  def handle_event({ref, _result}, %{map_id: _map_id} = state) when is_reference(ref) do
+  def handle_event({ref, _result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
-
-    state
   end
 
-  def handle_event(msg, state) do
+  def handle_event(msg) do
     Logger.warning("Unhandled event: #{inspect(msg)}")
+  end
 
-    state
+  def update_subscription_settings(map_id, subscription_settings) do
+    {:ok, %{map: map}} = WandererApp.Map.get_map_state(map_id)
+
+    WandererApp.Map.update_map_state(map_id, %{
+      map: map |> WandererApp.Map.update_subscription_settings!(subscription_settings)
+    })
+  end
+
+  def update_options(map_id, options) do
+    {:ok, %{map: map}} = WandererApp.Map.get_map_state(map_id)
+
+    WandererApp.Map.update_map_state(map_id, %{
+      map: map |> WandererApp.Map.update_options!(options),
+      map_opts: map_options(options)
+    })
   end
 
   def broadcast!(map_id, event, payload \\ nil) do
@@ -387,64 +426,7 @@ defmodule WandererApp.Map.Server.Impl do
     ]
   end
 
-  defp save_map_state(%{map_id: map_id} = _state) do
-    systems_last_activity =
-      map_id
-      |> WandererApp.Map.list_systems!()
-      |> Enum.reduce(%{}, fn %{id: system_id} = _system, acc ->
-        case WandererApp.Cache.get("map_#{map_id}:system_#{system_id}:last_activity") do
-          nil ->
-            acc
-
-          value ->
-            acc |> Map.put_new(system_id, value)
-        end
-      end)
-
-    connections =
-      map_id
-      |> WandererApp.Map.list_connections!()
-
-    connections_eol_time =
-      connections
-      |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
-        case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time") do
-          nil ->
-            acc
-
-          value ->
-            acc |> Map.put_new(connection_id, value)
-        end
-      end)
-
-    connections_start_time =
-      connections
-      |> Enum.reduce(%{}, fn %{id: connection_id} = _connection, acc ->
-        connection_start_time = ConnectionsImpl.get_start_time(map_id, connection_id)
-        acc |> Map.put_new(connection_id, connection_start_time)
-      end)
-
-    WandererApp.Api.MapState.create(%{
-      map_id: map_id,
-      systems_last_activity: systems_last_activity,
-      connections_eol_time: connections_eol_time,
-      connections_start_time: connections_start_time
-    })
-  end
-
-  defp maybe_stop_rtree(%{rtree_name: rtree_name} = state) do
-    case Process.whereis(rtree_name) do
-      nil ->
-        :ok
-
-      pid when is_pid(pid) ->
-        GenServer.stop(pid, :normal)
-    end
-
-    state
-  end
-
-  defp init_map_cache(%__MODULE__{map_id: map_id} = state) do
+  defp init_map_cache(map_id) do
     case WandererApp.Api.MapState.by_map_id(map_id) do
       {:ok,
        %{
@@ -456,10 +438,8 @@ defmodule WandererApp.Map.Server.Impl do
         ConnectionsImpl.init_eol_cache(map_id, connections_eol_time)
         ConnectionsImpl.init_start_cache(map_id, connections_start_time)
 
-        state
-
       _ ->
-        state
+        :ok
     end
   end
 
@@ -481,54 +461,70 @@ defmodule WandererApp.Map.Server.Impl do
       |> WandererApp.Map.add_connections!(connections)
       |> WandererApp.Map.add_characters!(characters)
 
+    SystemsImpl.init_map_systems(map_id, systems)
+
     character_ids =
       map_id
       |> WandererApp.Map.get_map!()
       |> Map.get(:characters, [])
+
+    init_map_cache(map_id)
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
     %{state | map: map, map_opts: map_options(options)}
   end
 
-  def maybe_import_systems(state, %{"systems" => systems} = _settings, user_id, character_id) do
-    state =
-      systems
-      |> Enum.reduce(state, fn %{
-                                 "description" => description,
-                                 "id" => id,
-                                 "labels" => labels,
-                                 "locked" => locked,
-                                 "name" => name,
-                                 "position" => %{"x" => x, "y" => y},
-                                 "status" => status,
-                                 "tag" => tag,
-                                 "temporary_name" => temporary_name
-                               } = _system,
-                               acc ->
-        acc
-        |> add_system(
-          %{
-            solar_system_id: id |> String.to_integer(),
-            coordinates: %{"x" => round(x), "y" => round(y)}
-          },
-          user_id,
-          character_id
-        )
-        |> update_system_name(%{solar_system_id: id |> String.to_integer(), name: name})
-        |> update_system_description(%{
-          solar_system_id: id |> String.to_integer(),
-          description: description
-        })
-        |> update_system_status(%{solar_system_id: id |> String.to_integer(), status: status})
-        |> update_system_tag(%{solar_system_id: id |> String.to_integer(), tag: tag})
-        |> update_system_temporary_name(%{
-          solar_system_id: id |> String.to_integer(),
-          temporary_name: temporary_name
-        })
-        |> update_system_locked(%{solar_system_id: id |> String.to_integer(), locked: locked})
-        |> update_system_labels(%{solar_system_id: id |> String.to_integer(), labels: labels})
-      end)
+  def maybe_import_systems(
+        map_id,
+        %{"systems" => systems} = _settings,
+        user_id,
+        character_id
+      ) do
+    systems
+    |> Enum.each(fn %{
+                      "description" => description,
+                      "id" => id,
+                      "labels" => labels,
+                      "locked" => locked,
+                      "name" => name,
+                      "position" => %{"x" => x, "y" => y},
+                      "status" => status,
+                      "tag" => tag,
+                      "temporary_name" => temporary_name
+                    } ->
+      solar_system_id = id |> String.to_integer()
+
+      add_system(
+        map_id,
+        %{
+          solar_system_id: solar_system_id,
+          coordinates: %{"x" => round(x), "y" => round(y)}
+        },
+        user_id,
+        character_id
+      )
+
+      update_system_name(map_id, %{solar_system_id: solar_system_id, name: name})
+
+      update_system_description(map_id, %{
+        solar_system_id: solar_system_id,
+        description: description
+      })
+
+      update_system_status(map_id, %{solar_system_id: solar_system_id, status: status})
+
+      update_system_tag(map_id, %{solar_system_id: solar_system_id, tag: tag})
+
+      update_system_temporary_name(map_id, %{
+        solar_system_id: solar_system_id,
+        temporary_name: temporary_name
+      })
+
+      update_system_locked(map_id, %{solar_system_id: solar_system_id, locked: locked})
+
+      update_system_labels(map_id, %{solar_system_id: solar_system_id, labels: labels})
+    end)
 
     removed_system_ids =
       systems
@@ -536,39 +532,39 @@ defmodule WandererApp.Map.Server.Impl do
       |> Enum.map(fn system -> system["id"] end)
       |> Enum.map(&String.to_integer/1)
 
-    state
-    |> delete_systems(removed_system_ids, user_id, character_id)
+    delete_systems(map_id, removed_system_ids, user_id, character_id)
   end
 
-  def maybe_import_connections(state, %{"connections" => connections} = _settings, _user_id) do
+  def maybe_import_connections(map_id, %{"connections" => connections} = _settings, _user_id) do
     connections
-    |> Enum.reduce(state, fn %{
-                               "source" => source,
-                               "target" => target,
-                               "mass_status" => mass_status,
-                               "time_status" => time_status,
-                               "ship_size_type" => ship_size_type
-                             } = _system,
-                             acc ->
+    |> Enum.each(fn %{
+                      "source" => source,
+                      "target" => target,
+                      "mass_status" => mass_status,
+                      "time_status" => time_status,
+                      "ship_size_type" => ship_size_type
+                    } ->
       source_id = source |> String.to_integer()
       target_id = target |> String.to_integer()
 
-      acc
-      |> add_connection(%{
+      add_connection(map_id, %{
         solar_system_source_id: source_id,
         solar_system_target_id: target_id
       })
-      |> update_connection_time_status(%{
+
+      update_connection_time_status(map_id, %{
         solar_system_source_id: source_id,
         solar_system_target_id: target_id,
         time_status: time_status
       })
-      |> update_connection_mass_status(%{
+
+      update_connection_mass_status(map_id, %{
         solar_system_source_id: source_id,
         solar_system_target_id: target_id,
         mass_status: mass_status
       })
-      |> update_connection_ship_size_type(%{
+
+      update_connection_ship_size_type(map_id, %{
         solar_system_source_id: source_id,
         solar_system_target_id: target_id,
         ship_size_type: ship_size_type
@@ -576,13 +572,12 @@ defmodule WandererApp.Map.Server.Impl do
     end)
   end
 
-  def maybe_import_hubs(state, %{"hubs" => hubs} = _settings, _user_id) do
+  def maybe_import_hubs(map_id, %{"hubs" => hubs} = _settings, _user_id) do
     hubs
-    |> Enum.reduce(state, fn hub, acc ->
+    |> Enum.each(fn hub ->
       solar_system_id = hub |> String.to_integer()
 
-      acc
-      |> add_hub(%{solar_system_id: solar_system_id})
+      add_hub(map_id, %{solar_system_id: solar_system_id})
     end)
   end
 

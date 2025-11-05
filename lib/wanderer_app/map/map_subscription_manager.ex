@@ -328,7 +328,7 @@ defmodule WandererApp.Map.SubscriptionManager do
           @pubsub_client.broadcast(
             WandererApp.PubSub,
             "maps:#{map.id}",
-            :subscription_settings_updated
+            {:subscription_settings_updated, map.id}
           )
 
           :telemetry.execute([:wanderer_app, :map, :subscription, :renew], %{count: 1}, %{
@@ -388,7 +388,7 @@ defmodule WandererApp.Map.SubscriptionManager do
           @pubsub_client.broadcast(
             WandererApp.PubSub,
             "maps:#{map.id}",
-            :subscription_settings_updated
+            {:subscription_settings_updated, map.id}
           )
 
           case WandererApp.License.LicenseManager.get_license_by_map_id(map.id) do
@@ -423,7 +423,7 @@ defmodule WandererApp.Map.SubscriptionManager do
     @pubsub_client.broadcast(
       WandererApp.PubSub,
       "maps:#{subscription.map_id}",
-      :subscription_settings_updated
+      {:subscription_settings_updated, subscription.map_id}
     )
 
     case WandererApp.License.LicenseManager.get_license_by_map_id(subscription.map_id) do

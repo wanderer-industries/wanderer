@@ -88,13 +88,13 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
   def get_tracked_system_ids do
     try do
       # Get systems from currently running maps
-      active_maps = WandererApp.Map.RegistryHelper.list_all_maps()
+      {:ok, started_maps_ids} = WandererApp.Cache.lookup("started_maps", [])
 
-      Logger.debug("[MapIntegration] Found #{length(active_maps)} active maps")
+      Logger.debug("[MapIntegration] Found #{length(started_maps_ids)} active maps")
 
       map_systems =
-        active_maps
-        |> Enum.map(fn %{id: map_id} ->
+        started_maps_ids
+        |> Enum.map(fn map_id ->
           case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
             {:ok, systems} ->
               system_ids = Enum.map(systems, & &1.solar_system_id)
@@ -114,7 +114,7 @@ defmodule WandererApp.Kills.Subscription.MapIntegration do
         |> Enum.uniq()
 
       Logger.debug(fn ->
-        "[MapIntegration] Total tracked systems: #{length(system_ids)} across #{length(active_maps)} maps"
+        "[MapIntegration] Total tracked systems: #{length(system_ids)} across #{length(started_maps_ids)} maps"
       end)
 
       {:ok, system_ids}

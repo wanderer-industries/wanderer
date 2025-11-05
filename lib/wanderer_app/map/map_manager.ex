@@ -8,12 +8,10 @@ defmodule WandererApp.Map.Manager do
   require Logger
 
   alias WandererApp.Map.Server
-  alias WandererApp.Map.ServerSupervisor
 
   @maps_start_per_second 10
   @maps_start_interval 1000
   @maps_queue :maps_queue
-  @garbage_collection_interval :timer.hours(1)
   @check_maps_queue_interval :timer.seconds(1)
 
   @pings_cleanup_interval :timer.minutes(10)
@@ -39,15 +37,11 @@ defmodule WandererApp.Map.Manager do
     do: WandererApp.Queue.push_uniq(@maps_queue, map_id)
 
   def stop_map(map_id) when is_binary(map_id) do
-    case Server.map_pid(map_id) do
-      pid when is_pid(pid) ->
-        GenServer.cast(
-          pid,
-          :stop
-        )
+    with {:ok, started_maps} <- WandererApp.Cache.lookup("started_maps", []),
+         true <- Enum.member?(started_maps, map_id) do
+      Logger.warning(fn -> "Shutting down map server: #{inspect(map_id)}" end)
 
-      nil ->
-        :ok
+      WandererApp.Map.MapPoolDynamicSupervisor.stop_map(map_id)
     end
   end
 
@@ -56,12 +50,10 @@ defmodule WandererApp.Map.Manager do
   @impl true
   def init([]) do
     WandererApp.Queue.new(@maps_queue, [])
+    WandererApp.Cache.insert("started_maps", [])
 
     {:ok, check_maps_queue_timer} =
       :timer.send_interval(@check_maps_queue_interval, :check_maps_queue)
-
-    {:ok, garbage_collector_timer} =
-      :timer.send_interval(@garbage_collection_interval, :garbage_collect)
 
     {:ok, pings_cleanup_timer} =
       :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
@@ -72,7 +64,6 @@ defmodule WandererApp.Map.Manager do
 
     {:ok,
      %{
-       garbage_collector_timer: garbage_collector_timer,
        check_maps_queue_timer: check_maps_queue_timer,
        pings_cleanup_timer: pings_cleanup_timer
      }}
@@ -107,36 +98,6 @@ defmodule WandererApp.Map.Manager do
   end
 
   @impl true
-  def handle_info(:garbage_collect, state) do
-    try do
-      WandererApp.Map.RegistryHelper.list_all_maps()
-      |> Enum.each(fn %{id: map_id, pid: server_pid} ->
-        case Process.alive?(server_pid) do
-          true ->
-            presence_character_ids =
-              WandererApp.Cache.lookup!("map_#{map_id}:presence_character_ids", [])
-
-            if presence_character_ids |> Enum.empty?() do
-              Logger.info("No more characters present on: #{map_id}, shutting down map server...")
-              stop_map(map_id)
-            end
-
-          false ->
-            Logger.warning("Server not alive: #{inspect(server_pid)}")
-            :ok
-        end
-      end)
-
-      {:noreply, state}
-    rescue
-      e ->
-        Logger.error(Exception.message(e))
-
-        {:noreply, state}
-    end
-  end
-
-  @impl true
   def handle_info(:cleanup_pings, state) do
     try do
       cleanup_expired_pings()
@@ -156,7 +117,7 @@ defmodule WandererApp.Map.Manager do
         Enum.each(pings, fn %{id: ping_id, map_id: map_id, type: type} = ping ->
           {:ok, %{system: system}} = ping |> Ash.load([:system])
 
-          WandererApp.Map.Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+          Server.Impl.broadcast!(map_id, :ping_cancelled, %{
             id: ping_id,
             solar_system_id: system.solar_system_id,
             type: type
@@ -237,21 +198,21 @@ defmodule WandererApp.Map.Manager do
   end
 
   defp start_map_server(map_id) do
-    case DynamicSupervisor.start_child(
-           {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-           {ServerSupervisor, map_id: map_id}
-         ) do
-      {:ok, pid} ->
-        {:ok, pid}
+    with {:ok, started_maps} <- WandererApp.Cache.lookup("started_maps", []),
+         false <- Enum.member?(started_maps, map_id) do
+      WandererApp.Cache.insert_or_update(
+        "started_maps",
+        [map_id],
+        fn existing ->
+          [map_id | existing] |> Enum.uniq()
+        end
+      )
 
-      {:error, {:already_started, pid}} ->
-        {:ok, pid}
-
-      {:error, {:shutdown, {:failed_to_start_child, Server, {:already_started, pid}}}} ->
-        {:ok, pid}
-
-      {:error, reason} ->
-        {:error, reason}
+      WandererApp.Map.MapPoolDynamicSupervisor.start_map(map_id)
+    else
+      _error ->
+        Logger.warning("Map already started: #{map_id}")
+        :ok
     end
   end
 end

@@ -46,10 +46,6 @@ defmodule WandererApp.Character.TrackerPool do
     {:ok, _} = Registry.register(@unique_registry, Module.concat(__MODULE__, uuid), tracked_ids)
     {:ok, _} = Registry.register(@registry, __MODULE__, uuid)
 
-    # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
-    #   {:commit, ids ++ tracked_ids}
-    # end)
-
     tracked_ids
     |> Enum.each(fn id ->
       Cachex.put(@cache, id, uuid)
@@ -79,9 +75,6 @@ defmodule WandererApp.Character.TrackerPool do
       [tracked_id | r_tracked_ids]
     end)
 
-    # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
-    #   {:commit, ids ++ [tracked_id]}
-    # end)
     Cachex.put(@cache, tracked_id, uuid)
 
     {:noreply, %{state | characters: [tracked_id | characters]}}
@@ -96,10 +89,6 @@ defmodule WandererApp.Character.TrackerPool do
       r_tracked_ids |> Enum.reject(fn id -> id == tracked_id end)
     end)
 
-    # Cachex.get_and_update(@cache, :tracked_characters, fn ids ->
-    #   {:commit, ids |> Enum.reject(fn id -> id == tracked_id end)}
-    # end)
-    #
     Cachex.del(@cache, tracked_id)
 
     {:noreply, %{state | characters: characters |> Enum.reject(fn id -> id == tracked_id end)}}

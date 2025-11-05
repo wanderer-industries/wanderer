@@ -24,11 +24,11 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         |> assign(:owner_user_id, user.id)
 
       # Start the map server for the test map using the proper PartitionSupervisor
-      {:ok, _pid} =
-        DynamicSupervisor.start_child(
-          {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-          {WandererApp.Map.ServerSupervisor, map_id: map.id}
-        )
+      # {:ok, _pid} =
+      #   DynamicSupervisor.start_child(
+      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
+      #   )
 
       %{conn: conn, user: user, character: character, map: map}
     end

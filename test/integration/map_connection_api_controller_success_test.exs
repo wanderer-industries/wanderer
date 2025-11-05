@@ -13,11 +13,11 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       map = insert(:map, %{owner_id: character.id})
 
       # Start the map server for this test map
-      {:ok, _pid} =
-        DynamicSupervisor.start_child(
-          {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-          {WandererApp.Map.ServerSupervisor, map_id: map.id}
-        )
+      # {:ok, _pid} =
+      #   DynamicSupervisor.start_child(
+      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
+      #   )
 
       # Create systems that connections can reference
       system1 =
@@ -181,11 +181,11 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       map = insert(:map, %{owner_id: character.id})
 
       # Start the map server for this test map
-      {:ok, _pid} =
-        DynamicSupervisor.start_child(
-          {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-          {WandererApp.Map.ServerSupervisor, map_id: map.id}
-        )
+      # {:ok, _pid} =
+      #   DynamicSupervisor.start_child(
+      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
+      #   )
 
       conn =
         build_conn()

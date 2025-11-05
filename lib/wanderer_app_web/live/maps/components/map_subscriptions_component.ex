@@ -108,7 +108,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     Phoenix.PubSub.broadcast(
       WandererApp.PubSub,
       "maps:#{map_id}",
-      :subscription_settings_updated
+      {:subscription_settings_updated, map_id}
     )
 
     :telemetry.execute([:wanderer_app, :map, :subscription, :cancel], %{count: 1}, %{
@@ -213,7 +213,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "maps:#{map_id}",
-          :subscription_settings_updated
+          {:subscription_settings_updated, map_id}
         )
 
         :telemetry.execute([:wanderer_app, :map, :subscription, :new], %{count: 1}, %{
@@ -299,7 +299,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "maps:#{map_id}",
-          :subscription_settings_updated
+          {:subscription_settings_updated, map_id}
         )
 
         :telemetry.execute([:wanderer_app, :map, :subscription, :update], %{count: 1}, %{
