@@ -373,7 +373,7 @@ defmodule WandererAppWeb.MapsLive do
         Phoenix.PubSub.broadcast(
           WandererApp.PubSub,
           "maps:#{map.id}",
-          {:map_acl_updated, added_acls, removed_acls}
+          {:map_acl_updated, map.id, added_acls, removed_acls}
         )
 
         {:ok, tracked_characters} =
@@ -460,7 +460,7 @@ defmodule WandererAppWeb.MapsLive do
     @pubsub_client.broadcast(
       WandererApp.PubSub,
       "maps:#{map_id}",
-      {:options_updated, options}
+      {:options_updated, map_id, options}
     )
 
     {:noreply, socket |> assign(map: updated_map, options_form: options_form)}

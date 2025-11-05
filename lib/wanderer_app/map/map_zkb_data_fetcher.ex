@@ -29,9 +29,11 @@ defmodule WandererApp.Map.ZkbDataFetcher do
     kills_enabled = Application.get_env(:wanderer_app, :wanderer_kills_service_enabled, true)
 
     if kills_enabled do
-      WandererApp.Map.RegistryHelper.list_all_maps()
+      {:ok, started_maps_ids} = WandererApp.Cache.lookup("started_maps", [])
+
+      started_maps_ids
       |> Task.async_stream(
-        fn %{id: map_id, pid: _server_pid} ->
+        fn map_id ->
           try do
             if WandererApp.Map.Server.map_pid(map_id) do
               # Always update kill counts

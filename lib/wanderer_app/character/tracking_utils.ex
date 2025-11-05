@@ -240,8 +240,6 @@ defmodule WandererApp.Character.TrackingUtils do
         })
       end)
 
-      # WandererApp.Map.Server.untrack_characters(map_id, character_ids)
-
       :ok
     else
       true ->
@@ -249,20 +247,6 @@ defmodule WandererApp.Character.TrackingUtils do
         {:error, "caller_pid is required"}
     end
   end
-
-  # def add_characters([], _map_id, _track_character), do: :ok
-
-  # def add_characters([character | characters], map_id, track_character) do
-  #   :ok = WandererApp.Map.Server.add_character(map_id, character, track_character)
-  #   add_characters(characters, map_id, track_character)
-  # end
-
-  # def remove_characters([], _map_id), do: :ok
-
-  # def remove_characters([character | characters], map_id) do
-  #   :ok = WandererApp.Map.Server.remove_character(map_id, character.id)
-  #   remove_characters(characters, map_id)
-  # end
 
   def get_main_character(
         nil,

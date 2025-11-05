@@ -1,13 +1,13 @@
-defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
+defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   @moduledoc false
   use DynamicSupervisor
 
   require Logger
 
-  @cache :tracked_characters
-  @registry :tracker_pool_registry
-  @unique_registry :unique_tracker_pool_registry
-  @tracker_pool_limit 50
+  @cache :map_pool_cache
+  @registry :map_pool_registry
+  @unique_registry :unique_map_pool_registry
+  @map_pool_limit 10
 
   @name __MODULE__
 
@@ -19,41 +19,41 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_tracking(tracked_id) do
-    case Registry.lookup(@registry, WandererApp.Character.TrackerPool) do
+  def start_map(map_id) do
+    case Registry.lookup(@registry, WandererApp.Map.MapPool) do
       [] ->
-        start_child([tracked_id], 0)
+        start_child([map_id], 0)
 
       pools ->
         case get_available_pool(pools) do
           nil ->
-            start_child([tracked_id], pools |> Enum.count())
+            start_child([map_id], pools |> Enum.count())
 
           pid ->
-            GenServer.cast(pid, {:add_tracked_id, tracked_id})
+            GenServer.cast(pid, {:start_map, map_id})
         end
     end
   end
 
-  def stop_tracking(tracked_id) do
-    {:ok, uuid} = Cachex.get(@cache, tracked_id)
+  def stop_map(map_id) do
+    {:ok, pool_uuid} = Cachex.get(@cache, map_id)
 
     case Registry.lookup(
            @unique_registry,
-           Module.concat(WandererApp.Character.TrackerPool, uuid)
+           Module.concat(WandererApp.Map.MapPool, pool_uuid)
          ) do
       [] ->
         :ok
 
       [{pool_pid, _}] ->
-        GenServer.cast(pool_pid, {:remove_tracked_id, tracked_id})
+        GenServer.cast(pool_pid, {:stop_map, map_id})
     end
   end
 
   defp get_available_pool([]), do: nil
 
   defp get_available_pool([{pid, uuid} | pools]) do
-    case Registry.lookup(@unique_registry, Module.concat(WandererApp.Character.TrackerPool, uuid)) do
+    case Registry.lookup(@unique_registry, Module.concat(WandererApp.Map.MapPool, uuid)) do
       [] ->
         nil
 
@@ -70,18 +70,18 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
 
   defp get_available_pool_pid([]), do: nil
 
-  defp get_available_pool_pid([{pid, tracked_ids} | pools]) do
-    if Enum.count(tracked_ids) < @tracker_pool_limit do
+  defp get_available_pool_pid([{pid, map_ids} | pools]) do
+    if Enum.count(map_ids) < @map_pool_limit do
       pid
     else
       get_available_pool_pid(pools)
     end
   end
 
-  defp start_child(tracked_ids, pools_count) do
-    case DynamicSupervisor.start_child(@name, {WandererApp.Character.TrackerPool, tracked_ids}) do
+  defp start_child(map_ids, pools_count) do
+    case DynamicSupervisor.start_child(@name, {WandererApp.Map.MapPool, map_ids}) do
       {:ok, pid} ->
-        Logger.info("Starting tracking pool, total pools: #{pools_count + 1}")
+        Logger.info("Starting map pool, total map_pools: #{pools_count + 1}")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->

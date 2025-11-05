@@ -38,7 +38,12 @@ defmodule WandererApp.Application do
       ),
       Supervisor.child_spec({Cachex, name: :ship_types_cache}, id: :ship_types_cache_worker),
       Supervisor.child_spec({Cachex, name: :character_cache}, id: :character_cache_worker),
+      Supervisor.child_spec({Cachex, name: :acl_cache}, id: :acl_cache_worker),
       Supervisor.child_spec({Cachex, name: :map_cache}, id: :map_cache_worker),
+      Supervisor.child_spec({Cachex, name: :map_pool_cache},
+        id: :map_pool_cache_worker
+      ),
+      Supervisor.child_spec({Cachex, name: :map_state_cache}, id: :map_state_cache_worker),
       Supervisor.child_spec({Cachex, name: :character_state_cache},
         id: :character_state_cache_worker
       ),
@@ -48,10 +53,7 @@ defmodule WandererApp.Application do
       Supervisor.child_spec({Cachex, name: :wanderer_app_cache},
         id: :wanderer_app_cache_worker
       ),
-      {Registry, keys: :unique, name: WandererApp.MapRegistry},
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
-      {PartitionSupervisor,
-       child_spec: DynamicSupervisor, name: WandererApp.Map.DynamicSupervisors},
       {PartitionSupervisor,
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
       WandererAppWeb.PresenceGracePeriodManager,
@@ -78,6 +80,7 @@ defmodule WandererApp.Application do
           WandererApp.Server.ServerStatusTracker,
           WandererApp.Server.TheraDataFetcher,
           {WandererApp.Character.TrackerPoolSupervisor, []},
+          {WandererApp.Map.MapPoolSupervisor, []},
           WandererApp.Character.TrackerManager,
           WandererApp.Map.Manager
         ] ++ security_audit_children

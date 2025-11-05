@@ -8,14 +8,14 @@ defmodule WandererApp.Map.Server.PingsImpl do
   @ping_auto_expire_timeout :timer.minutes(15)
 
   def add_ping(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           solar_system_id: solar_system_id,
           type: type,
           message: message,
           character_id: character_id,
           user_id: user_id
-        } = ping_info
+        } = _ping_info
       ) do
     with {:ok, character} <- WandererApp.Character.get_character(character_id),
          system <-
@@ -57,23 +57,20 @@ defmodule WandererApp.Map.Server.PingsImpl do
         map_id: map_id,
         solar_system_id: "#{solar_system_id}"
       })
-
-      state
     else
       error ->
         Logger.error("Failed to add_ping: #{inspect(error, pretty: true)}")
-        state
     end
   end
 
   def cancel_ping(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           id: ping_id,
           character_id: character_id,
           user_id: user_id,
           type: type
-        } = ping_info
+        } = _ping_info
       ) do
     with {:ok, character} <- WandererApp.Character.get_character(character_id),
          {:ok,
@@ -105,12 +102,9 @@ defmodule WandererApp.Map.Server.PingsImpl do
         map_id: map_id,
         solar_system_id: solar_system_id
       })
-
-      state
     else
       error ->
         Logger.error("Failed to cancel_ping: #{inspect(error, pretty: true)}")
-        state
     end
   end
 end

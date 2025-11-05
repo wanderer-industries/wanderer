@@ -20,14 +20,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
-  def init_map_systems(_map_id, _rtree_name, [] = _systems), do: :ok
+  def init_map_systems(_map_id, [] = _systems), do: :ok
 
-  def init_map_systems(map_id, rtree_name, systems) do
+  def init_map_systems(map_id, systems) do
     systems
     |> Enum.each(fn %{id: system_id, solar_system_id: solar_system_id} = system ->
       @ddrt.insert(
         {solar_system_id, WandererApp.Map.PositionCalculator.get_system_bounding_rect(system)},
-        rtree_name
+        "rtree_#{map_id}"
       )
 
       WandererApp.Cache.put(
@@ -39,7 +39,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   end
 
   def add_system(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           solar_system_id: solar_system_id
         } = system_info,
@@ -47,17 +47,19 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         character_id,
         opts
       ) do
-    case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
+    map_id
+    |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
+    |> case do
       {:ok, _location} ->
-        state |> do_add_system(system_info, user_id, character_id)
+        do_add_system(map_id, system_info, user_id, character_id)
 
       {:error, :already_exists} ->
-        state
+        :ok
     end
   end
 
   def paste_systems(
-        %{map_id: map_id} = state,
+        map_id,
         systems,
         user_id,
         character_id,
@@ -73,8 +75,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
         {:ok, _location} ->
           if opts |> Keyword.get(:add_not_existing, true) do
-            state
-            |> do_add_system(
+            do_add_system(
+              map_id,
               %{solar_system_id: solar_system_id, coordinates: coordinates, extra_info: system},
               user_id,
               character_id
@@ -91,12 +93,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
       end
     end)
-
-    state
   end
 
   def add_system_comment(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           solar_system_id: solar_system_id,
           text: text
@@ -124,12 +124,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       solar_system_id: solar_system_id,
       comment: comment
     })
-
-    state
   end
 
   def remove_system_comment(
-        %{map_id: map_id} = state,
+        map_id,
         comment_id,
         user_id,
         character_id
@@ -143,11 +141,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       solar_system_id: system.solar_system_id,
       comment_id: comment_id
     })
-
-    state
   end
 
-  def cleanup_systems(%{map_id: map_id} = state) do
+  def cleanup_systems(map_id) do
     expired_systems =
       map_id
       |> WandererApp.Map.list_systems!()
@@ -182,71 +178,66 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       end)
       |> Enum.map(& &1.solar_system_id)
 
-    case expired_systems |> Enum.empty?() do
-      false ->
-        state |> delete_systems(expired_systems, nil, nil)
-
-      _ ->
-        state
+    if expired_systems |> Enum.empty?() |> Kernel.not() do
+      delete_systems(map_id, expired_systems, nil, nil)
     end
   end
 
   def update_system_name(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_name, [:name], update)
+      do: update_system(map_id, :update_name, [:name], update)
 
   def update_system_description(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_description, [:description], update)
+      do: update_system(map_id, :update_description, [:description], update)
 
   def update_system_status(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_status, [:status], update)
+      do: update_system(map_id, :update_status, [:status], update)
 
   def update_system_tag(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_tag, [:tag], update)
+      do: update_system(map_id, :update_tag, [:tag], update)
 
   def update_system_temporary_name(
-        state,
+        map_id,
         update
-      ) do
-    state |> update_system(:update_temporary_name, [:temporary_name], update)
-  end
+      ),
+      do: update_system(map_id, :update_temporary_name, [:temporary_name], update)
 
   def update_system_locked(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_locked, [:locked], update)
+      do: update_system(map_id, :update_locked, [:locked], update)
 
   def update_system_labels(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_labels, [:labels], update)
+      do: update_system(map_id, :update_labels, [:labels], update)
 
   def update_system_linked_sig_eve_id(
-        state,
+        map_id,
         update
       ),
-      do: state |> update_system(:update_linked_sig_eve_id, [:linked_sig_eve_id], update)
+      do: update_system(map_id, :update_linked_sig_eve_id, [:linked_sig_eve_id], update)
 
   def update_system_position(
-        %{rtree_name: rtree_name} = state,
+        map_id,
         update
       ),
       do:
-        state
-        |> update_system(
+        update_system(
+          map_id,
           :update_position,
           [:position_x, :position_y],
           update,
@@ -254,13 +245,13 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             @ddrt.update(
               updated_system.solar_system_id,
               WandererApp.Map.PositionCalculator.get_system_bounding_rect(updated_system),
-              rtree_name
+              "rtree_#{map_id}"
             )
           end
         )
 
   def add_hub(
-        %{map_id: map_id} = state,
+        map_id,
         hub_info
       ) do
     with :ok <- WandererApp.Map.add_hub(map_id, hub_info),
@@ -268,16 +259,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
          {:ok, _} <-
            WandererApp.MapRepo.update_hubs(map_id, hubs) do
       Impl.broadcast!(map_id, :update_map, %{hubs: hubs})
-      state
     else
       error ->
         Logger.error("Failed to add hub: #{inspect(error, pretty: true)}")
-        state
+        :ok
     end
   end
 
   def remove_hub(
-        %{map_id: map_id} = state,
+        map_id,
         hub_info
       ) do
     with :ok <- WandererApp.Map.remove_hub(map_id, hub_info),
@@ -285,16 +275,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
          {:ok, _} <-
            WandererApp.MapRepo.update_hubs(map_id, hubs) do
       Impl.broadcast!(map_id, :update_map, %{hubs: hubs})
-      state
     else
       error ->
         Logger.error("Failed to remove hub: #{inspect(error, pretty: true)}")
-        state
+        :ok
     end
   end
 
   def delete_systems(
-        %{map_id: map_id, rtree_name: rtree_name} = state,
+        map_id,
         removed_ids,
         user_id,
         character_id
@@ -314,7 +303,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       |> case do
         {:ok, result} ->
           :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
-          @ddrt.delete([solar_system_id], rtree_name)
+          @ddrt.delete([solar_system_id], "rtree_#{map_id}")
           Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
 
           # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
@@ -342,7 +331,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
 
           try do
-            cleanup_linked_system_sig_eve_ids(state, [system_id])
+            cleanup_linked_system_sig_eve_ids(map_id, [system_id])
           rescue
             e ->
               Logger.error("Failed to cleanup system linked sig eve ids: #{inspect(e)}")
@@ -355,8 +344,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           :ok
       end
     end)
-
-    state
   end
 
   defp track_systems_removed(map_id, user_id, character_id, removed_solar_system_ids)
@@ -422,7 +409,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
-  defp cleanup_linked_system_sig_eve_ids(state, system_ids_to_remove) do
+  defp cleanup_linked_system_sig_eve_ids(map_id, system_ids_to_remove) do
     linked_system_ids =
       system_ids_to_remove
       |> Enum.map(fn system_id ->
@@ -435,17 +422,19 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     linked_system_ids
     |> Enum.each(fn linked_system_id ->
-      update_system_linked_sig_eve_id(state, %{
+      update_system(map_id, :update_linked_sig_eve_id, [:linked_sig_eve_id], %{
         solar_system_id: linked_system_id,
         linked_sig_eve_id: nil
       })
     end)
   end
 
-  def maybe_add_system(map_id, location, old_location, rtree_name, map_opts)
+  def maybe_add_system(map_id, location, old_location, map_opts)
       when not is_nil(location) do
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
+        rtree_name = "rtree_#{map_id}"
+
         {:ok, position} = calc_new_system_position(map_id, old_location, rtree_name, map_opts)
 
         case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
@@ -544,10 +533,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end
   end
 
-  def maybe_add_system(_map_id, _location, _old_location, _rtree_name, _map_opts), do: :ok
+  def maybe_add_system(_map_id, _location, _old_location, _map_opts), do: :ok
 
   defp do_add_system(
-         %{map_id: map_id, map_opts: map_opts, rtree_name: rtree_name} = state,
+         map_id,
          %{
            solar_system_id: solar_system_id,
            coordinates: coordinates
@@ -556,6 +545,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
          character_id
        ) do
     extra_info = system_info |> Map.get(:extra_info)
+    rtree_name = "rtree_#{map_id}"
+    {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
 
     %{"x" => x, "y" => y} =
       coordinates
@@ -629,7 +620,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           })
       end
 
-    :ok = map_id |> WandererApp.Map.add_system(system)
+    :ok = WandererApp.Map.add_system(map_id, system)
 
     WandererApp.Cache.put(
       "map_#{map_id}:system_#{system.id}:last_activity",
@@ -658,8 +649,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         map_id: map_id,
         solar_system_id: solar_system_id
       })
-
-    state
   end
 
   defp maybe_update_extra_info(system, nil), do: system
@@ -791,7 +780,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
        |> WandererApp.Map.PositionCalculator.get_new_system_position(rtree_name, opts)}
 
   defp update_system(
-         %{map_id: map_id} = state,
+         map_id,
          update_method,
          attributes,
          update,
@@ -815,12 +804,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       end
 
       update_map_system_last_activity(map_id, updated_system)
-
-      state
     else
       error ->
         Logger.error("Failed to update system: #{inspect(error, pretty: true)}")
-        state
+        :ok
     end
   end
 
@@ -840,13 +827,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     WandererApp.ExternalEvents.broadcast(map_id, :system_metadata_changed, %{
       solar_system_id: updated_system.solar_system_id,
       name: updated_system.name,
-      # ADD
       temporary_name: updated_system.temporary_name,
-      # ADD
       labels: updated_system.labels,
-      # ADD
       description: updated_system.description,
-      # ADD
       status: updated_system.status
     })
   end

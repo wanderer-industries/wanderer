@@ -109,8 +109,8 @@ defmodule WandererApp.Kills.MapEventListener do
 
   # Handle re-subscription attempt
   def handle_info(:resubscribe_to_maps, state) do
-    running_maps = WandererApp.Map.RegistryHelper.list_all_maps()
-    current_running_map_ids = MapSet.new(Enum.map(running_maps, & &1.id))
+    {:ok, started_maps} = WandererApp.Cache.lookup("started_maps", [])
+    current_running_map_ids = MapSet.new(started_maps)
 
     Logger.debug(fn ->
       "[MapEventListener] Resubscribing to maps. Running maps: #{MapSet.size(current_running_map_ids)}"

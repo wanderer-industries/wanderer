@@ -139,30 +139,27 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   def init_start_cache(_map_id, _connections_start_time), do: :ok
 
   def add_connection(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id,
           character_id: character_id
         } = connection_info
-      ) do
-    :ok =
-      maybe_add_connection(
-        map_id,
-        %{solar_system_id: solar_system_target_id},
-        %{
-          solar_system_id: solar_system_source_id
-        },
-        character_id,
-        true,
-        connection_info |> Map.get(:extra_info)
-      )
-
-    state
-  end
+      ),
+      do:
+        maybe_add_connection(
+          map_id,
+          %{solar_system_id: solar_system_target_id},
+          %{
+            solar_system_id: solar_system_source_id
+          },
+          character_id,
+          true,
+          connection_info |> Map.get(:extra_info)
+        )
 
   def paste_connections(
-        %{map_id: map_id} = state,
+        map_id,
         connections,
         _user_id,
         character_id
@@ -175,28 +172,16 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       solar_system_source_id = source |> String.to_integer()
       solar_system_target_id = target |> String.to_integer()
 
-      state
-      |> add_connection(%{
+      add_connection(map_id, %{
         solar_system_source_id: solar_system_source_id,
         solar_system_target_id: solar_system_target_id,
         character_id: character_id,
         extra_info: connection
       })
     end)
-
-    state
   end
 
   def delete_connection(
-        %{map_id: map_id} = state,
-        connection_info
-      ) do
-    :ok = do_delete_connection(map_id, connection_info)
-
-    state
-  end
-
-  def do_delete_connection(
         map_id,
         %{
           solar_system_source_id: solar_system_source_id,
@@ -208,20 +193,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_id: solar_system_source_id
         })
 
-  def update_connection_type(
-        %{map_id: map_id} = state,
-        %{
-          solar_system_source_id: solar_system_source_id,
-          solar_system_target_id: solar_system_target_id,
-          character_id: character_id
-        } = _connection_info,
-        type
-      ) do
-    state
-  end
-
   def get_connection_info(
-        %{map_id: map_id} = _state,
+        map_id,
         %{
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id
@@ -243,15 +216,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   end
 
   def update_connection_time_status(
-        %{map_id: map_id} = state,
-        connection_update
-      ) do
-    do_update_connection_time_status(map_id, connection_update)
-
-    state
-  end
-
-  def do_update_connection_time_status(
         map_id,
         connection_update
       ),
@@ -283,48 +247,36 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         end)
 
   def update_connection_type(
-        %{map_id: map_id} = state,
+        map_id,
         connection_update
-      ) do
-    update_connection(map_id, :update_type, [:type], connection_update)
-
-    state
-  end
+      ),
+      do: update_connection(map_id, :update_type, [:type], connection_update)
 
   def update_connection_mass_status(
-        %{map_id: map_id} = state,
+        map_id,
         connection_update
-      ) do
-    update_connection(map_id, :update_mass_status, [:mass_status], connection_update)
-
-    state
-  end
+      ),
+      do: update_connection(map_id, :update_mass_status, [:mass_status], connection_update)
 
   def update_connection_ship_size_type(
-        %{map_id: map_id} = state,
+        map_id,
         connection_update
-      ) do
-    update_connection(map_id, :update_ship_size_type, [:ship_size_type], connection_update)
-    state
-  end
+      ),
+      do: update_connection(map_id, :update_ship_size_type, [:ship_size_type], connection_update)
 
   def update_connection_locked(
-        %{map_id: map_id} = state,
+        map_id,
         connection_update
-      ) do
-    update_connection(map_id, :update_locked, [:locked], connection_update)
-    state
-  end
+      ),
+      do: update_connection(map_id, :update_locked, [:locked], connection_update)
 
   def update_connection_custom_info(
-        %{map_id: map_id} = state,
+        map_id,
         connection_update
-      ) do
-    update_connection(map_id, :update_custom_info, [:custom_info], connection_update)
-    state
-  end
+      ),
+      do: update_connection(map_id, :update_custom_info, [:custom_info], connection_update)
 
-  def cleanup_connections(%{map_id: map_id} = state) do
+  def cleanup_connections(map_id) do
     connection_auto_expire_hours = get_connection_auto_expire_hours()
     connection_auto_eol_hours = get_connection_auto_eol_hours()
     connection_eol_expire_timeout_hours = get_eol_expire_timeout_mins() / 60
@@ -378,13 +330,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                       solar_system_source: solar_system_source_id,
                       solar_system_target: solar_system_target_id
                     } ->
-      do_delete_connection(map_id, %{
+      delete_connection(map_id, %{
         solar_system_source_id: solar_system_source_id,
         solar_system_target_id: solar_system_target_id
       })
     end)
-
-    state
   end
 
   defp maybe_update_connection_time_status(map_id, %{
@@ -405,7 +355,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
          ) do
       set_start_time(map_id, connection_id, DateTime.utc_now())
 
-      do_update_connection_time_status(map_id, %{
+      update_connection_time_status(map_id, %{
         solar_system_source_id: solar_system_source_id,
         solar_system_target_id: solar_system_target_id,
         time_status: new_time_status
