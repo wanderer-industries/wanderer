@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.1](https://github.com/wanderer-industries/wanderer/compare/v1.84.0...v1.84.1) (2025-11-01)
+
+
+
+
+### Bug Fixes:
+
+* Core: Fixed connection time status update issue
+
 ## [v1.84.0](https://github.com/wanderer-industries/wanderer/compare/v1.83.4...v1.84.0) (2025-10-29)
 
 
