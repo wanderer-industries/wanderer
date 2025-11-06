@@ -35,16 +35,14 @@ defmodule WandererApp.Map.ZkbDataFetcher do
       |> Task.async_stream(
         fn map_id ->
           try do
-            if WandererApp.Map.Server.map_pid(map_id) do
-              # Always update kill counts
-              update_map_kills(map_id)
+            # Always update kill counts
+            update_map_kills(map_id)
 
-              # Update detailed kills for maps with active subscriptions
-              {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
+            # Update detailed kills for maps with active subscriptions
+            {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
 
-              if is_subscription_active do
-                update_detailed_map_kills(map_id)
-              end
+            if is_subscription_active do
+              update_detailed_map_kills(map_id)
             end
           rescue
             e ->
