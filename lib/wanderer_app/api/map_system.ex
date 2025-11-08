@@ -9,6 +9,11 @@ defmodule WandererApp.Api.MapSystem do
   postgres do
     repo(WandererApp.Repo)
     table("map_system_v1")
+
+    custom_indexes do
+      # Partial index for efficient visible systems query
+      index [:map_id], where: "visible = true", name: "map_system_v1_map_id_visible_index"
+    end
   end
 
   json_api do

@@ -9,6 +9,11 @@ defmodule WandererApp.Api.MapConnection do
   postgres do
     repo(WandererApp.Repo)
     table("map_chain_v1")
+
+    custom_indexes do
+      # Critical index for list_connections query performance
+      index [:map_id], name: "map_chain_v1_map_id_index"
+    end
   end
 
   json_api do
