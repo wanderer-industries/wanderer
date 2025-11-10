@@ -13,7 +13,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   Public entrypoint for updating signatures on a map system.
   """
   def update_signatures(
-        %{map_id: map_id} = state,
+        map_id,
         %{
           solar_system_id: system_solar_id,
           character_id: char_id,
@@ -31,7 +31,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
              solar_system_id: system_solar_id
            }) do
       do_update_signatures(
-        state,
+        map_id,
         system,
         char_id,
         user_id,
@@ -43,14 +43,13 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     else
       error ->
         Logger.warning("Skipping signature update: #{inspect(error)}")
-        state
     end
   end
 
-  def update_signatures(state, _), do: state
+  def update_signatures(_map_id, _), do: :ok
 
   defp do_update_signatures(
-         state,
+         map_id,
          system,
          character_id,
          user_id,
@@ -86,14 +85,14 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     # 1. Removals
     existing_current
     |> Enum.filter(&(&1.eve_id in removed_ids))
-    |> Enum.each(&remove_signature(&1, state, system, delete_conn?))
+    |> Enum.each(&remove_signature(map_id, &1, system, delete_conn?))
 
     # 2. Updates
     existing_current
     |> Enum.filter(&(&1.eve_id in updated_ids))
     |> Enum.each(fn existing ->
       update = Enum.find(updated_sigs, &(&1.eve_id == existing.eve_id))
-      apply_update_signature(state, existing, update)
+      apply_update_signature(map_id, existing, update)
     end)
 
     # 3. Additions & restorations
@@ -119,7 +118,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     if added_ids != [] do
       track_activity(
         :signatures_added,
-        state.map_id,
+        map_id,
         system.solar_system_id,
         user_id,
         character_id,
@@ -130,7 +129,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     if removed_ids != [] do
       track_activity(
         :signatures_removed,
-        state.map_id,
+        map_id,
         system.solar_system_id,
         user_id,
         character_id,
@@ -139,12 +138,12 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     end
 
     # 5. Broadcast to any live subscribers
-    Impl.broadcast!(state.map_id, :signatures_updated, system.solar_system_id)
+    Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
 
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
     # Send individual signature events
     Enum.each(added_sigs, fn sig ->
-      WandererApp.ExternalEvents.broadcast(state.map_id, :signature_added, %{
+      WandererApp.ExternalEvents.broadcast(map_id, :signature_added, %{
         solar_system_id: system.solar_system_id,
         signature_id: sig.eve_id,
         name: sig.name,
@@ -155,27 +154,25 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     end)
 
     Enum.each(removed_ids, fn sig_eve_id ->
-      WandererApp.ExternalEvents.broadcast(state.map_id, :signature_removed, %{
+      WandererApp.ExternalEvents.broadcast(map_id, :signature_removed, %{
         solar_system_id: system.solar_system_id,
         signature_id: sig_eve_id
       })
     end)
 
     # Also send the summary event for backwards compatibility
-    WandererApp.ExternalEvents.broadcast(state.map_id, :signatures_updated, %{
+    WandererApp.ExternalEvents.broadcast(map_id, :signatures_updated, %{
       solar_system_id: system.solar_system_id,
       added_count: length(added_ids),
       updated_count: length(updated_ids),
       removed_count: length(removed_ids)
     })
-
-    state
   end
 
-  defp remove_signature(sig, state, system, delete_conn?) do
+  defp remove_signature(map_id, sig, system, delete_conn?) do
     # optionally remove the linked connection
     if delete_conn? && sig.linked_system_id do
-      ConnectionsImpl.delete_connection(state, %{
+      ConnectionsImpl.delete_connection(map_id, %{
         solar_system_source_id: system.solar_system_id,
         solar_system_target_id: sig.linked_system_id
       })
@@ -183,7 +180,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     # clear any linked_sig_eve_id on the target system
     if sig.linked_system_id do
-      SystemsImpl.update_system_linked_sig_eve_id(state, %{
+      SystemsImpl.update_system_linked_sig_eve_id(map_id, %{
         solar_system_id: sig.linked_system_id,
         linked_sig_eve_id: nil
       })
@@ -194,7 +191,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   end
 
   def apply_update_signature(
-        state,
+        map_id,
         %MapSystemSignature{} = existing,
         update_params
       )
@@ -204,8 +201,8 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
            update_params |> Map.put(:update_forced_at, DateTime.utc_now())
          ) do
       {:ok, updated} ->
-        maybe_update_connection_time_status(state, existing, updated)
-        maybe_update_connection_mass_status(state, existing, updated)
+        maybe_update_connection_time_status(map_id, existing, updated)
+        maybe_update_connection_mass_status(map_id, existing, updated)
         :ok
 
       {:error, reason} ->
@@ -214,7 +211,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   end
 
   defp maybe_update_connection_time_status(
-         state,
+         map_id,
          %{custom_info: old_custom_info} = old_sig,
          %{custom_info: new_custom_info, system_id: system_id, linked_system_id: linked_system_id} =
            updated_sig
@@ -226,7 +223,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     if old_time_status != new_time_status do
       {:ok, source_system} = MapSystem.by_id(system_id)
 
-      ConnectionsImpl.update_connection_time_status(state, %{
+      ConnectionsImpl.update_connection_time_status(map_id, %{
         solar_system_source_id: source_system.solar_system_id,
         solar_system_target_id: linked_system_id,
         time_status: new_time_status
@@ -234,10 +231,10 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     end
   end
 
-  defp maybe_update_connection_time_status(_state, _old_sig, _updated_sig), do: :ok
+  defp maybe_update_connection_time_status(_map_id, _old_sig, _updated_sig), do: :ok
 
   defp maybe_update_connection_mass_status(
-         state,
+         map_id,
          %{type: old_type} = old_sig,
          %{type: new_type, system_id: system_id, linked_system_id: linked_system_id} =
            updated_sig
@@ -248,7 +245,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       signature_ship_size_type = EVEUtil.get_wh_size(new_type)
 
       if not is_nil(signature_ship_size_type) do
-        ConnectionsImpl.update_connection_ship_size_type(state, %{
+        ConnectionsImpl.update_connection_ship_size_type(map_id, %{
           solar_system_source_id: source_system.solar_system_id,
           solar_system_target_id: linked_system_id,
           ship_size_type: signature_ship_size_type
@@ -257,7 +254,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     end
   end
 
-  defp maybe_update_connection_mass_status(_state, _old_sig, _updated_sig), do: :ok
+  defp maybe_update_connection_mass_status(_map_id, _old_sig, _updated_sig), do: :ok
 
   defp track_activity(event, map_id, solar_system_id, user_id, character_id, signatures) do
     ActivityTracker.track_map_event(event, %{

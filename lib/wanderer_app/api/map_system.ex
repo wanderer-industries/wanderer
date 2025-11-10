@@ -1,6 +1,26 @@
 defmodule WandererApp.Api.MapSystem do
   @moduledoc false
 
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :map_id,
+             :name,
+             :solar_system_id,
+             :position_x,
+             :position_y,
+             :status,
+             :visible,
+             :locked,
+             :custom_name,
+             :description,
+             :tag,
+             :temporary_name,
+             :labels,
+             :added_at,
+             :linked_sig_eve_id
+           ]}
+
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
@@ -9,6 +29,11 @@ defmodule WandererApp.Api.MapSystem do
   postgres do
     repo(WandererApp.Repo)
     table("map_system_v1")
+
+    custom_indexes do
+      # Partial index for efficient visible systems query
+      index [:map_id], where: "visible = true", name: "map_system_v1_map_id_visible_index"
+    end
   end
 
   json_api do

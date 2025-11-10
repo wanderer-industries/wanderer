@@ -7,6 +7,8 @@ defmodule WandererApp.Map do
 
   require Logger
 
+  @map_state_cache :map_state_cache
+
   defstruct map_id: nil,
             name: nil,
             scope: :none,
@@ -68,6 +70,50 @@ defmodule WandererApp.Map do
       end
     end)
   end
+
+  def get_map_state(map_id, init_if_empty? \\ true) do
+    case Cachex.get(@map_state_cache, map_id) do
+      {:ok, nil} ->
+        case init_if_empty? do
+          true ->
+            map_state = WandererApp.Map.Server.Impl.do_init_state(map_id: map_id)
+            Cachex.put(@map_state_cache, map_id, map_state)
+            {:ok, map_state}
+
+          _ ->
+            {:ok, nil}
+        end
+
+      {:ok, map_state} ->
+        {:ok, map_state}
+    end
+  end
+
+  def get_map_state!(map_id) do
+    case get_map_state(map_id) do
+      {:ok, map_state} ->
+        map_state
+
+      _ ->
+        Logger.error("Failed to get map_state #{map_id}")
+        throw("Failed to get map_state #{map_id}")
+    end
+  end
+
+  def update_map_state(map_id, state_update),
+    do:
+      Cachex.get_and_update(@map_state_cache, map_id, fn map_state ->
+        case map_state do
+          nil ->
+            new_state = WandererApp.Map.Server.Impl.do_init_state(map_id: map_id)
+            {:commit, Map.merge(new_state, state_update)}
+
+          _ ->
+            {:commit, Map.merge(map_state, state_update)}
+        end
+      end)
+
+  def delete_map_state(map_id), do: Cachex.del(@map_state_cache, map_id)
 
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 50)}

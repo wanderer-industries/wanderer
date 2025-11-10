@@ -2,6 +2,8 @@ defmodule WandererApp.Map.PositionCalculator do
   @moduledoc false
   require Logger
 
+  @ddrt Application.compile_env(:wanderer_app, :ddrt)
+
   # Node height
   @h 34
   # Node weight
@@ -60,7 +62,7 @@ defmodule WandererApp.Map.PositionCalculator do
   end
 
   defp is_available_position({x, y} = _position, rtree_name) do
-    case DDRT.query(get_system_bounding_rect(%{position_x: x, position_y: y}), rtree_name) do
+    case @ddrt.query(get_system_bounding_rect(%{position_x: x, position_y: y}), rtree_name) do
       {:ok, []} ->
         true
 

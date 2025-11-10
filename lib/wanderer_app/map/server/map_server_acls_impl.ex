@@ -5,7 +5,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
-  def handle_map_acl_updated(%{map_id: map_id, map: old_map} = state, added_acls, removed_acls) do
+  def handle_map_acl_updated(map_id, added_acls, removed_acls) do
     {:ok, map} =
       WandererApp.MapRepo.get(map_id,
         acls: [
@@ -63,7 +63,11 @@ defmodule WandererApp.Map.Server.AclsImpl do
 
     broadcast_acl_updates({:ok, result}, map_id)
 
-    %{state | map: Map.merge(old_map, map_update)}
+    {:ok, %{map: old_map}} = WandererApp.Map.get_map_state(map_id)
+
+    WandererApp.Map.update_map_state(map_id, %{
+      map: Map.merge(old_map, map_update)
+    })
   end
 
   def handle_acl_updated(map_id, acl_id) do
@@ -113,8 +117,18 @@ defmodule WandererApp.Map.Server.AclsImpl do
     track_acls(rest)
   end
 
-  defp track_acl(acl_id),
-    do: @pubsub_client.subscribe(WandererApp.PubSub, "acls:#{acl_id}")
+  defp track_acl(acl_id) do
+    Cachex.get_and_update(:acl_cache, acl_id, fn acl ->
+      case acl do
+        nil ->
+          @pubsub_client.subscribe(WandererApp.PubSub, "acls:#{acl_id}")
+          {:commit, acl_id}
+
+        _ ->
+          {:ignore, nil}
+      end
+    end)
+  end
 
   defp broadcast_acl_updates(
          {:ok,

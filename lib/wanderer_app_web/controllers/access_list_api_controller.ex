@@ -610,7 +610,7 @@ defmodule WandererAppWeb.MapAccessListAPIController do
             Phoenix.PubSub.broadcast(
               WandererApp.PubSub,
               "maps:#{loaded_map.id}",
-              {:map_acl_updated, [new_acl_id], []}
+              {:map_acl_updated, loaded_map.id, [new_acl_id], []}
             )
           end
 

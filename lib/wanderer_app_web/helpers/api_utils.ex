@@ -353,7 +353,7 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   def connection_to_json(conn) do
     Map.take(conn, ~w(
       id map_id solar_system_source solar_system_target mass_status
-      time_status ship_size_type type wormhole_type inserted_at updated_at
+      time_status ship_size_type type wormhole_type locked inserted_at updated_at
     )a)
   end
 end

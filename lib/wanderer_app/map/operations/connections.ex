@@ -231,31 +231,15 @@ defmodule WandererApp.Map.Operations.Connections do
         attrs
       ) do
     with {:ok, conn_struct} <- MapConnectionRepo.get_by_id(map_id, conn_id),
-         result <-
+         :ok <-
            (try do
-              _allowed_keys = [
-                :mass_status,
-                :ship_size_type,
-                :time_status,
-                :type
-              ]
-
-              _update_map =
-                attrs
-                |> Enum.filter(fn {k, _v} ->
-                  k in ["mass_status", "ship_size_type", "time_status", "type"]
-                end)
-                |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
-                |> Enum.into(%{})
-
               res = apply_connection_updates(map_id, conn_struct, attrs, char_id)
               res
             rescue
               error ->
                 Logger.error("[update_connection] Exception: #{inspect(error)}")
                 {:error, :exception}
-            end),
-         :ok <- result do
+            end) do
       # Since GenServer updates are asynchronous, manually apply updates to the current struct
       # to return the correct data immediately instead of refetching from potentially stale cache
       updated_attrs =
@@ -374,6 +358,7 @@ defmodule WandererApp.Map.Operations.Connections do
           "ship_size_type" -> maybe_update_ship_size_type(map_id, conn, val)
           "time_status" -> maybe_update_time_status(map_id, conn, val)
           "type" -> maybe_update_type(map_id, conn, val)
+          "locked" -> maybe_update_locked(map_id, conn, val)
           _ -> :ok
         end
 
@@ -426,6 +411,16 @@ defmodule WandererApp.Map.Operations.Connections do
       solar_system_source_id: conn.solar_system_source,
       solar_system_target_id: conn.solar_system_target,
       type: value
+    })
+  end
+
+  defp maybe_update_locked(_map_id, _conn, nil), do: :ok
+
+  defp maybe_update_locked(map_id, conn, value) do
+    Server.update_connection_locked(map_id, %{
+      solar_system_source_id: conn.solar_system_source,
+      solar_system_target_id: conn.solar_system_target,
+      locked: value
     })
   end
 
