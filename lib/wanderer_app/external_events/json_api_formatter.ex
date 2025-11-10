@@ -212,6 +212,7 @@ defmodule WandererApp.ExternalEvents.JsonApiFormatter do
         "time_status" => payload["time_status"] || payload[:time_status],
         "mass_status" => payload["mass_status"] || payload[:mass_status],
         "ship_size_type" => payload["ship_size_type"] || payload[:ship_size_type],
+        "locked" => payload["locked"] || payload[:locked],
         "updated_at" => event.timestamp
       },
       "relationships" => %{

@@ -508,9 +508,14 @@ defmodule WandererAppWeb.MapSystemAPIController do
   def update(conn, %{"id" => id} = params) do
     with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
          {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
-         {:ok, attrs} <- APIUtils.extract_update_params(params),
-         {:ok, updated_system} <- Ash.update(system, attrs) do
-      APIUtils.respond_data(conn, APIUtils.map_system_to_json(updated_system))
+         {:ok, attrs} <- APIUtils.extract_update_params(params) do
+      case Operations.update_system(conn, system.solar_system_id, attrs) do
+        {:ok, result} ->
+          APIUtils.respond_data(conn, result)
+
+        error ->
+          error
+      end
     end
   end
 
