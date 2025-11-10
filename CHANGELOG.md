@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.84.2](https://github.com/wanderer-industries/wanderer/compare/v1.84.1...v1.84.2) (2025-11-10)
+
+
+
+
+### Bug Fixes:
+
+* api: fixed  api for get/update map systems
+
+* add index for map/systems api
+
 ## [v1.84.1](https://github.com/wanderer-industries/wanderer/compare/v1.84.0...v1.84.1) (2025-11-01)
 
 
