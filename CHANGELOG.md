@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.5](https://github.com/wanderer-industries/wanderer/compare/v1.84.4...v1.84.5) (2025-11-11)
+
+
+
+
+### Bug Fixes:
+
+* core: Added tracking for map & character event handling errors
+
 ## [v1.84.4](https://github.com/wanderer-industries/wanderer/compare/v1.84.3...v1.84.4) (2025-11-11)
 
 
