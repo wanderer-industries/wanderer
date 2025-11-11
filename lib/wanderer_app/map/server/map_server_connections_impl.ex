@@ -438,7 +438,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           %{custom_info: updated_custom_info}
         end
 
-      SignaturesImpl.apply_update_signature(%{map_id: map_id}, sig, update_params)
+      SignaturesImpl.apply_update_signature(map_id, sig, update_params)
     end)
 
     Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
