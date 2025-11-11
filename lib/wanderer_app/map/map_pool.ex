@@ -310,7 +310,17 @@ defmodule WandererApp.Map.MapPool do
   end
 
   def handle_info(event, state) do
-    Server.Impl.handle_event(event)
+    try do
+      Server.Impl.handle_event(event)
+    rescue
+      e ->
+        Logger.error("""
+        [Map Pool] handle_info => exception: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+
+        ErrorTracker.report(e, __STACKTRACE__)
+    end
 
     {:noreply, state}
   end
