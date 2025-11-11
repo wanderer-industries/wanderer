@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.4](https://github.com/wanderer-industries/wanderer/compare/v1.84.3...v1.84.4) (2025-11-11)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed issue with updating system signatures
+
 ## [v1.84.3](https://github.com/wanderer-industries/wanderer/compare/v1.84.2...v1.84.3) (2025-11-11)
 
 
