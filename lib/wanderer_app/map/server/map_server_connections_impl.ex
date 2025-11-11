@@ -373,36 +373,36 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
            solar_system_target: solar_system_target
          } = updated_connection
        ) do
-    source_system =
-      WandererApp.Map.find_system_by_location(
+    with source_system when not is_nil(source_system) <-
+           WandererApp.Map.find_system_by_location(
+             map_id,
+             %{solar_system_id: solar_system_source}
+           ),
+         target_system when not is_nil(source_system) <-
+           WandererApp.Map.find_system_by_location(
+             map_id,
+             %{solar_system_id: solar_system_target}
+           ),
+         source_linked_signatures <-
+           find_linked_signatures(source_system, target_system),
+         target_linked_signatures <- find_linked_signatures(target_system, source_system) do
+      update_signatures_time_status(
         map_id,
-        %{solar_system_id: solar_system_source}
+        source_system.solar_system_id,
+        source_linked_signatures,
+        time_status
       )
 
-    target_system =
-      WandererApp.Map.find_system_by_location(
+      update_signatures_time_status(
         map_id,
-        %{solar_system_id: solar_system_target}
+        target_system.solar_system_id,
+        target_linked_signatures,
+        time_status
       )
-
-    source_linked_signatures =
-      find_linked_signatures(source_system, target_system)
-
-    target_linked_signatures = find_linked_signatures(target_system, source_system)
-
-    update_signatures_time_status(
-      map_id,
-      source_system.solar_system_id,
-      source_linked_signatures,
-      time_status
-    )
-
-    update_signatures_time_status(
-      map_id,
-      target_system.solar_system_id,
-      target_linked_signatures,
-      time_status
-    )
+    else
+      error ->
+        Logger.error("Failed to update_linked_signature_time_status: #{inspect(error)}")
+    end
   end
 
   defp find_linked_signatures(
