@@ -5,8 +5,35 @@ defmodule WandererApp.Map.Operations.Signatures do
 
   require Logger
   alias WandererApp.Map.Operations
-  alias WandererApp.Api.{MapSystem, MapSystemSignature}
+  alias WandererApp.Api.{Character, MapSystem, MapSystemSignature}
   alias WandererApp.Map.Server
+
+  # Private helper to validate character_eve_id from params
+  # If character_eve_id is provided in params, validates it exists in the system
+  # If not provided, falls back to the owner's character ID
+  @spec validate_character_eve_id(map(), String.t()) ::
+          {:ok, String.t()} | {:error, :invalid_character}
+  defp validate_character_eve_id(params, fallback_char_id) do
+    case Map.get(params, "character_eve_id") do
+      nil ->
+        # No character_eve_id provided, use fallback (owner's character)
+        {:ok, fallback_char_id}
+
+      provided_char_id when is_binary(provided_char_id) ->
+        # Validate the provided character_eve_id exists
+        case Character.by_eve_id(provided_char_id) do
+          {:ok, _character} ->
+            {:ok, provided_char_id}
+
+          _ ->
+            {:error, :invalid_character}
+        end
+
+      _ ->
+        # Invalid format
+        {:error, :invalid_character}
+    end
+  end
 
   @spec list_signatures(String.t()) :: [map()]
   def list_signatures(map_id) do
@@ -42,10 +69,11 @@ defmodule WandererApp.Map.Operations.Signatures do
       )
       when is_integer(solar_system_id) do
     # Convert solar_system_id to system_id for internal use
-    with {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id) do
+    with {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id),
+         {:ok, validated_char_id} <- validate_character_eve_id(params, char_id) do
       attrs =
         params
-        |> Map.put("character_eve_id", char_id)
+        |> Map.put("character_eve_id", validated_char_id)
         |> Map.put("system_id", system.id)
         |> Map.delete("solar_system_id")
 
@@ -54,7 +82,7 @@ defmodule WandererApp.Map.Operations.Signatures do
              updated_signatures: [],
              removed_signatures: [],
              solar_system_id: solar_system_id,
-             character_id: char_id,
+             character_id: validated_char_id,
              user_id: user_id,
              delete_connection_with_sigs: false
            }) do
@@ -86,6 +114,10 @@ defmodule WandererApp.Map.Operations.Signatures do
           {:error, :unexpected_error}
       end
     else
+      {:error, :invalid_character} ->
+        Logger.error("[create_signature] Invalid character_eve_id provided")
+        {:error, :invalid_character}
+
       _ ->
         Logger.error(
           "[create_signature] System not found for solar_system_id: #{solar_system_id}"
@@ -112,7 +144,8 @@ defmodule WandererApp.Map.Operations.Signatures do
         params
       ) do
     with {:ok, sig} <- MapSystemSignature.by_id(sig_id),
-         {:ok, system} <- MapSystem.by_id(sig.system_id) do
+         {:ok, system} <- MapSystem.by_id(sig.system_id),
+         {:ok, validated_char_id} <- validate_character_eve_id(params, char_id) do
       base = %{
         "eve_id" => sig.eve_id,
         "name" => sig.name,
@@ -120,7 +153,7 @@ defmodule WandererApp.Map.Operations.Signatures do
         "group" => sig.group,
         "type" => sig.type,
         "custom_info" => sig.custom_info,
-        "character_eve_id" => char_id,
+        "character_eve_id" => validated_char_id,
         "description" => sig.description,
         "linked_system_id" => sig.linked_system_id
       }
@@ -133,7 +166,7 @@ defmodule WandererApp.Map.Operations.Signatures do
           updated_signatures: [attrs],
           removed_signatures: [],
           solar_system_id: system.solar_system_id,
-          character_id: char_id,
+          character_id: validated_char_id,
           user_id: user_id,
           delete_connection_with_sigs: false
         })
@@ -151,6 +184,10 @@ defmodule WandererApp.Map.Operations.Signatures do
         _ -> {:ok, attrs}
       end
     else
+      {:error, :invalid_character} ->
+        Logger.error("[update_signature] Invalid character_eve_id provided")
+        {:error, :invalid_character}
+
       err ->
         Logger.error("[update_signature] Unexpected error: #{inspect(err)}")
         {:error, :unexpected_error}

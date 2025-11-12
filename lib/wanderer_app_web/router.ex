@@ -595,7 +595,7 @@ defmodule WandererAppWeb.Router do
   # while maintaining 100% backward compatibility with existing /api/* routes
   #
   scope "/api/v1" do
-    pipe_through :api_v1
+    pipe_through [:api_v1, :api_map]
 
     # Custom combined endpoints
     get "/maps/:map_id/systems_and_connections",
