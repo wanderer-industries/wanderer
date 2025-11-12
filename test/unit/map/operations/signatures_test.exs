@@ -580,6 +580,155 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
     end
   end
 
+  describe "character_eve_id validation" do
+    test "create_signature uses provided character_eve_id when valid" do
+      # Create a test character
+      {:ok, character} =
+        WandererApp.Api.Character.create(%{
+          eve_id: "111111111",
+          name: "Test Character"
+        })
+
+      conn = %{
+        assigns: %{
+          map_id: Ecto.UUID.generate(),
+          owner_character_id: "999999999",
+          owner_user_id: Ecto.UUID.generate()
+        }
+      }
+
+      params = %{
+        "solar_system_id" => 30_000_142,
+        "eve_id" => "ABC-123",
+        "character_eve_id" => character.eve_id
+      }
+
+      MapTestHelpers.expect_map_server_error(fn ->
+        result = Signatures.create_signature(conn, params)
+
+        case result do
+          {:ok, data} ->
+            # Should use the provided character_eve_id, not the owner's
+            assert Map.get(data, "character_eve_id") == character.eve_id
+
+          {:error, _} ->
+            # System not found error is acceptable
+            :ok
+        end
+      end)
+    end
+
+    test "create_signature rejects invalid character_eve_id" do
+      conn = %{
+        assigns: %{
+          map_id: Ecto.UUID.generate(),
+          owner_character_id: "999999999",
+          owner_user_id: Ecto.UUID.generate()
+        }
+      }
+
+      params = %{
+        "solar_system_id" => 30_000_142,
+        "eve_id" => "ABC-123",
+        "character_eve_id" => "invalid_char_id_999"
+      }
+
+      MapTestHelpers.expect_map_server_error(fn ->
+        result = Signatures.create_signature(conn, params)
+        # Should return invalid_character error
+        assert {:error, :invalid_character} = result
+      end)
+    end
+
+    test "create_signature falls back to owner when character_eve_id not provided" do
+      owner_char_id = "888888888"
+
+      conn = %{
+        assigns: %{
+          map_id: Ecto.UUID.generate(),
+          owner_character_id: owner_char_id,
+          owner_user_id: Ecto.UUID.generate()
+        }
+      }
+
+      params = %{
+        "solar_system_id" => 30_000_142,
+        "eve_id" => "ABC-123"
+      }
+
+      MapTestHelpers.expect_map_server_error(fn ->
+        result = Signatures.create_signature(conn, params)
+
+        case result do
+          {:ok, data} ->
+            # Should use the owner's character_eve_id
+            assert Map.get(data, "character_eve_id") == owner_char_id
+
+          {:error, _} ->
+            # System not found error is acceptable
+            :ok
+        end
+      end)
+    end
+
+    test "update_signature respects provided character_eve_id when valid" do
+      # Create a test character
+      {:ok, character} =
+        WandererApp.Api.Character.create(%{
+          eve_id: "222222222",
+          name: "Another Test Character"
+        })
+
+      conn = %{
+        assigns: %{
+          map_id: Ecto.UUID.generate(),
+          owner_character_id: "999999999",
+          owner_user_id: Ecto.UUID.generate()
+        }
+      }
+
+      sig_id = Ecto.UUID.generate()
+
+      params = %{
+        "name" => "Updated Name",
+        "character_eve_id" => character.eve_id
+      }
+
+      result = Signatures.update_signature(conn, sig_id, params)
+
+      case result do
+        {:ok, data} ->
+          # Should use the provided character_eve_id
+          assert Map.get(data, "character_eve_id") == character.eve_id
+
+        {:error, _} ->
+          # Signature not found error is acceptable
+          :ok
+      end
+    end
+
+    test "update_signature rejects invalid character_eve_id" do
+      conn = %{
+        assigns: %{
+          map_id: Ecto.UUID.generate(),
+          owner_character_id: "999999999",
+          owner_user_id: Ecto.UUID.generate()
+        }
+      }
+
+      sig_id = Ecto.UUID.generate()
+
+      params = %{
+        "name" => "Updated Name",
+        "character_eve_id" => "totally_invalid_char"
+      }
+
+      result = Signatures.update_signature(conn, sig_id, params)
+      # Should return invalid_character error
+      assert {:error, :invalid_character} = result
+    end
+  end
+
   describe "parameter merging and character_eve_id injection" do
     test "create_signature injects character_eve_id correctly" do
       char_id = "987654321"

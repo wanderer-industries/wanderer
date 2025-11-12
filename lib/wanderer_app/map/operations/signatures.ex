@@ -11,9 +11,9 @@ defmodule WandererApp.Map.Operations.Signatures do
   # Private helper to validate character_eve_id from params
   # If character_eve_id is provided in params, validates it exists in the system
   # If not provided, falls back to the owner's character ID
-  @spec validate_character_eve_id(map(), String.t()) ::
+  @spec validate_character_eve_id(map() | nil, String.t()) ::
           {:ok, String.t()} | {:error, :invalid_character}
-  defp validate_character_eve_id(params, fallback_char_id) do
+  defp validate_character_eve_id(params, fallback_char_id) when is_map(params) do
     case Map.get(params, "character_eve_id") do
       nil ->
         # No character_eve_id provided, use fallback (owner's character)
@@ -33,6 +33,11 @@ defmodule WandererApp.Map.Operations.Signatures do
         # Invalid format
         {:error, :invalid_character}
     end
+  end
+
+  # Handle nil or non-map params by falling back to owner's character
+  defp validate_character_eve_id(_params, fallback_char_id) do
+    {:ok, fallback_char_id}
   end
 
   @spec list_signatures(String.t()) :: [map()]
@@ -68,9 +73,9 @@ defmodule WandererApp.Map.Operations.Signatures do
         %{"solar_system_id" => solar_system_id} = params
       )
       when is_integer(solar_system_id) do
-    # Convert solar_system_id to system_id for internal use
-    with {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id),
-         {:ok, validated_char_id} <- validate_character_eve_id(params, char_id) do
+    # Validate character first, then convert solar_system_id to system_id
+    with {:ok, validated_char_id} <- validate_character_eve_id(params, char_id),
+         {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id) do
       attrs =
         params
         |> Map.put("character_eve_id", validated_char_id)
@@ -143,9 +148,10 @@ defmodule WandererApp.Map.Operations.Signatures do
         sig_id,
         params
       ) do
-    with {:ok, sig} <- MapSystemSignature.by_id(sig_id),
-         {:ok, system} <- MapSystem.by_id(sig.system_id),
-         {:ok, validated_char_id} <- validate_character_eve_id(params, char_id) do
+    # Validate character first, then look up signature and system
+    with {:ok, validated_char_id} <- validate_character_eve_id(params, char_id),
+         {:ok, sig} <- MapSystemSignature.by_id(sig_id),
+         {:ok, system} <- MapSystem.by_id(sig.system_id) do
       base = %{
         "eve_id" => sig.eve_id,
         "name" => sig.name,
