@@ -1,5 +1,11 @@
 import { Dispatch, SetStateAction, useCallback, useMemo, useRef } from 'react';
-import { MapUserSettings, MapUserSettingsStructure, SettingsWrapper } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import {
+  MapUserSettings,
+  MapUserSettingsStructure,
+  SettingsTypes,
+  SettingsWrapper,
+} from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { getDefaultSettingsByType } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 
 type ExtractSettings<S extends keyof MapUserSettings> = MapUserSettings[S] extends SettingsWrapper<infer U> ? U : never;
 
@@ -17,10 +23,14 @@ export const useSettingsValueAndSetter = <S extends keyof MapUserSettings>(
   setting: S,
 ): GenerateSettingsReturn<S> => {
   const data = useMemo<ExtractSettings<S>>(() => {
-    if (!mapId) return {} as ExtractSettings<S>;
+    if (!mapId) {
+      // Return proper defaults when no mapId
+      return getDefaultSettingsByType(setting as SettingsTypes) as ExtractSettings<S>;
+    }
 
     const mapSettings = settings[mapId];
-    return (mapSettings?.[setting] ?? ({} as ExtractSettings<S>)) as ExtractSettings<S>;
+    // Return proper defaults instead of empty object when setting is missing
+    return (mapSettings?.[setting] ?? getDefaultSettingsByType(setting as SettingsTypes)) as ExtractSettings<S>;
   }, [mapId, setting, settings]);
 
   const refData = useRef({ mapId, setting, setSettings });

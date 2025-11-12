@@ -16,8 +16,8 @@ export const applyMigrations = (mapSettings: any) => {
   let currentMapSettings = { ...mapSettings };
 
   // INFO if we have NO any data in store expected that we will use default
-  if (!currentMapSettings) {
-    return;
+  if (!currentMapSettings || Object.keys(currentMapSettings).length === 0) {
+    return createDefaultStoredSettings();
   }
 
   const direction = STORED_SETTINGS_VERSION - (currentMapSettings.version || 0);

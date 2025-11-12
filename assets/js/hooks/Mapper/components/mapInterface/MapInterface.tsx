@@ -8,7 +8,7 @@ export const MapInterface = () => {
   const { windowsSettings, updateWidgetSettings } = useMapRootState();
 
   const items = useMemo(() => {
-    return windowsSettings.windows
+    return (windowsSettings.windows ?? [])
       .map(x => {
         const content = DEFAULT_WIDGETS.find(y => y.id === x.id)?.content;
         return {
@@ -16,7 +16,7 @@ export const MapInterface = () => {
           content: content!,
         };
       })
-      .filter(x => windowsSettings.visible.some(j => x.id === j));
+      .filter(x => (windowsSettings.visible ?? []).some(j => x.id === j));
   }, [windowsSettings]);
 
   return (
