@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.10](https://github.com/wanderer-industries/wanderer/compare/v1.84.9...v1.84.10) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed adding system on character dock
+
 ## [v1.84.9](https://github.com/wanderer-industries/wanderer/compare/v1.84.8...v1.84.9) (2025-11-12)
 
 
