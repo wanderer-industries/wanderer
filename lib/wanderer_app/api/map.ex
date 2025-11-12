@@ -37,7 +37,7 @@ defmodule WandererApp.Api.Map do
       delete(:destroy)
 
       # Custom action for map duplication
-      post(:duplicate, route: "/:id/duplicate")
+      # post(:duplicate, route: "/:id/duplicate")
     end
   end
 
