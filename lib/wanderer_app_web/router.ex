@@ -234,6 +234,7 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckApiDisabled
     plug WandererAppWeb.Plugs.JsonApiPerformanceMonitor
     plug WandererAppWeb.Plugs.CheckJsonApiAuth
+    plug WandererAppWeb.Plugs.ConditionalAssignMapOwner
     # Future: Add rate limiting, advanced permissions, etc.
   end
 

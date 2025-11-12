@@ -30,9 +30,6 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
 
   const { outCommand } = useMapRootState();
 
-  const [prevQuery, setPrevQuery] = useState('');
-  const [prevResults, setPrevResults] = useState<{ label: string; value: string }[]>([]);
-
   useEffect(() => {
     if (structure) {
       setEditData(structure);
@@ -46,34 +43,24 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
   // Searching corporation owners via auto-complete
   const searchOwners = useCallback(
     async (e: { query: string }) => {
-      const newQuery = e.query.trim();
-      if (!newQuery) {
+      const query = e.query.trim();
+      if (!query) {
         setOwnerSuggestions([]);
         return;
       }
 
-      // If user typed more text but we have partial match in prevResults
-      if (newQuery.startsWith(prevQuery) && prevResults.length > 0) {
-        const filtered = prevResults.filter(item => item.label.toLowerCase().includes(newQuery.toLowerCase()));
-        setOwnerSuggestions(filtered);
-        return;
-      }
-
       try {
-        // TODO fix it
         const { results = [] } = await outCommand({
           type: OutCommand.getCorporationNames,
-          data: { search: newQuery },
+          data: { search: query },
         });
         setOwnerSuggestions(results);
-        setPrevQuery(newQuery);
-        setPrevResults(results);
       } catch (err) {
         console.error('Failed to fetch owners:', err);
         setOwnerSuggestions([]);
       }
     },
-    [prevQuery, prevResults, outCommand],
+    [outCommand],
   );
 
   const handleChange = (field: keyof StructureItem, val: string | Date) => {
@@ -122,7 +109,6 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
     // fetch corporation ticker if we have an ownerId
     if (editData.ownerId) {
       try {
-        // TODO fix it
         const { ticker } = await outCommand({
           type: OutCommand.getCorporationTicker,
           data: { corp_id: editData.ownerId },
