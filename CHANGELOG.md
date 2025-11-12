@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.8](https://github.com/wanderer-industries/wanderer/compare/v1.84.7...v1.84.8) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: added cleanup jobs for old system signatures & chain passages
+
 ## [v1.84.7](https://github.com/wanderer-industries/wanderer/compare/v1.84.6...v1.84.7) (2025-11-12)
 
 
