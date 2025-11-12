@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.6](https://github.com/wanderer-industries/wanderer/compare/v1.84.5...v1.84.6) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: Added map slug uniqness checking while using API
+
 ## [v1.84.5](https://github.com/wanderer-industries/wanderer/compare/v1.84.4...v1.84.5) (2025-11-11)
 
 
