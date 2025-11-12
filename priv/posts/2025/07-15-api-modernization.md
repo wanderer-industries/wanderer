@@ -144,33 +144,28 @@ The API v1 provides access to over 25 resources through the Ash Framework. Here 
 
 ### Core Resources
 - **Maps** (`/api/v1/maps`) - Map management with full CRUD operations
-- **Characters** (`/api/v1/characters`) - Character tracking and management (GET, DELETE only)
-- **Access Lists** (`/api/v1/access_lists`) - ACL management and permissions
-- **Access List Members** (`/api/v1/access_list_members`) - ACL member management
+- **Access Lists** (`/api/v1/access_lists`) - ACL management and permissions with full CRUD operations
+- **Access List Members** (`/api/v1/access_list_members`) - ACL member management with full CRUD operations
+- **Map Access Lists** (`/api/v1/map_access_lists`) - Map-ACL associations with full CRUD operations
 
 ### Map Resources
-- **Map Systems** (`/api/v1/map_systems`) - Solar system data and metadata
-- **Map Connections** (`/api/v1/map_connections`) - Wormhole connections
-- **Map Signatures** (`/api/v1/map_system_signatures`) - Signature scanning data (GET, DELETE only)
-- **Map Structures** (`/api/v1/map_system_structures`) - Structure information
-- **Map Subscriptions** (`/api/v1/map_subscriptions`) - Subscription management (GET only)
-- **Map Systems and Connections** (`/api/v1/maps/{map_id}/systems_and_connections`) - Combined endpoint (GET only)
+- **Map Systems** (`/api/v1/map_systems`) - Solar system data and metadata with full CRUD operations (paginated: default 100, max 500)
+- **Map Connections** (`/api/v1/map_connections`) - Wormhole connections with full CRUD operations
+- **Map Signatures** (`/api/v1/map_system_signatures`) - Signature scanning data (read and delete only, paginated: default 50, max 200)
+- **Map Structures** (`/api/v1/map_system_structures`) - Structure information with full CRUD operations
+- **Map Subscriptions** (`/api/v1/map_subscriptions`) - Subscription management (read-only)
+- **Map Default Settings** (`/api/v1/map_default_settings`) - Default map configurations with full CRUD operations
+- **Map Systems and Connections** (`/api/v1/maps/{map_id}/systems_and_connections`) - Combined endpoint (read-only)
 
 ### System Resources
-- **Map System Comments** (`/api/v1/map_system_comments`) - System annotations (GET only)
+- **Map System Comments** (`/api/v1/map_system_comments`) - System annotations (read-only)
 
 ### User Resources
-- **User Activities** (`/api/v1/user_activities`) - User activity tracking (GET only)
-- **Map Character Settings** (`/api/v1/map_character_settings`) - Character preferences (GET only)
-- **Map User Settings** (`/api/v1/map_user_settings`) - User map preferences (GET only)
+- **User Activities** (`/api/v1/user_activities`) - User activity tracking (read-only, paginated: default 15)
+- **Map Character Settings** (`/api/v1/map_character_settings`) - Character preferences (read-only)
+- **Map User Settings** (`/api/v1/map_user_settings`) - User map preferences (read-only)
 
-### Additional Resources
-- **Map Webhook Subscriptions** (`/api/v1/map_webhook_subscriptions`) - Webhook management
-- **Map Invites** (`/api/v1/map_invites`) - Map invitation system
-- **Map Pings** (`/api/v1/map_pings`) - In-game ping tracking
-- **Corp Wallet Transactions** (`/api/v1/corp_wallet_transactions`) - Corporation finances
-
-*Note: Some resources have been restricted to read-only access for security and consistency. Resources marked as "(GET only)" support only read operations, while "(GET, DELETE only)" support read and delete operations.*
+*Note: Resources marked as "full CRUD operations" support create, read, update, and delete. Resources marked as "read-only" support only GET operations. Resources marked as "read and delete only" support GET and DELETE operations. Pagination limits are configurable via `page[limit]` and `page[offset]` parameters where supported.*
 
 ## API v1 Feature Set
 

@@ -12,28 +12,32 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   # Inlined OpenAPI schema for a map system signature
   @signature_schema %OpenApiSpex.Schema{
     title: "MapSystemSignature",
+    description: "A cosmic signature scanned in an EVE Online solar system",
     type: :object,
     properties: %{
-      id: %OpenApiSpex.Schema{type: :string, format: :uuid},
-      solar_system_id: %OpenApiSpex.Schema{type: :integer},
-      eve_id: %OpenApiSpex.Schema{type: :string},
-      character_eve_id: %OpenApiSpex.Schema{type: :string},
-      name: %OpenApiSpex.Schema{type: :string, nullable: true},
-      description: %OpenApiSpex.Schema{type: :string, nullable: true},
-      type: %OpenApiSpex.Schema{type: :string, nullable: true},
-      linked_system_id: %OpenApiSpex.Schema{type: :integer, nullable: true},
-      kind: %OpenApiSpex.Schema{type: :string, nullable: true},
-      group: %OpenApiSpex.Schema{type: :string, nullable: true},
-      custom_info: %OpenApiSpex.Schema{type: :string, nullable: true},
-      updated: %OpenApiSpex.Schema{type: :integer, nullable: true},
-      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time},
-      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time}
+      id: %OpenApiSpex.Schema{type: :string, format: :uuid, description: "Unique signature identifier"},
+      solar_system_id: %OpenApiSpex.Schema{type: :integer, description: "EVE Online solar system ID"},
+      eve_id: %OpenApiSpex.Schema{type: :string, description: "In-game signature ID (e.g., ABC-123)"},
+      character_eve_id: %OpenApiSpex.Schema{
+        type: :string,
+        description: "EVE character ID who scanned/updated this signature. Must be a valid character in the database. If not provided, defaults to the map owner's character.",
+        nullable: true
+      },
+      name: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature name"},
+      description: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Additional notes"},
+      type: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature type"},
+      linked_system_id: %OpenApiSpex.Schema{type: :integer, nullable: true, description: "Connected solar system ID for wormholes"},
+      kind: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature kind (e.g., cosmic_signature)"},
+      group: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature group (e.g., wormhole, data, relic)"},
+      custom_info: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Custom metadata"},
+      updated: %OpenApiSpex.Schema{type: :integer, nullable: true, description: "Update counter"},
+      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Creation timestamp"},
+      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Last update timestamp"}
     },
     required: [
       :id,
       :solar_system_id,
-      :eve_id,
-      :character_eve_id
+      :eve_id
     ],
     example: %{
       id: "sig-uuid-1",
@@ -143,6 +147,10 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
 
   @doc """
   Create a new signature.
+
+  The `character_eve_id` field is optional. If provided, it must be a valid character
+  that exists in the database, otherwise a 422 error will be returned. If not provided,
+  the signature will be associated with the map owner's character.
   """
   operation(:create,
     summary: "Create a new signature",
@@ -162,6 +170,18 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
            type: :object,
            properties: %{data: @signature_schema},
            example: %{data: @signature_schema.example}
+         }},
+      unprocessable_entity:
+        {"Validation error", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             error: %OpenApiSpex.Schema{
+               type: :string,
+               description: "Error type (e.g., 'invalid_character', 'system_not_found', 'missing_params')"
+             }
+           },
+           example: %{error: "invalid_character"}
          }}
     ]
   )
@@ -175,6 +195,9 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
 
   @doc """
   Update a signature by ID.
+
+  The `character_eve_id` field is optional. If provided, it must be a valid character
+  that exists in the database, otherwise a 422 error will be returned.
   """
   operation(:update,
     summary: "Update a signature by ID",
@@ -195,6 +218,18 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
            type: :object,
            properties: %{data: @signature_schema},
            example: %{data: @signature_schema.example}
+         }},
+      unprocessable_entity:
+        {"Validation error", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             error: %OpenApiSpex.Schema{
+               type: :string,
+               description: "Error type (e.g., 'invalid_character', 'unexpected_error')"
+             }
+           },
+           example: %{error: "invalid_character"}
          }}
     ]
   )
