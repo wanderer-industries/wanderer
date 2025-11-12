@@ -300,10 +300,9 @@ defmodule WandererApp.Map.SubscriptionManager do
   defp is_expired(subscription) when is_map(subscription),
     do: DateTime.compare(DateTime.utc_now(), subscription.active_till) == :gt
 
-  defp renew_subscription(%{auto_renew?: true} = subscription) when is_map(subscription) do
-    with {:ok, %{map: map}} <-
-           subscription |> WandererApp.MapSubscriptionRepo.load_relationships([:map]),
-         {:ok, estimated_price, discount} <- estimate_price(subscription, true),
+  defp renew_subscription(%{auto_renew?: true, map: map} = subscription)
+       when is_map(subscription) do
+    with {:ok, estimated_price, discount} <- estimate_price(subscription, true),
          {:ok, map_balance} <- get_balance(map) do
       case map_balance >= estimated_price do
         true ->

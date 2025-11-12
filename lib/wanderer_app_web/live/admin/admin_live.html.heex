@@ -272,6 +272,9 @@
                                     <.icon name="hero-check-badge-solid" class="w-5 h-5" />
                                   </div>
                                 </:col>
+                                <:col :let={subscription} label="Map">
+                                  {subscription.map.name}
+                                </:col>
                                 <:col :let={subscription} label="Active Till">
                                   <.local_time
                                     :if={subscription.active_till}
@@ -333,7 +336,7 @@
         label="Valid"
         options={Enum.map(@valid_types, fn valid_type -> {valid_type.label, valid_type.id} end)}
       />
-      
+
 <!-- API Key Section with grid layout -->
       <div class="modal-action">
         <.button class="mt-2" type="submit" phx-disable-with="Saving...">
