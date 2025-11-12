@@ -657,12 +657,14 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
         )
 
-  def is_connection_valid(:all, _from_solar_system_id, _to_solar_system_id), do: true
+  def is_connection_valid(:all, from_solar_system_id, to_solar_system_id),
+    do: from_solar_system_id != to_solar_system_id
 
   def is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
 
   def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
-      when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) do
+      when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) and
+             from_solar_system_id != to_solar_system_id do
     with {:ok, known_jumps} <- find_solar_system_jump(from_solar_system_id, to_solar_system_id),
          {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
          {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do

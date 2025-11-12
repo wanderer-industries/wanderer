@@ -310,8 +310,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     start_solar_system_id =
       WandererApp.Cache.take("map:#{map_id}:character:#{character_id}:start_solar_system_id")
 
-    case is_nil(old_location.solar_system_id) and
-           is_nil(start_solar_system_id) and
+    case is_nil(old_location.solar_system_id) &&
+           is_nil(start_solar_system_id) &&
            ConnectionsImpl.can_add_location(scope, location.solar_system_id) do
       true ->
         :ok = SystemsImpl.maybe_add_system(map_id, location, nil, map_opts)
