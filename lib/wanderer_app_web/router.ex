@@ -234,6 +234,7 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckApiDisabled
     plug WandererAppWeb.Plugs.JsonApiPerformanceMonitor
     plug WandererAppWeb.Plugs.CheckJsonApiAuth
+    plug WandererAppWeb.Plugs.ConditionalAssignMapOwner
     # Future: Add rate limiting, advanced permissions, etc.
   end
 
@@ -595,7 +596,7 @@ defmodule WandererAppWeb.Router do
   # while maintaining 100% backward compatibility with existing /api/* routes
   #
   scope "/api/v1" do
-    pipe_through [:api_v1, :api_map]
+    pipe_through :api_v1
 
     # Custom combined endpoints
     get "/maps/:map_id/systems_and_connections",
