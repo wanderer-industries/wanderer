@@ -36,17 +36,78 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   end
 
   def stop_map(map_id) do
-    {:ok, pool_uuid} = Cachex.get(@cache, map_id)
+    case Cachex.get(@cache, map_id) do
+      {:ok, nil} ->
+        # Cache miss - try to find the pool by scanning the registry
+        Logger.warning(
+          "Cache miss for map #{map_id}, scanning registry for pool containing this map"
+        )
 
-    case Registry.lookup(
-           @unique_registry,
-           Module.concat(WandererApp.Map.MapPool, pool_uuid)
-         ) do
+        find_pool_by_scanning_registry(map_id)
+
+      {:ok, pool_uuid} ->
+        # Cache hit - use the pool_uuid to lookup the pool
+        case Registry.lookup(
+               @unique_registry,
+               Module.concat(WandererApp.Map.MapPool, pool_uuid)
+             ) do
+          [] ->
+            Logger.warning(
+              "Pool with UUID #{pool_uuid} not found in registry for map #{map_id}, scanning registry"
+            )
+
+            find_pool_by_scanning_registry(map_id)
+
+          [{pool_pid, _}] ->
+            GenServer.cast(pool_pid, {:stop_map, map_id})
+        end
+
+      {:error, reason} ->
+        Logger.error("Failed to lookup map #{map_id} in cache: #{inspect(reason)}")
+        :ok
+    end
+  end
+
+  defp find_pool_by_scanning_registry(map_id) do
+    case Registry.lookup(@registry, WandererApp.Map.MapPool) do
       [] ->
+        Logger.debug("No map pools found in registry for map #{map_id}")
         :ok
 
-      [{pool_pid, _}] ->
-        GenServer.cast(pool_pid, {:stop_map, map_id})
+      pools ->
+        # Scan all pools to find the one containing this map_id
+        found_pool =
+          Enum.find_value(pools, fn {_pid, uuid} ->
+            case Registry.lookup(
+                   @unique_registry,
+                   Module.concat(WandererApp.Map.MapPool, uuid)
+                 ) do
+              [{pool_pid, map_ids}] ->
+                if map_id in map_ids do
+                  {pool_pid, uuid}
+                else
+                  nil
+                end
+
+              _ ->
+                nil
+            end
+          end)
+
+        case found_pool do
+          {pool_pid, pool_uuid} ->
+            Logger.info(
+              "Found map #{map_id} in pool #{pool_uuid} via registry scan, updating cache"
+            )
+
+            # Update the cache to fix the inconsistency
+            Cachex.put(@cache, map_id, pool_uuid)
+            GenServer.cast(pool_pid, {:stop_map, map_id})
+
+          nil ->
+            Logger.debug("Map #{map_id} not found in any pool registry")
+            :ok
+        end
     end
   end
 

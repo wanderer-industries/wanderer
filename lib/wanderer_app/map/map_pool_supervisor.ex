@@ -14,7 +14,8 @@ defmodule WandererApp.Map.MapPoolSupervisor do
     children = [
       {Registry, [keys: :unique, name: @unique_registry]},
       {Registry, [keys: :duplicate, name: @registry]},
-      {WandererApp.Map.MapPoolDynamicSupervisor, []}
+      {WandererApp.Map.MapPoolDynamicSupervisor, []},
+      {WandererApp.Map.Reconciler, []}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one, max_restarts: 10)

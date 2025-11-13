@@ -8,7 +8,7 @@ defmodule WandererApp.Character.TrackerPool do
     :tracked_ids,
     :uuid,
     :characters,
-    server_online: true
+    server_online: false
   ]
 
   @name __MODULE__
