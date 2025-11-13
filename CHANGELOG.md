@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.15](https://github.com/wanderer-industries/wanderer/compare/v1.84.14...v1.84.15) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed maps start/stop logic, added server downtime period support
+
 ## [v1.84.14](https://github.com/wanderer-industries/wanderer/compare/v1.84.13...v1.84.14) (2025-11-13)
 
 
