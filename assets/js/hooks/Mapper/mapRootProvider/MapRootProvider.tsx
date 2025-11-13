@@ -6,9 +6,11 @@ import {
   MapUnionTypes,
   OutCommandHandler,
   SolarSystemConnection,
+  StringBoolean,
   TrackingCharacter,
   UseCharactersCacheData,
   UseCommentsData,
+  UserPermission,
 } from '@/hooks/Mapper/types';
 import { useCharactersCache, useComments, useMapRootHandlers } from '@/hooks/Mapper/mapRootProvider/hooks';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
@@ -80,7 +82,16 @@ const INITIAL_DATA: MapRootData = {
   selectedSystems: [],
   selectedConnections: [],
   userPermissions: {},
-  options: {},
+  options: {
+    allowed_copy_for: UserPermission.VIEW_SYSTEM,
+    allowed_paste_for: UserPermission.VIEW_SYSTEM,
+    layout: '',
+    restrict_offline_showing: 'false',
+    show_linked_signature_id: 'false',
+    show_linked_signature_id_temp_name: 'false',
+    show_temp_system_name: 'false',
+    store_custom_labels: 'false',
+  },
   isSubscriptionActive: false,
   linkSignatureToSystem: null,
   mainCharacterEveId: null,
@@ -135,7 +146,7 @@ export interface MapRootContextProps {
     hasOldSettings: boolean;
     getSettingsForExport(): string | undefined;
     applySettings(settings: MapUserSettings): boolean;
-    resetSettings(settings: MapUserSettings): void;
+    resetSettings(): void;
     checkOldSettings(): void;
   };
 }
