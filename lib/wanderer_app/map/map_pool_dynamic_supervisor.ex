@@ -7,7 +7,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   @cache :map_pool_cache
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
-  @map_pool_limit 10
+  @map_pool_limit 20
 
   @name __MODULE__
 
@@ -30,7 +30,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             start_child([map_id], pools |> Enum.count())
 
           pid ->
-            GenServer.cast(pid, {:start_map, map_id})
+            GenServer.call(pid, {:start_map, map_id})
         end
     end
   end
@@ -59,7 +59,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             find_pool_by_scanning_registry(map_id)
 
           [{pool_pid, _}] ->
-            GenServer.cast(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id})
         end
 
       {:error, reason} ->
@@ -102,7 +102,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
 
             # Update the cache to fix the inconsistency
             Cachex.put(@cache, map_id, pool_uuid)
-            GenServer.cast(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id})
 
           nil ->
             Logger.debug("Map #{map_id} not found in any pool registry")

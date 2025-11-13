@@ -15,6 +15,7 @@ defmodule WandererApp.Map.MapPool do
   @cache :map_pool_cache
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
+  @map_pool_limit 20
 
   @garbage_collection_interval :timer.hours(4)
   @systems_cleanup_timeout :timer.minutes(30)
@@ -94,32 +95,31 @@ defmodule WandererApp.Map.MapPool do
   def handle_cast(:stop, state), do: {:stop, :normal, state}
 
   @impl true
-  def handle_cast({:start_map, map_id}, state) do
-    case do_start_map(map_id, state) do
-      {:ok, new_state} ->
-        {:noreply, new_state}
+  def handle_call({:start_map, map_id}, _from, %{map_ids: map_ids, uuid: uuid} = state) do
+    # Enforce capacity limit to prevent pool overload due to race conditions
+    if length(map_ids) >= @map_pool_limit do
+      Logger.warning(
+        "[Map Pool #{uuid}] Pool at capacity (#{length(map_ids)}/#{@map_pool_limit}), " <>
+          "rejecting map #{map_id} and triggering new pool creation"
+      )
 
-      {:error, _reason} ->
-        # Error already logged in do_start_map
-        {:noreply, state}
+      # Trigger a new pool creation attempt asynchronously
+      # This allows the system to create a new pool for this map
+      spawn(fn ->
+        WandererApp.Map.MapPoolDynamicSupervisor.start_map(map_id)
+      end)
+
+      {:reply, :ok, state}
+    else
+      case do_start_map(map_id, state) do
+        {:ok, new_state} ->
+          {:reply, :ok, new_state}
+
+        {:error, _reason} ->
+          # Error already logged in do_start_map
+          {:reply, :ok, state}
+      end
     end
-  end
-
-  @impl true
-  def handle_cast(
-        {:stop_map, map_id},
-        %{map_ids: map_ids, uuid: uuid} = state
-      ) do
-    Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
-      r_map_ids |> Enum.reject(fn id -> id == map_id end)
-    end)
-
-    Cachex.del(@cache, map_id)
-
-    map_id
-    |> Server.Impl.stop_map()
-
-    {:noreply, %{state | map_ids: map_ids |> Enum.reject(fn id -> id == map_id end)}}
   end
 
   @impl true
