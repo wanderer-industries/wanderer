@@ -10,9 +10,14 @@ import { useCallback } from 'react';
 import { TooltipPosition, WdButton, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { ConfirmPopup } from 'primereact/confirmpopup';
 import { useConfirmPopup } from '@/hooks/Mapper/hooks';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export const CommonSettings = () => {
   const { renderSettingItem } = useMapSettings();
+  const {
+    storedSettings: { resetSettings },
+  } = useMapRootState();
+
   const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
 
   const renderSettingsList = useCallback(
@@ -22,7 +27,7 @@ export const CommonSettings = () => {
     [renderSettingItem],
   );
 
-  const handleResetSettings = () => {};
+  const handleResetSettings = useCallback(() => resetSettings(), [resetSettings]);
 
   return (
     <div className="flex flex-col h-full gap-1">
