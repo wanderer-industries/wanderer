@@ -16,7 +16,7 @@ defmodule WandererApp.Map.MapPool do
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
 
-  @garbage_collection_interval :timer.hours(12)
+  @garbage_collection_interval :timer.hours(4)
   @systems_cleanup_timeout :timer.minutes(30)
   @characters_cleanup_timeout :timer.minutes(5)
   @connections_cleanup_timeout :timer.minutes(5)
