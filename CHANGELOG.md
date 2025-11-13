@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.16](https://github.com/wanderer-industries/wanderer/compare/v1.84.15...v1.84.16) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* core: removed maps auto-start logic
+
 ## [v1.84.15](https://github.com/wanderer-industries/wanderer/compare/v1.84.14...v1.84.15) (2025-11-13)
 
 
