@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.14](https://github.com/wanderer-industries/wanderer/compare/v1.84.13...v1.84.14) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem related with error if settings was removed and mapper crashed. Fixed settings reset.
+
 ## [v1.84.13](https://github.com/wanderer-industries/wanderer/compare/v1.84.12...v1.84.13) (2025-11-13)
 
 
