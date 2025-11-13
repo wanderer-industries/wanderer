@@ -9,7 +9,10 @@ defmodule WandererApp.Api.MapWebhookSubscription do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshCloak]
+    extensions: [AshCloak, AshJsonApi.Resource]
+
+  require Ash.Query
+  alias WandererApp.Api.Changes.InjectMapFromActor
 
   postgres do
     repo(WandererApp.Repo)
@@ -20,6 +23,24 @@ defmodule WandererApp.Api.MapWebhookSubscription do
     vault(WandererApp.Vault)
     attributes([:secret])
     decrypt_by_default([:secret])
+  end
+
+  json_api do
+    type "map_webhook_subscriptions"
+
+    routes do
+      base("/map_webhook_subscriptions")
+
+      get(:read)
+      index :read
+      post(:create)
+      patch(:update)
+      delete(:destroy)
+    end
+
+    includes([
+      :map
+    ])
   end
 
   code_interface do
@@ -39,13 +60,34 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
   actions do
     default_accept [
-      :map_id,
+      # Note: map_id is auto-injected from authenticated token via InjectMapFromActor
       :url,
       :events,
       :active?
     ]
 
-    defaults [:read, :destroy]
+    read :read do
+      primary? true
+
+      # Auto-filter by map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            Ash.Query.filter(query, expr(map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
+
+    defaults [:destroy]
 
     update :update do
       accept [
@@ -74,11 +116,15 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
     create :create do
       accept [
-        :map_id,
+        # Note: map_id is auto-injected from authenticated token via InjectMapFromActor
         :url,
         :events,
-        :active?
+        :active?,
+        :secret
       ]
+
+      # Auto-inject map_id from authenticated token
+      change InjectMapFromActor
 
       # Validate webhook URL format
       change fn changeset, _context ->
@@ -117,10 +163,19 @@ defmodule WandererApp.Api.MapWebhookSubscription do
         end
       end
 
-      # Generate secret on creation
+      # Generate secret on creation (always override if provided)
       change fn changeset, _context ->
-        secret = generate_webhook_secret()
-        Ash.Changeset.force_change_attribute(changeset, :secret, secret)
+        case Ash.Changeset.get_argument(changeset, :secret) do
+          nil ->
+            # No secret provided, generate one
+            secret = generate_webhook_secret()
+            Ash.Changeset.change_attribute(changeset, :secret, secret)
+
+          _provided_secret ->
+            # Secret provided but we don't use it, generate our own
+            secret = generate_webhook_secret()
+            Ash.Changeset.force_change_attribute(changeset, :secret, secret)
+        end
       end
     end
 
@@ -138,7 +193,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
   validations do
     validate present(:url), message: "URL is required"
     validate present(:events), message: "Events array is required"
-    validate present(:map_id), message: "Map ID is required"
+    # Note: map_id validation not needed - it's injected automatically via InjectMapFromActor
   end
 
   attributes do
@@ -204,6 +259,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       source_attribute :map_id
       destination_attribute :id
       attribute_writable? true
+      public? true
     end
   end
 

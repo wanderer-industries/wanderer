@@ -268,13 +268,19 @@ defmodule WandererApp.Map.Operations.Systems do
         })
 
       "custom_name" ->
-        {:ok, solar_system_info} =
-          WandererApp.CachedInfo.get_system_static_info(system_id)
-
-        Server.update_system_name(map_id, %{
-          solar_system_id: system_id,
-          name: val || solar_system_info.solar_system_name
-        })
+        # Update the custom_name field directly using Ash
+        with {:ok, system} <-
+               MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id),
+             {:ok, _updated} <-
+               system
+               |> Ash.Changeset.for_update(:update, %{custom_name: val})
+               |> Ash.update() do
+          :ok
+        else
+          error ->
+            Logger.error("[update_system_field] Failed to update custom_name: #{inspect(error)}")
+            {:error, :update_failed}
+        end
 
       "temporary_name" ->
         Server.update_system_temporary_name(map_id, %{

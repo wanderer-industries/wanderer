@@ -440,7 +440,6 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
     )
   end
 
-  @doc false
   defp member_to_json(member) do
     base = %{
       id: member.id,

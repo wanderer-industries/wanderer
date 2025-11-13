@@ -8,6 +8,23 @@ defmodule WandererApp.Map.Server do
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
+  @doc """
+  Returns the PID of the pool managing the given map, or nil if not found.
+  """
+  def map_pid(map_id) when is_binary(map_id) do
+    try do
+      with {:ok, pool_uuid} <- Cachex.get(:map_pool_cache, map_id),
+           pool_name <- Module.concat(WandererApp.Map.MapPool, pool_uuid),
+           [{pid, _}] <- Registry.lookup(:unique_map_pool_registry, pool_name) do
+        pid
+      else
+        _ -> nil
+      end
+    rescue
+      ArgumentError -> nil
+    end
+  end
+
   def get_export_settings(%{id: map_id, hubs: hubs} = _map) do
     with {:ok, all_systems} <- WandererApp.MapSystemRepo.get_all_by_map(map_id),
          {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id) do

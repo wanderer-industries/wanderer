@@ -4,6 +4,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
   import Mox
 
   alias WandererApp.Map.Operations.Connections
+  alias WandererAppWeb.Factory
 
   setup :verify_on_exit!
 
@@ -11,6 +12,11 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
     # Ensure we're in global mode and re-setup mocks
     Mox.set_mox_global()
     WandererApp.Test.Mocks.setup_additional_expectations()
+
+    # Create real user, character, and map for tests that need them
+    user = Factory.insert(:user)
+    character = Factory.insert(:character, %{user_id: user.id})
+    map = Factory.insert(:map, %{owner_id: character.id})
 
     # Set up CachedInfo mock stubs for the systems used in the tests
     WandererApp.CachedInfo.Mock
@@ -88,7 +94,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
         {:error, :not_found}
     end)
 
-    :ok
+    {:ok, %{user: user, character: character, map: map}}
   end
 
   describe "parameter validation" do
@@ -206,10 +212,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       assert is_tuple(result)
     end
 
-    test "create connection validates integer parameters" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
+    test "create connection validates integer parameters", %{map: map, character: character} do
       # Test with valid integer strings
       attrs_valid = %{
         "solar_system_source" => "30000142",
@@ -221,7 +224,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       # This should not crash on parameter parsing
       result =
         try do
-          Connections.create(attrs_valid, map_id, char_id)
+          Connections.create(attrs_valid, map.id, character.id)
         catch
           "Map server not started" ->
             {:error, :map_server_not_started}
@@ -236,15 +239,12 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
         "solar_system_target" => "30000143"
       }
 
-      result_invalid = Connections.create(attrs_invalid, map_id, char_id)
+      result_invalid = Connections.create(attrs_invalid, map.id, character.id)
       # Should handle invalid parameter gracefully
       assert {:error, :precondition_failed, _} = result_invalid
     end
 
-    test "create_connection/3 handles parameter validation" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
+    test "create_connection/3 handles parameter validation", %{map: map, character: character} do
       attrs = %{
         "solar_system_source" => 30_000_142,
         "solar_system_target" => 30_000_143,
@@ -253,7 +253,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
 
       result =
         try do
-          Connections.create_connection(map_id, attrs, char_id)
+          Connections.create_connection(map.id, attrs, character.id)
         catch
           "Map server not started" ->
             {:error, :map_server_not_started}
@@ -263,11 +263,11 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       assert is_tuple(result)
     end
 
-    test "create_connection/2 with Plug.Conn handles parameter validation" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
-      conn = %{assigns: %{map_id: map_id, owner_character_id: char_id}}
+    test "create_connection/2 with Plug.Conn handles parameter validation", %{
+      map: map,
+      character: character
+    } do
+      conn = %{assigns: %{map_id: map.id, owner_character_id: character.id}}
 
       attrs = %{
         "solar_system_source" => 30_000_142,
@@ -315,11 +315,8 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       assert is_tuple(result_invalid)
     end
 
-    test "upsert_batch processes connection lists correctly" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
-      conn = %{assigns: %{map_id: map_id, owner_character_id: char_id}}
+    test "upsert_batch processes connection lists correctly", %{map: map, character: character} do
+      conn = %{assigns: %{map_id: map.id, owner_character_id: character.id}}
 
       # Test with empty list
       result_empty = Connections.upsert_batch(conn, [])
@@ -354,11 +351,8 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       assert Map.has_key?(result, :skipped)
     end
 
-    test "upsert_single processes individual connections" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
-      conn = %{assigns: %{map_id: map_id, owner_character_id: char_id}}
+    test "upsert_single processes individual connections", %{map: map, character: character} do
+      conn = %{assigns: %{map_id: map.id, owner_character_id: character.id}}
 
       conn_data = %{
         "solar_system_source" => 30_000_142,
@@ -388,10 +382,8 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       assert is_tuple(result)
     end
 
-    test "internal helper functions work correctly" do
+    test "internal helper functions work correctly", %{map: map, character: character} do
       # Test coordinate normalization by creating a connection with different parameters
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
 
       # Test different parameter formats to exercise helper functions
       params_various_formats = [
@@ -417,7 +409,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       Enum.each(params_various_formats, fn params ->
         result =
           try do
-            Connections.create(params, map_id, char_id)
+            Connections.create(params, map.id, character.id)
           catch
             "Map server not started" ->
               {:error, :map_server_not_started}
@@ -465,10 +457,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       end)
     end
 
-    test "handles different ship size type values" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
+    test "handles different ship size type values", %{map: map, character: character} do
       # Test different ship size type formats
       ship_size_types = [nil, "0", "1", "2", "3", 0, 1, 2, 3, "invalid", -1]
 
@@ -481,7 +470,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
 
         result =
           try do
-            Connections.create(attrs, map_id, char_id)
+            Connections.create(attrs, map.id, character.id)
           catch
             "Map server not started" ->
               {:error, :map_server_not_started}
@@ -492,10 +481,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       end)
     end
 
-    test "handles different connection type values" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
+    test "handles different connection type values", %{map: map, character: character} do
       # Test different connection type formats
       connection_types = [nil, "0", "1", 0, 1, "invalid", -1]
 
@@ -508,7 +494,7 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
 
         result =
           try do
-            Connections.create(attrs, map_id, char_id)
+            Connections.create(attrs, map.id, character.id)
           catch
             "Map server not started" ->
               {:error, :map_server_not_started}
@@ -544,11 +530,8 @@ defmodule WandererApp.Map.Operations.ConnectionsTest do
       end)
     end
 
-    test "handles atom and string key formats in upsert_single" do
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-
-      conn = %{assigns: %{map_id: map_id, owner_character_id: char_id}}
+    test "handles atom and string key formats in upsert_single", %{map: map, character: character} do
+      conn = %{assigns: %{map_id: map.id, owner_character_id: character.id}}
 
       # Test both string and atom key formats
       conn_data_formats = [

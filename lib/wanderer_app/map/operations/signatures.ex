@@ -90,7 +90,8 @@ defmodule WandererApp.Map.Operations.Signatures do
              updated_signatures: [],
              removed_signatures: [],
              solar_system_id: solar_system_id,
-             character_id: validated_char_uuid,  # Pass internal UUID here
+             # Pass internal UUID here
+             character_id: validated_char_uuid,
              user_id: user_id,
              delete_connection_with_sigs: false
            }) do
@@ -176,7 +177,8 @@ defmodule WandererApp.Map.Operations.Signatures do
           updated_signatures: [attrs],
           removed_signatures: [],
           solar_system_id: system.solar_system_id,
-          character_id: validated_char_uuid,  # Pass internal UUID here
+          # Pass internal UUID here
+          character_id: validated_char_uuid,
           user_id: user_id,
           delete_connection_with_sigs: false
         })

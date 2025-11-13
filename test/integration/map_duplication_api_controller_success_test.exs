@@ -61,7 +61,7 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
         build_conn()
         |> put_req_header(
           "authorization",
-          "Bearer #{source_map.public_api_key || "test-api-key"}"
+          "Bearer #{source_map.public_api_key}"
         )
         |> put_req_header("content-type", "application/json")
         |> assign(:current_character, character)
@@ -246,11 +246,11 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
     setup do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      map = insert(:map, %{owner_id: character.id})
 
       conn =
         build_conn()
-        |> put_req_header("authorization", "Bearer test-api-key")
+        |> put_req_header("authorization", "Bearer #{map.public_api_key}")
         |> put_req_header("content-type", "application/json")
         |> assign(:current_character, character)
         |> assign(:current_user, user)
@@ -263,7 +263,7 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
       user: user,
       character: character
     } do
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      source_map = insert(:map, %{owner_id: character.id})
 
       invalid_params = %{
         "description" => "Missing name field"
@@ -308,7 +308,7 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
     end
 
     test "fails with invalid boolean parameters", %{conn: conn, user: user, character: character} do
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      source_map = insert(:map, %{owner_id: character.id})
 
       invalid_params = %{
         "name" => "Invalid Boolean Test",
@@ -329,7 +329,7 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
     end
 
     test "handles very long map names", %{conn: conn, user: user, character: character} do
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      source_map = insert(:map, %{owner_id: character.id})
 
       # Very long name
       long_name = String.duplicate("a", 300)
@@ -368,7 +368,7 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
     test "succeeds when user has access to source map" do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      source_map = insert(:map, %{owner_id: character.id})
 
       params = %{
         "name" => "Authorized Copy"

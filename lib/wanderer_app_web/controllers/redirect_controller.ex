@@ -12,4 +12,8 @@ defmodule WandererAppWeb.RedirectController do
       redirect(conn, to: ~p"/welcome")
     end
   end
+
+  def swaggerui_root(conn, _) do
+    redirect(conn, to: "/swaggerui/v1")
+  end
 end

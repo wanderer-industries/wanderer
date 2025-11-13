@@ -4,7 +4,7 @@ defmodule WandererAppWeb.MapSystemStructureAPIControllerTest do
   alias WandererAppWeb.Factory
 
   describe "GET /api/maps/:map_identifier/structures (index)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns all structures for a map", %{conn: conn, map: map} do
       # Create test systems
@@ -66,7 +66,7 @@ defmodule WandererAppWeb.MapSystemStructureAPIControllerTest do
   end
 
   describe "GET /api/maps/:map_identifier/structures/:id (show)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns a specific structure", %{conn: conn, map: map} do
       system = Factory.insert(:map_system, %{map_id: map.id, solar_system_id: 30_000_142})
@@ -132,7 +132,7 @@ defmodule WandererAppWeb.MapSystemStructureAPIControllerTest do
   end
 
   describe "POST /api/maps/:map_identifier/structures (create)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "creates a new structure", %{conn: conn, map: map} do
       system = Factory.insert(:map_system, %{map_id: map.id, solar_system_id: 30_000_142})
@@ -207,7 +207,7 @@ defmodule WandererAppWeb.MapSystemStructureAPIControllerTest do
   end
 
   describe "PUT /api/maps/:map_identifier/structures/:id (update)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "updates structure attributes", %{conn: conn, map: map} do
       system = Factory.insert(:map_system, %{map_id: map.id, solar_system_id: 30_000_142})
@@ -311,7 +311,7 @@ defmodule WandererAppWeb.MapSystemStructureAPIControllerTest do
   end
 
   describe "DELETE /api/maps/:map_identifier/structures/:id (delete)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "deletes a structure", %{conn: conn, map: map} do
       system = Factory.insert(:map_system, %{map_id: map.id, solar_system_id: 30_000_142})

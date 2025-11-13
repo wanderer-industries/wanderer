@@ -41,6 +41,26 @@ defmodule WandererApp.MapRepo do
 
   defp load_user_permissions(error, _current_user), do: error
 
+  def update(map, attrs) do
+    # Use specialized actions based on attributes
+    cond do
+      Map.has_key?(attrs, :public_api_key) ->
+        map |> WandererApp.Api.Map.update_api_key(attrs)
+
+      Map.has_key?(attrs, :webhooks_enabled) ->
+        map |> WandererApp.Api.Map.toggle_webhooks(attrs)
+
+      Map.has_key?(attrs, :options) ->
+        update_options(map, Jason.decode!(attrs.options))
+
+      Map.has_key?(attrs, :hubs) ->
+        map |> WandererApp.Api.Map.update_hubs(attrs)
+
+      true ->
+        map |> WandererApp.Api.Map.update(attrs)
+    end
+  end
+
   def update_hubs(map_id, hubs) do
     map_id
     |> WandererApp.Api.Map.by_id()

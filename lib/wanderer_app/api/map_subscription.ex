@@ -62,7 +62,28 @@ defmodule WandererApp.Api.MapSubscription do
       :auto_renew?
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :update, :destroy]
+
+    read :read do
+      primary?(true)
+
+      # Auto-filter by map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            Ash.Query.filter(query, expr(map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
 
     read :all_active do
       prepare build(sort: [updated_at: :asc], load: [:map])

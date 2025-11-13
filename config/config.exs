@@ -25,7 +25,8 @@ config :wanderer_app,
   ecto_repos: [WandererApp.Repo],
   ash_domains: [WandererApp.Api],
   generators: [timestamp_type: :utc_datetime],
-  ddrt: WandererApp.Map.CacheRTree,
+  spatial_index_module: WandererApp.Map.CacheRTree,
+  cached_info: WandererApp.CachedInfo,
   logger: Logger,
   pubsub_client: Phoenix.PubSub
 

@@ -19,7 +19,7 @@ config :wanderer_app, WandererApp.Repo,
 System.put_env("WANDERER_CHARACTER_API_DISABLED", "false")
 
 config :wanderer_app,
-  ddrt: Test.DDRTMock,
+  spatial_index_module: Test.SpatialIndexMock,
   logger: Test.LoggerMock,
   pubsub_client: Test.PubSubMock,
   cached_info: WandererApp.CachedInfo.Mock,
@@ -49,3 +49,13 @@ config :phoenix, :plug_init_mode, :runtime
 config :mime, :types, %{
   "application/xml" => ["xml"]
 }
+
+config :wanderer_app, WandererApp.Vault,
+  ciphers: [
+    default: {
+      Cloak.Ciphers.AES.GCM,
+      tag: "AES.GCM.V1",
+      key: Base.decode64!("OtPJXGfKNyOMWI7TdpcWgOlyNtD9AGSfoAdvEuTQIno="),
+      iv_length: 12
+    }
+  ]

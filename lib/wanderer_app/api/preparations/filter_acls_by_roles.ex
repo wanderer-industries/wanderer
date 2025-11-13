@@ -4,6 +4,8 @@ defmodule WandererApp.Api.Preparations.FilterAclsByRoles do
   use Ash.Resource.Preparation
   require Ash.Query
 
+  alias WandererApp.Api.ActorWithMap
+
   def prepare(query, _params, %{actor: nil}) do
     query
     |> Ash.Query.load([:owner, :members])
@@ -13,6 +15,11 @@ defmodule WandererApp.Api.Preparations.FilterAclsByRoles do
     query
     |> filter_membership(actor)
     |> Ash.Query.load([:owner, :members])
+  end
+
+  defp filter_membership(query, %ActorWithMap{user: user}) do
+    # For token-based auth, extract the user from ActorWithMap
+    filter_membership(query, user)
   end
 
   defp filter_membership(query, actor) do

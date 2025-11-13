@@ -11,6 +11,7 @@ defmodule WandererApp.ExternalEvents.Event do
           | :deleted_system
           | :system_renamed
           | :system_metadata_changed
+          | :position_updated
           | :signatures_updated
           | :signature_added
           | :signature_removed
@@ -199,6 +200,7 @@ defmodule WandererApp.ExternalEvents.Event do
       :deleted_system,
       :system_renamed,
       :system_metadata_changed,
+      :position_updated,
       :signatures_updated,
       :signature_added,
       :signature_removed,

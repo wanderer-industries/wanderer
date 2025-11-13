@@ -29,6 +29,8 @@ defmodule WandererApp.Api.MapSystemStructure do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshJsonApi.Resource]
 
+  require Ash.Query
+
   postgres do
     repo(WandererApp.Repo)
     table("map_system_structures_v1")
@@ -93,7 +95,30 @@ defmodule WandererApp.Api.MapSystemStructure do
       :end_time
     ]
 
-    defaults [:read, :destroy]
+    read :read do
+      primary? true
+
+      # Auto-filter by system's map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            # Filter structures to only those belonging to systems on this map
+            query
+            |> Ash.Query.filter(exists(system, map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
+
+    defaults [:destroy]
 
     read :all_active do
       prepare build(sort: [updated_at: :desc])
