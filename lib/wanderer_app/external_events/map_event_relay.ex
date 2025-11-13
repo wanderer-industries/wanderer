@@ -162,26 +162,23 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
     # 1. Store in ETS for backfill
     store_event(event, state.ets_table)
 
-    # 2. Convert event to JSON for delivery methods
     event_json = Event.to_json(event)
 
-    Logger.debug(fn ->
-      "MapEventRelay converted event to JSON: #{inspect(String.slice(inspect(event_json), 0, 200))}..."
-    end)
-
-    # 3. Send to webhook subscriptions via WebhookDispatcher
     WebhookDispatcher.dispatch_event(event.map_id, event)
 
-    # 4. Broadcast to SSE clients
-    Logger.debug(fn -> "MapEventRelay broadcasting to SSE clients for map #{event.map_id}" end)
-    WandererApp.ExternalEvents.SseStreamManager.broadcast_event(event.map_id, event_json)
+    case WandererApp.ExternalEvents.SseAccessControl.sse_allowed?(event.map_id) do
+      :ok ->
+        WandererApp.ExternalEvents.SseStreamManager.broadcast_event(event.map_id, event_json)
 
-    # Emit delivered telemetry
-    :telemetry.execute(
-      [:wanderer_app, :external_events, :relay, :delivered],
-      %{count: 1},
-      %{map_id: event.map_id, event_type: event.type}
-    )
+        :telemetry.execute(
+          [:wanderer_app, :external_events, :relay, :delivered],
+          %{count: 1},
+          %{map_id: event.map_id, event_type: event.type}
+        )
+
+      {:error, _reason} ->
+        :ok
+    end
 
     %{state | event_count: state.event_count + 1}
   end
