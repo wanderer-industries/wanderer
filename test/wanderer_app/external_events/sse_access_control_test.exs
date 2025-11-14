@@ -34,15 +34,11 @@ defmodule WandererApp.ExternalEvents.SseAccessControlTest do
       assert {:error, :sse_disabled_for_map} = result
     end
 
-    test "returns valid response when all conditions met", %{map: map} do
-      # In test environment, subscriptions are typically disabled (CE mode)
-      # and SSE is enabled by default
-      # This tests the happy path
+    test "returns :ok when all conditions met in CE mode", %{map: map} do
+      # Tests run in CE mode (map_subscriptions_enabled: false by default)
+      # When subscriptions are disabled, any map with sse_enabled should be allowed
       result = SseAccessControl.sse_allowed?(map.id)
-
-      # Should either return :ok (if CE mode) or error if subscriptions required
-      # We just verify it returns a valid response
-      assert result == :ok or match?({:error, _}, result)
+      assert result == :ok
     end
 
     test "validates map must have sse_enabled true", %{map: map} do
