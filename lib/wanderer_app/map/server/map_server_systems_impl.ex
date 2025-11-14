@@ -642,13 +642,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       position_y: system.position_y
     })
 
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
-        character_id: character_id,
-        user_id: user_id,
-        map_id: map_id,
-        solar_system_id: solar_system_id
-      })
+    WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
+      character_id: character_id,
+      user_id: user_id,
+      map_id: map_id,
+      solar_system_id: solar_system_id
+    })
   end
 
   defp maybe_update_extra_info(system, nil), do: system

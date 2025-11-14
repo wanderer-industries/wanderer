@@ -250,15 +250,14 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         |> Map.put_new(key_atom, value)
       ])
 
-      {:ok, _} =
-        WandererApp.User.ActivityTracker.track_map_event(:system_updated, %{
-          character_id: main_character_id,
-          user_id: current_user.id,
-          map_id: map_id,
-          solar_system_id: "#{solar_system_id}" |> String.to_integer(),
-          key: key_atom,
-          value: value
-        })
+      WandererApp.User.ActivityTracker.track_map_event(:system_updated, %{
+        character_id: main_character_id,
+        user_id: current_user.id,
+        map_id: map_id,
+        solar_system_id: "#{solar_system_id}" |> String.to_integer(),
+        key: key_atom,
+        value: value
+      })
     end
 
     {:noreply, socket}
