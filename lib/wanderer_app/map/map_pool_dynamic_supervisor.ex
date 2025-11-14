@@ -8,6 +8,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
   @map_pool_limit 20
+  @genserver_call_timeout :timer.seconds(30)
 
   @name __MODULE__
 
@@ -30,7 +31,26 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             start_child([map_id], pools |> Enum.count())
 
           pid ->
-            GenServer.call(pid, {:start_map, map_id})
+            result = GenServer.call(pid, {:start_map, map_id}, @genserver_call_timeout)
+
+            case result do
+              {:ok, :initializing} ->
+                Logger.debug("[Map Pool Supervisor] Map #{map_id} queued for async initialization")
+                result
+
+              {:ok, :already_started} ->
+                Logger.debug("[Map Pool Supervisor] Map #{map_id} already started")
+                result
+
+              :ok ->
+                # Legacy synchronous response (from crash recovery path)
+                Logger.debug("[Map Pool Supervisor] Map #{map_id} started synchronously")
+                result
+
+              other ->
+                Logger.warning("[Map Pool Supervisor] Unexpected response for map #{map_id}: #{inspect(other)}")
+                other
+            end
         end
     end
   end
@@ -59,7 +79,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             find_pool_by_scanning_registry(map_id)
 
           [{pool_pid, _}] ->
-            GenServer.call(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id}, @genserver_call_timeout)
         end
 
       {:error, reason} ->
@@ -102,7 +122,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
 
             # Update the cache to fix the inconsistency
             Cachex.put(@cache, map_id, pool_uuid)
-            GenServer.call(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id}, @genserver_call_timeout)
 
           nil ->
             Logger.debug("Map #{map_id} not found in any pool registry")

@@ -195,6 +195,68 @@ defmodule WandererApp.Map.MapPool do
   end
 
   @impl true
+  def handle_continue({:init_map, map_id}, %{uuid: uuid} = state) do
+    # Perform the actual map initialization asynchronously
+    # This runs after the GenServer.call has already returned
+    start_time = System.monotonic_time(:millisecond)
+
+    try do
+      # Initialize the map state and start the map server
+      map_id
+      |> WandererApp.Map.get_map_state!()
+      |> Server.Impl.start_map()
+
+      duration = System.monotonic_time(:millisecond) - start_time
+
+      Logger.info("[Map Pool #{uuid}] Map #{map_id} initialized successfully in #{duration}ms")
+
+      # Emit telemetry for slow initializations
+      if duration > 5_000 do
+        Logger.warning("[Map Pool #{uuid}] Slow map initialization: #{map_id} took #{duration}ms")
+
+        :telemetry.execute(
+          [:wanderer_app, :map_pool, :slow_init],
+          %{duration_ms: duration},
+          %{map_id: map_id, pool_uuid: uuid}
+        )
+      end
+
+      {:noreply, state}
+    rescue
+      e ->
+        duration = System.monotonic_time(:millisecond) - start_time
+
+        Logger.error("""
+        [Map Pool #{uuid}] Failed to initialize map #{map_id} after #{duration}ms: #{Exception.message(e)}
+        #{Exception.format_stacktrace(__STACKTRACE__)}
+        """)
+
+        # Rollback: Remove from state, registry, and cache
+        new_state = %{state | map_ids: state.map_ids |> Enum.reject(fn id -> id == map_id end)}
+
+        # Update registry
+        Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
+          r_map_ids |> Enum.reject(fn id -> id == map_id end)
+        end)
+
+        # Remove from cache
+        Cachex.del(@cache, map_id)
+
+        # Update ETS state
+        MapPoolState.save_pool_state(uuid, new_state.map_ids)
+
+        # Emit telemetry for failed initialization
+        :telemetry.execute(
+          [:wanderer_app, :map_pool, :init_failed],
+          %{duration_ms: duration},
+          %{map_id: map_id, pool_uuid: uuid, reason: Exception.message(e)}
+        )
+
+        {:noreply, new_state}
+    end
+  end
+
+  @impl true
   def handle_cast(:stop, state), do: {:stop, :normal, state}
 
   @impl true
@@ -214,13 +276,38 @@ defmodule WandererApp.Map.MapPool do
 
       {:reply, :ok, state}
     else
-      case do_start_map(map_id, state) do
-        {:ok, new_state} ->
-          {:reply, :ok, new_state}
+      # Check if map is already started or being initialized
+      if map_id in map_ids do
+        Logger.debug("[Map Pool #{uuid}] Map #{map_id} already in pool")
+        {:reply, {:ok, :already_started}, state}
+      else
+        # Pre-register the map in registry and cache to claim ownership
+        # This prevents race conditions where multiple pools try to start the same map
+        registry_result =
+          Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
+            [map_id | r_map_ids]
+          end)
 
-        {:error, _reason} ->
-          # Error already logged in do_start_map
-          {:reply, :ok, state}
+        case registry_result do
+          {_new_value, _old_value} ->
+            # Add to cache
+            Cachex.put(@cache, map_id, uuid)
+
+            # Add to state
+            new_state = %{state | map_ids: [map_id | map_ids]}
+
+            # Persist state to ETS
+            MapPoolState.save_pool_state(uuid, new_state.map_ids)
+
+            Logger.debug("[Map Pool #{uuid}] Map #{map_id} queued for async initialization")
+
+            # Return immediately and initialize asynchronously
+            {:reply, {:ok, :initializing}, new_state, {:continue, {:init_map, map_id}}}
+
+          :error ->
+            Logger.error("[Map Pool #{uuid}] Failed to register map #{map_id} in registry")
+            {:reply, {:error, :registration_failed}, state}
+        end
       end
     end
   end

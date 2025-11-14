@@ -410,7 +410,7 @@ defmodule WandererApp.Map.CacheRTreeTest do
       # Check many positions for availability (simulating auto-positioning)
       test_positions = for x <- 0..20, y <- 0..20, do: {x * 100, y * 50}
 
-      for {x, y} do
+      for {x, y} <- test_positions do
         box = [{x, x + 130}, {y, y + 34}]
         {:ok, _ids} = CacheRTree.query(box, name)
         # Not asserting anything, just verifying queries work
