@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.18](https://github.com/wanderer-industries/wanderer/compare/v1.84.17...v1.84.18) (2025-11-14)
+
+
+
+
+### Bug Fixes:
+
+* core: added gracefull map poll recovery from saved state. added map slug unique checks
+
 ## [v1.84.17](https://github.com/wanderer-industries/wanderer/compare/v1.84.16...v1.84.17) (2025-11-14)
 
 
