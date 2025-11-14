@@ -165,13 +165,12 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         solar_system_id: solar_system_id
       })
 
-      {:ok, _} =
-        WandererApp.User.ActivityTracker.track_map_event(:hub_added, %{
-          character_id: main_character_id,
-          user_id: current_user.id,
-          map_id: map_id,
-          solar_system_id: solar_system_id
-        })
+      WandererApp.User.ActivityTracker.track_map_event(:hub_added, %{
+        character_id: main_character_id,
+        user_id: current_user.id,
+        map_id: map_id,
+        solar_system_id: solar_system_id
+      })
 
       {:noreply, socket}
     else
@@ -204,13 +203,12 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
       solar_system_id: solar_system_id
     })
 
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:hub_removed, %{
-        character_id: main_character_id,
-        user_id: current_user.id,
-        map_id: map_id,
-        solar_system_id: solar_system_id
-      })
+    WandererApp.User.ActivityTracker.track_map_event(:hub_removed, %{
+      character_id: main_character_id,
+      user_id: current_user.id,
+      map_id: map_id,
+      solar_system_id: solar_system_id
+    })
 
     {:noreply, socket}
   end

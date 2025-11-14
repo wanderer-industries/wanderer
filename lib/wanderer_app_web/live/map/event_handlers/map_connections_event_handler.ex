@@ -59,14 +59,13 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       character_id: main_character_id
     })
 
-    {:ok, _} =
-      WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
-        character_id: main_character_id,
-        user_id: current_user_id,
-        map_id: map_id,
-        solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-        solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
-      })
+    WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
+      character_id: main_character_id,
+      user_id: current_user_id,
+      map_id: map_id,
+      solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+      solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+    })
 
     {:noreply, socket}
   end
@@ -149,7 +148,6 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       end
     end
 
-    {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
         character_id: main_character_id,
         user_id: current_user_id,
@@ -202,7 +200,6 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         _ -> nil
       end
 
-    {:ok, _} =
       WandererApp.User.ActivityTracker.track_map_event(:map_connection_updated, %{
         character_id: main_character_id,
         user_id: current_user_id,

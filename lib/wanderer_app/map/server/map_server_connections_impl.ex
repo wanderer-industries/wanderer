@@ -537,6 +537,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         Impl.broadcast!(map_id, :add_connection, connection)
 
+        Impl.broadcast!(map_id, :maybe_link_signature, %{
+          character_id: character_id,
+          solar_system_source: old_location.solar_system_id,
+          solar_system_target: location.solar_system_id
+        })
+
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
         WandererApp.ExternalEvents.broadcast(map_id, :connection_added, %{
           connection_id: connection.id,
@@ -548,19 +554,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           time_status: connection.time_status
         })
 
-        {:ok, _} =
-          WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
-            character_id: character_id,
-            user_id: character.user_id,
-            map_id: map_id,
-            solar_system_source_id: old_location.solar_system_id,
-            solar_system_target_id: location.solar_system_id
-          })
-
-        Impl.broadcast!(map_id, :maybe_link_signature, %{
+        WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
           character_id: character_id,
-          solar_system_source: old_location.solar_system_id,
-          solar_system_target: location.solar_system_id
+          user_id: character.user_id,
+          map_id: map_id,
+          solar_system_source_id: old_location.solar_system_id,
+          solar_system_target_id: location.solar_system_id
         })
 
         :ok
