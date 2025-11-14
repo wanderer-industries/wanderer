@@ -140,9 +140,13 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   end
 
   defp start_child(map_ids, pools_count) do
-    case DynamicSupervisor.start_child(@name, {WandererApp.Map.MapPool, map_ids}) do
+    # Generate UUID for the new pool - this will be used for crash recovery
+    uuid = UUID.uuid1()
+
+    # Pass both UUID and map_ids to the pool for crash recovery support
+    case DynamicSupervisor.start_child(@name, {WandererApp.Map.MapPool, {uuid, map_ids}}) do
       {:ok, pid} ->
-        Logger.info("Starting map pool, total map_pools: #{pools_count + 1}")
+        Logger.info("Starting map pool #{uuid}, total map_pools: #{pools_count + 1}")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->

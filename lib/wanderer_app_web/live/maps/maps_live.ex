@@ -1,6 +1,8 @@
 defmodule WandererAppWeb.MapsLive do
   use WandererAppWeb, :live_view
 
+  alias Phoenix.LiveView.AsyncResult
+
   require Logger
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
@@ -275,17 +277,57 @@ defmodule WandererAppWeb.MapsLive do
         :telemetry.execute([:wanderer_app, :map, :created], %{count: 1})
         maybe_create_default_acl(form, new_map)
 
+        # Reload maps synchronously to avoid timing issues with flash messages
+        {:ok, %{maps: maps}} = load_maps(current_user)
+
         {:noreply,
          socket
-         |> assign_async(:maps, fn ->
-           load_maps(current_user)
-         end)
+         |> put_flash(
+           :info,
+           "Map '#{new_map.name}' created successfully with slug '#{new_map.slug}'"
+         )
+         |> assign(:maps, AsyncResult.ok(maps))
          |> push_patch(to: ~p"/maps")}
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        # Check for slug uniqueness constraint violation
+        slug_error =
+          Enum.find(errors, fn error ->
+            case error do
+              %{field: :slug} -> true
+              %{message: message} when is_binary(message) -> String.contains?(message, "unique")
+              _ -> false
+            end
+          end)
+
+        error_message =
+          if slug_error do
+            "A map with this name already exists. The system will automatically adjust the name if needed. Please try again."
+          else
+            errors
+            |> Enum.map(fn error ->
+              field = Map.get(error, :field, "field")
+              message = Map.get(error, :message, "validation error")
+              "#{field}: #{message}"
+            end)
+            |> Enum.join(", ")
+          end
+
+        Logger.warning("Map creation failed",
+          form: form,
+          errors: inspect(errors),
+          slug_error: slug_error != nil
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to create map: #{error_message}")
+         |> assign(error: error_message)}
 
       {:error, %{errors: errors}} ->
         error_message =
           errors
-          |> Enum.map(fn %{field: _field} = error ->
+          |> Enum.map(fn error ->
             "#{Map.get(error, :message, "Field validation error")}"
           end)
           |> Enum.join(", ")
@@ -296,9 +338,14 @@ defmodule WandererAppWeb.MapsLive do
          |> assign(error: error_message)}
 
       {:error, error} ->
+        Logger.error("Unexpected error creating map",
+          form: form,
+          error: inspect(error)
+        )
+
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to create map")
+         |> put_flash(:error, "Failed to create map. Please try again.")
          |> assign(error: error)}
     end
   end
@@ -342,97 +389,156 @@ defmodule WandererAppWeb.MapsLive do
         %{"form" => form} = _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    {:ok, map} =
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug!()
-      |> Ash.load(:acls)
+    case get_map_by_slug_safely(map_slug) do
+      {:ok, map} ->
+        # Successfully found the map, proceed with loading and updating
+        {:ok, map_with_acls} = Ash.load(map, :acls)
 
-    scope =
-      form
-      |> Map.get("scope")
-      |> case do
-        "" -> "wormholes"
-        scope -> scope
-      end
+        scope =
+          form
+          |> Map.get("scope")
+          |> case do
+            "" -> "wormholes"
+            scope -> scope
+          end
 
-    form =
-      form
-      |> Map.put("acls", form["acls"] || [])
-      |> Map.put("scope", scope)
-      |> Map.put(
-        "only_tracked_characters",
-        (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
-      )
+        form =
+          form
+          |> Map.put("acls", form["acls"] || [])
+          |> Map.put("scope", scope)
+          |> Map.put(
+            "only_tracked_characters",
+            (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
+          )
 
-    map
-    |> WandererApp.Api.Map.update(form)
-    |> case do
-      {:ok, _updated_map} ->
-        {added_acls, removed_acls} = map.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
+        map_with_acls
+        |> WandererApp.Api.Map.update(form)
+        |> case do
+          {:ok, _updated_map} ->
+            {added_acls, removed_acls} =
+              map_with_acls.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "maps:#{map.id}",
-          {:map_acl_updated, map.id, added_acls, removed_acls}
-        )
+            Phoenix.PubSub.broadcast(
+              WandererApp.PubSub,
+              "maps:#{map_with_acls.id}",
+              {:map_acl_updated, map_with_acls.id, added_acls, removed_acls}
+            )
 
-        {:ok, tracked_characters} =
-          WandererApp.Maps.get_tracked_map_characters(map.id, current_user)
+            {:ok, tracked_characters} =
+              WandererApp.Maps.get_tracked_map_characters(map_with_acls.id, current_user)
 
-        first_tracked_character_id = Enum.map(tracked_characters, & &1.id) |> List.first()
+            first_tracked_character_id = Enum.map(tracked_characters, & &1.id) |> List.first()
 
-        added_acls
-        |> Enum.each(fn acl_id ->
-          WandererApp.User.ActivityTracker.track_map_event(:map_acl_added, %{
-            character_id: first_tracked_character_id,
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
-        end)
+            added_acls
+            |> Enum.each(fn acl_id ->
+              WandererApp.User.ActivityTracker.track_map_event(:map_acl_added, %{
+                character_id: first_tracked_character_id,
+                user_id: current_user.id,
+                map_id: map_with_acls.id,
+                acl_id: acl_id
+              })
+            end)
 
-        removed_acls
-        |> Enum.each(fn acl_id ->
-          WandererApp.User.ActivityTracker.track_map_event(:map_acl_removed, %{
-            character_id: first_tracked_character_id,
-            user_id: current_user.id,
-            map_id: map.id,
-            acl_id: acl_id
-          })
-        end)
+            removed_acls
+            |> Enum.each(fn acl_id ->
+              WandererApp.User.ActivityTracker.track_map_event(:map_acl_removed, %{
+                character_id: first_tracked_character_id,
+                user_id: current_user.id,
+                map_id: map_with_acls.id,
+                acl_id: acl_id
+              })
+            end)
 
+            {:noreply,
+             socket
+             |> push_navigate(to: ~p"/maps")}
+
+          {:error, error} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to update map")
+             |> assign(error: error)}
+        end
+
+      {:error, :multiple_results} ->
         {:noreply,
          socket
+         |> put_flash(
+           :error,
+           "Multiple maps found with this identifier. Please contact support to resolve this issue."
+         )
          |> push_navigate(to: ~p"/maps")}
 
-      {:error, error} ->
+      {:error, :not_found} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to update map")
-         |> assign(error: error)}
+         |> put_flash(:error, "Map not found")
+         |> push_navigate(to: ~p"/maps")}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to load map. Please try again.")
+         |> push_navigate(to: ~p"/maps")}
     end
   end
 
   def handle_event("delete", %{"data" => map_slug} = _params, socket) do
-    map =
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug!()
-      |> WandererApp.Api.Map.mark_as_deleted!()
+    case get_map_by_slug_safely(map_slug) do
+      {:ok, map} ->
+        # Successfully found the map, proceed with deletion
+        deleted_map = WandererApp.Api.Map.mark_as_deleted!(map)
 
-    Phoenix.PubSub.broadcast(
-      WandererApp.PubSub,
-      "maps:#{map.id}",
-      :map_deleted
-    )
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "maps:#{deleted_map.id}",
+          :map_deleted
+        )
 
-    current_user = socket.assigns.current_user
+        current_user = socket.assigns.current_user
 
-    {:noreply,
-     socket
-     |> assign_async(:maps, fn ->
-       load_maps(current_user)
-     end)
-     |> push_patch(to: ~p"/maps")}
+        # Reload maps synchronously to avoid timing issues with flash messages
+        {:ok, %{maps: maps}} = load_maps(current_user)
+
+        {:noreply,
+         socket
+         |> assign(:maps, AsyncResult.ok(maps))
+         |> push_patch(to: ~p"/maps")}
+
+      {:error, :multiple_results} ->
+        # Multiple maps found with this slug - data integrity issue
+        # Reload maps synchronously
+        {:ok, %{maps: maps}} = load_maps(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Multiple maps found with this identifier. Please contact support to resolve this issue."
+         )
+         |> assign(:maps, AsyncResult.ok(maps))}
+
+      {:error, :not_found} ->
+        # Map not found
+        # Reload maps synchronously
+        {:ok, %{maps: maps}} = load_maps(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Map not found or already deleted")
+         |> assign(:maps, AsyncResult.ok(maps))
+         |> push_patch(to: ~p"/maps")}
+
+      {:error, _reason} ->
+        # Other error
+        # Reload maps synchronously
+        {:ok, %{maps: maps}} = load_maps(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to delete map. Please try again.")
+         |> assign(:maps, AsyncResult.ok(maps))}
+    end
   end
 
   def handle_event(
@@ -680,5 +786,50 @@ defmodule WandererAppWeb.MapsLive do
   defp map_map(%{acls: acls} = map) do
     map
     |> Map.put(:acls, acls |> Enum.map(&map_acl/1))
+  end
+
+  @doc """
+  Safely retrieves a map by slug, handling the case where multiple maps
+  with the same slug exist (database integrity issue).
+
+  Returns:
+  - `{:ok, map}` - Single map found
+  - `{:error, :multiple_results}` - Multiple maps found (logs error)
+  - `{:error, :not_found}` - No map found
+  - `{:error, reason}` - Other error
+  """
+  defp get_map_by_slug_safely(slug) do
+    try do
+      map = WandererApp.Api.Map.get_map_by_slug!(slug)
+      {:ok, map}
+    rescue
+      error in Ash.Error.Invalid.MultipleResults ->
+        Logger.error("Multiple maps found with slug '#{slug}' - database integrity issue",
+          slug: slug,
+          error: inspect(error)
+        )
+
+        # Emit telemetry for monitoring
+        :telemetry.execute(
+          [:wanderer_app, :map, :duplicate_slug_detected],
+          %{count: 1},
+          %{slug: slug, operation: :get_by_slug}
+        )
+
+        # Return error - caller should handle this appropriately
+        {:error, :multiple_results}
+
+      error in Ash.Error.Query.NotFound ->
+        Logger.debug("Map not found with slug: #{slug}")
+        {:error, :not_found}
+
+      error ->
+        Logger.error("Error retrieving map by slug",
+          slug: slug,
+          error: inspect(error)
+        )
+
+        {:error, :unknown_error}
+    end
   end
 end

@@ -4,7 +4,7 @@ defmodule WandererApp.Map.MapPool do
 
   require Logger
 
-  alias WandererApp.Map.Server
+  alias WandererApp.Map.{MapPoolState, Server}
 
   defstruct [
     :map_ids,
@@ -26,7 +26,17 @@ defmodule WandererApp.Map.MapPool do
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
 
-  def start_link(map_ids) do
+  # Accept both {uuid, map_ids} tuple (from supervisor restart) and just map_ids (legacy)
+  def start_link({uuid, map_ids}) when is_binary(uuid) and is_list(map_ids) do
+    GenServer.start_link(
+      @name,
+      {uuid, map_ids},
+      name: Module.concat(__MODULE__, uuid)
+    )
+  end
+
+  # For backward compatibility - generate UUID if only map_ids provided
+  def start_link(map_ids) when is_list(map_ids) do
     uuid = UUID.uuid1()
 
     GenServer.start_link(
@@ -38,13 +48,42 @@ defmodule WandererApp.Map.MapPool do
 
   @impl true
   def init({uuid, map_ids}) do
-    {:ok, _} = Registry.register(@unique_registry, Module.concat(__MODULE__, uuid), map_ids)
+    # Check for crash recovery - if we have previous state in ETS, merge it with new map_ids
+    {final_map_ids, recovery_info} =
+      case MapPoolState.get_pool_state(uuid) do
+        {:ok, recovered_map_ids} ->
+          # Merge and deduplicate map IDs
+          merged = Enum.uniq(recovered_map_ids ++ map_ids)
+          recovery_count = length(recovered_map_ids)
+
+          Logger.info(
+            "[Map Pool #{uuid}] Crash recovery detected: recovering #{recovery_count} maps",
+            pool_uuid: uuid,
+            recovered_maps: recovered_map_ids,
+            new_maps: map_ids,
+            total_maps: length(merged)
+          )
+
+          # Emit telemetry for crash recovery
+          :telemetry.execute(
+            [:wanderer_app, :map_pool, :recovery, :start],
+            %{recovered_map_count: recovery_count, total_map_count: length(merged)},
+            %{pool_uuid: uuid}
+          )
+
+          {merged, %{recovered: true, count: recovery_count}}
+
+        {:error, :not_found} ->
+          # Normal startup, no previous state to recover
+          {map_ids, %{recovered: false}}
+      end
+
+    # Register with empty list - maps will be added as they're started in handle_continue
+    {:ok, _} = Registry.register(@unique_registry, Module.concat(__MODULE__, uuid), [])
     {:ok, _} = Registry.register(@registry, __MODULE__, uuid)
 
-    map_ids
-    |> Enum.each(fn id ->
-      Cachex.put(@cache, id, uuid)
-    end)
+    # Don't pre-populate cache - will be populated as maps start in handle_continue
+    # This prevents duplicates when recovering
 
     state =
       %{
@@ -53,31 +92,95 @@ defmodule WandererApp.Map.MapPool do
       }
       |> new()
 
-    {:ok, state, {:continue, {:start, map_ids}}}
+    {:ok, state, {:continue, {:start, {final_map_ids, recovery_info}}}}
   end
 
   @impl true
-  def terminate(_reason, _state) do
+  def terminate(reason, %{uuid: uuid} = _state) do
+    # On graceful shutdown, clean up ETS state
+    # On crash, keep ETS state for recovery
+    case reason do
+      :normal ->
+        Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
+        MapPoolState.delete_pool_state(uuid)
+
+      :shutdown ->
+        Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
+        MapPoolState.delete_pool_state(uuid)
+
+      {:shutdown, _} ->
+        Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
+        MapPoolState.delete_pool_state(uuid)
+
+      _ ->
+        Logger.warning("[Map Pool #{uuid}] Abnormal termination (#{inspect(reason)}), keeping ETS state for recovery")
+        # Keep ETS state for crash recovery
+        :ok
+    end
+
     :ok
   end
 
   @impl true
-  def handle_continue({:start, map_ids}, state) do
+  def handle_continue({:start, {map_ids, recovery_info}}, state) do
     Logger.info("#{@name} started")
 
+    # Track recovery statistics
+    start_time = System.monotonic_time(:millisecond)
+    initial_count = length(map_ids)
+
     # Start maps synchronously and accumulate state changes
-    new_state =
+    {new_state, failed_maps} =
       map_ids
-      |> Enum.reduce(state, fn map_id, current_state ->
+      |> Enum.reduce({state, []}, fn map_id, {current_state, failed} ->
         case do_start_map(map_id, current_state) do
           {:ok, updated_state} ->
-            updated_state
+            {updated_state, failed}
 
           {:error, reason} ->
             Logger.error("[Map Pool] Failed to start map #{map_id}: #{reason}")
-            current_state
+
+            # Emit telemetry for individual map recovery failure
+            if recovery_info.recovered do
+              :telemetry.execute(
+                [:wanderer_app, :map_pool, :recovery, :map_failed],
+                %{map_id: map_id},
+                %{pool_uuid: state.uuid, reason: reason}
+              )
+            end
+
+            {current_state, [map_id | failed]}
         end
       end)
+
+    # Calculate final statistics
+    end_time = System.monotonic_time(:millisecond)
+    duration_ms = end_time - start_time
+    successful_count = length(new_state.map_ids)
+    failed_count = length(failed_maps)
+
+    # Log and emit telemetry for recovery completion
+    if recovery_info.recovered do
+      Logger.info(
+        "[Map Pool #{state.uuid}] Crash recovery completed: #{successful_count}/#{initial_count} maps recovered in #{duration_ms}ms",
+        pool_uuid: state.uuid,
+        recovered_count: successful_count,
+        failed_count: failed_count,
+        total_count: initial_count,
+        duration_ms: duration_ms,
+        failed_maps: failed_maps
+      )
+
+      :telemetry.execute(
+        [:wanderer_app, :map_pool, :recovery, :complete],
+        %{
+          recovered_count: successful_count,
+          failed_count: failed_count,
+          duration_ms: duration_ms
+        },
+        %{pool_uuid: state.uuid}
+      )
+    end
 
     # Schedule periodic tasks
     Process.send_after(self(), :backup_state, @backup_state_timeout)
@@ -181,6 +284,9 @@ defmodule WandererApp.Map.MapPool do
         # Step 4: Update GenServer state (last, as this is in-memory and fast)
         new_state = %{state | map_ids: [map_id | map_ids]}
 
+        # Step 5: Persist state to ETS for crash recovery
+        MapPoolState.save_pool_state(uuid, new_state.map_ids)
+
         Logger.debug("[Map Pool] Successfully started map #{map_id} in pool #{uuid}")
         {:ok, new_state}
       rescue
@@ -278,6 +384,9 @@ defmodule WandererApp.Map.MapPool do
       # Step 4: Update GenServer state (last, as this is in-memory and fast)
       new_state = %{state | map_ids: map_ids |> Enum.reject(fn id -> id == map_id end)}
 
+      # Step 5: Persist state to ETS for crash recovery
+      MapPoolState.save_pool_state(uuid, new_state.map_ids)
+
       Logger.debug("[Map Pool] Successfully stopped map #{map_id} from pool #{uuid}")
       {:ok, new_state}
     rescue
@@ -335,10 +444,14 @@ defmodule WandererApp.Map.MapPool do
   def handle_call(:error, _, state), do: {:stop, :error, :ok, state}
 
   @impl true
-  def handle_info(:backup_state, %{map_ids: map_ids} = state) do
+  def handle_info(:backup_state, %{map_ids: map_ids, uuid: uuid} = state) do
     Process.send_after(self(), :backup_state, @backup_state_timeout)
 
     try do
+      # Persist pool state to ETS
+      MapPoolState.save_pool_state(uuid, map_ids)
+
+      # Backup individual map states to database
       map_ids
       |> Task.async_stream(
         fn map_id ->
@@ -532,6 +645,51 @@ defmodule WandererApp.Map.MapPool do
     end
 
     {:noreply, state}
+  end
+
+  def handle_info(:map_deleted, %{map_ids: map_ids} = state) do
+    # When a map is deleted, stop all maps in this pool that are deleted
+    # This is a graceful shutdown triggered by user action
+    Logger.info("[Map Pool #{state.uuid}] Received map_deleted event, stopping affected maps")
+
+    # Check which of our maps were deleted and stop them
+    new_state =
+      map_ids
+      |> Enum.reduce(state, fn map_id, current_state ->
+        # Check if the map still exists in the database
+        case WandererApp.MapRepo.get(map_id) do
+          {:ok, %{deleted: true}} ->
+            Logger.info("[Map Pool #{state.uuid}] Map #{map_id} was deleted, stopping it")
+
+            case do_stop_map(map_id, current_state) do
+              {:ok, updated_state} ->
+                updated_state
+
+              {:error, reason} ->
+                Logger.error("[Map Pool #{state.uuid}] Failed to stop deleted map #{map_id}: #{reason}")
+                current_state
+            end
+
+          {:ok, _map} ->
+            # Map still exists and is not deleted
+            current_state
+
+          {:error, _} ->
+            # Map doesn't exist, should stop it
+            Logger.info("[Map Pool #{state.uuid}] Map #{map_id} not found, stopping it")
+
+            case do_stop_map(map_id, current_state) do
+              {:ok, updated_state} ->
+                updated_state
+
+              {:error, reason} ->
+                Logger.error("[Map Pool #{state.uuid}] Failed to stop missing map #{map_id}: #{reason}")
+                current_state
+            end
+        end
+      end)
+
+    {:noreply, new_state}
   end
 
   def handle_info(event, state) do

@@ -358,6 +358,13 @@ defmodule WandererApp.Map.Server.Impl do
     update_options(map_id, options)
   end
 
+  def handle_event(:map_deleted) do
+    # Map has been deleted - this event is handled by MapPool to stop the server
+    # and by MapLive to redirect users. Nothing to do here.
+    Logger.debug("Map deletion event received, will be handled by MapPool")
+    :ok
+  end
+
   def handle_event({ref, _result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
   end

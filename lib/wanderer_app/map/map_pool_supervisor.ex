@@ -2,6 +2,8 @@ defmodule WandererApp.Map.MapPoolSupervisor do
   @moduledoc false
   use Supervisor
 
+  alias WandererApp.Map.MapPoolState
+
   @name __MODULE__
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
@@ -11,6 +13,10 @@ defmodule WandererApp.Map.MapPoolSupervisor do
   end
 
   def init(_args) do
+    # Initialize ETS table for MapPool state persistence
+    # This table survives individual MapPool crashes but is lost on node restart
+    MapPoolState.init_table()
+
     children = [
       {Registry, [keys: :unique, name: @unique_registry]},
       {Registry, [keys: :duplicate, name: @registry]},

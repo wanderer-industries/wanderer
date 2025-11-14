@@ -21,59 +21,85 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         :refresh_permissions,
         %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket
       ) do
-    {:ok, %{id: map_id, user_permissions: user_permissions, owner_id: owner_id}} =
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug!()
-      |> Ash.load(:user_permissions, actor: current_user)
+    try do
+      {:ok, %{id: map_id, user_permissions: user_permissions, owner_id: owner_id}} =
+        map_slug
+        |> WandererApp.Api.Map.get_map_by_slug!()
+        |> Ash.load(:user_permissions, actor: current_user)
 
-    user_permissions =
-      WandererApp.Permissions.get_map_permissions(
-        user_permissions,
-        owner_id,
-        current_user.characters |> Enum.map(& &1.id)
-      )
+      user_permissions =
+        WandererApp.Permissions.get_map_permissions(
+          user_permissions,
+          owner_id,
+          current_user.characters |> Enum.map(& &1.id)
+        )
 
-    case user_permissions do
-      %{view_system: false} ->
-        socket
-        |> Phoenix.LiveView.put_flash(:error, "Your access to the map have been revoked.")
-        |> Phoenix.LiveView.push_navigate(to: ~p"/maps")
+      case user_permissions do
+        %{view_system: false} ->
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "Your access to the map have been revoked.")
+          |> Phoenix.LiveView.push_navigate(to: ~p"/maps")
 
-      %{track_character: track_character} ->
-        {:ok, map_characters} =
-          case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
-                 map_id,
-                 current_user.characters |> Enum.map(& &1.id)
-               ) do
-            {:ok, settings} ->
-              {:ok,
-               settings
-               |> Enum.map(fn s -> s |> Ash.load!(:character) |> Map.get(:character) end)}
+        %{track_character: track_character} ->
+          {:ok, map_characters} =
+            case WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_filtered(
+                   map_id,
+                   current_user.characters |> Enum.map(& &1.id)
+                 ) do
+              {:ok, settings} ->
+                {:ok,
+                 settings
+                 |> Enum.map(fn s -> s |> Ash.load!(:character) |> Map.get(:character) end)}
+
+              _ ->
+                {:ok, []}
+            end
+
+          case track_character do
+            false ->
+              :ok = WandererApp.Character.TrackingUtils.untrack(map_characters, map_id, self())
 
             _ ->
-              {:ok, []}
+              :ok =
+                WandererApp.Character.TrackingUtils.track(
+                  map_characters,
+                  map_id,
+                  true,
+                  self()
+                )
           end
 
-        case track_character do
-          false ->
-            :ok = WandererApp.Character.TrackingUtils.untrack(map_characters, map_id, self())
+          socket
+          |> assign(user_permissions: user_permissions)
+          |> MapEventHandler.push_map_event(
+            "user_permissions",
+            user_permissions
+          )
+      end
+    rescue
+      error in Ash.Error.Invalid.MultipleResults ->
+        Logger.error("Multiple maps found with slug '#{map_slug}' during refresh_permissions",
+          slug: map_slug,
+          error: inspect(error)
+        )
 
-          _ ->
-            :ok =
-              WandererApp.Character.TrackingUtils.track(
-                map_characters,
-                map_id,
-                true,
-                self()
-              )
-        end
+        # Emit telemetry for monitoring
+        :telemetry.execute(
+          [:wanderer_app, :map, :duplicate_slug_detected],
+          %{count: 1},
+          %{slug: map_slug, operation: :refresh_permissions}
+        )
+
+        # Return socket unchanged - permissions won't refresh but won't crash
+        socket
+
+      error ->
+        Logger.error("Error refreshing permissions for map slug '#{map_slug}'",
+          slug: map_slug,
+          error: inspect(error)
+        )
 
         socket
-        |> assign(user_permissions: user_permissions)
-        |> MapEventHandler.push_map_event(
-          "user_permissions",
-          user_permissions
-        )
     end
   end
 
