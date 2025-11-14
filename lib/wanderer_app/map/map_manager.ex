@@ -9,8 +9,8 @@ defmodule WandererApp.Map.Manager do
 
   alias WandererApp.Map.Server
 
-  @maps_start_per_second 10
-  @maps_start_interval 1000
+  @maps_start_chunk_size 20
+  @maps_start_interval 500
   @maps_queue :maps_queue
   @check_maps_queue_interval :timer.seconds(1)
 
@@ -58,9 +58,9 @@ defmodule WandererApp.Map.Manager do
     {:ok, pings_cleanup_timer} =
       :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
 
-    safe_async_task(fn ->
-      start_last_active_maps()
-    end)
+    # safe_async_task(fn ->
+    #   start_last_active_maps()
+    # end)
 
     {:ok,
      %{
@@ -153,7 +153,7 @@ defmodule WandererApp.Map.Manager do
       @maps_queue
       |> WandererApp.Queue.to_list!()
       |> Enum.uniq()
-      |> Enum.chunk_every(@maps_start_per_second)
+      |> Enum.chunk_every(@maps_start_chunk_size)
 
     WandererApp.Queue.clear(@maps_queue)
 

@@ -149,12 +149,12 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp validate_api_token(conn, token) do
-    # Check for map identifier in path params
-    # According to PR feedback, routes supply params["map_identifier"]
-    case conn.params["map_identifier"] do
+    # Try to get map identifier from multiple sources
+    map_identifier = get_map_identifier(conn)
+
+    case map_identifier do
       nil ->
-        # No map identifier in path - this might be a general API endpoint
-        # For now, we'll return an error since we need to validate against a specific map
+        # No map identifier found - this might be a general API endpoint
         {:error, "Authentication failed", :no_map_context}
 
       identifier ->
@@ -178,6 +178,37 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
           {:error, _} ->
             {:error, "Authentication failed", :map_not_found}
+        end
+    end
+  end
+
+  # Extract map identifier from multiple sources
+  defp get_map_identifier(conn) do
+    # 1. Check path params (e.g., /api/v1/maps/:map_identifier/systems)
+    case conn.params["map_identifier"] do
+      id when is_binary(id) and id != "" -> id
+      _ ->
+        # 2. Check request body for map_id (JSON:API format)
+        case conn.body_params do
+          %{"data" => %{"attributes" => %{"map_id" => map_id}}} when is_binary(map_id) and map_id != "" ->
+            map_id
+
+          %{"data" => %{"relationships" => %{"map" => %{"data" => %{"id" => map_id}}}}} when is_binary(map_id) and map_id != "" ->
+            map_id
+
+          # 3. Check flat body params (non-JSON:API format)
+          %{"map_id" => map_id} when is_binary(map_id) and map_id != "" ->
+            map_id
+
+          _ ->
+            # 4. Check query params (e.g., ?filter[map_id]=...)
+            case conn.params do
+              %{"filter" => %{"map_id" => map_id}} when is_binary(map_id) and map_id != "" ->
+                map_id
+
+              _ ->
+                nil
+            end
         end
     end
   end

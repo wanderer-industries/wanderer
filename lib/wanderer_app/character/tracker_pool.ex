@@ -8,7 +8,7 @@ defmodule WandererApp.Character.TrackerPool do
     :tracked_ids,
     :uuid,
     :characters,
-    server_online: true
+    server_online: false
   ]
 
   @name __MODULE__
@@ -180,6 +180,8 @@ defmodule WandererApp.Character.TrackerPool do
         [Tracker Pool] update_online => exception: #{Exception.message(e)}
         #{Exception.format_stacktrace(__STACKTRACE__)}
         """)
+
+        ErrorTracker.report(e, __STACKTRACE__)
     end
 
     {:noreply, state}

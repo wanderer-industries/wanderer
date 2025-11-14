@@ -148,10 +148,6 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     setHasOldSettings(!!(widgetsOld || interfaceSettings || widgetRoutes || widgetLocal || widgetKills || onTheMapOld));
   }, []);
 
-  useEffect(() => {
-    checkOldSettings();
-  }, [checkOldSettings]);
-
   const getSettingsForExport = useCallback(() => {
     const { map_slug } = ref.current;
 
@@ -165,6 +161,24 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
   const resetSettings = useCallback(() => {
     applySettings(createDefaultStoredSettings());
   }, [applySettings]);
+
+  useEffect(() => {
+    checkOldSettings();
+  }, [checkOldSettings]);
+
+  // IN Case if in runtime someone clear settings
+  useEffect(() => {
+    if (Object.keys(windowsSettings).length !== 0) {
+      return;
+    }
+
+    if (!isReady) {
+      return;
+    }
+
+    resetSettings();
+    location.reload();
+  }, [isReady, resetSettings, windowsSettings]);
 
   return {
     isReady,

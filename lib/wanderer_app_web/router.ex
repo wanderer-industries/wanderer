@@ -597,7 +597,7 @@ defmodule WandererAppWeb.Router do
   scope "/api/v1" do
     pipe_through :api_v1
 
-    # Custom combined endpoints
+    # Custom combined endpoint with map_id in path
     get "/maps/:map_id/systems_and_connections",
         WandererAppWeb.Api.MapSystemsConnectionsController,
         :show
@@ -605,6 +605,18 @@ defmodule WandererAppWeb.Router do
     # Forward all v1 requests to AshJsonApi router
     # This will automatically generate RESTful JSON:API endpoints
     # for all Ash resources once they're configured with the AshJsonApi extension
+    #
+    # NOTE: AshJsonApi generates flat routes (e.g., /api/v1/map_systems)
+    # Phoenix's `forward` cannot be used with dynamic path segments, so proper
+    # nested routes like /api/v1/maps/{id}/systems would require custom controllers.
+    #
+    # Current approach: Use flat routes with map_id in request body or filters:
+    #   - POST /api/v1/map_systems with {"data": {"attributes": {"map_id": "..."}}}
+    #   - GET /api/v1/map_systems?filter[map_id]=...
+    #   - PATCH /api/v1/map_systems/{id} with map_id in body
+    #
+    # Authentication is handled by CheckJsonApiAuth which validates the Bearer
+    # token against the map's API key.
     forward "/", WandererAppWeb.ApiV1Router
   end
 end

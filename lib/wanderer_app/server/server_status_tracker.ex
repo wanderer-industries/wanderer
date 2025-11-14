@@ -11,7 +11,9 @@ defmodule WandererApp.Server.ServerStatusTracker do
     :server_version,
     :start_time,
     :vip,
-    :retries
+    :retries,
+    :in_forced_downtime,
+    :downtime_notified
   ]
 
   @retries_count 3
@@ -21,8 +23,16 @@ defmodule WandererApp.Server.ServerStatusTracker do
     retries: @retries_count,
     server_version: "0",
     start_time: "0",
-    vip: true
+    vip: true,
+    in_forced_downtime: false,
+    downtime_notified: false
   }
+
+  # EVE Online daily downtime period (UTC/GMT)
+  @downtime_start_hour 10
+  @downtime_start_minute 58
+  @downtime_end_hour 11
+  @downtime_end_minute 2
 
   @refresh_interval :timer.minutes(1)
 
@@ -57,13 +67,51 @@ defmodule WandererApp.Server.ServerStatusTracker do
   def handle_info(
         :refresh_status,
         %{
-          retries: retries
+          retries: retries,
+          in_forced_downtime: was_in_downtime
         } = state
       ) do
     Process.send_after(self(), :refresh_status, @refresh_interval)
-    Task.async(fn -> get_server_status(retries) end)
 
-    {:noreply, state}
+    in_downtime = in_forced_downtime?()
+
+    cond do
+      # Entering downtime period - broadcast offline status immediately
+      in_downtime and not was_in_downtime ->
+        @logger.info("#{__MODULE__} entering forced downtime period (10:58-11:02 GMT)")
+
+        downtime_status = %{
+          players: 0,
+          server_version: "downtime",
+          start_time: DateTime.utc_now() |> DateTime.to_iso8601(),
+          vip: true
+        }
+
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "server_status",
+          {:server_status, downtime_status}
+        )
+
+        {:noreply,
+         %{state | in_forced_downtime: true, downtime_notified: true}
+         |> Map.merge(downtime_status)}
+
+      # Currently in downtime - skip API call
+      in_downtime ->
+        {:noreply, state}
+
+      # Exiting downtime period - resume normal operations
+      not in_downtime and was_in_downtime ->
+        @logger.info("#{__MODULE__} exiting forced downtime period, resuming normal operations")
+        Task.async(fn -> get_server_status(retries) end)
+        {:noreply, %{state | in_forced_downtime: false, downtime_notified: false}}
+
+      # Normal operation
+      true ->
+        Task.async(fn -> get_server_status(retries) end)
+        {:noreply, state}
+    end
   end
 
   @impl true
@@ -154,5 +202,20 @@ defmodule WandererApp.Server.ServerStatusTracker do
       start_time: start_time,
       vip: false
     }
+  end
+
+  # Checks if the current UTC time falls within the forced downtime period (10:58-11:02 GMT).
+  defp in_forced_downtime? do
+    now = DateTime.utc_now()
+    current_hour = now.hour
+    current_minute = now.minute
+
+    # Convert times to minutes since midnight for easier comparison
+    current_time_minutes = current_hour * 60 + current_minute
+    downtime_start_minutes = @downtime_start_hour * 60 + @downtime_start_minute
+    downtime_end_minutes = @downtime_end_hour * 60 + @downtime_end_minute
+
+    current_time_minutes >= downtime_start_minutes and
+      current_time_minutes < downtime_end_minutes
   end
 end

@@ -12,7 +12,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
     total_balance: 0,
     transactions: [],
     retries: 5,
-    server_online: true,
+    server_online: false,
     status: :started
   ]
 
@@ -75,7 +75,7 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
 
   def handle_event(
         :update_corp_wallets,
-        %{character: character} = state
+        %{character: character, server_online: true} = state
       ) do
     Process.send_after(self(), :update_corp_wallets, @update_interval)
 
@@ -88,26 +88,26 @@ defmodule WandererApp.Character.TransactionsTracker.Impl do
         :update_corp_wallets,
         state
       ) do
-    Process.send_after(self(), :update_corp_wallets, :timer.seconds(15))
+    Process.send_after(self(), :update_corp_wallets, @update_interval)
 
     state
   end
 
   def handle_event(
         :check_wallets,
-        %{wallets: []} = state
+        %{character: character, wallets: wallets, server_online: true} = state
       ) do
-    Process.send_after(self(), :check_wallets, :timer.seconds(5))
+    Process.send_after(self(), :check_wallets, @update_interval)
 
-    state
-  end
-
-  def handle_event(
-        :check_wallets,
-        %{character: character, wallets: wallets} = state
-      ) do
     check_wallets(wallets, character)
 
+    state
+  end
+
+  def handle_event(
+        :check_wallets,
+        state
+      ) do
     Process.send_after(self(), :check_wallets, @update_interval)
 
     state

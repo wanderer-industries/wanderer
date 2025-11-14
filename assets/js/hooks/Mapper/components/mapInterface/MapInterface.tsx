@@ -4,10 +4,13 @@ import { DEFAULT_WIDGETS } from '@/hooks/Mapper/components/mapInterface/constant
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export const MapInterface = () => {
-  // const [items, setItems] = useState<WindowProps[]>(restoreWindowsFromLS);
   const { windowsSettings, updateWidgetSettings } = useMapRootState();
 
   const items = useMemo(() => {
+    if (Object.keys(windowsSettings).length === 0) {
+      return [];
+    }
+
     return windowsSettings.windows
       .map(x => {
         const content = DEFAULT_WIDGETS.find(y => y.id === x.id)?.content;

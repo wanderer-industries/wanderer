@@ -432,32 +432,42 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ],
       id: [
         in: :path,
-        description: "System ID",
-        type: :string,
-        required: true
+        description: "Solar System ID (EVE Online system ID, e.g., 30000142 for Jita)",
+        type: :integer,
+        required: true,
+        example: 30_000_142
       ]
     ],
     responses: ResponseSchemas.standard_responses(@detail_response_schema)
   )
 
   def show(%{assigns: %{map_id: map_id}} = conn, %{"id" => id}) do
-    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
-         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid) do
-      # Verify the system belongs to the requested map
-      if system.map_id == map_id do
-        APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
-      else
+    # Look up by solar_system_id (EVE Online integer ID)
+    case APIUtils.parse_int(id) do
+      {:ok, solar_system_id} ->
+        case Operations.get_system(map_id, solar_system_id) do
+          {:ok, system} ->
+            APIUtils.respond_data(conn, APIUtils.map_system_to_json(system))
+
+          {:error, :not_found} ->
+            {:error, :not_found}
+        end
+
+      {:error, _} ->
         {:error, :not_found}
-      end
-    else
-      {:error, %Ash.Error.Query.NotFound{}} -> {:error, :not_found}
-      {:error, _} -> {:error, :not_found}
-      error -> error
     end
   end
 
   operation(:create,
-    summary: "Upsert Systems and Connections (batch or single)",
+    summary: "Create or Update Systems and Connections",
+    description: """
+    Creates or updates systems and connections. Supports two formats:
+
+    1. **Single System Format**: Post a single system object directly (e.g., `{"solar_system_id": 30000142, "position_x": 100, ...}`)
+    2. **Batch Format**: Post multiple systems and connections (e.g., `{"systems": [...], "connections": [...]}`)
+
+    Systems are identified by solar_system_id and will be updated if they already exist on the map.
+    """,
     parameters: [
       map_identifier: [
         in: :path,
@@ -472,8 +482,22 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def create(conn, params) do
-    systems = Map.get(params, "systems", [])
-    connections = Map.get(params, "connections", [])
+    # Support both batch format {"systems": [...], "connections": [...]}
+    # and single system format {"solar_system_id": ..., ...}
+    {systems, connections} =
+      cond do
+        Map.has_key?(params, "systems") ->
+          # Batch format
+          {Map.get(params, "systems", []), Map.get(params, "connections", [])}
+
+        Map.has_key?(params, "solar_system_id") or Map.has_key?(params, :solar_system_id) ->
+          # Single system format - wrap it in an array
+          {[params], []}
+
+        true ->
+          # Empty request
+          {[], []}
+      end
 
     case Operations.upsert_systems_and_connections(conn, systems, connections) do
       {:ok, result} ->
@@ -496,9 +520,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ],
       id: [
         in: :path,
-        description: "System ID",
-        type: :string,
-        required: true
+        description: "Solar System ID (EVE Online system ID, e.g., 30000142 for Jita)",
+        type: :integer,
+        required: true,
+        example: 30_000_142
       ]
     ],
     request_body: {"System update request", "application/json", @system_update_schema},
@@ -506,10 +531,9 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def update(conn, %{"id" => id} = params) do
-    with {:ok, system_uuid} <- APIUtils.validate_uuid(id),
-         {:ok, system} <- WandererApp.Api.MapSystem.by_id(system_uuid),
+    with {:ok, solar_system_id} <- APIUtils.parse_int(id),
          {:ok, attrs} <- APIUtils.extract_update_params(params) do
-      case Operations.update_system(conn, system.solar_system_id, attrs) do
+      case Operations.update_system(conn, solar_system_id, attrs) do
         {:ok, result} ->
           APIUtils.respond_data(conn, result)
 
@@ -583,9 +607,10 @@ defmodule WandererAppWeb.MapSystemAPIController do
       ],
       id: [
         in: :path,
-        description: "System ID",
-        type: :string,
-        required: true
+        description: "Solar System ID (EVE Online system ID, e.g., 30000142 for Jita)",
+        type: :integer,
+        required: true,
+        example: 30_000_142
       ]
     ],
     responses: ResponseSchemas.standard_responses(@delete_response_schema)

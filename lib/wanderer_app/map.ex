@@ -532,15 +532,16 @@ defmodule WandererApp.Map do
         solar_system_source,
         solar_system_target
       ) do
-    case map_id
-         |> get_map!()
-         |> Map.get(:connections, Map.new())
+    connections =
+      map_id
+      |> get_map!()
+      |> Map.get(:connections, Map.new())
+
+    case connections
          |> Map.get("#{solar_system_source}_#{solar_system_target}") do
       nil ->
         {:ok,
-         map_id
-         |> get_map!()
-         |> Map.get(:connections, Map.new())
+         connections
          |> Map.get("#{solar_system_target}_#{solar_system_source}")}
 
       connection ->

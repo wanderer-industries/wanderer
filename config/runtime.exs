@@ -258,7 +258,9 @@ config :wanderer_app, WandererApp.Scheduler,
   timezone: :utc,
   jobs:
     [
-      {"@daily", {WandererApp.Map.Audit, :archive, []}}
+      {"@daily", {WandererApp.Map.Audit, :archive, []}},
+      {"@daily", {WandererApp.Map.GarbageCollector, :cleanup_chain_passages, []}},
+      {"@daily", {WandererApp.Map.GarbageCollector, :cleanup_system_signatures, []}}
     ] ++ sheduler_jobs,
   timeout: :infinity
 

@@ -65,7 +65,7 @@ defmodule WandererApp.Api.MapSubscription do
     defaults [:create, :read, :update, :destroy]
 
     read :all_active do
-      prepare build(sort: [updated_at: :asc])
+      prepare build(sort: [updated_at: :asc], load: [:map])
 
       filter(expr(status == :active))
     end

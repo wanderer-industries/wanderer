@@ -38,14 +38,18 @@
     </div>
     <div class="navbar-end"></div>
   </navbar>
-  <div class="!z-10 min-h-[calc(100vh-7rem)]">
+  <div class="!z-10 min-h-[calc(100vh-11rem)]">
     {@inner_content}
   </div>
   <!--Footer-->
-  <footer class="!z-10 w-full pb-4 text-sm text-center fade-in">
-    <a class="text-gray-500 no-underline hover:no-underline" href="#">
-      &copy; Wanderer 2024
-    </a>
+  <footer class="!z-10 w-full pt-8 pb-4 text-sm text-center fade-in flex justify-center items-center">
+    <div class="flex flex-col justify-center items-center">
+      <a target="_blank" rel="noopener noreferrer" href="https://www.eveonline.com/partners"><img src="/images/eo_pp.png" style="width: 300px;" alt="Eve Online Partnership Program"></a>
+      <div class="text-gray-500 no-underline hover:no-underline">
+       All <a href="/license">EVE related materials</a> are property of <a href="https://www.ccpgames.com">CCP Games</a>
+       &copy; {Date.utc_today().year} Wanderer Industries.
+      </div>
+    </div>
   </footer>
   <div class="fixed top-0 left-0 w-full h-full !-z-1 maps_bg" />
 </main>

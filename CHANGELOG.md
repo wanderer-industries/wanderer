@@ -2,6 +2,131 @@
 
 <!-- changelog -->
 
+## [v1.84.16](https://github.com/wanderer-industries/wanderer/compare/v1.84.15...v1.84.16) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* core: removed maps auto-start logic
+
+## [v1.84.15](https://github.com/wanderer-industries/wanderer/compare/v1.84.14...v1.84.15) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed maps start/stop logic, added server downtime period support
+
+## [v1.84.14](https://github.com/wanderer-industries/wanderer/compare/v1.84.13...v1.84.14) (2025-11-13)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem related with error if settings was removed and mapper crashed. Fixed settings reset.
+
+## [v1.84.13](https://github.com/wanderer-industries/wanderer/compare/v1.84.12...v1.84.13) (2025-11-13)
+
+
+
+
+## [v1.84.12](https://github.com/wanderer-industries/wanderer/compare/v1.84.11...v1.84.12) (2025-11-13)
+
+
+
+
+## [v1.84.11](https://github.com/wanderer-industries/wanderer/compare/v1.84.10...v1.84.11) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* api and doc updates
+
+## [v1.84.10](https://github.com/wanderer-industries/wanderer/compare/v1.84.9...v1.84.10) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed adding system on character dock
+
+## [v1.84.9](https://github.com/wanderer-industries/wanderer/compare/v1.84.8...v1.84.9) (2025-11-12)
+
+
+
+
+## [v1.84.8](https://github.com/wanderer-industries/wanderer/compare/v1.84.7...v1.84.8) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: added cleanup jobs for old system signatures & chain passages
+
+## [v1.84.7](https://github.com/wanderer-industries/wanderer/compare/v1.84.6...v1.84.7) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* api and structure search fixes
+
+## [v1.84.6](https://github.com/wanderer-industries/wanderer/compare/v1.84.5...v1.84.6) (2025-11-12)
+
+
+
+
+### Bug Fixes:
+
+* core: Added map slug uniqness checking while using API
+
+## [v1.84.5](https://github.com/wanderer-industries/wanderer/compare/v1.84.4...v1.84.5) (2025-11-11)
+
+
+
+
+### Bug Fixes:
+
+* core: Added tracking for map & character event handling errors
+
+## [v1.84.4](https://github.com/wanderer-industries/wanderer/compare/v1.84.3...v1.84.4) (2025-11-11)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed issue with updating system signatures
+
+## [v1.84.3](https://github.com/wanderer-industries/wanderer/compare/v1.84.2...v1.84.3) (2025-11-11)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed linked signature time status update
+
+## [v1.84.2](https://github.com/wanderer-industries/wanderer/compare/v1.84.1...v1.84.2) (2025-11-10)
+
+
+
+
+### Bug Fixes:
+
+* api: fixed  api for get/update map systems
+
+* add index for map/systems api
+
 ## [v1.84.1](https://github.com/wanderer-industries/wanderer/compare/v1.84.0...v1.84.1) (2025-11-01)
 
 
