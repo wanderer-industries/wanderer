@@ -3,6 +3,37 @@ defmodule WandererAppWeb.Api.EventsController do
   Controller for Server-Sent Events (SSE) streaming.
 
   Provides real-time event streaming for map updates to external clients.
+
+  ## Error Handling
+
+  All error responses use structured JSON format for consistency with the API:
+
+      {
+        "error": "Human-readable error message",
+        "code": "MACHINE_READABLE_CODE",
+        "status": 403
+      }
+
+  ## Error Codes
+
+  - `SSE_GLOBALLY_DISABLED` - SSE disabled in server configuration
+  - `SSE_DISABLED_FOR_MAP` - SSE disabled for this specific map
+  - `SUBSCRIPTION_REQUIRED` - Active subscription required (Enterprise mode)
+  - `MAP_NOT_FOUND` - Requested map does not exist
+  - `UNAUTHORIZED` - Invalid or missing API key
+  - `MAP_CONNECTION_LIMIT` - Too many concurrent connections to this map
+  - `API_KEY_CONNECTION_LIMIT` - Too many connections for this API key
+  - `INTERNAL_SERVER_ERROR` - Unexpected server error
+
+  ## Access Control
+
+  SSE connections require:
+  1. Valid API key (Bearer token)
+  2. SSE enabled globally (server config)
+  3. SSE enabled for the specific map
+  4. Active subscription (Enterprise mode only)
+
+  See `WandererApp.ExternalEvents.SseAccessControl` for details.
   """
 
   use WandererAppWeb, :controller
@@ -28,25 +59,55 @@ defmodule WandererAppWeb.Api.EventsController do
   - format: Event format - "legacy" (default) or "jsonapi" for JSON:API compliance
   """
   def stream(conn, %{"map_identifier" => map_identifier} = params) do
-    Logger.debug(fn -> "SSE stream requested for map #{map_identifier}" end)
+    case validate_api_key(conn, map_identifier) do
+      {:ok, map, api_key} ->
+        case WandererApp.ExternalEvents.SseAccessControl.sse_allowed?(map.id) do
+          :ok ->
+            establish_sse_connection(conn, map.id, api_key, params)
 
-    # Check if SSE is enabled
-    unless WandererApp.Env.sse_enabled?() do
-      conn
-      |> put_status(:service_unavailable)
-      |> put_resp_content_type("text/plain")
-      |> send_resp(503, "Server-Sent Events are disabled on this server")
-    else
-      # Validate API key and get map
-      case validate_api_key(conn, map_identifier) do
-        {:ok, map, api_key} ->
-          establish_sse_connection(conn, map.id, api_key, params)
+          {:error, :sse_globally_disabled} ->
+            send_sse_error(
+              conn,
+              503,
+              "Server-Sent Events are disabled on this server",
+              "SSE_GLOBALLY_DISABLED"
+            )
 
-        {:error, status, message} ->
-          conn
-          |> put_status(status)
-          |> json(%{error: message})
-      end
+          {:error, :sse_disabled_for_map} ->
+            send_sse_error(
+              conn,
+              403,
+              "Server-Sent Events are disabled for this map",
+              "SSE_DISABLED_FOR_MAP"
+            )
+
+          {:error, :subscription_required} ->
+            send_sse_error(
+              conn,
+              402,
+              "Active subscription required for Server-Sent Events",
+              "SUBSCRIPTION_REQUIRED"
+            )
+
+          {:error, _reason} ->
+            send_sse_error(
+              conn,
+              403,
+              "Server-Sent Events not available",
+              "SSE_NOT_AVAILABLE"
+            )
+        end
+
+      {:error, status, message} ->
+        # Map validation errors to appropriate codes
+        code =
+          case status do
+            401 -> "UNAUTHORIZED"
+            404 -> "MAP_NOT_FOUND"
+            _ -> "SSE_ERROR"
+          end
+
+        send_sse_error(conn, status, message, code)
     end
   end
 
@@ -105,27 +166,24 @@ defmodule WandererAppWeb.Api.EventsController do
         stream_events(conn, map_id, api_key, event_filter, event_format)
 
       {:error, :map_limit_exceeded} ->
-        conn
-        |> put_status(:too_many_requests)
-        |> json(%{
-          error: "Too many connections to this map",
-          code: "MAP_CONNECTION_LIMIT"
-        })
+        send_sse_error(
+          conn,
+          429,
+          "Too many connections to this map",
+          "MAP_CONNECTION_LIMIT"
+        )
 
       {:error, :api_key_limit_exceeded} ->
-        conn
-        |> put_status(:too_many_requests)
-        |> json(%{
-          error: "Too many connections for this API key",
-          code: "API_KEY_CONNECTION_LIMIT"
-        })
+        send_sse_error(
+          conn,
+          429,
+          "Too many connections for this API key",
+          "API_KEY_CONNECTION_LIMIT"
+        )
 
       {:error, reason} ->
         Logger.error("Failed to add SSE client: #{inspect(reason)}")
-
-        conn
-        |> put_status(:internal_server_error)
-        |> send_resp(500, "Internal server error")
+        send_sse_error(conn, 500, "Internal server error", "INTERNAL_SERVER_ERROR")
     end
   end
 
@@ -289,19 +347,19 @@ defmodule WandererAppWeb.Api.EventsController do
     else
       [] ->
         Logger.warning("Missing or invalid 'Bearer' token")
-        {:error, :unauthorized, "Missing or invalid 'Bearer' token"}
+        {:error, 401, "Missing or invalid 'Bearer' token"}
 
       {:error, :not_found} ->
         Logger.warning("Map not found: #{map_identifier}")
-        {:error, :not_found, "Map not found"}
+        {:error, 404, "Map not found"}
 
       false ->
         Logger.warning("Unauthorized: invalid token for map #{map_identifier}")
-        {:error, :unauthorized, "Unauthorized (invalid token for map)"}
+        {:error, 401, "Unauthorized (invalid token for map)"}
 
       error ->
         Logger.error("Unexpected error validating API key: #{inspect(error)}")
-        {:error, :internal_server_error, "Unexpected error"}
+        {:error, 500, "Unexpected error"}
     end
   end
 
@@ -319,6 +377,25 @@ defmodule WandererAppWeb.Api.EventsController do
             {:error, :not_found}
         end
     end
+  end
+
+  # Sends a structured JSON error response for SSE connection failures.
+  #
+  # Returns consistent JSON format matching the rest of the API:
+  # - error: Human-readable error message
+  # - code: Machine-readable error code for programmatic handling
+  # - status: HTTP status code
+  #
+  # This maintains API consistency and makes it easier for clients to
+  # handle errors programmatically.
+  defp send_sse_error(conn, status, message, code) do
+    conn
+    |> put_status(status)
+    |> json(%{
+      error: message,
+      code: code,
+      status: status
+    })
   end
 
   # SSE helper functions

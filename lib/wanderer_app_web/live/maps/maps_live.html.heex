@@ -166,6 +166,11 @@
       label="Allow only tracked characters"
     />
     <.input
+      type="checkbox"
+      field={f[:sse_enabled]}
+      label="Enable Server-Sent Events (SSE)"
+    />
+    <.input
       :if={@live_action == :create}
       type="checkbox"
       field={f[:create_default_acl]}
