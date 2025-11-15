@@ -75,7 +75,7 @@ body > div:first-of-type {
 .maps_bg {
   /* OLD image */
   /* background-image: url('../images/maps_bg.webp'); */
-  background-image: url('https://raw.githubusercontent.com/wanderer-industries/wanderer-assets/d65f3a87ba36c26a75f501f34804f1454af96165/images/eve-screen-catalyst-expansion-bg.jpg');
+  background-image: url('https://wanderer-industries.github.io/wanderer-assets/images/eve-screen-catalyst-expansion-bg.jpg');
   background-size: cover;
   background-position: center;
   width: 100%;
