@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.22](https://github.com/wanderer-industries/wanderer/compare/v1.84.21...v1.84.22) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map initialization
+
 ## [v1.84.21](https://github.com/wanderer-industries/wanderer/compare/v1.84.20...v1.84.21) (2025-11-15)
 
 
