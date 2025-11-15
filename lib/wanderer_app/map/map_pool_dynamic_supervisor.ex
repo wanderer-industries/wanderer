@@ -7,8 +7,8 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   @cache :map_pool_cache
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
-  @map_pool_limit 20
-  @genserver_call_timeout :timer.seconds(30)
+  @map_pool_limit 10
+  @genserver_call_timeout :timer.minutes(2)
 
   @name __MODULE__
 
@@ -35,7 +35,10 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
 
             case result do
               {:ok, :initializing} ->
-                Logger.debug("[Map Pool Supervisor] Map #{map_id} queued for async initialization")
+                Logger.debug(
+                  "[Map Pool Supervisor] Map #{map_id} queued for async initialization"
+                )
+
                 result
 
               {:ok, :already_started} ->
@@ -48,7 +51,10 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
                 result
 
               other ->
-                Logger.warning("[Map Pool Supervisor] Unexpected response for map #{map_id}: #{inspect(other)}")
+                Logger.warning(
+                  "[Map Pool Supervisor] Unexpected response for map #{map_id}: #{inspect(other)}"
+                )
+
                 other
             end
         end

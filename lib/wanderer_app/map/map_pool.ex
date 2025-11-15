@@ -15,7 +15,7 @@ defmodule WandererApp.Map.MapPool do
   @cache :map_pool_cache
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
-  @map_pool_limit 20
+  @map_pool_limit 10
 
   @garbage_collection_interval :timer.hours(4)
   @systems_cleanup_timeout :timer.minutes(30)
@@ -113,7 +113,10 @@ defmodule WandererApp.Map.MapPool do
         MapPoolState.delete_pool_state(uuid)
 
       _ ->
-        Logger.warning("[Map Pool #{uuid}] Abnormal termination (#{inspect(reason)}), keeping ETS state for recovery")
+        Logger.warning(
+          "[Map Pool #{uuid}] Abnormal termination (#{inspect(reason)}), keeping ETS state for recovery"
+        )
+
         # Keep ETS state for crash recovery
         :ok
     end
@@ -753,7 +756,10 @@ defmodule WandererApp.Map.MapPool do
                 updated_state
 
               {:error, reason} ->
-                Logger.error("[Map Pool #{state.uuid}] Failed to stop deleted map #{map_id}: #{reason}")
+                Logger.error(
+                  "[Map Pool #{state.uuid}] Failed to stop deleted map #{map_id}: #{reason}"
+                )
+
                 current_state
             end
 
@@ -770,7 +776,10 @@ defmodule WandererApp.Map.MapPool do
                 updated_state
 
               {:error, reason} ->
-                Logger.error("[Map Pool #{state.uuid}] Failed to stop missing map #{map_id}: #{reason}")
+                Logger.error(
+                  "[Map Pool #{state.uuid}] Failed to stop missing map #{map_id}: #{reason}"
+                )
+
                 current_state
             end
         end

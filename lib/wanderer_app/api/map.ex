@@ -31,7 +31,7 @@ defmodule WandererApp.Api.Map do
     routes do
       base("/maps")
       get(:by_slug, route: "/:slug")
-      index :read
+      # index :read
       post(:new)
       patch(:update)
       delete(:destroy)
