@@ -1,6 +1,6 @@
 @use "sass:color";
 @use '@/hooks/Mapper/components/map/styles/eve-common-variables';
-@import '@/hooks/Mapper/components/map/styles/solar-system-node';
+@use '@/hooks/Mapper/components/map/styles/solar-system-node' as v;
 
 @keyframes move-stripes {
   from {
@@ -26,8 +26,8 @@
   background-color: var(--rf-node-bg-color, #202020) !important;
   color: var(--rf-text-color, #ffffff);
 
-  box-shadow: 0 0 5px rgba($dark-bg, 0.5);
-  border: 1px solid color.adjust($pastel-blue, $lightness: -10%);
+  box-shadow: 0 0 5px rgba(v.$dark-bg, 0.5);
+  border: 1px solid color.adjust(v.$pastel-blue, $lightness: -10%);
   border-radius: 5px;
   position: relative;
   z-index: 3;
@@ -99,7 +99,7 @@
   }
 
   &.selected {
-    border-color: $pastel-pink;
+    border-color: v.$pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
   }
 
@@ -113,11 +113,11 @@
       bottom: 0;
       z-index: -1;
 
-      border-color: $neon-color-1;
+      border-color: v.$neon-color-1;
       background: repeating-linear-gradient(
           45deg,
-          $neon-color-3 0px,
-          $neon-color-3 8px,
+          v.$neon-color-3 0px,
+          v.$neon-color-3 8px,
           transparent 8px,
           transparent 21px
       );
@@ -146,7 +146,7 @@
     border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
     background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
     &.selected {
-      border-color: $pastel-pink;
+      border-color: v.$pastel-pink;
     }
   }
 
@@ -347,13 +347,13 @@
 .Handle {
   min-width: initial;
   min-height: initial;
-  border: 1px solid $pastel-blue;
+  border: 1px solid v.$pastel-blue;
   width: 5px;
   height: 5px;
   pointer-events: auto;
 
   &.selected {
-    border-color: $pastel-pink;
+    border-color: v.$pastel-pink;
   }
 
   &.HandleTop {

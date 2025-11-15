@@ -33,7 +33,7 @@
             <%= for post <- @posts do %>
               <.link
                 navigate={~p"/news/#{post.id}"}
-                class="card sm:card-side hover:bg-base-200 transition-colors sm:max-w-none hover:text-white"
+                class="card sm:card-side bg-neutral-900/60 hover:bg-neutral-900/80 transition-colors sm:max-w-none hover:text-white text-stone-200 !rounded-[0]"
               >
                 <figure class="mx-auto w-full object-cover p-6 max-sm:pb-0 sm:max-w-[12rem] sm:pe-0">
                   <img
@@ -45,16 +45,16 @@
                 </figure>
                 <div class="card-body hover:text-white">
                   <h2 class="card-title">{post.title}</h2>
-                  <p class="text-xs opacity-60">
+                  <p class="text-xs text-stone-200">
                     {post.description}
                   </p>
-                  <div class="card-actions justify-end">
-                    <ul class="flex flex-wrap items-center p-0 m-0">
+                  <div class="card-actions">
+                    <ul class="flex flex-wrap items-center p-0 m-0 gap-2">
                       <li
                         :for={tag <- post.tags}
-                        class="inline-flex rounded-[35px] bg-primary px-1 text-white"
+                        class="inline-flex rounded-[35px] bg-primary text-white"
                       >
-                        <div class="badge badge-outline text-primary rounded-none border-none text-sm">
+                        <div class="badge-outline text-primary rounded-none border-none text-sm text-lime-400">
                           #{tag}
                         </div>
                       </li>

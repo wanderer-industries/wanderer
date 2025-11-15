@@ -15,6 +15,9 @@ case $COMMAND in
   deps)
     MIX_ENV=dev mix deps.get
     ;;
+  deploy)
+    MIX_ENV=dev mix assets.deploy
+    ;;
   setup)
     MIX_ENV=dev mix setup
     ;;
