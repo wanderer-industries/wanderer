@@ -521,6 +521,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
                 :ok
 
+              {:error, error} ->
+                Logger.warning("Failed to create system: #{inspect(error, pretty: true)}")
+                :ok
+
               error ->
                 Logger.warning("Failed to create system: #{inspect(error, pretty: true)}")
                 :ok
@@ -804,6 +808,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
       update_map_system_last_activity(map_id, updated_system)
     else
+      {:error, error} ->
+        Logger.error("Failed to update system: #{inspect(error, pretty: true)}")
+        :ok
+
       error ->
         Logger.error("Failed to update system: #{inspect(error, pretty: true)}")
         :ok

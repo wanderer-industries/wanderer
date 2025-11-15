@@ -187,6 +187,10 @@ defmodule WandererApp.Character do
           {:ok, result} ->
             {:ok, result |> prepare_search_results()}
 
+          {:error, error} ->
+            Logger.warning("#{__MODULE__} failed search: #{inspect(error)}")
+            {:ok, []}
+
           error ->
             Logger.warning("#{__MODULE__} failed search: #{inspect(error)}")
             {:ok, []}
