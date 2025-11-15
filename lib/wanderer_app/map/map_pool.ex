@@ -204,10 +204,8 @@ defmodule WandererApp.Map.MapPool do
     start_time = System.monotonic_time(:millisecond)
 
     try do
-      # Initialize the map state and start the map server
-      map_id
-      |> WandererApp.Map.get_map_state!()
-      |> Server.Impl.start_map()
+      # Initialize the map state and start the map server using extracted helper
+      do_initialize_map_server(map_id)
 
       duration = System.monotonic_time(:millisecond) - start_time
 
@@ -234,19 +232,8 @@ defmodule WandererApp.Map.MapPool do
         #{Exception.format_stacktrace(__STACKTRACE__)}
         """)
 
-        # Rollback: Remove from state, registry, and cache
-        new_state = %{state | map_ids: state.map_ids |> Enum.reject(fn id -> id == map_id end)}
-
-        # Update registry
-        Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
-          r_map_ids |> Enum.reject(fn id -> id == map_id end)
-        end)
-
-        # Remove from cache
-        Cachex.del(@cache, map_id)
-
-        # Update ETS state
-        MapPoolState.save_pool_state(uuid, new_state.map_ids)
+        # Rollback: Remove from state, registry, cache, and ETS using extracted helper
+        new_state = do_unregister_map(map_id, uuid, state)
 
         # Emit telemetry for failed initialization
         :telemetry.execute(
@@ -358,16 +345,16 @@ defmodule WandererApp.Map.MapPool do
         # Step 2: Add to cache
         case Cachex.put(@cache, map_id, uuid) do
           {:ok, _} ->
-            completed_operations = [:cache | completed_operations]
+            :ok
 
           {:error, reason} ->
             raise "Failed to add to cache: #{inspect(reason)}"
         end
 
-        # Step 3: Start the map server
-        map_id
-        |> WandererApp.Map.get_map_state!()
-        |> Server.Impl.start_map()
+        completed_operations = [:cache | completed_operations]
+
+        # Step 3: Start the map server using extracted helper
+        do_initialize_map_server(map_id)
 
         completed_operations = [:map_server | completed_operations]
 
@@ -459,11 +446,13 @@ defmodule WandererApp.Map.MapPool do
       # Step 2: Delete from cache
       case Cachex.del(@cache, map_id) do
         {:ok, _} ->
-          completed_operations = [:cache | completed_operations]
+          :ok
 
         {:error, reason} ->
           raise "Failed to delete from cache: #{inspect(reason)}"
       end
+
+      completed_operations = [:cache | completed_operations]
 
       # Step 3: Stop the map server (clean up all map resources)
       map_id
@@ -491,6 +480,35 @@ defmodule WandererApp.Map.MapPool do
 
         {:error, Exception.message(e)}
     end
+  end
+
+  # Helper function to initialize the map server (no state management)
+  # This extracts the common map initialization logic used in both
+  # synchronous (do_start_map) and asynchronous ({:init_map, map_id}) paths
+  defp do_initialize_map_server(map_id) do
+    map_id
+    |> WandererApp.Map.get_map_state!()
+    |> Server.Impl.start_map()
+  end
+
+  # Helper function to unregister a map from all tracking
+  # Used for rollback when map initialization fails in the async path
+  defp do_unregister_map(map_id, uuid, state) do
+    # Remove from registry
+    Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
+      Enum.reject(r_map_ids, &(&1 == map_id))
+    end)
+
+    # Remove from cache
+    Cachex.del(@cache, map_id)
+
+    # Update state
+    new_state = %{state | map_ids: Enum.reject(state.map_ids, &(&1 == map_id))}
+
+    # Update ETS
+    MapPoolState.save_pool_state(uuid, new_state.map_ids)
+
+    new_state
   end
 
   defp rollback_stop_map_operations(map_id, uuid, completed_operations) do

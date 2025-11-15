@@ -25,6 +25,7 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+  @ddrt Application.compile_env(:wanderer_app, :ddrt)
 
   @connections_cleanup_timeout :timer.minutes(1)
 
@@ -50,14 +51,15 @@ defmodule WandererApp.Map.Server.Impl do
 
     tasks = [
       Task.async(fn ->
-        {:map, WandererApp.MapRepo.get(map_id, [
-          :owner,
-          :characters,
-          acls: [
-            :owner_id,
-            members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
-          ]
-        ])}
+        {:map,
+         WandererApp.MapRepo.get(map_id, [
+           :owner,
+           :characters,
+           acls: [
+             :owner_id,
+             members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+           ]
+         ])}
       end),
       Task.async(fn ->
         {:systems, WandererApp.MapSystemRepo.get_visible_by_map(map_id)}
@@ -86,25 +88,29 @@ defmodule WandererApp.Map.Server.Impl do
     end
 
     # Extract results
-    map_result = Enum.find_value(results, fn
-      {:map, result} -> result
-      _ -> nil
-    end)
+    map_result =
+      Enum.find_value(results, fn
+        {:map, result} -> result
+        _ -> nil
+      end)
 
-    systems_result = Enum.find_value(results, fn
-      {:systems, result} -> result
-      _ -> nil
-    end)
+    systems_result =
+      Enum.find_value(results, fn
+        {:systems, result} -> result
+        _ -> nil
+      end)
 
-    connections_result = Enum.find_value(results, fn
-      {:connections, result} -> result
-      _ -> nil
-    end)
+    connections_result =
+      Enum.find_value(results, fn
+        {:connections, result} -> result
+        _ -> nil
+      end)
 
-    subscription_result = Enum.find_value(results, fn
-      {:subscription, result} -> result
-      _ -> nil
-    end)
+    subscription_result =
+      Enum.find_value(results, fn
+        {:subscription, result} -> result
+        _ -> nil
+      end)
 
     # Process results
     with {:ok, map} <- map_result,
@@ -141,7 +147,6 @@ defmodule WandererApp.Map.Server.Impl do
             "maps:#{map_id}"
           )
 
-          WandererApp.Map.CacheRTree.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
           Process.send_after(self(), {:update_characters, map_id}, @update_characters_timeout)
 
           Process.send_after(
@@ -511,6 +516,8 @@ defmodule WandererApp.Map.Server.Impl do
          connections
        ) do
     {:ok, options} = WandererApp.MapRepo.options_to_form_data(initial_map)
+
+    @ddrt.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
 
     map =
       initial_map
