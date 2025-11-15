@@ -2,6 +2,7 @@ defmodule WandererApp.MapConnectionRepo do
   use WandererApp, :repository
 
   require Logger
+  alias WandererApp.Repositories.MapContextHelper
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -27,8 +28,17 @@ defmodule WandererApp.MapConnectionRepo do
     end
   end
 
-  def create(connection), do: connection |> WandererApp.Api.MapConnection.create()
-  def create!(connection), do: connection |> WandererApp.Api.MapConnection.create!()
+  def create(connection) do
+    MapContextHelper.with_map_context(connection, fn attrs, context ->
+      WandererApp.Api.MapConnection.create(attrs, context: context)
+    end)
+  end
+
+  def create!(connection) do
+    MapContextHelper.with_map_context!(connection, fn attrs, context ->
+      WandererApp.Api.MapConnection.create!(attrs, context: context)
+    end)
+  end
 
   def destroy(map_id, connection) when not is_nil(connection) do
     {:ok, from_connections} =

@@ -50,7 +50,9 @@ defmodule WandererApp.Map.MapPoolTest do
   end
 
   describe "cache lookup with registry fallback" do
-    test "stop_map handles cache miss by scanning registry", %{registries_running: registries_running?} do
+    test "stop_map handles cache miss by scanning registry", %{
+      registries_running: registries_running?
+    } do
       if registries_running? do
         # Setup: Create a map_id that's not in cache but will be found in registry scan
         map_id = "test_map_#{:rand.uniform(1_000_000)}"
@@ -66,7 +68,9 @@ defmodule WandererApp.Map.MapPoolTest do
       end
     end
 
-    test "stop_map handles non-existent pool_uuid in registry", %{registries_running: registries_running?} do
+    test "stop_map handles non-existent pool_uuid in registry", %{
+      registries_running: registries_running?
+    } do
       if registries_running? do
         map_id = "test_map_#{:rand.uniform(1_000_000)}"
         fake_uuid = "fake_uuid_#{:rand.uniform(1_000_000)}"
@@ -81,7 +85,9 @@ defmodule WandererApp.Map.MapPoolTest do
       end
     end
 
-    test "stop_map updates cache when found via registry scan", %{registries_running: registries_running?} do
+    test "stop_map updates cache when found via registry scan", %{
+      registries_running: registries_running?
+    } do
       if registries_running? do
         # This test would require a running pool with registered maps
         # For now, we verify the fallback logic doesn't crash
@@ -115,7 +121,9 @@ defmodule WandererApp.Map.MapPoolTest do
   end
 
   describe "Reconciler - zombie map detection and cleanup" do
-    test "reconciler detects zombie maps in started_maps cache", %{reconciler_running: reconciler_running?} do
+    test "reconciler detects zombie maps in started_maps cache", %{
+      reconciler_running: reconciler_running?
+    } do
       if reconciler_running? do
         # Setup: Add maps to started_maps that aren't in any registry
         zombie_map_id = "zombie_map_#{:rand.uniform(1_000_000)}"
@@ -189,7 +197,9 @@ defmodule WandererApp.Map.MapPoolTest do
   end
 
   describe "Reconciler - cache inconsistency detection and fix" do
-    test "reconciler detects map with missing cache entry", %{reconciler_running: reconciler_running?} do
+    test "reconciler detects map with missing cache entry", %{
+      reconciler_running: reconciler_running?
+    } do
       if reconciler_running? do
         # This test verifies the reconciler can detect when a map
         # is in the registry but has no cache entry
@@ -209,7 +219,9 @@ defmodule WandererApp.Map.MapPoolTest do
       end
     end
 
-    test "reconciler detects cache pointing to non-existent pool", %{reconciler_running: reconciler_running?} do
+    test "reconciler detects cache pointing to non-existent pool", %{
+      reconciler_running: reconciler_running?
+    } do
       if reconciler_running? do
         map_id = "test_map_#{:rand.uniform(1_000_000)}"
         fake_uuid = "fake_uuid_#{:rand.uniform(1_000_000)}"
@@ -267,7 +279,9 @@ defmodule WandererApp.Map.MapPoolTest do
   end
 
   describe "Reconciler - manual trigger" do
-    test "trigger_reconciliation runs reconciliation immediately", %{reconciler_running: reconciler_running?} do
+    test "trigger_reconciliation runs reconciliation immediately", %{
+      reconciler_running: reconciler_running?
+    } do
       if reconciler_running? do
         zombie_map_id = "zombie_map_#{:rand.uniform(1_000_000)}"
 
@@ -307,7 +321,9 @@ defmodule WandererApp.Map.MapPoolTest do
       end
     end
 
-    test "reconciler handles empty registries gracefully", %{reconciler_running: reconciler_running?} do
+    test "reconciler handles empty registries gracefully", %{
+      reconciler_running: reconciler_running?
+    } do
       if reconciler_running? do
         # Clear everything
         cleanup_test_data()

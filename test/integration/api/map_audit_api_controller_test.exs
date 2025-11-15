@@ -4,7 +4,7 @@ defmodule WandererAppWeb.MapAuditAPIControllerIntegrationTest do
   alias WandererAppWeb.Factory
 
   describe "GET /api/map/audit (index)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns audit events for a map by slug", %{conn: conn, map: map} do
       # Create a character for the audit events

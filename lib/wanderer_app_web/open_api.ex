@@ -20,10 +20,36 @@ defmodule WandererAppWeb.OpenApi do
         - Relationships: Include related resources with `include=relationship`
 
         ## Authentication
-        All endpoints require Bearer token authentication:
+
+        All endpoints use **token-only authentication**. Your Bearer token identifies both:
+        - Your user account
+        - The specific map you're working with
+
+        You do **NOT** need to provide `map_id` or `map_identifier` in:
+        - Request body attributes
+        - Query parameters
+        - URL path
+
+        The map context is automatically determined from your API token.
+
+        ### Example
         ```
         Authorization: Bearer YOUR_API_KEY
         ```
+
+        ### Getting Your API Token
+
+        1. Navigate to your map in the web interface
+        2. Go to Map Settings
+        3. Copy your API key from the "API Access" section
+
+        Each map has its own unique API token. Use the appropriate token for the map you want to interact with.
+
+        ### Security
+
+        - Never share your API tokens publicly
+        - Each token provides full access to its associated map
+        - Tokens can be regenerated from Map Settings if compromised
         """
       },
       servers: [

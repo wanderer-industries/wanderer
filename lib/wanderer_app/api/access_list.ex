@@ -22,7 +22,7 @@ defmodule WandererApp.Api.AccessList do
     routes do
       base("/access_lists")
       get(:read)
-      index :read
+      index :available
       post(:new)
       patch(:update)
       delete(:destroy)

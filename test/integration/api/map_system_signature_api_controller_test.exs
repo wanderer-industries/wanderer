@@ -4,7 +4,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   alias WandererAppWeb.Factory
 
   describe "GET /api/maps/:map_identifier/signatures" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns all signatures for a map", %{conn: conn, map: map} do
       conn = get(conn, ~p"/api/maps/#{map.slug}/signatures")
@@ -30,14 +30,14 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "GET /api/maps/:map_identifier/signatures/:id" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns signature when it exists and belongs to the map", %{conn: conn, map: map} do
       # Create a system for the map
       system = Factory.insert(:map_system, %{map_id: map.id, solar_system_id: 30_000_142})
 
       # Create a signature for this system
-      signature =
+      {:ok, signature} =
         Factory.insert(:map_system_signature, %{
           system_id: system.id,
           eve_id: "ABC-123",
@@ -60,7 +60,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
       other_system =
         Factory.insert(:map_system, %{map_id: other_map.id, solar_system_id: 30_000_143})
 
-      signature = Factory.insert(:map_system_signature, %{system_id: other_system.id})
+      {:ok, signature} = Factory.insert(:map_system_signature, %{system_id: other_system.id})
 
       conn = get(conn, ~p"/api/maps/#{map.slug}/signatures/#{signature.id}")
 
@@ -96,7 +96,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "POST /api/maps/:map_identifier/signatures" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "creates a new signature with valid parameters", %{conn: conn, map: map} do
       signature_params = %{
@@ -194,7 +194,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "PUT /api/maps/:map_identifier/signatures/:id" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "updates an existing signature", %{conn: conn, map: map} do
       signature_id = Ecto.UUID.generate()
@@ -299,7 +299,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "DELETE /api/maps/:map_identifier/signatures/:id" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "deletes an existing signature", %{conn: conn, map: map} do
       signature_id = Ecto.UUID.generate()
@@ -364,7 +364,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "parameter validation" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "validates signature ID format in show", %{conn: conn, map: map} do
       invalid_ids = [
@@ -420,7 +420,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "edge cases" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "handles very long signature names and descriptions", %{conn: conn, map: map} do
       long_string = String.duplicate("a", 1000)
@@ -524,7 +524,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIControllerTest do
   end
 
   describe "OpenAPI schema compliance" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "responses match expected structure", %{conn: conn, map: map} do
       # Test index endpoint response structure

@@ -15,24 +15,63 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
     description: "A cosmic signature scanned in an EVE Online solar system",
     type: :object,
     properties: %{
-      id: %OpenApiSpex.Schema{type: :string, format: :uuid, description: "Unique signature identifier"},
-      solar_system_id: %OpenApiSpex.Schema{type: :integer, description: "EVE Online solar system ID"},
-      eve_id: %OpenApiSpex.Schema{type: :string, description: "In-game signature ID (e.g., ABC-123)"},
+      id: %OpenApiSpex.Schema{
+        type: :string,
+        format: :uuid,
+        description: "Unique signature identifier"
+      },
+      solar_system_id: %OpenApiSpex.Schema{
+        type: :integer,
+        description: "EVE Online solar system ID"
+      },
+      eve_id: %OpenApiSpex.Schema{
+        type: :string,
+        description: "In-game signature ID (e.g., ABC-123)"
+      },
       character_eve_id: %OpenApiSpex.Schema{
         type: :string,
-        description: "EVE character ID who scanned/updated this signature. Must be a valid character in the database. If not provided, defaults to the map owner's character.",
+        description:
+          "EVE character ID who scanned/updated this signature. Must be a valid character in the database. If not provided, defaults to the map owner's character.",
         nullable: true
       },
       name: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature name"},
-      description: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Additional notes"},
+      description: %OpenApiSpex.Schema{
+        type: :string,
+        nullable: true,
+        description: "Additional notes"
+      },
       type: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature type"},
-      linked_system_id: %OpenApiSpex.Schema{type: :integer, nullable: true, description: "Connected solar system ID for wormholes"},
-      kind: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature kind (e.g., cosmic_signature)"},
-      group: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Signature group (e.g., wormhole, data, relic)"},
-      custom_info: %OpenApiSpex.Schema{type: :string, nullable: true, description: "Custom metadata"},
+      linked_system_id: %OpenApiSpex.Schema{
+        type: :integer,
+        nullable: true,
+        description: "Connected solar system ID for wormholes"
+      },
+      kind: %OpenApiSpex.Schema{
+        type: :string,
+        nullable: true,
+        description: "Signature kind (e.g., cosmic_signature)"
+      },
+      group: %OpenApiSpex.Schema{
+        type: :string,
+        nullable: true,
+        description: "Signature group (e.g., wormhole, data, relic)"
+      },
+      custom_info: %OpenApiSpex.Schema{
+        type: :string,
+        nullable: true,
+        description: "Custom metadata"
+      },
       updated: %OpenApiSpex.Schema{type: :integer, nullable: true, description: "Update counter"},
-      inserted_at: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Creation timestamp"},
-      updated_at: %OpenApiSpex.Schema{type: :string, format: :date_time, description: "Last update timestamp"}
+      inserted_at: %OpenApiSpex.Schema{
+        type: :string,
+        format: :date_time,
+        description: "Creation timestamp"
+      },
+      updated_at: %OpenApiSpex.Schema{
+        type: :string,
+        format: :date_time,
+        description: "Last update timestamp"
+      }
     },
     required: [
       :id,
@@ -178,7 +217,8 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
            properties: %{
              error: %OpenApiSpex.Schema{
                type: :string,
-               description: "Error type (e.g., 'invalid_character', 'system_not_found', 'missing_params')"
+               description:
+                 "Error type (e.g., 'invalid_character', 'system_not_found', 'missing_params')"
              }
            },
            example: %{error: "invalid_character"}

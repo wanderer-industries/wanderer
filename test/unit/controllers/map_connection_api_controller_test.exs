@@ -3,6 +3,7 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
 
   import Mox
   import Phoenix.ConnTest
+  import WandererAppWeb.Factory
 
   alias WandererAppWeb.MapConnectionAPIController
 
@@ -166,9 +167,17 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
           {:error, :not_found}
       end)
 
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-      conn = build_conn() |> assign(:map_id, map_id) |> assign(:owner_character_id, char_id)
+      # Create user, character and map using factory
+      user = insert(:user)
+      character = insert(:character, %{user_id: user.id})
+      map = insert(:map, %{owner_id: character.id})
+
+      # Add map and character to cache for unit test
+      Cachex.put(:map_cache, map.id, map)
+      Cachex.put(:character_cache, character.eve_id, character)
+
+      conn =
+        build_conn() |> assign(:map_id, map.id) |> assign(:owner_character_id, character.eve_id)
 
       params = %{
         "solar_system_source" => 30_000_142,
@@ -247,9 +256,17 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
           {:error, :not_found}
       end)
 
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-      conn = build_conn() |> assign(:map_id, map_id) |> assign(:owner_character_id, char_id)
+      # Create user, character and map using factory
+      user = insert(:user)
+      character = insert(:character, %{user_id: user.id})
+      map = insert(:map, %{owner_id: character.id})
+
+      # Add map and character to cache for unit test
+      Cachex.put(:map_cache, map.id, map)
+      Cachex.put(:character_cache, character.eve_id, character)
+
+      conn =
+        build_conn() |> assign(:map_id, map.id) |> assign(:owner_character_id, character.eve_id)
 
       params = %{
         "solar_system_source" => 30_000_142,
@@ -721,9 +738,17 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
           {:error, :not_found}
       end)
 
-      map_id = Ecto.UUID.generate()
-      char_id = "123456789"
-      conn = build_conn() |> assign(:map_id, map_id) |> assign(:owner_character_id, char_id)
+      # Create user, character and map using factory
+      user = insert(:user)
+      character = insert(:character, %{user_id: user.id})
+      map = insert(:map, %{owner_id: character.id})
+
+      # Add map and character to cache for unit test
+      Cachex.put(:map_cache, map.id, map)
+      Cachex.put(:character_cache, character.eve_id, character)
+
+      conn =
+        build_conn() |> assign(:map_id, map.id) |> assign(:owner_character_id, character.eve_id)
 
       params = %{
         "solar_system_source" => 30_000_142,

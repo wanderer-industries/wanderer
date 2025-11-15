@@ -167,7 +167,9 @@ defmodule WandererApp.Map.Reconciler do
   defp cleanup_zombie_maps([]), do: :ok
 
   defp cleanup_zombie_maps(zombie_maps) do
-    Logger.warning("[Map Reconciler] Found #{length(zombie_maps)} zombie maps: #{inspect(zombie_maps)}")
+    Logger.warning(
+      "[Map Reconciler] Found #{length(zombie_maps)} zombie maps: #{inspect(zombie_maps)}"
+    )
 
     Enum.each(zombie_maps, fn map_id ->
       Logger.info("[Map Reconciler] Cleaning up zombie map: #{map_id}")
@@ -201,7 +203,9 @@ defmodule WandererApp.Map.Reconciler do
   defp fix_orphan_maps([]), do: :ok
 
   defp fix_orphan_maps(orphan_maps) do
-    Logger.warning("[Map Reconciler] Found #{length(orphan_maps)} orphan maps: #{inspect(orphan_maps)}")
+    Logger.warning(
+      "[Map Reconciler] Found #{length(orphan_maps)} orphan maps: #{inspect(orphan_maps)}"
+    )
 
     Enum.each(orphan_maps, fn map_id ->
       Logger.info("[Map Reconciler] Fixing orphan map: #{map_id}")
@@ -246,7 +250,10 @@ defmodule WandererApp.Map.Reconciler do
           )
 
         :error ->
-          Logger.warning("[Map Reconciler] Could not find pool for map #{map_id}, removing from cache")
+          Logger.warning(
+            "[Map Reconciler] Could not find pool for map #{map_id}, removing from cache"
+          )
+
           Cachex.del(@cache, map_id)
       end
     end)

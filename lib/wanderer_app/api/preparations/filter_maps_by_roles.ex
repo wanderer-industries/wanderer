@@ -4,6 +4,8 @@ defmodule WandererApp.Api.Preparations.FilterMapsByRoles do
   use Ash.Resource.Preparation
   require Ash.Query
 
+  alias WandererApp.Api.ActorWithMap
+
   def prepare(query, _params, %{actor: nil}) do
     query
     |> Ash.Query.filter(expr(deleted == false))
@@ -17,6 +19,11 @@ defmodule WandererApp.Api.Preparations.FilterMapsByRoles do
     |> Ash.Query.load([:owner, :acls])
   end
 
+  defp filter_membership(query, %ActorWithMap{user: user}) do
+    # For token-based auth, extract the user from ActorWithMap
+    filter_membership(query, user)
+  end
+
   defp filter_membership(query, actor) do
     characters = actor.characters
 
@@ -28,13 +35,37 @@ defmodule WandererApp.Api.Preparations.FilterMapsByRoles do
 
     character_alliance_ids = characters |> Enum.map(& &1.alliance_id) |> Enum.map(&to_string/1)
 
+    accessible_acl_ids =
+      get_accessible_acl_ids(character_eve_ids, character_corporation_ids, character_alliance_ids)
+
+    # Filter to maps where the user:
+    # 1. Owns the map directly (owner_id)
+    # 2. Has access via an ACL that the user can access
     query
     |> Ash.Query.filter(
       owner_id in ^character_ids or
-        (acls.owner_id in ^character_ids or
-           acls.members.eve_character_id in ^character_eve_ids or
-           acls.members.eve_corporation_id in ^character_corporation_ids or
-           acls.members.eve_alliance_id in ^character_alliance_ids)
+        acls.id in ^accessible_acl_ids
     )
+  end
+
+  defp get_accessible_acl_ids(
+         character_eve_ids,
+         character_corporation_ids,
+         character_alliance_ids
+       ) do
+    # Query AccessListMember directly to find ACLs where the character is a member
+    # This bypasses Ash's ownership constraints
+    import Ecto.Query
+
+    query =
+      from m in "access_list_members_v1",
+        where:
+          m.eve_character_id in ^character_eve_ids or
+            m.eve_corporation_id in ^character_corporation_ids or
+            m.eve_alliance_id in ^character_alliance_ids,
+        select: m.access_list_id,
+        distinct: true
+
+    WandererApp.Repo.all(query)
   end
 end

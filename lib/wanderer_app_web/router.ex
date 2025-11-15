@@ -220,12 +220,6 @@ defmodule WandererAppWeb.Router do
       module: WandererAppWeb.OpenApiV1Spec
   end
 
-  pipeline :api_spec_combined do
-    plug OpenApiSpex.Plug.PutApiSpec,
-      otp_app: :wanderer_app,
-      module: WandererAppWeb.ApiSpecV1
-  end
-
   # New v1 API pipeline for ash_json_api
   pipeline :api_v1 do
     plug WandererAppWeb.Plugs.ContentNegotiation, accepts: ["json"]
@@ -344,12 +338,6 @@ defmodule WandererAppWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
   end
 
-  # Combined spec needs its own pipeline
-  scope "/api" do
-    pipe_through [:api_spec_combined]
-    get "/openapi-complete", OpenApiSpex.Plug.RenderSpec, :show
-  end
-
   scope "/api/v1" do
     pipe_through [:api_spec_v1]
     # v1 JSON:API spec (bypasses authentication)
@@ -427,9 +415,14 @@ defmodule WandererAppWeb.Router do
   end
 
   scope "/swaggerui" do
-    pipe_through [:browser, :api_spec]
+    pipe_through [:browser]
 
-    # v1 JSON:API (AshJsonApi generated)
+    # Redirect root to v1 (recommended API)
+    get "/", WandererAppWeb.RedirectController, :swaggerui_root
+
+    pipe_through [:api_spec_v1]
+
+    # v1 JSON:API (AshJsonApi generated) - Recommended
     get "/v1", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/v1/open_api",
       title: "WandererApp v1 JSON:API Docs",
@@ -450,8 +443,12 @@ defmodule WandererAppWeb.Router do
         "tagsSorter" => "alpha",
         "operationsSorter" => "alpha"
       }
+  end
 
-    # Legacy API only
+  scope "/swaggerui" do
+    pipe_through [:browser, :api_spec]
+
+    # Legacy API only (maintained for backward compatibility)
     get "/legacy", OpenApiSpex.Plug.SwaggerUI,
       path: "/api/openapi",
       title: "WandererApp Legacy API Docs",
@@ -469,28 +466,6 @@ defmodule WandererAppWeb.Router do
       swagger_ui_config: %{
         "docExpansion" => "none",
         "deepLinking" => true
-      }
-
-    # Complete API (Legacy + v1)
-    get "/", OpenApiSpex.Plug.SwaggerUI,
-      path: "/api/openapi-complete",
-      title: "WandererApp Complete API Docs (Legacy & v1)",
-      css_urls: [
-        # Standard Swagger UI CSS
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui.min.css",
-        # Material theme from swagger-ui-themes (v3.x):
-        "https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.0/themes/3.x/theme-material.css"
-      ],
-      js_urls: [
-        # We need both main JS & standalone preset for full styling
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-bundle.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.5.0/swagger-ui-standalone-preset.min.js"
-      ],
-      swagger_ui_config: %{
-        "docExpansion" => "none",
-        "deepLinking" => true,
-        "tagsSorter" => "alpha",
-        "operationsSorter" => "alpha"
       }
   end
 
@@ -596,6 +571,9 @@ defmodule WandererAppWeb.Router do
   #
   scope "/api/v1" do
     pipe_through :api_v1
+
+    # Get current authenticated map (using Bearer token)
+    get "/map", WandererAppWeb.MapAPIController, :current_v1
 
     # Custom combined endpoint with map_id in path
     get "/maps/:map_id/systems_and_connections",

@@ -1,8 +1,6 @@
 defmodule WandererApp.DatabaseTest do
   use WandererApp.DataCase, async: false
 
-  @moduletag :skip
-
   describe "database connectivity" do
     test "can connect to test database" do
       # Simple connectivity test

@@ -31,7 +31,7 @@ defmodule WandererApp.Api.Map do
     routes do
       base("/maps")
       get(:by_slug, route: "/:slug")
-      index :read
+      index :available
       post(:new)
       patch(:update)
       delete(:destroy)
@@ -44,6 +44,7 @@ defmodule WandererApp.Api.Map do
   code_interface do
     define(:available, action: :available)
     define(:get_map_by_slug, action: :by_slug, args: [:slug])
+    define(:get_map_by_api_key, action: :by_api_key, args: [:api_key])
     define(:new, action: :new)
     define(:create, action: :create)
     define(:update, action: :update)
@@ -88,6 +89,13 @@ defmodule WandererApp.Api.Map do
       argument :slug, :string, allow_nil?: false
 
       filter expr(slug == ^arg(:slug))
+    end
+
+    read :by_api_key do
+      get? true
+      argument :api_key, :string, allow_nil?: false
+
+      filter expr(public_api_key == ^arg(:api_key))
     end
 
     read :available do

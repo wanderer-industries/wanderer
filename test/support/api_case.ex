@@ -45,12 +45,24 @@ defmodule WandererAppWeb.ApiCase do
   end
 
   @doc """
-  Helper for creating API authentication headers
+  Helper for creating API authentication headers (JSON:API format)
   """
   def put_api_key(conn, api_key) do
     conn
     |> Plug.Conn.put_req_header("authorization", "Bearer #{api_key}")
+    |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
+    |> Plug.Conn.put_req_header("accept", "application/vnd.api+json")
+  end
+
+  @doc """
+  Helper for creating API authentication headers (plain JSON format)
+  Use this for controllers that accept "application/json" instead of "application/vnd.api+json"
+  """
+  def put_json_auth(conn, api_key) do
+    conn
+    |> Plug.Conn.put_req_header("authorization", "Bearer #{api_key}")
     |> Plug.Conn.put_req_header("content-type", "application/json")
+    |> Plug.Conn.put_req_header("accept", "application/json")
   end
 
   @doc """
@@ -101,7 +113,7 @@ defmodule WandererAppWeb.ApiCase do
     # Create a test map
     map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
 
-    # Ensure mocks are properly set up before starting map server
+    # Ensure mocks are properly set up
     if Code.ensure_loaded?(Mox) do
       Mox.set_mox_global()
 
@@ -110,10 +122,7 @@ defmodule WandererAppWeb.ApiCase do
       end
     end
 
-    # Ensure the map server is started
-    WandererApp.TestHelpers.ensure_map_server_started(map.id)
-
-    # Also ensure MapEventRelay has database access if it's running
+    # Ensure MapEventRelay has database access if it's running
     if pid = Process.whereis(WandererApp.ExternalEvents.MapEventRelay) do
       WandererApp.DataCase.allow_database_access(pid)
     end
@@ -127,12 +136,45 @@ defmodule WandererAppWeb.ApiCase do
   Setup callback for tests that need map authentication without starting map servers.
   Creates a test map and authenticates the connection, but doesn't start the map server.
   Use this for integration tests that don't need the full map server infrastructure.
+
+  Returns:
+  - conn: authenticated connection
+  - map: the created map
+  - character: the character that owns the map (useful for actions that require a character)
+  - user: the user that owns the character/map
   """
   def setup_map_authentication_without_server(%{conn: conn}) do
+    # Create a test map (this automatically creates user -> character -> map)
+    map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
+
+    # Load the map with owner to get the character
+    {:ok, map_with_owner} = WandererApp.Api.Map.by_id(map.id, load: :owner)
+    character = map_with_owner.owner
+
+    # Load the character to get the user
+    {:ok, character_with_user} = WandererApp.Api.Character.by_id(character.id, load: :user)
+    user = character_with_user.user
+
+    # Authenticate the connection with the map's actual public_api_key
+    # CheckJsonApiAuth will handle setting the actor as ActorWithMap
+    authenticated_conn =
+      conn
+      |> put_api_key(map.public_api_key)
+
+    # Return character_with_user so the user relationship is available
+    {:ok, conn: authenticated_conn, map: map, character: character_with_user, user: user}
+  end
+
+  @doc """
+  Setup callback for tests that need map authentication with plain JSON (not JSON:API).
+  Creates a test map and authenticates the connection with application/json content type.
+  Use this for controllers that accept "application/json" instead of "application/vnd.api+json".
+  """
+  def setup_map_authentication_json(%{conn: conn}) do
     # Create a test map
     map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
-    # Authenticate the connection with the map's actual public_api_key
-    authenticated_conn = put_api_key(conn, map.public_api_key)
+    # Authenticate the connection with plain JSON headers
+    authenticated_conn = put_json_auth(conn, map.public_api_key)
     {:ok, conn: authenticated_conn, map: map}
   end
 end

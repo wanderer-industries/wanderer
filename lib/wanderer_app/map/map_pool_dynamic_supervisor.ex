@@ -20,18 +20,27 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   end
 
   def start_map(map_id) do
-    case Registry.lookup(@registry, WandererApp.Map.MapPool) do
-      [] ->
-        start_child([map_id], 0)
+    try do
+      case Registry.lookup(@registry, WandererApp.Map.MapPool) do
+        [] ->
+          start_child([map_id], 0)
 
-      pools ->
-        case get_available_pool(pools) do
-          nil ->
-            start_child([map_id], pools |> Enum.count())
+        pools ->
+          case get_available_pool(pools) do
+            nil ->
+              start_child([map_id], pools |> Enum.count())
 
-          pid ->
-            GenServer.call(pid, {:start_map, map_id})
-        end
+            pid ->
+              GenServer.cast(pid, {:start_map, map_id})
+          end
+      end
+    rescue
+      ArgumentError ->
+        Logger.warning(fn ->
+          "Map pool registry not available, cannot start map #{map_id}"
+        end)
+
+        {:error, :registry_not_available}
     end
   end
 

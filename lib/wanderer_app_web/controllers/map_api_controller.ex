@@ -16,6 +16,46 @@ defmodule WandererAppWeb.MapAPIController do
   # V1 API Actions (for compatibility with versioned API router)
   # -----------------------------------------------------------------
 
+  @doc """
+  Get current authenticated map information.
+  Returns the map associated with the API token used in the request.
+  """
+  def current_v1(conn, _params) do
+    # The CheckJsonApiAuth plug already assigns :map to conn
+    try do
+      case conn.assigns[:map] do
+        %{} = map ->
+          json(conn, %{
+            data: %{
+              id: to_string(map.id),
+              type: "maps",
+              attributes: %{
+                name: to_string(map.name || ""),
+                slug: to_string(map.slug || ""),
+                description: to_string(map.description || "")
+              }
+            },
+            meta: %{
+              version: "1"
+            }
+          })
+
+        nil ->
+          conn
+          |> put_status(:unauthorized)
+          |> json(%{error: "No authenticated map found"})
+      end
+    rescue
+      e ->
+        Logger.error("Error in current_v1: #{inspect(e)}")
+        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
+
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Internal server error"})
+    end
+  end
+
   def index_v1(conn, params) do
     # Delegate to the existing list implementation or create a basic one
     json(conn, %{

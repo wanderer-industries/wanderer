@@ -88,8 +88,8 @@ defmodule WandererApp.Test.IntegrationConfig do
     case service do
       :pubsub -> true
       :cache -> true
-      # Keep DDRT mocked for performance
-      :ddrt -> false
+      # Keep spatial index mocked for performance
+      :spatial_index -> false
       # Keep Logger mocked to avoid test output noise
       :logger -> false
       # Keep external APIs mocked

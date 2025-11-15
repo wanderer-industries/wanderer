@@ -1,10 +1,14 @@
 defmodule WandererApp.Api.MapSystemSignature do
   @moduledoc false
 
+  alias WandererApp.Api.Changes.BroadcastSignatureUpdate
+
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshJsonApi.Resource]
+
+  require Ash.Query
 
   postgres do
     repo(WandererApp.Repo)
@@ -23,6 +27,8 @@ defmodule WandererApp.Api.MapSystemSignature do
       base("/map_system_signatures")
       get(:read)
       index :read
+      post(:create)
+      patch(:update)
       delete(:destroy)
     end
   end
@@ -72,10 +78,27 @@ defmodule WandererApp.Api.MapSystemSignature do
       :custom_info
     ]
 
-    defaults [:destroy]
+    # Define explicit destroy action with PubSub broadcasting
+    destroy :destroy do
+      require_atomic? false
+      change BroadcastSignatureUpdate
+    end
 
     read :read do
       primary?(true)
+
+      # Auto-filter by system's map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            # Filter signatures to only those belonging to systems on this map
+            query
+            |> Ash.Query.filter(exists(system, map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
 
       pagination offset?: true,
                  default_limit: 50,
@@ -115,6 +138,7 @@ defmodule WandererApp.Api.MapSystemSignature do
       argument :system_id, :uuid, allow_nil?: false
 
       change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
+      change BroadcastSignatureUpdate
     end
 
     update :update do
@@ -135,18 +159,25 @@ defmodule WandererApp.Api.MapSystemSignature do
 
       primary? true
       require_atomic? false
+      change BroadcastSignatureUpdate
     end
 
     update :update_linked_system do
       accept [:linked_system_id]
+      require_atomic? false
+      change BroadcastSignatureUpdate
     end
 
     update :update_type do
       accept [:type]
+      require_atomic? false
+      change BroadcastSignatureUpdate
     end
 
     update :update_group do
       accept [:group]
+      require_atomic? false
+      change BroadcastSignatureUpdate
     end
 
     read :by_system_id do

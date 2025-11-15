@@ -245,7 +245,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
       assert_controller_result(result_invalid)
     end
 
-    test "delete handles batch deletion" do
+    test "delete_batch handles batch deletion" do
       map_id = Ecto.UUID.generate()
       conn = build_conn() |> assign(:map_id, map_id)
 
@@ -255,7 +255,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
         "connection_ids" => [Ecto.UUID.generate()]
       }
 
-      result = MapSystemAPIController.delete(conn, params)
+      result = MapSystemAPIController.delete_batch(conn, params)
 
       case result do
         %Plug.Conn{} ->
@@ -271,18 +271,18 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
       end
     end
 
-    test "delete_single handles individual system deletion" do
+    test "delete handles individual system deletion" do
       map_id = Ecto.UUID.generate()
       conn = build_conn() |> assign(:map_id, map_id)
 
       # Test with valid system ID
       params_valid = %{"id" => "30000142"}
-      result_valid = MapSystemAPIController.delete_single(conn, params_valid)
+      result_valid = MapSystemAPIController.delete(conn, params_valid)
       assert_controller_result(result_valid)
 
       # Test with invalid system ID
       params_invalid = %{"id" => "invalid"}
-      result_invalid = MapSystemAPIController.delete_single(conn, params_invalid)
+      result_invalid = MapSystemAPIController.delete(conn, params_invalid)
       assert_controller_result(result_invalid)
     end
   end
@@ -357,12 +357,12 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
         "connection_ids" => []
       }
 
-      result_empty = MapSystemAPIController.delete(conn, params_empty)
+      result_empty = MapSystemAPIController.delete_batch(conn, params_empty)
       assert_controller_result(result_empty)
 
       # Test with missing fields
       params_missing = %{}
-      result_missing = MapSystemAPIController.delete(conn, params_missing)
+      result_missing = MapSystemAPIController.delete_batch(conn, params_missing)
       assert_controller_result(result_missing)
 
       # Test with malformed IDs
@@ -371,7 +371,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
         "connection_ids" => ["invalid-uuid", ""]
       }
 
-      result_malformed = MapSystemAPIController.delete(conn, params_malformed)
+      result_malformed = MapSystemAPIController.delete_batch(conn, params_malformed)
       assert_controller_result(result_malformed)
     end
 
@@ -467,7 +467,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
           "connection_ids" => []
         }
 
-        result = MapSystemAPIController.delete(conn, params)
+        result = MapSystemAPIController.delete_batch(conn, params)
         assert_controller_result(result)
       end)
     end
@@ -492,7 +492,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
       end)
     end
 
-    test "delete_single handles various error conditions" do
+    test "delete handles various error conditions" do
       map_id = Ecto.UUID.generate()
       conn = build_conn() |> assign(:map_id, map_id)
 
@@ -514,7 +514,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
 
       Enum.each(system_id_formats, fn id ->
         params = %{"id" => id}
-        result = MapSystemAPIController.delete_single(conn, params)
+        result = MapSystemAPIController.delete(conn, params)
         assert_controller_result(result)
       end)
     end
@@ -614,11 +614,13 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
       end
     end
 
-    test "delete returns proper response structure" do
+    test "delete_batch returns proper response structure" do
       map_id = Ecto.UUID.generate()
       conn = build_conn() |> assign(:map_id, map_id)
 
-      result = MapSystemAPIController.delete(conn, %{"system_ids" => [], "connection_ids" => []})
+      result =
+        MapSystemAPIController.delete_batch(conn, %{"system_ids" => [], "connection_ids" => []})
+
       assert_controller_result(result)
 
       if result.status == 200 do
@@ -629,11 +631,11 @@ defmodule WandererAppWeb.MapSystemAPIControllerTest do
       end
     end
 
-    test "delete_single returns proper response structure" do
+    test "delete returns proper response structure" do
       map_id = Ecto.UUID.generate()
       conn = build_conn() |> assign(:map_id, map_id)
 
-      result = MapSystemAPIController.delete_single(conn, %{"id" => "30000142"})
+      result = MapSystemAPIController.delete(conn, %{"id" => "30000142"})
 
       case result do
         %Plug.Conn{} ->
