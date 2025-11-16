@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.25](https://github.com/wanderer-industries/wanderer/compare/v1.84.24...v1.84.25) (2025-11-16)
+
+
+
+
+### Bug Fixes:
+
+* core: used upsert for adding map systems
+
 ## [v1.84.24](https://github.com/wanderer-industries/wanderer/compare/v1.84.23...v1.84.24) (2025-11-15)
 
 
