@@ -103,23 +103,25 @@ defmodule WandererApp.Character.Tracker do
     do: check_tracking_errors(character_id, "location", @location_error_timeout)
 
   defp check_tracking_errors(character_id, type, timeout) do
-    WandererApp.Cache.lookup!("character:#{character_id}:#{type}_error_time")
-    |> case do
-      nil ->
-        :skip
+    # WandererApp.Cache.lookup!("character:#{character_id}:#{type}_error_time")
+    # |> case do
+    #   nil ->
+    #     :skip
 
-      error_time ->
-        duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
+    #   error_time ->
+    #     duration = DateTime.diff(DateTime.utc_now(), error_time, :millisecond)
 
-        if duration >= timeout do
-          pause_tracking(character_id)
-          WandererApp.Cache.delete("character:#{character_id}:#{type}_error_time")
+    #     if duration >= timeout do
+    #       pause_tracking(character_id)
+    #       WandererApp.Cache.delete("character:#{character_id}:#{type}_error_time")
 
-          :ok
-        else
-          :skip
-        end
-    end
+    #       :ok
+    #     else
+    #       :skip
+    #     end
+    # end
+
+    :skip
   end
 
   defp pause_tracking(character_id) do
