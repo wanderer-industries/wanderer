@@ -505,8 +505,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             :ok
 
           _ ->
-            IO.inspect("upsert")
-
             {:ok, solar_system_info} =
               WandererApp.CachedInfo.get_system_static_info(location.solar_system_id)
 

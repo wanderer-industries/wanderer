@@ -30,7 +30,7 @@ format f:
 	mix format
 
 test t:
-	mix test
+	MIX_ENV=test mix test
 
 coverage cover co:
 	mix test --cover
@@ -45,4 +45,3 @@ versions v:
 	@cat .tool-versions
 	@cat Aptfile
 	@echo
-

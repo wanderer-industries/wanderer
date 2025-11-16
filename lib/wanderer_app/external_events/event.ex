@@ -20,6 +20,7 @@ defmodule WandererApp.ExternalEvents.Event do
           | :character_added
           | :character_removed
           | :character_updated
+          | :characters_updated
           | :map_kill
           | :acl_member_added
           | :acl_member_removed

@@ -685,7 +685,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
          old_location
        ) do
     start_solar_system_id =
-      WandererApp.Cache.take("map:#{map_id}:character:#{character_id}:start_solar_system_id")
+      case WandererApp.Cache.lookup(
+             "map:#{map_id}:character:#{character_id}:start_solar_system_id"
+           ) do
+        {:ok, value} -> value
+        :error -> nil
+      end
 
     case is_nil(old_location.solar_system_id) &&
            is_nil(start_solar_system_id) &&
@@ -704,7 +709,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         end
 
       _ ->
-        if is_nil(start_solar_system_id) || start_solar_system_id == old_location.solar_system_id do
+        if is_nil(start_solar_system_id) || location.solar_system_id != start_solar_system_id do
           ConnectionsImpl.is_connection_valid(
             scope,
             old_location.solar_system_id,
