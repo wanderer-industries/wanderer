@@ -200,123 +200,104 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end
   end
 
+  # Calculate optimal concurrency based on character count
+  # Scales from base concurrency (32 on 8-core) up to 128 for 300+ characters
+  defp calculate_max_concurrency(character_count) do
+    base_concurrency = System.schedulers_online() * 4
+
+    cond do
+      character_count < 100 -> base_concurrency
+      character_count < 200 -> base_concurrency * 2
+      character_count < 300 -> base_concurrency * 3
+      true -> base_concurrency * 4
+    end
+  end
+
   def update_characters(map_id) do
+    start_time = System.monotonic_time(:microsecond)
+
     try do
       {:ok, presence_character_ids} =
         WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
 
-      presence_character_ids
-      |> Task.async_stream(
-        fn character_id ->
-          character_updates =
-            maybe_update_online(map_id, character_id) ++
-              maybe_update_location(map_id, character_id) ++
-              maybe_update_ship(map_id, character_id) ++
-              maybe_update_alliance(map_id, character_id) ++
-              maybe_update_corporation(map_id, character_id)
+      character_count = length(presence_character_ids)
 
-          character_updates
-          |> Enum.filter(fn update -> update != :skip end)
-          |> Enum.map(fn update ->
-            update
-            |> case do
-              {:character_location, location_info, old_location_info} ->
-                start_time = System.monotonic_time(:microsecond)
-
-                :telemetry.execute(
-                  [:wanderer_app, :character, :location_update, :start],
-                  %{system_time: System.system_time()},
-                  %{
-                    character_id: character_id,
-                    map_id: map_id,
-                    from_system: old_location_info.solar_system_id,
-                    to_system: location_info.solar_system_id
-                  }
-                )
-
-                {:ok, map_state} = WandererApp.Map.get_map_state(map_id)
-
-                update_location(
-                  map_state,
-                  character_id,
-                  location_info,
-                  old_location_info
-                )
-
-                duration = System.monotonic_time(:microsecond) - start_time
-
-                :telemetry.execute(
-                  [:wanderer_app, :character, :location_update, :complete],
-                  %{duration: duration, system_time: System.system_time()},
-                  %{
-                    character_id: character_id,
-                    map_id: map_id,
-                    from_system: old_location_info.solar_system_id,
-                    to_system: location_info.solar_system_id
-                  }
-                )
-
-                :broadcast
-
-              {:character_ship, _info} ->
-                :broadcast
-
-              {:character_online, _info} ->
-                :broadcast
-
-              {:character_tracking, _info} ->
-                :broadcast
-
-              {:character_alliance, _info} ->
-                WandererApp.Cache.insert_or_update(
-                  "map_#{map_id}:invalidate_character_ids",
-                  [character_id],
-                  fn ids ->
-                    [character_id | ids] |> Enum.uniq()
-                  end
-                )
-
-                :broadcast
-
-              {:character_corporation, _info} ->
-                WandererApp.Cache.insert_or_update(
-                  "map_#{map_id}:invalidate_character_ids",
-                  [character_id],
-                  fn ids ->
-                    [character_id | ids] |> Enum.uniq()
-                  end
-                )
-
-                :broadcast
-
-              _ ->
-                :skip
-            end
-          end)
-          |> Enum.filter(fn update -> update != :skip end)
-          |> Enum.uniq()
-          |> Enum.each(fn update ->
-            case update do
-              :broadcast ->
-                update_character(map_id, character_id)
-
-              _ ->
-                :ok
-            end
-          end)
-
-          :ok
-        end,
-        timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online() * 4,
-        on_timeout: :kill_task
+      # Emit telemetry for tracking update cycle start
+      :telemetry.execute(
+        [:wanderer_app, :map, :update_characters, :start],
+        %{character_count: character_count, system_time: System.system_time()},
+        %{map_id: map_id}
       )
-      |> Enum.each(fn
-        {:ok, _result} -> :ok
-        {:error, reason} -> Logger.error("Error in update_characters: #{inspect(reason)}")
-      end)
+
+      # Calculate dynamic concurrency based on character count
+      max_concurrency = calculate_max_concurrency(character_count)
+
+      updated_characters =
+        presence_character_ids
+        |> Task.async_stream(
+          fn character_id ->
+            # Use batch cache operations for all character tracking data
+            process_character_updates_batched(map_id, character_id)
+          end,
+          timeout: :timer.seconds(15),
+          max_concurrency: max_concurrency,
+          on_timeout: :kill_task
+        )
+        |> Enum.reduce([], fn
+          {:ok, {:updated, character}}, acc ->
+            [character | acc]
+
+          {:ok, _result}, acc ->
+            acc
+
+          {:error, reason}, acc ->
+            Logger.error("Error in update_characters: #{inspect(reason)}")
+            acc
+        end)
+
+      unless Enum.empty?(updated_characters) do
+        # Broadcast to internal channels
+        Impl.broadcast!(map_id, :characters_updated, %{
+          characters: updated_characters,
+          timestamp: DateTime.utc_now()
+        })
+
+        # Broadcast to external event system (webhooks/WebSocket)
+        WandererApp.ExternalEvents.broadcast(map_id, :characters_updated, %{
+          characters: updated_characters,
+          timestamp: DateTime.utc_now()
+        })
+      end
+
+      # Emit telemetry for successful completion
+      duration = System.monotonic_time(:microsecond) - start_time
+
+      :telemetry.execute(
+        [:wanderer_app, :map, :update_characters, :complete],
+        %{
+          duration: duration,
+          character_count: character_count,
+          updated_count: length(updated_characters),
+          system_time: System.system_time()
+        },
+        %{map_id: map_id}
+      )
+
+      :ok
     rescue
       e ->
+        # Emit telemetry for error case
+        duration = System.monotonic_time(:microsecond) - start_time
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :update_characters, :error],
+          %{
+            duration: duration,
+            system_time: System.system_time()
+          },
+          %{map_id: map_id, error: Exception.message(e)}
+        )
+
         Logger.error("""
         [Map Server] update_characters => exception: #{Exception.message(e)}
         #{Exception.format_stacktrace(__STACKTRACE__)}
@@ -324,8 +305,372 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end
   end
 
-  defp update_character(map_id, character_id) do
-    {:ok, character} = WandererApp.Character.get_map_character(map_id, character_id)
+  defp calculate_character_state_hash(character) do
+    # Hash all trackable fields for quick comparison
+    :erlang.phash2(%{
+      online: character.online,
+      ship: character.ship,
+      ship_name: character.ship_name,
+      ship_item_id: character.ship_item_id,
+      solar_system_id: character.solar_system_id,
+      station_id: character.station_id,
+      structure_id: character.structure_id,
+      alliance_id: character.alliance_id,
+      corporation_id: character.corporation_id
+    })
+  end
+
+  defp process_character_updates_batched(map_id, character_id) do
+    # Step 1: Get current character data for hash comparison
+    case WandererApp.Character.get_character(character_id) do
+      {:ok, character} ->
+        new_hash = calculate_character_state_hash(character)
+        state_hash_key = "map:#{map_id}:character:#{character_id}:state_hash"
+
+        {:ok, old_hash} = WandererApp.Cache.lookup(state_hash_key, nil)
+
+        if new_hash == old_hash do
+          # No changes detected - skip expensive processing (70-90% of cases)
+          :no_change
+        else
+          # Changes detected - proceed with full processing
+          process_character_changes(map_id, character_id, character, state_hash_key, new_hash)
+        end
+
+      {:error, _error} ->
+        :ok
+    end
+  end
+
+  # Process character changes when hash indicates updates
+  defp process_character_changes(map_id, character_id, character, state_hash_key, new_hash) do
+    # Step 1: Batch read all cached values for this character
+    cache_keys = [
+      "map:#{map_id}:character:#{character_id}:online",
+      "map:#{map_id}:character:#{character_id}:ship_type_id",
+      "map:#{map_id}:character:#{character_id}:ship_name",
+      "map:#{map_id}:character:#{character_id}:solar_system_id",
+      "map:#{map_id}:character:#{character_id}:station_id",
+      "map:#{map_id}:character:#{character_id}:structure_id",
+      "map:#{map_id}:character:#{character_id}:location_updated_at",
+      "map:#{map_id}:character:#{character_id}:alliance_id",
+      "map:#{map_id}:character:#{character_id}:corporation_id"
+    ]
+
+    {:ok, cached_values} = WandererApp.Cache.lookup_all(cache_keys)
+
+    # Step 2: Calculate all updates
+    {character_updates, cache_updates} =
+      calculate_character_updates(map_id, character_id, character, cached_values)
+
+    # Step 3: Update the state hash in cache
+    cache_updates = Map.put(cache_updates, state_hash_key, new_hash)
+
+    # Step 4: Batch write all cache updates
+    unless Enum.empty?(cache_updates) do
+      WandererApp.Cache.insert_all(cache_updates)
+    end
+
+    # Step 5: Process update events
+    has_updates =
+      character_updates
+      |> Enum.filter(fn update -> update != :skip end)
+      |> Enum.map(fn update ->
+        case update do
+          {:character_location, location_info, old_location_info} ->
+            start_time = System.monotonic_time(:microsecond)
+
+            :telemetry.execute(
+              [:wanderer_app, :character, :location_update, :start],
+              %{system_time: System.system_time()},
+              %{
+                character_id: character_id,
+                map_id: map_id,
+                from_system: old_location_info.solar_system_id,
+                to_system: location_info.solar_system_id
+              }
+            )
+
+            {:ok, map_state} = WandererApp.Map.get_map_state(map_id)
+
+            update_location(
+              map_state,
+              character_id,
+              location_info,
+              old_location_info
+            )
+
+            duration = System.monotonic_time(:microsecond) - start_time
+
+            :telemetry.execute(
+              [:wanderer_app, :character, :location_update, :complete],
+              %{duration: duration, system_time: System.system_time()},
+              %{
+                character_id: character_id,
+                map_id: map_id,
+                from_system: old_location_info.solar_system_id,
+                to_system: location_info.solar_system_id
+              }
+            )
+
+            :has_update
+
+          {:character_ship, _info} ->
+            :has_update
+
+          {:character_online, _info} ->
+            :has_update
+
+          {:character_tracking, _info} ->
+            :has_update
+
+          {:character_alliance, _info} ->
+            WandererApp.Cache.insert_or_update(
+              "map_#{map_id}:invalidate_character_ids",
+              [character_id],
+              fn ids ->
+                [character_id | ids] |> Enum.uniq()
+              end
+            )
+
+            :has_update
+
+          {:character_corporation, _info} ->
+            WandererApp.Cache.insert_or_update(
+              "map_#{map_id}:invalidate_character_ids",
+              [character_id],
+              fn ids ->
+                [character_id | ids] |> Enum.uniq()
+              end
+            )
+
+            :has_update
+
+          _ ->
+            :skip
+        end
+      end)
+      |> Enum.any?(fn result -> result == :has_update end)
+
+    if has_updates do
+      case WandererApp.Character.get_map_character(map_id, character_id) do
+        {:ok, character} ->
+          {:updated, character}
+
+        {:error, _} ->
+          :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  # Calculate all character updates in a single pass
+  defp calculate_character_updates(map_id, character_id, character, cached_values) do
+    updates = []
+    cache_updates = %{}
+
+    # Check each type of update using specialized functions
+    {updates, cache_updates} =
+      check_online_update(map_id, character_id, character, cached_values, updates, cache_updates)
+
+    {updates, cache_updates} =
+      check_ship_update(map_id, character_id, character, cached_values, updates, cache_updates)
+
+    {updates, cache_updates} =
+      check_location_update(
+        map_id,
+        character_id,
+        character,
+        cached_values,
+        updates,
+        cache_updates
+      )
+
+    {updates, cache_updates} =
+      check_alliance_update(
+        map_id,
+        character_id,
+        character,
+        cached_values,
+        updates,
+        cache_updates
+      )
+
+    {updates, cache_updates} =
+      check_corporation_update(
+        map_id,
+        character_id,
+        character,
+        cached_values,
+        updates,
+        cache_updates
+      )
+
+    {updates, cache_updates}
+  end
+
+  # Check for online status changes
+  defp check_online_update(map_id, character_id, character, cached_values, updates, cache_updates) do
+    online_key = "map:#{map_id}:character:#{character_id}:online"
+    old_online = Map.get(cached_values, online_key)
+
+    if character.online != old_online do
+      {
+        [{:character_online, %{online: character.online}} | updates],
+        Map.put(cache_updates, online_key, character.online)
+      }
+    else
+      {updates, cache_updates}
+    end
+  end
+
+  # Check for ship changes
+  defp check_ship_update(map_id, character_id, character, cached_values, updates, cache_updates) do
+    ship_type_key = "map:#{map_id}:character:#{character_id}:ship_type_id"
+    ship_name_key = "map:#{map_id}:character:#{character_id}:ship_name"
+    old_ship_type_id = Map.get(cached_values, ship_type_key)
+    old_ship_name = Map.get(cached_values, ship_name_key)
+
+    if character.ship != old_ship_type_id or character.ship_name != old_ship_name do
+      {
+        [
+          {:character_ship,
+           %{
+             ship: character.ship,
+             ship_name: character.ship_name,
+             ship_item_id: character.ship_item_id
+           }}
+          | updates
+        ],
+        cache_updates
+        |> Map.put(ship_type_key, character.ship)
+        |> Map.put(ship_name_key, character.ship_name)
+      }
+    else
+      {updates, cache_updates}
+    end
+  end
+
+  # Check for location changes with race condition detection
+  defp check_location_update(
+         map_id,
+         character_id,
+         character,
+         cached_values,
+         updates,
+         cache_updates
+       ) do
+    solar_system_key = "map:#{map_id}:character:#{character_id}:solar_system_id"
+    station_key = "map:#{map_id}:character:#{character_id}:station_id"
+    structure_key = "map:#{map_id}:character:#{character_id}:structure_id"
+    location_timestamp_key = "map:#{map_id}:character:#{character_id}:location_updated_at"
+
+    old_solar_system_id = Map.get(cached_values, solar_system_key)
+    old_station_id = Map.get(cached_values, station_key)
+    old_structure_id = Map.get(cached_values, structure_key)
+    old_timestamp = Map.get(cached_values, location_timestamp_key)
+
+    if character.solar_system_id != old_solar_system_id ||
+         character.structure_id != old_structure_id ||
+         character.station_id != old_station_id do
+      # Race condition detection
+      {:ok, current_cached_timestamp} =
+        WandererApp.Cache.lookup(location_timestamp_key)
+
+      race_detected =
+        !is_nil(old_timestamp) && !is_nil(current_cached_timestamp) &&
+          old_timestamp != current_cached_timestamp
+
+      if race_detected do
+        Logger.warning(
+          "[CharacterTracking] Race condition detected for character #{character_id} on map #{map_id}: " <>
+            "cache was modified between read (#{inspect(old_timestamp)}) and write (#{inspect(current_cached_timestamp)})"
+        )
+
+        :telemetry.execute(
+          [:wanderer_app, :character, :location_update, :race_condition],
+          %{system_time: System.system_time()},
+          %{
+            character_id: character_id,
+            map_id: map_id,
+            old_system: old_solar_system_id,
+            new_system: character.solar_system_id,
+            old_timestamp: old_timestamp,
+            current_timestamp: current_cached_timestamp
+          }
+        )
+      end
+
+      now = DateTime.utc_now()
+
+      {
+        [
+          {:character_location,
+           %{
+             solar_system_id: character.solar_system_id,
+             structure_id: character.structure_id,
+             station_id: character.station_id
+           }, %{solar_system_id: old_solar_system_id}}
+          | updates
+        ],
+        cache_updates
+        |> Map.put(solar_system_key, character.solar_system_id)
+        |> Map.put(station_key, character.station_id)
+        |> Map.put(structure_key, character.structure_id)
+        |> Map.put(location_timestamp_key, now)
+      }
+    else
+      {updates, cache_updates}
+    end
+  end
+
+  # Check for alliance changes
+  defp check_alliance_update(
+         map_id,
+         character_id,
+         character,
+         cached_values,
+         updates,
+         cache_updates
+       ) do
+    alliance_key = "map:#{map_id}:character:#{character_id}:alliance_id"
+    old_alliance_id = Map.get(cached_values, alliance_key)
+
+    if character.alliance_id != old_alliance_id do
+      {
+        [{:character_alliance, %{alliance_id: character.alliance_id}} | updates],
+        Map.put(cache_updates, alliance_key, character.alliance_id)
+      }
+    else
+      {updates, cache_updates}
+    end
+  end
+
+  # Check for corporation changes
+  defp check_corporation_update(
+         map_id,
+         character_id,
+         character,
+         cached_values,
+         updates,
+         cache_updates
+       ) do
+    corporation_key = "map:#{map_id}:character:#{character_id}:corporation_id"
+    old_corporation_id = Map.get(cached_values, corporation_key)
+
+    if character.corporation_id != old_corporation_id do
+      {
+        [{:character_corporation, %{corporation_id: character.corporation_id}} | updates],
+        Map.put(cache_updates, corporation_key, character.corporation_id)
+      }
+    else
+      {updates, cache_updates}
+    end
+  end
+
+  # Updated to accept character struct directly to avoid redundant queries
+  defp update_character(map_id, %{id: _character_id} = character) do
     Impl.broadcast!(map_id, :character_updated, character)
 
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
@@ -471,197 +816,5 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       track_ship: true,
       solar_system_id: solar_system_id
     })
-  end
-
-  defp maybe_update_online(map_id, character_id) do
-    with {:ok, old_online} <-
-           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:online"),
-         {:ok, %{online: online}} <-
-           WandererApp.Character.get_character(character_id) do
-      case old_online != online do
-        true ->
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:online",
-            online
-          )
-
-          [{:character_online, %{online: online}}]
-
-        _ ->
-          [:skip]
-      end
-    else
-      error ->
-        Logger.error("Failed to update online: #{inspect(error, pretty: true)}")
-        [:skip]
-    end
-  end
-
-  defp maybe_update_ship(map_id, character_id) do
-    with {:ok, old_ship_type_id} <-
-           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_type_id"),
-         {:ok, old_ship_name} <-
-           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:ship_name"),
-         {:ok, %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}} <-
-           WandererApp.Character.get_character(character_id) do
-      case old_ship_type_id != ship_type_id or
-             old_ship_name != ship_name do
-        true ->
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:ship_type_id",
-            ship_type_id
-          )
-
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:ship_name",
-            ship_name
-          )
-
-          [
-            {:character_ship,
-             %{ship: ship_type_id, ship_name: ship_name, ship_item_id: ship_item_id}}
-          ]
-
-        _ ->
-          [:skip]
-      end
-    else
-      error ->
-        Logger.error("Failed to update ship: #{inspect(error, pretty: true)}")
-        [:skip]
-    end
-  end
-
-  defp maybe_update_location(map_id, character_id) do
-    # Read old cached values with timestamp for race detection
-    {:ok, old_solar_system_id} =
-      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
-
-    {:ok, old_station_id} =
-      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:station_id")
-
-    {:ok, old_structure_id} =
-      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:structure_id")
-
-    {:ok, old_timestamp} =
-      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:location_updated_at")
-
-    # Get current character data
-    {:ok, %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
-      WandererApp.Character.get_character(character_id)
-
-    # Before updating, check if cache was modified concurrently (race condition detection)
-    {:ok, current_cached_timestamp} =
-      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:location_updated_at")
-
-    race_detected =
-      !is_nil(old_timestamp) && !is_nil(current_cached_timestamp) &&
-        old_timestamp != current_cached_timestamp
-
-    if race_detected do
-      # Concurrent modification detected - log for observability
-      Logger.warning(
-        "[CharacterTracking] Race condition detected for character #{character_id} on map #{map_id}: " <>
-          "cache was modified between read (#{inspect(old_timestamp)}) and write (#{inspect(current_cached_timestamp)})"
-      )
-
-      :telemetry.execute(
-        [:wanderer_app, :character, :location_update, :race_condition],
-        %{system_time: System.system_time()},
-        %{
-          character_id: character_id,
-          map_id: map_id,
-          old_system: old_solar_system_id,
-          new_system: solar_system_id,
-          old_timestamp: old_timestamp,
-          current_timestamp: current_cached_timestamp
-        }
-      )
-    end
-
-    # Update cache with new values and current timestamp
-    now = DateTime.utc_now()
-
-    WandererApp.Cache.insert(
-      "map:#{map_id}:character:#{character_id}:solar_system_id",
-      solar_system_id
-    )
-
-    WandererApp.Cache.insert(
-      "map:#{map_id}:character:#{character_id}:station_id",
-      station_id
-    )
-
-    WandererApp.Cache.insert(
-      "map:#{map_id}:character:#{character_id}:structure_id",
-      structure_id
-    )
-
-    WandererApp.Cache.insert(
-      "map:#{map_id}:character:#{character_id}:location_updated_at",
-      now
-    )
-
-    if solar_system_id != old_solar_system_id || structure_id != old_structure_id ||
-         station_id != old_station_id do
-      [
-        {:character_location,
-         %{
-           solar_system_id: solar_system_id,
-           structure_id: structure_id,
-           station_id: station_id
-         }, %{solar_system_id: old_solar_system_id}}
-      ]
-    else
-      [:skip]
-    end
-  end
-
-  defp maybe_update_alliance(map_id, character_id) do
-    with {:ok, old_alliance_id} <-
-           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:alliance_id"),
-         {:ok, %{alliance_id: alliance_id}} <-
-           WandererApp.Character.get_character(character_id) do
-      case old_alliance_id != alliance_id do
-        true ->
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:alliance_id",
-            alliance_id
-          )
-
-          [{:character_alliance, %{alliance_id: alliance_id}}]
-
-        _ ->
-          [:skip]
-      end
-    else
-      error ->
-        Logger.error("Failed to update alliance: #{inspect(error, pretty: true)}")
-        [:skip]
-    end
-  end
-
-  defp maybe_update_corporation(map_id, character_id) do
-    with {:ok, old_corporation_id} <-
-           WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:corporation_id"),
-         {:ok, %{corporation_id: corporation_id}} <-
-           WandererApp.Character.get_character(character_id) do
-      case old_corporation_id != corporation_id do
-        true ->
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:corporation_id",
-            corporation_id
-          )
-
-          [{:character_corporation, %{corporation_id: corporation_id}}]
-
-        _ ->
-          [:skip]
-      end
-    else
-      error ->
-        Logger.error("Failed to update corporation: #{inspect(error, pretty: true)}")
-        [:skip]
-    end
   end
 end

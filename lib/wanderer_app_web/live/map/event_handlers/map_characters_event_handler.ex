@@ -44,6 +44,20 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     socket
   end
 
+  # Uses the characters from the payload instead of fetching all from database
+  def handle_server_event(
+        %{event: :characters_updated, payload: %{characters: characters}},
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event(
+          "characters_updated",
+          characters |> Enum.map(&map_ui_character/1)
+        )
+
+  # Legacy handler for :characters_updated without payload (backwards compatibility)
+  # This can be removed once all callers use the new batch format
   def handle_server_event(
         %{event: :characters_updated},
         %{

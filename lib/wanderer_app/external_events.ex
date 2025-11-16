@@ -72,20 +72,12 @@ defmodule WandererApp.ExternalEvents do
 
       # Check if MapEventRelay is alive before sending
       if Process.whereis(MapEventRelay) do
-        try do
-          # Use call with timeout instead of cast for better error handling
-          GenServer.call(MapEventRelay, {:deliver_event, event}, 5000)
-          :ok
-        catch
-          :exit, {:timeout, _} ->
-            Logger.error("Timeout delivering event to MapEventRelay for map #{map_id}")
-            {:error, :timeout}
-
-          :exit, reason ->
-            Logger.error("Failed to deliver event to MapEventRelay: #{inspect(reason)}")
-            {:error, reason}
-        end
+        # Use cast for async delivery to avoid blocking the caller
+        # This is critical for performance in hot paths (character updates)
+        GenServer.cast(MapEventRelay, {:deliver_event, event})
+        :ok
       else
+        Logger.warning("MapEventRelay not available for event delivery (map: #{map_id})")
         {:error, :relay_not_available}
       end
     else

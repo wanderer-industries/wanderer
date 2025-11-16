@@ -14,8 +14,27 @@ export const useCommandsCharacters = () => {
   const ref = useRef({ update });
   ref.current = { update };
 
-  const charactersUpdated = useCallback((characters: CommandCharactersUpdated) => {
-    ref.current.update(() => ({ characters: characters.slice() }));
+  const charactersUpdated = useCallback((updatedCharacters: CommandCharactersUpdated) => {
+    ref.current.update(state => {
+      const existing = state.characters ?? [];
+      // Put updatedCharacters into a map keyed by ID
+      const updatedMap = new Map(updatedCharacters.map(c => [c.eve_id, c]));
+
+      // 1. Update existing characters when possible
+      const merged = existing.map(character => {
+        const updated = updatedMap.get(character.eve_id);
+        if (updated) {
+          updatedMap.delete(character.eve_id); // Mark as processed
+          return { ...character, ...updated };
+        }
+        return character;
+      });
+
+      // 2. Any remaining items in updatedMap are NEW characters → add them
+      const newCharacters = Array.from(updatedMap.values());
+
+      return { characters: [...merged, ...newCharacters] };
+    });
   }, []);
 
   const characterAdded = useCallback((value: CommandCharacterAdded) => {
