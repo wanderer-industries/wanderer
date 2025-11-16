@@ -155,6 +155,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     Task.start_link(fn ->
       with :ok <- WandererApp.Map.remove_character(map_id, character_id),
            {:ok, character} <- WandererApp.Character.get_map_character(map_id, character_id) do
+        # Clean up character-specific cache entries
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:start_solar_system_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+        WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:location_updated_at")
+
         Impl.broadcast!(map_id, :character_removed, character)
 
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
@@ -215,6 +222,19 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             update
             |> case do
               {:character_location, location_info, old_location_info} ->
+                start_time = System.monotonic_time(:microsecond)
+
+                :telemetry.execute(
+                  [:wanderer_app, :character, :location_update, :start],
+                  %{system_time: System.system_time()},
+                  %{
+                    character_id: character_id,
+                    map_id: map_id,
+                    from_system: old_location_info.solar_system_id,
+                    to_system: location_info.solar_system_id
+                  }
+                )
+
                 {:ok, map_state} = WandererApp.Map.get_map_state(map_id)
 
                 update_location(
@@ -222,6 +242,19 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                   character_id,
                   location_info,
                   old_location_info
+                )
+
+                duration = System.monotonic_time(:microsecond) - start_time
+
+                :telemetry.execute(
+                  [:wanderer_app, :character, :location_update, :complete],
+                  %{duration: duration, system_time: System.system_time()},
+                  %{
+                    character_id: character_id,
+                    map_id: map_id,
+                    from_system: old_location_info.solar_system_id,
+                    to_system: location_info.solar_system_id
+                  }
                 )
 
                 :broadcast
@@ -314,7 +347,17 @@ defmodule WandererApp.Map.Server.CharactersImpl do
            is_nil(start_solar_system_id) &&
            ConnectionsImpl.can_add_location(scope, location.solar_system_id) do
       true ->
-        :ok = SystemsImpl.maybe_add_system(map_id, location, nil, map_opts)
+        case SystemsImpl.maybe_add_system(map_id, location, nil, map_opts) do
+          :ok ->
+            :ok
+
+          {:error, error} ->
+            Logger.error(
+              "[CharacterTracking] Failed to add initial system #{location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
+            )
+
+            :ok
+        end
 
       _ ->
         if is_nil(start_solar_system_id) || start_solar_system_id == old_location.solar_system_id do
@@ -325,22 +368,48 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           )
           |> case do
             true ->
-              :ok =
-                SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts)
+              # Add new location system
+              case SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts) do
+                :ok ->
+                  :ok
 
-              :ok =
-                SystemsImpl.maybe_add_system(map_id, old_location, location, map_opts)
-
-              if is_character_in_space?(location) do
-                :ok =
-                  ConnectionsImpl.maybe_add_connection(
-                    map_id,
-                    location,
-                    old_location,
-                    character_id,
-                    false,
-                    nil
+                {:error, error} ->
+                  Logger.error(
+                    "[CharacterTracking] Failed to add new location system #{location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
                   )
+              end
+
+              # Add old location system (in case it wasn't on map)
+              case SystemsImpl.maybe_add_system(map_id, old_location, location, map_opts) do
+                :ok ->
+                  :ok
+
+                {:error, error} ->
+                  Logger.error(
+                    "[CharacterTracking] Failed to add old location system #{old_location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
+                  )
+              end
+
+              # Add connection if character is in space
+              if is_character_in_space?(location) do
+                case ConnectionsImpl.maybe_add_connection(
+                       map_id,
+                       location,
+                       old_location,
+                       character_id,
+                       false,
+                       nil
+                     ) do
+                  :ok ->
+                    :ok
+
+                  {:error, error} ->
+                    Logger.error(
+                      "[CharacterTracking] Failed to add connection for character #{character_id} on map #{map_id}: #{inspect(error)}"
+                    )
+
+                    :ok
+                end
               end
 
             _ ->
@@ -494,6 +563,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp maybe_update_location(map_id, character_id) do
+    # Read old cached values with timestamp for race detection
     {:ok, old_solar_system_id} =
       WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:solar_system_id")
 
@@ -503,8 +573,44 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     {:ok, old_structure_id} =
       WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:structure_id")
 
+    {:ok, old_timestamp} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:location_updated_at")
+
+    # Get current character data
     {:ok, %{solar_system_id: solar_system_id, structure_id: structure_id, station_id: station_id}} =
       WandererApp.Character.get_character(character_id)
+
+    # Before updating, check if cache was modified concurrently (race condition detection)
+    {:ok, current_cached_timestamp} =
+      WandererApp.Cache.lookup("map:#{map_id}:character:#{character_id}:location_updated_at")
+
+    race_detected =
+      !is_nil(old_timestamp) && !is_nil(current_cached_timestamp) &&
+        old_timestamp != current_cached_timestamp
+
+    if race_detected do
+      # Concurrent modification detected - log for observability
+      Logger.warning(
+        "[CharacterTracking] Race condition detected for character #{character_id} on map #{map_id}: " <>
+          "cache was modified between read (#{inspect(old_timestamp)}) and write (#{inspect(current_cached_timestamp)})"
+      )
+
+      :telemetry.execute(
+        [:wanderer_app, :character, :location_update, :race_condition],
+        %{system_time: System.system_time()},
+        %{
+          character_id: character_id,
+          map_id: map_id,
+          old_system: old_solar_system_id,
+          new_system: solar_system_id,
+          old_timestamp: old_timestamp,
+          current_timestamp: current_cached_timestamp
+        }
+      )
+    end
+
+    # Update cache with new values and current timestamp
+    now = DateTime.utc_now()
 
     WandererApp.Cache.insert(
       "map:#{map_id}:character:#{character_id}:solar_system_id",
@@ -519,6 +625,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     WandererApp.Cache.insert(
       "map:#{map_id}:character:#{character_id}:structure_id",
       structure_id
+    )
+
+    WandererApp.Cache.insert(
+      "map:#{map_id}:character:#{character_id}:location_updated_at",
+      now
     )
 
     if solar_system_id != old_solar_system_id || structure_id != old_structure_id ||

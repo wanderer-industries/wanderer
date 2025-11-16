@@ -67,6 +67,7 @@ defmodule WandererApp.Api.MapSystem do
 
   code_interface do
     define(:create, action: :create)
+    define(:upsert, action: :upsert)
     define(:destroy, action: :destroy)
 
     define(:by_id,
@@ -128,6 +129,31 @@ defmodule WandererApp.Api.MapSystem do
     ]
 
     defaults [:create, :update, :destroy]
+
+    create :upsert do
+      primary? false
+      upsert? true
+      upsert_identity :map_solar_system_id
+
+      # Update these fields on conflict
+      upsert_fields [
+        :position_x,
+        :position_y,
+        :visible,
+        :name
+      ]
+
+      accept [
+        :map_id,
+        :solar_system_id,
+        :name,
+        :position_x,
+        :position_y,
+        :visible,
+        :locked,
+        :status
+      ]
+    end
 
     read :read do
       primary?(true)

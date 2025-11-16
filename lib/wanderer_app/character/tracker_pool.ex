@@ -317,7 +317,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
       |> Enum.each(fn
         {:ok, _result} -> :ok
-        error -> @logger.error("Error in check_ship_errors: #{inspect(error)}")
+        error -> Logger.error("Error in check_ship_errors: #{inspect(error)}")
       end)
     rescue
       e ->

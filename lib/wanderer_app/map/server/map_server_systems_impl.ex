@@ -431,6 +431,16 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   def maybe_add_system(map_id, location, old_location, map_opts)
       when not is_nil(location) do
+    :telemetry.execute(
+      [:wanderer_app, :map, :system_addition, :start],
+      %{system_time: System.system_time()},
+      %{
+        map_id: map_id,
+        solar_system_id: location.solar_system_id,
+        from_system: old_location && old_location.solar_system_id
+      }
+    )
+
     case WandererApp.Map.check_location(map_id, location) do
       {:ok, location} ->
         rtree_name = "rtree_#{map_id}"
@@ -481,13 +491,27 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               position_y: updated_system.position_y
             })
 
+            :telemetry.execute(
+              [:wanderer_app, :map, :system_addition, :complete],
+              %{system_time: System.system_time()},
+              %{
+                map_id: map_id,
+                solar_system_id: updated_system.solar_system_id,
+                system_id: updated_system.id,
+                operation: :update_existing
+              }
+            )
+
             :ok
 
           _ ->
+            IO.inspect("upsert")
+
             {:ok, solar_system_info} =
               WandererApp.CachedInfo.get_system_static_info(location.solar_system_id)
 
-            WandererApp.MapSystemRepo.create(%{
+            # Use upsert instead of create - handles race conditions gracefully
+            WandererApp.MapSystemRepo.upsert(%{
               map_id: map_id,
               solar_system_id: location.solar_system_id,
               name: solar_system_info.solar_system_name,
@@ -495,39 +519,79 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               position_y: position.y
             })
             |> case do
-              {:ok, new_system} ->
+              {:ok, system} ->
+                # System was either created or updated - both cases are success
                 @ddrt.insert(
-                  {new_system.solar_system_id,
-                   WandererApp.Map.PositionCalculator.get_system_bounding_rect(new_system)},
+                  {system.solar_system_id,
+                   WandererApp.Map.PositionCalculator.get_system_bounding_rect(system)},
                   rtree_name
                 )
 
                 WandererApp.Cache.put(
-                  "map_#{map_id}:system_#{new_system.id}:last_activity",
+                  "map_#{map_id}:system_#{system.id}:last_activity",
                   DateTime.utc_now(),
                   ttl: @system_inactive_timeout
                 )
 
-                WandererApp.Map.add_system(map_id, new_system)
-                Impl.broadcast!(map_id, :add_system, new_system)
+                WandererApp.Map.add_system(map_id, system)
+                Impl.broadcast!(map_id, :add_system, system)
 
                 # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
                 WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-                  solar_system_id: new_system.solar_system_id,
-                  name: new_system.name,
-                  position_x: new_system.position_x,
-                  position_y: new_system.position_y
+                  solar_system_id: system.solar_system_id,
+                  name: system.name,
+                  position_x: system.position_x,
+                  position_y: system.position_y
                 })
 
+                :telemetry.execute(
+                  [:wanderer_app, :map, :system_addition, :complete],
+                  %{system_time: System.system_time()},
+                  %{
+                    map_id: map_id,
+                    solar_system_id: system.solar_system_id,
+                    system_id: system.id,
+                    operation: :upsert
+                  }
+                )
+
                 :ok
 
-              {:error, error} ->
-                Logger.warning("Failed to create system: #{inspect(error, pretty: true)}")
-                :ok
+              {:error, error} = result ->
+                Logger.warning(
+                  "[CharacterTracking] Failed to upsert system #{location.solar_system_id} on map #{map_id}: #{inspect(error, pretty: true)}"
+                )
+
+                :telemetry.execute(
+                  [:wanderer_app, :map, :system_addition, :error],
+                  %{system_time: System.system_time()},
+                  %{
+                    map_id: map_id,
+                    solar_system_id: location.solar_system_id,
+                    error: error,
+                    reason: :db_upsert_failed
+                  }
+                )
+
+                result
 
               error ->
-                Logger.warning("Failed to create system: #{inspect(error, pretty: true)}")
-                :ok
+                Logger.warning(
+                  "[CharacterTracking] Failed to upsert system #{location.solar_system_id} on map #{map_id}: #{inspect(error, pretty: true)}"
+                )
+
+                :telemetry.execute(
+                  [:wanderer_app, :map, :system_addition, :error],
+                  %{system_time: System.system_time()},
+                  %{
+                    map_id: map_id,
+                    solar_system_id: location.solar_system_id,
+                    error: error,
+                    reason: :db_upsert_failed_unexpected
+                  }
+                )
+
+                {:error, error}
             end
         end
 

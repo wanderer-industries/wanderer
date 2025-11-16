@@ -41,6 +41,7 @@ defmodule WandererApp.Test.Mocks do
 
     # Set up default stubs for DDRT mock
     Test.DDRTMock
+    |> Mox.stub(:init_tree, fn _tree_name, _opts -> :ok end)
     |> Mox.stub(:insert, fn _data, _tree_name -> :ok end)
     |> Mox.stub(:update, fn _id, _data, _tree_name -> :ok end)
     |> Mox.stub(:delete, fn _ids, _tree_name -> :ok end)
@@ -71,16 +72,62 @@ defmodule WandererApp.Test.Mocks do
            sun_type_id: 45041
          }}
 
-      30_000_144 ->
+      30_002_187 ->
         {:ok,
          %{
-           solar_system_id: 30_000_144,
+           solar_system_id: 30_002_187,
            region_id: 10_000_043,
            constellation_id: 20_000_304,
            solar_system_name: "Amarr",
            solar_system_name_lc: "amarr",
            constellation_name: "Throne Worlds",
            region_name: "Domain",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      30_002_659 ->
+        {:ok,
+         %{
+           solar_system_id: 30_002_659,
+           region_id: 10_000_032,
+           constellation_id: 20_000_456,
+           solar_system_name: "Dodixie",
+           solar_system_name_lc: "dodixie",
+           constellation_name: "Sinq Laison",
+           region_name: "Sinq Laison",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      30_002_510 ->
+        {:ok,
+         %{
+           solar_system_id: 30_002_510,
+           region_id: 10_000_030,
+           constellation_id: 20_000_387,
+           solar_system_name: "Rens",
+           solar_system_name_lc: "rens",
+           constellation_name: "Frarn",
+           region_name: "Heimatar",
            system_class: 0,
            security: "0.9",
            type_description: "High Security",
