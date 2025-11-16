@@ -73,6 +73,54 @@ defmodule WandererApp.Cache do
 
   def filter_by_attr_in(type, attr, includes), do: type |> get() |> filter_in(attr, includes)
 
+  @doc """
+  Batch lookup multiple keys from cache.
+  Returns a map of key => value pairs, with `default` used for missing keys.
+  """
+  def lookup_all(keys, default \\ nil) when is_list(keys) do
+    # Get all values from cache
+    values = get_all(keys)
+
+    # Build result map with defaults for missing keys
+    result =
+      keys
+      |> Enum.map(fn key ->
+        value = Map.get(values, key, default)
+        {key, value}
+      end)
+      |> Map.new()
+
+    {:ok, result}
+  end
+
+  @doc """
+  Batch insert multiple key-value pairs into cache.
+  Accepts a map of key => value pairs or a list of {key, value} tuples.
+  Skips nil values (deletes the key instead).
+  """
+  def insert_all(entries, opts \\ [])
+
+  def insert_all(entries, opts) when is_map(entries) do
+    # Filter out nil values and delete those keys
+    {to_delete, to_insert} =
+      entries
+      |> Enum.split_with(fn {_key, value} -> is_nil(value) end)
+
+    # Delete keys with nil values
+    Enum.each(to_delete, fn {key, _} -> delete(key) end)
+
+    # Insert non-nil values
+    unless Enum.empty?(to_insert) do
+      put_all(to_insert, opts)
+    end
+
+    :ok
+  end
+
+  def insert_all(entries, opts) when is_list(entries) do
+    insert_all(Map.new(entries), opts)
+  end
+
   defp find(list, %{} = attrs, match: match) do
     list
     |> Enum.find(fn item ->

@@ -25,6 +25,7 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+  @ddrt Application.compile_env(:wanderer_app, :ddrt)
 
   @connections_cleanup_timeout :timer.minutes(1)
 
@@ -45,19 +46,77 @@ defmodule WandererApp.Map.Server.Impl do
       }
       |> new()
 
-    with {:ok, map} <-
-           WandererApp.MapRepo.get(map_id, [
-             :owner,
-             :characters,
-             acls: [
-               :owner_id,
-               members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
-             ]
-           ]),
-         {:ok, systems} <- WandererApp.MapSystemRepo.get_visible_by_map(map_id),
-         {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id),
-         {:ok, subscription_settings} <-
-           WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id) do
+    # Parallelize database queries for faster initialization
+    start_time = System.monotonic_time(:millisecond)
+
+    tasks = [
+      Task.async(fn ->
+        {:map,
+         WandererApp.MapRepo.get(map_id, [
+           :owner,
+           :characters,
+           acls: [
+             :owner_id,
+             members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+           ]
+         ])}
+      end),
+      Task.async(fn ->
+        {:systems, WandererApp.MapSystemRepo.get_visible_by_map(map_id)}
+      end),
+      Task.async(fn ->
+        {:connections, WandererApp.MapConnectionRepo.get_by_map(map_id)}
+      end),
+      Task.async(fn ->
+        {:subscription, WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id)}
+      end)
+    ]
+
+    results = Task.await_many(tasks, :timer.seconds(15))
+
+    duration = System.monotonic_time(:millisecond) - start_time
+
+    # Emit telemetry for slow initializations
+    if duration > 5_000 do
+      Logger.warning("[Map Server] Slow map state initialization: #{map_id} took #{duration}ms")
+
+      :telemetry.execute(
+        [:wanderer_app, :map, :slow_init],
+        %{duration_ms: duration},
+        %{map_id: map_id}
+      )
+    end
+
+    # Extract results
+    map_result =
+      Enum.find_value(results, fn
+        {:map, result} -> result
+        _ -> nil
+      end)
+
+    systems_result =
+      Enum.find_value(results, fn
+        {:systems, result} -> result
+        _ -> nil
+      end)
+
+    connections_result =
+      Enum.find_value(results, fn
+        {:connections, result} -> result
+        _ -> nil
+      end)
+
+    subscription_result =
+      Enum.find_value(results, fn
+        {:subscription, result} -> result
+        _ -> nil
+      end)
+
+    # Process results
+    with {:ok, map} <- map_result,
+         {:ok, systems} <- systems_result,
+         {:ok, connections} <- connections_result,
+         {:ok, subscription_settings} <- subscription_result do
       initial_state
       |> init_map(
         map,
@@ -88,7 +147,6 @@ defmodule WandererApp.Map.Server.Impl do
             "maps:#{map_id}"
           )
 
-          WandererApp.Map.CacheRTree.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
           Process.send_after(self(), {:update_characters, map_id}, @update_characters_timeout)
 
           Process.send_after(
@@ -358,6 +416,13 @@ defmodule WandererApp.Map.Server.Impl do
     update_options(map_id, options)
   end
 
+  def handle_event(:map_deleted) do
+    # Map has been deleted - this event is handled by MapPool to stop the server
+    # and by MapLive to redirect users. Nothing to do here.
+    Logger.debug("Map deletion event received, will be handled by MapPool")
+    :ok
+  end
+
   def handle_event({ref, _result}) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
   end
@@ -451,6 +516,8 @@ defmodule WandererApp.Map.Server.Impl do
          connections
        ) do
     {:ok, options} = WandererApp.MapRepo.options_to_form_data(initial_map)
+
+    @ddrt.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
 
     map =
       initial_map

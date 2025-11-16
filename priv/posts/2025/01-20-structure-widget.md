@@ -1,5 +1,5 @@
 %{
-title: "Managing Upwell Structures & Timers with the Structures Widget",
+title: "User Guide: Managing Upwell Structures & Timers with the Structures Widget",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/01-20-structure-widget/cover.png",
 tags: ~w(interface guide map structures),

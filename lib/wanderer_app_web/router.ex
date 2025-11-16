@@ -40,6 +40,7 @@ defmodule WandererAppWeb.Router do
     "https://images.evetech.net",
     "https://web.ccpgamescdn.com",
     "https://images.ctfassets.net",
+    "https://wanderer-industries.github.io",
     "https://w.appzi.io"
   ]
 

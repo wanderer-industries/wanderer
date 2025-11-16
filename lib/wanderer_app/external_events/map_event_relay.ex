@@ -82,16 +82,9 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
 
   @impl true
   def handle_call({:deliver_event, %Event{} = event}, _from, state) do
-    # Log ACL events at info level for debugging
-    if event.type in [:acl_member_added, :acl_member_removed, :acl_member_updated] do
-      Logger.debug(fn ->
-        "MapEventRelay received :deliver_event (call) for map #{event.map_id}, type: #{event.type}"
-      end)
-    else
-      Logger.debug(fn ->
-        "MapEventRelay received :deliver_event (call) for map #{event.map_id}, type: #{event.type}"
-      end)
-    end
+    Logger.debug(fn ->
+      "MapEventRelay received :deliver_event (call) for map #{event.map_id}, type: #{event.type}"
+    end)
 
     new_state = deliver_single_event(event, state)
     {:reply, :ok, new_state}

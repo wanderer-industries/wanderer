@@ -51,20 +51,8 @@ export const Characters = ({ data }: CharactersProps) => {
             ['border-lime-600/70']: character.online,
           },
         )}
-        title={character.tracking_paused ? `${character.name} - Tracking Paused (click to resume)` : character.name}
+        title={character.name}
       >
-        {character.tracking_paused && (
-          <>
-            <span
-              className={clsx(
-                'absolute flex flex-col  p-[2px]  top-[0px] left-[0px] w-[35px] h-[35px]',
-                'text-yellow-500 text-[9px] z-10 bg-gray-800/40',
-                'pi',
-                PrimeIcons.PAUSE,
-              )}
-            />
-          </>
-        )}
         {mainCharacterEveId === character.eve_id && (
           <span
             className={clsx(

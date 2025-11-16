@@ -12,11 +12,11 @@ const animateBg = function (bgCanvas) {
    */
   const randomInRange = (max, min) => Math.floor(Math.random() * (max - min + 1)) + min;
   const BASE_SIZE = 1;
-  const VELOCITY_INC = 1.01;
+  const VELOCITY_INC = 1.002;
   const VELOCITY_INIT_INC = 0.525;
   const JUMP_VELOCITY_INC = 0.55;
   const JUMP_SIZE_INC = 1.15;
-  const SIZE_INC = 1.01;
+  const SIZE_INC = 1.002;
   const RAD = Math.PI / 180;
   const WARP_COLORS = [
     [197, 239, 247],

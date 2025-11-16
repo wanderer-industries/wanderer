@@ -53,8 +53,8 @@ defmodule WandererApp.Map do
       {:ok, map} ->
         map
 
-      _ ->
-        Logger.error(fn -> "Failed to get map #{map_id}" end)
+      error ->
+        Logger.error("Failed to get map #{map_id}: #{inspect(error)}")
         %{}
     end
   end
@@ -183,9 +183,31 @@ defmodule WandererApp.Map do
 
   def add_characters!(map, []), do: map
 
-  def add_characters!(%{map_id: map_id} = map, [character | rest]) do
-    add_character(map_id, character)
-    add_characters!(map, rest)
+  def add_characters!(%{map_id: map_id} = map, characters) when is_list(characters) do
+    # Get current characters list once
+    current_characters = Map.get(map, :characters, [])
+
+    characters_ids =
+      characters
+      |> Enum.map(fn %{id: char_id} -> char_id end)
+
+    # Filter out characters that already exist
+    new_character_ids =
+      characters_ids
+      |> Enum.reject(fn char_id -> char_id in current_characters end)
+
+    # If all characters already exist, return early
+    if new_character_ids == [] do
+      map
+    else
+      case update_map(map_id, %{characters: new_character_ids ++ current_characters}) do
+        {:commit, map} ->
+          map
+
+        _ ->
+          map
+      end
+    end
   end
 
   def add_character(
@@ -198,61 +220,10 @@ defmodule WandererApp.Map do
 
     case not (characters |> Enum.member?(character_id)) do
       true ->
-        WandererApp.Character.get_map_character(map_id, character_id)
-        |> case do
-          {:ok,
-           %{
-             alliance_id: alliance_id,
-             corporation_id: corporation_id,
-             solar_system_id: solar_system_id,
-             structure_id: structure_id,
-             station_id: station_id,
-             ship: ship_type_id,
-             ship_name: ship_name
-           }} ->
-            map_id
-            |> update_map(%{characters: [character_id | characters]})
+        map_id
+        |> update_map(%{characters: [character_id | characters]})
 
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:alliance_id",
-            #   alliance_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:corporation_id",
-            #   corporation_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:solar_system_id",
-            #   solar_system_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:structure_id",
-            #   structure_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:station_id",
-            #   station_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:ship_type_id",
-            #   ship_type_id
-            # )
-
-            # WandererApp.Cache.insert(
-            #   "map:#{map_id}:character:#{character_id}:ship_name",
-            #   ship_name
-            # )
-
-            :ok
-
-          error ->
-            error
-        end
+        :ok
 
       _ ->
         {:error, :already_exists}

@@ -7,7 +7,8 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   @cache :map_pool_cache
   @registry :map_pool_registry
   @unique_registry :unique_map_pool_registry
-  @map_pool_limit 20
+  @map_pool_limit 10
+  @genserver_call_timeout :timer.minutes(2)
 
   @name __MODULE__
 
@@ -30,7 +31,32 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             start_child([map_id], pools |> Enum.count())
 
           pid ->
-            GenServer.call(pid, {:start_map, map_id})
+            result = GenServer.call(pid, {:start_map, map_id}, @genserver_call_timeout)
+
+            case result do
+              {:ok, :initializing} ->
+                Logger.debug(
+                  "[Map Pool Supervisor] Map #{map_id} queued for async initialization"
+                )
+
+                result
+
+              {:ok, :already_started} ->
+                Logger.debug("[Map Pool Supervisor] Map #{map_id} already started")
+                result
+
+              :ok ->
+                # Legacy synchronous response (from crash recovery path)
+                Logger.debug("[Map Pool Supervisor] Map #{map_id} started synchronously")
+                result
+
+              other ->
+                Logger.warning(
+                  "[Map Pool Supervisor] Unexpected response for map #{map_id}: #{inspect(other)}"
+                )
+
+                other
+            end
         end
     end
   end
@@ -59,7 +85,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
             find_pool_by_scanning_registry(map_id)
 
           [{pool_pid, _}] ->
-            GenServer.call(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id}, @genserver_call_timeout)
         end
 
       {:error, reason} ->
@@ -102,7 +128,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
 
             # Update the cache to fix the inconsistency
             Cachex.put(@cache, map_id, pool_uuid)
-            GenServer.call(pool_pid, {:stop_map, map_id})
+            GenServer.call(pool_pid, {:stop_map, map_id}, @genserver_call_timeout)
 
           nil ->
             Logger.debug("Map #{map_id} not found in any pool registry")
@@ -140,9 +166,13 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
   end
 
   defp start_child(map_ids, pools_count) do
-    case DynamicSupervisor.start_child(@name, {WandererApp.Map.MapPool, map_ids}) do
+    # Generate UUID for the new pool - this will be used for crash recovery
+    uuid = UUID.uuid1()
+
+    # Pass both UUID and map_ids to the pool for crash recovery support
+    case DynamicSupervisor.start_child(@name, {WandererApp.Map.MapPool, {uuid, map_ids}}) do
       {:ok, pid} ->
-        Logger.info("Starting map pool, total map_pools: #{pools_count + 1}")
+        Logger.info("Starting map pool #{uuid}, total map_pools: #{pools_count + 1}")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->

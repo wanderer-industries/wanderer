@@ -1,5 +1,5 @@
 %{
-  title: "New Feature: Map Default Settings",
+  title: "User Guide: Map Default Settings",
   author: "Wanderer Team",
   cover_image_uri: "/images/news/2025/07-27-settings/common_settings.png",
   tags: ~w(feature settings maps customization admin),

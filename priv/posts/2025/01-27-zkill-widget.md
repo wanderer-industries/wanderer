@@ -1,5 +1,5 @@
 %{
-title: "Tracking Kills with the New zKill Widget",
+title: "User Guide: Tracking Kills with the New zKill Widget",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/01-27-zkill-widget/cover.png",
 tags: ~w(kills zkill interface guide map),

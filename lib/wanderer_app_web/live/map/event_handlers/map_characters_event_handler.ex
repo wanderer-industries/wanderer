@@ -44,6 +44,20 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     socket
   end
 
+  # Uses the characters from the payload instead of fetching all from database
+  def handle_server_event(
+        %{event: :characters_updated, payload: %{characters: characters}},
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event(
+          "characters_updated",
+          characters |> Enum.map(&map_ui_character/1)
+        )
+
+  # Legacy handler for :characters_updated without payload (backwards compatibility)
+  # This can be removed once all callers use the new batch format
   def handle_server_event(
         %{event: :characters_updated},
         %{
@@ -294,8 +308,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       when not is_nil(character_eve_id) do
     {:ok, character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
 
-    WandererApp.Cache.delete("character:#{character.id}:tracking_paused")
-
     {:noreply, socket}
   end
 
@@ -318,7 +330,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put(:alliance_ticker, Map.get(character, :alliance_ticker, ""))
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
-      |> Map.put_new(:tracking_paused, character |> Map.get(:tracking_paused, false))
 
   defp get_location(character),
     do: %{

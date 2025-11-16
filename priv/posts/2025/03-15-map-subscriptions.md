@@ -1,5 +1,5 @@
 %{
-  title: "Comprehensive Guide: Map Subscriptions",
+  title: "User Guide: Map Subscriptions",
   author: "Wanderer Team",
   cover_image_uri: "/images/news/03-15-map-subscriptions/map-subs-cover.png",
   tags: ~w(api map subscriptions documentation),

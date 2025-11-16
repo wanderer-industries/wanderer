@@ -20,6 +20,7 @@ defmodule WandererApp.ExternalEvents.Event do
           | :character_added
           | :character_removed
           | :character_updated
+          | :characters_updated
           | :map_kill
           | :acl_member_added
           | :acl_member_removed
@@ -41,50 +42,6 @@ defmodule WandererApp.ExternalEvents.Event do
         }
 
   defstruct [:id, :map_id, :type, :payload, :timestamp]
-
-  @doc """
-  Creates a new external event with ULID for ordering.
-
-  Validates that the event_type is supported before creating the event.
-  """
-  @spec new(String.t(), event_type(), map()) :: t() | {:error, :invalid_event_type}
-  def new(map_id, event_type, payload) when is_binary(map_id) and is_map(payload) do
-    if valid_event_type?(event_type) do
-      %__MODULE__{
-        id: Ecto.ULID.generate(System.system_time(:millisecond)),
-        map_id: map_id,
-        type: event_type,
-        payload: payload,
-        timestamp: DateTime.utc_now()
-      }
-    else
-      raise ArgumentError,
-            "Invalid event type: #{inspect(event_type)}. Must be one of: #{supported_event_types() |> Enum.map(&to_string/1) |> Enum.join(", ")}"
-    end
-  end
-
-  @doc """
-  Converts an event to JSON format for delivery.
-  """
-  @spec to_json(t()) :: map()
-  def to_json(%__MODULE__{} = event) do
-    %{
-      "id" => event.id,
-      "type" => to_string(event.type),
-      "map_id" => event.map_id,
-      "timestamp" => DateTime.to_iso8601(event.timestamp),
-      "payload" => serialize_payload(event.payload)
-    }
-  end
-
-  # Convert Ash structs and other complex types to plain maps
-  defp serialize_payload(payload) when is_struct(payload) do
-    serialize_payload(payload, MapSet.new())
-  end
-
-  defp serialize_payload(payload) when is_map(payload) do
-    serialize_payload(payload, MapSet.new())
-  end
 
   # Define allowlisted fields for different struct types
   @system_fields [
@@ -132,6 +89,73 @@ defmodule WandererApp.ExternalEvents.Event do
     :ship_size
   ]
   @signature_fields [:id, :signature_id, :name, :type, :group]
+
+  @supported_event_types [
+    :add_system,
+    :deleted_system,
+    :system_renamed,
+    :system_metadata_changed,
+    :signatures_updated,
+    :signature_added,
+    :signature_removed,
+    :connection_added,
+    :connection_removed,
+    :connection_updated,
+    :character_added,
+    :character_removed,
+    :character_updated,
+    :characters_updated,
+    :map_kill,
+    :acl_member_added,
+    :acl_member_removed,
+    :acl_member_updated,
+    :rally_point_added,
+    :rally_point_removed
+  ]
+
+  @doc """
+  Creates a new external event with ULID for ordering.
+
+  Validates that the event_type is supported before creating the event.
+  """
+  @spec new(String.t(), event_type(), map()) :: t() | {:error, :invalid_event_type}
+  def new(map_id, event_type, payload) when is_binary(map_id) and is_map(payload) do
+    if valid_event_type?(event_type) do
+      %__MODULE__{
+        id: Ecto.ULID.generate(System.system_time(:millisecond)),
+        map_id: map_id,
+        type: event_type,
+        payload: payload,
+        timestamp: DateTime.utc_now()
+      }
+    else
+      raise ArgumentError,
+            "Invalid event type: #{inspect(event_type)}. Must be one of: #{supported_event_types() |> Enum.map(&to_string/1) |> Enum.join(", ")}"
+    end
+  end
+
+  @doc """
+  Converts an event to JSON format for delivery.
+  """
+  @spec to_json(t()) :: map()
+  def to_json(%__MODULE__{} = event) do
+    %{
+      "id" => event.id,
+      "type" => to_string(event.type),
+      "map_id" => event.map_id,
+      "timestamp" => DateTime.to_iso8601(event.timestamp),
+      "payload" => serialize_payload(event.payload)
+    }
+  end
+
+  # Convert Ash structs and other complex types to plain maps
+  defp serialize_payload(payload) when is_struct(payload) do
+    serialize_payload(payload, MapSet.new())
+  end
+
+  defp serialize_payload(payload) when is_map(payload) do
+    serialize_payload(payload, MapSet.new())
+  end
 
   # Overloaded versions with visited tracking
   defp serialize_payload(payload, visited) when is_struct(payload) do
@@ -193,29 +217,7 @@ defmodule WandererApp.ExternalEvents.Event do
   Returns all supported event types.
   """
   @spec supported_event_types() :: [event_type()]
-  def supported_event_types do
-    [
-      :add_system,
-      :deleted_system,
-      :system_renamed,
-      :system_metadata_changed,
-      :signatures_updated,
-      :signature_added,
-      :signature_removed,
-      :connection_added,
-      :connection_removed,
-      :connection_updated,
-      :character_added,
-      :character_removed,
-      :character_updated,
-      :map_kill,
-      :acl_member_added,
-      :acl_member_removed,
-      :acl_member_updated,
-      :rally_point_added,
-      :rally_point_removed
-    ]
-  end
+  def supported_event_types, do: @supported_event_types
 
   @doc """
   Validates an event type.

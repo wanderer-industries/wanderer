@@ -5,6 +5,10 @@ defmodule WandererApp.MapSystemRepo do
     system |> WandererApp.Api.MapSystem.create()
   end
 
+  def upsert(system) do
+    system |> WandererApp.Api.MapSystem.upsert()
+  end
+
   def get_by_map_and_solar_system_id(map_id, solar_system_id) do
     WandererApp.Api.MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id)
     |> case do

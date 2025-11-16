@@ -1,6 +1,6 @@
 @use "sass:color";
 @use '@/hooks/Mapper/components/map/styles/eve-common-variables';
-@import '@/hooks/Mapper/components/map/styles/solar-system-node';
+@use '@/hooks/Mapper/components/map/styles/solar-system-node' as v;
 
 :root {
   --rf-has-user-characters: #ffc75d;
@@ -108,7 +108,7 @@
   }
 
   &.selected {
-    border-color: $pastel-pink;
+    border-color: v.$pastel-pink;
     box-shadow: 0 0 10px #9a1af1c2;
   }
 
@@ -122,11 +122,11 @@
       bottom: 0;
       z-index: -1;
 
-      border-color: $neon-color-1;
+      border-color: v.$neon-color-1;
       background: repeating-linear-gradient(
           45deg,
-          $neon-color-3 0px,
-          $neon-color-3 8px,
+          v.$neon-color-3 0px,
+          v.$neon-color-3 8px,
           transparent 8px,
           transparent 21px
       );
@@ -152,7 +152,7 @@
   &.eve-system-status-lookingFor {
     background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
     &.selected {
-      border-color: $pastel-pink;
+      border-color: v.$pastel-pink;
     }
   }
 

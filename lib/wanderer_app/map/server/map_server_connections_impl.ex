@@ -401,7 +401,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       )
     else
       error ->
-        Logger.error("Failed to update_linked_signature_time_status: #{inspect(error)}")
+        Logger.warning("Failed to update_linked_signature_time_status: #{inspect(error)}")
     end
   end
 

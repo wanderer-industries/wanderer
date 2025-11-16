@@ -1,5 +1,5 @@
 %{
-title: "Map Active Characters Page — Interface Guide",
+title: "User Guide: Map Active Characters Page",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/2025/05-11-map-active-characters/cover.png",
 tags: ~w(characters interface guide map security),

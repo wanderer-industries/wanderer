@@ -3,11 +3,25 @@ defmodule WandererApp.MapPingsRepo do
 
   require Logger
 
-  def get_by_id(ping_id),
-    do: WandererApp.Api.MapPing.by_id!(ping_id) |> Ash.load([:system])
+  def get_by_id(ping_id) do
+    case WandererApp.Api.MapPing.by_id(ping_id) do
+      {:ok, ping} ->
+        ping |> Ash.load([:system])
 
-  def get_by_map(map_id),
-    do: WandererApp.Api.MapPing.by_map!(%{map_id: map_id}) |> Ash.load([:character, :system])
+      error ->
+        error
+    end
+  end
+
+  def get_by_map(map_id) do
+    case WandererApp.Api.MapPing.by_map(%{map_id: map_id}) do
+      {:ok, ping} ->
+        ping |> Ash.load([:character, :system])
+
+      error ->
+        error
+    end
+  end
 
   def get_by_map_and_system!(map_id, system_id),
     do: WandererApp.Api.MapPing.by_map_and_system!(%{map_id: map_id, system_id: system_id})

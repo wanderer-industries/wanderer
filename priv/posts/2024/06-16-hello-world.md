@@ -1,5 +1,5 @@
 %{
-title: "Greetings, Capsuleers!",
+title: "Welcome: Greetings, Capsuleers!",
 author: "Wanderer Team",
 cover_image_uri: "/assets/hello.webp",
 tags: ~w(hello world),

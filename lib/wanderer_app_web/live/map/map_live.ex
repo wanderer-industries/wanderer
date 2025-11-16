@@ -74,6 +74,13 @@ defmodule WandererAppWeb.MapLive do
          "You don't have main character set, please update it in tracking settings (top right icon)."
        )}
 
+  def handle_info(:map_deleted, socket),
+    do:
+      {:noreply,
+       socket
+       |> put_flash(:info, "This map has been deleted.")
+       |> push_navigate(to: ~p"/maps")}
+
   def handle_info(:no_access, socket),
     do:
       {:noreply,

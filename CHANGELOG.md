@@ -2,6 +2,87 @@
 
 <!-- changelog -->
 
+## [v1.84.26](https://github.com/wanderer-industries/wanderer/compare/v1.84.25...v1.84.26) (2025-11-16)
+
+
+
+
+### Bug Fixes:
+
+* core: disable character tracker pausing
+
+## [v1.84.25](https://github.com/wanderer-industries/wanderer/compare/v1.84.24...v1.84.25) (2025-11-16)
+
+
+
+
+### Bug Fixes:
+
+* core: used upsert for adding map systems
+
+## [v1.84.24](https://github.com/wanderer-industries/wanderer/compare/v1.84.23...v1.84.24) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* Map: Fixed problem related with error if settings was removed and mapper crashed. Fixed settings reset.
+
+## [v1.84.23](https://github.com/wanderer-industries/wanderer/compare/v1.84.22...v1.84.23) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map pings cancel errors
+
+## [v1.84.22](https://github.com/wanderer-industries/wanderer/compare/v1.84.21...v1.84.22) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map initialization
+
+## [v1.84.21](https://github.com/wanderer-industries/wanderer/compare/v1.84.20...v1.84.21) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map characters adding
+
+## [v1.84.20](https://github.com/wanderer-industries/wanderer/compare/v1.84.19...v1.84.20) (2025-11-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map start issues
+
+## [v1.84.19](https://github.com/wanderer-industries/wanderer/compare/v1.84.18...v1.84.19) (2025-11-14)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed map start issues
+
+## [v1.84.18](https://github.com/wanderer-industries/wanderer/compare/v1.84.17...v1.84.18) (2025-11-14)
+
+
+
+
+### Bug Fixes:
+
+* core: added gracefull map poll recovery from saved state. added map slug unique checks
+
 ## [v1.84.17](https://github.com/wanderer-industries/wanderer/compare/v1.84.16...v1.84.17) (2025-11-14)
 
 

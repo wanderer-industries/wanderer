@@ -1,5 +1,5 @@
 %{
-title: "How to Add a Custom Theme",
+title: "User Guide: How to Add a Custom Theme",
 author: "Wanderer Community",
 cover_image_uri: "/images/news/01-13-theme-swap/theme-selector.png",
 tags: ~w(themes),
