@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.26](https://github.com/wanderer-industries/wanderer/compare/v1.84.25...v1.84.26) (2025-11-16)
+
+
+
+
+### Bug Fixes:
+
+* core: disable character tracker pausing
+
 ## [v1.84.25](https://github.com/wanderer-industries/wanderer/compare/v1.84.24...v1.84.25) (2025-11-16)
 
 
