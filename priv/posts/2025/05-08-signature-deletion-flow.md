@@ -1,5 +1,5 @@
 %{
-title: "Instant Signature Deletion & Undo: A New Flow for Map Signatures",
+title: "User Guide: Instant Signature Deletion & Undo: A New Flow for Map Signatures",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/05-08-undo/undo.png",
 tags: ~w(signatures deletion undo map realtime guide),
@@ -67,4 +67,4 @@ The new signature deletion flow brings instant, real-time updates and a safety n
 Fly safe,
 **The Wanderer Team**
 
---- 
+---

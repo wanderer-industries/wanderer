@@ -1,5 +1,5 @@
 %{
-title: "Map User Settings (from our community member)",
+title: "Example: Map User Settings (from our community member)",
 author: "Wanderer Community",
 cover_image_uri: "/images/news/01-11-map-settings-guide/cover.png",
 tags: ~w(map settings guide interface),

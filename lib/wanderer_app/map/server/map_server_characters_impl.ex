@@ -210,7 +210,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         fn character_id ->
           character_updates =
             maybe_update_online(map_id, character_id) ++
-              maybe_update_tracking_status(map_id, character_id) ++
               maybe_update_location(map_id, character_id) ++
               maybe_update_ship(map_id, character_id) ++
               maybe_update_alliance(map_id, character_id) ++
@@ -459,12 +458,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp track_character(map_id, character_id) do
-    {:ok, %{solar_system_id: solar_system_id} = map_character} =
-      WandererApp.Character.get_map_character(map_id, character_id, not_present: true)
+    {:ok, %{solar_system_id: solar_system_id} = character} =
+      WandererApp.Character.get_character(character_id)
 
-    WandererApp.Cache.delete("character:#{character_id}:tracking_paused")
-
-    add_character(map_id, map_character, true)
+    add_character(map_id, character, true)
 
     WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
       map_id: map_id,
@@ -496,33 +493,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     else
       error ->
         Logger.error("Failed to update online: #{inspect(error, pretty: true)}")
-        [:skip]
-    end
-  end
-
-  defp maybe_update_tracking_status(map_id, character_id) do
-    with {:ok, old_tracking_paused} <-
-           WandererApp.Cache.lookup(
-             "map:#{map_id}:character:#{character_id}:tracking_paused",
-             false
-           ),
-         {:ok, tracking_paused} <-
-           WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false) do
-      case old_tracking_paused != tracking_paused do
-        true ->
-          WandererApp.Cache.insert(
-            "map:#{map_id}:character:#{character_id}:tracking_paused",
-            tracking_paused
-          )
-
-          [{:character_tracking, %{tracking_paused: tracking_paused}}]
-
-        _ ->
-          [:skip]
-      end
-    else
-      error ->
-        Logger.error("Failed to update character_tracking: #{inspect(error, pretty: true)}")
         [:skip]
     end
   end

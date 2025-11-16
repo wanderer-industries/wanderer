@@ -41,8 +41,9 @@
               <div class="absolute rounded-m top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300">
               </div>
               <div class="absolute w-full bottom-2 p-4">
-                <h3 class="!m-0 !text-s font-bold break-normal ccp-font whitespace-nowrap text-white">{String.slice(post.title, 0, 21)}</h3>
-                <p class="!m-0 !text-s text-white text-ellipsis overflow-hidden whitespace-nowrap ccp-font">{String.slice(post.title, 21..-1)}</p>
+                <% [first_part, second_part] = String.split(post.title, ":", parts: 2) %>
+                <h3 class="!m-0 !text-s font-bold break-normal ccp-font whitespace-nowrap text-white">{first_part}</h3>
+                <p class="!m-0 !text-s text-white text-ellipsis overflow-hidden whitespace-nowrap ccp-font">{second_part || ""}</p>
               </div>
             </div>
           </.link>

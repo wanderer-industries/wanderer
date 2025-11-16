@@ -294,8 +294,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       when not is_nil(character_eve_id) do
     {:ok, character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
 
-    WandererApp.Cache.delete("character:#{character.id}:tracking_paused")
-
     {:noreply, socket}
   end
 
@@ -318,7 +316,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put(:alliance_ticker, Map.get(character, :alliance_ticker, ""))
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
-      |> Map.put_new(:tracking_paused, character |> Map.get(:tracking_paused, false))
 
   defp get_location(character),
     do: %{

@@ -1,5 +1,5 @@
 %{
-  title: "Guide: Systems and Connections API",
+  title: "API Guide: Systems and Connections API",
   author: "Wanderer Team",
   cover_image_uri: "/images/news/03-05-api/swagger-ui.png",
   tags: ~w(api map systems connections documentation),

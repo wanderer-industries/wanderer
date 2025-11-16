@@ -1,5 +1,5 @@
 %{
-title: "Introducing Wanderer Community Edition",
+title: "Announcement: Wanderer Community Edition",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/ce_logo_dark.png",
 tags: ~w(community-edition open-source),

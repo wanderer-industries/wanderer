@@ -4,6 +4,8 @@ defmodule WandererApp.Character do
 
   require Logger
 
+  alias WandererApp.Cache
+
   @read_character_wallet_scope "esi-wallet.read_character_wallet.v1"
   @read_corp_wallet_scope "esi-wallet.read_corporation_wallets.v1"
 
@@ -15,6 +17,9 @@ defmodule WandererApp.Character do
     ship_name: nil,
     ship_item_id: nil
   }
+
+  @present_on_map_ttl :timer.seconds(10)
+  @not_present_on_map_ttl :timer.minutes(2)
 
   def get_by_eve_id(character_eve_id) when is_binary(character_eve_id) do
     WandererApp.Api.Character.by_eve_id(character_eve_id)
@@ -41,7 +46,7 @@ defmodule WandererApp.Character do
 
   def get_character!(character_id) do
     case get_character(character_id) do
-      {:ok, character} ->
+      {:ok, character} when not is_nil(character) ->
         character
 
       _ ->
@@ -50,16 +55,10 @@ defmodule WandererApp.Character do
     end
   end
 
-  def get_map_character(map_id, character_id, opts \\ []) do
+  def get_map_character(map_id, character_id) do
     case get_character(character_id) do
-      {:ok, character} ->
-        # If we are forcing the character to not be present, we merge the character state with map settings
-        character_is_present =
-          if opts |> Keyword.get(:not_present, false) do
-            false
-          else
-            WandererApp.Character.TrackerManager.Impl.character_is_present(map_id, character_id)
-          end
+      {:ok, character} when not is_nil(character) ->
+        character_is_present = character_is_present?(map_id, character_id)
 
         {:ok,
          character
@@ -267,22 +266,26 @@ defmodule WandererApp.Character do
     end
   end
 
-  defp maybe_merge_map_character_settings(%{id: character_id} = character, _map_id, true) do
-    {:ok, tracking_paused} =
-      WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false)
+  @decorate cacheable(
+              cache: Cache,
+              key: "character-present-#{map_id}-#{character_id}",
+              opts: [ttl: @present_on_map_ttl]
+            )
+  defp character_is_present?(map_id, character_id),
+    do: WandererApp.Character.TrackerManager.Impl.character_is_present(map_id, character_id)
 
-    character
-    |> Map.merge(%{tracking_paused: tracking_paused})
-  end
+  defp maybe_merge_map_character_settings(character, _map_id, true), do: character
 
+  @decorate cacheable(
+              cache: Cache,
+              key: "not-present-map-character-#{map_id}-#{character_id}",
+              opts: [ttl: @not_present_on_map_ttl]
+            )
   defp maybe_merge_map_character_settings(
          %{id: character_id} = character,
          map_id,
-         _character_is_present
+         false
        ) do
-    {:ok, tracking_paused} =
-      WandererApp.Cache.lookup("character:#{character_id}:tracking_paused", false)
-
     WandererApp.MapCharacterSettingsRepo.get(map_id, character_id)
     |> case do
       {:ok, settings} when not is_nil(settings) ->
@@ -300,7 +303,7 @@ defmodule WandererApp.Character do
         character
         |> Map.merge(@default_character_tracking_data)
     end
-    |> Map.merge(%{online: false, tracking_paused: tracking_paused})
+    |> Map.merge(%{online: false})
   end
 
   defp prepare_search_results(result) do

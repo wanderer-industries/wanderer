@@ -19,9 +19,6 @@ defmodule WandererApp.Character.TrackerPool do
   @update_location_interval :timer.seconds(1)
   @update_online_interval :timer.seconds(30)
   @check_offline_characters_interval :timer.minutes(5)
-  @check_online_errors_interval :timer.minutes(1)
-  @check_ship_errors_interval :timer.minutes(1)
-  @check_location_errors_interval :timer.minutes(1)
   @update_ship_interval :timer.seconds(2)
   @update_info_interval :timer.minutes(2)
   @update_wallet_interval :timer.minutes(10)
@@ -110,13 +107,10 @@ defmodule WandererApp.Character.TrackerPool do
     )
 
     Process.send_after(self(), :update_online, 100)
-    Process.send_after(self(), :check_online_errors, :timer.seconds(60))
-    Process.send_after(self(), :check_ship_errors, :timer.seconds(90))
-    Process.send_after(self(), :check_location_errors, :timer.seconds(120))
-    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
     Process.send_after(self(), :update_location, 300)
     Process.send_after(self(), :update_ship, 500)
     Process.send_after(self(), :update_info, 1500)
+    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
 
     if WandererApp.Env.wallet_tracking_enabled?() do
       Process.send_after(self(), :update_wallet, 1000)
@@ -243,126 +237,6 @@ defmodule WandererApp.Character.TrackerPool do
       e ->
         Logger.error("""
         [Tracker Pool] check_offline => exception: #{Exception.message(e)}
-        #{Exception.format_stacktrace(__STACKTRACE__)}
-        """)
-    end
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        :check_online_errors,
-        %{
-          characters: characters
-        } =
-          state
-      ) do
-    Process.send_after(self(), :check_online_errors, @check_online_errors_interval)
-
-    try do
-      characters
-      |> Task.async_stream(
-        fn character_id ->
-          WandererApp.TaskWrapper.start_link(
-            WandererApp.Character.Tracker,
-            :check_online_errors,
-            [
-              character_id
-            ]
-          )
-        end,
-        timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online() * 4,
-        on_timeout: :kill_task
-      )
-      |> Enum.each(fn
-        {:ok, _result} -> :ok
-        error -> @logger.error("Error in check_online_errors: #{inspect(error)}")
-      end)
-    rescue
-      e ->
-        Logger.error("""
-        [Tracker Pool] check_online_errors => exception: #{Exception.message(e)}
-        #{Exception.format_stacktrace(__STACKTRACE__)}
-        """)
-    end
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        :check_ship_errors,
-        %{
-          characters: characters
-        } =
-          state
-      ) do
-    Process.send_after(self(), :check_ship_errors, @check_ship_errors_interval)
-
-    try do
-      characters
-      |> Task.async_stream(
-        fn character_id ->
-          WandererApp.TaskWrapper.start_link(
-            WandererApp.Character.Tracker,
-            :check_ship_errors,
-            [
-              character_id
-            ]
-          )
-        end,
-        timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online() * 4,
-        on_timeout: :kill_task
-      )
-      |> Enum.each(fn
-        {:ok, _result} -> :ok
-        error -> Logger.error("Error in check_ship_errors: #{inspect(error)}")
-      end)
-    rescue
-      e ->
-        Logger.error("""
-        [Tracker Pool] check_ship_errors => exception: #{Exception.message(e)}
-        #{Exception.format_stacktrace(__STACKTRACE__)}
-        """)
-    end
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        :check_location_errors,
-        %{
-          characters: characters
-        } =
-          state
-      ) do
-    Process.send_after(self(), :check_location_errors, @check_location_errors_interval)
-
-    try do
-      characters
-      |> Task.async_stream(
-        fn character_id ->
-          WandererApp.TaskWrapper.start_link(
-            WandererApp.Character.Tracker,
-            :check_location_errors,
-            [
-              character_id
-            ]
-          )
-        end,
-        timeout: :timer.seconds(15),
-        max_concurrency: System.schedulers_online() * 4,
-        on_timeout: :kill_task
-      )
-      |> Enum.each(fn
-        {:ok, _result} -> :ok
-        error -> @logger.error("Error in check_location_errors: #{inspect(error)}")
-      end)
-    rescue
-      e ->
-        Logger.error("""
-        [Tracker Pool] check_location_errors => exception: #{Exception.message(e)}
         #{Exception.format_stacktrace(__STACKTRACE__)}
         """)
     end
