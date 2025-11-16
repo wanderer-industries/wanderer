@@ -117,16 +117,18 @@ defmodule WandererApp.DataCase do
           :ok
       end
     end)
-  end
 
-  @doc """
-  Grants database access to a process with comprehensive monitoring.
+    # Grant database access to MapPoolSupervisor and all its dynamically started children
+    case Process.whereis(WandererApp.Map.MapPoolSupervisor) do
+      pid when is_pid(pid) ->
+        # Grant access to the supervisor and its entire supervision tree
+        # This ensures dynamically started map servers get database access
+        owner_pid = Process.get(:sandbox_owner_pid) || self()
+        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
 
-  This function provides enhanced database access granting with monitoring
-  for child processes and automatic access granting.
-  """
-  def allow_database_access(pid, owner_pid \\ self()) do
-    WandererApp.Test.DatabaseAccessManager.grant_database_access(pid, owner_pid)
+      _ ->
+        :ok
+    end
   end
 
   @doc """
