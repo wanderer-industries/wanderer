@@ -1,6 +1,6 @@
 defmodule WandererApp.Map.CacheRTree do
   @moduledoc """
-  Cache-based spatial index implementing DDRT behavior.
+  Cache-based spatial index implementing SpatialIndex behavior.
 
   Provides R-tree-like spatial indexing using grid-based storage in Nebulex cache.
   No GenServer processes required - all operations are functional and cache-based.
@@ -19,20 +19,21 @@ defmodule WandererApp.Map.CacheRTree do
   detection without the overhead of GenServer-based tree traversal.
   """
 
-  @behaviour WandererApp.Test.DDRT
+  @behaviour WandererApp.Behaviours.SpatialIndex
 
   alias WandererApp.Cache
 
-  @grid_size 150  # Grid cell size in pixels
+  # Grid cell size in pixels
+  @grid_size 150
 
-  # Type definitions matching DDRT behavior
+  # Type definitions matching SpatialIndex behavior
   @type id :: number() | String.t()
   @type coord_range :: {number(), number()}
   @type bounding_box :: list(coord_range())
   @type leaf :: {id(), bounding_box()}
 
   # ============================================================================
-  # Public API - DDRT Behavior Implementation
+  # Public API - SpatialIndex Behavior Implementation
   # ============================================================================
 
   @doc """
@@ -59,19 +60,26 @@ defmodule WandererApp.Map.CacheRTree do
 
     # Update leaves storage
     current_leaves = get_leaves(name)
-    new_leaves = Enum.reduce(leaves, current_leaves, fn {id, box}, acc ->
-      Map.put(acc, id, {id, box})
-    end)
+
+    new_leaves =
+      Enum.reduce(leaves, current_leaves, fn {id, box}, acc ->
+        Map.put(acc, id, {id, box})
+      end)
+
     put_leaves(name, new_leaves)
 
     # Update spatial grid
     current_grid = get_grid(name)
-    new_grid = Enum.reduce(leaves, current_grid, fn leaf, grid ->
-      add_to_grid(grid, leaf)
-    end)
+
+    new_grid =
+      Enum.reduce(leaves, current_grid, fn leaf, grid ->
+        add_to_grid(grid, leaf)
+      end)
+
     put_grid(name, new_grid)
 
-    {:ok, %{}}  # Match DRTree return format
+    # Match DRTree return format
+    {:ok, %{}}
   end
 
   @doc """
@@ -97,17 +105,19 @@ defmodule WandererApp.Map.CacheRTree do
     current_grid = get_grid(name)
 
     # Remove from leaves and track bounding boxes for grid cleanup
-    {new_leaves, removed} = Enum.reduce(ids, {current_leaves, []}, fn id, {leaves, removed} ->
-      case Map.pop(leaves, id) do
-        {nil, leaves} -> {leaves, removed}
-        {{^id, box}, leaves} -> {leaves, [{id, box} | removed]}
-      end
-    end)
+    {new_leaves, removed} =
+      Enum.reduce(ids, {current_leaves, []}, fn id, {leaves, removed} ->
+        case Map.pop(leaves, id) do
+          {nil, leaves} -> {leaves, removed}
+          {{^id, box}, leaves} -> {leaves, [{id, box} | removed]}
+        end
+      end)
 
     # Update grid
-    new_grid = Enum.reduce(removed, current_grid, fn {id, box}, grid ->
-      remove_from_grid(grid, id, box)
-    end)
+    new_grid =
+      Enum.reduce(removed, current_grid, fn {id, box}, grid ->
+        remove_from_grid(grid, id, box)
+      end)
 
     put_leaves(name, new_leaves)
     put_grid(name, new_grid)
@@ -133,17 +143,21 @@ defmodule WandererApp.Map.CacheRTree do
   """
   @impl true
   def update(id, box_or_tuple, name) do
-    {old_box, new_box} = case box_or_tuple do
-      {old, new} ->
-        {old, new}
-      box ->
-        # Need to look up old box
-        leaves = get_leaves(name)
-        case Map.get(leaves, id) do
-          {^id, old} -> {old, box}
-          nil -> {nil, box}  # Will be handled as new insert
-        end
-    end
+    {old_box, new_box} =
+      case box_or_tuple do
+        {old, new} ->
+          {old, new}
+
+        box ->
+          # Need to look up old box
+          leaves = get_leaves(name)
+
+          case Map.get(leaves, id) do
+            {^id, old} -> {old, box}
+            # Will be handled as new insert
+            nil -> {nil, box}
+          end
+      end
 
     # Delete old, insert new
     if old_box, do: delete([id], name)
@@ -184,6 +198,7 @@ defmodule WandererApp.Map.CacheRTree do
 
     # Precise intersection test
     leaves = get_leaves(name)
+
     matching_ids =
       Enum.filter(candidate_ids, fn id ->
         case Map.get(leaves, id) do
@@ -319,6 +334,7 @@ defmodule WandererApp.Map.CacheRTree do
 
   # Floor division that works correctly with negative numbers
   defp div_floor(a, b) when a >= 0, do: div(a, b)
+
   defp div_floor(a, b) when a < 0 do
     case rem(a, b) do
       0 -> div(a, b)
@@ -332,8 +348,9 @@ defmodule WandererApp.Map.CacheRTree do
     [{x2_min, x2_max}, {y2_min, y2_max}] = box2
 
     # Boxes intersect if they overlap on both axes
-    x_overlap = x1_min <= x2_max and x2_min <= x1_max
-    y_overlap = y1_min <= y2_max and y2_min <= y1_max
+    # Use < instead of <= to exclude touching-only cases (no overlap)
+    x_overlap = x1_min < x2_max and x2_min < x1_max
+    y_overlap = y1_min < y2_max and y2_min < y1_max
 
     x_overlap and y_overlap
   end

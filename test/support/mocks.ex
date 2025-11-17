@@ -16,8 +16,8 @@ defmodule WandererApp.Test.Mocks do
     # Mocks are already defined in mock_definitions.ex
     # Here we just set up stubs for them
 
-    # Set global mode for the mocks to avoid ownership issues during application startup
-    Mox.set_mox_global()
+    # Note: We don't call set_mox_global() here because the caller should handle that
+    # This allows the function to be called from different contexts without ownership issues
 
     # Set up default stubs for logger mock (these methods are called during application startup)
     Test.LoggerMock
@@ -29,7 +29,7 @@ defmodule WandererApp.Test.Mocks do
     # Make mocks available to any spawned process
     :persistent_term.put({Test.LoggerMock, :global_mode}, true)
     :persistent_term.put({Test.PubSubMock, :global_mode}, true)
-    :persistent_term.put({Test.DDRTMock, :global_mode}, true)
+    :persistent_term.put({Test.SpatialIndexMock, :global_mode}, true)
 
     # Set up default stubs for PubSub mock
     Test.PubSubMock
@@ -39,12 +39,12 @@ defmodule WandererApp.Test.Mocks do
     |> Mox.stub(:subscribe, fn _module, _topic -> :ok end)
     |> Mox.stub(:unsubscribe, fn _topic -> :ok end)
 
-    # Set up default stubs for DDRT mock
-    Test.DDRTMock
-    |> Mox.stub(:init_tree, fn _tree_name, _opts -> :ok end)
-    |> Mox.stub(:insert, fn _data, _tree_name -> :ok end)
-    |> Mox.stub(:update, fn _id, _data, _tree_name -> :ok end)
-    |> Mox.stub(:delete, fn _ids, _tree_name -> :ok end)
+    # Set up default stubs for SpatialIndex mock (matching CacheRTree return values)
+    Test.SpatialIndexMock
+    |> Mox.stub(:insert, fn _data, _tree_name -> {:ok, %{}} end)
+    |> Mox.stub(:update, fn _id, _data, _tree_name -> {:ok, %{}} end)
+    |> Mox.stub(:delete, fn _id_or_ids, _tree_name -> {:ok, %{}} end)
+    |> Mox.stub(:query, fn _box, _tree_name -> {:ok, []} end)
 
     # Set up default stubs for CachedInfo mock
     WandererApp.CachedInfo.Mock
@@ -154,7 +154,13 @@ defmodule WandererApp.Test.Mocks do
   """
   def setup_additional_expectations do
     # Reset to global mode in case tests changed it
-    Mox.set_mox_global()
+    try do
+      Mox.set_mox_global()
+    rescue
+      # Already in global mode, that's fine
+      _ -> :ok
+    end
+
     :ok
   end
 end

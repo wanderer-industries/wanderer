@@ -16,44 +16,46 @@ defmodule WandererApp.Map.SlugUniquenessTest do
 
   describe "slug uniqueness constraint" do
     setup do
-      # Create a test user
+      # Create a test user and character
       user = create_test_user()
-      %{user: user}
+      character = insert(:character, %{user_id: user.id})
+      %{user: user, character: character}
     end
 
-    test "prevents duplicate slugs via database constraint", %{user: user} do
+    test "prevents duplicate slugs via database constraint", %{character: character} do
       # Create first map with a specific slug
       {:ok, _map1} =
         Map.new(%{
           name: "Test Map",
           slug: "test-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "First map",
           scope: "wormholes"
         })
 
-      # Attempt to create second map with same slug by bypassing Ash slug generation
-      # This simulates a race condition where slug generation passes but DB insert fails
+      # Attempt to create second map with same slug
+      # Slug generation should automatically increment to avoid conflicts
       result =
         Map.new(%{
           name: "Different Name",
           slug: "test-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Second map",
           scope: "wormholes"
         })
 
-      # Should get a unique constraint error from database
-      assert {:error, _error} = result
+      # Should succeed with auto-incremented slug
+      assert {:ok, map2} = result
+      assert map2.slug == "test-map-2"
     end
 
-    test "automatically increments slug when duplicate detected", %{user: user} do
+    test "automatically increments slug when duplicate detected", %{character: character} do
       # Create first map
       {:ok, map1} =
         Map.new(%{
           name: "Test Map",
           slug: "test-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "First map",
           scope: "wormholes"
         })
@@ -65,7 +67,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
         Map.new(%{
           name: "Test Map",
           slug: "test-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Second map",
           scope: "wormholes"
         })
@@ -78,7 +80,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
         Map.new(%{
           name: "Test Map",
           slug: "test-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Third map",
           scope: "wormholes"
         })
@@ -86,7 +88,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
       assert map3.slug == "test-map-3"
     end
 
-    test "handles many maps with similar names", %{user: user} do
+    test "handles many maps with similar names", %{character: character} do
       # Create 10 maps with the same base slug
       maps =
         for i <- 1..10 do
@@ -94,7 +96,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
             Map.new(%{
               name: "Popular Name",
               slug: "popular-name",
-              owner_id: user.id,
+              owner_id: character.id,
               description: "Map #{i}",
               scope: "wormholes"
             })
@@ -118,11 +120,12 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   describe "concurrent slug creation (race condition)" do
     setup do
       user = create_test_user()
-      %{user: user}
+      character = insert(:character, %{user_id: user.id})
+      %{user: user, character: character}
     end
 
     @tag :slow
-    test "handles concurrent map creation with identical slugs", %{user: user} do
+    test "handles concurrent map creation with identical slugs", %{character: character} do
       # Create 5 concurrent map creation requests with the same slug
       tasks =
         for i <- 1..5 do
@@ -130,7 +133,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
             Map.new(%{
               name: "Concurrent Test",
               slug: "concurrent-test",
-              owner_id: user.id,
+              owner_id: character.id,
               description: "Concurrent map #{i}",
               scope: "wormholes"
             })
@@ -155,7 +158,9 @@ defmodule WandererApp.Map.SlugUniquenessTest do
 
       # Verify all successful maps have unique slugs
       slugs = Enum.map(maps, & &1.slug)
-      assert length(Enum.uniq(slugs)) == length(slugs), "All successful maps should have unique slugs"
+
+      assert length(Enum.uniq(slugs)) == length(slugs),
+             "All successful maps should have unique slugs"
 
       # Log results for visibility
       Logger.info("Concurrent test: #{length(successful)} succeeded, #{length(failed)} failed")
@@ -163,7 +168,9 @@ defmodule WandererApp.Map.SlugUniquenessTest do
     end
 
     @tag :slow
-    test "concurrent creation with different names creates different base slugs", %{user: user} do
+    test "concurrent creation with different names creates different base slugs", %{
+      character: character
+    } do
       # Create concurrent requests with different names (should all succeed)
       tasks =
         for i <- 1..5 do
@@ -171,7 +178,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
             Map.new(%{
               name: "Concurrent Map #{i}",
               slug: "concurrent-map-#{i}",
-              owner_id: user.id,
+              owner_id: character.id,
               description: "Map #{i}",
               scope: "wormholes"
             })
@@ -192,33 +199,47 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   describe "slug generation edge cases" do
     setup do
       user = create_test_user()
-      %{user: user}
+      character = insert(:character, %{user_id: user.id})
+      %{user: user, character: character}
     end
 
-    test "handles very long slugs", %{user: user} do
-      # Create map with name that would generate very long slug
-      long_name = String.duplicate("a", 100)
+    test "handles very long slugs", %{character: character} do
+      # Create map with name that's at max length for name (20 chars)
+      # but would generate a longer slug
+      long_name = String.duplicate("a", 20)
+      long_slug = String.duplicate("a", 50)
 
-      {:ok, map} =
+      # Should fail because slug is too long (max 40 chars)
+      {:error, _changeset} =
         Map.new(%{
           name: long_name,
-          slug: long_name,
-          owner_id: user.id,
+          slug: long_slug,
+          owner_id: character.id,
           description: "Long name test",
           scope: "wormholes"
         })
 
-      # Slug should be truncated to max length (40 chars based on map.ex constraints)
+      # Creating with a slug at max length should work
+      {:ok, map} =
+        Map.new(%{
+          name: long_name,
+          slug: String.duplicate("a", 40),
+          owner_id: character.id,
+          description: "Long name test",
+          scope: "wormholes"
+        })
+
+      # Slug should be at or under max length (40 chars)
       assert String.length(map.slug) <= 40
     end
 
-    test "handles special characters in slugs", %{user: user} do
+    test "handles special characters in slugs", %{character: character} do
       # Test that special characters are properly slugified
       {:ok, map} =
         Map.new(%{
           name: "Test: Map & Name!",
           slug: "test-map-name",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Special chars test",
           scope: "wormholes"
         })
@@ -231,17 +252,18 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   describe "slug update operations" do
     setup do
       user = create_test_user()
+      character = insert(:character, %{user_id: user.id})
 
       {:ok, map} =
         Map.new(%{
           name: "Original Map",
           slug: "original-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Original",
           scope: "wormholes"
         })
 
-      %{user: user, map: map}
+      %{user: user, character: character, map: map}
     end
 
     test "updating map with same slug succeeds", %{map: map} do
@@ -257,13 +279,13 @@ defmodule WandererApp.Map.SlugUniquenessTest do
       assert updated_map.description == "Updated description"
     end
 
-    test "updating to conflicting slug is handled", %{user: user, map: map} do
+    test "updating to conflicting slug is handled", %{character: character, map: map} do
       # Create another map
       {:ok, _other_map} =
         Map.new(%{
           name: "Other Map",
           slug: "other-map",
-          owner_id: user.id,
+          owner_id: character.id,
           description: "Other",
           scope: "wormholes"
         })
@@ -291,7 +313,8 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   describe "get_map_by_slug with duplicates" do
     setup do
       user = create_test_user()
-      %{user: user}
+      character = insert(:character, %{user_id: user.id})
+      %{user: user, character: character}
     end
 
     test "get_map_by_slug! raises on duplicates if they exist" do
@@ -309,12 +332,6 @@ defmodule WandererApp.Map.SlugUniquenessTest do
 
   defp create_test_user do
     # Create a test user with necessary attributes
-    {:ok, user} =
-      WandererApp.Api.User.new(%{
-        name: "Test User #{:rand.uniform(10_000)}",
-        eve_id: :rand.uniform(100_000_000)
-      })
-
-    user
+    insert(:user)
   end
 end

@@ -31,30 +31,35 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:map_system, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     attrs = Map.delete(attrs, :map_id)
     create_map_system(map_id, attrs)
   end
 
   def insert(:map_connection, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     attrs = Map.delete(attrs, :map_id)
     create_map_connection(map_id, attrs)
   end
 
   def insert(:access_list, attrs) do
+    attrs = Enum.into(attrs, %{})
     owner_id = Map.fetch!(attrs, :owner_id)
     attrs = Map.delete(attrs, :owner_id)
     create_access_list(owner_id, attrs)
   end
 
   def insert(:access_list_member, attrs) do
+    attrs = Enum.into(attrs, %{})
     access_list_id = Map.fetch!(attrs, :access_list_id)
     attrs = Map.delete(attrs, :access_list_id)
     create_access_list_member(access_list_id, attrs)
   end
 
   def insert(:map_access_list, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     access_list_id = Map.fetch!(attrs, :access_list_id)
     attrs = attrs |> Map.delete(:map_id) |> Map.delete(:access_list_id)
@@ -62,12 +67,15 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:map_system_signature, attrs) do
+    attrs = Enum.into(attrs, %{})
     system_id = Map.fetch!(attrs, :system_id)
     attrs = Map.delete(attrs, :system_id)
     create_map_system_signature(system_id, attrs)
   end
 
   def insert(:map_system_structure, attrs) do
+    # Normalize attrs to handle keyword lists
+    attrs = Enum.into(attrs, %{})
     # Get the system_id from attrs - this should be a map system ID
     system_id = Map.fetch!(attrs, :system_id)
     attrs = Map.delete(attrs, :system_id)
@@ -75,12 +83,14 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:license, attrs) do
+    attrs = Enum.into(attrs, %{})
     user_id = Map.fetch!(attrs, :user_id)
     attrs = Map.delete(attrs, :user_id)
     create_license(user_id, attrs)
   end
 
   def insert(:map_system_comment, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     system_id = Map.fetch!(attrs, :solar_system_id)
     character_id = Map.fetch!(attrs, :character_id)
@@ -92,6 +102,7 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:map_character_settings, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     character_id = Map.fetch!(attrs, :character_id)
     attrs = attrs |> Map.delete(:map_id) |> Map.delete(:character_id)
@@ -103,6 +114,7 @@ defmodule WandererAppWeb.Factory do
   end
 
   def insert(:map_transaction, attrs) do
+    attrs = Enum.into(attrs, %{})
     map_id = Map.fetch!(attrs, :map_id)
     attrs = Map.delete(attrs, :map_id)
     create_map_transaction(map_id, attrs)
@@ -121,7 +133,7 @@ defmodule WandererAppWeb.Factory do
       hash: "test_hash_#{System.unique_integer([:positive])}"
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_user(attrs \\ %{}) do
@@ -152,7 +164,7 @@ defmodule WandererAppWeb.Factory do
       corporation_id: 1_000_000_000 + unique_id
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_character(attrs \\ %{}) do
@@ -236,7 +248,7 @@ defmodule WandererAppWeb.Factory do
       public_api_key: "test_api_key_#{unique_id}"
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map(attrs \\ %{}) do
@@ -304,6 +316,9 @@ defmodule WandererAppWeb.Factory do
   Creates a test map system with reasonable defaults.
   """
   def build_map_system(attrs \\ %{}) do
+    # Normalize attrs to handle keyword lists
+    attrs = Enum.into(attrs, %{})
+
     # Generate a unique solar_system_id if not provided
     unique_id = System.unique_integer([:positive])
     solar_system_id = Map.get(attrs, :solar_system_id, 30_000_000 + rem(unique_id, 10_000))
@@ -322,12 +337,13 @@ defmodule WandererAppWeb.Factory do
   end
 
   def create_map_system(map_id, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> build_map_system()
-      |> Map.put(:map_id, map_id)
+    attrs = build_map_system(attrs)
 
-    {:ok, system} = Ash.create(Api.MapSystem, attrs)
+    # Get the map from database to pass in context
+    {:ok, map} = Ash.get(Api.Map, map_id)
+
+    # Create system with map in context (passed via changeset.context)
+    {:ok, system} = Ash.create(Api.MapSystem, attrs, context: %{map: map})
     system
   end
 
@@ -344,16 +360,17 @@ defmodule WandererAppWeb.Factory do
       ship_size_type: 0
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_connection(map_id, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> build_map_connection()
-      |> Map.put(:map_id, map_id)
+    attrs = build_map_connection(attrs)
 
-    {:ok, connection} = Ash.create(Api.MapConnection, attrs)
+    # Get the map from database to pass in context
+    {:ok, map} = Ash.get(Api.Map, map_id)
+
+    # Create connection with map in context (InjectMapFromActor needs this)
+    {:ok, connection} = Ash.create(Api.MapConnection, attrs, context: %{map: map})
     connection
   end
 
@@ -369,7 +386,7 @@ defmodule WandererAppWeb.Factory do
       api_key: "test_acl_key_#{unique_id}"
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_access_list(owner_id, attrs \\ %{}) do
@@ -386,6 +403,9 @@ defmodule WandererAppWeb.Factory do
   Creates a test access list member with reasonable defaults.
   """
   def build_access_list_member(attrs \\ %{}) do
+    # Normalize attrs to handle keyword lists
+    attrs = Enum.into(attrs, %{})
+
     unique_id = System.unique_integer([:positive])
 
     # Only set default eve_character_id if no entity IDs are provided
@@ -423,16 +443,17 @@ defmodule WandererAppWeb.Factory do
   def build_map_access_list(attrs \\ %{}) do
     default_attrs = %{}
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_access_list(map_id, access_list_id, attrs \\ %{}) do
     attrs =
       attrs
       |> build_map_access_list()
-      |> Map.put(:map_id, map_id)
       |> Map.put(:access_list_id, access_list_id)
+      |> Map.put(:map_id, map_id)
 
+    # Create map access list
     {:ok, map_acl} = Ash.create(Api.MapAccessList, attrs)
     map_acl
   end
@@ -451,7 +472,7 @@ defmodule WandererAppWeb.Factory do
       character_eve_id: "#{2_000_000_000 + unique_id}"
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_system_signature(system_id, attrs \\ %{}) do
@@ -480,7 +501,7 @@ defmodule WandererAppWeb.Factory do
       status: "anchored"
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_system_structure(system_id, attrs \\ %{}) do
@@ -506,7 +527,7 @@ defmodule WandererAppWeb.Factory do
       expires_at: DateTime.utc_now() |> DateTime.add(30, :day)
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_license(user_id, attrs \\ %{}) do
@@ -531,7 +552,7 @@ defmodule WandererAppWeb.Factory do
       position_y: 150
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_system_comment(map_id, system_id, character_id, attrs \\ %{}) do
@@ -554,7 +575,7 @@ defmodule WandererAppWeb.Factory do
       tracked: true
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_character_settings(map_id, character_id, attrs \\ %{}) do
@@ -578,10 +599,13 @@ defmodule WandererAppWeb.Factory do
       user_id: Ecto.UUID.generate()
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_transaction(map_id, attrs \\ %{}) do
+    # Normalize attrs to handle keyword lists
+    attrs = Enum.into(attrs, %{})
+
     # Extract timestamp attributes that need special handling
     inserted_at = Map.get(attrs, :inserted_at)
     updated_at = Map.get(attrs, :updated_at)
@@ -749,10 +773,13 @@ defmodule WandererAppWeb.Factory do
       event_data: %{"test" => "data"}
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_user_activity(attrs \\ %{}) do
+    # Normalize attrs to handle keyword lists
+    attrs = Enum.into(attrs, %{})
+
     # Ensure we have a user_id
     if is_nil(Map.get(attrs, :user_id)) do
       raise ArgumentError, "user_id is required for creating user activity"
@@ -789,17 +816,26 @@ defmodule WandererAppWeb.Factory do
 
     default_attrs = %{
       url: "https://webhook#{unique_id}.example.com/hook",
-      events: ["add_system", "remove_system"],
+      events: ["add_system", "deleted_system"],
       active?: true
+      # secret is auto-generated by the create action
     }
 
-    Map.merge(default_attrs, attrs)
+    Map.merge(default_attrs, Enum.into(attrs, %{}))
   end
 
   def create_map_webhook_subscription(attrs \\ %{}) do
     attrs = build_map_webhook_subscription(attrs)
 
-    {:ok, webhook} = Ash.create(Api.MapWebhookSubscription, attrs)
-    webhook
+    case Ash.create(Api.MapWebhookSubscription, attrs, action: :create) do
+      {:ok, webhook} ->
+        webhook
+
+      {:error, error} ->
+        IO.puts("\n=== Factory Error Creating MapWebhookSubscription ===")
+        IO.inspect(error, label: "Error", pretty: true, limit: :infinity)
+        IO.inspect(attrs, label: "Attrs", pretty: true)
+        raise "Failed to create MapWebhookSubscription: #{inspect(error)}"
+    end
   end
 end

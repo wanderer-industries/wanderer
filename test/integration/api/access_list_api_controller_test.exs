@@ -5,7 +5,7 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
   alias WandererApp.Api.{AccessList, Character}
 
   describe "GET /api/maps/:map_identifier/acls (index)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns access lists for a map", %{conn: conn, map: map} do
       # Create a character to be the owner
@@ -62,7 +62,7 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
   end
 
   describe "POST /api/maps/:map_identifier/acls (create)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "creates a new access list", %{conn: conn, map: map} do
       # Create a character to be the owner
@@ -135,7 +135,7 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
   end
 
   describe "GET /api/acls/:id (show)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "returns access list details with members", %{conn: conn, map: map} do
       character = Factory.insert(:character, %{eve_id: "2112073677"})
@@ -204,7 +204,7 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
   end
 
   describe "PUT /api/acls/:id (update)" do
-    setup :setup_map_authentication
+    setup :setup_map_authentication_json
 
     test "updates access list attributes", %{conn: conn} do
       character = Factory.insert(:character, %{eve_id: "2112073677"})

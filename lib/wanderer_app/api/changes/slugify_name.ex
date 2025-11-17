@@ -28,13 +28,22 @@ defmodule WandererApp.Api.Changes.SlugifyName do
   end
 
   defp maybe_slugify_name(changeset) do
-    case Changeset.get_attribute(changeset, :slug) do
+    slug = Changeset.get_attribute(changeset, :slug)
+    name = Changeset.get_attribute(changeset, :name)
+
+    Logger.info("SlugifyName processing: slug=#{inspect(slug)}, name=#{inspect(name)}, is_binary=#{is_binary(slug)}")
+
+    case slug do
       slug when is_binary(slug) ->
         base_slug = Slug.slugify(slug)
         unique_slug = ensure_unique_slug(changeset, base_slug)
+
+        Logger.info("SlugifyName result: base_slug=#{base_slug}, unique_slug=#{unique_slug}")
+
         Changeset.force_change_attribute(changeset, :slug, unique_slug)
 
       _ ->
+        Logger.info("SlugifyName skipped - slug is not a binary")
         changeset
     end
   end

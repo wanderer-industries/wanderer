@@ -441,7 +441,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       SignaturesImpl.apply_update_signature(map_id, sig, update_params)
     end)
 
-    Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+    # Broadcast now handled by Ash after_action hook
   end
 
   def maybe_add_connection(
@@ -528,38 +528,51 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           set_start_time(map_id, connection.id, DateTime.utc_now())
         end
 
-        WandererApp.Map.add_connection(map_id, connection)
+        # Cache and broadcast updates (PubSub and ExternalEvents) now handled
+        # by UpdateCoordinator via Ash after_transaction hooks
 
+        # Special UI-related broadcasts (not data CRUD) remain here
         Impl.broadcast!(map_id, :maybe_select_system, %{
           character_id: character_id,
           solar_system_id: location.solar_system_id
         })
 
-        Impl.broadcast!(map_id, :add_connection, connection)
+        # Track activity as best-effort - don't fail connection creation if tracking fails
+        case WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
+               character_id: character.id,
+               user_id: character.user_id,
+               map_id: map_id,
+               solar_system_source_id: old_location.solar_system_id,
+               solar_system_target_id: location.solar_system_id
+             }) do
+          {:ok, _} ->
+            :ok
+
+          {:error, reason} ->
+            require Logger
+
+            Logger.warning(
+              "Failed to track map_connection_added activity: #{inspect(reason)}",
+              map_id: map_id,
+              character_id: character.id,
+              reason: reason
+            )
+
+          other ->
+            require Logger
+
+            Logger.warning(
+              "Unexpected result from ActivityTracker.track_map_event: #{inspect(other)}",
+              map_id: map_id,
+              character_id: character.id,
+              result: other
+            )
+        end
 
         Impl.broadcast!(map_id, :maybe_link_signature, %{
           character_id: character_id,
           solar_system_source: old_location.solar_system_id,
           solar_system_target: location.solar_system_id
-        })
-
-        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-        WandererApp.ExternalEvents.broadcast(map_id, :connection_added, %{
-          connection_id: connection.id,
-          solar_system_source_id: old_location.solar_system_id,
-          solar_system_target_id: location.solar_system_id,
-          type: connection_type,
-          ship_size_type: ship_size_type,
-          mass_status: connection.mass_status,
-          time_status: connection.time_status
-        })
-
-        WandererApp.User.ActivityTracker.track_map_event(:map_connection_added, %{
-          character_id: character_id,
-          user_id: character.user_id,
-          map_id: map_id,
-          solar_system_source_id: old_location.solar_system_id,
-          solar_system_target_id: location.solar_system_id
         })
 
         :ok
@@ -732,15 +745,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       {:ok, connection} when not is_nil(connection) ->
         :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
 
-        Impl.broadcast!(map_id, :remove_connections, [connection])
-        map_id |> WandererApp.Map.remove_connection(connection)
-
-        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-        WandererApp.ExternalEvents.broadcast(map_id, :connection_removed, %{
-          connection_id: connection.id,
-          solar_system_source_id: location.solar_system_id,
-          solar_system_target_id: old_location.solar_system_id
-        })
+        # Cache and broadcast updates (PubSub and ExternalEvents) now handled
+        # by UpdateCoordinator via Ash after_transaction hooks
 
         WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
 
@@ -782,20 +788,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         callback_fn.(connection, updated_connection)
       end
 
-      Impl.broadcast!(map_id, :update_connection, updated_connection)
-
-      # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-      WandererApp.ExternalEvents.broadcast(map_id, :connection_updated, %{
-        connection_id: updated_connection.id,
-        solar_system_source_id: solar_system_source_id,
-        solar_system_target_id: solar_system_target_id,
-        type: updated_connection.type,
-        ship_size_type: updated_connection.ship_size_type,
-        mass_status: updated_connection.mass_status,
-        time_status: updated_connection.time_status,
-        locked: updated_connection.locked,
-        custom_info: updated_connection.custom_info
-      })
+      # Cache update above is kept for immediate validation in the with chain
+      # Additional cache update and broadcast (PubSub and ExternalEvents) are handled
+      # by UpdateCoordinator via Ash after_transaction hooks
 
       :ok
     else

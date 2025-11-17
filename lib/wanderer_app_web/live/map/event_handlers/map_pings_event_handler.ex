@@ -80,7 +80,7 @@ defmodule WandererAppWeb.MapPingsEventHandler do
     no_exisiting_pings =
       pings
       |> Enum.filter(fn %{type: type} ->
-        type == 1
+        type == :rally_point
       end)
       |> Enum.empty?()
 

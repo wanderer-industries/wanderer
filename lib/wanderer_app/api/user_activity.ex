@@ -61,6 +61,22 @@ defmodule WandererApp.Api.UserActivity do
     read :read do
       primary?(true)
 
+      # Auto-filter by user_id from authenticated user
+      prepare fn query, context ->
+        actor = context.actor
+
+        case actor do
+          %WandererApp.Api.ActorWithMap{user: %{id: user_id}} ->
+            Ash.Query.filter(query, expr(user_id == ^user_id))
+
+          %{id: user_id} ->
+            Ash.Query.filter(query, expr(user_id == ^user_id))
+
+          _ ->
+            query
+        end
+      end
+
       pagination offset?: true,
                  default_limit: @ash_pagify_options.default_limit,
                  countable: true,

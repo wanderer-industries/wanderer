@@ -29,8 +29,21 @@ defmodule WandererApp.MapPingsRepo do
   def get_by_inserted_before(inserted_before_date),
     do: WandererApp.Api.MapPing.by_inserted_before(inserted_before_date)
 
-  def create(ping), do: ping |> WandererApp.Api.MapPing.new()
-  def create!(ping), do: ping |> WandererApp.Api.MapPing.new!()
+  def create(%{map_id: map_id} = ping) when is_binary(map_id) do
+    # Use minimal map struct for InjectMapFromActor (no DB query needed)
+    minimal_map = %{id: map_id}
+    # Remove map_id from attrs since it's now injected from context
+    attrs = Map.delete(ping, :map_id)
+    # Pass minimal map via context
+    attrs |> WandererApp.Api.MapPing.new(context: %{map: minimal_map})
+  end
+
+  def create!(ping) do
+    case create(ping) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Failed to create ping: #{inspect(error)}"
+    end
+  end
 
   def destroy(ping) do
     ping

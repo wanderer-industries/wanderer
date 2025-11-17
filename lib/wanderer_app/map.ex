@@ -328,16 +328,12 @@ defmodule WandererApp.Map do
   def add_system(map_id, %{solar_system_id: solar_system_id} = system) do
     systems = map_id |> get_map!() |> Map.get(:systems, Map.new())
 
-    case not Map.has_key?(systems, solar_system_id) do
-      true ->
-        map_id
-        |> update_map(%{systems: Map.put(systems, solar_system_id, system)})
+    # Always update the cache, whether adding or updating
+    # This is used by UpdateCoordinator for both operations
+    map_id
+    |> update_map(%{systems: Map.put(systems, solar_system_id, system)})
 
-        :ok
-
-      _ ->
-        :ok
-    end
+    :ok
   end
 
   def update_system_by_solar_system_id(

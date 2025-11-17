@@ -272,6 +272,8 @@ defmodule WandererAppWeb.MapsLive do
 
     form = form |> Map.put("scope", scope)
 
+    Logger.info("Map creation form data: #{inspect(form)}, has_slug: #{Map.has_key?(form, "slug")}, slug_value: #{inspect(Map.get(form, "slug"))}")
+
     case WandererApp.Api.Map.new(form) do
       {:ok, new_map} ->
         :telemetry.execute([:wanderer_app, :map, :created], %{count: 1})
@@ -313,11 +315,7 @@ defmodule WandererAppWeb.MapsLive do
             |> Enum.join(", ")
           end
 
-        Logger.warning("Map creation failed",
-          form: form,
-          errors: inspect(errors),
-          slug_error: slug_error != nil
-        )
+        Logger.warning("Map creation failed: errors=#{inspect(errors)}, slug_error=#{slug_error != nil}")
 
         {:noreply,
          socket

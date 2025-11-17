@@ -5,7 +5,7 @@ if Mix.env() == :test do
   # Define the mocks
   Mox.defmock(Test.PubSubMock, for: WandererApp.Test.PubSub)
   Mox.defmock(Test.LoggerMock, for: WandererApp.Test.Logger)
-  Mox.defmock(Test.DDRTMock, for: WandererApp.Test.DDRT)
+  Mox.defmock(Test.SpatialIndexMock, for: WandererApp.Behaviours.SpatialIndex)
 
   # Define mock behaviours for testing
   defmodule WandererApp.Cache.MockBehaviour do
@@ -155,4 +155,21 @@ if Mix.env() == :test do
   Mox.defmock(Test.TelemetryMock, for: Test.TelemetryMock.MockBehaviour)
   Mox.defmock(Test.AshMock, for: Test.AshMock.MockBehaviour)
   Mox.defmock(WandererApp.Esi.Mock, for: WandererApp.Esi.MockBehaviour)
+
+  # Global stubs for commonly used mocks
+  Mox.stub(WandererApp.CachedInfo.Mock, :get_system_static_info, fn solar_system_id ->
+    {:ok,
+     %{
+       solar_system_id: solar_system_id,
+       solar_system_name: "Test System #{solar_system_id}",
+       class_title: "HS",
+       region_name: "Test Region",
+       constellation_name: "Test Constellation",
+       security: 1.0,
+       system_class: 1,
+       statics: [],
+       region_id: 10_000_001,
+       constellation_id: 20_000_001
+     }}
+  end)
 end

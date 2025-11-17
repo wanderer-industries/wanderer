@@ -1,4 +1,20 @@
 defmodule WandererAppWeb.MapWebhooksAPIController do
+  @moduledoc """
+  Legacy webhook management controller.
+
+  ⚠️  DEPRECATED: Use /api/v1/map_webhook_subscriptions instead.
+
+  This controller maintains backward compatibility for existing integrations.
+  The legacy endpoints at /api/maps/:map_identifier/webhooks will be removed
+  in a future version.
+
+  **Migration Path:**
+  - Use `/api/v1/map_webhook_subscriptions` for new integrations
+  - JSON:API compliant format
+  - Better error handling and validation
+  - Consistent with other v1 endpoints
+  """
+
   use WandererAppWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
@@ -363,7 +379,10 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       webhooks = MapWebhookSubscription.by_map!(map.id)
 
       json_webhooks = Enum.map(webhooks, &webhook_to_json/1)
-      json(conn, %{data: json_webhooks})
+
+      conn
+      |> add_deprecation_headers()
+      |> json(%{data: json_webhooks})
     else
       {:error, :map_not_found} ->
         conn
@@ -382,7 +401,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   def show(conn, %{"map_identifier" => map_identifier, "id" => webhook_id}) do
     with {:ok, map} <- get_map(conn, map_identifier),
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
-      json(conn, %{data: webhook_to_json(webhook)})
+      conn
+      |> add_deprecation_headers()
+      |> json(%{data: webhook_to_json(webhook)})
     else
       {:error, :map_not_found} ->
         conn
@@ -420,6 +441,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       case MapWebhookSubscription.create(webhook_params) do
         {:ok, webhook} ->
           conn
+          |> add_deprecation_headers()
           |> put_status(:created)
           |> json(%{data: webhook_to_json(webhook)})
 
@@ -475,7 +497,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
          {:ok, update_params} <- validate_update_params(params) do
       case MapWebhookSubscription.update(webhook, update_params) do
         {:ok, updated_webhook} ->
-          json(conn, %{data: webhook_to_json(updated_webhook)})
+          conn
+          |> add_deprecation_headers()
+          |> json(%{data: webhook_to_json(updated_webhook)})
 
         {:error, %Ash.Error.Invalid{errors: errors}} ->
           error_messages =
@@ -533,7 +557,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
          {:ok, webhook} <- get_webhook(webhook_id, map.id) do
       case MapWebhookSubscription.destroy(webhook) do
         :ok ->
-          conn |> put_status(:no_content)
+          conn
+          |> add_deprecation_headers()
+          |> put_status(:no_content)
 
         {:error, reason} ->
           Logger.error("Failed to delete webhook: #{inspect(reason)}")
@@ -571,7 +597,9 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
       case MapWebhookSubscription.rotate_secret(webhook) do
         {:ok, updated_webhook} ->
           # Return the new secret (this is the only time it's exposed)
-          json(conn, %{data: %{secret: updated_webhook.secret}})
+          conn
+          |> add_deprecation_headers()
+          |> json(%{data: %{secret: updated_webhook.secret}})
 
         {:error, reason} ->
           Logger.error("Failed to rotate webhook secret: #{inspect(reason)}")
@@ -603,6 +631,16 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   # -----------------------------------------------------------------
   # Private Functions
   # -----------------------------------------------------------------
+
+  defp add_deprecation_headers(conn) do
+    conn
+    |> put_resp_header("x-api-deprecated", "true")
+    |> put_resp_header("x-api-deprecated-reason", "Use /api/v1/map_webhook_subscriptions instead")
+    |> put_resp_header(
+      "warning",
+      "299 - \"This endpoint is deprecated and will be removed in a future version. Use /api/v1/map_webhook_subscriptions instead.\""
+    )
+  end
 
   defp get_map(conn, map_identifier) do
     # The map should already be loaded by the CheckMapApiKey plug

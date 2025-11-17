@@ -5,18 +5,39 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   Supports both session-based authentication (for web clients) and
   Bearer token authentication (for API clients).
 
-  Currently, Bearer token authentication only supports map API keys.
-  When a valid map API key is provided, the map owner is set as the
-  authenticated user and the map is made available in conn.assigns.
+  ## Authentication Mode
 
+  ### Token-Only Authentication (Simplified)
+  All V1 API endpoints now use token-only authentication:
+  - `Authorization: Bearer <token>` header identifies both the user and the map
+  - No need to provide `map_id` or `map_identifier` in requests
+  - The map context is automatically determined from the token
+
+  ### Non-Map-Scoped Endpoints
+  Some utility endpoints don't require map context:
+  - OpenAPI/JSON Schema endpoints
+  - Health check endpoints
+
+  This simplified approach eliminates redundant map identification and
+  ensures clients cannot accidentally access the wrong map.
   """
 
   import Plug.Conn
+  require Logger
 
-  alias Plug.Crypto
   alias WandererApp.Api.User
+  alias WandererApp.Api.ActorWithMap
   alias WandererApp.SecurityAudit
   alias WandererApp.Audit.RequestContext
+  alias Ash.PlugHelpers
+
+  # All V1 endpoints are now token-only (simpler!)
+  # We use a negative match approach - paths that DON'T require map context
+  @non_map_scoped_paths [
+    ~r{^/api/v1/open_api$},
+    ~r{^/api/v1/json_schema$},
+    ~r{^/api/v1/health.*$}
+  ]
 
   def init(opts), do: opts
 
@@ -28,32 +49,31 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         end_time = System.monotonic_time(:millisecond)
         duration = end_time - start_time
 
-        # Log successful authentication
         request_details = extract_request_details(conn)
         SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
 
-        # Emit successful authentication event
         :telemetry.execute(
           [:wanderer_app, :json_api, :auth],
           %{count: 1, duration: duration},
           %{auth_type: get_auth_type(conn), result: "success"}
         )
 
+        # For map-scoped endpoints, wrap user and map together as actor
+        actor = if map, do: ActorWithMap.new(user, map), else: user
+
         conn
         |> assign(:current_user, user)
         |> assign(:current_user_role, get_user_role(user))
+        |> PlugHelpers.set_actor(actor)
         |> maybe_assign_map(map)
 
       {:ok, user} ->
-        # Backward compatibility for session auth without map
         end_time = System.monotonic_time(:millisecond)
         duration = end_time - start_time
 
-        # Log successful authentication
         request_details = extract_request_details(conn)
         SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
 
-        # Emit successful authentication event
         :telemetry.execute(
           [:wanderer_app, :json_api, :auth],
           %{count: 1, duration: duration},
@@ -63,13 +83,12 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         conn
         |> assign(:current_user, user)
         |> assign(:current_user_role, get_user_role(user))
+        |> PlugHelpers.set_actor(user)
 
       {:error, reason} when is_binary(reason) ->
-        # Legacy error handling for simple string errors
         end_time = System.monotonic_time(:millisecond)
         duration = end_time - start_time
 
-        # Log failed authentication
         request_details = extract_request_details(conn)
 
         SecurityAudit.log_auth_event(
@@ -78,7 +97,6 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
           Map.put(request_details, :failure_reason, reason)
         )
 
-        # Emit failed authentication event
         :telemetry.execute(
           [:wanderer_app, :json_api, :auth],
           %{count: 1, duration: duration},
@@ -92,11 +110,9 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         |> halt()
 
       {:error, external_message, internal_reason} ->
-        # New error handling with separate internal and external messages
         end_time = System.monotonic_time(:millisecond)
         duration = end_time - start_time
 
-        # Log failed authentication with detailed internal reason
         request_details = extract_request_details(conn)
 
         SecurityAudit.log_auth_event(
@@ -108,7 +124,6 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
           })
         )
 
-        # Emit failed authentication event
         :telemetry.execute(
           [:wanderer_app, :json_api, :auth],
           %{count: 1, duration: duration},
@@ -124,10 +139,8 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp authenticate_request(conn) do
-    # Try session-based auth first (for web clients)
     case get_session(conn, :user_id) do
       nil ->
-        # Fallback to Bearer token auth
         authenticate_bearer_token(conn)
 
       user_id ->
@@ -149,90 +162,90 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp validate_api_token(conn, token) do
-    # Try to get map identifier from multiple sources
-    map_identifier = get_map_identifier(conn)
+    request_path = conn.request_path
+    request_method = http_method_atom(conn.method)
 
-    case map_identifier do
-      nil ->
-        # No map identifier found - this might be a general API endpoint
-        {:error, "Authentication failed", :no_map_context}
+    cond do
+      request_method == :unsupported ->
+        Logger.warning(
+          "[CheckJsonApiAuth] Unsupported HTTP method for #{request_path}",
+          path: request_path,
+          method: conn.method
+        )
 
-      identifier ->
-        # Resolve the identifier (could be UUID or slug)
-        case resolve_map_identifier(identifier) do
-          {:ok, map} ->
-            # Validate the token matches this specific map's API key
-            if is_binary(map.public_api_key) &&
-                 Crypto.secure_compare(map.public_api_key, token) do
-              # Get the map owner
-              case User.by_id(map.owner.user_id, load: :characters) do
-                {:ok, user} ->
-                  {:ok, user, map}
+        {:error, "Unsupported HTTP method", :unsupported_http_method}
 
-                {:error, _error} ->
-                  {:error, "Authentication failed", :map_owner_not_found}
-              end
-            else
-              {:error, "Authentication failed", :invalid_token_for_map}
-            end
+      # All v1 map-scoped endpoints are token-only
+      requires_map_context?(request_path) ->
+        find_map_by_token(token)
 
-          {:error, _} ->
-            {:error, "Authentication failed", :map_not_found}
+      # Non-map-scoped endpoints (health checks, OpenAPI, etc.)
+      true ->
+        # For non-map-scoped endpoints, we still need to validate the token
+        # but we don't need to return the map
+        case find_map_by_token(token) do
+          {:ok, user, _map} -> {:ok, user}
+          error -> error
         end
     end
   end
 
-  # Extract map identifier from multiple sources
-  defp get_map_identifier(conn) do
-    # 1. Check path params (e.g., /api/v1/maps/:map_identifier/systems)
-    case conn.params["map_identifier"] do
-      id when is_binary(id) and id != "" -> id
-      _ ->
-        # 2. Check request body for map_id (JSON:API format)
-        case conn.body_params do
-          %{"data" => %{"attributes" => %{"map_id" => map_id}}} when is_binary(map_id) and map_id != "" ->
-            map_id
+  # Helper to check if path requires map context
+  defp requires_map_context?(path) do
+    starts_with_v1? = String.starts_with?(path, "/api/v1/")
+    not_excluded? = not Enum.any?(@non_map_scoped_paths, &Regex.match?(&1, path))
 
-          %{"data" => %{"relationships" => %{"map" => %{"data" => %{"id" => map_id}}}}} when is_binary(map_id) and map_id != "" ->
-            map_id
+    starts_with_v1? and not_excluded?
+  end
 
-          # 3. Check flat body params (non-JSON:API format)
-          %{"map_id" => map_id} when is_binary(map_id) and map_id != "" ->
-            map_id
-
-          _ ->
-            # 4. Check query params (e.g., ?filter[map_id]=...)
-            case conn.params do
-              %{"filter" => %{"map_id" => map_id}} when is_binary(map_id) and map_id != "" ->
-                map_id
-
-              _ ->
-                nil
-            end
-        end
+  defp http_method_atom(method) do
+    case method do
+      "GET" -> :get
+      "POST" -> :post
+      "PUT" -> :put
+      "PATCH" -> :patch
+      "DELETE" -> :delete
+      "OPTIONS" -> :options
+      "HEAD" -> :head
+      _ -> :unsupported
     end
   end
 
-  # Helper to resolve map by ID or slug
-  defp resolve_map_identifier(identifier) do
-    # Try as UUID first
-    case WandererApp.Api.Map.by_id(identifier, load: :owner) do
-      {:ok, map} ->
-        {:ok, map}
+  defp find_map_by_token(token) do
+    try do
+      case WandererApp.Api.Map.get_map_by_api_key(token, load: :owner) do
+        {:ok, map} when not is_nil(map) ->
+          case User.by_id(map.owner.user_id, load: :characters) do
+            {:ok, user} ->
+              {:ok, user, map}
 
-      _ ->
-        # Try as slug
-        WandererApp.Api.Map.get_map_by_slug(identifier, load: :owner)
+            {:error, error} ->
+              Logger.error("[CheckJsonApiAuth] Failed to load map owner: #{inspect(error)}")
+
+              {:error, "Authentication failed", :map_owner_not_found}
+          end
+
+        {:error, %Ash.Error.Query.NotFound{}} ->
+          {:error, "Authentication failed", :invalid_token}
+
+        {:error, error} ->
+          Logger.error("[CheckJsonApiAuth] Error querying map: #{inspect(error)}")
+          {:error, "Authentication failed", :query_error}
+
+        nil ->
+          {:error, "Authentication failed", :invalid_token}
+      end
+    rescue
+      e ->
+        Logger.error("[CheckJsonApiAuth] Exception in find_map_by_token: #{inspect(e)}")
+        Logger.error("[CheckJsonApiAuth] Stacktrace: #{inspect(__STACKTRACE__)}")
+        {:error, "Authentication failed", :exception}
     end
   end
 
   defp get_user_role(user) do
     admins = WandererApp.Env.admins()
-
-    case Enum.empty?(admins) or user.hash in admins do
-      true -> :admin
-      false -> :user
-    end
+    if Enum.empty?(admins) or user.hash in admins, do: :admin, else: :user
   end
 
   defp get_auth_type(conn) do

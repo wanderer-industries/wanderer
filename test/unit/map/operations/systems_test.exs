@@ -68,6 +68,16 @@ defmodule WandererApp.Map.Operations.SystemsTest do
   end
 
   describe "core functions with real implementations" do
+    setup do
+      # Stub SpatialIndexMock functions
+      Mox.stub(Test.SpatialIndexMock, :init_tree, fn _tree_name, _opts -> :ok end)
+      Mox.stub(Test.SpatialIndexMock, :insert, fn _data, _tree_name -> {:ok, %{}} end)
+      Mox.stub(Test.SpatialIndexMock, :update, fn _id, _data, _tree_name -> {:ok, %{}} end)
+      Mox.stub(Test.SpatialIndexMock, :query, fn _box, _tree_name -> {:ok, []} end)
+      Mox.stub(Test.SpatialIndexMock, :delete, fn _ids, _tree_name -> {:ok, %{}} end)
+      :ok
+    end
+
     test "list_systems/1 function exists and handles map_id parameter" do
       map_id = Ecto.UUID.generate()
 
@@ -86,15 +96,16 @@ defmodule WandererApp.Map.Operations.SystemsTest do
     end
 
     test "create_system validates integer solar_system_id parameter" do
-      map_id = Ecto.UUID.generate()
-      user_id = Ecto.UUID.generate()
-      char_id = "123456789"
+      # Create a real map in the database
+      user = Factory.insert(:user)
+      character = Factory.insert(:character, %{user_id: user.id})
+      map = Factory.insert(:map, %{owner_id: character.id})
 
       conn = %{
         assigns: %{
-          map_id: map_id,
-          owner_character_id: char_id,
-          owner_user_id: user_id
+          map_id: map.id,
+          owner_character_id: character.id,
+          owner_user_id: user.id
         }
       }
 
@@ -154,16 +165,17 @@ defmodule WandererApp.Map.Operations.SystemsTest do
     end
 
     test "delete_system handles system_id parameter" do
-      map_id = Ecto.UUID.generate()
-      user_id = Ecto.UUID.generate()
-      char_id = "123456789"
+      # Create a real map in the database
+      user = Factory.insert(:user)
+      character = Factory.insert(:character, %{user_id: user.id})
+      map = Factory.insert(:map, %{owner_id: character.id})
       system_id = 30_000_142
 
       conn = %{
         assigns: %{
-          map_id: map_id,
-          owner_character_id: char_id,
-          owner_user_id: user_id
+          map_id: map.id,
+          owner_character_id: character.id,
+          owner_user_id: user.id
         }
       }
 
@@ -175,15 +187,16 @@ defmodule WandererApp.Map.Operations.SystemsTest do
     end
 
     test "upsert_systems_and_connections processes empty lists correctly" do
-      map_id = Ecto.UUID.generate()
-      user_id = Ecto.UUID.generate()
-      char_id = "123456789"
+      # Create a real map in the database
+      user = Factory.insert(:user)
+      character = Factory.insert(:character, %{user_id: user.id})
+      map = Factory.insert(:map, %{owner_id: character.id})
 
       conn = %{
         assigns: %{
-          map_id: map_id,
-          owner_character_id: char_id,
-          owner_user_id: user_id
+          map_id: map.id,
+          owner_character_id: character.id,
+          owner_user_id: user.id
         }
       }
 
@@ -224,43 +237,34 @@ defmodule WandererApp.Map.Operations.SystemsTest do
     end
 
     test "internal helper functions work correctly" do
-      # Test coordinate normalization by creating a system with coordinates
-      _params_with_coords = %{
-        "position_x" => 100,
-        "position_y" => 200
-      }
-
-      # Test solar system ID parsing
-      system_id_valid = "30000142"
-      _system_id_invalid = "invalid"
-
-      # These are internal functions tested indirectly through public API
-      # The main goal is to exercise code paths that use these helpers
-
-      # Test that functions can handle various input formats
-      map_id = Ecto.UUID.generate()
-      user_id = Ecto.UUID.generate()
-      char_id = "123456789"
+      # Create real map and user for testing
+      user = Factory.insert(:user)
+      character = Factory.insert(:character, %{user_id: user.id})
+      map = Factory.insert(:map, %{owner_id: character.id})
 
       conn_valid = %{
         assigns: %{
-          map_id: map_id,
-          owner_character_id: char_id,
-          owner_user_id: user_id
+          map_id: map.id,
+          owner_character_id: character.id,
+          owner_user_id: user.id
         }
       }
 
-      # This will exercise the fetch_system_id and normalize_coordinates functions
+      # Test that functions can handle various input formats
+      system_id_valid = "30000142"
+
       params_various_formats = [
         %{"solar_system_id" => system_id_valid, "position_x" => 100, "position_y" => 200},
         %{"solar_system_id" => system_id_valid, "position_x" => "150", "position_y" => "250"},
         %{solar_system_id: 30_000_142, position_x: 300, position_y: 400}
       ]
 
+      # In unit tests, map servers aren't started, so we expect an error
+      # but the parameter parsing and validation should work
       Enum.each(params_various_formats, fn params ->
         MapTestHelpers.expect_map_server_error(fn ->
           result = Systems.create_system(conn_valid, params)
-          # Each call should handle the parameter format
+          # Each call should handle the parameter format (will error due to no map server)
           assert is_tuple(result)
         end)
       end)

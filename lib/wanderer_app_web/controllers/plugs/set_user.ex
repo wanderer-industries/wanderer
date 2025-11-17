@@ -18,15 +18,7 @@ defmodule WandererAppWeb.Plugs.SetUser do
 
       user ->
         admins = WandererApp.Env.admins()
-
-        user_role =
-          case Enum.empty?(admins) or user.hash in admins do
-            true ->
-              :admin
-
-            _ ->
-              :user
-          end
+        user_role = if Enum.empty?(admins) or user.hash in admins, do: :admin, else: :user
 
         conn
         |> assign(:current_user, user)

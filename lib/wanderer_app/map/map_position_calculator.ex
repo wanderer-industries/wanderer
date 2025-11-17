@@ -2,7 +2,9 @@ defmodule WandererApp.Map.PositionCalculator do
   @moduledoc false
   require Logger
 
-  @ddrt Application.compile_env(:wanderer_app, :ddrt)
+  alias WandererApp.Map.CacheRTree
+
+  @spatial_index Application.compile_env(:wanderer_app, :spatial_index_module, CacheRTree)
 
   # Node height
   @h 34
@@ -62,7 +64,10 @@ defmodule WandererApp.Map.PositionCalculator do
   end
 
   defp is_available_position({x, y} = _position, rtree_name) do
-    case @ddrt.query(get_system_bounding_rect(%{position_x: x, position_y: y}), rtree_name) do
+    case @spatial_index.query(
+           get_system_bounding_rect(%{position_x: x, position_y: y}),
+           rtree_name
+         ) do
       {:ok, []} ->
         true
 
@@ -84,10 +89,10 @@ defmodule WandererApp.Map.PositionCalculator do
     top_edge = for x <- min..max, do: {x, min}
     # Right edge
     right_edge = for y <- min..max, do: {max, y}
-    # Bottom edge
-    bottom_edge = for x <- max..min, do: {x, max}
-    # Left edge
-    left_edge = for y <- max..min, do: {min, y}
+    # Bottom edge (descending)
+    bottom_edge = for x <- max..min//-1, do: {x, max}
+    # Left edge (descending)
+    left_edge = for y <- max..min//-1, do: {min, y}
 
     # Combine all edges in clockwise order
     (right_edge ++ bottom_edge ++ left_edge ++ top_edge)
@@ -105,6 +110,14 @@ defmodule WandererApp.Map.PositionCalculator do
   defp get_start_index(n, "left_to_right"), do: div(n, 2)
 
   defp get_start_index(n, "top_to_bottom"), do: div(n, 2) + n - 1
+
+  defp get_start_index(n, layout) do
+    if layout not in [nil, "left_to_right", "top_to_bottom"] do
+      Logger.debug(fn -> "Unknown layout '#{inspect(layout)}', defaulting to left_to_right" end)
+    end
+
+    div(n, 2)
+  end
 
   defp adjusted_coordinates(n, start_x, start_y, opts) when n > 1 do
     sorted_coords = sorted_edge_coordinates(n, opts)

@@ -37,7 +37,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
       )
 
       # Broadcast rally point events to external clients (webhooks/SSE)
-      if type == 1 do
+      if type == :rally_point do
         WandererApp.ExternalEvents.broadcast(map_id, :rally_point_added, %{
           rally_point_id: ping.id,
           solar_system_id: solar_system_id,
@@ -84,7 +84,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
       })
 
       # Broadcast rally point removal events to external clients (webhooks/SSE)
-      if type == 1 do
+      if type == :rally_point do
         WandererApp.ExternalEvents.broadcast(map_id, :rally_point_removed, %{
           id: ping_id,
           solar_system_id: solar_system_id,

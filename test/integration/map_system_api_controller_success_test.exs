@@ -1,13 +1,79 @@
 defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.ConnCase, async: false
 
   import Mox
   import WandererAppWeb.Factory
 
   setup :verify_on_exit!
+  setup :set_mox_private
+
+  # Shared setup for Mox stubs across all tests
+  setup do
+    # Set up default Mox expectations for SpatialIndex operations
+    Mox.stub(Test.SpatialIndexMock, :init_tree, fn _tree_name, _opts -> :ok end)
+    Mox.stub(Test.SpatialIndexMock, :query, fn _box, _tree_name -> {:ok, []} end)
+    Mox.stub(Test.SpatialIndexMock, :update, fn _id, _data, _tree_name -> {:ok, %{}} end)
+    Mox.stub(Test.SpatialIndexMock, :insert, fn _data, _tree_name -> {:ok, %{}} end)
+    Mox.stub(Test.SpatialIndexMock, :delete, fn _ids, _tree_name -> {:ok, %{}} end)
+
+    # Set up CachedInfo mock for system static info lookups
+    Mox.stub(WandererApp.CachedInfo.Mock, :get_system_static_info, fn
+      30_000_142 ->
+        {:ok,
+         %{
+           solar_system_id: 30_000_142,
+           region_id: 10_000_002,
+           constellation_id: 20_000_020,
+           solar_system_name: "Jita",
+           solar_system_name_lc: "jita",
+           constellation_name: "Kimotoro",
+           region_name: "The Forge",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      30_000_144 ->
+        {:ok,
+         %{
+           solar_system_id: 30_000_144,
+           region_id: 10_000_043,
+           constellation_id: 20_000_304,
+           solar_system_name: "Amarr",
+           solar_system_name_lc: "amarr",
+           constellation_name: "Throne Worlds",
+           region_name: "Domain",
+           system_class: 0,
+           security: "0.9",
+           type_description: "High Security",
+           class_title: "High Sec",
+           is_shattered: false,
+           effect_name: nil,
+           effect_power: nil,
+           statics: [],
+           wandering: [],
+           triglavian_invasion_status: nil,
+           sun_type_id: 45041
+         }}
+
+      _ ->
+        {:error, :not_found}
+    end)
+
+    :ok
+  end
 
   describe "successful CRUD operations for map systems" do
     setup do
+
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
@@ -115,7 +181,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "status" => 1
       }
 
-      conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
+      conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.solar_system_id}", update_params)
 
       response = json_response(conn, 200)
 
@@ -141,7 +207,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "custom_name" => "My Trade Hub"
       }
 
-      conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
+      conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.solar_system_id}", update_params)
 
       response = json_response(conn, 200)
 
@@ -160,7 +226,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
           name: "Jita"
         })
 
-      conn = delete(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}")
+      conn = delete(conn, ~p"/api/maps/#{map.slug}/systems/#{system.solar_system_id}")
 
       # Response may be 204 (no content) or 200 with data
       case conn.status do

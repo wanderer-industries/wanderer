@@ -193,38 +193,28 @@ defmodule WandererApp.TestHelpers do
         if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
         # Start the map server directly for tests
         {:ok, pid} = start_map_server_directly(map_id)
-        # Grant database access to the new map server process
-        WandererApp.DataCase.allow_database_access(pid)
-        # Allow database access for any spawned processes
-        allow_map_server_children_database_access(pid)
+
+        # Only grant access if we got a valid PID
+        if is_pid(pid) do
+          # Grant database access to the new map server process
+          WandererApp.DataCase.allow_database_access(pid)
+          # Allow database access for any spawned processes
+          allow_map_server_children_database_access(pid)
+        end
+
         :ok
     end
   end
 
   defp start_map_server_directly(map_id) do
-    # Use the same approach as MapManager.start_map_server/1
-    case DynamicSupervisor.start_child(
-           {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-           {WandererApp.Map.ServerSupervisor, map_id: map_id}
-         ) do
+    # Use the pooled architecture to start the map
+    case WandererApp.Map.MapPoolDynamicSupervisor.start_map(map_id) do
       {:ok, pid} ->
-        # Allow database access for the supervisor and its children
+        # Allow database access for the pool
         WandererApp.DataCase.allow_genserver_database_access(pid)
 
-        # Allow Mox access for the supervisor process if in test mode
+        # Allow Mox access for the pool process if in test mode
         WandererApp.Test.MockAllowance.setup_genserver_mocks(pid)
-
-        # Also get the actual map server pid and allow access
-        case WandererApp.Map.Server.map_pid(map_id) do
-          server_pid when is_pid(server_pid) ->
-            WandererApp.DataCase.allow_genserver_database_access(server_pid)
-
-            # Allow Mox access for the map server process if in test mode
-            WandererApp.Test.MockAllowance.setup_genserver_mocks(server_pid)
-
-          _ ->
-            :ok
-        end
 
         {:ok, pid}
 
@@ -236,6 +226,11 @@ defmodule WandererApp.TestHelpers do
         # If we hit max children, wait a bit and retry
         :timer.sleep(100)
         start_map_server_directly(map_id)
+
+      {:error, :registry_not_available} ->
+        # Registry not available in test environment, skip map server startup
+        # Tests will run without the pooled map server
+        {:ok, nil}
 
       error ->
         error

@@ -78,7 +78,7 @@ defmodule WandererApp.Map.Operations.Duplication do
 
         Enum.reduce_while(source_systems, {:ok, system_mapping}, fn source_system,
                                                                     {:ok, acc_mapping} ->
-          case copy_single_system(source_system, new_map.id) do
+          case copy_single_system(source_system, new_map) do
             {:ok, new_system} ->
               new_mapping = Map.put(acc_mapping, source_system.id, new_system.id)
               {:cont, {:ok, new_mapping}}
@@ -94,7 +94,7 @@ defmodule WandererApp.Map.Operations.Duplication do
   end
 
   # Copy a single system
-  defp copy_single_system(source_system, new_map_id) do
+  defp copy_single_system(source_system, new_map) do
     # Get all attributes from the source system, excluding system-managed fields and metadata
     excluded_fields = [
       # System managed fields
@@ -113,13 +113,14 @@ defmodule WandererApp.Map.Operations.Duplication do
     ]
 
     # Convert the source system struct to a map and filter out excluded fields
+    # Note: map_id is excluded and will be injected via InjectMapFromActor from context
     system_attrs =
       source_system
       |> Map.from_struct()
       |> Map.drop(excluded_fields)
-      |> Map.put(:map_id, new_map_id)
 
-    MapSystem.create(system_attrs)
+    # Pass map via context instead of as an attribute (InjectMapFromActor will inject map_id)
+    MapSystem.create(system_attrs, context: %{map: new_map})
   end
 
   # Copy all connections between systems
@@ -130,7 +131,7 @@ defmodule WandererApp.Map.Operations.Duplication do
       {:ok, source_connections} ->
         Enum.reduce_while(source_connections, {:ok, []}, fn source_connection,
                                                             {:ok, acc_connections} ->
-          case copy_single_connection(source_connection, new_map.id, system_mapping) do
+          case copy_single_connection(source_connection, new_map, system_mapping) do
             {:ok, new_connection} ->
               {:cont, {:ok, [new_connection | acc_connections]}}
 
@@ -145,7 +146,7 @@ defmodule WandererApp.Map.Operations.Duplication do
   end
 
   # Copy a single connection with updated system references
-  defp copy_single_connection(source_connection, new_map_id, system_mapping) do
+  defp copy_single_connection(source_connection, new_map, system_mapping) do
     # Get all attributes from the source connection, excluding system-managed fields and metadata
     excluded_fields = [
       # System managed fields
@@ -164,14 +165,15 @@ defmodule WandererApp.Map.Operations.Duplication do
     ]
 
     # Convert the source connection struct to a map and filter out excluded fields
+    # Note: map_id is excluded and will be injected via InjectMapFromActor from context
     connection_attrs =
       source_connection
       |> Map.from_struct()
       |> Map.drop(excluded_fields)
-      |> Map.put(:map_id, new_map_id)
       |> update_system_references(system_mapping)
 
-    MapConnection.create(connection_attrs)
+    # Pass map via context instead of as an attribute (InjectMapFromActor will inject map_id)
+    MapConnection.create(connection_attrs, context: %{map: new_map})
   end
 
   # Update system references in connection attributes using the system mapping

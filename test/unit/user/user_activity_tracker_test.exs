@@ -20,11 +20,13 @@ defmodule WandererApp.User.ActivityTrackerTest do
       # - Invalid data
 
       # The key requirement is that it NEVER crashes the calling code
-      result = ActivityTracker.track_map_event(:map_connection_added, %{
-        character_id: nil,  # This will cause the function to skip tracking
-        user_id: nil,
-        map_id: nil
-      })
+      result =
+        ActivityTracker.track_map_event(:map_connection_added, %{
+          # This will cause the function to skip tracking
+          character_id: nil,
+          user_id: nil,
+          map_id: nil
+        })
 
       # Should return success even when input is incomplete
       assert {:ok, _} = result
@@ -35,11 +37,12 @@ defmodule WandererApp.User.ActivityTrackerTest do
       # This is important for monitoring and debugging
 
       # The function should complete without raising even with incomplete data
-      assert {:ok, _} = ActivityTracker.track_map_event(:map_connection_added, %{
-        character_id: nil,
-        user_id: nil,
-        map_id: nil
-      })
+      assert {:ok, _} =
+               ActivityTracker.track_map_event(:map_connection_added, %{
+                 character_id: nil,
+                 user_id: nil,
+                 map_id: nil
+               })
     end
   end
 
@@ -49,10 +52,11 @@ defmodule WandererApp.User.ActivityTrackerTest do
     end
 
     test "returns {:ok, nil} on error without crashing" do
-      result = ActivityTracker.track_acl_event(:map_acl_added, %{
-        user_id: nil,
-        acl_id: nil
-      })
+      result =
+        ActivityTracker.track_acl_event(:map_acl_added, %{
+          user_id: nil,
+          acl_id: nil
+        })
 
       assert {:ok, _} = result
     end
@@ -68,11 +72,12 @@ defmodule WandererApp.User.ActivityTrackerTest do
       # regardless of internal errors
 
       # Test with nil values (which will fail validation)
-      assert {:ok, _} = ActivityTracker.track_map_event(:test_event, %{
-        character_id: nil,
-        user_id: nil,
-        map_id: nil
-      })
+      assert {:ok, _} =
+               ActivityTracker.track_map_event(:test_event, %{
+                 character_id: nil,
+                 user_id: nil,
+                 map_id: nil
+               })
 
       # Test with empty map (which will fail validation)
       assert {:ok, _} = ActivityTracker.track_map_event(:test_event, %{})

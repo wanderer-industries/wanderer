@@ -52,25 +52,28 @@ Connect to Wanderer's SSE endpoint to receive a real-time stream of events:
 ### JavaScript Example
 ```javascript
 // Connect to SSE endpoint
-const mapId = "your-map-id-or-slug";
+const mapIdentifier = "your-map-id-or-slug";
 const apiToken = "your-map-api-token";
 
 // Optional: Filter specific events
 const eventTypes = ["add_system", "map_kill"].join(",");
 
+// v1 endpoint (Recommended) with JSON:API format
+const url = `https://wanderer.ltd/api/v1/maps/${mapIdentifier}/events/stream?events=${eventTypes}&format=jsonapi`;
+
 // Note: Native EventSource doesn't support custom headers
 // You have two options:
 
-// Option 1: Include the API token as a query parameter
-const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?events=${eventTypes}&token=${apiToken}`;
-const eventSource = new EventSource(url);
+// Option 1: Include the API token as a query parameter (deprecated but works)
+const urlWithToken = `${url}&token=${apiToken}`;
+const eventSource = new EventSource(urlWithToken);
 
-// Option 2: Use an EventSource polyfill that supports headers
- import { EventSourcePolyfill } from 'event-source-polyfill';
- const eventSource = new EventSourcePolyfill(url, {
-   headers: {
-     'Authorization': `Bearer ${apiToken}`
-   }
+// Option 2: Use an EventSource polyfill that supports headers (recommended)
+import { EventSourcePolyfill } from 'event-source-polyfill';
+const eventSource = new EventSourcePolyfill(url, {
+  headers: {
+    'Authorization': `Bearer ${apiToken}`
+  }
 });
 
 // Handle connection opened
@@ -82,7 +85,7 @@ eventSource.onopen = () => {
 eventSource.onmessage = (event) => {
   const eventData = JSON.parse(event.data);
   console.log(`Received ${eventData.type} event:`, eventData);
-  
+
   // Handle specific event types
   switch(eventData.type) {
     case 'add_system':
@@ -109,10 +112,10 @@ You can subscribe to specific events or omit the `events` parameter to receive a
 ```javascript
 // Subscribe to specific events only
 const eventTypes = ["add_system", "connection_added", "map_kill"].join(",");
-const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?events=${eventTypes}`;
+const url = `https://wanderer.ltd/api/v1/maps/${mapIdentifier}/events/stream?events=${eventTypes}`;
 
 // Or subscribe to all events (no events parameter)
-const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream`;
+const url = `https://wanderer.ltd/api/v1/maps/${mapIdentifier}/events/stream`;
 ```
 
 ### Event Backfill
@@ -121,7 +124,7 @@ SSE supports automatic backfill when reconnecting:
 ```javascript
 // Reconnect with backfill from last received event
 // Add the last_event_id as a query parameter
-const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream?token=${apiToken}&last_event_id=${lastEventId}`;
+const url = `https://wanderer.ltd/api/v1/maps/${mapIdentifier}/events/stream?token=${apiToken}&last_event_id=${lastEventId}`;
 const eventSource = new EventSource(url);
 ```
 
@@ -540,11 +543,13 @@ Your Discord channel will now receive formatted notifications for all map events
 ## API Reference
 
 ### SSE Endpoints
-- **Stream URL**: `https://wanderer.ltd/api/maps/{map_id}/events/stream`
+- **v1 Stream URL** (Recommended): `https://wanderer.ltd/api/v1/maps/{map_identifier}/events/stream`
+- **Legacy Stream URL** (Maintained): `https://wanderer.ltd/api/maps/{map_identifier}/events/stream`
 - **Authentication**: Bearer token in Authorization header
-- **Query Parameters**: 
+- **Query Parameters**:
   - `events`: Comma-separated list of event types (optional)
   - `last_event_id`: ULID for backfill (optional)
+  - `format`: Event format - "legacy" (default) or "jsonapi" for JSON:API compliance
 
 ### REST API Endpoints
 - **Enable/Disable Webhooks**: `PUT /api/maps/{map_id}/webhooks/toggle`
@@ -566,24 +571,25 @@ Your Discord channel will now receive formatted notifications for all map events
 Connect to multiple maps simultaneously:
 
 ```javascript
-const maps = ['map-id-1', 'map-id-2', 'map-id-3'];
+const mapIdentifiers = ['map-slug-1', 'map-slug-2', 'map-slug-3'];
 const eventSources = {};
 
-maps.forEach(mapId => {
-  const url = `https://wanderer.ltd/api/maps/${mapId}/events/stream`;
-  const eventSource = new EventSource(url, {
+mapIdentifiers.forEach(mapId => {
+  const url = `https://wanderer.ltd/api/v1/maps/${mapId}/events/stream`;
+  // Using EventSourcePolyfill for header support
+  const eventSource = new EventSourcePolyfill(url, {
     headers: { 'Authorization': `Bearer ${apiToken}` }
   });
-  
+
   eventSource.onmessage = (event) => {
     const eventData = JSON.parse(event.data);
     console.log(`[${mapId}] ${eventData.type}:`, eventData);
   };
-  
+
   eventSource.onerror = (error) => {
     console.error(`[${mapId}] SSE error:`, error);
   };
-  
+
   eventSources[mapId] = eventSource;
 });
 ```
@@ -621,13 +627,13 @@ Create sophisticated alert conditions:
 
 ```javascript
 // Set up SSE connection for alerts
-const eventSource = new EventSource(`https://wanderer.ltd/api/maps/${mapId}/events/stream`, {
+const eventSource = new EventSourcePolyfill(`https://wanderer.ltd/api/v1/maps/${mapIdentifier}/events/stream`, {
   headers: { 'Authorization': `Bearer ${apiToken}` }
 });
 
 eventSource.onmessage = (event) => {
   const eventData = JSON.parse(event.data);
-  
+
   // Alert on high-value kills
   if (eventData.type === 'map_kill' && eventData.payload.value > 1000000000) {
     sendUrgentAlert({
@@ -636,7 +642,7 @@ eventSource.onmessage = (event) => {
       priority: "high"
     });
   }
-  
+
   // Alert on new connections to specific systems
   if (eventData.type === 'connection_added') {
     const watchedSystems = ["J123456", "J234567"];

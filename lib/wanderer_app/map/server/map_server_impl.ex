@@ -25,7 +25,7 @@ defmodule WandererApp.Map.Server.Impl do
   ]
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
-  @ddrt Application.compile_env(:wanderer_app, :ddrt)
+  @spatial_index Application.compile_env(:wanderer_app, :spatial_index_module)
 
   @connections_cleanup_timeout :timer.minutes(1)
 
@@ -517,7 +517,7 @@ defmodule WandererApp.Map.Server.Impl do
        ) do
     {:ok, options} = WandererApp.MapRepo.options_to_form_data(initial_map)
 
-    @ddrt.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
+    @spatial_index.init_tree("rtree_#{map_id}", %{width: 150, verbose: false})
 
     map =
       initial_map

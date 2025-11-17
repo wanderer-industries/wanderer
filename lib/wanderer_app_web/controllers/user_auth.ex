@@ -14,15 +14,7 @@ defmodule WandererAppWeb.UserAuth do
       %{"user_id" => user_id} ->
         user = User.by_id!(user_id) |> Ash.load!(:characters)
         admins = WandererApp.Env.admins()
-
-        user_role =
-          case Enum.empty?(admins) or user.hash in admins do
-            true ->
-              :admin
-
-            _ ->
-              :user
-          end
+        user_role = if Enum.empty?(admins) or user.hash in admins, do: :admin, else: :user
 
         new_socket =
           socket

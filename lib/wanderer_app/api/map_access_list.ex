@@ -6,6 +6,8 @@ defmodule WandererApp.Api.MapAccessList do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshJsonApi.Resource]
 
+  alias WandererApp.Api.Changes.InjectMapFromActor
+
   postgres do
     repo(WandererApp.Repo)
     table("map_access_lists_v1")
@@ -33,7 +35,7 @@ defmodule WandererApp.Api.MapAccessList do
 
       get(:read)
       index :read
-      post(:create)
+      post(:create_with_map_injection)
       patch(:update)
       delete(:destroy)
 
@@ -44,7 +46,7 @@ defmodule WandererApp.Api.MapAccessList do
   end
 
   code_interface do
-    define(:create, action: :create)
+    define(:create_with_map_injection, action: :create_with_map_injection)
 
     define(:read_by_map,
       action: :read_by_map
@@ -57,11 +59,45 @@ defmodule WandererApp.Api.MapAccessList do
 
   actions do
     default_accept [
-      :map_id,
-      :access_list_id
+      :access_list_id,
+      :map_id
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    # Default create action for relationship management
+    # map_id is auto-set by manage_relationship
+    create :create do
+      primary? true
+      accept [:access_list_id, :map_id]
+    end
+
+    # API v1 create action with map injection
+    create :create_with_map_injection do
+      accept [:access_list_id]
+      change InjectMapFromActor
+    end
+
+    read :read do
+      primary? true
+
+      # Auto-filter by map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            Ash.Query.filter(query, expr(map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
+
+    defaults [:update, :destroy]
 
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)

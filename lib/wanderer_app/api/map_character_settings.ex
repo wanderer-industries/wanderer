@@ -6,6 +6,8 @@ defmodule WandererApp.Api.MapCharacterSettings do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshCloak, AshJsonApi.Resource]
 
+  require Ash.Query
+
   @derive {Jason.Encoder,
            only: [
              :id,
@@ -64,7 +66,28 @@ defmodule WandererApp.Api.MapCharacterSettings do
       :tracked
     ]
 
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary?(true)
+
+      # Auto-filter by map_id from authenticated token
+      prepare fn query, context ->
+        case Map.get(context, :map) do
+          %{id: map_id} ->
+            Ash.Query.filter(query, expr(map_id == ^map_id))
+
+          _ ->
+            query
+        end
+      end
+
+      pagination offset?: true,
+                 default_limit: 100,
+                 max_page_size: 500,
+                 countable: true,
+                 required?: false
+    end
 
     create :create do
       primary? true

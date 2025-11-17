@@ -14,8 +14,8 @@ defmodule WandererApp.Test.MockAllowance do
   def allow_mocks_for_process(pid, owner_pid \\ self()) do
     if Code.ensure_loaded?(Mox) do
       try do
-        # Allow DDRT mock for the process
-        Mox.allow(Test.DDRTMock, owner_pid, pid)
+        # Allow SpatialIndex mock for the process
+        Mox.allow(Test.SpatialIndexMock, owner_pid, pid)
 
         # Allow Logger mock for the process
         Mox.allow(Test.LoggerMock, owner_pid, pid)
@@ -57,10 +57,24 @@ defmodule WandererApp.Test.MockAllowance do
   """
   def ensure_global_mocks do
     if Code.ensure_loaded?(Mox) do
-      Mox.set_mox_global()
+      # Only set global mode if we're not already in global mode
+      # This prevents errors when multiple tests try to set global mode concurrently
+      try do
+        Mox.set_mox_global()
+      rescue
+        # Already in global mode, that's fine
+        _ -> :ok
+      end
 
-      # Re-setup mocks to ensure they're available globally
-      WandererApp.Test.Mocks.setup_mocks()
+      # Try to setup mocks, but ignore errors if we're not the global owner
+      try do
+        WandererApp.Test.Mocks.setup_mocks()
+      rescue
+        ArgumentError ->
+          # Another process is the global owner and has already set up mocks
+          # This is expected in concurrent tests
+          :ok
+      end
     end
   end
 

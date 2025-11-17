@@ -98,7 +98,10 @@
       </div>
       <div class="w-full justify-end">
         <ul class="flex flex-wrap items-center p-0 m-0">
-          <li :for={tag <- @post.tags} class="inline-flex rounded-[35px] bg-primary px-1 text-white">
+          <li
+            :for={tag <- @post.tags}
+            class="inline-flex rounded-[35px] bg-primary px-1 text-white"
+          >
             <a href="#">
               <div class="badge badge-outline text-lime-400 rounded-none border-none text-xl">
                 #{tag}

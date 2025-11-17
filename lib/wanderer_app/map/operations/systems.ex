@@ -35,21 +35,26 @@ defmodule WandererApp.Map.Operations.Systems do
 
   # Private helper for batch upsert
   defp create_system_batch(%{map_id: map_id, user_id: user_id, char_id: char_id}, params) do
-    {:ok, solar_system_id} = fetch_system_id(params)
-    update_existing = fetch_update_existing(params, false)
+    case fetch_system_id(params) do
+      {:ok, solar_system_id} ->
+        update_existing = fetch_update_existing(params, false)
 
-    map_id
-    |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
-    |> case do
-      {:ok, _location} ->
-        do_create_system(map_id, user_id, char_id, params)
+        map_id
+        |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
+        |> case do
+          {:ok, _location} ->
+            do_create_system(map_id, user_id, char_id, params)
 
-      {:error, :already_exists} ->
-        if update_existing do
-          do_update_system(map_id, user_id, char_id, solar_system_id, params)
-        else
-          :ok
+          {:error, :already_exists} ->
+            if update_existing do
+              do_update_system(map_id, user_id, char_id, solar_system_id, params)
+            else
+              :ok
+            end
         end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -268,13 +273,19 @@ defmodule WandererApp.Map.Operations.Systems do
         })
 
       "custom_name" ->
-        {:ok, solar_system_info} =
-          WandererApp.CachedInfo.get_system_static_info(system_id)
-
-        Server.update_system_name(map_id, %{
-          solar_system_id: system_id,
-          name: val || solar_system_info.solar_system_name
-        })
+        # Update the custom_name field directly using Ash
+        with {:ok, system} <-
+               MapSystemRepo.get_by_map_and_solar_system_id(map_id, system_id),
+             {:ok, _updated} <-
+               system
+               |> Ash.Changeset.for_update(:update, %{custom_name: val})
+               |> Ash.update() do
+          :ok
+        else
+          error ->
+            Logger.error("[update_system_field] Failed to update custom_name: #{inspect(error)}")
+            {:error, :update_failed}
+        end
 
       "temporary_name" ->
         Server.update_system_temporary_name(map_id, %{
