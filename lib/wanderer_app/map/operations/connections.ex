@@ -12,7 +12,6 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # Connection type constants
   @connection_type_wormhole 0
-  @connection_type_stargate 1
 
   # Ship size constants
   @small_ship_size 0

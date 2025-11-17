@@ -136,9 +136,6 @@ defmodule WandererApp.License.LicenseManager do
     end
   end
 
-  @doc """
-  Updates a license's expiration date based on the map's subscription.
-  """
   def update_license_expiration_from_subscription(map_id) do
     with {:ok, license} <- get_license_by_map_id(map_id),
          {:ok, subscription} <- SubscriptionManager.get_active_map_subscription(map_id) do
@@ -146,24 +143,15 @@ defmodule WandererApp.License.LicenseManager do
     end
   end
 
-  @doc """
-  Formats a datetime as YYYY-MM-DD.
-  """
   defp format_date(datetime) do
     Calendar.strftime(datetime, "%Y-%m-%d")
   end
 
-  @doc """
-  Generates a link to the map.
-  """
   defp generate_map_link(map_slug) do
     base_url = Application.get_env(:wanderer_app, :web_app_url)
     "#{base_url}/#{map_slug}"
   end
 
-  @doc """
-  Gets the map owner's data.
-  """
   defp get_map_owner_email(map) do
     {:ok, %{owner: owner}} = map |> Ash.load([:owner])
     "#{owner.name}(#{owner.eve_id})"

@@ -234,12 +234,12 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
     end
   end
 
-  defp validate_param_value(key, value, max_length, max_depth, current_depth)
+  defp validate_param_value(_key, value, max_length, max_depth, current_depth)
        when is_map(value) do
     validate_params(value, max_length, max_depth, current_depth)
   end
 
-  defp validate_param_value(key, value, max_length, max_depth, current_depth)
+  defp validate_param_value(_key, value, max_length, max_depth, current_depth)
        when is_list(value) do
     validate_params(value, max_length, max_depth, current_depth)
   end

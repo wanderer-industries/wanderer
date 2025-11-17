@@ -45,7 +45,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         } = system_info,
         user_id,
         character_id,
-        opts
+        _opts
       ) do
     map_id
     |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
@@ -100,8 +100,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         %{
           solar_system_id: solar_system_id,
           text: text
-        } = comment_info,
-        user_id,
+        } = _comment_info,
+        _user_id,
         character_id
       ) do
     system =

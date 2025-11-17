@@ -546,7 +546,7 @@ defmodule WandererApp.Kills.Client do
     end
   end
 
-  defp check_health(%{socket_pid: pid, last_message_time: last_msg_time} = state)
+  defp check_health(%{socket_pid: pid, last_message_time: last_msg_time} = _state)
        when not is_nil(pid) and not is_nil(last_msg_time) do
     cond do
       not socket_alive?(pid) ->

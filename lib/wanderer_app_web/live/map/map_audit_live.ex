@@ -164,14 +164,4 @@ defmodule WandererAppWeb.MapAuditLive do
         {:noreply, socket |> push_navigate(to: valid_path)}
     end
   end
-
-  defp get_valid_period(period, true), do: period
-
-  defp get_valid_period(period, _map_subscription_active) do
-    if period in @active_subscription_periods do
-      "1H"
-    else
-      period
-    end
-  end
 end

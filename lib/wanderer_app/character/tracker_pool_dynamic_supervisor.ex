@@ -52,7 +52,7 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
 
   defp get_available_pool([]), do: nil
 
-  defp get_available_pool([{pid, uuid} | pools]) do
+  defp get_available_pool([{_pid, uuid} | pools]) do
     case Registry.lookup(@unique_registry, Module.concat(WandererApp.Character.TrackerPool, uuid)) do
       [] ->
         nil
@@ -62,8 +62,8 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
           nil ->
             get_available_pool(pools)
 
-          pid ->
-            pid
+          pool_pid ->
+            pool_pid
         end
     end
   end

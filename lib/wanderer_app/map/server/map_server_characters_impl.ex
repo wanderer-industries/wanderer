@@ -78,9 +78,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     })
   end
 
-  defp untrack_character(_is_character_map_active, _map_id, character_id) do
-    :ok
-  end
+  defp untrack_character(_is_character_map_active, _map_id, _character_id), do: :ok
 
   defp is_character_map_active?(map_id, character_id) do
     case WandererApp.Character.get_character_state(character_id) do
@@ -667,14 +665,6 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     else
       {updates, cache_updates}
     end
-  end
-
-  # Updated to accept character struct directly to avoid redundant queries
-  defp update_character(map_id, %{id: _character_id} = character) do
-    Impl.broadcast!(map_id, :character_updated, character)
-
-    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-    WandererApp.ExternalEvents.broadcast(map_id, :character_updated, character)
   end
 
   defp update_location(

@@ -143,7 +143,7 @@ defmodule WandererAppWeb.MapAPIController do
     })
   end
 
-  def bulk_delete_v1(conn, params) do
+  def bulk_delete_v1(conn, _params) do
     # Basic bulk delete implementation for testing
     conn
     |> put_status(204)

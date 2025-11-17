@@ -152,7 +152,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     |> assign(show_topup: true)
   end
 
-  @impl true
   def handle_server_event(
         {_event, {:flash, type, message}},
         socket
@@ -327,8 +326,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   end
 
   def handle_ui_event(
-        event,
-        body,
+        _event,
+        _body,
         %{assigns: %{main_character_id: main_character_id, can_track?: true}} =
           socket
       )
@@ -354,20 +353,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     if actor do
       case WandererApp.Api.MapDefaultSettings.get_by_map_id(%{map_id: map_id}) do
         {:ok, [existing | _]} ->
-          result =
-            WandererApp.Api.MapDefaultSettings.update(existing, %{settings: settings},
-              actor: actor
-            )
+          WandererApp.Api.MapDefaultSettings.update(existing, %{settings: settings}, actor: actor)
 
-          result
-
-        error ->
-          result =
-            WandererApp.Api.MapDefaultSettings.create(%{map_id: map_id, settings: settings},
-              actor: actor
-            )
-
-          result
+        _error ->
+          WandererApp.Api.MapDefaultSettings.create(%{map_id: map_id, settings: settings},
+            actor: actor
+          )
       end
     else
       Logger.error("No character found for user #{current_user.id}")
@@ -437,7 +428,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          %{
            id: current_user_id,
            characters: current_user_characters
-         } = current_user,
+         } = _current_user,
          user_permissions,
          owner_id
        ) do
@@ -537,9 +528,6 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   end
 
   defp check_map_access(_, _), do: {:error, :no_permissions}
-
-  defp setup_map_socket(socket, map_id, map_slug, map_name, init_data, only_tracked_characters) do
-  end
 
   defp handle_map_server_started(
          %{
