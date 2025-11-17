@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.28](https://github.com/wanderer-industries/wanderer/compare/v1.84.27...v1.84.28) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed ACL updates
+
 ## [v1.84.27](https://github.com/wanderer-industries/wanderer/compare/v1.84.26...v1.84.27) (2025-11-17)
 
 
