@@ -2,6 +2,21 @@
 
 <!-- changelog -->
 
+## [v1.84.27](https://github.com/wanderer-industries/wanderer/compare/v1.84.26...v1.84.27) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: supported characters_updates for external events
+
+* core: improved character tracking
+
+* core: improved character tracking
+
+* core: improved character location tracking
+
 ## [v1.84.26](https://github.com/wanderer-industries/wanderer/compare/v1.84.25...v1.84.26) (2025-11-16)
 
 
