@@ -309,12 +309,12 @@ defmodule WandererApp.Map.SlugUniquenessTest do
 
   defp create_test_user do
     # Create a test user with necessary attributes
-    {:ok, user} =
-      WandererApp.Api.User.new(%{
-        name: "Test User #{:rand.uniform(10_000)}",
-        eve_id: :rand.uniform(100_000_000)
-      })
-
-    user
+    case Ash.create(WandererApp.Api.User, %{
+           name: "Test User #{:rand.uniform(10_000)}",
+           hash: "test_hash_#{:rand.uniform(100_000_000)}"
+         }) do
+      {:ok, user} -> user
+      {:error, reason} -> raise "Failed to create user: #{inspect(reason)}"
+    end
   end
 end
