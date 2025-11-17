@@ -2,7 +2,7 @@ defmodule WandererApp.ExternalEvents do
   @moduledoc """
   External event system for SSE and webhook delivery.
 
-  This system is completely separate from the internal Phoenix PubSub 
+  This system is completely separate from the internal Phoenix PubSub
   event system and does NOT modify any existing event flows.
 
   External events are delivered to:
@@ -77,7 +77,7 @@ defmodule WandererApp.ExternalEvents do
         GenServer.cast(MapEventRelay, {:deliver_event, event})
         :ok
       else
-        Logger.warning("MapEventRelay not available for event delivery (map: #{map_id})")
+        Logger.debug(fn -> "MapEventRelay not available for event delivery (map: #{map_id})" end)
         {:error, :relay_not_available}
       end
     else
