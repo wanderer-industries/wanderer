@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.31](https://github.com/wanderer-industries/wanderer/compare/v1.84.30...v1.84.31) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connactions validation logic
+
 ## [v1.84.30](https://github.com/wanderer-industries/wanderer/compare/v1.84.29...v1.84.30) (2025-11-17)
 
 
