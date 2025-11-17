@@ -1,6 +1,8 @@
 defmodule WandererApp.CachedInfo do
   require Logger
 
+  alias WandererAppWeb.Helpers.APIUtils
+
   def run(_arg) do
     :ok = cache_trig_systems()
   end
@@ -37,6 +39,8 @@ defmodule WandererApp.CachedInfo do
   end
 
   def get_system_static_info(solar_system_id) do
+    {:ok, solar_system_id} = APIUtils.parse_int(solar_system_id)
+
     case Cachex.get(:system_static_info_cache, solar_system_id) do
       {:ok, nil} ->
         case WandererApp.Api.MapSolarSystem.read() do
