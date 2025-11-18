@@ -42,6 +42,24 @@ In the dynamic world of EVE Online wormhole mapping, every second counts. When a
 - Your map API token (found in map settings)
 - Basic programming knowledge for integration
 
+### Server Configuration (Community Edition)
+
+If you're running Wanderer Community Edition (CE), you need to enable the required features via environment variables:
+
+**For SSE (Server-Sent Events):**
+```bash
+WANDERER_SSE_ENABLED=true
+```
+
+**For Webhooks:**
+```bash
+WANDERER_WEBHOOKS_ENABLED=true
+```
+
+Add these to your `.env` file or Docker environment configuration and restart Wanderer. Without these settings, you'll receive a 403 error when trying to access SSE streams or webhook management endpoints.
+
+*Note: The public Wanderer instance at wanderer.ltd has these features enabled by default.*
+
 ### Authentication
 Both SSE and webhook APIs use your existing map API token for authentication. This token should be kept secure and never exposed in client-side code.
 

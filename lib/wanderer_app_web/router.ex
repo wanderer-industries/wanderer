@@ -201,8 +201,8 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckCharacterApiDisabled
   end
 
-  pipeline :api_websocket_events do
-    plug WandererAppWeb.Plugs.CheckWebsocketDisabled
+  pipeline :api_webhooks do
+    plug WandererAppWeb.Plugs.CheckWebhooksDisabled
   end
 
   pipeline :api_acl do
@@ -302,9 +302,9 @@ defmodule WandererAppWeb.Router do
     get "/tracked-characters", MapAPIController, :show_tracked_characters
   end
 
-  # WebSocket events and webhook management endpoints (disabled by default)
+  # Webhook management endpoints (requires WANDERER_WEBHOOKS_ENABLED=true)
   scope "/api/maps/:map_identifier", WandererAppWeb do
-    pipe_through [:api, :api_map, :api_websocket_events]
+    pipe_through [:api, :api_map, :api_webhooks]
 
     get "/events", MapEventsAPIController, :list_events
 

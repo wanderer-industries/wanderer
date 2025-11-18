@@ -9,7 +9,7 @@ defmodule WandererApp.Map.Operations.Signatures do
   alias WandererApp.Map.Server
 
   @spec validate_character_eve_id(map() | nil, String.t()) ::
-          {:ok, String.t()} | {:error, :invalid_character}
+          {:ok, String.t()} | {:error, :invalid_character} | {:error, :unexpected_error}
   defp validate_character_eve_id(params, fallback_char_id) when is_map(params) do
     case Map.get(params, "character_eve_id") do
       nil ->
@@ -121,6 +121,10 @@ defmodule WandererApp.Map.Operations.Signatures do
         Logger.error("[create_signature] Invalid character_eve_id provided")
         {:error, :invalid_character}
 
+      {:error, :unexpected_error} ->
+        Logger.error("[create_signature] Unexpected error during character validation")
+        {:error, :unexpected_error}
+
       _ ->
         Logger.error(
           "[create_signature] System not found for solar_system_id: #{solar_system_id}"
@@ -191,9 +195,13 @@ defmodule WandererApp.Map.Operations.Signatures do
         Logger.error("[update_signature] Invalid character_eve_id provided")
         {:error, :invalid_character}
 
-      err ->
-        Logger.error("[update_signature] Unexpected error: #{inspect(err)}")
+      {:error, :unexpected_error} ->
+        Logger.error("[update_signature] Unexpected error during character validation")
         {:error, :unexpected_error}
+
+      err ->
+        Logger.error("[update_signature] Signature or system not found: #{inspect(err)}")
+        {:error, :not_found}
     end
   end
 

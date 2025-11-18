@@ -16,7 +16,8 @@ defmodule WandererApp.Api.Changes.InjectMapFromActor do
       %{id: map_id} ->
         Ash.Changeset.force_change_attribute(changeset, :map_id, map_id)
 
-      nil ->
+      _other ->
+        # nil or unexpected return shape - check for direct map_id
         case Ash.Changeset.get_attribute(changeset, :map_id) do
           nil ->
             Ash.Changeset.add_error(changeset,
