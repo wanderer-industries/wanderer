@@ -73,7 +73,54 @@ defmodule WandererApp.Api.MapConnection do
       :custom_info
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    create :create do
+      primary? true
+
+      accept [
+        :map_id,
+        :solar_system_source,
+        :solar_system_target,
+        :type,
+        :ship_size_type,
+        :mass_status,
+        :time_status,
+        :wormhole_type,
+        :count_of_passage,
+        :locked,
+        :custom_info
+      ]
+
+      # Inject map_id from token
+      change WandererApp.Api.Changes.InjectMapFromActor
+    end
+
+    read :read do
+      primary? true
+
+      # Security: Filter to only connections from actor's map
+      prepare WandererApp.Api.Preparations.FilterConnectionsByActorMap
+    end
+
+    update :update do
+      primary? true
+
+      accept [
+        :solar_system_source,
+        :solar_system_target,
+        :type,
+        :ship_size_type,
+        :mass_status,
+        :time_status,
+        :wormhole_type,
+        :count_of_passage,
+        :locked,
+        :custom_info
+      ]
+    end
+
+    destroy :destroy do
+      primary? true
+    end
 
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)

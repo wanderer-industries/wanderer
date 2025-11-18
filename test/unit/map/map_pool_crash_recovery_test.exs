@@ -513,14 +513,16 @@ defmodule WandererApp.Map.MapPoolCrashRecoveryTest do
         map_ids = Enum.to_list(1..20)
 
         # Measure save time
-        {save_time_us, :ok} = :timer.tc(fn ->
-          MapPoolState.save_pool_state(uuid, map_ids)
-        end)
+        {save_time_us, :ok} =
+          :timer.tc(fn ->
+            MapPoolState.save_pool_state(uuid, map_ids)
+          end)
 
         # Measure retrieval time
-        {get_time_us, {:ok, _}} = :timer.tc(fn ->
-          MapPoolState.get_pool_state(uuid)
-        end)
+        {get_time_us, {:ok, _}} =
+          :timer.tc(fn ->
+            MapPoolState.get_pool_state(uuid)
+          end)
 
         # Both operations should be very fast (< 1ms)
         assert save_time_us < 1000, "Save took #{save_time_us}µs, expected < 1000µs"
@@ -543,9 +545,10 @@ defmodule WandererApp.Map.MapPoolCrashRecoveryTest do
         end)
 
         # Measure cleanup time
-        {cleanup_time_us, {:ok, deleted_count}} = :timer.tc(fn ->
-          MapPoolState.cleanup_stale_entries()
-        end)
+        {cleanup_time_us, {:ok, deleted_count}} =
+          :timer.tc(fn ->
+            MapPoolState.cleanup_stale_entries()
+          end)
 
         # Should have deleted at least 100 entries
         assert deleted_count >= 100

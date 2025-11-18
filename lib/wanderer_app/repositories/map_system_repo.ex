@@ -1,8 +1,11 @@
 defmodule WandererApp.MapSystemRepo do
   use WandererApp, :repository
 
+  alias WandererApp.Repositories.MapContextHelper
+
   def create(system) do
-    system |> WandererApp.Api.MapSystem.create()
+    context = MapContextHelper.build_context(system)
+    WandererApp.Api.MapSystem.create(system, context)
   end
 
   def upsert(system) do

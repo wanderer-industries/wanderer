@@ -63,8 +63,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       character_id: main_character_id,
       user_id: current_user_id,
       map_id: map_id,
-      solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-      solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+      solar_system_source_id: String.to_integer(solar_system_source_id),
+      solar_system_target_id: String.to_integer(solar_system_target_id)
     })
 
     {:noreply, socket}
@@ -148,13 +148,13 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       end
     end
 
-      WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
-        character_id: main_character_id,
-        user_id: current_user_id,
-        map_id: map_id,
-        solar_system_source_id: solar_system_source_id,
-        solar_system_target_id: solar_system_target_id
-      })
+    WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
+      character_id: main_character_id,
+      user_id: current_user_id,
+      map_id: map_id,
+      solar_system_source_id: solar_system_source_id,
+      solar_system_target_id: solar_system_target_id
+    })
 
     {:noreply, socket}
   end
@@ -200,21 +200,21 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         _ -> nil
       end
 
-      WandererApp.User.ActivityTracker.track_map_event(:map_connection_updated, %{
-        character_id: main_character_id,
-        user_id: current_user_id,
-        map_id: map_id,
-        solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-        solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer(),
-        key: key_atom,
-        value: value
-      })
+    WandererApp.User.ActivityTracker.track_map_event(:map_connection_updated, %{
+      character_id: main_character_id,
+      user_id: current_user_id,
+      map_id: map_id,
+      solar_system_source_id: String.to_integer(solar_system_source_id),
+      solar_system_target_id: String.to_integer(solar_system_target_id),
+      key: key_atom,
+      value: value
+    })
 
     apply(WandererApp.Map.Server, method_atom, [
       map_id,
       %{
-        solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
-        solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
+        solar_system_source_id: String.to_integer(solar_system_source_id),
+        solar_system_target_id: String.to_integer(solar_system_target_id)
       }
       |> Map.put_new(key_atom, value)
     ])

@@ -30,10 +30,14 @@ export const SystemStructures: React.FC = () => {
 
   const processClipboard = useCallback(
     (text: string) => {
+      if (!systemId) {
+        console.warn('Cannot update structures: no system selected');
+        return;
+      }
       const updated = processSnippetText(text, structures);
       handleUpdateStructures(updated);
     },
-    [structures, handleUpdateStructures],
+    [systemId, structures, handleUpdateStructures],
   );
 
   const handlePaste = useCallback(

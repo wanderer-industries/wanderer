@@ -11,21 +11,23 @@ defmodule WandererApp.Api.MapTest do
     end
 
     test "allows creating map with sse_enabled false (default)", %{character: character} do
-      {:ok, map} = Ash.create(Map, %{
-        name: "Test Map",
-        slug: "test-map-#{System.unique_integer([:positive])}",
-        owner_id: character.id
-      })
+      {:ok, map} =
+        Ash.create(Map, %{
+          name: "Test Map",
+          slug: "test-map-#{System.unique_integer([:positive])}",
+          owner_id: character.id
+        })
 
       assert map.sse_enabled == false
     end
 
     test "allows creating map and then enabling SSE", %{character: character} do
-      {:ok, map} = Ash.create(Map, %{
-        name: "Test Map",
-        slug: "test-map-#{System.unique_integer([:positive])}",
-        owner_id: character.id
-      })
+      {:ok, map} =
+        Ash.create(Map, %{
+          name: "Test Map",
+          slug: "test-map-#{System.unique_integer([:positive])}",
+          owner_id: character.id
+        })
 
       # Maps are created with sse_enabled false by default
       assert map.sse_enabled == false

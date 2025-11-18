@@ -36,7 +36,14 @@ defmodule WandererApp.Api.MapPing do
       :message
     ]
 
-    defaults [:read, :update, :destroy]
+    defaults [:update, :destroy]
+
+    read :read do
+      primary? true
+
+      # Security: Filter to only pings from actor's map
+      prepare WandererApp.Api.Preparations.FilterPingsByActorMap
+    end
 
     create :new do
       accept [

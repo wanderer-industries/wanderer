@@ -39,23 +39,25 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     user = create_user(%{name: "Test User", hash: "test_hash_#{:rand.uniform(1_000_000)}"})
 
     # Create test character with location tracking scopes
-    character = create_character(%{
-      eve_id: "#{@test_character_eve_id}",
-      name: "Test Character",
-      user_id: user.id,
-      scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
-      tracking_pool: "default"
-    })
+    character =
+      create_character(%{
+        eve_id: "#{@test_character_eve_id}",
+        name: "Test Character",
+        user_id: user.id,
+        scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
+        tracking_pool: "default"
+      })
 
     # Create test map
-    map = create_map(%{
-      id: @test_map_id,
-      name: "Test Char Track",
-      slug: "test-char-tracking-#{:rand.uniform(1_000_000)}",
-      owner_id: character.id,
-      scope: :none,
-      only_tracked_characters: false
-    })
+    map =
+      create_map(%{
+        id: @test_map_id,
+        name: "Test Char Track",
+        slug: "test-char-tracking-#{:rand.uniform(1_000_000)}",
+        owner_id: character.id,
+        scope: :none,
+        only_tracked_characters: false
+      })
 
     on_exit(fn ->
       cleanup_test_data()
@@ -76,7 +78,11 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
   defp cleanup_character_caches(character_id) do
     # Clean up character location caches
     WandererApp.Cache.delete("map_#{@test_map_id}:character:#{character_id}:solar_system_id")
-    WandererApp.Cache.delete("map_#{@test_map_id}:character:#{character_id}:start_solar_system_id")
+
+    WandererApp.Cache.delete(
+      "map_#{@test_map_id}:character:#{character_id}:start_solar_system_id"
+    )
+
     WandererApp.Cache.delete("map_#{@test_map_id}:character:#{character_id}:station_id")
     WandererApp.Cache.delete("map_#{@test_map_id}:character:#{character_id}:structure_id")
 
@@ -96,21 +102,24 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     Helper to simulate character location update in cache.
     This mimics what the Character.Tracker does when it polls ESI.
     """
+
     structure_id = opts[:structure_id]
     station_id = opts[:station_id]
-    ship_type_id = opts[:ship_type_id] || 670  # Capsule
+    # Capsule
+    ship_type_id = opts[:ship_type_id] || 670
 
     # First get the existing character from cache or database to maintain all fields
     {:ok, existing_character} = WandererApp.Character.get_character(character_id)
 
     # Update character cache (mimics Character.update_character/2)
-    character_data = Map.merge(existing_character, %{
-      solar_system_id: solar_system_id,
-      structure_id: structure_id,
-      station_id: station_id,
-      ship_type_id: ship_type_id,
-      updated_at: DateTime.utc_now()
-    })
+    character_data =
+      Map.merge(existing_character, %{
+        solar_system_id: solar_system_id,
+        structure_id: structure_id,
+        station_id: station_id,
+        ship_type_id: ship_type_id,
+        updated_at: DateTime.utc_now()
+      })
 
     Cachex.put(:character_cache, character_id, character_data)
   end
@@ -120,6 +129,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     Ensure the map server is started for the given map.
     This is required for character updates to work.
     """
+
     case WandererApp.Map.Manager.start_map(map_id) do
       {:ok, _pid} -> :ok
       {:error, {:already_started, _pid}} -> :ok
@@ -132,6 +142,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     Helper to add character to map's presence list.
     This mimics what PresenceGracePeriodManager does.
     """
+
     {:ok, current_chars} = WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
     updated_chars = Enum.uniq([character_id | current_chars])
     WandererApp.Cache.insert("map_#{map_id}:presence_character_ids", updated_chars)
@@ -141,6 +152,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     """
     Helper to get all systems currently on the map.
     """
+
     case WandererApp.Map.get_map_state(map_id) do
       {:ok, %{map: %{systems: systems}}} when is_map(systems) ->
         Map.values(systems)
@@ -154,6 +166,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     """
     Check if a specific system is on the map.
     """
+
     systems = get_map_systems(map_id)
     Enum.any?(systems, fn sys -> sys.solar_system_id == solar_system_id end)
   end
@@ -162,6 +175,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     """
     Wait for a system to appear on the map (for async operations).
     """
+
     deadline = System.monotonic_time(:millisecond) + timeout
 
     Stream.repeatedly(fn ->
@@ -233,6 +247,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Setup: Character starts at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map_#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -267,6 +282,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Character starts at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map_#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -280,16 +296,21 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Before update_characters can process, character jumps again to Dodixie
       # This simulates the race condition
-      CharactersImpl.update_characters(map.id)  # Should process Jita→Amarr
+      # Should process Jita→Amarr
+      CharactersImpl.update_characters(map.id)
 
       # Character already at Dodixie before second update
       set_character_location(character.id, @system_dodixie)
 
-      CharactersImpl.update_characters(map.id)  # Should process Amarr→Dodixie
+      # Should process Amarr→Dodixie
+      CharactersImpl.update_characters(map.id)
 
       # Verify: All three systems should be on map
       assert wait_for_system_on_map(map.id, @system_jita), "Jita (start) should be on map"
-      assert wait_for_system_on_map(map.id, @system_amarr), "Amarr (intermediate) should be on map - this is the critical test"
+
+      assert wait_for_system_on_map(map.id, @system_amarr),
+             "Amarr (intermediate) should be on map - this is the critical test"
+
       assert wait_for_system_on_map(map.id, @system_dodixie), "Dodixie (end) should be on map"
     end
 
@@ -307,6 +328,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Start at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map_#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -362,9 +384,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify start_solar_system_id still exists after first update
       {:ok, start_system} =
-        WandererApp.Cache.lookup(
-          "map_#{map.id}:character:#{character.id}:start_solar_system_id"
-        )
+        WandererApp.Cache.lookup("map_#{map.id}:character:#{character.id}:start_solar_system_id")
 
       assert start_system == @system_jita,
              "start_solar_system_id should persist after first update (not be taken/removed)"
@@ -520,6 +540,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Set location in character cache
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map_#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -540,10 +561,12 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify both caches updated
       {:ok, character_data} = Cachex.get(:character_cache, character.id)
+
       {:ok, map_cached_location} =
         WandererApp.Cache.lookup("map_#{map.id}:character:#{character.id}:solar_system_id")
 
       assert character_data.solar_system_id == @system_amarr
+
       assert map_cached_location == @system_amarr,
              "Both caches should be consistent after update"
     end

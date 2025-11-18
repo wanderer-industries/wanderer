@@ -220,7 +220,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
+              key: "search-#{character_eve_id}-#{categories_val}-#{Base.encode64(search_val)}",
               opts: [ttl: @ttl]
             )
   defp get_search(character_eve_id, search_val, categories_val, merged_opts) do

@@ -128,7 +128,55 @@ defmodule WandererApp.Api.MapSystem do
       :linked_sig_eve_id
     ]
 
-    defaults [:create, :update, :destroy]
+    create :create do
+      primary? true
+
+      accept [
+        :map_id,
+        :name,
+        :solar_system_id,
+        :position_x,
+        :position_y,
+        :status,
+        :visible,
+        :locked,
+        :custom_name,
+        :description,
+        :tag,
+        :temporary_name,
+        :labels,
+        :added_at,
+        :linked_sig_eve_id
+      ]
+
+      # Inject map_id from token
+      change WandererApp.Api.Changes.InjectMapFromActor
+    end
+
+    update :update do
+      primary? true
+
+      # Note: name and solar_system_id are not in accept
+      # - solar_system_id should be immutable (identifier)
+      # - name has allow_nil? false which makes it required in JSON:API
+      accept [
+        :position_x,
+        :position_y,
+        :status,
+        :visible,
+        :locked,
+        :custom_name,
+        :description,
+        :tag,
+        :temporary_name,
+        :labels,
+        :linked_sig_eve_id
+      ]
+    end
+
+    destroy :destroy do
+      primary? true
+    end
 
     create :upsert do
       primary? false
@@ -157,6 +205,9 @@ defmodule WandererApp.Api.MapSystem do
 
     read :read do
       primary?(true)
+
+      # Security: Filter to only systems from actor's map
+      prepare WandererApp.Api.Preparations.FilterSystemsByActorMap
 
       pagination offset?: true,
                  default_limit: 100,
