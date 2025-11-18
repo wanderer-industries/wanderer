@@ -203,8 +203,19 @@ defmodule WandererApp.Esi.ApiClient do
     do: get_character_auth_data(character_eve_id, "ship", opts ++ @cache_opts)
 
   def search(character_eve_id, opts \\ []) do
-    search_val = to_string(opts[:params][:search] || "")
-    categories_val = to_string(opts[:params][:categories] || "character,alliance,corporation")
+    params = Keyword.get(opts, :params, %{}) |> Map.new()
+
+    search_val =
+      to_string(
+        Map.get(params, :search) || Map.get(params, "search") || ""
+      )
+
+    categories_val =
+      to_string(
+        Map.get(params, :categories) ||
+          Map.get(params, "categories") ||
+          "character,alliance,corporation"
+      )
 
     query_params = [
       {"search", search_val},

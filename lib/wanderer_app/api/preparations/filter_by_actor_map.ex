@@ -39,6 +39,10 @@ defmodule WandererApp.Api.Preparations.FilterByActorMap do
       nil ->
         emit_telemetry_no_context(resource_name)
         Ash.Query.filter(query, false)
+
+      _other ->
+        emit_telemetry_no_context(resource_name)
+        Ash.Query.filter(query, false)
     end
   end
 

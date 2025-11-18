@@ -73,9 +73,13 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
           %{auth_type: get_auth_type(conn), result: "success"}
         )
 
+        # Wrap user with nil map as actor for Ash (session auth has no map context)
+        actor = ActorWithMap.new(user, nil)
+
         conn
         |> assign(:current_user, user)
         |> assign(:current_user_role, get_user_role(user))
+        |> PlugHelpers.set_actor(actor)
 
       {:error, reason} when is_atom(reason) ->
         # Error handling with atom reasons

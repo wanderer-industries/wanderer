@@ -111,6 +111,43 @@ defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
       assert system.map_id == map.id
     end
 
+    test "POST /api/v1/map_systems ignores client-supplied map_id and uses authenticated map", %{
+      conn: conn,
+      map: map
+    } do
+      # Create another map that the client will try to inject
+      other_user = insert(:user)
+      other_character = insert(:character, %{user_id: other_user.id})
+      other_map = insert(:map, %{owner_id: other_character.id})
+
+      # Client tries to supply a different map_id in the payload
+      payload = %{
+        "data" => %{
+          "type" => "map_systems",
+          "attributes" => %{
+            "solar_system_id" => 30_000_145,
+            "name" => "Dodixie",
+            "position_x" => 150,
+            "position_y" => 250,
+            "map_id" => other_map.id
+          }
+        }
+      }
+
+      conn = post(conn, "/api/v1/map_systems", payload)
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["type"] == "map_systems"
+      assert data["attributes"]["name"] == "Dodixie"
+
+      # Verify the system was created with the authenticated map's ID, not the client-supplied one
+      # Use Ecto directly to bypass security filter for test verification
+      system_id = data["id"]
+      system = WandererApp.Repo.get!(WandererApp.Api.MapSystem, system_id)
+      assert system.map_id == map.id
+      refute system.map_id == other_map.id
+    end
+
     test "GET /api/v1/map_systems/:id returns a single system", %{conn: conn, map: map} do
       system =
         insert(:map_system, %{

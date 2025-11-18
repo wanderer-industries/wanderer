@@ -95,7 +95,7 @@ defmodule WandererApp.Api.Map do
       get? true
       argument :api_key, :string, allow_nil?: false
 
-      filter expr(public_api_key == ^arg(:api_key))
+      prepare WandererApp.Api.Preparations.SecureApiKeyLookup
     end
 
     read :available do
@@ -344,6 +344,7 @@ defmodule WandererApp.Api.Map do
 
   identities do
     identity :unique_slug, [:slug]
+    identity :unique_public_api_key, [:public_api_key]
   end
 
   relationships do

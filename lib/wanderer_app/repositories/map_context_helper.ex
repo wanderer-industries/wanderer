@@ -41,7 +41,7 @@ defmodule WandererApp.Repositories.MapContextHelper do
 
       # Deprecated callback-based approach
       MapContextHelper.with_map_context(%{map_id: "123", name: "System"}, fn attrs, context ->
-        WandererApp.Api.MapSystem.create(attrs, context: context)
+        WandererApp.Api.MapSystem.create(attrs, context)
       end)
 
       # Preferred approach using build_context/1

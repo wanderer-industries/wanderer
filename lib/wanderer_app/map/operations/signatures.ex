@@ -17,8 +17,18 @@ defmodule WandererApp.Map.Operations.Signatures do
 
       provided_char_eve_id when is_binary(provided_char_eve_id) ->
         case Character.by_eve_id(provided_char_eve_id) do
-          {:ok, character} -> {:ok, character.id}
-          _ -> {:error, :invalid_character}
+          {:ok, character} ->
+            {:ok, character.id}
+
+          {:error, %Ash.Error.Query.NotFound{}} ->
+            {:error, :invalid_character}
+
+          {:error, reason} ->
+            Logger.error(
+              "[validate_character_eve_id] Unexpected error looking up character: #{inspect(reason)}"
+            )
+
+            {:error, :unexpected_error}
         end
 
       _ ->
