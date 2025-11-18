@@ -134,6 +134,13 @@ defmodule WandererApp.Map do
   def get_options(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:options, Map.new())}
 
+  def get_character_ids(map_id),
+    do:
+      {:ok,
+       map_id
+       |> get_map!()
+       |> Map.get(:characters, [])}
+
   @doc """
   Returns a full list of characters in the map
   """

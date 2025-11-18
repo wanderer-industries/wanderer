@@ -14,8 +14,8 @@ defmodule WandererApp.Character.Tracker do
     active_maps: [],
     is_online: false,
     track_online: true,
-    track_location: true,
-    track_ship: true,
+    track_location: false,
+    track_ship: false,
     track_wallet: false,
     status: "new"
   ]
@@ -155,7 +155,7 @@ defmodule WandererApp.Character.Tracker do
                   )
                 end
 
-                if online.online == true && online.online != is_online do
+                if online.online == true && not is_online do
                   WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
                   WandererApp.Cache.delete("character:#{character_id}:location_error_time")
                   WandererApp.Cache.delete("character:#{character_id}:location_error_count")
@@ -963,9 +963,7 @@ defmodule WandererApp.Character.Tracker do
        ),
        do: %{
          state
-         | track_online: true,
-           track_location: true,
-           track_ship: true
+         | track_online: true
        }
 
   defp maybe_start_online_tracking(
@@ -1007,11 +1005,6 @@ defmodule WandererApp.Character.Tracker do
       WandererApp.Cache.put(
         "character:#{character_id}:map:#{map_id}:tracking_start_time",
         DateTime.utc_now()
-      )
-
-      WandererApp.Cache.put(
-        "map:#{map_id}:character:#{character_id}:start_solar_system_id",
-        track_settings |> Map.get(:solar_system_id)
       )
 
       WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
@@ -1064,7 +1057,7 @@ defmodule WandererApp.Character.Tracker do
       )
     end
 
-    state
+    %{state | track_location: false, track_ship: false}
   end
 
   defp maybe_stop_tracking(
