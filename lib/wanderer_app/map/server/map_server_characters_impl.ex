@@ -214,9 +214,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     start_time = System.monotonic_time(:microsecond)
 
     try do
-      {:ok, active_character_ids} = WandererApp.Map.get_character_ids(map_id)
+      {:ok, tracked_character_ids} = WandererApp.Map.get_tracked_character_ids(map_id)
 
-      character_count = length(active_character_ids)
+      character_count = length(tracked_character_ids)
 
       # Emit telemetry for tracking update cycle start
       :telemetry.execute(
@@ -229,7 +229,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       max_concurrency = calculate_max_concurrency(character_count)
 
       updated_characters =
-        active_character_ids
+        tracked_character_ids
         |> Task.async_stream(
           fn character_id ->
             # Use batch cache operations for all character tracking data
