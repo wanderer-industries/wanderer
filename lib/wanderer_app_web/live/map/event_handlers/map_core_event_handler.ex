@@ -544,7 +544,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
        ) do
     with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
          {:ok, characters_limit} <- map_id |> WandererApp.Map.get_characters_limit(),
-         {:ok, map_character_ids} <- map_id |> WandererApp.Map.get_character_ids() do
+         {:ok, map_character_ids} <-
+           WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", []) do
       events =
         case tracked_characters |> Enum.any?(&(&1.access_token == nil)) do
           true ->
