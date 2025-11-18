@@ -574,6 +574,12 @@ defmodule WandererAppWeb.AccessListsLive do
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
 
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "acls:#{access_list_id}",
+          {:acl_updated, %{acl_id: access_list_id}}
+        )
+
         {:ok, member}
 
       _ ->
@@ -606,6 +612,12 @@ defmodule WandererAppWeb.AccessListsLive do
           })
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
+
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "acls:#{access_list_id}",
+          {:acl_updated, %{acl_id: access_list_id}}
+        )
 
         {:ok, member}
 
@@ -640,6 +652,12 @@ defmodule WandererAppWeb.AccessListsLive do
           })
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
+
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "acls:#{access_list_id}",
+          {:acl_updated, %{acl_id: access_list_id}}
+        )
 
         {:ok, member}
 

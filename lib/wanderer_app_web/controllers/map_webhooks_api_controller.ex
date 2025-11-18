@@ -604,7 +604,7 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
   # Private Functions
   # -----------------------------------------------------------------
 
-  defp get_map(conn, map_identifier) do
+  defp get_map(conn, _map_identifier) do
     # The map should already be loaded by the CheckMapApiKey plug
     case conn.assigns[:map] do
       nil -> {:error, :map_not_found}

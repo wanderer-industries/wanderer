@@ -723,38 +723,6 @@ defmodule WandererApp.Map.MapPool do
     {:noreply, state}
   end
 
-  def handle_info(
-        :update_online,
-        %{
-          characters: characters,
-          server_online: true
-        } =
-          state
-      ) do
-    Process.send_after(self(), :update_online, @update_online_interval)
-
-    try do
-      characters
-      |> Task.async_stream(
-        fn character_id ->
-          WandererApp.Character.Tracker.update_online(character_id)
-        end,
-        max_concurrency: System.schedulers_online() * 4,
-        on_timeout: :kill_task,
-        timeout: :timer.seconds(5)
-      )
-      |> Enum.each(fn _result -> :ok end)
-    rescue
-      e ->
-        Logger.error("""
-        [Tracker Pool] update_online => exception: #{Exception.message(e)}
-        #{Exception.format_stacktrace(__STACKTRACE__)}
-        """)
-    end
-
-    {:noreply, state}
-  end
-
   def handle_info(:map_deleted, %{map_ids: map_ids} = state) do
     # When a map is deleted, stop all maps in this pool that are deleted
     # This is a graceful shutdown triggered by user action

@@ -30,6 +30,51 @@ defmodule WandererApp.MapRepo do
       |> WandererApp.Api.Map.get_map_by_slug()
       |> load_user_permissions(current_user)
 
+  @doc """
+  Safely retrieves a map by slug, handling the case where multiple maps
+  with the same slug exist (database integrity issue).
+
+  Returns:
+  - `{:ok, map}` - Single map found
+  - `{:error, :multiple_results}` - Multiple maps found (logs error)
+  - `{:error, :not_found}` - No map found
+  - `{:error, reason}` - Other error
+  """
+  def get_map_by_slug_safely(slug) do
+    try do
+      map = WandererApp.Api.Map.get_map_by_slug!(slug)
+      {:ok, map}
+    rescue
+      error in Ash.Error.Invalid.MultipleResults ->
+        Logger.error("Multiple maps found with slug '#{slug}' - database integrity issue",
+          slug: slug,
+          error: inspect(error)
+        )
+
+        # Emit telemetry for monitoring
+        :telemetry.execute(
+          [:wanderer_app, :map, :duplicate_slug_detected],
+          %{count: 1},
+          %{slug: slug, operation: :get_by_slug}
+        )
+
+        # Return error - caller should handle this appropriately
+        {:error, :multiple_results}
+
+      error in Ash.Error.Query.NotFound ->
+        Logger.debug("Map not found with slug: #{slug}")
+        {:error, :not_found}
+
+      error ->
+        Logger.error("Error retrieving map by slug",
+          slug: slug,
+          error: inspect(error)
+        )
+
+        {:error, :unknown_error}
+    end
+  end
+
   def load_relationships(map, []), do: {:ok, map}
 
   def load_relationships(map, relationships), do: map |> Ash.load(relationships)

@@ -14,8 +14,8 @@ defmodule WandererApp.Character.Tracker do
     active_maps: [],
     is_online: false,
     track_online: true,
-    track_location: true,
-    track_ship: true,
+    track_location: false,
+    track_ship: false,
     track_wallet: false,
     status: "new"
   ]
@@ -41,7 +41,6 @@ defmodule WandererApp.Character.Tracker do
   @location_error_threshold 3
   @online_forbidden_ttl :timer.seconds(7)
   @offline_check_delay_ttl :timer.seconds(15)
-  @online_limit_ttl :timer.seconds(7)
   @forbidden_ttl :timer.seconds(10)
   @limit_ttl :timer.seconds(5)
   @location_limit_ttl :timer.seconds(1)
@@ -156,7 +155,7 @@ defmodule WandererApp.Character.Tracker do
                   )
                 end
 
-                if online.online == true && online.online != is_online do
+                if online.online == true && not is_online do
                   WandererApp.Cache.delete("character:#{character_id}:ship_error_time")
                   WandererApp.Cache.delete("character:#{character_id}:location_error_time")
                   WandererApp.Cache.delete("character:#{character_id}:location_error_count")
@@ -226,12 +225,6 @@ defmodule WandererApp.Character.Tracker do
 
               {:error, :error_limited, headers} ->
                 reset_timeout = get_reset_timeout(headers)
-
-                reset_seconds =
-                  Map.get(headers, "x-esi-error-limit-reset", ["unknown"]) |> List.first()
-
-                remaining =
-                  Map.get(headers, "x-esi-error-limit-remain", ["unknown"]) |> List.first()
 
                 WandererApp.Cache.put(
                   "character:#{character_id}:online_forbidden",
@@ -970,9 +963,7 @@ defmodule WandererApp.Character.Tracker do
        ),
        do: %{
          state
-         | track_online: true,
-           track_location: true,
-           track_ship: true
+         | track_online: true
        }
 
   defp maybe_start_online_tracking(
@@ -1014,11 +1005,6 @@ defmodule WandererApp.Character.Tracker do
       WandererApp.Cache.put(
         "character:#{character_id}:map:#{map_id}:tracking_start_time",
         DateTime.utc_now()
-      )
-
-      WandererApp.Cache.put(
-        "map:#{map_id}:character:#{character_id}:start_solar_system_id",
-        track_settings |> Map.get(:solar_system_id)
       )
 
       WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
@@ -1071,7 +1057,7 @@ defmodule WandererApp.Character.Tracker do
       )
     end
 
-    state
+    %{state | track_location: false, track_ship: false}
   end
 
   defp maybe_stop_tracking(
@@ -1100,19 +1086,6 @@ defmodule WandererApp.Character.Tracker do
   defp get_online(%{"online" => online}), do: %{online: online}
 
   defp get_online(_), do: %{online: false}
-
-  defp get_tracking_duration_minutes(character_id) do
-    case WandererApp.Cache.lookup!("character:#{character_id}:map:*:tracking_start_time") do
-      nil ->
-        0
-
-      start_time when is_struct(start_time, DateTime) ->
-        DateTime.diff(DateTime.utc_now(), start_time, :minute)
-
-      _ ->
-        0
-    end
-  end
 
   # Telemetry handler for database pool monitoring
   def handle_pool_query(_event_name, measurements, metadata, _config) do

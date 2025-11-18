@@ -389,7 +389,8 @@ defmodule WandererAppWeb.MapsLive do
         %{"form" => form} = _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    case get_map_by_slug_safely(map_slug) do
+    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with loading and updating
         {:ok, map_with_acls} = Ash.load(map, :acls)
@@ -484,7 +485,8 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   def handle_event("delete", %{"data" => map_slug} = _params, socket) do
-    case get_map_by_slug_safely(map_slug) do
+    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with deletion
         deleted_map = WandererApp.Api.Map.mark_as_deleted!(map)
@@ -615,10 +617,10 @@ defmodule WandererAppWeb.MapsLive do
   def handle_progress(
         :settings,
         entry,
-        %{assigns: %{current_user: current_user, map_id: map_id}} = socket
+        %{assigns: %{current_user: _current_user, map_id: _map_id}} = socket
       ) do
     if entry.done? do
-      [uploaded_file_path] =
+      [_uploaded_file_path] =
         consume_uploaded_entries(socket, :settings, fn %{path: path}, _entry ->
           tmp_file_path =
             System.tmp_dir!()
@@ -786,50 +788,5 @@ defmodule WandererAppWeb.MapsLive do
   defp map_map(%{acls: acls} = map) do
     map
     |> Map.put(:acls, acls |> Enum.map(&map_acl/1))
-  end
-
-  @doc """
-  Safely retrieves a map by slug, handling the case where multiple maps
-  with the same slug exist (database integrity issue).
-
-  Returns:
-  - `{:ok, map}` - Single map found
-  - `{:error, :multiple_results}` - Multiple maps found (logs error)
-  - `{:error, :not_found}` - No map found
-  - `{:error, reason}` - Other error
-  """
-  defp get_map_by_slug_safely(slug) do
-    try do
-      map = WandererApp.Api.Map.get_map_by_slug!(slug)
-      {:ok, map}
-    rescue
-      error in Ash.Error.Invalid.MultipleResults ->
-        Logger.error("Multiple maps found with slug '#{slug}' - database integrity issue",
-          slug: slug,
-          error: inspect(error)
-        )
-
-        # Emit telemetry for monitoring
-        :telemetry.execute(
-          [:wanderer_app, :map, :duplicate_slug_detected],
-          %{count: 1},
-          %{slug: slug, operation: :get_by_slug}
-        )
-
-        # Return error - caller should handle this appropriately
-        {:error, :multiple_results}
-
-      error in Ash.Error.Query.NotFound ->
-        Logger.debug("Map not found with slug: #{slug}")
-        {:error, :not_found}
-
-      error ->
-        Logger.error("Error retrieving map by slug",
-          slug: slug,
-          error: inspect(error)
-        )
-
-        {:error, :unknown_error}
-    end
   end
 end

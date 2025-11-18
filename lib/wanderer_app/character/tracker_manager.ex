@@ -14,8 +14,8 @@ defmodule WandererApp.Character.TrackerManager do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def start_tracking(character_id, opts \\ []),
-    do: GenServer.cast(__MODULE__, {&Impl.start_tracking/3, [character_id, opts]})
+  def start_tracking(character_id),
+    do: GenServer.cast(__MODULE__, {&Impl.start_tracking/2, [character_id]})
 
   def stop_tracking(character_id),
     do: GenServer.cast(__MODULE__, {&Impl.stop_tracking/2, [character_id]})

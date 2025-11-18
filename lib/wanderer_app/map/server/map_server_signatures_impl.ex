@@ -212,9 +212,9 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
   defp maybe_update_connection_time_status(
          map_id,
-         %{custom_info: old_custom_info} = old_sig,
+         %{custom_info: old_custom_info} = _old_sig,
          %{custom_info: new_custom_info, system_id: system_id, linked_system_id: linked_system_id} =
-           updated_sig
+           _updated_sig
        )
        when not is_nil(linked_system_id) do
     old_time_status = get_time_status(old_custom_info)
@@ -235,9 +235,9 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
   defp maybe_update_connection_mass_status(
          map_id,
-         %{type: old_type} = old_sig,
+         %{type: old_type} = _old_sig,
          %{type: new_type, system_id: system_id, linked_system_id: linked_system_id} =
-           updated_sig
+           _updated_sig
        )
        when not is_nil(linked_system_id) do
     if old_type != new_type do

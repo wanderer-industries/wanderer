@@ -635,7 +635,7 @@ defmodule WandererAppWeb.MapSystemAPIController do
           reason: reason
         })
 
-      error ->
+      _error ->
         conn
         |> put_status(:bad_request)
         |> APIUtils.respond_data(%{deleted: false, error: "Invalid system ID format"})
