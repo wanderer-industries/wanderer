@@ -155,7 +155,9 @@ defmodule WandererApp.Map.SlugUniquenessTest do
 
       # Verify all successful maps have unique slugs
       slugs = Enum.map(maps, & &1.slug)
-      assert length(Enum.uniq(slugs)) == length(slugs), "All successful maps should have unique slugs"
+
+      assert length(Enum.uniq(slugs)) == length(slugs),
+             "All successful maps should have unique slugs"
 
       # Log results for visibility
       Logger.info("Concurrent test: #{length(successful)} succeeded, #{length(failed)} failed")
