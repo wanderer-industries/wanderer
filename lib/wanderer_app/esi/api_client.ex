@@ -116,7 +116,33 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "group-info-#{group_id}",
+              opts: [ttl: @ttl]
+            )
+  def get_group_info(group_id, opts),
+    do:
+      do_get(
+        "/universe/groups/#{group_id}/",
+        opts,
+        @cache_opts
+      )
+
+  @decorate cacheable(
+              cache: Cache,
+              key: "type-info-#{type_id}",
+              opts: [ttl: @ttl]
+            )
+  def get_type_info(type_id, opts),
+    do:
+      do_get(
+        "/universe/types/#{type_id}/",
+        opts,
+        @cache_opts
+      )
+
+  @decorate cacheable(
+              cache: Cache,
+              key: "alliance-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_alliance_info(eve_id, opts \\ []) do
@@ -137,7 +163,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "corporation-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_corporation_info(eve_id, opts \\ []) do
@@ -150,7 +176,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "character-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_character_info(eve_id, opts \\ []) do
