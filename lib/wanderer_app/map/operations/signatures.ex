@@ -8,35 +8,34 @@ defmodule WandererApp.Map.Operations.Signatures do
   alias WandererApp.Api.{Character, MapSystem, MapSystemSignature}
   alias WandererApp.Map.Server
 
-  # Private helper to validate character_eve_id from params and return internal character ID
-  # If character_eve_id is provided in params, validates it exists and returns the internal UUID
-  # If not provided, falls back to the owner's character ID (which is already the internal UUID)
   @spec validate_character_eve_id(map() | nil, String.t()) ::
-          {:ok, String.t()} | {:error, :invalid_character}
+          {:ok, String.t()} | {:error, :invalid_character} | {:error, :unexpected_error}
   defp validate_character_eve_id(params, fallback_char_id) when is_map(params) do
     case Map.get(params, "character_eve_id") do
       nil ->
-        # No character_eve_id provided, use fallback (owner's internal character UUID)
         {:ok, fallback_char_id}
 
       provided_char_eve_id when is_binary(provided_char_eve_id) ->
-        # Validate the provided character_eve_id exists and get internal UUID
         case Character.by_eve_id(provided_char_eve_id) do
           {:ok, character} ->
-            # Return the internal character UUID, not the eve_id
             {:ok, character.id}
 
-          _ ->
+          {:error, %Ash.Error.Query.NotFound{}} ->
             {:error, :invalid_character}
+
+          {:error, reason} ->
+            Logger.error(
+              "[validate_character_eve_id] Unexpected error looking up character: #{inspect(reason)}"
+            )
+
+            {:error, :unexpected_error}
         end
 
       _ ->
-        # Invalid format
         {:error, :invalid_character}
     end
   end
 
-  # Handle nil or non-map params by falling back to owner's character
   defp validate_character_eve_id(_params, fallback_char_id) do
     {:ok, fallback_char_id}
   end
@@ -74,12 +73,8 @@ defmodule WandererApp.Map.Operations.Signatures do
         %{"solar_system_id" => solar_system_id} = params
       )
       when is_integer(solar_system_id) do
-    # Validate character first, then convert solar_system_id to system_id
-    # validated_char_uuid is the internal character UUID for Server.update_signatures
     with {:ok, validated_char_uuid} <- validate_character_eve_id(params, char_id),
          {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id) do
-      # Keep character_eve_id in attrs if provided by user (parse_signatures will use it)
-      # If not provided, parse_signatures will use the character_eve_id from validated_char_uuid lookup
       attrs =
         params
         |> Map.put("system_id", system.id)
@@ -90,7 +85,7 @@ defmodule WandererApp.Map.Operations.Signatures do
              updated_signatures: [],
              removed_signatures: [],
              solar_system_id: solar_system_id,
-             character_id: validated_char_uuid,  # Pass internal UUID here
+             character_id: validated_char_uuid,
              user_id: user_id,
              delete_connection_with_sigs: false
            }) do
@@ -126,6 +121,10 @@ defmodule WandererApp.Map.Operations.Signatures do
         Logger.error("[create_signature] Invalid character_eve_id provided")
         {:error, :invalid_character}
 
+      {:error, :unexpected_error} ->
+        Logger.error("[create_signature] Unexpected error during character validation")
+        {:error, :unexpected_error}
+
       _ ->
         Logger.error(
           "[create_signature] System not found for solar_system_id: #{solar_system_id}"
@@ -151,8 +150,6 @@ defmodule WandererApp.Map.Operations.Signatures do
         sig_id,
         params
       ) do
-    # Validate character first, then look up signature and system
-    # validated_char_uuid is the internal character UUID
     with {:ok, validated_char_uuid} <- validate_character_eve_id(params, char_id),
          {:ok, sig} <- MapSystemSignature.by_id(sig_id),
          {:ok, system} <- MapSystem.by_id(sig.system_id) do
@@ -176,7 +173,7 @@ defmodule WandererApp.Map.Operations.Signatures do
           updated_signatures: [attrs],
           removed_signatures: [],
           solar_system_id: system.solar_system_id,
-          character_id: validated_char_uuid,  # Pass internal UUID here
+          character_id: validated_char_uuid,
           user_id: user_id,
           delete_connection_with_sigs: false
         })
@@ -198,9 +195,13 @@ defmodule WandererApp.Map.Operations.Signatures do
         Logger.error("[update_signature] Invalid character_eve_id provided")
         {:error, :invalid_character}
 
-      err ->
-        Logger.error("[update_signature] Unexpected error: #{inspect(err)}")
+      {:error, :unexpected_error} ->
+        Logger.error("[update_signature] Unexpected error during character validation")
         {:error, :unexpected_error}
+
+      err ->
+        Logger.error("[update_signature] Signature or system not found: #{inspect(err)}")
+        {:error, :not_found}
     end
   end
 

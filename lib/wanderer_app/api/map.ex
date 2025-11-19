@@ -44,6 +44,7 @@ defmodule WandererApp.Api.Map do
   code_interface do
     define(:available, action: :available)
     define(:get_map_by_slug, action: :by_slug, args: [:slug])
+    define(:by_api_key, action: :by_api_key, args: [:api_key])
     define(:new, action: :new)
     define(:create, action: :create)
     define(:update, action: :update)
@@ -90,12 +91,19 @@ defmodule WandererApp.Api.Map do
       filter expr(slug == ^arg(:slug))
     end
 
+    read :by_api_key do
+      get? true
+      argument :api_key, :string, allow_nil?: false
+
+      prepare WandererApp.Api.Preparations.SecureApiKeyLookup
+    end
+
     read :available do
       prepare WandererApp.Api.Preparations.FilterMapsByRoles
     end
 
     create :new do
-      accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id]
+      accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id, :sse_enabled]
       primary?(true)
 
       argument :owner_id, :uuid, allow_nil?: false
@@ -336,6 +344,7 @@ defmodule WandererApp.Api.Map do
 
   identities do
     identity :unique_slug, [:slug]
+    identity :unique_public_api_key, [:public_api_key]
   end
 
   relationships do

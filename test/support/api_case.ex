@@ -135,4 +135,14 @@ defmodule WandererAppWeb.ApiCase do
     authenticated_conn = put_api_key(conn, map.public_api_key)
     {:ok, conn: authenticated_conn, map: map}
   end
+
+  @doc """
+  Helper for creating authenticated connection for JSON:API V1 endpoints.
+  Sets both authorization and content-type headers for JSON:API format.
+  """
+  def create_authenticated_conn(conn, map) do
+    conn
+    |> Plug.Conn.put_req_header("authorization", "Bearer #{map.public_api_key}")
+    |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
+  end
 end
