@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.84.35](https://github.com/wanderer-industries/wanderer/compare/v1.84.34...v1.84.35) (2025-11-19)
+
+
+
+
+### Bug Fixes:
+
+* structure search / paste issues
+
 ## [v1.84.34](https://github.com/wanderer-industries/wanderer/compare/v1.84.33...v1.84.34) (2025-11-18)
 
 
