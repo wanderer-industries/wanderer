@@ -56,6 +56,11 @@ export function useSystemStructures({ systemId, outCommand }: UseSystemStructure
 
   const handleUpdateStructures = useCallback(
     async (newList: StructureItem[]) => {
+      if (!systemId) {
+        console.warn('Cannot update structures: systemId is undefined');
+        return;
+      }
+
       const { added, updated, removed } = getActualStructures(structures, newList);
 
       const sanitizedAdded = added.map(sanitizeIds);
