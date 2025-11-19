@@ -58,11 +58,15 @@ defmodule WandererApp.Map.SlugRecoveryTest do
       assert Ecto.UUID.load!(kept_id_binary) == map1_id
 
       # Verify the other maps were renamed with numeric suffixes
-      {:ok, map2_result} = Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map2_id)])
+      {:ok, map2_result} =
+        Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map2_id)])
+
       [[map2_slug]] = map2_result.rows
       assert map2_slug == "duplicate-slug-2"
 
-      {:ok, map3_result} = Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map3_id)])
+      {:ok, map3_result} =
+        Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map3_id)])
+
       [[map3_slug]] = map3_result.rows
       assert map3_slug == "duplicate-slug-3"
 
@@ -115,7 +119,9 @@ defmodule WandererApp.Map.SlugRecoveryTest do
       assert result.fixed_count == 1
 
       # Map 3 should get "test-3" since "test-2" is already taken
-      {:ok, map3} = Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map3_id)])
+      {:ok, map3} =
+        Repo.query("SELECT slug FROM maps_v1 WHERE id = $1", [Ecto.UUID.dump!(map3_id)])
+
       assert map3.rows == [["test-3"]]
 
       # Recreate index after test
@@ -147,7 +153,9 @@ defmodule WandererApp.Map.SlugRecoveryTest do
       assert stats.total_maps_renamed == 3
 
       # Verify all duplicates are fixed
-      {:ok, result} = Repo.query("SELECT slug, COUNT(*) FROM maps_v1 GROUP BY slug HAVING COUNT(*) > 1")
+      {:ok, result} =
+        Repo.query("SELECT slug, COUNT(*) FROM maps_v1 GROUP BY slug HAVING COUNT(*) > 1")
+
       assert result.rows == []
 
       # Recreate index after test

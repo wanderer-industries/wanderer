@@ -206,9 +206,7 @@ defmodule WandererApp.Esi.ApiClient do
     params = Keyword.get(opts, :params, %{}) |> Map.new()
 
     search_val =
-      to_string(
-        Map.get(params, :search) || Map.get(params, "search") || ""
-      )
+      to_string(Map.get(params, :search) || Map.get(params, "search") || "")
 
     categories_val =
       to_string(

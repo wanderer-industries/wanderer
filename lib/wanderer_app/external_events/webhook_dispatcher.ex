@@ -90,7 +90,9 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
 
   @impl true
   def handle_cast({:dispatch_events, map_id, events}, state) do
-    Logger.debug(fn -> "WebhookDispatcher received #{length(events)} events for map #{map_id}" end)
+    Logger.debug(fn ->
+      "WebhookDispatcher received #{length(events)} events for map #{map_id}"
+    end)
 
     # Emit telemetry for batch events
     :telemetry.execute(
