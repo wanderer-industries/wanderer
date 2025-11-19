@@ -544,7 +544,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
        ) do
     with {:ok, _} <- current_user |> WandererApp.Api.User.update_last_map(%{last_map_id: map_id}),
          {:ok, characters_limit} <- map_id |> WandererApp.Map.get_characters_limit(),
-         {:ok, present_character_ids} <-
+         {:ok, map_character_ids} <-
            WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", []) do
       events =
         case tracked_characters |> Enum.any?(&(&1.access_token == nil)) do
@@ -564,7 +564,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             events
         end
 
-      character_limit_reached? = present_character_ids |> Enum.count() >= characters_limit
+      character_limit_reached? = map_character_ids |> Enum.count() >= characters_limit
 
       events =
         cond do
@@ -621,7 +621,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         %{
           kills: kills_data,
           present_characters:
-            present_character_ids
+            map_character_ids
             |> WandererApp.Character.get_character_eve_ids!(),
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
           system_static_infos: nil,
