@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.85.2](https://github.com/wanderer-industries/wanderer/compare/v1.85.1...v1.85.2) (2025-11-20)
+
+
+
+
+### Bug Fixes:
+
+* core: increased API pool limits
+
 ## [v1.85.1](https://github.com/wanderer-industries/wanderer/compare/v1.85.0...v1.85.1) (2025-11-20)
 
 
