@@ -49,7 +49,21 @@ defmodule WandererApp.CachedInfo do
             ship_type = parse_type(type_id, info)
             {:ok, group_info} = get_group_info(ship_type.group_id)
 
-            {:ok, ship_type |> Map.merge(group_info)}
+            {:ok, ship_type_info} =
+              WandererApp.Api.ShipTypeInfo |> Ash.create(ship_type |> Map.merge(group_info))
+
+            {:ok,
+             ship_type_info
+             |> Map.take([
+               :type_id,
+               :group_id,
+               :group_name,
+               :name,
+               :description,
+               :mass,
+               :capacity,
+               :volume
+             ])}
 
           {:error, reason} ->
             Logger.error("Failed to get ship_type #{type_id} from ESI: #{inspect(reason)}")
