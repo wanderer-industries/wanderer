@@ -16,15 +16,48 @@ defmodule WandererApp.Application do
       WandererApp.Vault,
       WandererApp.Repo,
       {Phoenix.PubSub, name: WandererApp.PubSub, adapter_name: Phoenix.PubSub.PG2},
+      # Multiple Finch pools for different services to prevent connection pool exhaustion
+      # ESI Character Tracking pool - high capacity for bulk character operations
+      {
+        Finch,
+        name: WandererApp.Finch.ESI.CharacterTracking,
+        pools: %{
+          default: [
+            size: Application.get_env(:wanderer_app, :finch_esi_character_pool_size, 100),
+            count: Application.get_env(:wanderer_app, :finch_esi_character_pool_count, 4)
+          ]
+        }
+      },
+      # ESI General pool - standard capacity for general ESI operations
+      {
+        Finch,
+        name: WandererApp.Finch.ESI.General,
+        pools: %{
+          default: [
+            size: Application.get_env(:wanderer_app, :finch_esi_general_pool_size, 50),
+            count: Application.get_env(:wanderer_app, :finch_esi_general_pool_count, 4)
+          ]
+        }
+      },
+      # Webhooks pool - isolated from ESI rate limits
+      {
+        Finch,
+        name: WandererApp.Finch.Webhooks,
+        pools: %{
+          default: [
+            size: Application.get_env(:wanderer_app, :finch_webhooks_pool_size, 25),
+            count: Application.get_env(:wanderer_app, :finch_webhooks_pool_count, 2)
+          ]
+        }
+      },
+      # Default pool - everything else (email, license manager, etc.)
       {
         Finch,
         name: WandererApp.Finch,
         pools: %{
           default: [
-            # number of connections per pool
-            size: 50,
-            # number of pools (so total 50 connections)
-            count: 4
+            size: Application.get_env(:wanderer_app, :finch_default_pool_size, 25),
+            count: Application.get_env(:wanderer_app, :finch_default_pool_count, 2)
           ]
         }
       },

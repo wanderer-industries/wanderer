@@ -49,7 +49,7 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
         WandererApp.Cache.put(
           "eve_auth_#{params[:state]}",
           [with_wallet: with_wallet, is_admin?: is_admin?],
-          ttl: :timer.minutes(15)
+          ttl: :timer.minutes(30)
         )
 
         opts = oauth_client_options_from_conn(conn, with_wallet, is_admin?)
@@ -66,17 +66,22 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
   Handles the callback from Eve.
   """
   def handle_callback!(%Plug.Conn{params: %{"code" => code, "state" => state}} = conn) do
-    opts =
-      WandererApp.Cache.get("eve_auth_#{state}")
+    case WandererApp.Cache.get("eve_auth_#{state}") do
+      nil ->
+        # Cache expired or invalid state - redirect to welcome page
+        conn
+        |> redirect!("/welcome")
 
-    params = [code: code]
+      opts ->
+        params = [code: code]
 
-    case WandererApp.Ueberauth.Strategy.Eve.OAuth.get_access_token(params, opts) do
-      {:ok, token} ->
-        fetch_user(conn, token)
+        case WandererApp.Ueberauth.Strategy.Eve.OAuth.get_access_token(params, opts) do
+          {:ok, token} ->
+            fetch_user(conn, token)
 
-      {:error, {error_code, error_description}} ->
-        set_errors!(conn, [error(error_code, error_description)])
+          {:error, {error_code, error_description}} ->
+            set_errors!(conn, [error(error_code, error_description)])
+        end
     end
   end
 

@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.85.0](https://github.com/wanderer-industries/wanderer/compare/v1.84.37...v1.85.0) (2025-11-19)
+
+
+
+
+### Features:
+
+* core: added support for new ship types
+
+## [v1.84.37](https://github.com/wanderer-industries/wanderer/compare/v1.84.36...v1.84.37) (2025-11-19)
+
+
+
+
+### Bug Fixes:
+
+* auth: fixed character auth issues
+
 ## [v1.84.36](https://github.com/wanderer-industries/wanderer/compare/v1.84.35...v1.84.36) (2025-11-19)
 
 

@@ -82,6 +82,7 @@ defmodule WandererApp.Repo.Migrations.UpdateMapSlugIndexIncludeDeleted do
     case repo().query(duplicates_query, []) do
       {:ok, %{rows: [[count]]}} ->
         count
+
       {:error, error} ->
         IO.puts("Error counting duplicates: #{inspect(error)}")
         0
@@ -160,6 +161,7 @@ defmodule WandererApp.Repo.Migrations.UpdateMapSlugIndexIncludeDeleted do
     case repo().query!(check_query, [candidate]) do
       %{rows: [[0]]} ->
         candidate
+
       %{rows: [[_count]]} ->
         # Try next number
         generate_unique_slug(base_slug, n + 1)

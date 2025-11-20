@@ -133,7 +133,12 @@ defmodule WandererApp.Repo.Migrations.FixDuplicateMapSlugs do
 
       {:ok, %{rows: [[false]]}} ->
         IO.puts("Creating unique index on slug...")
-        create_if_not_exists index(:maps_v1, [:slug], unique: true, name: :maps_v1_unique_slug_index)
+
+        create_if_not_exists index(:maps_v1, [:slug],
+                               unique: true,
+                               name: :maps_v1_unique_slug_index
+                             )
+
         IO.puts("✓ Index created successfully!")
 
       {:error, error} ->
