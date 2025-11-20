@@ -177,7 +177,34 @@ config :wanderer_app,
     ],
     extra_characters_50: map_subscription_extra_characters_50_price,
     extra_hubs_10: map_subscription_extra_hubs_10_price
-  }
+  },
+  # Finch pool configuration - separate pools for different services
+  # ESI Character Tracking pool - high capacity for bulk character operations
+  # With 30+ TrackerPools × ~100 concurrent tasks, need large pool
+  finch_esi_character_pool_size:
+    System.get_env("WANDERER_FINCH_ESI_CHARACTER_POOL_SIZE", "200") |> String.to_integer(),
+  finch_esi_character_pool_count:
+    System.get_env("WANDERER_FINCH_ESI_CHARACTER_POOL_COUNT", "4") |> String.to_integer(),
+  # ESI General pool - standard capacity for general ESI operations
+  finch_esi_general_pool_size:
+    System.get_env("WANDERER_FINCH_ESI_GENERAL_POOL_SIZE", "50") |> String.to_integer(),
+  finch_esi_general_pool_count:
+    System.get_env("WANDERER_FINCH_ESI_GENERAL_POOL_COUNT", "4") |> String.to_integer(),
+  # Webhooks pool - isolated from ESI rate limits
+  finch_webhooks_pool_size:
+    System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_SIZE", "25") |> String.to_integer(),
+  finch_webhooks_pool_count:
+    System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_COUNT", "2") |> String.to_integer(),
+  # Default pool - everything else (email, license manager, etc.)
+  finch_default_pool_size:
+    System.get_env("WANDERER_FINCH_DEFAULT_POOL_SIZE", "25") |> String.to_integer(),
+  finch_default_pool_count:
+    System.get_env("WANDERER_FINCH_DEFAULT_POOL_COUNT", "2") |> String.to_integer(),
+  # Character tracker concurrency settings
+  # Location updates need high concurrency for <2s response with 3000+ characters
+  location_concurrency:
+    System.get_env("WANDERER_LOCATION_CONCURRENCY", "#{System.schedulers_online() * 12}")
+    |> String.to_integer()
 
 config :ueberauth, Ueberauth,
   providers: [
