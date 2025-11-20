@@ -331,7 +331,7 @@ defmodule WandererApp.Character do
     do:
       {:ok,
        Enum.map(eve_ids, fn eve_id ->
-         Task.async(fn -> apply(WandererApp.Esi.ApiClient, method, [eve_id]) end)
+         Task.async(fn -> apply(WandererApp.Esi, method, [eve_id]) end)
        end)
        # 145000 == Timeout in milliseconds
        |> Enum.map(fn task -> Task.await(task, 145_000) end)
