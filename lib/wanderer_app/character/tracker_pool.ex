@@ -26,7 +26,10 @@ defmodule WandererApp.Character.TrackerPool do
 
   # Per-operation concurrency limits
   # Location updates are critical and need high concurrency (100 chars in ~200ms)
-  @location_concurrency Application.compile_env(:wanderer_app, :location_concurrency, System.schedulers_online() * 12)
+  # Note: This is fetched at runtime since it's configured via runtime.exs
+  defp location_concurrency do
+    Application.get_env(:wanderer_app, :location_concurrency, System.schedulers_online() * 12)
+  end
   # Other operations can use lower concurrency
   @standard_concurrency System.schedulers_online() * 2
 
@@ -278,7 +281,7 @@ defmodule WandererApp.Character.TrackerPool do
         fn character_id ->
           WandererApp.Character.Tracker.update_location(character_id)
         end,
-        max_concurrency: @location_concurrency,
+        max_concurrency: location_concurrency(),
         on_timeout: :kill_task,
         timeout: :timer.seconds(5)
       )
