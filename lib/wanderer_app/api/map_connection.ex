@@ -4,7 +4,8 @@ defmodule WandererApp.Api.MapConnection do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource],
+    primary_read_warning?: false
 
   postgres do
     repo(WandererApp.Repo)
@@ -116,6 +117,8 @@ defmodule WandererApp.Api.MapConnection do
         :locked,
         :custom_info
       ]
+
+      require_atomic? false
     end
 
     destroy :destroy do
@@ -157,30 +160,37 @@ defmodule WandererApp.Api.MapConnection do
 
     update :update_mass_status do
       accept [:mass_status]
+      require_atomic? false
     end
 
     update :update_time_status do
       accept [:time_status]
+      require_atomic? false
     end
 
     update :update_ship_size_type do
       accept [:ship_size_type]
+      require_atomic? false
     end
 
     update :update_locked do
       accept [:locked]
+      require_atomic? false
     end
 
     update :update_custom_info do
       accept [:custom_info]
+      require_atomic? false
     end
 
     update :update_type do
       accept [:type]
+      require_atomic? false
     end
 
     update :update_wormhole_type do
       accept [:wormhole_type]
+      require_atomic? false
     end
   end
 

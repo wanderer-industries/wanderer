@@ -21,6 +21,7 @@ defmodule WandererApp.Map.Server.Impl do
     :map_id,
     :rtree_name,
     map: nil,
+    acls: [],
     map_opts: []
   ]
 
@@ -51,13 +52,14 @@ defmodule WandererApp.Map.Server.Impl do
       Task.async(fn ->
         {:map,
          WandererApp.MapRepo.get(map_id, [
-           :owner,
-           :characters,
-           acls: [
-             :owner_id,
-             members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
-           ]
+           :owner
          ])}
+      end),
+      Task.async(fn ->
+        {:acls, WandererApp.Api.MapAccessList.read_by_map(%{map_id: map_id})}
+      end),
+      Task.async(fn ->
+        {:characters, WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)}
       end),
       Task.async(fn ->
         {:systems, WandererApp.MapSystemRepo.get_visible_by_map(map_id)}
@@ -92,6 +94,18 @@ defmodule WandererApp.Map.Server.Impl do
         _ -> nil
       end)
 
+    acls_result =
+      Enum.find_value(results, fn
+        {:acls, result} -> result
+        _ -> nil
+      end)
+
+    characters_result =
+      Enum.find_value(results, fn
+        {:characters, result} -> result
+        _ -> nil
+      end)
+
     systems_result =
       Enum.find_value(results, fn
         {:systems, result} -> result
@@ -112,12 +126,16 @@ defmodule WandererApp.Map.Server.Impl do
 
     # Process results
     with {:ok, map} <- map_result,
+         {:ok, acls} <- acls_result,
+         {:ok, characters} <- characters_result,
          {:ok, systems} <- systems_result,
          {:ok, connections} <- connections_result,
          {:ok, subscription_settings} <- subscription_result do
       initial_state
       |> init_map(
         map,
+        acls,
+        characters,
         subscription_settings,
         systems,
         connections
@@ -129,7 +147,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  def start_map(%__MODULE__{map: map, map_id: map_id} = _state) do
+  def start_map(%__MODULE__{map: map, acls: acls, map_id: map_id} = _state) do
     WandererApp.Cache.insert("map_#{map_id}:started", false)
 
     # Check if map was loaded successfully
@@ -139,7 +157,7 @@ defmodule WandererApp.Map.Server.Impl do
         {:error, :map_not_loaded}
 
       map ->
-        with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
+        with :ok <- AclsImpl.track_acls(acls |> Enum.map(& &1.access_list_id)) do
           @pubsub_client.subscribe(
             WandererApp.PubSub,
             "maps:#{map_id}"
@@ -480,7 +498,9 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp init_map(
          state,
-         %{id: map_id, characters: characters} = initial_map,
+         %{id: map_id} = initial_map,
+         acls,
+         characters,
          subscription_settings,
          systems,
          connections
@@ -509,7 +529,7 @@ defmodule WandererApp.Map.Server.Impl do
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
-    %{state | map: map, map_opts: map_options(options)}
+    %{state | map: map, acls: acls, map_opts: map_options(options)}
   end
 
   def maybe_import_systems(

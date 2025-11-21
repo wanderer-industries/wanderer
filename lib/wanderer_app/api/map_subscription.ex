@@ -62,7 +62,11 @@ defmodule WandererApp.Api.MapSubscription do
       :auto_renew?
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     read :all_active do
       prepare build(sort: [updated_at: :asc], load: [:map])
@@ -88,32 +92,39 @@ defmodule WandererApp.Api.MapSubscription do
 
     update :update_plan do
       accept [:plan]
+      require_atomic? false
     end
 
     update :update_characters_limit do
       accept [:characters_limit]
+      require_atomic? false
     end
 
     update :update_hubs_limit do
       accept [:hubs_limit]
+      require_atomic? false
     end
 
     update :update_active_till do
       accept [:active_till]
+      require_atomic? false
     end
 
     update :update_auto_renew do
       accept [:auto_renew?]
+      require_atomic? false
     end
 
     update :cancel do
       accept([])
+      require_atomic? false
 
       change(set_attribute(:status, :cancelled))
     end
 
     update :expire do
       accept([])
+      require_atomic? false
 
       change(set_attribute(:status, :expired))
     end

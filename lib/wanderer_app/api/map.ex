@@ -105,15 +105,11 @@ defmodule WandererApp.Api.Map do
     create :new do
       accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id, :sse_enabled]
       primary?(true)
-
-      argument :owner_id, :uuid, allow_nil?: false
       argument :create_default_acl, :boolean, allow_nil?: true
       argument :acls, {:array, :uuid}, allow_nil?: true
       argument :acls_text_input, :string, allow_nil?: true
       argument :scope_text_input, :string, allow_nil?: true
       argument :acls_empty_selection, :string, allow_nil?: true
-
-      change manage_relationship(:owner_id, :owner, on_lookup: :relate, on_no_match: nil)
       change manage_relationship(:acls, type: :append_and_remove)
       change WandererApp.Api.Changes.SlugifyName
     end
@@ -162,34 +158,38 @@ defmodule WandererApp.Api.Map do
 
     update :assign_owner do
       accept [:owner_id]
+      require_atomic? false
     end
 
     update :update_hubs do
       accept [:hubs]
+      require_atomic? false
     end
 
     update :update_options do
       accept [:options]
+      require_atomic? false
     end
 
     update :mark_as_deleted do
       accept([])
+      require_atomic? false
 
       change(set_attribute(:deleted, true))
     end
 
     update :update_api_key do
       accept [:public_api_key]
+      require_atomic? false
     end
 
     update :toggle_webhooks do
       accept [:webhooks_enabled]
+      require_atomic? false
     end
 
     create :duplicate do
       accept [:name, :description, :scope, :only_tracked_characters]
-
-      argument :source_map_id, :uuid, allow_nil?: false
       argument :copy_acls, :boolean, default: true
       argument :copy_user_settings, :boolean, default: true
       argument :copy_signatures, :boolean, default: true

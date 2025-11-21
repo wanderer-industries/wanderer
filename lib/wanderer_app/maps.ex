@@ -132,9 +132,14 @@ defmodule WandererApp.Maps do
     WandererApp.Cache.lookup!("map_characters-#{map_id}")
     |> case do
       nil ->
+        {:ok, acls} =
+          WandererApp.Api.MapAccessList.read_by_map(%{map_id: map_id},
+            load: [access_list: [:owner, :members]]
+          )
+
         map_acls =
-          map.acls
-          |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
+          acls
+          |> Enum.map(fn acl -> acl.access_list end)
 
         map_acl_owner_ids =
           map_acls
@@ -332,9 +337,7 @@ defmodule WandererApp.Maps do
   end
 
   def check_user_can_delete_map(map_slug, current_user) do
-    map_slug
-    |> WandererApp.Api.Map.get_map_by_slug()
-    |> Ash.load([:owner, :acls, :user_permissions], actor: current_user)
+    WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
     |> case do
       {:ok,
        %{

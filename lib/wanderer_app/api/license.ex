@@ -36,7 +36,11 @@ defmodule WandererApp.Api.License do
       :expire_at
     ]
 
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     create :create do
       primary? true
@@ -58,12 +62,14 @@ defmodule WandererApp.Api.License do
 
     update :invalidate do
       accept([])
+      require_atomic? false
 
       change(set_attribute(:is_valid, false))
     end
 
     update :set_valid do
       accept([])
+      require_atomic? false
 
       change(set_attribute(:is_valid, true))
     end

@@ -53,22 +53,30 @@ defmodule WandererApp.Api.MapUserSettings do
       :settings
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     update :update_settings do
       accept [:settings]
+      require_atomic? false
     end
 
     update :update_main_character do
       accept [:main_character_eve_id]
+      require_atomic? false
     end
 
     update :update_following_character do
       accept [:following_character_eve_id]
+      require_atomic? false
     end
 
     update :update_hubs do
       accept [:hubs]
+      require_atomic? false
     end
   end
 

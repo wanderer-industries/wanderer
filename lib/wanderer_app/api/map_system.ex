@@ -24,16 +24,12 @@ defmodule WandererApp.Api.MapSystem do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource],
+    primary_read_warning?: false
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_v1")
-
-    custom_indexes do
-      # Partial index for efficient visible systems query
-      index [:map_id], where: "visible = true", name: "map_system_v1_map_id_visible_index"
-    end
   end
 
   json_api do
@@ -70,10 +66,7 @@ defmodule WandererApp.Api.MapSystem do
     define(:upsert, action: :upsert)
     define(:destroy, action: :destroy)
 
-    define(:by_id,
-      get_by: [:id],
-      action: :read
-    )
+    define :by_id, action: :get_by_id, args: [:id], get?: true
 
     define(:by_solar_system_id,
       get_by: [:solar_system_id],
@@ -155,6 +148,7 @@ defmodule WandererApp.Api.MapSystem do
 
     update :update do
       primary? true
+      require_atomic? false
 
       # Note: name and solar_system_id are not in accept
       # - solar_system_id should be immutable (identifier)
@@ -216,6 +210,11 @@ defmodule WandererApp.Api.MapSystem do
                  required?: false
     end
 
+    read :get_by_id do
+      argument(:id, :string, allow_nil?: false)
+      filter(expr(id == ^arg(:id)))
+    end
+
     read :read_all_by_map do
       argument(:map_id, :string, allow_nil?: false)
       filter(expr(map_id == ^arg(:map_id)))
@@ -237,44 +236,54 @@ defmodule WandererApp.Api.MapSystem do
 
     update :update_name do
       accept [:name]
+      require_atomic? false
     end
 
     update :update_description do
       accept [:description]
+      require_atomic? false
     end
 
     update :update_locked do
       accept [:locked]
+      require_atomic? false
     end
 
     update :update_status do
       accept [:status]
+      require_atomic? false
     end
 
     update :update_tag do
       accept [:tag]
+      require_atomic? false
     end
 
     update :update_temporary_name do
       accept [:temporary_name]
+      require_atomic? false
     end
 
     update :update_labels do
       accept [:labels]
+      require_atomic? false
     end
 
     update :update_position do
       accept [:position_x, :position_y]
+      require_atomic? false
 
       change(set_attribute(:visible, true))
     end
 
     update :update_linked_sig_eve_id do
       accept [:linked_sig_eve_id]
+      require_atomic? false
     end
 
     update :update_visible do
       accept [:visible]
+      require_atomic? false
     end
   end
 

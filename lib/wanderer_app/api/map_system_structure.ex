@@ -122,13 +122,6 @@ defmodule WandererApp.Api.MapSystemStructure do
         :status,
         :end_time
       ]
-
-      argument :system_id, :uuid, allow_nil?: false
-
-      change manage_relationship(:system_id, :system,
-               on_lookup: :relate,
-               on_no_match: nil
-             )
     end
 
     update :update do

@@ -26,11 +26,20 @@ defmodule WandererApp.MapRepo do
     end
   end
 
-  def get_by_slug_with_permissions(map_slug, current_user),
-    do:
-      map_slug
-      |> WandererApp.Api.Map.get_map_by_slug()
-      |> load_user_permissions(current_user)
+  def get_by_slug_with_permissions(map_slug, current_user) do
+    map_slug
+    |> WandererApp.Api.Map.get_map_by_slug!()
+    |> Ash.load(
+      acls: [
+        :owner_id,
+        members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+      ]
+    )
+    |> case do
+      {:ok, map_with_acls} -> Ash.load(map_with_acls, :user_permissions, actor: current_user)
+      error -> error
+    end
+  end
 
   @doc """
   Safely retrieves a map by slug, handling the case where multiple maps
@@ -145,13 +154,6 @@ defmodule WandererApp.MapRepo do
   def load_relationships(map, []), do: {:ok, map}
 
   def load_relationships(map, relationships), do: map |> Ash.load(relationships)
-
-  defp load_user_permissions({:ok, map}, current_user),
-    do:
-      map
-      |> Ash.load([:acls, :user_permissions], actor: current_user)
-
-  defp load_user_permissions(error, _current_user), do: error
 
   def update_hubs(map_id, hubs) do
     map_id

@@ -106,7 +106,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       ) do
     system =
       WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id |> String.to_integer()
+        solar_system_id: solar_system_id
       })
 
     {:ok, comment} =
@@ -118,7 +118,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     comment =
       comment
-      |> Ash.load!([:character, :system])
+      |> Ash.load!([:character])
 
     Impl.broadcast!(map_id, :system_comment_added, %{
       solar_system_id: solar_system_id,
@@ -132,8 +132,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         user_id,
         character_id
       ) do
-    {:ok, %{system: system} = comment} =
+    {:ok, %{system_id: system_id} = comment} =
       WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
+
+    {:ok, system} = WandererApp.Api.MapSystem.by_id(system_id)
 
     :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
 

@@ -13,12 +13,15 @@ defmodule WandererApp.MapSystemRepo do
   end
 
   def get_by_map_and_solar_system_id(map_id, solar_system_id) do
-    WandererApp.Api.MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id)
+    WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+      map_id: map_id,
+      solar_system_id: solar_system_id
+    })
     |> case do
       {:ok, system} ->
         {:ok, system}
 
-      _ ->
+      _error ->
         {:error, :not_found}
     end
   end
@@ -126,10 +129,16 @@ defmodule WandererApp.MapSystemRepo do
       system
       |> WandererApp.Api.MapSystem.update_description(update)
 
-  def update_locked(system, update),
-    do:
-      system
-      |> WandererApp.Api.MapSystem.update_locked(update)
+  def update_locked(system, update) do
+    case WandererApp.Api.MapSystem.update_locked(system, update) do
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.StaleRecord{}]}} ->
+        WandererApp.Api.MapSystem.by_id!(system.id)
+        |> WandererApp.Api.MapSystem.update_locked(update)
+
+      {:ok, system} ->
+        {:ok, system}
+    end
+  end
 
   def update_status(system, update),
     do:

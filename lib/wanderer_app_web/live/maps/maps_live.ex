@@ -20,6 +20,7 @@ defmodule WandererAppWeb.MapsLive do
     user_characters =
       active_characters
       |> Enum.map(&map_character/1)
+      |> Enum.reject(&is_nil/1)
 
     {:ok,
      socket
@@ -107,7 +108,18 @@ defmodule WandererAppWeb.MapsLive do
     WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
-        map = map |> map_map()
+        # Load the owner association to get character details
+        map =
+          case Ash.load(map, :owner) do
+            {:ok, loaded_map} -> loaded_map |> map_map()
+            _ -> map |> map_map()
+          end
+
+        # Add owner to characters list, filtering out nil values
+        characters =
+          [map.owner |> map_character() | socket.assigns.characters]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
 
         socket
         |> assign(:active_page, :maps)
@@ -115,10 +127,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:page_title, "Maps - Edit")
         |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
         |> assign(:map_slug, map_slug)
-        |> assign(
-          :characters,
-          [map.owner |> map_character() | socket.assigns.characters] |> Enum.uniq()
-        )
+        |> assign(:characters, characters)
         |> assign(
           :form,
           map |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
