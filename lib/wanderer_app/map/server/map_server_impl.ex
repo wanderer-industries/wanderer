@@ -29,7 +29,7 @@ defmodule WandererApp.Map.Server.Impl do
 
   @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
-  @update_tracked_characters_timeout :timer.minutes(1)
+  @invalidate_characters_timeout :timer.hours(1)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -149,8 +149,8 @@ defmodule WandererApp.Map.Server.Impl do
 
           Process.send_after(
             self(),
-            {:update_tracked_characters, map_id},
-            @update_tracked_characters_timeout
+            {:invalidate_characters, map_id},
+            @invalidate_characters_timeout
           )
 
           Process.send_after(self(), {:update_presence, map_id}, @update_presence_timeout)
@@ -302,14 +302,14 @@ defmodule WandererApp.Map.Server.Impl do
     CharactersImpl.update_characters(map_id)
   end
 
-  def handle_event({:update_tracked_characters, map_id} = event) do
+  def handle_event({:invalidate_characters, map_id} = event) do
     Process.send_after(
       self(),
       event,
-      @update_tracked_characters_timeout
+      @invalidate_characters_timeout
     )
 
-    CharactersImpl.update_tracked_characters(map_id)
+    CharactersImpl.invalidate_characters(map_id)
   end
 
   def handle_event({:update_presence, map_id} = event) do
