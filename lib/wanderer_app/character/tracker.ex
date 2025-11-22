@@ -709,6 +709,7 @@ defmodule WandererApp.Character.Tracker do
     end
   end
 
+  # when old_alliance_id != alliance_id and is_nil(alliance_id)
   defp maybe_update_alliance(
          %{character_id: character_id, alliance_id: old_alliance_id} = state,
          alliance_id
@@ -734,6 +735,7 @@ defmodule WandererApp.Character.Tracker do
     )
 
     state
+    |> Map.merge(%{alliance_id: nil})
   end
 
   defp maybe_update_alliance(
@@ -771,6 +773,7 @@ defmodule WandererApp.Character.Tracker do
             )
 
             state
+            |> Map.merge(%{alliance_id: alliance_id})
 
           _error ->
             Logger.error("Failed to get alliance info for #{alliance_id}")

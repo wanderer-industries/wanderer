@@ -34,28 +34,14 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     track_characters(map_id, rest)
   end
 
-  def update_tracked_characters(map_id) do
+  def invalidate_characters(map_id) do
     Task.start_link(fn ->
-      {:ok, all_map_tracked_character_ids} =
+      character_ids =
         map_id
-        |> WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all()
-        |> case do
-          {:ok, settings} -> {:ok, settings |> Enum.map(&Map.get(&1, :character_id))}
-          _ -> {:ok, []}
-        end
+        |> WandererApp.Map.get_map!()
+        |> Map.get(:characters, [])
 
-      {:ok, actual_map_tracked_characters} =
-        WandererApp.Cache.lookup("maps:#{map_id}:tracked_characters", [])
-
-      characters_to_remove = actual_map_tracked_characters -- all_map_tracked_character_ids
-
-      WandererApp.Cache.insert_or_update(
-        "map_#{map_id}:invalidate_character_ids",
-        characters_to_remove,
-        fn ids ->
-          (ids ++ characters_to_remove) |> Enum.uniq()
-        end
-      )
+      WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
       :ok
     end)
