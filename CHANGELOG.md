@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.85.3](https://github.com/wanderer-industries/wanderer/compare/v1.85.2...v1.85.3) (2025-11-22)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connection time status issues. fixed character alliance update issues
+
 ## [v1.85.2](https://github.com/wanderer-industries/wanderer/compare/v1.85.1...v1.85.2) (2025-11-20)
 
 
