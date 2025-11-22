@@ -6,6 +6,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
   alias BetterNumber, as: Number
   alias WandererApp.License.LicenseManager
+  alias WandererApp.Map.SubscriptionManager
 
   @impl true
   def mount(socket) do
@@ -39,10 +40,10 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     {:ok, map} = WandererApp.MapRepo.get(map_id)
 
     {:ok, estimated_price, discount} =
-      WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
+      SubscriptionManager.estimate_price(subscription_form, false)
 
     {:ok, map_subscriptions} =
-      WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
+      SubscriptionManager.get_map_subscriptions(map_id)
 
     socket =
       socket
@@ -76,7 +77,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     }
 
     {:ok, additional_price, discount} =
-      WandererApp.Map.SubscriptionManager.calc_additional_price(
+      SubscriptionManager.calc_additional_price(
         subscription_form,
         selected_subscription
       )
@@ -103,7 +104,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
       |> WandererApp.Api.MapSubscription.by_id!()
       |> WandererApp.Api.MapSubscription.cancel()
 
-    {:ok, map_subscriptions} = WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
+    {:ok, map_subscriptions} = SubscriptionManager.get_map_subscriptions(map_id)
 
     Phoenix.PubSub.broadcast(
       WandererApp.PubSub,
@@ -115,9 +116,9 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
       map_id: map_id
     })
 
-    case WandererApp.License.LicenseManager.get_license_by_map_id(map_id) do
+    case LicenseManager.get_license_by_map_id(map_id) do
       {:ok, license} ->
-        WandererApp.License.LicenseManager.invalidate_license(license.id)
+        LicenseManager.invalidate_license(license.id)
         Logger.info("Cancelled license for map #{map_id}")
 
       {:error, reason} ->
@@ -309,12 +310,10 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
         # Check if a license exists, if not create one, otherwise update its expiration
         # The License Manager service will verify the subscription is active
-        case WandererApp.License.LicenseManager.get_license_by_map_id(map_id) do
+        case LicenseManager.get_license_by_map_id(map_id) do
           {:ok, _license} ->
             # License exists, update its expiration date
-            case WandererApp.License.LicenseManager.update_license_expiration_from_subscription(
-                   map_id
-                 ) do
+            case LicenseManager.update_license_expiration_from_subscription(map_id) do
               {:ok, updated_license} ->
                 Logger.info(
                   "Updated license expiration for map #{map_id} to #{updated_license.expire_at}"
@@ -376,7 +375,7 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
   defp create_map_license(socket, map_id) do
     # No license found, create one
-    case WandererApp.License.LicenseManager.create_license_for_map(map_id) do
+    case LicenseManager.create_license_for_map(map_id) do
       {:ok, license} ->
         Logger.debug(fn ->
           "Automatically created license #{license.license_key} for map #{map_id} during subscription update"

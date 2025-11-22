@@ -186,14 +186,18 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   defp get_map_identifier(conn) do
     # 1. Check path params (e.g., /api/v1/maps/:map_identifier/systems)
     case conn.params["map_identifier"] do
-      id when is_binary(id) and id != "" -> id
+      id when is_binary(id) and id != "" ->
+        id
+
       _ ->
         # 2. Check request body for map_id (JSON:API format)
         case conn.body_params do
-          %{"data" => %{"attributes" => %{"map_id" => map_id}}} when is_binary(map_id) and map_id != "" ->
+          %{"data" => %{"attributes" => %{"map_id" => map_id}}}
+          when is_binary(map_id) and map_id != "" ->
             map_id
 
-          %{"data" => %{"relationships" => %{"map" => %{"data" => %{"id" => map_id}}}}} when is_binary(map_id) and map_id != "" ->
+          %{"data" => %{"relationships" => %{"map" => %{"data" => %{"id" => map_id}}}}}
+          when is_binary(map_id) and map_id != "" ->
             map_id
 
           # 3. Check flat body params (non-JSON:API format)

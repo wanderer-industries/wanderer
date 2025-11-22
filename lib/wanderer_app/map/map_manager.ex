@@ -58,10 +58,6 @@ defmodule WandererApp.Map.Manager do
     {:ok, pings_cleanup_timer} =
       :timer.send_interval(@pings_cleanup_interval, :cleanup_pings)
 
-    # safe_async_task(fn ->
-    #   start_last_active_maps()
-    # end)
-
     {:ok,
      %{
        check_maps_queue_timer: check_maps_queue_timer,
@@ -132,20 +128,6 @@ defmodule WandererApp.Map.Manager do
         Logger.error("Failed to fetch expired pings: #{inspect(error)}")
         {:error, error}
     end
-  end
-
-  defp start_last_active_maps() do
-    {:ok, last_map_states} =
-      WandererApp.Api.MapState.get_last_active(
-        DateTime.utc_now()
-        |> DateTime.add(-30, :minute)
-      )
-
-    last_map_states
-    |> Enum.map(fn %{map_id: map_id} -> map_id end)
-    |> Enum.each(fn map_id -> start_map(map_id) end)
-
-    :ok
   end
 
   defp start_maps() do

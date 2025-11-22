@@ -40,13 +40,13 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     tracked_characters
     |> Enum.each(fn character_id ->
-      start_tracking(state, character_id, %{})
+      start_tracking(state, character_id)
     end)
 
     state
   end
 
-  def start_tracking(state, character_id, opts) do
+  def start_tracking(state, character_id) do
     if not WandererApp.Cache.has_key?("#{character_id}:track_requested") do
       WandererApp.Cache.insert(
         "#{character_id}:track_requested",

@@ -23,9 +23,11 @@ defmodule WandererApp.Release do
     IO.puts("Run migrations..")
     prepare()
 
-    for repo <- repos() do
+    for repo <- repos do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
+
+    run_post_migration_tasks()
 
     :init.stop()
   end
@@ -76,6 +78,8 @@ defmodule WandererApp.Release do
     Enum.each(streaks, fn {repo, up_to_version} ->
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, to: up_to_version))
     end)
+
+    run_post_migration_tasks()
   end
 
   defp migration_streaks(pending_migrations) do
@@ -214,5 +218,41 @@ defmodule WandererApp.Release do
     # Start the Repo(s) for myapp
     IO.puts("Starting repos..")
     Enum.each(repos(), & &1.start_link(pool_size: 2))
+  end
+
+  defp run_post_migration_tasks do
+    IO.puts("Running post-migration tasks..")
+
+    # Recover any duplicate map slugs
+    IO.puts("Checking for duplicate map slugs..")
+
+    case WandererApp.Map.SlugRecovery.recover_all_duplicates() do
+      {:ok, %{total_slugs_fixed: 0}} ->
+        IO.puts("No duplicate slugs found.")
+
+      {:ok, %{total_slugs_fixed: count, total_maps_renamed: renamed}} ->
+        IO.puts("Successfully fixed #{count} duplicate slug(s), renamed #{renamed} map(s).")
+
+      {:error, reason} ->
+        IO.puts("Warning: Failed to recover duplicate slugs: #{inspect(reason)}")
+        IO.puts("Application will continue, but you may need to manually fix duplicate slugs.")
+    end
+
+    # Ensure the unique index exists after recovery
+    IO.puts("Verifying unique index on map slugs..")
+
+    case WandererApp.Map.SlugRecovery.verify_unique_index() do
+      {:ok, :exists} ->
+        IO.puts("Unique index already exists.")
+
+      {:ok, :created} ->
+        IO.puts("Successfully created unique index.")
+
+      {:error, reason} ->
+        IO.puts("Warning: Failed to verify/create unique index: #{inspect(reason)}")
+        IO.puts("You may need to manually create the index.")
+    end
+
+    IO.puts("Post-migration tasks completed.")
   end
 end

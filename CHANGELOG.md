@@ -2,6 +2,139 @@
 
 <!-- changelog -->
 
+## [v1.85.3](https://github.com/wanderer-industries/wanderer/compare/v1.85.2...v1.85.3) (2025-11-22)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connection time status issues. fixed character alliance update issues
+
+## [v1.85.2](https://github.com/wanderer-industries/wanderer/compare/v1.85.1...v1.85.2) (2025-11-20)
+
+
+
+
+### Bug Fixes:
+
+* core: increased API pool limits
+
+## [v1.85.1](https://github.com/wanderer-industries/wanderer/compare/v1.85.0...v1.85.1) (2025-11-20)
+
+
+
+
+### Bug Fixes:
+
+* core: increased API pool limits
+
+## [v1.85.0](https://github.com/wanderer-industries/wanderer/compare/v1.84.37...v1.85.0) (2025-11-19)
+
+
+
+
+### Features:
+
+* core: added support for new ship types
+
+## [v1.84.37](https://github.com/wanderer-industries/wanderer/compare/v1.84.36...v1.84.37) (2025-11-19)
+
+
+
+
+### Bug Fixes:
+
+* auth: fixed character auth issues
+
+## [v1.84.36](https://github.com/wanderer-industries/wanderer/compare/v1.84.35...v1.84.36) (2025-11-19)
+
+
+
+
+### Bug Fixes:
+
+* fixed duplicated map slugs
+
+## [v1.84.35](https://github.com/wanderer-industries/wanderer/compare/v1.84.34...v1.84.35) (2025-11-19)
+
+
+
+
+### Bug Fixes:
+
+* structure search / paste issues
+
+## [v1.84.34](https://github.com/wanderer-industries/wanderer/compare/v1.84.33...v1.84.34) (2025-11-18)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed character tracking issues
+
+## [v1.84.33](https://github.com/wanderer-industries/wanderer/compare/v1.84.32...v1.84.33) (2025-11-18)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed character tracking issues
+
+## [v1.84.32](https://github.com/wanderer-industries/wanderer/compare/v1.84.31...v1.84.32) (2025-11-18)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed character tracking issues
+
+## [v1.84.31](https://github.com/wanderer-industries/wanderer/compare/v1.84.30...v1.84.31) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connactions validation logic
+
+## [v1.84.30](https://github.com/wanderer-industries/wanderer/compare/v1.84.29...v1.84.30) (2025-11-17)
+
+
+
+
+## [v1.84.29](https://github.com/wanderer-industries/wanderer/compare/v1.84.28...v1.84.29) (2025-11-17)
+
+
+
+
+## [v1.84.28](https://github.com/wanderer-industries/wanderer/compare/v1.84.27...v1.84.28) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed ACL updates
+
+## [v1.84.27](https://github.com/wanderer-industries/wanderer/compare/v1.84.26...v1.84.27) (2025-11-17)
+
+
+
+
+### Bug Fixes:
+
+* core: supported characters_updates for external events
+
+* core: improved character tracking
+
+* core: improved character tracking
+
+* core: improved character location tracking
+
 ## [v1.84.26](https://github.com/wanderer-industries/wanderer/compare/v1.84.25...v1.84.26) (2025-11-16)
 
 

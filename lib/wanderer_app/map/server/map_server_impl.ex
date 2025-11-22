@@ -27,11 +27,9 @@ defmodule WandererApp.Map.Server.Impl do
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
   @ddrt Application.compile_env(:wanderer_app, :ddrt)
 
-  @connections_cleanup_timeout :timer.minutes(1)
-
   @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
-  @update_tracked_characters_timeout :timer.minutes(1)
+  @invalidate_characters_timeout :timer.hours(1)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -151,8 +149,8 @@ defmodule WandererApp.Map.Server.Impl do
 
           Process.send_after(
             self(),
-            {:update_tracked_characters, map_id},
-            @update_tracked_characters_timeout
+            {:invalidate_characters, map_id},
+            @invalidate_characters_timeout
           )
 
           Process.send_after(self(), {:update_presence, map_id}, @update_presence_timeout)
@@ -201,17 +199,11 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate cleanup_systems(map_id), to: SystemsImpl
   defdelegate cleanup_connections(map_id), to: ConnectionsImpl
   defdelegate cleanup_characters(map_id), to: CharactersImpl
-
   defdelegate untrack_characters(map_id, characters_ids), to: CharactersImpl
-
   defdelegate add_system(map_id, system_info, user_id, character_id, opts \\ []), to: SystemsImpl
-
   defdelegate paste_connections(map_id, connections, user_id, character_id), to: ConnectionsImpl
-
   defdelegate paste_systems(map_id, systems, user_id, character_id, opts), to: SystemsImpl
-
   defdelegate add_system_comment(map_id, comment_info, user_id, character_id), to: SystemsImpl
-
   defdelegate remove_system_comment(map_id, comment_id, user_id, character_id), to: SystemsImpl
 
   defdelegate delete_systems(
@@ -223,49 +215,27 @@ defmodule WandererApp.Map.Server.Impl do
               to: SystemsImpl
 
   defdelegate update_system_name(map_id, update), to: SystemsImpl
-
   defdelegate update_system_description(map_id, update), to: SystemsImpl
-
   defdelegate update_system_status(map_id, update), to: SystemsImpl
-
   defdelegate update_system_tag(map_id, update), to: SystemsImpl
-
   defdelegate update_system_temporary_name(map_id, update), to: SystemsImpl
-
   defdelegate update_system_locked(map_id, update), to: SystemsImpl
-
   defdelegate update_system_labels(map_id, update), to: SystemsImpl
-
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl
-
   defdelegate update_system_position(map_id, update), to: SystemsImpl
-
   defdelegate add_hub(map_id, hub_info), to: SystemsImpl
-
   defdelegate remove_hub(map_id, hub_info), to: SystemsImpl
-
   defdelegate add_ping(map_id, ping_info), to: PingsImpl
-
   defdelegate cancel_ping(map_id, ping_info), to: PingsImpl
-
   defdelegate add_connection(map_id, connection_info), to: ConnectionsImpl
-
   defdelegate delete_connection(map_id, connection_info), to: ConnectionsImpl
-
   defdelegate get_connection_info(map_id, connection_info), to: ConnectionsImpl
-
   defdelegate update_connection_time_status(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_connection_type(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_connection_mass_status(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_connection_ship_size_type(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_connection_locked(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_connection_custom_info(map_id, connection_update), to: ConnectionsImpl
-
   defdelegate update_signatures(map_id, signatures_update), to: SignaturesImpl
 
   def import_settings(map_id, settings, user_id) do
@@ -332,14 +302,14 @@ defmodule WandererApp.Map.Server.Impl do
     CharactersImpl.update_characters(map_id)
   end
 
-  def handle_event({:update_tracked_characters, map_id} = event) do
+  def handle_event({:invalidate_characters, map_id} = event) do
     Process.send_after(
       self(),
       event,
-      @update_tracked_characters_timeout
+      @invalidate_characters_timeout
     )
 
-    CharactersImpl.update_tracked_characters(map_id)
+    CharactersImpl.invalidate_characters(map_id)
   end
 
   def handle_event({:update_presence, map_id} = event) do

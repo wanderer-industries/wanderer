@@ -1,6 +1,8 @@
 defmodule WandererApp.CachedInfo do
   require Logger
 
+  alias WandererAppWeb.Helpers.APIUtils
+
   def run(_arg) do
     :ok = cache_trig_systems()
   end
@@ -29,14 +31,71 @@ defmodule WandererApp.CachedInfo do
           )
         end)
 
-        Cachex.get(:ship_types_cache, type_id)
+        get_ship_type_from_cache_or_api(type_id)
 
       {:ok, ship_type} ->
         {:ok, ship_type}
     end
   end
 
+  defp get_ship_type_from_cache_or_api(type_id) do
+    case Cachex.get(:ship_types_cache, type_id) do
+      {:ok, ship_type} when not is_nil(ship_type) ->
+        {:ok, ship_type}
+
+      {:ok, nil} ->
+        case WandererApp.Esi.get_type_info(type_id) do
+          {:ok, info} when not is_nil(info) ->
+            ship_type = parse_type(type_id, info)
+            {:ok, group_info} = get_group_info(ship_type.group_id)
+
+            {:ok, ship_type_info} =
+              WandererApp.Api.ShipTypeInfo |> Ash.create(ship_type |> Map.merge(group_info))
+
+            {:ok,
+             ship_type_info
+             |> Map.take([
+               :type_id,
+               :group_id,
+               :group_name,
+               :name,
+               :description,
+               :mass,
+               :capacity,
+               :volume
+             ])}
+
+          {:error, reason} ->
+            Logger.error("Failed to get ship_type #{type_id} from ESI: #{inspect(reason)}")
+            {:ok, nil}
+
+          error ->
+            Logger.error("Failed to get ship_type #{type_id} from ESI: #{inspect(error)}")
+            {:ok, nil}
+        end
+    end
+  end
+
+  def get_group_info(nil), do: {:ok, nil}
+
+  def get_group_info(group_id) do
+    case WandererApp.Esi.get_group_info(group_id) do
+      {:ok, info} when not is_nil(info) ->
+        {:ok, parse_group(group_id, info)}
+
+      {:error, reason} ->
+        Logger.error("Failed to get group_info #{group_id} from ESI: #{inspect(reason)}")
+        {:ok, %{group_name: ""}}
+
+      error ->
+        Logger.error("Failed to get group_info #{group_id} from ESI: #{inspect(error)}")
+        {:ok, %{group_name: ""}}
+    end
+  end
+
   def get_system_static_info(solar_system_id) do
+    {:ok, solar_system_id} = APIUtils.parse_int(solar_system_id)
+
     case Cachex.get(:system_static_info_cache, solar_system_id) do
       {:ok, nil} ->
         case WandererApp.Api.MapSolarSystem.read() do
@@ -147,6 +206,25 @@ defmodule WandererApp.CachedInfo do
       result ->
         result
     end
+  end
+
+  defp parse_group(group_id, group) do
+    %{
+      group_id: group_id,
+      group_name: Map.get(group, "name")
+    }
+  end
+
+  defp parse_type(type_id, type) do
+    %{
+      type_id: type_id,
+      name: Map.get(type, "name"),
+      description: Map.get(type, "description"),
+      group_id: Map.get(type, "group_id"),
+      mass: "#{Map.get(type, "mass")}",
+      capacity: "#{Map.get(type, "capacity")}",
+      volume: "#{Map.get(type, "volume")}"
+    }
   end
 
   defp build_jump_index() do

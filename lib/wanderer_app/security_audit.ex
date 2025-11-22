@@ -487,7 +487,7 @@ defmodule WandererApp.SecurityAudit do
 
   # Private functions
 
-  defp store_audit_entry(audit_entry) do
+  defp store_audit_entry(_audit_entry) do
     # Handle async processing if enabled
     # if async_enabled?() do
     #   WandererApp.SecurityAudit.AsyncProcessor.log_event(audit_entry)

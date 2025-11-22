@@ -17,6 +17,17 @@ defmodule WandererApp.Esi.ApiClient do
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
+  # Pool selection for different operation types
+  # Character tracking operations use dedicated high-capacity pool
+  @character_tracking_pool WandererApp.Finch.ESI.CharacterTracking
+  # General ESI operations use standard pool
+  @general_pool WandererApp.Finch.ESI.General
+
+  # Helper function to get Req options with appropriate Finch pool
+  defp req_options_for_pool(pool) do
+    [base_url: "https://esi.evetech.net", finch: pool]
+  end
+
   def get_server_status, do: do_get("/status", [], @cache_opts)
 
   def set_autopilot_waypoint(add_to_beginning, clear_other_waypoints, destination_id, opts \\ []),
@@ -38,10 +49,13 @@ defmodule WandererApp.Esi.ApiClient do
       do:
         do_post_esi(
           "/characters/affiliation/",
-          json: character_eve_ids,
-          params: %{
-            datasource: "tranquility"
-          }
+          [
+            json: character_eve_ids,
+            params: %{
+              datasource: "tranquility"
+            }
+          ],
+          @character_tracking_pool
         )
 
   def get_routes_custom(hubs, origin, params),
@@ -116,7 +130,33 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "group-info-#{group_id}",
+              opts: [ttl: @ttl]
+            )
+  def get_group_info(group_id, opts),
+    do:
+      do_get(
+        "/universe/groups/#{group_id}/",
+        opts,
+        @cache_opts
+      )
+
+  @decorate cacheable(
+              cache: Cache,
+              key: "type-info-#{type_id}",
+              opts: [ttl: @ttl]
+            )
+  def get_type_info(type_id, opts),
+    do:
+      do_get(
+        "/universe/types/#{type_id}/",
+        opts,
+        @cache_opts
+      )
+
+  @decorate cacheable(
+              cache: Cache,
+              key: "alliance-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_alliance_info(eve_id, opts \\ []) do
@@ -137,7 +177,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "corporation-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_corporation_info(eve_id, opts \\ []) do
@@ -150,7 +190,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "info-#{eve_id}",
+              key: "character-info-#{eve_id}",
               opts: [ttl: @ttl]
             )
   def get_character_info(eve_id, opts \\ []) do
@@ -203,8 +243,17 @@ defmodule WandererApp.Esi.ApiClient do
     do: get_character_auth_data(character_eve_id, "ship", opts ++ @cache_opts)
 
   def search(character_eve_id, opts \\ []) do
-    search_val = to_string(opts[:params][:search] || "")
-    categories_val = to_string(opts[:params][:categories] || "character,alliance,corporation")
+    params = Keyword.get(opts, :params, %{}) |> Map.new()
+
+    search_val =
+      to_string(Map.get(params, :search) || Map.get(params, "search") || "")
+
+    categories_val =
+      to_string(
+        Map.get(params, :categories) ||
+          Map.get(params, "categories") ||
+          "character,alliance,corporation"
+      )
 
     query_params = [
       {"search", search_val},
@@ -220,7 +269,7 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
-              key: "search-#{character_eve_id}-#{categories_val}-#{search_val |> Slug.slugify()}",
+              key: "search-#{character_eve_id}-#{categories_val}-#{Base.encode64(search_val)}",
               opts: [ttl: @ttl]
             )
   defp get_search(character_eve_id, search_val, categories_val, merged_opts) do
@@ -254,14 +303,18 @@ defmodule WandererApp.Esi.ApiClient do
 
     character_id = opts |> Keyword.get(:character_id, nil)
 
+    # Use character tracking pool for character operations
+    pool = @character_tracking_pool
+
     if not is_access_token_expired?(character_id) do
       do_get(
         path,
         auth_opts,
-        opts |> with_refresh_token()
+        opts |> with_refresh_token(),
+        pool
       )
     else
-      do_get_retry(path, auth_opts, opts |> with_refresh_token())
+      do_get_retry(path, auth_opts, opts |> with_refresh_token(), :forbidden, pool)
     end
   end
 
@@ -295,19 +348,19 @@ defmodule WandererApp.Esi.ApiClient do
   defp with_cache_opts(opts),
     do: opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
 
-  defp do_get(path, api_opts \\ [], opts \\ []) do
+  defp do_get(path, api_opts \\ [], opts \\ [], pool \\ @general_pool) do
     case Cachex.get(:api_cache, path) do
       {:ok, cached_data} when not is_nil(cached_data) ->
         {:ok, cached_data}
 
       _ ->
-        do_get_request(path, api_opts, opts)
+        do_get_request(path, api_opts, opts, pool)
     end
   end
 
-  defp do_get_request(path, api_opts \\ [], opts \\ []) do
+  defp do_get_request(path, api_opts \\ [], opts \\ [], pool \\ @general_pool) do
     try do
-      @req_esi_options
+      req_options_for_pool(pool)
       |> Req.new()
       |> Req.get(
         api_opts
@@ -398,12 +451,48 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: status, headers: headers}} ->
           {:error, "Unexpected status: #{status}"}
 
-        {:error, _reason} ->
+        {:error, %Mint.TransportError{reason: :timeout}} ->
+          # Emit telemetry for pool timeout
+          :telemetry.execute(
+            [:wanderer_app, :finch, :pool_timeout],
+            %{count: 1},
+            %{method: "GET", path: path, pool: pool}
+          )
+
+          {:error, :pool_timeout}
+
+        {:error, reason} ->
+          # Check if this is a Finch pool error
+          if is_exception(reason) and Exception.message(reason) =~ "unable to provide a connection" do
+            :telemetry.execute(
+              [:wanderer_app, :finch, :pool_exhausted],
+              %{count: 1},
+              %{method: "GET", path: path, pool: pool}
+            )
+          end
+
           {:error, "Request failed"}
       end
     rescue
       e ->
-        Logger.error(Exception.message(e))
+        error_msg = Exception.message(e)
+
+        # Emit telemetry for pool exhaustion errors
+        if error_msg =~ "unable to provide a connection" do
+          :telemetry.execute(
+            [:wanderer_app, :finch, :pool_exhausted],
+            %{count: 1},
+            %{method: "GET", path: path, pool: pool}
+          )
+
+          Logger.error("FINCH_POOL_EXHAUSTED: #{error_msg}",
+            method: "GET",
+            path: path,
+            pool: inspect(pool)
+          )
+        else
+          Logger.error(error_msg)
+        end
 
         {:error, "Request failed"}
     end
@@ -492,13 +581,13 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp do_post_esi(url, opts) do
+  defp do_post_esi(url, opts, pool \\ @general_pool) do
     try do
       req_opts =
         (opts |> with_user_agent_opts() |> Keyword.merge(@retry_opts)) ++
           [params: opts[:params] || []]
 
-      Req.new(@req_esi_options ++ req_opts)
+      Req.new(req_options_for_pool(pool) ++ req_opts)
       |> Req.post(url: url)
       |> case do
         {:ok, %{status: status, body: body}} when status in [200, 201] ->
@@ -576,18 +665,54 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
 
+        {:error, %Mint.TransportError{reason: :timeout}} ->
+          # Emit telemetry for pool timeout
+          :telemetry.execute(
+            [:wanderer_app, :finch, :pool_timeout],
+            %{count: 1},
+            %{method: "POST_ESI", path: url, pool: pool}
+          )
+
+          {:error, :pool_timeout}
+
         {:error, reason} ->
+          # Check if this is a Finch pool error
+          if is_exception(reason) and Exception.message(reason) =~ "unable to provide a connection" do
+            :telemetry.execute(
+              [:wanderer_app, :finch, :pool_exhausted],
+              %{count: 1},
+              %{method: "POST_ESI", path: url, pool: pool}
+            )
+          end
+
           {:error, reason}
       end
     rescue
       e ->
-        @logger.error(Exception.message(e))
+        error_msg = Exception.message(e)
+
+        # Emit telemetry for pool exhaustion errors
+        if error_msg =~ "unable to provide a connection" do
+          :telemetry.execute(
+            [:wanderer_app, :finch, :pool_exhausted],
+            %{count: 1},
+            %{method: "POST_ESI", path: url, pool: pool}
+          )
+
+          @logger.error("FINCH_POOL_EXHAUSTED: #{error_msg}",
+            method: "POST_ESI",
+            path: url,
+            pool: inspect(pool)
+          )
+        else
+          @logger.error(error_msg)
+        end
 
         {:error, "Request failed"}
     end
   end
 
-  defp do_get_retry(path, api_opts, opts, status \\ :forbidden) do
+  defp do_get_retry(path, api_opts, opts, status \\ :forbidden, pool \\ @general_pool) do
     refresh_token? = opts |> Keyword.get(:refresh_token?, false)
     retry_count = opts |> Keyword.get(:retry_count, 0)
     character_id = opts |> Keyword.get(:character_id, nil)
@@ -602,7 +727,8 @@ defmodule WandererApp.Esi.ApiClient do
           do_get(
             path,
             api_opts |> Keyword.merge(auth_opts),
-            opts |> Keyword.merge(retry_count: retry_count + 1)
+            opts |> Keyword.merge(retry_count: retry_count + 1),
+            pool
           )
 
         {:error, _error} ->

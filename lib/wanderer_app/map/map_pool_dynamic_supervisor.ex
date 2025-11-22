@@ -139,7 +139,7 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
 
   defp get_available_pool([]), do: nil
 
-  defp get_available_pool([{pid, uuid} | pools]) do
+  defp get_available_pool([{_pid, uuid} | pools]) do
     case Registry.lookup(@unique_registry, Module.concat(WandererApp.Map.MapPool, uuid)) do
       [] ->
         nil

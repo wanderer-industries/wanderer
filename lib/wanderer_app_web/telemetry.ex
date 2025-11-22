@@ -78,7 +78,36 @@ defmodule WandererAppWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Finch Pool Metrics
+      counter("wanderer_app.finch.pool_exhausted.count",
+        tags: [:pool, :method],
+        description: "Count of Finch pool exhaustion errors"
+      ),
+      counter("wanderer_app.finch.pool_timeout.count",
+        tags: [:pool, :method],
+        description: "Count of Finch pool timeout errors"
+      ),
+
+      # Character Tracker Pool Metrics
+      summary("wanderer_app.tracker_pool.location_update.duration",
+        unit: :millisecond,
+        tags: [:pool_uuid],
+        description: "Time taken to update all character locations in a pool"
+      ),
+      counter("wanderer_app.tracker_pool.location_lag.count",
+        tags: [:pool_uuid],
+        description: "Count of location updates falling behind (>800ms)"
+      ),
+      counter("wanderer_app.tracker_pool.ship_skipped.count",
+        tags: [:pool_uuid, :reason],
+        description: "Count of ship updates skipped due to backpressure"
+      ),
+      counter("wanderer_app.tracker_pool.info_skipped.count",
+        tags: [:pool_uuid, :reason],
+        description: "Count of info updates skipped due to backpressure"
+      )
     ]
   end
 

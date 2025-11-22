@@ -31,7 +31,7 @@ defmodule WandererApp.StartCorpWalletTrackerTask do
 
     if not is_nil(admin_character) do
       :ok =
-        WandererApp.Character.TrackerManager.start_tracking(admin_character.id, keep_alive: true)
+        WandererApp.Character.TrackerManager.start_tracking(admin_character.id)
 
       {:ok, _pid} =
         WandererApp.Character.TrackerManager.start_transaction_tracker(admin_character.id)

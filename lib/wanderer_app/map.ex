@@ -134,6 +134,22 @@ defmodule WandererApp.Map do
   def get_options(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:options, Map.new())}
 
+  def get_tracked_character_ids(map_id) do
+    {:ok,
+     map_id
+     |> get_map!()
+     |> Map.get(:characters, [])
+     |> Enum.filter(fn character_id ->
+       {:ok, tracking_start_time} =
+         WandererApp.Cache.lookup(
+           "character:#{character_id}:map:#{map_id}:tracking_start_time",
+           nil
+         )
+
+       not is_nil(tracking_start_time)
+     end)}
+  end
+
   @doc """
   Returns a full list of characters in the map
   """
@@ -226,7 +242,7 @@ defmodule WandererApp.Map do
         :ok
 
       _ ->
-        {:error, :already_exists}
+        :ok
     end
   end
 

@@ -223,6 +223,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         update_connection(map_id, :update_time_status, [:time_status], connection_update, fn
           %{time_status: old_time_status},
           %{id: connection_id, time_status: time_status} = updated_connection ->
+            # Handle EOL marking cache separately
             case time_status == @connection_time_status_eol do
               true ->
                 if old_time_status != @connection_time_status_eol do
@@ -230,18 +231,30 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                     "map_#{map_id}:conn_#{connection_id}:mark_eol_time",
                     DateTime.utc_now()
                   )
-
-                  set_start_time(map_id, connection_id, DateTime.utc_now())
                 end
 
               _ ->
                 if old_time_status == @connection_time_status_eol do
                   WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:mark_eol_time")
-                  set_start_time(map_id, connection_id, DateTime.utc_now())
                 end
             end
 
+            # Always reset start_time when status changes (manual override)
+            # This ensures user manual changes aren't immediately overridden by cleanup
             if time_status != old_time_status do
+              # Emit telemetry for manual time status change
+              :telemetry.execute(
+                [:wanderer_app, :connection, :manual_status_change],
+                %{system_time: System.system_time()},
+                %{
+                  map_id: map_id,
+                  connection_id: connection_id,
+                  old_time_status: old_time_status,
+                  new_time_status: time_status
+                }
+              )
+
+              set_start_time(map_id, connection_id, DateTime.utc_now())
               maybe_update_linked_signature_time_status(map_id, updated_connection)
             end
         end)
@@ -353,6 +366,25 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
            solar_system_source_id,
            solar_system_target_id
          ) do
+      # Emit telemetry for automatic time status downgrade
+      elapsed_minutes = DateTime.diff(DateTime.utc_now(), connection_start_time, :minute)
+
+      :telemetry.execute(
+        [:wanderer_app, :connection, :auto_downgrade],
+        %{
+          elapsed_minutes: elapsed_minutes,
+          system_time: System.system_time()
+        },
+        %{
+          map_id: map_id,
+          connection_id: connection_id,
+          old_time_status: time_status,
+          new_time_status: new_time_status,
+          solar_system_source: solar_system_source_id,
+          solar_system_target: solar_system_target_id
+        }
+      )
+
       set_start_time(map_id, connection_id, DateTime.utc_now())
 
       update_connection_time_status(map_id, %{
@@ -656,14 +688,17 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
         )
 
+  def is_connection_valid(_scope, from_solar_system_id, to_solar_system_id)
+      when is_nil(from_solar_system_id) or is_nil(to_solar_system_id),
+      do: false
+
   def is_connection_valid(:all, from_solar_system_id, to_solar_system_id),
     do: from_solar_system_id != to_solar_system_id
 
   def is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
 
   def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
-      when not is_nil(from_solar_system_id) and not is_nil(to_solar_system_id) and
-             from_solar_system_id != to_solar_system_id do
+      when from_solar_system_id != to_solar_system_id do
     with {:ok, known_jumps} <- find_solar_system_jump(from_solar_system_id, to_solar_system_id),
          {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
          {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do

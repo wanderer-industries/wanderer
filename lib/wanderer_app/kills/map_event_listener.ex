@@ -229,7 +229,7 @@ defmodule WandererApp.Kills.MapEventListener do
       {:error, :not_running} ->
         {:error, :not_running}
 
-      {:ok, status} ->
+      {:ok, _status} ->
         {:error, :not_connected}
 
       error ->
