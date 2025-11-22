@@ -154,6 +154,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:map_slug, map_slug)
         |> assign(:map_id, map.id)
         |> assign(:public_api_key, map.public_api_key)
+        |> assign(:sse_enabled, map.sse_enabled)
         |> assign(:map, map)
         |> assign(
           export_settings: export_settings |> _get_export_map_data(),
@@ -221,6 +222,31 @@ defmodule WandererAppWeb.MapsLive do
       WandererApp.Api.Map.update_api_key(map, %{public_api_key: new_api_key})
 
     {:noreply, assign(socket, public_api_key: new_api_key)}
+  end
+
+  def handle_event("toggle-sse", _params, socket) do
+    map = WandererApp.Api.Map.by_id!(socket.assigns.map_id)
+    new_sse_enabled = not map.sse_enabled
+
+    case WandererApp.Api.Map.toggle_sse(map, %{sse_enabled: new_sse_enabled}) do
+      {:ok, _updated_map} ->
+        {:noreply, assign(socket, sse_enabled: new_sse_enabled)}
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        error_message =
+          errors
+          |> Enum.map(fn error -> Map.get(error, :message, "Unknown error") end)
+          |> Enum.join(", ")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, error_message)}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to update SSE setting")}
+    end
   end
 
   @impl true

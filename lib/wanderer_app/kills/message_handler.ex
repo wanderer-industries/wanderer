@@ -420,28 +420,72 @@ defmodule WandererApp.Kills.MessageHandler do
 
   @spec get_corp_ticker(map() | any()) :: String.t() | nil
   defp get_corp_ticker(data) when is_map(data) do
-    extract_field(data, ["corporation_ticker", "corp_ticker"])
+    # Try flat format first (corporation_ticker at top level)
+    case extract_field(data, ["corporation_ticker", "corp_ticker"]) do
+      nil ->
+        # Try nested format (ticker inside corporation object)
+        case data["corporation"] do
+          %{"ticker" => ticker} when is_binary(ticker) and ticker != "" -> ticker
+          _ -> nil
+        end
+
+      ticker ->
+        ticker
+    end
   end
 
   defp get_corp_ticker(_), do: nil
 
   @spec get_corp_name(map() | any()) :: String.t() | nil
   defp get_corp_name(data) when is_map(data) do
-    extract_field(data, ["corporation_name", "corp_name"])
+    # Try flat format first
+    case extract_field(data, ["corporation_name", "corp_name"]) do
+      nil ->
+        # Try nested format (name inside corporation object)
+        case data["corporation"] do
+          %{"name" => name} when is_binary(name) and name != "" -> name
+          _ -> nil
+        end
+
+      name ->
+        name
+    end
   end
 
   defp get_corp_name(_), do: nil
 
   @spec get_alliance_ticker(map() | any()) :: String.t() | nil
   defp get_alliance_ticker(data) when is_map(data) do
-    extract_field(data, ["alliance_ticker"])
+    # Try flat format first (alliance_ticker at top level)
+    case extract_field(data, ["alliance_ticker"]) do
+      nil ->
+        # Try nested format (ticker inside alliance object)
+        case data["alliance"] do
+          %{"ticker" => ticker} when is_binary(ticker) and ticker != "" -> ticker
+          _ -> nil
+        end
+
+      ticker ->
+        ticker
+    end
   end
 
   defp get_alliance_ticker(_), do: nil
 
   @spec get_alliance_name(map() | any()) :: String.t() | nil
   defp get_alliance_name(data) when is_map(data) do
-    extract_field(data, ["alliance_name"])
+    # Try flat format first
+    case extract_field(data, ["alliance_name"]) do
+      nil ->
+        # Try nested format (name inside alliance object)
+        case data["alliance"] do
+          %{"name" => name} when is_binary(name) and name != "" -> name
+          _ -> nil
+        end
+
+      name ->
+        name
+    end
   end
 
   defp get_alliance_name(_), do: nil
