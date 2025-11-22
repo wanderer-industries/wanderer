@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.85.4](https://github.com/wanderer-industries/wanderer/compare/v1.85.3...v1.85.4) (2025-11-22)
+
+
+
+
+### Bug Fixes:
+
+* core: invalidate map characters every 1 hour for any missing/revoked permissions
+
 ## [v1.85.3](https://github.com/wanderer-industries/wanderer/compare/v1.85.2...v1.85.3) (2025-11-22)
 
 
