@@ -1,7 +1,28 @@
 defmodule WandererApp.ExternalEvents.SseAccessControlTest do
-  use WandererApp.DataCase, async: false
+  use WandererApp.DataCase, async: true
+
+  import Mox
+
+  setup :verify_on_exit!
 
   alias WandererApp.ExternalEvents.SseAccessControl
+
+  # Helper to create an active subscription for a map if subscriptions are enabled
+  defp create_active_subscription_if_needed(map_id) do
+    if WandererApp.Env.map_subscriptions_enabled?() do
+      {:ok, _subscription} =
+        Ash.create(WandererApp.Api.MapSubscription, %{
+          map_id: map_id,
+          plan: :omega,
+          characters_limit: 100,
+          hubs_limit: 10,
+          auto_renew?: true,
+          active_till: DateTime.utc_now() |> DateTime.add(30, :day)
+        })
+    end
+
+    :ok
+  end
 
   describe "sse_allowed?/1" do
     setup do
@@ -11,6 +32,9 @@ defmodule WandererApp.ExternalEvents.SseAccessControlTest do
 
       # Create test map
       map = insert(:map, %{owner_id: character.id})
+
+      # Create a subscription if needed (in Enterprise mode)
+      create_active_subscription_if_needed(map.id)
 
       # Enable SSE for the map
       {:ok, map} = Ash.update(map, %{sse_enabled: true})

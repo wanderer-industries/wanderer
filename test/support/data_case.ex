@@ -36,13 +36,12 @@ defmodule WandererApp.DataCase do
   setup tags do
     WandererApp.DataCase.setup_sandbox(tags)
 
+    # Set up mocks for this test process
+    WandererApp.Test.Mocks.setup_test_mocks()
+
     # Set up integration test environment
     WandererApp.Test.IntegrationConfig.setup_integration_environment()
     WandererApp.Test.IntegrationConfig.setup_test_reliability_configs()
-
-    # Ensure Mox is in global mode for each test
-    # This prevents tests that set private mode from affecting other tests
-    WandererApp.Test.MockAllowance.ensure_global_mocks()
 
     # Cleanup after test
     on_exit(fn ->
@@ -61,6 +60,8 @@ defmodule WandererApp.DataCase do
       {:ok, _} = WandererApp.Repo.start_link()
     end
 
+    # Always use non-shared mode for proper test isolation
+    # Child processes will be explicitly granted access via allow/3
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
@@ -69,6 +70,10 @@ defmodule WandererApp.DataCase do
 
     # Allow critical system processes to access the database
     allow_system_processes_database_access()
+
+    # Set $callers to enable automatic allowance propagation to child processes
+    # This makes child processes inherit database access from the test process
+    Process.put(:"$callers", [pid])
   end
 
   @doc """
@@ -118,14 +123,23 @@ defmodule WandererApp.DataCase do
       end
     end)
 
-    # Grant database access to MapPoolSupervisor and all its dynamically started children
+    # Grant database access to MapPoolSupervisor and MapPoolDynamicSupervisor
+    # This must be done early and repeatedly to catch dynamically spawned children
+    owner_pid = Process.get(:sandbox_owner_pid) || self()
+
     case Process.whereis(WandererApp.Map.MapPoolSupervisor) do
       pid when is_pid(pid) ->
-        # Grant access to the supervisor and its entire supervision tree
-        # This ensures dynamically started map servers get database access
-        owner_pid = Process.get(:sandbox_owner_pid) || self()
         WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
+        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
+      _ ->
+        :ok
+    end
 
+    # Also grant to MapPoolDynamicSupervisor which actually spawns MapPool processes
+    case Process.whereis(WandererApp.Map.MapPoolDynamicSupervisor) do
+      pid when is_pid(pid) ->
+        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
+        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
       _ ->
         :ok
     end

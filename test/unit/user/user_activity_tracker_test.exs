@@ -1,5 +1,9 @@
 defmodule WandererApp.User.ActivityTrackerTest do
-  use WandererApp.DataCase, async: false
+  use WandererApp.DataCase, async: true
+
+  import Mox
+
+  setup :verify_on_exit!
 
   alias WandererApp.User.ActivityTracker
 

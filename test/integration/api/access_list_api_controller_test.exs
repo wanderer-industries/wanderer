@@ -56,6 +56,9 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
     end
 
     test "returns error when neither map_id nor slug provided", %{conn: conn} do
+      # The route /api/map/acls is within the :api_map pipeline scope
+      # which requires proper map authentication, but the CheckMapApiKey plug
+      # specifically requires map_id or slug query parameters
       conn = get(conn, "/api/map/acls")
       assert %{"error" => _} = json_response(conn, 400)
     end
@@ -129,15 +132,19 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
         }
       }
 
+      # The route expects either map_id or slug as query parameter
+      # Not providing either should result in a 400 error
       conn = post(conn, "/api/map/acls", acl_params)
       assert %{"error" => _} = json_response(conn, 400)
     end
   end
 
   describe "GET /api/acls/:id (show)" do
-    setup :setup_map_authentication
+    # Note: show/update actions use :api_acl pipeline (CheckAclApiKey plug)
+    # which validates the ACL's api_key, not the map's api_key
+    # So we don't need setup_map_authentication here
 
-    test "returns access list details with members", %{conn: conn, map: map} do
+    test "returns access list details with members", %{conn: conn} do
       character = Factory.insert(:character, %{eve_id: "2112073677"})
 
       acl =
@@ -188,23 +195,24 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
       assert "Corp Member" in member_names
     end
 
-    test "returns 404 for non-existent ACL", %{conn: conn} do
+    test "returns 404 for non-existent ACL", %{conn: _conn} do
+      # Create a fresh conn without any authentication setup
+      conn = build_conn()
+
       conn =
         conn
         |> put_req_header("authorization", "Bearer some-api-key")
         |> get(~p"/api/acls/#{Ecto.UUID.generate()}")
 
-      # The response might not be JSON if auth fails first
-      case conn.status do
-        404 -> assert conn.status == 404
-        # Other auth-related errors are acceptable
-        _ -> assert conn.status in [400, 401, 404]
-      end
+      # The CheckAclApiKey plug will return 404 when the ACL ID is not found
+      assert conn.status == 404
     end
   end
 
   describe "PUT /api/acls/:id (update)" do
-    setup :setup_map_authentication
+    # Note: update action uses :api_acl pipeline (CheckAclApiKey plug)
+    # which validates the ACL's api_key, not the map's api_key
+    # So we don't need setup_map_authentication here
 
     test "updates access list attributes", %{conn: conn} do
       character = Factory.insert(:character, %{eve_id: "2112073677"})
@@ -244,7 +252,8 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
       assert updated_acl.description == "Updated description"
     end
 
-    test "preserves api_key on update", %{conn: conn} do
+    test "preserves api_key on update", %{conn: _conn} do
+      conn = build_conn()
       character = Factory.insert(:character, %{eve_id: "2112073677"})
 
       original_api_key = "original-api-key"
@@ -274,7 +283,8 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
              } = json_response(conn, 200)
     end
 
-    test "returns 404 for non-existent ACL", %{conn: conn} do
+    test "returns 404 for non-existent ACL", %{conn: _conn} do
+      conn = build_conn()
       update_params = %{
         "acl" => %{
           "name" => "Updated Name"
@@ -286,15 +296,12 @@ defmodule WandererAppWeb.MapAccessListAPIControllerTest do
         |> put_req_header("authorization", "Bearer some-api-key")
         |> put(~p"/api/acls/#{Ecto.UUID.generate()}", update_params)
 
-      # The response might not be JSON if auth fails first
-      case conn.status do
-        404 -> assert conn.status == 404
-        # Other auth-related errors are acceptable
-        _ -> assert conn.status in [400, 401, 404]
-      end
+      # The CheckAclApiKey plug will return 404 when the ACL ID is not found
+      assert conn.status == 404
     end
 
-    test "validates update parameters", %{conn: conn} do
+    test "validates update parameters", %{conn: _conn} do
+      conn = build_conn()
       character = Factory.insert(:character, %{eve_id: "2112073677"})
 
       acl =

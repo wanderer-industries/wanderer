@@ -33,7 +33,29 @@ defmodule WandererAppWeb.ApiCase do
   end
 
   setup tags do
-    WandererApp.DataCase.setup_sandbox(tags)
+    # Determine if this is an integration test based on the test file path
+    # Integration tests are in test/integration/ directory
+    integration_test? = tags[:file] && String.contains?(tags[:file], "/integration/")
+
+    # Use shared mode for async integration tests
+    if integration_test? do
+      WandererAppWeb.IntegrationConnCase.setup_sandbox(tags)
+    else
+      WandererApp.DataCase.setup_sandbox(tags)
+    end
+
+    # Set up mocks for this test process
+    WandererApp.Test.Mocks.setup_test_mocks()
+
+    # Set up integration test environment if needed
+    if integration_test? do
+      WandererApp.Test.IntegrationConfig.setup_integration_environment()
+      WandererApp.Test.IntegrationConfig.setup_test_reliability_configs()
+
+      on_exit(fn ->
+        WandererApp.Test.IntegrationConfig.cleanup_integration_environment()
+      end)
+    end
 
     # Handle skip_if_api_disabled tag
     # Note: ExUnit skip functionality isn't available in setup, so we'll return :skip
@@ -101,21 +123,19 @@ defmodule WandererAppWeb.ApiCase do
     # Create a test map
     map = WandererAppWeb.Factory.insert(:map, %{slug: "test-map-#{System.unique_integer()}"})
 
-    # Ensure mocks are properly set up before starting map server
-    if Code.ensure_loaded?(Mox) do
-      Mox.set_mox_global()
-
-      if Code.ensure_loaded?(WandererApp.Test.Mocks) do
-        WandererApp.Test.Mocks.setup_additional_expectations()
-      end
+    # Create an active subscription for the map if subscriptions are enabled
+    if WandererApp.Env.map_subscriptions_enabled?() do
+      create_active_subscription_for_map(map.id)
     end
 
     # Ensure the map server is started
+    # Note: Map servers are granted database/mock access via the MapPoolSupervisor in DataCase
     WandererApp.TestHelpers.ensure_map_server_started(map.id)
 
-    # Also ensure MapEventRelay has database access if it's running
+    # Grant database/mock access to MapEventRelay if running
     if pid = Process.whereis(WandererApp.ExternalEvents.MapEventRelay) do
       WandererApp.DataCase.allow_database_access(pid)
+      WandererApp.Test.MockOwnership.allow_mocks_for_process(pid)
     end
 
     # Authenticate the connection with the map's actual public_api_key
@@ -144,5 +164,21 @@ defmodule WandererAppWeb.ApiCase do
     conn
     |> Plug.Conn.put_req_header("authorization", "Bearer #{map.public_api_key}")
     |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
+  end
+
+  @doc """
+  Creates an active subscription for a map to bypass subscription checks in tests.
+  """
+  defp create_active_subscription_for_map(map_id) do
+    # Create a subscription with a non-alpha plan (status defaults to :active)
+    {:ok, _subscription} =
+      Ash.create(WandererApp.Api.MapSubscription, %{
+        map_id: map_id,
+        plan: :omega,
+        characters_limit: 100,
+        hubs_limit: 10,
+        auto_renew?: true,
+        active_till: DateTime.utc_now() |> DateTime.add(30, :day)
+      })
   end
 end

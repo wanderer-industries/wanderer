@@ -666,7 +666,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           %{"x" => x, "y" => y}
       end
 
-    {:ok, system} =
+    system_result =
       case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
         {:ok, existing_system} when not is_nil(existing_system) ->
           use_old_coordinates = Map.get(system_info, :use_old_coordinates, false)
@@ -704,49 +704,65 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
 
         _ ->
-          {:ok, solar_system_info} =
-            WandererApp.CachedInfo.get_system_static_info(solar_system_id)
+          case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+            {:ok, solar_system_info} ->
+              @ddrt.insert(
+                {solar_system_id,
+                 WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                   position_x: x,
+                   position_y: y
+                 })},
+                rtree_name
+              )
 
-          @ddrt.insert(
-            {solar_system_id,
-             WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-               position_x: x,
-               position_y: y
-             })},
-            rtree_name
-          )
+              WandererApp.MapSystemRepo.create(%{
+                map_id: map_id,
+                solar_system_id: solar_system_id,
+                name: solar_system_info.solar_system_name,
+                position_x: x,
+                position_y: y
+              })
 
-          WandererApp.MapSystemRepo.create(%{
-            map_id: map_id,
-            solar_system_id: solar_system_id,
-            name: solar_system_info.solar_system_name,
-            position_x: x,
-            position_y: y
-          })
+            {:error, reason} ->
+              Logger.error("Failed to get system static info for #{solar_system_id}: #{inspect(reason)}")
+              {:error, :system_info_not_found}
+          end
       end
 
-    :ok = WandererApp.Map.add_system(map_id, system)
+    case system_result do
+      {:ok, system} ->
+        :ok = WandererApp.Map.add_system(map_id, system)
 
-    WandererApp.Cache.put(
-      "map_#{map_id}:system_#{system.id}:last_activity",
-      DateTime.utc_now(),
-      ttl: @system_inactive_timeout
-    )
+        WandererApp.Cache.put(
+          "map_#{map_id}:system_#{system.id}:last_activity",
+          DateTime.utc_now(),
+          ttl: @system_inactive_timeout
+        )
 
-    Impl.broadcast!(map_id, :add_system, system)
+        Impl.broadcast!(map_id, :add_system, system)
 
-    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-    Logger.debug(fn ->
-      "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
-    end)
+        # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+        Logger.debug(fn ->
+          "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+        end)
 
-    WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-      solar_system_id: system.solar_system_id,
-      name: system.name,
-      position_x: system.position_x,
-      position_y: system.position_y
-    })
+        WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+          solar_system_id: system.solar_system_id,
+          position_x: system.position_x,
+          position_y: system.position_y
+        })
 
+        track_add_system(map_id, user_id, character_id, system.solar_system_id)
+
+        :ok
+
+      {:error, reason} = error ->
+        Logger.error("Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}")
+        error
+    end
+  end
+
+  defp track_add_system(map_id, user_id, character_id, solar_system_id) do
     WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
       character_id: character_id,
       user_id: user_id,

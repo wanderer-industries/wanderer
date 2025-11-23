@@ -1320,9 +1320,9 @@ defmodule WandererAppWeb.MapAPIController do
           errors:
             Enum.map(error.errors, fn err ->
               %{
-                field: err.field,
-                message: err.message,
-                value: err.value
+                field: Map.get(err, :field) || Map.get(err, :input),
+                message: Map.get(err, :message, "Unknown error"),
+                value: Map.get(err, :value)
               }
             end)
         })

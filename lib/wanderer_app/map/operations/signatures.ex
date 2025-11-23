@@ -23,6 +23,10 @@ defmodule WandererApp.Map.Operations.Signatures do
           {:error, %Ash.Error.Query.NotFound{}} ->
             {:error, :invalid_character}
 
+          {:error, %Ash.Error.Invalid{}} ->
+            # Invalid format (e.g., non-numeric string for an integer field)
+            {:error, :invalid_character}
+
           {:error, reason} ->
             Logger.error(
               "[validate_character_eve_id] Unexpected error looking up character: #{inspect(reason)}"

@@ -190,6 +190,7 @@ defmodule WandererApp.Api.Map do
 
     create :duplicate do
       accept [:name, :description, :scope, :only_tracked_characters]
+      argument :source_map_id, :uuid, allow_nil?: false
       argument :copy_acls, :boolean, default: true
       argument :copy_user_settings, :boolean, default: true
       argument :copy_signatures, :boolean, default: true

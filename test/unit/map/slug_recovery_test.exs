@@ -1,5 +1,9 @@
 defmodule WandererApp.Map.SlugRecoveryTest do
-  use WandererApp.DataCase, async: false
+  use WandererApp.DataCase, async: true
+
+  import Mox
+
+  setup :verify_on_exit!
 
   alias WandererApp.Map.SlugRecovery
   alias WandererApp.Api.Map
@@ -219,16 +223,9 @@ defmodule WandererApp.Map.SlugRecoveryTest do
   # Helper functions
 
   defp create_test_user do
-    # Generate a unique EVE ID (9 digits, as a string)
-    eve_id = "10#{:rand.uniform(9_999_999) |> Integer.to_string() |> String.pad_leading(7, "0")}"
-
-    {:ok, user} =
-      WandererApp.Api.Character.create(%{
-        eve_id: eve_id,
-        name: "Test User #{:rand.uniform(10000)}"
-      })
-
-    user
+    # Use factory to create character with proper database setup
+    # This ensures the character is properly inserted and visible in async tests
+    insert(:character)
   end
 
   defp create_map(user, slug) do

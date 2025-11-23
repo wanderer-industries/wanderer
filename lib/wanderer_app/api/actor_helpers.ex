@@ -26,8 +26,10 @@ defmodule WandererApp.Api.ActorHelpers do
 
   def get_map(context) when is_map(context) do
     # For plain maps, check private.actor
-    case Map.get(context, :private) do
-      %{actor: %ActorWithMap{map: %{} = map}} -> map
+    with private when is_map(private) <- Map.get(context, :private),
+         %ActorWithMap{map: %{} = map} <- Map.get(private, :actor) do
+      map
+    else
       _ -> nil
     end
   end

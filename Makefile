@@ -33,7 +33,7 @@ test t:
 	MIX_ENV=test mix test
 
 coverage cover co:
-	mix test --cover
+	MIX_ENV=test mix test --cover
 
 unit-tests ut:
 	@echo "Running unit tests..."

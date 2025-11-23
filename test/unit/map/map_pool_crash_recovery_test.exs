@@ -1,5 +1,9 @@
 defmodule WandererApp.Map.MapPoolCrashRecoveryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
+  import Mox
+
+  setup :verify_on_exit!
 
   alias WandererApp.Map.{MapPool, MapPoolState}
 

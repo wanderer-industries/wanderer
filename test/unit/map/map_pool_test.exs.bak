@@ -1,10 +1,6 @@
 defmodule WandererApp.Map.MapPoolTest do
   use ExUnit.Case, async: true
 
-  import Mox
-
-  setup :verify_on_exit!
-
   alias WandererApp.Map.{MapPool, MapPoolDynamicSupervisor, Reconciler}
 
   @cache :map_pool_cache

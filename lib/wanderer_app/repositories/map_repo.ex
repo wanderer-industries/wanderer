@@ -69,13 +69,19 @@ defmodule WandererApp.MapRepo do
             handle_multiple_results(slug, multiple_results_error, retry_count)
 
           :error ->
-            # Some other Invalid error
-            Logger.error("Error retrieving map by slug",
-              slug: slug,
-              error: inspect(error)
-            )
+            # Check if this is a no results error
+            if is_no_results_error?(error) do
+              Logger.debug("Map not found with slug: #{slug}")
+              {:error, :not_found}
+            else
+              # Some other Invalid error
+              Logger.error("Error retrieving map by slug",
+                slug: slug,
+                error: inspect(error)
+              )
 
-            {:error, :unknown_error}
+              {:error, :unknown_error}
+            end
         end
 
       error in Ash.Error.Query.NotFound ->
@@ -150,6 +156,14 @@ defmodule WandererApp.MapRepo do
       _ -> false
     end)
   end
+
+  # Helper function to check if an error indicates no results were found
+  defp is_no_results_error?(%Ash.Error.Invalid{errors: errors}) do
+    # If errors list is empty, it's likely a no results error
+    Enum.empty?(errors)
+  end
+
+  defp is_no_results_error?(_), do: false
 
   def load_relationships(map, []), do: {:ok, map}
 

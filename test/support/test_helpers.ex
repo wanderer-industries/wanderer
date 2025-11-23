@@ -180,15 +180,26 @@ defmodule WandererApp.TestHelpers do
   For integration tests, use WandererApp.MapTestHelpers.ensure_map_started/1 instead.
   """
   def ensure_map_server_started(map_id) do
-    # Ensure global Mox mode is maintained
-    if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
-
     # Use the standard map startup flow through Map.Manager
     :ok = WandererApp.Map.Manager.start_map(map_id)
 
     # Wait a bit for the map to fully initialize
     :timer.sleep(500)
 
+    :ok
+  end
+
+  @doc """
+  Ensures map server is started and has proper mock/database access.
+  Use this in tests that need to interact with map servers.
+
+  Note: Map servers started through MapPoolSupervisor automatically get
+  database and mock access via the DataCase setup. This function is here
+  for compatibility and will ensure the server is started.
+  """
+  def ensure_map_server_with_access(map_id, _owner_pid \\ self()) do
+    # Start the server - it will automatically get access through MapPoolSupervisor
+    ensure_map_server_started(map_id)
     :ok
   end
 end

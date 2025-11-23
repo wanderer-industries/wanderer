@@ -10,10 +10,6 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   """
   use WandererApp.DataCase, async: true
 
-  import Mox
-
-  setup :verify_on_exit!
-
   alias WandererApp.Api.Map
 
   require Logger
@@ -333,8 +329,33 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   # Helper functions
 
   defp create_test_user do
-    # Use factory to create character with proper database setup
-    # This ensures the character is properly inserted and visible in async tests
-    insert(:character)
+    # Create a test user with necessary attributes
+    user =
+      case Ash.create(WandererApp.Api.User, %{
+             name: "Test User #{:rand.uniform(10_000)}",
+             hash: "test_hash_#{:rand.uniform(100_000_000)}"
+           }) do
+        {:ok, user} -> user
+        {:error, reason} -> raise "Failed to create user: #{inspect(reason)}"
+      end
+
+    # Create a character for the user (maps need character as owner)
+    unique_id = System.unique_integer([:positive])
+
+    character =
+      case Ash.create(
+             WandererApp.Api.Character,
+             %{
+               eve_id: "#{2_000_000_000 + unique_id}",
+               name: "Test Character #{unique_id}",
+               user_id: user.id
+             },
+             action: :link
+           ) do
+        {:ok, character} -> character
+        {:error, reason} -> raise "Failed to create character: #{inspect(reason)}"
+      end
+
+    character
   end
 end

@@ -12,6 +12,9 @@ defmodule WandererAppWeb.Api.EventsControllerTest do
       # Create map (factory sets public_api_key)
       map = insert(:map, %{owner_id: character.id})
 
+      # Create an active subscription for the map to allow SSE
+      create_active_subscription_for_map(map.id)
+
       # Enable SSE for the map
       {:ok, map} = Ash.update(map, %{sse_enabled: true})
 

@@ -18,7 +18,12 @@ defmodule WandererApp.Api.Changes.InjectMapFromActor do
 
       _other ->
         # nil or unexpected return shape - check for direct map_id
-        case Ash.Changeset.get_attribute(changeset, :map_id) do
+        # Check params (input), arguments, and attributes (in that order)
+        map_id = Map.get(changeset.params, :map_id) ||
+                 Ash.Changeset.get_argument(changeset, :map_id) ||
+                 Ash.Changeset.get_attribute(changeset, :map_id)
+
+        case map_id do
           nil ->
             Ash.Changeset.add_error(changeset,
               field: :map_id,

@@ -27,6 +27,9 @@ defmodule WandererApp.MapTestHelpers do
   Ensures the map is started for the given map ID.
   Uses async Map.Manager.start_map and waits for completion.
 
+  IMPORTANT: This also grants database access to any dynamically spawned
+  MapPool processes, which is required for async tests.
+
   ## Parameters
   - map_id: The ID of the map to start
 
@@ -38,8 +41,57 @@ defmodule WandererApp.MapTestHelpers do
     # Queue the map for starting (async)
     :ok = WandererApp.Map.Manager.start_map(map_id)
 
+    # Continuously grant database access to any newly spawned processes
+    # This ensures MapPool processes that spawn during initialization get access
+    grant_database_access_continuously()
+
     # Wait for the map to actually start
     wait_for_map_started(map_id)
+  end
+
+  @doc """
+  Continuously grants database access to all MapPool processes and their children.
+  This is necessary when maps are started dynamically during tests.
+  Polls multiple times to catch processes spawned at different stages.
+  """
+  defp grant_database_access_continuously do
+    owner_pid = Process.get(:sandbox_owner_pid) || self()
+
+    # Grant access multiple times with delays to catch processes at different spawn stages
+    # First few times quickly, then with longer delays
+    # Quick initial grants (3 times with 10ms)
+    Enum.each(1..3, fn _ ->
+      grant_database_access_to_map_pools(owner_pid)
+      Process.sleep(10)
+    end)
+
+    # Then slower grants (7 times with 20ms)
+    Enum.each(1..7, fn _ ->
+      grant_database_access_to_map_pools(owner_pid)
+      Process.sleep(20)
+    end)
+  end
+
+  defp grant_database_access_to_map_pools(owner_pid) do
+    # Grant access to the MapPool supervisor and all its children
+    case Process.whereis(WandererApp.Map.MapPoolSupervisor) do
+      pid when is_pid(pid) ->
+        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
+        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
+
+      _ ->
+        :ok
+    end
+
+    # Also grant access to the MapPoolDynamicSupervisor and its children
+    case Process.whereis(WandererApp.Map.MapPoolDynamicSupervisor) do
+      pid when is_pid(pid) ->
+        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
+        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
+
+      _ ->
+        :ok
+    end
   end
 
   @doc """
@@ -114,11 +166,17 @@ defmodule WandererApp.MapTestHelpers do
   This is required for system positioning on the map.
   We stub all R-tree operations to allow systems to be placed anywhere.
 
+  IMPORTANT: This sets the mock to :global mode so it works with GenServers
+  started in separate processes (like MapPool).
+
   ## Examples
       iex> setup_ddrt_mocks()
       :ok
   """
   def setup_ddrt_mocks do
+    # Set mock to global mode so it works in child processes (MapPool, etc.)
+    Mox.set_mox_global()
+
     Test.DDRTMock
     |> stub(:init_tree, fn _name, _opts -> :ok end)
     |> stub(:insert, fn _data, _tree_name -> {:ok, %{}} end)

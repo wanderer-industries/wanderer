@@ -1,9 +1,7 @@
 defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
-  use WandererAppWeb.IntegrationConnCase, async: false
+  use WandererAppWeb.ApiCase, async: false
 
   import Mox
-
-  setup :verify_on_exit!
   import WandererAppWeb.Factory
   import WandererApp.MapTestHelpers
 
@@ -85,8 +83,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 1
         })
 
-      # Allow time for connections to be created in database
-      Process.sleep(100)
+      # Update the map cache with the connections we just created
+      WandererApp.Map.add_connection(map.id, connection1)
+      WandererApp.Map.add_connection(map.id, connection2)
 
       conn = get(conn, ~p"/api/maps/#{map.slug}/connections")
 
@@ -122,8 +121,8 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 0
         })
 
-      # Allow time for connection to be created in database
-      Process.sleep(100)
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
 
       update_params = %{
         "mass_status" => 2
@@ -158,8 +157,8 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 2
         })
 
-      # Allow time for connection to be created in database
-      Process.sleep(100)
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/connections/#{connection.id}")
 
@@ -186,9 +185,6 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
-
-      # Create an active subscription for the map if subscriptions are enabled
-      create_active_subscription_for_map(map.id)
 
       # Start the map server using the new async manager pattern
       ensure_map_started(map.id)
