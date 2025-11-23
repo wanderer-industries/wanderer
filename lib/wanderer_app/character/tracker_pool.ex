@@ -30,6 +30,7 @@ defmodule WandererApp.Character.TrackerPool do
   defp location_concurrency do
     Application.get_env(:wanderer_app, :location_concurrency, System.schedulers_online() * 12)
   end
+
   # Other operations can use lower concurrency
   @standard_concurrency System.schedulers_online() * 2
 

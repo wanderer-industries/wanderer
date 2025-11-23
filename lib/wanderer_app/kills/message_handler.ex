@@ -403,10 +403,24 @@ defmodule WandererApp.Kills.MessageHandler do
 
   defp extract_field(_data, _field_names), do: nil
 
-  # Specific field extractors using the generic function
+  # Generic nested field extraction - tries flat keys first, then nested object
+  @spec extract_nested_field(map(), list(String.t()), String.t(), String.t()) :: String.t() | nil
+  defp extract_nested_field(data, flat_keys, nested_key, field) when is_map(data) do
+    case extract_field(data, flat_keys) do
+      nil ->
+        case data[nested_key] do
+          %{^field => value} when is_binary(value) and value != "" -> value
+          _ -> nil
+        end
+
+      value ->
+        value
+    end
+  end
+
+  # Specific field extractors using the generic functions
   @spec get_character_name(map() | any()) :: String.t() | nil
   defp get_character_name(data) when is_map(data) do
-    # Try multiple possible field names
     field_names = ["attacker_name", "victim_name", "character_name", "name"]
 
     extract_field(data, field_names) ||
@@ -419,30 +433,26 @@ defmodule WandererApp.Kills.MessageHandler do
   defp get_character_name(_), do: nil
 
   @spec get_corp_ticker(map() | any()) :: String.t() | nil
-  defp get_corp_ticker(data) when is_map(data) do
-    extract_field(data, ["corporation_ticker", "corp_ticker"])
-  end
+  defp get_corp_ticker(data) when is_map(data),
+    do: extract_nested_field(data, ["corporation_ticker", "corp_ticker"], "corporation", "ticker")
 
   defp get_corp_ticker(_), do: nil
 
   @spec get_corp_name(map() | any()) :: String.t() | nil
-  defp get_corp_name(data) when is_map(data) do
-    extract_field(data, ["corporation_name", "corp_name"])
-  end
+  defp get_corp_name(data) when is_map(data),
+    do: extract_nested_field(data, ["corporation_name", "corp_name"], "corporation", "name")
 
   defp get_corp_name(_), do: nil
 
   @spec get_alliance_ticker(map() | any()) :: String.t() | nil
-  defp get_alliance_ticker(data) when is_map(data) do
-    extract_field(data, ["alliance_ticker"])
-  end
+  defp get_alliance_ticker(data) when is_map(data),
+    do: extract_nested_field(data, ["alliance_ticker"], "alliance", "ticker")
 
   defp get_alliance_ticker(_), do: nil
 
   @spec get_alliance_name(map() | any()) :: String.t() | nil
-  defp get_alliance_name(data) when is_map(data) do
-    extract_field(data, ["alliance_name"])
-  end
+  defp get_alliance_name(data) when is_map(data),
+    do: extract_nested_field(data, ["alliance_name"], "alliance", "name")
 
   defp get_alliance_name(_), do: nil
 

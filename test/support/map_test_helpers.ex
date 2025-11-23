@@ -264,7 +264,8 @@ defmodule WandererApp.MapTestHelpers do
   def set_character_location(character_id, solar_system_id, opts \\ []) do
     structure_id = opts[:structure_id]
     station_id = opts[:station_id]
-    ship = opts[:ship] || 670  # Capsule
+    # Capsule
+    ship = opts[:ship] || 670
 
     # First get the existing character from cache or database to maintain all fields
     {:ok, existing_character} = WandererApp.Character.get_character(character_id)

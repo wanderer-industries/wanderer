@@ -43,24 +43,26 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     user = create_user(%{name: "Test User", hash: "test_hash_#{:rand.uniform(1_000_000)}"})
 
     # Create test character with location tracking scopes
-    character = create_character(%{
-      eve_id: "#{@test_character_eve_id}",
-      name: "Test Character",
-      user_id: user.id,
-      scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
-      tracking_pool: "default"
-    })
+    character =
+      create_character(%{
+        eve_id: "#{@test_character_eve_id}",
+        name: "Test Character",
+        user_id: user.id,
+        scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
+        tracking_pool: "default"
+      })
 
     # Create test map
     # Note: scope: :all is used because :none prevents system addition
     # (is_connection_valid returns false for :none scope)
-    map = create_map(%{
-      name: "Test Char Track",
-      slug: "test-char-tracking-#{:rand.uniform(1_000_000)}",
-      owner_id: character.id,
-      scope: :all,
-      only_tracked_characters: false
-    })
+    map =
+      create_map(%{
+        name: "Test Char Track",
+        slug: "test-char-tracking-#{:rand.uniform(1_000_000)}",
+        owner_id: character.id,
+        scope: :all,
+        only_tracked_characters: false
+      })
 
     on_exit(fn ->
       cleanup_test_data(map.id)
@@ -146,6 +148,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Setup: Character starts at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -153,6 +156,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # First update - start system is intentionally NOT added yet
       CharactersImpl.update_characters(map.id)
+
       refute system_on_map?(map.id, @system_jita),
              "Start system should not be added until character moves"
 
@@ -163,8 +167,11 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify: Both systems should be on map after character moves
-      assert wait_for_system_on_map(map.id, @system_jita), "Jita should be added after character moves"
-      assert wait_for_system_on_map(map.id, @system_amarr), "Amarr should be added as the new location"
+      assert wait_for_system_on_map(map.id, @system_jita),
+             "Jita should be added after character moves"
+
+      assert wait_for_system_on_map(map.id, @system_amarr),
+             "Amarr should be added as the new location"
     end
   end
 
@@ -181,6 +188,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Character starts at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -188,6 +196,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # First update - start system is intentionally NOT added yet
       CharactersImpl.update_characters(map.id)
+
       refute system_on_map?(map.id, @system_jita),
              "Start system should not be added until character moves"
 
@@ -198,7 +207,9 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify both Jita and Amarr are now on map
-      assert wait_for_system_on_map(map.id, @system_jita), "Jita (start) should be on map after movement"
+      assert wait_for_system_on_map(map.id, @system_jita),
+             "Jita (start) should be on map after movement"
+
       assert wait_for_system_on_map(map.id, @system_amarr), "Amarr should be on map"
 
       # Rapid jump to Dodixie before next update cycle
@@ -209,7 +220,10 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify: All three systems should be on map
       assert wait_for_system_on_map(map.id, @system_jita), "Jita (start) should still be on map"
-      assert wait_for_system_on_map(map.id, @system_amarr), "Amarr (intermediate) should still be on map - this is the critical test"
+
+      assert wait_for_system_on_map(map.id, @system_amarr),
+             "Amarr (intermediate) should still be on map - this is the critical test"
+
       assert wait_for_system_on_map(map.id, @system_dodixie), "Dodixie (end) should be on map"
     end
 
@@ -226,6 +240,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Start at Jita
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -280,9 +295,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify start_solar_system_id still exists after first update
       {:ok, start_system} =
-        WandererApp.Cache.lookup(
-          "map:#{map.id}:character:#{character.id}:start_solar_system_id"
-        )
+        WandererApp.Cache.lookup("map:#{map.id}:character:#{character.id}:start_solar_system_id")
 
       assert start_system == @system_jita,
              "start_solar_system_id should persist after first update (not be taken/removed)"
@@ -365,6 +378,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Set character at Jita and set start location
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -397,6 +411,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Set up character location
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -420,19 +435,22 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Create a second character
       user2 = create_user(%{name: "Test User 2", hash: "test_hash_#{:rand.uniform(1_000_000)}"})
-      character2 = create_character(%{
-        eve_id: "#{@test_character_eve_id + 1}",
-        name: "Test Character 2",
-        user_id: user2.id,
-        scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
-        tracking_pool: "default"
-      })
+
+      character2 =
+        create_character(%{
+          eve_id: "#{@test_character_eve_id + 1}",
+          name: "Test Character 2",
+          user_id: user2.id,
+          scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
+          tracking_pool: "default"
+        })
 
       # Add both characters to map presence
       add_character_to_map_presence(map.id, character2.id)
 
       # Set locations for both characters
       set_character_location(character2.id, @system_amarr)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character2.id}:start_solar_system_id",
         @system_amarr
@@ -460,6 +478,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Set up character with location
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -487,32 +506,38 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       ensure_map_started(map.id)
 
       # Create multiple characters for concurrent processing
-      characters = for i <- 1..5 do
-        user = create_user(%{
-          name: "Test User #{i}",
-          hash: "test_hash_#{:rand.uniform(1_000_000)}"
-        })
+      characters =
+        for i <- 1..5 do
+          user =
+            create_user(%{
+              name: "Test User #{i}",
+              hash: "test_hash_#{:rand.uniform(1_000_000)}"
+            })
 
-        character = create_character(%{
-          eve_id: "#{@test_character_eve_id + i}",
-          name: "Test Character #{i}",
-          user_id: user.id,
-          scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
-          tracking_pool: "default"
-        })
+          character =
+            create_character(%{
+              eve_id: "#{@test_character_eve_id + i}",
+              name: "Test Character #{i}",
+              user_id: user.id,
+              scopes: "esi-location.read_location.v1 esi-location.read_ship_type.v1",
+              tracking_pool: "default"
+            })
 
-        # Add character to presence and set location
-        add_character_to_map_presence(map.id, character.id)
+          # Add character to presence and set location
+          add_character_to_map_presence(map.id, character.id)
 
-        solar_system_id = Enum.at([@system_jita, @system_amarr, @system_dodixie, @system_rens], rem(i, 4))
-        set_character_location(character.id, solar_system_id)
-        WandererApp.Cache.insert(
-          "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-          solar_system_id
-        )
+          solar_system_id =
+            Enum.at([@system_jita, @system_amarr, @system_dodixie, @system_rens], rem(i, 4))
 
-        character
-      end
+          set_character_location(character.id, solar_system_id)
+
+          WandererApp.Cache.insert(
+            "map:#{map.id}:character:#{character.id}:start_solar_system_id",
+            solar_system_id
+          )
+
+          character
+        end
 
       # Run update_characters - should handle all characters concurrently
       result = CharactersImpl.update_characters(map.id)
@@ -559,7 +584,8 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Should receive start and complete events (or error event if something failed)
-      assert_receive {:telemetry_event, [:wanderer_app, :map, :update_characters, :start], _, _}, 1000
+      assert_receive {:telemetry_event, [:wanderer_app, :map, :update_characters, :start], _, _},
+                     1000
 
       # Should receive either complete or error event
       receive do
@@ -589,6 +615,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Set location in character cache
       set_character_location(character.id, @system_jita)
+
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
         @system_jita
@@ -609,10 +636,12 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify both caches updated
       {:ok, character_data} = Cachex.get(:character_cache, character.id)
+
       {:ok, map_cached_location} =
         WandererApp.Cache.lookup("map:#{map.id}:character:#{character.id}:solar_system_id")
 
       assert character_data.solar_system_id == @system_amarr
+
       assert map_cached_location == @system_amarr,
              "Both caches should be consistent after update"
     end
