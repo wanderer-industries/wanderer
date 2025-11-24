@@ -240,13 +240,44 @@ defmodule WandererApp.Map.Routes do
             {:ok, result}
 
           {:error, _error} ->
+            error_file_path = save_error_params(origin, hubs, params)
+
             @logger.error(
-              "Error getting custom routes for #{inspect(origin)}: #{inspect(params)}"
+              "Error getting custom routes for #{inspect(origin)}: #{inspect(params)}. Params saved to: #{error_file_path}"
             )
 
             WandererApp.Esi.get_routes_eve(hubs, origin, params, opts)
         end
     end
+  end
+
+  defp save_error_params(origin, hubs, params) do
+    timestamp = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+    filename = "#{timestamp}_route_error_params.json"
+    filepath = Path.join([System.tmp_dir!(), filename])
+
+    error_data = %{
+      timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
+      origin: origin,
+      hubs: hubs,
+      params: params
+    }
+
+    case Jason.encode(error_data, pretty: true) do
+      {:ok, json_string} ->
+        File.write!(filepath, json_string)
+        filepath
+
+      {:error, _reason} ->
+        # Fallback: save as Elixir term if JSON encoding fails
+        filepath_term = Path.join([System.tmp_dir!(), "#{timestamp}_route_error_params.term"])
+        File.write!(filepath_term, inspect(error_data, pretty: true))
+        filepath_term
+    end
+  rescue
+    e ->
+      @logger.error("Failed to save error params: #{inspect(e)}")
+      "error_saving_params"
   end
 
   defp remove_intersection(pairs_arr) do

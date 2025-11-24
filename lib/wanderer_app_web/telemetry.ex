@@ -98,7 +98,7 @@ defmodule WandererAppWeb.Telemetry do
       ),
       counter("wanderer_app.tracker_pool.location_lag.count",
         tags: [:pool_uuid],
-        description: "Count of location updates falling behind (>800ms)"
+        description: "Count of location updates falling behind (>2s)"
       ),
       counter("wanderer_app.tracker_pool.ship_skipped.count",
         tags: [:pool_uuid, :reason],

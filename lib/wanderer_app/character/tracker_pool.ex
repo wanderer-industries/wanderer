@@ -30,6 +30,7 @@ defmodule WandererApp.Character.TrackerPool do
   defp location_concurrency do
     Application.get_env(:wanderer_app, :location_concurrency, System.schedulers_online() * 12)
   end
+
   # Other operations can use lower concurrency
   @standard_concurrency System.schedulers_online() * 2
 
@@ -297,7 +298,7 @@ defmodule WandererApp.Character.TrackerPool do
       )
 
       # Warn if location updates are falling behind (taking > 800ms for 100 chars)
-      if duration > 800 do
+      if duration > 2000 do
         Logger.warning(
           "[Tracker Pool] Location updates falling behind: #{duration}ms for #{length(characters)} chars (pool: #{state.uuid})"
         )

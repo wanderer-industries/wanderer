@@ -410,7 +410,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
              map_id,
              %{solar_system_id: solar_system_source}
            ),
-         target_system when not is_nil(source_system) <-
+         target_system when not is_nil(target_system) <-
            WandererApp.Map.find_system_by_location(
              map_id,
              %{solar_system_id: solar_system_target}
