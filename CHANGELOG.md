@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.85.5](https://github.com/wanderer-industries/wanderer/compare/v1.85.4...v1.85.5) (2025-11-24)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connections cleanup and rally points delete issues
+
 ## [v1.85.4](https://github.com/wanderer-industries/wanderer/compare/v1.85.3...v1.85.4) (2025-11-22)
 
 
