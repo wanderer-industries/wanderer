@@ -712,6 +712,16 @@ defmodule WandererAppWeb.MapSystemAPIController do
     end
   end
 
+  # Catch-all clause for delete with missing or invalid parameters
+  def delete(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> APIUtils.respond_data(%{
+      deleted_count: 0,
+      error: "Missing required parameters: system_ids or id"
+    })
+  end
+
   # -- Legacy endpoints --
 
   operation(:list_systems,

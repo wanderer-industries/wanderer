@@ -155,6 +155,11 @@ defmodule WandererApp.MapSystemRepo do
     |> WandererApp.Api.MapSystem.update_temporary_name(update)
   end
 
+  def update_custom_name(system, update) do
+    system
+    |> WandererApp.Api.MapSystem.update_custom_name(update)
+  end
+
   def update_labels(system, update),
     do:
       system

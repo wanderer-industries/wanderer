@@ -41,6 +41,7 @@ defmodule WandererApp.Test.Mocks do
     |> Mox.stub(:subscribe, fn _topic -> :ok end)
     |> Mox.stub(:subscribe, fn _module, _topic -> :ok end)
     |> Mox.stub(:unsubscribe, fn _topic -> :ok end)
+    |> Mox.stub(:unsubscribe, fn _server, _topic -> :ok end)
 
     # Set up default stubs for DDRT mock
     Test.DDRTMock

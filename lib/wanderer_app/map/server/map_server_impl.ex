@@ -243,6 +243,7 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_system_status(map_id, update), to: SystemsImpl
   defdelegate update_system_tag(map_id, update), to: SystemsImpl
   defdelegate update_system_temporary_name(map_id, update), to: SystemsImpl
+  defdelegate update_system_custom_name(map_id, update), to: SystemsImpl
   defdelegate update_system_locked(map_id, update), to: SystemsImpl
   defdelegate update_system_labels(map_id, update), to: SystemsImpl
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl

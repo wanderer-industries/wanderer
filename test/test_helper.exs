@@ -4,8 +4,7 @@ Application.put_env(:wanderer_app, :environment, :test)
 # Start ExUnit
 ExUnit.start()
 
-# Start the application (but NOT the repo yet - sandbox needs to be configured first)
-# The Repo will be started automatically when we set sandbox mode
+# Start the application
 {:ok, _} = Application.ensure_all_started(:wanderer_app)
 
 # Setup Ecto Sandbox for database isolation

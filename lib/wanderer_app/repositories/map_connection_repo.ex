@@ -97,15 +97,14 @@ defmodule WandererApp.MapConnectionRepo do
       |> WandererApp.Api.MapConnection.update_custom_info(update)
 
   def get_by_id(map_id, id) do
-    # Query directly without relying on by_id code interface, as the preparation
-    # filter interferes with the id-based lookup. We explicitly filter by both
-    # id and map_id, so we can skip the actor-based authorization for this query.
+    # Use read_by_map action which doesn't have the FilterConnectionsByActorMap preparation
+    # that was causing "filter being false" errors in tests
     import Ash.Query
 
     WandererApp.Api.MapConnection
-    |> Ash.Query.for_read(:read)
-    |> Ash.Query.filter(id == ^id and map_id == ^map_id)
-    |> Ash.read_one(authorize?: false)
+    |> Ash.Query.for_read(:read_by_map, %{map_id: map_id})
+    |> Ash.Query.filter(id == ^id)
+    |> Ash.read_one()
     |> case do
       {:ok, nil} -> {:error, :not_found}
       {:ok, conn} -> {:ok, conn}

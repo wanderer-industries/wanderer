@@ -56,6 +56,7 @@ defmodule WandererApp.MapTestHelpers do
     case WandererApp.Map.Manager.stop_map(map_id) do
       :ok -> :ok
       {:error, :not_found} -> :ok
+      false -> :ok
     end
     
     # Wait for it to disappear from registry
@@ -63,21 +64,23 @@ defmodule WandererApp.MapTestHelpers do
   end
 
   def wait_for_map_stopped(map_id, timeout \\ 5000) do
-    deadline = System.monotonic_time(:millisecond) + timeout
+    start_time = System.monotonic_time(:millisecond)
 
     Stream.repeatedly(fn ->
-      case WandererApp.Map.Server.via_tuple(map_id) |> GenServer.whereis() do
-        nil -> {:ok, :stopped}
-        _ -> 
-          if System.monotonic_time(:millisecond) < deadline do
-            Process.sleep(50)
-            :continue
-          else
-            {:error, :timeout}
-          end
+      {:ok, started_maps} = WandererApp.Cache.lookup("started_maps", [])
+
+      if map_id not in started_maps do
+        :ok
+      else
+        if System.monotonic_time(:millisecond) - start_time > timeout do
+          raise "Map #{map_id} failed to stop within #{timeout}ms"
+        end
+
+        Process.sleep(50)
+        :continue
       end
     end)
-    |> Enum.find(fn result -> result != :continue end)
+    |> Enum.find(&(&1 == :ok))
   end
 
   @doc """
