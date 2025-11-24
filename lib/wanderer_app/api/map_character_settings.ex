@@ -139,7 +139,6 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :track do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
       require_atomic? false
 
       # Load the record first
@@ -153,7 +152,6 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :untrack do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
       require_atomic? false
 
       # Load the record first
@@ -167,7 +165,6 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :follow do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
       require_atomic? false
 
       # Load the record first
@@ -181,7 +178,6 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :unfollow do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
       require_atomic? false
 
       # Load the record first

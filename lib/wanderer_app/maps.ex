@@ -203,10 +203,7 @@ defmodule WandererApp.Maps do
       is_member_corp = to_string(c.corporation_id) in map_member_corporation_ids
       is_member_alliance = to_string(c.alliance_id) in map_member_alliance_ids
 
-      has_access =
-        is_owner or is_acl_owner or is_member_eve or is_member_corp or is_member_alliance
-
-      has_access
+      is_owner || is_acl_owner || is_member_eve || is_member_corp || is_member_alliance
     end)
   end
 
@@ -250,11 +247,11 @@ defmodule WandererApp.Maps do
                     members ->
                       members
                       |> Enum.any?(fn member ->
-                        (member.role == :blocked and
+                        (member.role == :blocked &&
                            member.eve_character_id in user_character_eve_ids) or
-                          (member.role == :blocked and
+                          (member.role == :blocked &&
                              member.eve_corporation_id in user_character_corporation_ids) or
-                          (member.role == :blocked and
+                          (member.role == :blocked &&
                              member.eve_alliance_id in user_character_alliance_ids)
                       end)
                   end
