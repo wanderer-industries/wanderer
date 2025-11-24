@@ -8,7 +8,7 @@ defmodule WandererApp.Map.SlugUniquenessTest do
   3. Concurrent map creation doesn't create duplicates
   4. Error handling works correctly for slug conflicts
   """
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   import Mox
 

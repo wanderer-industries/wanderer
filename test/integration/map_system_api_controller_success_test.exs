@@ -32,8 +32,7 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         |> assign(:owner_character_id, character.eve_id)
         |> assign(:owner_user_id, user.id)
 
-      # Start the map server using the new async manager pattern
-      ensure_map_started(map.id)
+      # Map server will be started in individual tests after data insertion
 
       %{conn: conn, user: user, character: character, map: map}
     end
@@ -60,6 +59,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
           status: 0
         })
 
+      # Start the map server to load the systems
+      ensure_map_started(map.id)
+
       conn = get(conn, ~p"/api/maps/#{map.slug}/systems")
 
       assert %{
@@ -84,6 +86,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
     end
 
     test "CREATE: successfully creates a single system", %{conn: conn, map: map} do
+      # Start the map server
+      ensure_map_started(map.id)
+
       system_params = %{
         "systems" => [
           %{
@@ -120,6 +125,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "status" => 1
       }
 
+      # Start the map server to load the system
+      ensure_map_started(map.id)
+
       conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
 
       response = json_response(conn, 200)
@@ -146,6 +154,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "custom_name" => "My Trade Hub"
       }
 
+      # Start the map server to load the system
+      ensure_map_started(map.id)
+
       conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
 
       response = json_response(conn, 200)
@@ -164,6 +175,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
           solar_system_id: 30_000_142,
           name: "Jita"
         })
+
+      # Start the map server to load the system
+      ensure_map_started(map.id)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}")
 
@@ -188,6 +202,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
       delete_params = %{
         "system_ids" => [system1.id, system2.id]
       }
+
+      # Start the map server to load the systems
+      ensure_map_started(map.id)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/systems", delete_params)
 

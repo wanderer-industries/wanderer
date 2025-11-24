@@ -21,8 +21,7 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       # Create an active subscription for the map if subscriptions are enabled
       create_active_subscription_for_map(map.id)
 
-      # Start the map server using the new async manager pattern
-      ensure_map_started(map.id)
+      # Map server will be started in individual tests after data insertion
 
       # Create systems that connections can reference
       system1 =
@@ -88,6 +87,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       # Allow time for connections to be created in database
       Process.sleep(100)
 
+      # Start the map server to load the connections
+      ensure_map_started(map.id)
+
       conn = get(conn, ~p"/api/maps/#{map.slug}/connections")
 
       assert %{
@@ -125,6 +127,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       # Allow time for connection to be created in database
       Process.sleep(100)
 
+      # Start the map server to load the connection
+      ensure_map_started(map.id)
+
       update_params = %{
         "mass_status" => 2
       }
@@ -160,6 +165,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
 
       # Allow time for connection to be created in database
       Process.sleep(100)
+
+      # Start the map server to load the connection
+      ensure_map_started(map.id)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/connections/#{connection.id}")
 

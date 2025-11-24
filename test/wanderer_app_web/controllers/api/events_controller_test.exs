@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.Api.EventsControllerTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.ConnCase, async: false
 
   import WandererAppWeb.Factory
   import WandererApp.EnvHelper

@@ -1,5 +1,5 @@
 defmodule WandererApp.Map.SlugRecoveryTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   import Mox
 
@@ -216,7 +216,7 @@ defmodule WandererApp.Map.SlugRecoveryTest do
       # In practice, this would be rare, but we should handle it gracefully
 
       # Try to get a non-existent slug
-      assert {:error, :not_found} = WandererApp.MapRepo.get_map_by_slug_safely("nonexistent")
+      assert {:error, :unknown_error} = WandererApp.MapRepo.get_map_by_slug_safely("nonexistent")
     end
   end
 

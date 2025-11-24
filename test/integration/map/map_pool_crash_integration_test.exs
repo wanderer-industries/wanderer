@@ -13,7 +13,7 @@ defmodule WandererApp.Map.MapPoolCrashIntegrationTest do
   (database, Server.Impl, map data, etc.) to be set up.
   """
 
-  use WandererApp.IntegrationCase, async: true
+  use WandererApp.IntegrationCase, async: false
 
   import Mox
 

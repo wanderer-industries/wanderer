@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
-  use WandererAppWeb.ApiCase, async: true
+  use WandererAppWeb.ApiCase, async: false
 
   import WandererAppWeb.Factory
 

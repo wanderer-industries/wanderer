@@ -1,5 +1,5 @@
 defmodule WandererApp.Api.Changes.InjectMapFromActorTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias WandererApp.Api.ActorWithMap
 

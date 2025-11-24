@@ -17,7 +17,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
   4. Task timeout handling without recovery
   """
 
-  use WandererApp.IntegrationCase, async: true
+  use WandererApp.IntegrationCase, async: false
 
   import Mox
 

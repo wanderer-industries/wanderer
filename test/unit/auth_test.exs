@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.AuthTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.ConnCase, async: false
 
   alias WandererAppWeb.Plugs.CheckMapApiKey
   alias WandererAppWeb.Plugs.CheckAclApiKey

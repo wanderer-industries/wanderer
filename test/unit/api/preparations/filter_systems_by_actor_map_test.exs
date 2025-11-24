@@ -1,5 +1,5 @@
 defmodule WandererApp.Api.Preparations.FilterSystemsByActorMapTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   require Ash.Query
 

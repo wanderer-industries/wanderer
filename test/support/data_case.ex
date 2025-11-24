@@ -60,9 +60,11 @@ defmodule WandererApp.DataCase do
       {:ok, _} = WandererApp.Repo.start_link()
     end
 
-    # Always use non-shared mode for proper test isolation
-    # Child processes will be explicitly granted access via allow/3
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: not tags[:async])
+    # Use shared mode if requested or if running as a ConnCase test (to avoid ownership issues)
+    # Otherwise use non-shared mode for proper test isolation
+    shared = (tags[:shared] || tags[:conn_case] || not tags[:async]) and not tags[:async]
+    
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: shared)
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
     # Store the sandbox owner pid for allowing background processes

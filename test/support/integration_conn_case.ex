@@ -81,9 +81,9 @@ defmodule WandererAppWeb.IntegrationConnCase do
     end
 
     # For integration tests:
-    # - Use shared: true for async tests to avoid MapPool timing issues
-    # - Use shared: false for sync tests for better isolation
-    shared_mode = tags[:async] == true
+    # - Always use shared: true to avoid MapPool timing issues and ownership errors
+    # - This requires tests to be synchronous (async: false) if they share the same case
+    shared_mode = true
 
     # Set up sandbox mode based on test type
     pid =

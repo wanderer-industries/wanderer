@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.FactoryTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   describe "Factory data creation" do
     test "creates valid user" do

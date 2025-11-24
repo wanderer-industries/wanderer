@@ -39,8 +39,10 @@ defmodule WandererAppWeb.ApiCase do
 
     # Use shared mode for async integration tests
     if integration_test? do
+      IO.puts("DEBUG: Integration test detected: #{tags[:file]}")
       WandererAppWeb.IntegrationConnCase.setup_sandbox(tags)
     else
+      IO.puts("DEBUG: Unit test detected: #{tags[:file]}")
       WandererApp.DataCase.setup_sandbox(tags)
     end
 

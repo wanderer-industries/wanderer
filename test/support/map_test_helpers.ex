@@ -50,6 +50,37 @@ defmodule WandererApp.MapTestHelpers do
   end
 
   @doc """
+  Ensures the map is stopped for the given map ID.
+  """
+  def ensure_map_stopped(map_id) do
+    case WandererApp.Map.Manager.stop_map(map_id) do
+      :ok -> :ok
+      {:error, :not_found} -> :ok
+    end
+    
+    # Wait for it to disappear from registry
+    wait_for_map_stopped(map_id)
+  end
+
+  def wait_for_map_stopped(map_id, timeout \\ 5000) do
+    deadline = System.monotonic_time(:millisecond) + timeout
+
+    Stream.repeatedly(fn ->
+      case WandererApp.Map.Server.via_tuple(map_id) |> GenServer.whereis() do
+        nil -> {:ok, :stopped}
+        _ -> 
+          if System.monotonic_time(:millisecond) < deadline do
+            Process.sleep(50)
+            :continue
+          else
+            {:error, :timeout}
+          end
+      end
+    end)
+    |> Enum.find(fn result -> result != :continue end)
+  end
+
+  @doc """
   Continuously grants database access to all MapPool processes and their children.
   This is necessary when maps are started dynamically during tests.
   Polls multiple times to catch processes spawned at different stages.

@@ -1,5 +1,5 @@
 defmodule WandererApp.Api.ActorWithMapTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias WandererApp.Api.ActorWithMap
 

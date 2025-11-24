@@ -1,5 +1,5 @@
 defmodule WandererApp.MapDuplicationAPITest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.ConnCase, async: false
 
   import WandererAppWeb.Factory
 
@@ -242,6 +242,9 @@ defmodule WandererApp.MapDuplicationAPITest do
       owner = insert(:character, %{user_id: user.id})
       source_map = insert(:map, %{name: "Test Map", owner_id: owner.id})
 
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
+
       conn =
         conn
         |> put_req_header(
@@ -297,6 +300,9 @@ defmodule WandererApp.MapDuplicationAPITest do
       user = insert(:user)
       owner = insert(:character, %{user_id: user.id})
       source_map = insert(:map, %{name: "Concurrent Test", owner_id: owner.id})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       conn =
         conn

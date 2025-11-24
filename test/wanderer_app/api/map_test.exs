@@ -1,5 +1,5 @@
 defmodule WandererApp.Api.MapTest do
-  use WandererApp.DataCase, async: true
+  use WandererApp.DataCase, async: false
 
   import Mox
 
