@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.87.0](https://github.com/wanderer-industries/wanderer/compare/v1.86.1...v1.87.0) (2025-11-25)
+
+
+
+
+### Features:
+
+* Add support markdown for system description
+
 ## [v1.86.1](https://github.com/wanderer-industries/wanderer/compare/v1.86.0...v1.86.1) (2025-11-25)
 
 
