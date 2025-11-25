@@ -44,9 +44,17 @@ export interface MarkdownEditorProps {
   overlayContent?: ReactNode;
   value: string;
   onChange: (value: string) => void;
+  height?: string;
+  className?: string;
 }
 
-export const MarkdownEditor = ({ value, onChange, overlayContent }: MarkdownEditorProps) => {
+export const MarkdownEditor = ({
+  value,
+  onChange,
+  overlayContent,
+  height = '70px',
+  className,
+}: MarkdownEditorProps) => {
   const [hasShift, setHasShift] = useState(false);
 
   const refData = useRef({ onChange });
@@ -66,9 +74,9 @@ export const MarkdownEditor = ({ value, onChange, overlayContent }: MarkdownEdit
     <div className={clsx(classes.MarkdownEditor, 'relative')}>
       <CodeMirror
         value={value}
-        height="70px"
+        height={height}
         extensions={CODE_MIRROR_EXTENSIONS}
-        className={classes.CERoot}
+        className={clsx(classes.CERoot, className)}
         theme={oneDark}
         onChange={handleOnChange}
         placeholder="Start typing..."

@@ -1,4 +1,3 @@
-import classes from './MarkdownComment.module.scss';
 import clsx from 'clsx';
 import {
   InfoDrawer,
@@ -49,7 +48,11 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
     <>
       <InfoDrawer
         labelClassName="mb-[3px]"
-        className={clsx(classes.MarkdownCommentRoot, 'p-1 bg-stone-700/20 ')}
+        className={clsx(
+          'p-1 bg-stone-700/20',
+          'text-[12px] leading-[1.2] text-stone-300 break-words',
+          'bg-gradient-to-r from-stone-600/40 via-stone-600/10 to-stone-600/0',
+        )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         title={

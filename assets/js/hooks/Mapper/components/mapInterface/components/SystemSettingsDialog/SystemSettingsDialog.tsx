@@ -8,8 +8,8 @@ import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { Dialog } from 'primereact/dialog';
 import { IconField } from 'primereact/iconfield';
 import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MarkdownEditor } from '@/hooks/Mapper/components/mapInterface/components/MarkdownEditor';
 
 interface SystemSettingsDialog {
   systemId: string;
@@ -214,13 +214,9 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
 
             <div className="flex flex-col gap-1">
               <label htmlFor="username">Description</label>
-              <InputTextarea
-                autoResize
-                rows={5}
-                cols={30}
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-              />
+              <div className="h-[200px]">
+                <MarkdownEditor value={description} onChange={e => setDescription(e)} height="180px" />
+              </div>
             </div>
           </div>
 

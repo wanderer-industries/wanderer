@@ -1,8 +1,5 @@
-.MarkdownCommentRoot {
-  border-left-width: 3px;
-
+.MarkdownTextViewer {
   @apply text-[12px] leading-[1.2] text-stone-300 break-words;
-  @apply bg-gradient-to-r from-stone-600/40 via-stone-600/10 to-stone-600/0;
 
   .h1 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
@@ -54,6 +51,10 @@
 
   b, strong {
     @apply font-bold text-green-400 break-words whitespace-normal;
+  }
+
+  strong {
+    font-weight: bold;
   }
 
   i, em {
