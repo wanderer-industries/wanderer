@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.86.1](https://github.com/wanderer-industries/wanderer/compare/v1.86.0...v1.86.1) (2025-11-25)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add ability to see character passage direction in list of passages
+
 ## [v1.86.0](https://github.com/wanderer-industries/wanderer/compare/v1.85.5...v1.86.0) (2025-11-25)
 
 
