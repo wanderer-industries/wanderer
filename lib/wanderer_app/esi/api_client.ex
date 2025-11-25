@@ -463,7 +463,8 @@ defmodule WandererApp.Esi.ApiClient do
 
         {:error, reason} ->
           # Check if this is a Finch pool error
-          if is_exception(reason) and Exception.message(reason) =~ "unable to provide a connection" do
+          if is_exception(reason) and
+               Exception.message(reason) =~ "unable to provide a connection" do
             :telemetry.execute(
               [:wanderer_app, :finch, :pool_exhausted],
               %{count: 1},
@@ -677,7 +678,8 @@ defmodule WandererApp.Esi.ApiClient do
 
         {:error, reason} ->
           # Check if this is a Finch pool error
-          if is_exception(reason) and Exception.message(reason) =~ "unable to provide a connection" do
+          if is_exception(reason) and
+               Exception.message(reason) =~ "unable to provide a connection" do
             :telemetry.execute(
               [:wanderer_app, :finch, :pool_exhausted],
               %{count: 1},

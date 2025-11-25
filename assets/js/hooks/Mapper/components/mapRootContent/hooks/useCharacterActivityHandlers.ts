@@ -23,17 +23,17 @@ export const useCharacterActivityHandlers = () => {
   /**
    * Handle showing the character activity dialog
    */
-  const handleShowActivity = useCallback(() => {
+  const handleShowActivity = useCallback((days?: number | null) => {
     // Update local state to show the dialog
     update(state => ({
       ...state,
       showCharacterActivity: true,
     }));
 
-    // Send the command to the server
+    // Send the command to the server with optional days parameter
     outCommand({
       type: OutCommand.showActivity,
-      data: {},
+      data: days !== undefined ? { days } : {},
     });
   }, [outCommand, update]);
 

@@ -30,14 +30,17 @@ defmodule WandererAppWeb.MapActivityEventHandler do
 
   def handle_ui_event(
         "show_activity",
-        _,
+        params,
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
     Task.async(fn ->
       try do
+        # Extract days parameter (nil if not provided)
+        days = Map.get(params, "days")
+
         # Get raw activity data from the domain logic
         result =
-          WandererApp.Character.Activity.process_character_activity(map_id, current_user)
+          WandererApp.Character.Activity.process_character_activity(map_id, current_user, days)
 
         # Group activities by user_id and summarize
         summarized_result =

@@ -43,13 +43,14 @@ defmodule WandererApp.Character.Activity do
   ## Parameters
   - `map_id`: ID of the map
   - `current_user`: Current user struct (used only to get user settings)
+  - `days`: Optional number of days to filter activity (nil for all time)
 
   ## Returns
   - List of processed activity data
   """
-  def process_character_activity(map_id, current_user) do
+  def process_character_activity(map_id, current_user, days \\ nil) do
     with {:ok, map_user_settings} <- get_map_user_settings(map_id, current_user.id),
-         {:ok, raw_activity} <- WandererApp.Map.get_character_activity(map_id),
+         {:ok, raw_activity} <- WandererApp.Map.get_character_activity(map_id, days),
          {:ok, user_characters} <-
            WandererApp.Api.Character.active_by_user(%{user_id: current_user.id}) do
       process_activity_data(raw_activity, map_user_settings, user_characters)
