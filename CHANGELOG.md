@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.86.0](https://github.com/wanderer-industries/wanderer/compare/v1.85.5...v1.86.0) (2025-11-25)
+
+
+
+
+### Features:
+
+* add date filter for character activity
+
 ## [v1.85.5](https://github.com/wanderer-industries/wanderer/compare/v1.85.4...v1.85.5) (2025-11-24)
 
 
