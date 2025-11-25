@@ -6,10 +6,16 @@ export type PassageLimitedCharacterType = Pick<
 >;
 
 export type Passage = {
+  from: boolean;
   inserted_at: string; // Date
   ship: ShipTypeRaw;
   character: PassageLimitedCharacterType;
 };
+
+export type PassageWithSourceTarget = {
+  source: string;
+  target: string;
+} & Passage;
 
 export type ConnectionInfoOutput = {
   marl_eol_time: string;
