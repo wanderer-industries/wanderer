@@ -58,6 +58,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
         :consecutive_failures,
         :secret
       ]
+
       require_atomic? false
     end
 

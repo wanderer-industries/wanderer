@@ -8,6 +8,8 @@ defmodule WandererApp.Api.Map do
 
   alias Ash.Resource.Change.Builtins
 
+  require Logger
+
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
@@ -55,6 +57,7 @@ defmodule WandererApp.Api.Map do
     define(:mark_as_deleted, action: :mark_as_deleted)
     define(:update_api_key, action: :update_api_key)
     define(:toggle_webhooks, action: :toggle_webhooks)
+    define(:toggle_sse, action: :toggle_sse)
 
     define(:by_id,
       get_by: [:id],
@@ -103,7 +106,16 @@ defmodule WandererApp.Api.Map do
     end
 
     create :new do
-      accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id, :sse_enabled]
+      accept [
+        :name,
+        :slug,
+        :description,
+        :scope,
+        :only_tracked_characters,
+        :owner_id,
+        :sse_enabled
+      ]
+
       primary?(true)
       argument :create_default_acl, :boolean, allow_nil?: true
       argument :acls, {:array, :uuid}, allow_nil?: true
@@ -186,6 +198,14 @@ defmodule WandererApp.Api.Map do
     update :toggle_webhooks do
       accept [:webhooks_enabled]
       require_atomic? false
+    end
+
+    update :toggle_sse do
+      require_atomic? false
+      accept [:sse_enabled]
+
+      # Validate subscription when enabling SSE
+      validate &validate_sse_subscription/2
     end
 
     create :duplicate do
@@ -373,19 +393,13 @@ defmodule WandererApp.Api.Map do
     end
   end
 
-  # Private validation functions
-
-  @doc false
-  # Validates that SSE can be enabled based on subscription status.
+  # SSE Subscription Validation
   #
-  # Validation rules:
-  # 1. Skip if SSE not being enabled (no validation needed)
-  # 2. Skip during map creation (map_id is nil, subscription doesn't exist yet)
-  # 3. Skip in Community Edition mode (subscriptions disabled globally)
-  # 4. Require active subscription in Enterprise mode
-  #
-  # This ensures users cannot enable SSE without a valid subscription in Enterprise mode,
-  # while allowing SSE in Community Edition and during map creation.
+  # This validation ensures that SSE can only be enabled when:
+  # 1. SSE is being disabled (always allowed)
+  # 2. Map is being created (skip validation, will be checked on first update)
+  # 3. Community Edition mode (always allowed)
+  # 4. Enterprise mode with active subscription
   defp validate_sse_subscription(changeset, _context) do
     sse_enabled = Ash.Changeset.get_attribute(changeset, :sse_enabled)
     map_id = changeset.data.id
@@ -397,7 +411,6 @@ defmodule WandererApp.Api.Map do
         :ok
 
       # Map creation (no ID yet) - skip validation
-      # Subscription check will happen on first update if they try to enable SSE
       is_nil(map_id) ->
         :ok
 
@@ -411,7 +424,6 @@ defmodule WandererApp.Api.Map do
     end
   end
 
-  # Helper to check if map has an active subscription
   defp validate_active_subscription(map_id) do
     case WandererApp.Map.is_subscription_active?(map_id) do
       {:ok, true} ->
@@ -421,11 +433,8 @@ defmodule WandererApp.Api.Map do
         {:error, field: :sse_enabled, message: "Active subscription required to enable SSE"}
 
       {:error, reason} ->
-        require Logger
-        Logger.warning("Failed to check subscription for map #{map_id}: #{inspect(reason)}")
-        # Fail open - allow the operation but log the error
-        # This prevents database errors from blocking legitimate operations
-        :ok
+        Logger.error("Error checking subscription status: #{inspect(reason)}")
+        {:error, field: :sse_enabled, message: "Unable to verify subscription status"}
     end
   end
 end

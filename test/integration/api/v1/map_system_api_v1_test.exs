@@ -247,9 +247,10 @@ defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
       payload = %{
         "data" => %{
           "type" => "map_systems",
-          "attributes" => %{
-            # Missing solar_system_id - JSON:API returns 400 for schema validation
-          }
+          "attributes" =>
+            %{
+              # Missing solar_system_id - JSON:API returns 400 for schema validation
+            }
         }
       }
 

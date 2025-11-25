@@ -52,25 +52,24 @@ defmodule WandererApp.Repo.Migrations.AddPublicApiKeyUniqueIndex do
   end
 
   defp create_backup_table do
-    repo().query!("""
-    CREATE TABLE IF NOT EXISTS maps_v1_api_key_backup (
-      id UUID PRIMARY KEY,
-      map_id UUID NOT NULL,
-      old_public_api_key TEXT NOT NULL,
-      reason TEXT NOT NULL,
-      backed_up_at TIMESTAMP NOT NULL DEFAULT NOW()
+    repo().query!(
+      """
+      CREATE TABLE IF NOT EXISTS maps_v1_api_key_backup (
+        id UUID PRIMARY KEY,
+        map_id UUID NOT NULL,
+        old_public_api_key TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        backed_up_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+      """,
+      []
     )
-    """, [])
 
     IO.puts("Created backup table maps_v1_api_key_backup")
   end
 
   def down do
-    drop_if_exists(
-      index(:maps_v1, [:public_api_key],
-        name: :maps_v1_unique_public_api_key_index
-      )
-    )
+    drop_if_exists(index(:maps_v1, [:public_api_key], name: :maps_v1_unique_public_api_key_index))
 
     IO.puts("Dropped unique index on maps_v1.public_api_key")
 
@@ -119,6 +118,7 @@ defmodule WandererApp.Repo.Migrations.AddPublicApiKeyUniqueIndex do
                 INSERT INTO maps_v1_api_key_backup (id, map_id, old_public_api_key, reason)
                 VALUES (gen_random_uuid(), $1::uuid, $2, 'duplicate_api_key_cleared_for_unique_index')
                 """
+
                 repo().query!(backup_query, [id, api_key])
 
                 # Clear the duplicate
