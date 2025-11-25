@@ -68,4 +68,5 @@ export interface ActivitySummary {
   passages: number;
   connections: number;
   signatures: number;
+  timestamp?: string;
 }

@@ -7,15 +7,27 @@ import {
 } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity/helpers.tsx';
 import { Column } from 'primereact/column';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
+import { useCharacterActivityHandlers } from '@/hooks/Mapper/components/mapRootContent/hooks/useCharacterActivityHandlers';
 
-export const CharacterActivityContent = () => {
+interface CharacterActivityContentProps {
+  selectedPeriod: number | null;
+}
+
+export const CharacterActivityContent = ({ selectedPeriod }: CharacterActivityContentProps) => {
   const {
     data: { characterActivityData },
   } = useMapRootState();
 
+  const { handleShowActivity } = useCharacterActivityHandlers();
+
   const activity = useMemo(() => characterActivityData?.activity || [], [characterActivityData]);
   const loading = useMemo(() => characterActivityData?.loading !== false, [characterActivityData]);
+
+  // Reload activity data when period changes
+  useEffect(() => {
+    handleShowActivity(selectedPeriod);
+  }, [selectedPeriod, handleShowActivity]);
 
   if (loading) {
     return (
