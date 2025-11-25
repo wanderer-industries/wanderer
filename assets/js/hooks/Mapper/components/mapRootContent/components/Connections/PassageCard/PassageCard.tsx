@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import classes from './PassageCard.module.scss';
-import { Passage } from '@/hooks/Mapper/types';
-import { TimeAgo } from '@/hooks/Mapper/components/ui-kit';
+import { PassageWithSourceTarget } from '@/hooks/Mapper/types';
+import { SystemView, TimeAgo, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
 import { useMemo } from 'react';
@@ -11,7 +11,7 @@ type PassageCardType = {
   showShipName?: boolean;
   // showSystem?: boolean;
   // useSystemsCache?: boolean;
-} & Passage;
+} & PassageWithSourceTarget;
 
 const SHIP_NAME_RX = /u'|'/g;
 export const getShipName = (name: string) => {
@@ -25,7 +25,7 @@ export const getShipName = (name: string) => {
     });
 };
 
-export const PassageCard = ({ inserted_at, character: char, ship }: PassageCardType) => {
+export const PassageCard = ({ inserted_at, character: char, ship, source, target, from }: PassageCardType) => {
   const isOwn = false;
 
   const insertedAt = useMemo(() => {
@@ -37,7 +37,39 @@ export const PassageCard = ({ inserted_at, character: char, ship }: PassageCardT
     <div className={clsx(classes.CharacterCard, 'w-full text-xs', 'flex flex-col box-border')}>
       <div className="flex flex-col justify-between px-2 py-1 gap-1">
         {/*here icon and other*/}
-        <div className={clsx(classes.CharRow, classes.ThreeColumns)}>
+        <div className={clsx(classes.CharRow, classes.FourColumns)}>
+          <WdTooltipWrapper
+            position={TooltipPosition.top}
+            content={
+              <div className="flex justify-between gap-2 items-center">
+                <SystemView
+                  showCustomName
+                  systemId={source}
+                  className="select-none text-center !text-[12px]"
+                  hideRegion
+                />
+                <span className="pi pi-angle-double-right text-stone-500 text-[15px]"></span>
+                <SystemView
+                  showCustomName
+                  systemId={target}
+                  className="select-none text-center !text-[12px]"
+                  hideRegion
+                />
+              </div>
+            }
+          >
+            <div
+              className={clsx(
+                'transition-all transform ease-in duration-200',
+                'pi text-stone-500 text-[15px] w-[35px] h-[33px] !flex items-center justify-center border rounded-[6px]',
+                {
+                  ['pi-angle-double-right !text-orange-400 border-orange-400 hover:bg-orange-400/30']: from,
+                  ['pi-angle-double-left !text-stone-500/70 border-stone-500/70 hover:bg-stone-500/30']: !from,
+                },
+              )}
+            />
+          </WdTooltipWrapper>
+
           {/*portrait*/}
           <span
             className={clsx(classes.EveIcon, classes.CharIcon, 'wd-bg-default')}

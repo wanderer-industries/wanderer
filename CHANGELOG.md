@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.86.1](https://github.com/wanderer-industries/wanderer/compare/v1.86.0...v1.86.1) (2025-11-25)
+
+
+
+
+### Bug Fixes:
+
+* Map: Add ability to see character passage direction in list of passages
+
+## [v1.86.0](https://github.com/wanderer-industries/wanderer/compare/v1.85.5...v1.86.0) (2025-11-25)
+
+
+
+
+### Features:
+
+* add date filter for character activity
+
 ## [v1.85.5](https://github.com/wanderer-industries/wanderer/compare/v1.85.4...v1.85.5) (2025-11-24)
 
 
