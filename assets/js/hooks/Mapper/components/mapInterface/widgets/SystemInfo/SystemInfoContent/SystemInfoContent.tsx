@@ -2,7 +2,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { useMemo } from 'react';
 import { getSystemById, sortWHClasses } from '@/hooks/Mapper/helpers';
-import { InfoDrawer, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
+import { InfoDrawer, MarkdownTextViewer, WHClassView, WHEffectView } from '@/hooks/Mapper/components/ui-kit';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 
 interface SystemInfoContentProps {
@@ -51,7 +51,7 @@ export const SystemInfoContent = ({ systemId }: SystemInfoContentProps) => {
             </div>
           }
         >
-          <div className="break-words">{description}</div>
+          <MarkdownTextViewer>{description}</MarkdownTextViewer>
         </InfoDrawer>
       )}
     </div>

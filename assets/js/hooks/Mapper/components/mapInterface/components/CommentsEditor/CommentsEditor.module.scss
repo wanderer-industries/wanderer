@@ -1,0 +1,9 @@
+.CERoot {
+  @apply border border-stone-400/30 rounded-[2px];
+
+  :global {
+    .cm-content {
+      @apply bg-stone-600/40;
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { useHotkey } from '@/hooks/Mapper/hooks';
 import { useCallback, useRef, useState } from 'react';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import classes from './CommentsEditor.module.scss';
 
 export interface CommentsEditorProps {}
 
@@ -48,6 +49,7 @@ export const CommentsEditor = ({}: CommentsEditorProps) => {
 
   return (
     <MarkdownEditor
+      className={classes.CERoot}
       value={textVal}
       onChange={setTextVal}
       overlayContent={
