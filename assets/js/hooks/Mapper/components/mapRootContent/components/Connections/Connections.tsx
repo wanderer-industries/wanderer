@@ -140,11 +140,6 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
     return passages.reduce((acc, x) => acc + parseInt(x.ship.ship_type_info.mass), 0);
   }, [passages]);
 
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('JOipP', `cnInfo`, cnInfo);
-  }, [cnInfo]);
-
   if (!cnInfo) {
     return null;
   }
