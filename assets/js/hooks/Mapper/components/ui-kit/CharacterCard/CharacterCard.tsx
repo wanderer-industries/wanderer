@@ -3,6 +3,7 @@ import {
   WdEveEntityPortrait,
   WdEveEntityPortraitSize,
   WdEveEntityPortraitType,
+  WdImgButton,
   WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
 import { SystemView } from '@/hooks/Mapper/components/ui-kit/SystemView';
@@ -14,6 +15,8 @@ import { Commands } from '@/hooks/Mapper/types/mapHandlers';
 import clsx from 'clsx';
 import { useCallback } from 'react';
 import classes from './CharacterCard.module.scss';
+import { ZKB_ICON } from '@/hooks/Mapper/icons';
+import { charEveWhoLink, charZKBLink } from '@/hooks/Mapper/helpers/linkHelpers.ts';
 
 export type CharacterCardProps = {
   compact?: boolean;
@@ -65,6 +68,9 @@ export const CharacterCard = ({
   const tickerText = char.alliance_id ? char.alliance_ticker : char.corporation_ticker;
   const shipType = char.ship?.ship_type_info?.name;
   const locationShown = showSystem && char.location?.solar_system_id;
+
+  const handleOpenZKB = useCallback(() => window.open(charZKBLink(char.eve_id), '_blank'), [char]);
+  const handleOpenEveWho = useCallback(() => window.open(charEveWhoLink(char.eve_id), '_blank'), [char]);
 
   // INFO: Simple mode show only name and icon of ally/corp. By default it compact view
   if (simpleMode) {
@@ -244,7 +250,24 @@ export const CharacterCard = ({
               {char.name}
             </span>
             {showTicker && <span className="flex-shrink-0 text-gray-400 ml-1">[{tickerText}]</span>}
+
+            <div className={clsx('flex gap-1 items-center h-full ml-[6px]')}>
+              <WdImgButton
+                width={16}
+                height={16}
+                tooltip={{ position: TooltipPosition.top, content: 'Open zkillboard' }}
+                source={ZKB_ICON}
+                onClick={handleOpenZKB}
+                className="min-w-[16px]"
+              />
+              <WdImgButton
+                tooltip={{ position: TooltipPosition.top, content: 'Open Eve Who' }}
+                className={clsx('pi pi-user', '!text-[12px] relative top-[-1px]')}
+                onClick={handleOpenEveWho}
+              />
+            </div>
           </div>
+
           {locationShown ? (
             <div className="text-gray-300 text-xs overflow-hidden text-ellipsis whitespace-nowrap">
               <SystemView
