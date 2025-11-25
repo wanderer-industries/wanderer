@@ -5,6 +5,7 @@ import {
   ConnectionType,
   OutCommand,
   Passage,
+  PassageWithSourceTarget,
   SolarSystemConnection,
 } from '@/hooks/Mapper/types';
 import clsx from 'clsx';
@@ -19,7 +20,7 @@ import { PassageCard } from './PassageCard';
 
 const sortByDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
 
-const itemTemplate = (item: Passage, options: VirtualScrollerTemplateOptions) => {
+const itemTemplate = (item: PassageWithSourceTarget, options: VirtualScrollerTemplateOptions) => {
   return (
     <div
       className={clsx(classes.CharacterRow, 'w-full box-border', {
@@ -35,7 +36,7 @@ const itemTemplate = (item: Passage, options: VirtualScrollerTemplateOptions) =>
 };
 
 export interface ConnectionPassagesContentProps {
-  passages: Passage[];
+  passages: PassageWithSourceTarget[];
 }
 
 export const ConnectionPassages = ({ passages = [] }: ConnectionPassagesContentProps) => {
@@ -113,6 +114,20 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
     [outCommand],
   );
 
+  const preparedPassages = useMemo(() => {
+    if (!cnInfo) {
+      return [];
+    }
+
+    return passages
+      .sort((a, b) => sortByDate(b.inserted_at, a.inserted_at))
+      .map<PassageWithSourceTarget>(x => ({
+        ...x,
+        source: x.from ? cnInfo.target : cnInfo.source,
+        target: x.from ? cnInfo.source : cnInfo.target,
+      }));
+  }, [cnInfo, passages]);
+
   useEffect(() => {
     if (!selectedConnection) {
       return;
@@ -124,6 +139,11 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
   const approximateMass = useMemo(() => {
     return passages.reduce((acc, x) => acc + parseInt(x.ship.ship_type_info.mass), 0);
   }, [passages]);
+
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('JOipP', `cnInfo`, cnInfo);
+  }, [cnInfo]);
 
   if (!cnInfo) {
     return null;
@@ -145,12 +165,14 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
           <InfoDrawer title="Connection" rightSide>
             <div className="flex justify-end gap-2 items-center">
               <SystemView
+                showCustomName
                 systemId={cnInfo.source}
                 className={clsx(classes.InfoTextSize, 'select-none text-center')}
                 hideRegion
               />
               <span className="pi pi-angle-double-right text-stone-500 text-[15px]"></span>
               <SystemView
+                showCustomName
                 systemId={cnInfo.target}
                 className={clsx(classes.InfoTextSize, 'select-none text-center')}
                 hideRegion
@@ -184,7 +206,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
         {/* separator */}
         <div className="w-full h-px bg-neutral-800 px-0.5"></div>
 
-        <ConnectionPassages passages={passages} />
+        <ConnectionPassages passages={preparedPassages} />
       </div>
     </Sidebar>
   );
