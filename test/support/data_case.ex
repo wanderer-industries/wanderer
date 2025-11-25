@@ -63,12 +63,21 @@ defmodule WandererApp.DataCase do
     # Use shared mode if requested or if running as a ConnCase test (to avoid ownership issues)
     # Otherwise use non-shared mode for proper test isolation
     shared = (tags[:shared] || tags[:conn_case] || not tags[:async]) and not tags[:async]
-    
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: shared)
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
-    # Store the sandbox owner pid for allowing background processes
+    # Start the sandbox owner and link it to the test process
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: shared)
+
+    # Store the sandbox owner pid BEFORE registering on_exit
+    # This ensures it's available for use in setup callbacks
     Process.put(:sandbox_owner_pid, pid)
+
+    # Register cleanup - this will be called last (LIFO order)
+    on_exit(fn ->
+      # Only stop if the owner is still alive
+      if Process.alive?(pid) do
+        Ecto.Adapters.SQL.Sandbox.stop_owner(pid)
+      end
+    end)
 
     # Allow critical system processes to access the database
     allow_system_processes_database_access()
@@ -112,7 +121,9 @@ defmodule WandererApp.DataCase do
       WandererApp.Server.TheraDataFetcher,
       WandererApp.ExternalEvents.MapEventRelay,
       WandererApp.ExternalEvents.WebhookDispatcher,
-      WandererApp.ExternalEvents.SseStreamManager
+      WandererApp.ExternalEvents.SseStreamManager,
+      # Task.Supervisor for Task.async_stream calls (e.g., from MapPool background tasks)
+      Task.Supervisor
     ]
 
     Enum.each(system_processes, fn process_name ->

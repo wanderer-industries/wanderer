@@ -47,7 +47,9 @@ defmodule WandererAppWeb.ApiCase do
     end
 
     # Set up mocks for this test process
-    WandererApp.Test.Mocks.setup_test_mocks()
+    # Use global mode for integration tests so mocks work in spawned processes
+    mock_mode = if integration_test?, do: :global, else: :private
+    WandererApp.Test.Mocks.setup_test_mocks(mode: mock_mode)
 
     # Set up integration test environment if needed
     if integration_test? do

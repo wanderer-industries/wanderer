@@ -104,7 +104,6 @@ defmodule WandererAppWeb.MapAuditAPIControllerIntegrationTest do
       assert length(events) >= 0
     end
 
-    @tag :skip
     test "supports different period values", %{conn: conn, map: map} do
       character = Factory.insert(:character, %{eve_id: "123456789"})
       user = Factory.insert(:user)

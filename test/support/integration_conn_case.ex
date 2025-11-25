@@ -48,8 +48,9 @@ defmodule WandererAppWeb.IntegrationConnCase do
   setup tags do
     WandererAppWeb.IntegrationConnCase.setup_sandbox(tags)
 
-    # Set up mocks for this test process
-    WandererApp.Test.Mocks.setup_test_mocks()
+    # Set up mocks for this test process in global mode
+    # Integration tests spawn processes (MapPool, etc.) that need mock access
+    WandererApp.Test.Mocks.setup_test_mocks(mode: :global)
 
     # Set up integration test environment (including Map.Manager)
     WandererApp.Test.IntegrationConfig.setup_integration_environment()
@@ -74,7 +75,7 @@ defmodule WandererAppWeb.IntegrationConnCase do
   - Uses shared: false for better isolation
   - Child processes require explicit allowance
   """
-  def setup_sandbox(tags) do
+  def setup_sandbox(_tags) do
     # Ensure the repo is started before setting up sandbox
     unless Process.whereis(WandererApp.Repo) do
       {:ok, _} = WandererApp.Repo.start_link()
@@ -85,25 +86,21 @@ defmodule WandererAppWeb.IntegrationConnCase do
     # - This requires tests to be synchronous (async: false) if they share the same case
     shared_mode = true
 
-    # Set up sandbox mode based on test type
-    pid =
-      if shared_mode do
-        # For async tests with shared mode:
-        # Checkout the sandbox connection instead of starting an owner
-        # This allows multiple async tests to use the same connection pool
-        :ok = Ecto.Adapters.SQL.Sandbox.checkout(WandererApp.Repo)
-        # Put the connection in shared mode
-        Ecto.Adapters.SQL.Sandbox.mode(WandererApp.Repo, {:shared, self()})
-        self()
-      else
-        # For sync tests, start a dedicated owner
-        pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: false)
-        on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
-        pid
-      end
+    # Set up sandbox mode - always use start_owner! for proper ownership setup
+    # This ensures that spawned processes (like Ash transactions) can access the database
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: shared_mode)
 
-    # Store the sandbox owner pid for allowing background processes
+    # Store the sandbox owner pid BEFORE registering on_exit
+    # This ensures it's available for use in setup callbacks
     Process.put(:sandbox_owner_pid, pid)
+
+    # Register cleanup - this will be called last (LIFO order)
+    on_exit(fn ->
+      # Only stop if the owner is still alive
+      if Process.alive?(pid) do
+        Ecto.Adapters.SQL.Sandbox.stop_owner(pid)
+      end
+    end)
 
     # Allow critical system processes to access the database
     allow_system_processes_database_access()
@@ -136,7 +133,9 @@ defmodule WandererAppWeb.IntegrationConnCase do
       WandererApp.Server.TheraDataFetcher,
       WandererApp.ExternalEvents.MapEventRelay,
       WandererApp.ExternalEvents.WebhookDispatcher,
-      WandererApp.ExternalEvents.SseStreamManager
+      WandererApp.ExternalEvents.SseStreamManager,
+      # Task.Supervisor for Task.async_stream calls
+      Task.Supervisor
     ]
 
     Enum.each(system_processes, fn process_name ->
@@ -177,7 +176,7 @@ defmodule WandererAppWeb.IntegrationConnCase do
     end
   end
 
-  # Monitor for dynamically spawned children and grant them mock access
+  # Monitor for dynamically spawned children and grant them mock and database access
   defp monitor_and_allow_children(supervisor_pid, owner_pid, interval \\ 50) do
     if Process.alive?(supervisor_pid) do
       :timer.sleep(interval)
@@ -191,7 +190,9 @@ defmodule WandererAppWeb.IntegrationConnCase do
             |> Enum.filter(&is_pid/1)
             |> Enum.filter(&Process.alive?/1)
             |> Enum.each(fn child_pid ->
+              # Grant both mock and database access
               WandererApp.Test.MockOwnership.allow_mocks_for_process(child_pid, owner_pid)
+              allow_database_access(child_pid)
             end)
 
           _ ->

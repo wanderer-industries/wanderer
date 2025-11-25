@@ -16,9 +16,15 @@ defmodule WandererApp.Test.Mocks do
         :ok
       end
   """
-  def setup_test_mocks do
-    # Claim ownership of all mocks for this test process
-    Mox.set_mox_private()
+  def setup_test_mocks(opts \\ []) do
+    # For integration tests that spawn processes (MapPool, etc.),
+    # we need global mode so mocks work across process boundaries
+    mode = Keyword.get(opts, :mode, :private)
+
+    case mode do
+      :global -> Mox.set_mox_global()
+      :private -> Mox.set_mox_private()
+    end
 
     # Set up default stubs for this test
     setup_default_stubs()

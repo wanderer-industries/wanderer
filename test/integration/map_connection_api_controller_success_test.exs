@@ -239,7 +239,6 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       {:ok, conn: conn, map: map, user: user, character: character}
     end
 
-    @tag :skip
     test "CREATE: fails with missing required parameters", %{conn: conn, map: map} do
       invalid_params = %{
         "type" => 0
@@ -252,7 +251,6 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       assert conn.status in [400, 422]
     end
 
-    @tag :skip
     test "UPDATE: fails for non-existent connection", %{conn: conn, map: map} do
       non_existent_id = Ecto.UUID.generate()
 
@@ -267,7 +265,6 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       assert conn.status in [404, 422, 500]
     end
 
-    @tag :skip
     test "DELETE: handles non-existent connection gracefully", %{conn: conn, map: map} do
       non_existent_id = Ecto.UUID.generate()
 
@@ -277,7 +274,6 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
       assert conn.status in [200, 204, 404]
     end
 
-    @tag :skip
     test "READ: handles filtering with non-existent systems", %{conn: conn, map: map} do
       params = %{
         "solar_system_source" => "99999999",
