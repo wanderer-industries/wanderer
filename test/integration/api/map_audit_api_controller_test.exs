@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.MapAuditAPIControllerIntegrationTest do
-  use WandererAppWeb.ApiCase, async: false
+  use WandererAppWeb.ApiCase
 
   alias WandererAppWeb.Factory
 

@@ -1,10 +1,6 @@
 defmodule WandererApp.User.ActivityTrackerTest do
   use WandererApp.DataCase, async: false
 
-  import Mox
-
-  setup :verify_on_exit!
-
   alias WandererApp.User.ActivityTracker
 
   describe "track_map_event/2" do

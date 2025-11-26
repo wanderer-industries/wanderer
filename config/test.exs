@@ -24,11 +24,7 @@ config :wanderer_app,
   pubsub_client: Test.PubSubMock,
   cached_info: WandererApp.CachedInfo.Mock,
   character_api_disabled: false,
-  environment: :test,
-  map_subscriptions_enabled: false,
-  wanderer_kills_service_enabled: false,
-  sse: [enabled: false],
-  external_events: [webhooks_enabled: false]
+  environment: :test
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

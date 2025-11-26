@@ -28,6 +28,10 @@ defmodule WandererApp.Api.UserTransaction do
     create :new do
       accept [:journal_ref_id, :user_id, :date, :amount, :corporation_id]
       primary?(true)
+
+      argument :user_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:user_id, :user, on_lookup: :relate, on_no_match: nil)
     end
   end
 

@@ -60,7 +60,7 @@ defmodule WandererApp.Test.MockAllowance do
       Mox.set_mox_global()
 
       # Re-setup mocks to ensure they're available globally
-      WandererApp.Test.Mocks.setup_test_mocks(mode: :global)
+      WandererApp.Test.Mocks.setup_mocks()
     end
   end
 

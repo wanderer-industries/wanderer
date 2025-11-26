@@ -60,17 +60,19 @@ defmodule WandererApp.Api.AccessList do
       # Added :api_key to the accepted attributes
       accept [:name, :description, :owner_id, :api_key]
       primary?(true)
+
+      argument :owner_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:owner_id, :owner, on_lookup: :relate, on_no_match: nil)
     end
 
     update :update do
       accept [:name, :description, :owner_id, :api_key]
       primary?(true)
-      require_atomic? false
     end
 
     update :assign_owner do
       accept [:owner_id]
-      require_atomic? false
     end
   end
 

@@ -111,6 +111,10 @@ defmodule WandererApp.Api.MapSystemSignature do
         :custom_info,
         :deleted
       ]
+
+      argument :system_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
     end
 
     update :update do
@@ -135,17 +139,14 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     update :update_linked_system do
       accept [:linked_system_id]
-      require_atomic? false
     end
 
     update :update_type do
       accept [:type]
-      require_atomic? false
     end
 
     update :update_group do
       accept [:group]
-      require_atomic? false
     end
 
     read :by_system_id do

@@ -13,9 +13,9 @@ export type CommentSystem = {
 };
 
 export interface UseCommentsData {
-  loadComments: (systemId: number) => Promise<void>;
-  addComment: (systemId: number, comment: CommentType) => void;
-  removeComment: (systemId: number, commentId: string) => void;
-  comments: Map<number, CommentSystem>;
+  loadComments: (systemId: string) => Promise<void>;
+  addComment: (systemId: string, comment: CommentType) => void;
+  removeComment: (systemId: string, commentId: string) => void;
+  comments: Map<string, CommentSystem>;
   lastUpdateKey: number;
 }

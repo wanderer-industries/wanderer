@@ -45,11 +45,7 @@ defmodule WandererApp.Api.MapState do
       :connections_start_time
     ]
 
-    defaults [:read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:read, :update, :destroy]
 
     create :create do
       primary? true

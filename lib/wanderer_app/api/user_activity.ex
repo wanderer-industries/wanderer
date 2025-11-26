@@ -4,8 +4,7 @@ defmodule WandererApp.Api.UserActivity do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource],
-    primary_read_warning?: false
+    extensions: [AshJsonApi.Resource]
 
   require Ash.Expr
 
@@ -56,8 +55,7 @@ defmodule WandererApp.Api.UserActivity do
       :entity_type,
       :event_type,
       :event_data,
-      :user_id,
-      :character_id
+      :user_id
     ]
 
     read :read do
@@ -72,8 +70,14 @@ defmodule WandererApp.Api.UserActivity do
     end
 
     create :new do
-      accept [:entity_id, :entity_type, :event_type, :event_data, :user_id, :character_id]
+      accept [:entity_id, :entity_type, :event_type, :event_data]
       primary?(true)
+
+      argument :user_id, :uuid, allow_nil?: true
+      argument :character_id, :uuid, allow_nil?: true
+
+      change manage_relationship(:user_id, :user, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
     destroy :archive do

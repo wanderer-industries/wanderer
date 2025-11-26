@@ -22,9 +22,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket
       ) do
     try do
-      # Load acls with members first to avoid lateral join conflicts
       {:ok, %{id: map_id, user_permissions: user_permissions, owner_id: owner_id}} =
-        WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
+        map_slug
+        |> WandererApp.Api.Map.get_map_by_slug!()
+        |> Ash.load(:user_permissions, actor: current_user)
 
       user_permissions =
         WandererApp.Permissions.get_map_permissions(

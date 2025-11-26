@@ -1,10 +1,6 @@
 defmodule WandererApp.Map.MapPoolTest do
   use ExUnit.Case, async: false
 
-  import Mox
-
-  setup :verify_on_exit!
-
   alias WandererApp.Map.{MapPool, MapPoolDynamicSupervisor, Reconciler}
 
   @cache :map_pool_cache
@@ -223,7 +219,6 @@ defmodule WandererApp.Map.MapPoolTest do
       end
     end
 
-    @tag :skip
     test "reconciler detects cache pointing to non-existent pool", %{
       reconciler_running: reconciler_running?
     } do

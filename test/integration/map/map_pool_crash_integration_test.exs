@@ -13,11 +13,7 @@ defmodule WandererApp.Map.MapPoolCrashIntegrationTest do
   (database, Server.Impl, map data, etc.) to be set up.
   """
 
-  use WandererApp.IntegrationCase, async: false
-
-  import Mox
-
-  setup :verify_on_exit!
+  use ExUnit.Case, async: false
 
   alias WandererApp.Map.{MapPool, MapPoolDynamicSupervisor, MapPoolState}
 

@@ -18,20 +18,10 @@ defmodule WandererApp.Map.MapPool do
   @map_pool_limit 10
 
   @garbage_collection_interval :timer.hours(4)
-  # Use very long timeouts in test environment to prevent background tasks from running during tests
-  # This avoids database connection ownership errors when tests finish before async tasks complete
-  @systems_cleanup_timeout if Mix.env() == :test,
-                             do: :timer.hours(24),
-                             else: :timer.minutes(30)
-  @characters_cleanup_timeout if Mix.env() == :test,
-                                do: :timer.hours(24),
-                                else: :timer.minutes(5)
-  @connections_cleanup_timeout if Mix.env() == :test,
-                                 do: :timer.hours(24),
-                                 else: :timer.minutes(5)
-  @backup_state_timeout if Mix.env() == :test,
-                          do: :timer.hours(24),
-                          else: :timer.minutes(1)
+  @systems_cleanup_timeout :timer.minutes(30)
+  @characters_cleanup_timeout :timer.minutes(5)
+  @connections_cleanup_timeout :timer.minutes(5)
+  @backup_state_timeout :timer.minutes(1)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -197,7 +187,7 @@ defmodule WandererApp.Map.MapPool do
 
     # Schedule periodic tasks
     Process.send_after(self(), :backup_state, @backup_state_timeout)
-    Process.send_after(self(), :cleanup_systems, @systems_cleanup_timeout)
+    Process.send_after(self(), :cleanup_systems, 15_000)
     Process.send_after(self(), :cleanup_characters, @characters_cleanup_timeout)
     Process.send_after(self(), :cleanup_connections, @connections_cleanup_timeout)
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)

@@ -205,7 +205,7 @@ defmodule WandererApp.Map do
 
     characters_ids =
       characters
-      |> Enum.map(fn %{character_id: char_id} -> char_id end)
+      |> Enum.map(fn %{id: char_id} -> char_id end)
 
     # Filter out characters that already exist
     new_character_ids =

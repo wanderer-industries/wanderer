@@ -52,13 +52,10 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           socket
       )
       when not is_nil(main_character_id) do
-    solar_system_source_id_int = String.to_integer(solar_system_source_id)
-    solar_system_target_id_int = String.to_integer(solar_system_target_id)
-
     map_id
     |> WandererApp.Map.Server.add_connection(%{
-      solar_system_source_id: solar_system_source_id_int,
-      solar_system_target_id: solar_system_target_id_int,
+      solar_system_source_id: solar_system_source_id |> String.to_integer(),
+      solar_system_target_id: solar_system_target_id |> String.to_integer(),
       character_id: main_character_id
     })
 
@@ -66,8 +63,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       character_id: main_character_id,
       user_id: current_user_id,
       map_id: map_id,
-      solar_system_source_id: solar_system_source_id_int,
-      solar_system_target_id: solar_system_target_id_int
+      solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+      solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
     })
 
     {:noreply, socket}
@@ -203,15 +200,12 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         _ -> nil
       end
 
-    solar_system_source_id_int = String.to_integer(solar_system_source_id)
-    solar_system_target_id_int = String.to_integer(solar_system_target_id)
-
     WandererApp.User.ActivityTracker.track_map_event(:map_connection_updated, %{
       character_id: main_character_id,
       user_id: current_user_id,
       map_id: map_id,
-      solar_system_source_id: solar_system_source_id_int,
-      solar_system_target_id: solar_system_target_id_int,
+      solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+      solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer(),
       key: key_atom,
       value: value
     })
@@ -219,8 +213,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     apply(WandererApp.Map.Server, method_atom, [
       map_id,
       %{
-        solar_system_source_id: solar_system_source_id_int,
-        solar_system_target_id: solar_system_target_id_int
+        solar_system_source_id: "#{solar_system_source_id}" |> String.to_integer(),
+        solar_system_target_id: "#{solar_system_target_id}" |> String.to_integer()
       }
       |> Map.put_new(key_atom, value)
     ])
@@ -274,8 +268,8 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   defp get_connection_info(map_id, from, to) do
     map_id
     |> WandererApp.Map.Server.get_connection_info(%{
-      solar_system_source_id: String.to_integer(from),
-      solar_system_target_id: String.to_integer(to)
+      solar_system_source_id: "#{from}" |> String.to_integer(),
+      solar_system_target_id: "#{to}" |> String.to_integer()
     })
     |> case do
       {:ok, info} ->

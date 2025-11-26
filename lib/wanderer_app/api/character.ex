@@ -69,6 +69,11 @@ defmodule WandererApp.Api.Character do
       filter(expr(user_id == ^arg(:user_id) and deleted == false))
     end
 
+    read :available_by_map do
+      argument(:map_id, :uuid, allow_nil?: false)
+      filter(expr(user_id == ^arg(:user_id) and deleted == false))
+    end
+
     read :last_active do
       argument(:from, :utc_datetime, allow_nil?: false)
 
@@ -95,7 +100,6 @@ defmodule WandererApp.Api.Character do
 
     update :mark_as_deleted do
       accept([])
-      require_atomic? false
 
       change(atomic_update(:deleted, true))
       change(atomic_update(:user_id, nil))
@@ -103,7 +107,6 @@ defmodule WandererApp.Api.Character do
 
     update :update_online do
       accept([:online])
-      require_atomic? false
     end
 
     update :update_location do

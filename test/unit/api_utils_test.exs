@@ -1,10 +1,6 @@
 defmodule WandererAppWeb.Helpers.APIUtilsTest do
   use WandererApp.DataCase, async: false
 
-  import Mox
-
-  setup :verify_on_exit!
-
   alias WandererAppWeb.Helpers.APIUtils
   alias Phoenix.ConnTest
 

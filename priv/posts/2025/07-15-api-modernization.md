@@ -81,24 +81,6 @@ You can find or generate your map's API key in the map settings within the Wande
 **Session Authentication:**
 Web clients can also use session-based authentication for interactive use, maintaining compatibility with existing browser-based integrations.
 
-### Server Configuration (Community Edition)
-
-If you're running Wanderer Community Edition (CE), ensure the following environment variables are configured:
-
-**Required for API access:**
-```bash
-WANDERER_PUBLIC_API_DISABLED=false  # Enable public API (default: false)
-```
-
-**Optional features:**
-```bash
-WANDERER_SSE_ENABLED=true           # Enable Server-Sent Events (default: false)
-WANDERER_WEBHOOKS_ENABLED=true      # Enable webhook management (default: false)
-WANDERER_CHARACTER_API_DISABLED=false  # Enable character API (default: true)
-```
-
-Add these to your `.env` file or Docker environment configuration and restart Wanderer.
-
 ## JSON:API Features
 
 ### Resource Relationships
@@ -161,7 +143,7 @@ GET /api/v1/user_activities?include=character&sort=-inserted_at&page[limit]=15&p
 The API v1 provides access to over 25 resources through the Ash Framework. Here are the primary resources:
 
 ### Core Resources
-- **Maps** (`/api/v1/maps/:slug`) - Map management with create, read, update, and delete operations (accessed by slug with map-specific API key; no listing endpoint)
+- **Maps** (`/api/v1/maps`) - Map management with full CRUD operations
 - **Access Lists** (`/api/v1/access_lists`) - ACL management and permissions with full CRUD operations
 - **Access List Members** (`/api/v1/access_list_members`) - ACL member management with full CRUD operations
 - **Map Access Lists** (`/api/v1/map_access_lists`) - Map-ACL associations with full CRUD operations

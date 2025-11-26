@@ -29,11 +29,7 @@ defmodule WandererApp.Api.MapTransaction do
       :amount
     ]
 
-    defaults [:create, :read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:create, :read, :update, :destroy]
 
     read :by_map do
       argument(:map_id, :string, allow_nil?: false)

@@ -12,16 +12,11 @@ defmodule WandererAppWeb.ApiSpecV1 do
     # Get the base spec from the original
     base_spec = WandererAppWeb.ApiSpec.spec()
 
-    # Get v1 spec
+    # Get v1 spec 
     v1_spec = WandererAppWeb.OpenApiV1Spec.spec()
 
-    # Tag legacy paths and v1 paths appropriately
-    tagged_legacy_paths = tag_paths(base_spec.paths || %{}, "Legacy API")
-    # v1 paths already have tags from AshJsonApi, keep them as-is
-    v1_paths = v1_spec.paths || %{}
-
     # Merge the specs
-    merged_paths = Map.merge(tagged_legacy_paths, v1_paths)
+    merged_paths = Map.merge(base_spec.paths || %{}, v1_spec.paths || %{})
 
     # Merge components
     merged_components = %Components{
@@ -89,53 +84,11 @@ defmodule WandererAppWeb.ApiSpecV1 do
     # Get tags from v1 spec if available
     spec_tags = Map.get(v1_spec, :tags, [])
 
-    base_tags ++ spec_tags
+    # Add custom v1 tags
+    v1_label_tags = [
+      %{name: "v1 JSON:API", description: "JSON:API compliant endpoints with advanced querying"}
+    ]
+
+    base_tags ++ v1_label_tags ++ spec_tags
   end
-
-  # Tag all operations in paths with the given tag
-  defp tag_paths(paths, tag) when is_map(paths) do
-    Map.new(paths, fn {path, path_item} ->
-      {path, tag_path_item(path_item, tag)}
-    end)
-  end
-
-  # Handle OpenApiSpex.PathItem structs
-  defp tag_path_item(%OpenApiSpex.PathItem{} = path_item, tag) do
-    path_item
-    |> maybe_tag_operation(:get, tag)
-    |> maybe_tag_operation(:put, tag)
-    |> maybe_tag_operation(:post, tag)
-    |> maybe_tag_operation(:delete, tag)
-    |> maybe_tag_operation(:patch, tag)
-    |> maybe_tag_operation(:options, tag)
-    |> maybe_tag_operation(:head, tag)
-  end
-
-  # Handle plain maps (from AshJsonApi)
-  defp tag_path_item(path_item, tag) when is_map(path_item) do
-    Map.new(path_item, fn {method, operation} ->
-      {method, add_tag_to_operation(operation, tag)}
-    end)
-  end
-
-  defp tag_path_item(path_item, _tag), do: path_item
-
-  defp maybe_tag_operation(path_item, method, tag) do
-    case Map.get(path_item, method) do
-      nil -> path_item
-      operation -> Map.put(path_item, method, add_tag_to_operation(operation, tag))
-    end
-  end
-
-  defp add_tag_to_operation(%OpenApiSpex.Operation{} = operation, tag) do
-    %{operation | tags: [tag | List.wrap(operation.tags)]}
-  end
-
-  defp add_tag_to_operation(%{} = operation, tag) do
-    Map.update(operation, :tags, [tag], fn existing_tags ->
-      [tag | List.wrap(existing_tags)]
-    end)
-  end
-
-  defp add_tag_to_operation(operation, _tag), do: operation
 end

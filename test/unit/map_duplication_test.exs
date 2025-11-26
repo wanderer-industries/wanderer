@@ -1,5 +1,5 @@
 defmodule WandererApp.MapDuplicationTest do
-  use WandererAppWeb.ConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   alias WandererApp.ExternalEvents.Event
 

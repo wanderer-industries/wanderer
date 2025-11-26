@@ -24,11 +24,7 @@ defmodule WandererApp.Api.MapSolarSystemJumps do
       :to_solar_system_id
     ]
 
-    defaults [:read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:read, :destroy, :update]
 
     create :create do
       primary? true

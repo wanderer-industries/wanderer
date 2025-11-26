@@ -16,7 +16,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
         socket
         |> MapEventHandler.push_map_event("system_comment_added", %{
           solarSystemId: solar_system_id,
-          comment: comment |> map_system_comment(solar_system_id)
+          comment: comment |> map_system_comment()
         })
 
   def handle_server_event(
@@ -54,7 +54,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
       when not is_nil(main_character_id) do
     system =
       WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id
+        solar_system_id: solar_system_id |> String.to_integer()
       })
 
     comments_count =
@@ -106,15 +106,18 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           socket
       ) do
     WandererApp.Map.find_system_by_location(map_id, %{
-      solar_system_id: solar_system_id
+      solar_system_id: solar_system_id |> String.to_integer()
     })
     |> case do
-      %{id: system_id} = system when not is_nil(system_id) ->
+      %{id: system_id} when not is_nil(system_id) ->
         {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system_id)
 
-        {:reply,
-         %{comments: comments |> Enum.map(fn c -> map_system_comment(c, solar_system_id) end)},
-         socket}
+        comments =
+          comments
+          |> Enum.map(fn c -> c |> Ash.load!([:character, :system]) end)
+          |> Enum.map(&map_system_comment/1)
+
+        {:reply, %{comments: comments}, socket}
 
       _ ->
         {:reply, %{comments: []}, socket}
@@ -164,26 +167,6 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
       id: id,
       characterEveId: character.eve_id,
       solarSystemId: system.solar_system_id,
-      text: text,
-      updated_at: updated_at
-    }
-  end
-
-  def map_system_comment(nil, _solar_system_id), do: nil
-
-  def map_system_comment(
-        %{
-          id: id,
-          character: character,
-          text: text,
-          updated_at: updated_at
-        } = _comment,
-        solar_system_id
-      ) do
-    %{
-      id: id,
-      characterEveId: character.eve_id,
-      solarSystemId: solar_system_id,
       text: text,
       updated_at: updated_at
     }
