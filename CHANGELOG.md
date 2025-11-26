@@ -2,6 +2,27 @@
 
 <!-- changelog -->
 
+## [v1.88.1](https://github.com/wanderer-industries/wanderer/compare/v1.88.0...v1.88.1) (2025-11-26)
+
+
+
+
+### Bug Fixes:
+
+* sse enable checkbox, and kills ticker
+
+* apiv1 token auth and structure fixes
+
+* removed ipv6 distribution env settings
+
+* tests: updated tests
+
+* tests: updated tests
+
+* clean up id generation
+
+* resolve issue with async event processing
+
 ## [v1.88.0](https://github.com/wanderer-industries/wanderer/compare/v1.87.0...v1.88.0) (2025-11-25)
 
 
