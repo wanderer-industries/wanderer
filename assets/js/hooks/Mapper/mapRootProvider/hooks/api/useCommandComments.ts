@@ -12,7 +12,7 @@ export const useCommandComments = () => {
   }, []);
 
   const removeComment = useCallback((data: CommandCommentRemoved) => {
-    ref.current.removeComment(data.solarSystemId.toString(), data.commentId);
+    ref.current.removeComment(data.solarSystemId, data.commentId);
   }, []);
 
   return { addComment, removeComment };

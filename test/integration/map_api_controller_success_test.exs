@@ -1,8 +1,10 @@
 defmodule WandererAppWeb.MapAPIControllerSuccessTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.IntegrationConnCase, async: false
 
   import Mox
   import WandererAppWeb.Factory
+
+  setup :verify_on_exit!
 
   describe "map duplication API operations" do
     setup do
@@ -16,6 +18,9 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
           name: "Source Map",
           description: "Original map for duplication testing"
         })
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       # Set up the connection with proper authentication for map API
       conn =
@@ -123,7 +128,11 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
     test "DUPLICATE: fails with missing required name parameter", %{conn: _conn} do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      unique_key = "test-api-key-#{System.unique_integer([:positive])}"
+      source_map = insert(:map, %{owner_id: character.id, public_api_key: unique_key})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       invalid_params = %{
         "description" => "Missing required name field"
@@ -131,7 +140,7 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
 
       conn =
         build_conn()
-        |> put_req_header("authorization", "Bearer test-api-key")
+        |> put_req_header("authorization", "Bearer #{unique_key}")
         |> assign(:current_character, character)
         |> assign(:current_user, user)
         |> post(~p"/api/maps/#{source_map.id}/duplicate", invalid_params)
@@ -165,7 +174,11 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
     test "DUPLICATE: fails with invalid boolean parameters", %{conn: _conn} do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      unique_key = "test-api-key-#{System.unique_integer([:positive])}"
+      source_map = insert(:map, %{owner_id: character.id, public_api_key: unique_key})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       invalid_params = %{
         "name" => "Invalid Boolean Test",
@@ -176,7 +189,7 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
 
       conn =
         build_conn()
-        |> put_req_header("authorization", "Bearer test-api-key")
+        |> put_req_header("authorization", "Bearer #{unique_key}")
         |> assign(:current_character, character)
         |> assign(:current_user, user)
         |> post(~p"/api/maps/#{source_map.id}/duplicate", invalid_params)
@@ -187,7 +200,11 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
     test "DUPLICATE: handles very long map names", %{conn: _conn} do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      unique_key = "test-api-key-#{System.unique_integer([:positive])}"
+      source_map = insert(:map, %{owner_id: character.id, public_api_key: unique_key})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       # Very long name
       long_name = String.duplicate("a", 300)
@@ -198,7 +215,7 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
 
       conn =
         build_conn()
-        |> put_req_header("authorization", "Bearer test-api-key")
+        |> put_req_header("authorization", "Bearer #{unique_key}")
         |> assign(:current_character, character)
         |> assign(:current_user, user)
         |> post(~p"/api/maps/#{source_map.id}/duplicate", params)
@@ -225,7 +242,11 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
     test "DUPLICATE: succeeds when user has proper API key" do
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
-      source_map = insert(:map, %{owner_id: character.id, public_api_key: "test-api-key"})
+      unique_key = "test-api-key-#{System.unique_integer([:positive])}"
+      source_map = insert(:map, %{owner_id: character.id, public_api_key: unique_key})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(source_map.id)
 
       params = %{
         "name" => "Authorized Copy"
@@ -233,7 +254,7 @@ defmodule WandererAppWeb.MapAPIControllerSuccessTest do
 
       conn =
         build_conn()
-        |> put_req_header("authorization", "Bearer test-api-key")
+        |> put_req_header("authorization", "Bearer #{unique_key}")
         |> assign(:current_character, character)
         |> assign(:current_user, user)
         |> post(~p"/api/maps/#{source_map.id}/duplicate", params)

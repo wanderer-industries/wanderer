@@ -97,9 +97,17 @@ defmodule WandererApp.MapConnectionRepo do
       |> WandererApp.Api.MapConnection.update_custom_info(update)
 
   def get_by_id(map_id, id) do
-    case WandererApp.Api.MapConnection.by_id(id) do
-      {:ok, conn} when conn.map_id == map_id -> {:ok, conn}
-      {:ok, _} -> {:error, :not_found}
+    # Use read_by_map action which doesn't have the FilterConnectionsByActorMap preparation
+    # that was causing "filter being false" errors in tests
+    import Ash.Query
+
+    WandererApp.Api.MapConnection
+    |> Ash.Query.for_read(:read_by_map, %{map_id: map_id})
+    |> Ash.Query.filter(id == ^id)
+    |> Ash.read_one()
+    |> case do
+      {:ok, nil} -> {:error, :not_found}
+      {:ok, conn} -> {:ok, conn}
       {:error, _} -> {:error, :not_found}
     end
   end

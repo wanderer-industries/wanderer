@@ -176,103 +176,30 @@ defmodule WandererApp.TestHelpers do
 
   @doc """
   Ensures a map server is started for testing.
+  This function has been simplified to use the standard map startup flow.
+  For integration tests, use WandererApp.MapTestHelpers.ensure_map_started/1 instead.
   """
   def ensure_map_server_started(map_id) do
-    case WandererApp.Map.Server.map_pid(map_id) do
-      pid when is_pid(pid) ->
-        # Make sure existing server has database access
-        WandererApp.DataCase.allow_database_access(pid)
-        # Also allow database access for any spawned processes
-        allow_map_server_children_database_access(pid)
-        # Ensure global Mox mode is maintained
-        if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
-        :ok
+    # Use the standard map startup flow through Map.Manager
+    :ok = WandererApp.Map.Manager.start_map(map_id)
 
-      nil ->
-        # Ensure global Mox mode before starting map server
-        if Code.ensure_loaded?(Mox), do: Mox.set_mox_global()
-        # Start the map server directly for tests
-        {:ok, pid} = start_map_server_directly(map_id)
-        # Grant database access to the new map server process
-        WandererApp.DataCase.allow_database_access(pid)
-        # Allow database access for any spawned processes
-        allow_map_server_children_database_access(pid)
-        :ok
-    end
+    # Wait a bit for the map to fully initialize
+    :timer.sleep(500)
+
+    :ok
   end
 
-  defp start_map_server_directly(map_id) do
-    # Use the same approach as MapManager.start_map_server/1
-    case DynamicSupervisor.start_child(
-           {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-           {WandererApp.Map.ServerSupervisor, map_id: map_id}
-         ) do
-      {:ok, pid} ->
-        # Allow database access for the supervisor and its children
-        WandererApp.DataCase.allow_genserver_database_access(pid)
+  @doc """
+  Ensures map server is started and has proper mock/database access.
+  Use this in tests that need to interact with map servers.
 
-        # Allow Mox access for the supervisor process if in test mode
-        WandererApp.Test.MockAllowance.setup_genserver_mocks(pid)
-
-        # Also get the actual map server pid and allow access
-        case WandererApp.Map.Server.map_pid(map_id) do
-          server_pid when is_pid(server_pid) ->
-            WandererApp.DataCase.allow_genserver_database_access(server_pid)
-
-            # Allow Mox access for the map server process if in test mode
-            WandererApp.Test.MockAllowance.setup_genserver_mocks(server_pid)
-
-          _ ->
-            :ok
-        end
-
-        {:ok, pid}
-
-      {:error, {:already_started, pid}} ->
-        WandererApp.DataCase.allow_database_access(pid)
-        {:ok, pid}
-
-      {:error, :max_children} ->
-        # If we hit max children, wait a bit and retry
-        :timer.sleep(100)
-        start_map_server_directly(map_id)
-
-      error ->
-        error
-    end
-  end
-
-  defp allow_map_server_children_database_access(map_server_pid) do
-    # Allow database access for all children processes
-    # This is important for MapEventRelay and other spawned processes
-
-    # Wait a bit for children to spawn
-    :timer.sleep(100)
-
-    # Get all linked processes
-    case Process.info(map_server_pid, :links) do
-      {:links, linked_pids} ->
-        Enum.each(linked_pids, fn linked_pid ->
-          if is_pid(linked_pid) and Process.alive?(linked_pid) do
-            WandererApp.DataCase.allow_database_access(linked_pid)
-
-            # Also check for their children
-            case Process.info(linked_pid, :links) do
-              {:links, sub_links} ->
-                Enum.each(sub_links, fn sub_pid ->
-                  if is_pid(sub_pid) and Process.alive?(sub_pid) and sub_pid != map_server_pid do
-                    WandererApp.DataCase.allow_database_access(sub_pid)
-                  end
-                end)
-
-              _ ->
-                :ok
-            end
-          end
-        end)
-
-      _ ->
-        :ok
-    end
+  Note: Map servers started through MapPoolSupervisor automatically get
+  database and mock access via the DataCase setup. This function is here
+  for compatibility and will ensure the server is started.
+  """
+  def ensure_map_server_with_access(map_id, _owner_pid \\ self()) do
+    # Start the server - it will automatically get access through MapPoolSupervisor
+    ensure_map_server_started(map_id)
+    :ok
   end
 end

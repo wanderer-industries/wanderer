@@ -35,21 +35,22 @@ defmodule WandererApp.Map.Operations.Systems do
 
   # Private helper for batch upsert
   defp create_system_batch(%{map_id: map_id, user_id: user_id, char_id: char_id}, params) do
-    {:ok, solar_system_id} = fetch_system_id(params)
-    update_existing = fetch_update_existing(params, false)
+    with {:ok, solar_system_id} <- fetch_system_id(params) do
+      update_existing = fetch_update_existing(params, false)
 
-    map_id
-    |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
-    |> case do
-      {:ok, _location} ->
-        do_create_system(map_id, user_id, char_id, params)
+      map_id
+      |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
+      |> case do
+        {:ok, _location} ->
+          do_create_system(map_id, user_id, char_id, params)
 
-      {:error, :already_exists} ->
-        if update_existing do
-          do_update_system(map_id, user_id, char_id, solar_system_id, params)
-        else
-          :ok
-        end
+        {:error, :already_exists} ->
+          if update_existing do
+            do_update_system(map_id, user_id, char_id, solar_system_id, params)
+          else
+            :ok
+          end
+      end
     end
   end
 
@@ -106,8 +107,8 @@ defmodule WandererApp.Map.Operations.Systems do
         Logger.warning("[update_system] Expected error: #{inspect(reason)}")
         {:error, :expected_error}
 
-      _ ->
-        Logger.error("[update_system] Unexpected error")
+      error ->
+        Logger.error("[update_system] Unexpected error: #{inspect(error)}")
         {:error, :unexpected_error}
     end
   end
@@ -184,6 +185,8 @@ defmodule WandererApp.Map.Operations.Systems do
   defp fetch_update_existing(_, default), do: default
 
   defp parse_int(val, _field) when is_integer(val), do: {:ok, val}
+
+  defp parse_int(val, _field) when is_float(val), do: {:ok, trunc(val)}
 
   defp parse_int(val, field) when is_binary(val) do
     case Integer.parse(val) do
@@ -268,12 +271,9 @@ defmodule WandererApp.Map.Operations.Systems do
         })
 
       "custom_name" ->
-        {:ok, solar_system_info} =
-          WandererApp.CachedInfo.get_system_static_info(system_id)
-
-        Server.update_system_name(map_id, %{
+        Server.update_system_custom_name(map_id, %{
           solar_system_id: system_id,
-          name: val || solar_system_info.solar_system_name
+          custom_name: val
         })
 
       "temporary_name" ->

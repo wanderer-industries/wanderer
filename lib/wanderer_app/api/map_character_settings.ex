@@ -81,12 +81,6 @@ defmodule WandererApp.Api.MapCharacterSettings do
         :character_id,
         :tracked
       ]
-
-      argument :map_id, :uuid, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
-
-      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
-      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
     read :by_map_filtered do
@@ -145,8 +139,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :track do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
+      require_atomic? false
 
       # Load the record first
       load do
@@ -159,8 +152,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :untrack do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
+      require_atomic? false
 
       # Load the record first
       load do
@@ -173,8 +165,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :follow do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
+      require_atomic? false
 
       # Load the record first
       load do
@@ -187,8 +178,7 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     update :unfollow do
       accept [:map_id, :character_id]
-      argument :map_id, :string, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
+      require_atomic? false
 
       # Load the record first
       load do

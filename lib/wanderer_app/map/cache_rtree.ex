@@ -348,9 +348,9 @@ defmodule WandererApp.Map.CacheRTree do
     [{x1_min, x1_max}, {y1_min, y1_max}] = box1
     [{x2_min, x2_max}, {y2_min, y2_max}] = box2
 
-    # Boxes intersect if they overlap on both axes
-    x_overlap = x1_min <= x2_max and x2_min <= x1_max
-    y_overlap = y1_min <= y2_max and y2_min <= y1_max
+    # Boxes intersect if they overlap on both axes (strict intersection - not just touching)
+    x_overlap = x1_min < x2_max and x2_min < x1_max
+    y_overlap = y1_min < y2_max and y2_min < y1_max
 
     x_overlap and y_overlap
   end

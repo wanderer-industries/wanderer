@@ -61,7 +61,11 @@ defmodule WandererApp.Api.MapAccessList do
       :access_list_id
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)

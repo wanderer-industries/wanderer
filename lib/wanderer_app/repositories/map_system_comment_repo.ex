@@ -4,10 +4,10 @@ defmodule WandererApp.MapSystemCommentRepo do
   require Logger
 
   def get_by_id(comment_id),
-    do: WandererApp.Api.MapSystemComment.by_id!(comment_id) |> Ash.load([:system])
+    do: WandererApp.Api.MapSystemComment.by_id(comment_id)
 
   def get_by_system(system_id),
-    do: WandererApp.Api.MapSystemComment.by_system_id(system_id)
+    do: WandererApp.Api.MapSystemComment.by_system_id(system_id, load: [:character])
 
   def create(comment), do: comment |> WandererApp.Api.MapSystemComment.create()
   def create!(comment), do: comment |> WandererApp.Api.MapSystemComment.create!()

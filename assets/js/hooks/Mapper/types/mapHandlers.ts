@@ -131,7 +131,7 @@ export type CommandLinkSignatureToSystem = {
 };
 export type CommandLinkSignaturesUpdated = number;
 export type CommandCommentAdd = {
-  solarSystemId: string;
+  solarSystemId: number;
   comment: CommentType;
 };
 export type CommandCommentRemoved = {

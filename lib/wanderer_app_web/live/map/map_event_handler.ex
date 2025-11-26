@@ -306,13 +306,13 @@ defmodule WandererAppWeb.MapEventHandler do
         } = socket,
         type,
         body
-      ) do
-    socket
-    |> Phoenix.LiveView.Utils.push_event("map_event", %{
-      type: type,
-      body: body
-    })
-  end
+      ),
+      do:
+        socket
+        |> Phoenix.LiveView.Utils.push_event("map_event", %{
+          type: type,
+          body: body
+        })
 
   def push_map_event(socket, _type, _body), do: socket
 

@@ -93,6 +93,8 @@ defmodule WandererApp.CachedInfo do
     end
   end
 
+  def get_system_static_info(nil), do: {:ok, nil}
+
   def get_system_static_info(solar_system_id) do
     {:ok, solar_system_id} = APIUtils.parse_int(solar_system_id)
 

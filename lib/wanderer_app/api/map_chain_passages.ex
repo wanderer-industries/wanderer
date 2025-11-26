@@ -27,7 +27,11 @@ defmodule WandererApp.Api.MapChainPassages do
       :solar_system_target_id
     ]
 
-    defaults [:create, :read, :update, :destroy]
+    defaults [:create, :read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     create :new do
       accept [
@@ -40,12 +44,6 @@ defmodule WandererApp.Api.MapChainPassages do
       ]
 
       primary?(true)
-
-      argument :map_id, :uuid, allow_nil?: false
-      argument :character_id, :uuid, allow_nil?: false
-
-      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
-      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
     action :by_map_id, {:array, :struct} do

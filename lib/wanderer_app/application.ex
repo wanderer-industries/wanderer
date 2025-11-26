@@ -153,13 +153,16 @@ defmodule WandererApp.Application do
     :ok
   end
 
-  defp maybe_start_corp_wallet_tracker(true),
-    do: [
-      WandererApp.StartCorpWalletTrackerTask
-    ]
+  defp maybe_start_corp_wallet_tracker(true) do
+    # Don't start corp wallet tracker in test environment
+    if Application.get_env(:wanderer_app, :environment) == :test do
+      []
+    else
+      [WandererApp.StartCorpWalletTrackerTask]
+    end
+  end
 
-  defp maybe_start_corp_wallet_tracker(_),
-    do: []
+  defp maybe_start_corp_wallet_tracker(_), do: []
 
   defp maybe_start_kills_services do
     # Don't start kills services in test environment

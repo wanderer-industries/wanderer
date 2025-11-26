@@ -108,6 +108,10 @@ defmodule WandererAppWeb.Factory do
     create_map_transaction(map_id, attrs)
   end
 
+  def insert(:solar_system, attrs) do
+    create_solar_system(attrs)
+  end
+
   def insert(resource_type, _attrs) do
     raise "Unknown factory resource type: #{resource_type}"
   end
@@ -801,5 +805,46 @@ defmodule WandererAppWeb.Factory do
 
     {:ok, webhook} = Ash.create(Api.MapWebhookSubscription, attrs)
     webhook
+  end
+
+  @doc """
+  Creates a test solar system (static EVE Online system data) with reasonable defaults.
+  """
+  def build_solar_system(attrs \\ %{}) do
+    unique_id = System.unique_integer([:positive])
+    solar_system_id = Map.get(attrs, :solar_system_id, 30_000_000 + rem(unique_id, 10_000))
+
+    default_attrs = %{
+      solar_system_id: solar_system_id,
+      solar_system_name: "System #{solar_system_id}",
+      solar_system_name_lc: "system #{solar_system_id}",
+      region_id: 10_000_000 + rem(unique_id, 1000),
+      region_name: "Test Region",
+      constellation_id: 20_000_000 + rem(unique_id, 1000),
+      constellation_name: "Test Constellation",
+      security: "0.5",
+      system_class: 0,
+      type_description: "HS",
+      class_title: "High Sec"
+    }
+
+    merged_attrs = Map.merge(default_attrs, attrs)
+
+    # Automatically compute solar_system_name_lc from solar_system_name if not provided
+    if Map.has_key?(attrs, :solar_system_name) and not Map.has_key?(attrs, :solar_system_name_lc) do
+      Map.put(merged_attrs, :solar_system_name_lc, String.downcase(merged_attrs.solar_system_name))
+    else
+      merged_attrs
+    end
+  end
+
+  def create_solar_system(attrs \\ %{}) do
+    attrs = build_solar_system(attrs)
+
+    # Use upsert to handle cases where the system might already exist
+    case Ash.create(Api.MapSolarSystem, attrs) do
+      {:ok, solar_system} -> solar_system
+      {:error, reason} -> raise "Failed to create solar system: #{inspect(reason)}"
+    end
   end
 end

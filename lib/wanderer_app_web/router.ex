@@ -201,8 +201,8 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckCharacterApiDisabled
   end
 
-  pipeline :api_websocket_events do
-    plug WandererAppWeb.Plugs.CheckWebsocketDisabled
+  pipeline :api_webhooks do
+    plug WandererAppWeb.Plugs.CheckWebhooksDisabled
   end
 
   pipeline :api_acl do
@@ -302,9 +302,9 @@ defmodule WandererAppWeb.Router do
     get "/tracked-characters", MapAPIController, :show_tracked_characters
   end
 
-  # WebSocket events and webhook management endpoints (disabled by default)
+  # Webhook management endpoints (requires WANDERER_WEBHOOKS_ENABLED=true)
   scope "/api/maps/:map_identifier", WandererAppWeb do
-    pipe_through [:api, :api_map, :api_websocket_events]
+    pipe_through [:api, :api_map, :api_webhooks]
 
     get "/events", MapEventsAPIController, :list_events
 
@@ -363,24 +363,6 @@ defmodule WandererAppWeb.Router do
   #
   scope "/api", WandererAppWeb do
     pipe_through [:api]
-
-    # Basic health check for load balancers (lightweight)
-    get "/health", Api.HealthController, :health
-
-    # Detailed health status for monitoring systems
-    get "/health/status", Api.HealthController, :status
-
-    # Readiness check for deployment validation
-    get "/health/ready", Api.HealthController, :ready
-
-    # Liveness check for container orchestration
-    get "/health/live", Api.HealthController, :live
-
-    # Metrics endpoint for monitoring systems
-    get "/health/metrics", Api.HealthController, :metrics
-
-    # Deep health check for comprehensive diagnostics
-    get "/health/deep", Api.HealthController, :deep
   end
 
   # scope "/api/licenses", WandererAppWeb do

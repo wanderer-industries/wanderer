@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.OpenAPIValidationTest do
-  use WandererAppWeb.ApiCase, async: true
+  use WandererAppWeb.ApiCase, async: false
 
   describe "OpenAPI Specification" do
     test "GET /api/openapi returns valid OpenAPI spec", %{conn: conn} do

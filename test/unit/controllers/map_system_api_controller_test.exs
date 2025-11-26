@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.MapSystemAPIControllerTest do
-  use WandererAppWeb.ConnCase
+  use WandererAppWeb.ConnCase, async: false
 
   alias WandererAppWeb.MapSystemAPIController
 
