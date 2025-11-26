@@ -8,8 +8,6 @@ defmodule WandererApp.Api.Map do
 
   alias Ash.Resource.Change.Builtins
 
-  require Logger
-
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
@@ -46,7 +44,6 @@ defmodule WandererApp.Api.Map do
   code_interface do
     define(:available, action: :available)
     define(:get_map_by_slug, action: :by_slug, args: [:slug])
-    define(:by_api_key, action: :by_api_key, args: [:api_key])
     define(:new, action: :new)
     define(:create, action: :create)
     define(:update, action: :update)
@@ -57,7 +54,6 @@ defmodule WandererApp.Api.Map do
     define(:mark_as_deleted, action: :mark_as_deleted)
     define(:update_api_key, action: :update_api_key)
     define(:toggle_webhooks, action: :toggle_webhooks)
-    define(:toggle_sse, action: :toggle_sse)
 
     define(:by_id,
       get_by: [:id],
@@ -94,34 +90,22 @@ defmodule WandererApp.Api.Map do
       filter expr(slug == ^arg(:slug))
     end
 
-    read :by_api_key do
-      get? true
-      argument :api_key, :string, allow_nil?: false
-
-      prepare WandererApp.Api.Preparations.SecureApiKeyLookup
-    end
-
     read :available do
       prepare WandererApp.Api.Preparations.FilterMapsByRoles
     end
 
     create :new do
-      accept [
-        :name,
-        :slug,
-        :description,
-        :scope,
-        :only_tracked_characters,
-        :owner_id,
-        :sse_enabled
-      ]
-
+      accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id]
       primary?(true)
+
+      argument :owner_id, :uuid, allow_nil?: false
       argument :create_default_acl, :boolean, allow_nil?: true
       argument :acls, {:array, :uuid}, allow_nil?: true
       argument :acls_text_input, :string, allow_nil?: true
       argument :scope_text_input, :string, allow_nil?: true
       argument :acls_empty_selection, :string, allow_nil?: true
+
+      change manage_relationship(:owner_id, :owner, on_lookup: :relate, on_no_match: nil)
       change manage_relationship(:acls, type: :append_and_remove)
       change WandererApp.Api.Changes.SlugifyName
     end
@@ -129,16 +113,7 @@ defmodule WandererApp.Api.Map do
     update :update do
       primary? true
       require_atomic? false
-
-      accept [
-        :name,
-        :slug,
-        :description,
-        :scope,
-        :only_tracked_characters,
-        :owner_id,
-        :sse_enabled
-      ]
+      accept [:name, :slug, :description, :scope, :only_tracked_characters, :owner_id]
 
       argument :owner_id_text_input, :string, allow_nil?: true
       argument :acls_text_input, :string, allow_nil?: true
@@ -153,9 +128,6 @@ defmodule WandererApp.Api.Map do
              )
 
       change WandererApp.Api.Changes.SlugifyName
-
-      # Validate subscription when enabling SSE
-      validate &validate_sse_subscription/2
     end
 
     update :update_acls do
@@ -170,46 +142,33 @@ defmodule WandererApp.Api.Map do
 
     update :assign_owner do
       accept [:owner_id]
-      require_atomic? false
     end
 
     update :update_hubs do
       accept [:hubs]
-      require_atomic? false
     end
 
     update :update_options do
       accept [:options]
-      require_atomic? false
     end
 
     update :mark_as_deleted do
       accept([])
-      require_atomic? false
 
       change(set_attribute(:deleted, true))
     end
 
     update :update_api_key do
       accept [:public_api_key]
-      require_atomic? false
     end
 
     update :toggle_webhooks do
       accept [:webhooks_enabled]
-      require_atomic? false
-    end
-
-    update :toggle_sse do
-      require_atomic? false
-      accept [:sse_enabled]
-
-      # Validate subscription when enabling SSE
-      validate &validate_sse_subscription/2
     end
 
     create :duplicate do
       accept [:name, :description, :scope, :only_tracked_characters]
+
       argument :source_map_id, :uuid, allow_nil?: false
       argument :copy_acls, :boolean, default: true
       argument :copy_user_settings, :boolean, default: true
@@ -353,19 +312,12 @@ defmodule WandererApp.Api.Map do
       public?(true)
     end
 
-    attribute :sse_enabled, :boolean do
-      default(false)
-      allow_nil?(false)
-      public?(true)
-    end
-
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
 
   identities do
     identity :unique_slug, [:slug]
-    identity :unique_public_api_key, [:public_api_key]
   end
 
   relationships do
@@ -390,51 +342,6 @@ defmodule WandererApp.Api.Map do
 
     has_many :transactions, WandererApp.Api.MapTransaction do
       public? false
-    end
-  end
-
-  # SSE Subscription Validation
-  #
-  # This validation ensures that SSE can only be enabled when:
-  # 1. SSE is being disabled (always allowed)
-  # 2. Map is being created (skip validation, will be checked on first update)
-  # 3. Community Edition mode (always allowed)
-  # 4. Enterprise mode with active subscription
-  defp validate_sse_subscription(changeset, _context) do
-    sse_enabled = Ash.Changeset.get_attribute(changeset, :sse_enabled)
-    map_id = changeset.data.id
-    subscriptions_enabled = WandererApp.Env.map_subscriptions_enabled?()
-
-    cond do
-      # Not enabling SSE - no validation needed
-      not sse_enabled ->
-        :ok
-
-      # Map creation (no ID yet) - skip validation
-      is_nil(map_id) ->
-        :ok
-
-      # Community Edition mode - always allow
-      not subscriptions_enabled ->
-        :ok
-
-      # Enterprise mode - check subscription
-      true ->
-        validate_active_subscription(map_id)
-    end
-  end
-
-  defp validate_active_subscription(map_id) do
-    case WandererApp.Map.is_subscription_active?(map_id) do
-      {:ok, true} ->
-        :ok
-
-      {:ok, false} ->
-        {:error, field: :sse_enabled, message: "Active subscription required to enable SSE"}
-
-      {:error, reason} ->
-        Logger.error("Error checking subscription status: #{inspect(reason)}")
-        {:error, field: :sse_enabled, message: "Unable to verify subscription status"}
     end
   end
 end

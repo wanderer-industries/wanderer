@@ -22,9 +22,6 @@ defmodule WandererApp.Test.IntegrationConfig do
     # Ensure PubSub server is started for integration tests
     ensure_pubsub_server()
 
-    # Ensure map supervisors are started for map-related integration tests
-    ensure_map_supervisors_started()
-
     :ok
   end
 
@@ -61,42 +58,6 @@ defmodule WandererApp.Test.IntegrationConfig do
   end
 
   @doc """
-  Ensures map supervisors are started for integration tests.
-
-  This starts both MapPoolSupervisor and Map.Manager which are
-  required for character location tracking and map management tests.
-
-  IMPORTANT: MapPoolSupervisor must be started BEFORE Map.Manager
-  because Map.Manager depends on the registries created by MapPoolSupervisor.
-  """
-  def ensure_map_supervisors_started do
-    # Start MapPoolSupervisor FIRST if not running
-    # This supervisor creates the required registries (:map_pool_registry, :unique_map_pool_registry)
-    # and starts MapPoolDynamicSupervisor
-    case Process.whereis(WandererApp.Map.MapPoolSupervisor) do
-      nil ->
-        {:ok, _} = WandererApp.Map.MapPoolSupervisor.start_link([])
-
-      _ ->
-        :ok
-    end
-
-    # Give the supervisor a moment to fully initialize its children
-    Process.sleep(100)
-
-    # Start Map.Manager AFTER MapPoolSupervisor
-    case GenServer.whereis(WandererApp.Map.Manager) do
-      nil ->
-        {:ok, _} = WandererApp.Map.Manager.start_link([])
-
-      _ ->
-        :ok
-    end
-
-    :ok
-  end
-
-  @doc """
   Cleans up integration test environment.
 
   This should be called after integration tests to clean up any
@@ -113,8 +74,6 @@ defmodule WandererApp.Test.IntegrationConfig do
     end
 
     # Note: PubSub cleanup is handled by Phoenix during test shutdown
-    # Note: Map supervisors are not cleaned up here as they may be shared
-    # across tests and should persist for the test session
 
     :ok
   end

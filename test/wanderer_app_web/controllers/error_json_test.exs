@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.ErrorJSONTest do
-  use WandererAppWeb.ConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   test "renders 404" do
     assert WandererAppWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}

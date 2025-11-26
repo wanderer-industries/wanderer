@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.CommonAPIControllerTest do
-  use WandererAppWeb.ApiCase, async: false
+  use WandererAppWeb.ApiCase, async: true
 
   describe "GET /api/common/system-static-info" do
     test "returns system static info for valid system ID", %{conn: conn} do

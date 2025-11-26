@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { PrimeIcons } from 'primereact/api';
 import { MarkdownEditor } from '@/hooks/Mapper/components/mapInterface/components/MarkdownEditor';
 import { useHotkey } from '@/hooks/Mapper/hooks';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import classes from './CommentsEditor.module.scss';
@@ -19,9 +19,7 @@ export const CommentsEditor = ({}: CommentsEditorProps) => {
     outCommand,
   } = useMapRootState();
 
-  const systemId = useMemo(() => {
-    return +selectedSystems[0];
-  }, [selectedSystems]);
+  const [systemId] = selectedSystems;
 
   const ref = useRef({ outCommand, systemId, textVal });
   ref.current = { outCommand, systemId, textVal };

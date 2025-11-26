@@ -51,15 +51,10 @@ defmodule WandererApp.Api.User do
       :hash
     ]
 
-    defaults [:create, :read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:create, :read, :update, :destroy]
 
     update :update_last_map do
       accept([:last_map_id])
-      require_atomic? false
     end
 
     update :update_balance do

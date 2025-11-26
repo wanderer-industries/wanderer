@@ -88,21 +88,20 @@ defmodule WandererApp.SecurityAudit.AsyncProcessor do
   def handle_cast({:log_event, audit_entry}, state) do
     # Add to buffer
     buffer = [audit_entry | state.buffer]
-    buf_len = length(buffer)
 
     # Update stats
     stats = Map.update!(state.stats, :events_processed, &(&1 + 1))
 
     # Check if we need to flush
     cond do
-      buf_len >= state.batch_size ->
+      length(buffer) >= state.batch_size ->
         # Flush immediately if batch size reached
         {:noreply, do_flush(%{state | buffer: buffer, stats: stats})}
 
-      buf_len >= @max_buffer_size ->
+      length(buffer) >= @max_buffer_size ->
         # Force flush if max buffer size reached
         Logger.warning("Security audit buffer overflow, forcing flush",
-          buffer_size: buf_len,
+          buffer_size: length(buffer),
           max_size: @max_buffer_size
         )
 
@@ -187,66 +186,23 @@ defmodule WandererApp.SecurityAudit.AsyncProcessor do
         # Clear buffer
         %{state | buffer: [], stats: stats}
 
-      {:partial, success_count, failed_events} ->
-        failed_count = length(failed_events)
-
-        Logger.warning(
-          "Partial flush: stored #{success_count}, failed #{failed_count} audit events",
-          success_count: success_count,
-          failed_count: failed_count,
-          buffer_size: length(state.buffer)
-        )
-
-        # Emit telemetry for monitoring
-        :telemetry.execute(
-          [:wanderer_app, :security_audit, :async_flush_partial],
-          %{success_count: success_count, failed_count: failed_count},
-          %{}
-        )
-
-        # Update stats - count partial flush as both success and error
-        stats =
-          state.stats
-          |> Map.update!(:batches_flushed, &(&1 + 1))
-          |> Map.update!(:errors, &(&1 + 1))
-          |> Map.put(:last_flush, DateTime.utc_now())
-
-        # Extract just the events from failed_events tuples
-        failed_only = Enum.map(failed_events, fn {event, _reason} -> event end)
-
-        remaining_buffer = Enum.reject(state.buffer, fn ev -> ev in failed_only end)
-
-        # Re-buffer failed events at the front, preserving newest-first ordering
-        # Reverse failed_only since flush reversed the buffer to oldest-first
-        new_buffer = Enum.reverse(failed_only) ++ remaining_buffer
-        buffer = handle_buffer_overflow(new_buffer, @max_buffer_size)
-
-        %{state | buffer: buffer, stats: stats}
-
-      {:error, failed_events} ->
-        failed_count = length(failed_events)
-
-        Logger.error("Failed to flush all #{failed_count} security audit events",
-          failed_count: failed_count,
-          buffer_size: length(state.buffer)
-        )
-
-        # Emit telemetry for monitoring
-        :telemetry.execute(
-          [:wanderer_app, :security_audit, :async_flush_failure],
-          %{count: 1, event_count: failed_count},
-          %{}
+      {:error, reason} ->
+        Logger.error("Failed to flush security audit events",
+          reason: inspect(reason),
+          event_count: length(events)
         )
 
         # Update error stats
         stats = Map.update!(state.stats, :errors, &(&1 + 1))
 
-        # Extract just the events from failed_events tuples
-        failed_only = Enum.map(failed_events, fn {event, _reason} -> event end)
-
-        # Since ALL events failed, the new buffer should only contain the failed events
-        # Reverse to maintain newest-first ordering (flush reversed to oldest-first)
-        buffer = handle_buffer_overflow(Enum.reverse(failed_only), @max_buffer_size)
+        # Implement backoff - keep events in buffer but don't grow indefinitely
+        buffer =
+          if length(state.buffer) > @max_buffer_size do
+            Logger.warning("Dropping oldest audit events due to repeated flush failures")
+            Enum.take(state.buffer, @max_buffer_size)
+          else
+            state.buffer
+          end
 
         %{state | buffer: buffer, stats: stats}
     end
@@ -257,100 +213,34 @@ defmodule WandererApp.SecurityAudit.AsyncProcessor do
     events
     # Ash bulk operations work better with smaller chunks
     |> Enum.chunk_every(50)
-    |> Enum.reduce({0, []}, fn chunk, {total_success, all_failed} ->
+    |> Enum.reduce_while({:ok, 0}, fn chunk, {:ok, count} ->
       case store_event_chunk(chunk) do
         {:ok, chunk_count} ->
-          {total_success + chunk_count, all_failed}
+          {:cont, {:ok, count + chunk_count}}
 
-        {:partial, chunk_count, failed_events} ->
-          {total_success + chunk_count, all_failed ++ failed_events}
-
-        {:error, failed_events} ->
-          {total_success, all_failed ++ failed_events}
-      end
-    end)
-    |> then(fn {success_count, failed_events_list} ->
-      # Derive the final return shape based on results
-      cond do
-        failed_events_list == [] ->
-          {:ok, success_count}
-
-        success_count == 0 ->
-          {:error, failed_events_list}
-
-        true ->
-          {:partial, success_count, failed_events_list}
+        {:error, _} = error ->
+          {:halt, error}
       end
     end)
   end
-
-  defp handle_buffer_overflow(buffer, max_size) when length(buffer) > max_size do
-    dropped = length(buffer) - max_size
-
-    Logger.warning(
-      "Dropping #{dropped} oldest audit events due to buffer overflow",
-      buffer_size: length(buffer),
-      max_size: max_size
-    )
-
-    # Emit telemetry for dropped events
-    :telemetry.execute(
-      [:wanderer_app, :security_audit, :events_dropped],
-      %{count: dropped},
-      %{}
-    )
-
-    # Keep the newest events (take from the front since buffer is newest-first)
-    Enum.take(buffer, max_size)
-  end
-
-  defp handle_buffer_overflow(buffer, _max_size), do: buffer
 
   defp store_event_chunk(events) do
-    # Process each event and partition results
-    {successes, failures} =
-      events
-      |> Enum.map(fn event ->
-        case SecurityAudit.do_store_audit_entry(event) do
-          :ok ->
-            {:ok, event}
-
-          {:error, reason} ->
-            Logger.error("Failed to store individual audit event",
-              error: inspect(reason),
-              event_type: Map.get(event, :event_type),
-              user_id: Map.get(event, :user_id)
-            )
-
-            {:error, {event, reason}}
-        end
-      end)
-      |> Enum.split_with(fn
-        {:ok, _} -> true
-        {:error, _} -> false
+    # Transform events to Ash attributes
+    records =
+      Enum.map(events, fn event ->
+        SecurityAudit.do_store_audit_entry(event)
       end)
 
-    successful_count = length(successes)
-    failed_count = length(failures)
+    # Count successful stores
+    successful =
+      Enum.count(records, fn
+        :ok -> true
+        _ -> false
+      end)
 
-    # Extract failed events with reasons
-    failed_events = Enum.map(failures, fn {:error, event_reason} -> event_reason end)
-
-    # Log if some events failed (telemetry will be emitted at flush level)
-    if failed_count > 0 do
-      Logger.debug("Chunk processing: #{failed_count} of #{length(events)} events failed")
-    end
-
-    # Return richer result shape
-    cond do
-      successful_count == 0 ->
-        {:error, failed_events}
-
-      failed_count > 0 ->
-        {:partial, successful_count, failed_events}
-
-      true ->
-        {:ok, successful_count}
-    end
+    {:ok, successful}
+  rescue
+    error ->
+      {:error, error}
   end
 end

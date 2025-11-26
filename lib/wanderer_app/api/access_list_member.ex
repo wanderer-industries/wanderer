@@ -53,11 +53,7 @@ defmodule WandererApp.Api.AccessListMember do
       :role
     ]
 
-    defaults [:create, :read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:create, :read, :update, :destroy]
 
     read :read_by_access_list do
       argument(:access_list_id, :string, allow_nil?: false)
@@ -71,14 +67,12 @@ defmodule WandererApp.Api.AccessListMember do
 
     update :block do
       accept([])
-      require_atomic? false
 
       change(set_attribute(:blocked, true))
     end
 
     update :unblock do
       accept([])
-      require_atomic? false
 
       change(set_attribute(:blocked, false))
     end

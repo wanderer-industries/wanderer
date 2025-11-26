@@ -21,7 +21,6 @@ defmodule WandererApp.Map.Server.Impl do
     :map_id,
     :rtree_name,
     map: nil,
-    acls: [],
     map_opts: []
   ]
 
@@ -45,12 +44,6 @@ defmodule WandererApp.Map.Server.Impl do
       }
       |> new()
 
-    # In test mode, give the test setup time to grant database access
-    # This is necessary for async tests where the sandbox needs to allow this process
-    if Mix.env() == :test do
-      Process.sleep(150)
-    end
-
     # Parallelize database queries for faster initialization
     start_time = System.monotonic_time(:millisecond)
 
@@ -58,14 +51,13 @@ defmodule WandererApp.Map.Server.Impl do
       Task.async(fn ->
         {:map,
          WandererApp.MapRepo.get(map_id, [
-           :owner
+           :owner,
+           :characters,
+           acls: [
+             :owner_id,
+             members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+           ]
          ])}
-      end),
-      Task.async(fn ->
-        {:acls, WandererApp.Api.MapAccessList.read_by_map(%{map_id: map_id})}
-      end),
-      Task.async(fn ->
-        {:characters, WandererApp.MapCharacterSettingsRepo.get_all_by_map(map_id)}
       end),
       Task.async(fn ->
         {:systems, WandererApp.MapSystemRepo.get_visible_by_map(map_id)}
@@ -100,18 +92,6 @@ defmodule WandererApp.Map.Server.Impl do
         _ -> nil
       end)
 
-    acls_result =
-      Enum.find_value(results, fn
-        {:acls, result} -> result
-        _ -> nil
-      end)
-
-    characters_result =
-      Enum.find_value(results, fn
-        {:characters, result} -> result
-        _ -> nil
-      end)
-
     systems_result =
       Enum.find_value(results, fn
         {:systems, result} -> result
@@ -132,16 +112,12 @@ defmodule WandererApp.Map.Server.Impl do
 
     # Process results
     with {:ok, map} <- map_result,
-         {:ok, acls} <- acls_result,
-         {:ok, characters} <- characters_result,
          {:ok, systems} <- systems_result,
          {:ok, connections} <- connections_result,
          {:ok, subscription_settings} <- subscription_result do
       initial_state
       |> init_map(
         map,
-        acls,
-        characters,
         subscription_settings,
         systems,
         connections
@@ -153,7 +129,7 @@ defmodule WandererApp.Map.Server.Impl do
     end
   end
 
-  def start_map(%__MODULE__{map: map, acls: acls, map_id: map_id} = _state) do
+  def start_map(%__MODULE__{map: map, map_id: map_id} = _state) do
     WandererApp.Cache.insert("map_#{map_id}:started", false)
 
     # Check if map was loaded successfully
@@ -163,7 +139,7 @@ defmodule WandererApp.Map.Server.Impl do
         {:error, :map_not_loaded}
 
       map ->
-        with :ok <- AclsImpl.track_acls(acls |> Enum.map(& &1.access_list_id)) do
+        with :ok <- AclsImpl.track_acls(map.acls |> Enum.map(& &1.id)) do
           @pubsub_client.subscribe(
             WandererApp.PubSub,
             "maps:#{map_id}"
@@ -243,7 +219,6 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_system_status(map_id, update), to: SystemsImpl
   defdelegate update_system_tag(map_id, update), to: SystemsImpl
   defdelegate update_system_temporary_name(map_id, update), to: SystemsImpl
-  defdelegate update_system_custom_name(map_id, update), to: SystemsImpl
   defdelegate update_system_locked(map_id, update), to: SystemsImpl
   defdelegate update_system_labels(map_id, update), to: SystemsImpl
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl
@@ -313,57 +288,12 @@ defmodule WandererApp.Map.Server.Impl do
         acc |> Map.put_new(connection_id, connection_start_time)
       end)
 
-    # Create map state with retry logic for test scenarios
-    create_map_state_with_retry(
-      %{
-        map_id: map_id,
-        systems_last_activity: systems_last_activity,
-        connections_eol_time: connections_eol_time,
-        connections_start_time: connections_start_time
-      },
-      3
-    )
-  end
-
-  # Helper to create map state with retry logic for async tests
-  defp create_map_state_with_retry(attrs, retries_left) when retries_left > 0 do
-    case WandererApp.Api.MapState.create(attrs) do
-      {:ok, map_state} = result ->
-        result
-
-      {:error, %Ash.Error.Invalid{errors: errors}} = error ->
-        # Check if it's a foreign key constraint error
-        has_fkey_error =
-          Enum.any?(errors, fn
-            %Ash.Error.Changes.InvalidAttribute{private_vars: private_vars} ->
-              Enum.any?(private_vars, fn
-                {:constraint_type, :foreign_key} -> true
-                _ -> false
-              end)
-
-            _ ->
-              false
-          end)
-
-        if has_fkey_error and retries_left > 1 do
-          # In test environments with async tests, the parent map might not be
-          # visible yet due to sandbox timing. Brief retry with exponential backoff.
-          sleep_time = (4 - retries_left) * 15 + 10
-          Process.sleep(sleep_time)
-          create_map_state_with_retry(attrs, retries_left - 1)
-        else
-          # Return error if not a foreign key issue or out of retries
-          error
-        end
-
-      error ->
-        error
-    end
-  end
-
-  defp create_map_state_with_retry(attrs, 0) do
-    # Final attempt without retry
-    WandererApp.Api.MapState.create(attrs)
+    WandererApp.Api.MapState.create(%{
+      map_id: map_id,
+      systems_last_activity: systems_last_activity,
+      connections_eol_time: connections_eol_time,
+      connections_start_time: connections_start_time
+    })
   end
 
   def handle_event({:update_characters, map_id} = event) do
@@ -550,9 +480,7 @@ defmodule WandererApp.Map.Server.Impl do
 
   defp init_map(
          state,
-         %{id: map_id} = initial_map,
-         acls,
-         characters,
+         %{id: map_id, characters: characters} = initial_map,
          subscription_settings,
          systems,
          connections
@@ -581,7 +509,7 @@ defmodule WandererApp.Map.Server.Impl do
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
-    %{state | map: map, acls: acls, map_opts: map_options(options)}
+    %{state | map: map, map_opts: map_options(options)}
   end
 
   def maybe_import_systems(

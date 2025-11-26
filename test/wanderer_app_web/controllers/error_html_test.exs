@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.ErrorHTMLTest do
-  use WandererAppWeb.ConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   # Bring render_to_string/4 for testing custom views
   import Phoenix.Template

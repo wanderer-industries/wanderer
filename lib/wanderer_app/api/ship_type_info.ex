@@ -49,11 +49,7 @@ defmodule WandererApp.Api.ShipTypeInfo do
       :volume
     ]
 
-    defaults [:read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:read, :destroy, :update]
 
     create :create do
       primary? true

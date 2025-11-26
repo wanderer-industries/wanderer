@@ -132,14 +132,9 @@ defmodule WandererApp.Maps do
     WandererApp.Cache.lookup!("map_characters-#{map_id}")
     |> case do
       nil ->
-        {:ok, acls} =
-          WandererApp.Api.MapAccessList.read_by_map(%{map_id: map_id},
-            load: [access_list: [:owner, :members]]
-          )
-
         map_acls =
-          acls
-          |> Enum.map(fn acl -> acl.access_list end)
+          map.acls
+          |> Enum.map(fn acl -> acl |> Ash.load!(:members) end)
 
         map_acl_owner_ids =
           map_acls
@@ -203,7 +198,10 @@ defmodule WandererApp.Maps do
       is_member_corp = to_string(c.corporation_id) in map_member_corporation_ids
       is_member_alliance = to_string(c.alliance_id) in map_member_alliance_ids
 
-      is_owner || is_acl_owner || is_member_eve || is_member_corp || is_member_alliance
+      has_access =
+        is_owner or is_acl_owner or is_member_eve or is_member_corp or is_member_alliance
+
+      has_access
     end)
   end
 
@@ -247,11 +245,11 @@ defmodule WandererApp.Maps do
                     members ->
                       members
                       |> Enum.any?(fn member ->
-                        (member.role == :blocked &&
+                        (member.role == :blocked and
                            member.eve_character_id in user_character_eve_ids) or
-                          (member.role == :blocked &&
+                          (member.role == :blocked and
                              member.eve_corporation_id in user_character_corporation_ids) or
-                          (member.role == :blocked &&
+                          (member.role == :blocked and
                              member.eve_alliance_id in user_character_alliance_ids)
                       end)
                   end
@@ -334,7 +332,9 @@ defmodule WandererApp.Maps do
   end
 
   def check_user_can_delete_map(map_slug, current_user) do
-    WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
+    map_slug
+    |> WandererApp.Api.Map.get_map_by_slug()
+    |> Ash.load([:owner, :acls, :user_permissions], actor: current_user)
     |> case do
       {:ok,
        %{

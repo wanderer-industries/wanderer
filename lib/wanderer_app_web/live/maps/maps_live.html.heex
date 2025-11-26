@@ -165,7 +165,6 @@
       field={f[:only_tracked_characters]}
       label="Allow only tracked characters"
     />
-    <.input type="checkbox" field={f[:sse_enabled]} label="Enable Server-Sent Events (SSE)" />
     <.input
       :if={@live_action == :create}
       type="checkbox"
@@ -539,24 +538,6 @@
                       <span class="p-button-label">Copy</span>
                     </.button>
                   </div>
-                </div>
-
-                <div class="border-t border-stone-700 mt-4 pt-4">
-                  <h3 class="text-md font-semibold mb-3">Server-Sent Events (SSE)</h3>
-                  <div class="flex items-center gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-primary"
-                        checked={@sse_enabled}
-                        phx-click="toggle-sse"
-                      />
-                      <span>Enable SSE for this map</span>
-                    </label>
-                  </div>
-                  <p class="text-sm text-stone-400 mt-2">
-                    When enabled, external clients can subscribe to real-time map events via SSE.
-                  </p>
                 </div>
               </div>
 

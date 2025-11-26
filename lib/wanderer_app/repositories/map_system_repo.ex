@@ -1,11 +1,8 @@
 defmodule WandererApp.MapSystemRepo do
   use WandererApp, :repository
 
-  alias WandererApp.Repositories.MapContextHelper
-
   def create(system) do
-    context = MapContextHelper.build_context(system)
-    WandererApp.Api.MapSystem.create(system, context)
+    system |> WandererApp.Api.MapSystem.create()
   end
 
   def upsert(system) do
@@ -13,15 +10,12 @@ defmodule WandererApp.MapSystemRepo do
   end
 
   def get_by_map_and_solar_system_id(map_id, solar_system_id) do
-    WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-      map_id: map_id,
-      solar_system_id: solar_system_id
-    })
+    WandererApp.Api.MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id)
     |> case do
       {:ok, system} ->
         {:ok, system}
 
-      _error ->
+      _ ->
         {:error, :not_found}
     end
   end
@@ -129,16 +123,10 @@ defmodule WandererApp.MapSystemRepo do
       system
       |> WandererApp.Api.MapSystem.update_description(update)
 
-  def update_locked(system, update) do
-    case WandererApp.Api.MapSystem.update_locked(system, update) do
-      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.StaleRecord{}]}} ->
-        WandererApp.Api.MapSystem.by_id!(system.id)
-        |> WandererApp.Api.MapSystem.update_locked(update)
-
-      {:ok, system} ->
-        {:ok, system}
-    end
-  end
+  def update_locked(system, update),
+    do:
+      system
+      |> WandererApp.Api.MapSystem.update_locked(update)
 
   def update_status(system, update),
     do:
@@ -153,11 +141,6 @@ defmodule WandererApp.MapSystemRepo do
   def update_temporary_name(system, update) do
     system
     |> WandererApp.Api.MapSystem.update_temporary_name(update)
-  end
-
-  def update_custom_name(system, update) do
-    system
-    |> WandererApp.Api.MapSystem.update_custom_name(update)
   end
 
   def update_labels(system, update),

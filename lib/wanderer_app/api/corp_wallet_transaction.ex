@@ -33,11 +33,7 @@ defmodule WandererApp.Api.CorpWalletTransaction do
       :ref_type
     ]
 
-    defaults [:create, :read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:create, :read, :update, :destroy]
 
     create :new do
       accept [

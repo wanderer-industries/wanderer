@@ -72,7 +72,7 @@ defmodule WandererApp.Map.Operations.Duplication do
     Logger.debug("Copying systems for map #{source_map.id}")
 
     # Get all systems from source map using Ash
-    case MapSystem.read_all_by_map(%{map_id: source_map.id}) do
+    case MapSystem |> Ash.Query.filter(map_id == ^source_map.id) |> Ash.read() do
       {:ok, source_systems} ->
         system_mapping = %{}
 
@@ -126,7 +126,7 @@ defmodule WandererApp.Map.Operations.Duplication do
   defp copy_connections(source_map, new_map, system_mapping) do
     Logger.debug("Copying connections for map #{source_map.id}")
 
-    case MapConnection.read_by_map(%{map_id: source_map.id}) do
+    case MapConnection |> Ash.Query.filter(map_id == ^source_map.id) |> Ash.read() do
       {:ok, source_connections} ->
         Enum.reduce_while(source_connections, {:ok, []}, fn source_connection,
                                                             {:ok, acc_connections} ->
@@ -222,7 +222,7 @@ defmodule WandererApp.Map.Operations.Duplication do
     source_system_ids = Map.keys(system_mapping)
 
     Enum.flat_map(source_system_ids, fn system_id ->
-      case MapSystemSignature.by_system_id_all(%{system_id: system_id}) do
+      case MapSystemSignature |> Ash.Query.filter(system_id == ^system_id) |> Ash.read() do
         {:ok, signatures} -> signatures
         {:error, _} -> []
       end
@@ -355,7 +355,7 @@ defmodule WandererApp.Map.Operations.Duplication do
   defp maybe_copy_user_settings(source_map, new_map, true) do
     Logger.debug("Copying user settings for map #{source_map.id}")
 
-    case MapCharacterSettings.read_by_map(%{map_id: source_map.id}) do
+    case MapCharacterSettings |> Ash.Query.filter(map_id == ^source_map.id) |> Ash.read() do
       {:ok, source_settings} ->
         Enum.reduce_while(source_settings, {:ok, []}, fn source_setting, {:ok, acc_settings} ->
           case copy_single_character_setting(source_setting, new_map.id) do

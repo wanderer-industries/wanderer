@@ -8,8 +8,10 @@ defmodule WandererAppWeb.AccessListMemberAPIControllerTest do
   setup :verify_on_exit!
 
   setup do
-    # Mocks are already in global mode from application startup
-    # No need to call Mox.set_mox_global() again
+    # Ensure we're in global mode and re-setup mocks
+    # This ensures all processes can access the mocks
+    Mox.set_mox_global()
+    WandererApp.Test.Mocks.setup_additional_expectations()
 
     :ok
   end

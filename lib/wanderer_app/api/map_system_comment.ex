@@ -59,6 +59,12 @@ defmodule WandererApp.Api.MapSystemComment do
         :character_id,
         :text
       ]
+
+      argument :system_id, :uuid, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
     read :by_system_id do

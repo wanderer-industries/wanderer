@@ -106,9 +106,6 @@ defmodule WandererApp.Map.PositionCalculator do
 
   defp get_start_index(n, "top_to_bottom"), do: div(n, 2) + n - 1
 
-  # Default to left_to_right when layout is nil
-  defp get_start_index(n, nil), do: div(n, 2)
-
   defp adjusted_coordinates(n, start_x, start_y, opts) when n > 1 do
     sorted_coords = sorted_edge_coordinates(n, opts)
 

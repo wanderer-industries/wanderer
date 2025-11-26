@@ -74,6 +74,8 @@ defmodule WandererAppWeb.Helpers.APIUtils do
   end
 
   @spec parse_int(binary() | integer()) :: {:ok, integer()} | {:error, String.t()}
+  def parse_int(nil), do: {:ok, nil}
+
   def parse_int(str) when is_binary(str) do
     Logger.debug(fn -> "Parsing integer from: #{inspect(str)}" end)
 

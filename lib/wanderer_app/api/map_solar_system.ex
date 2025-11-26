@@ -65,11 +65,7 @@ defmodule WandererApp.Api.MapSolarSystem do
       :sun_type_id
     ]
 
-    defaults [:read, :destroy]
-
-    update :update do
-      require_atomic? false
-    end
+    defaults [:read, :destroy, :update]
 
     create :create do
       primary? true

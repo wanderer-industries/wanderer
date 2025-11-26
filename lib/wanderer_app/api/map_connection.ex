@@ -4,8 +4,7 @@ defmodule WandererApp.Api.MapConnection do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource],
-    primary_read_warning?: false
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
@@ -74,56 +73,7 @@ defmodule WandererApp.Api.MapConnection do
       :custom_info
     ]
 
-    create :create do
-      primary? true
-
-      accept [
-        :map_id,
-        :solar_system_source,
-        :solar_system_target,
-        :type,
-        :ship_size_type,
-        :mass_status,
-        :time_status,
-        :wormhole_type,
-        :count_of_passage,
-        :locked,
-        :custom_info
-      ]
-
-      # Inject map_id from token
-      change WandererApp.Api.Changes.InjectMapFromActor
-    end
-
-    read :read do
-      primary? true
-
-      # Security: Filter to only connections from actor's map
-      prepare WandererApp.Api.Preparations.FilterConnectionsByActorMap
-    end
-
-    update :update do
-      primary? true
-
-      accept [
-        :solar_system_source,
-        :solar_system_target,
-        :type,
-        :ship_size_type,
-        :mass_status,
-        :time_status,
-        :wormhole_type,
-        :count_of_passage,
-        :locked,
-        :custom_info
-      ]
-
-      require_atomic? false
-    end
-
-    destroy :destroy do
-      primary? true
-    end
+    defaults [:create, :read, :update, :destroy]
 
     read :read_by_map do
       argument(:map_id, :string, allow_nil?: false)
@@ -160,37 +110,30 @@ defmodule WandererApp.Api.MapConnection do
 
     update :update_mass_status do
       accept [:mass_status]
-      require_atomic? false
     end
 
     update :update_time_status do
       accept [:time_status]
-      require_atomic? false
     end
 
     update :update_ship_size_type do
       accept [:ship_size_type]
-      require_atomic? false
     end
 
     update :update_locked do
       accept [:locked]
-      require_atomic? false
     end
 
     update :update_custom_info do
       accept [:custom_info]
-      require_atomic? false
     end
 
     update :update_type do
       accept [:type]
-      require_atomic? false
     end
 
     update :update_wormhole_type do
       accept [:wormhole_type]
-      require_atomic? false
     end
   end
 

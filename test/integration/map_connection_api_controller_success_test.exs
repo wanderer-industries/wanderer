@@ -1,29 +1,23 @@
 defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
-  use WandererAppWeb.IntegrationConnCase, async: false
+  use WandererAppWeb.ConnCase, async: true
 
   import Mox
-
-  setup :verify_on_exit!
   import WandererAppWeb.Factory
-  import WandererApp.MapTestHelpers
 
   setup :verify_on_exit!
 
   describe "successful CRUD operations for map connections" do
     setup do
-      # Setup DDRT (R-tree) mock stubs for system positioning
-      setup_ddrt_mocks()
-
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
 
-      # Create an active subscription for the map if subscriptions are enabled
-      create_active_subscription_for_map(map.id)
-
-      # Map server will be started in individual tests after data insertion
-      # Ensure it's stopped first to prevent state leakage from previous tests
-      ensure_map_stopped(map.id)
+      # Start the map server for this test map
+      # {:ok, _pid} =
+      #   DynamicSupervisor.start_child(
+      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
+      #   )
 
       # Create systems that connections can reference
       system1 =
@@ -86,11 +80,9 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 1
         })
 
-      # Allow time for connections to be created in database
-      Process.sleep(100)
-
-      # Start the map server to load the connections
-      ensure_map_started(map.id)
+      # Update the map cache with the connections we just created
+      WandererApp.Map.add_connection(map.id, connection1)
+      WandererApp.Map.add_connection(map.id, connection2)
 
       conn = get(conn, ~p"/api/maps/#{map.slug}/connections")
 
@@ -126,11 +118,8 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 0
         })
 
-      # Allow time for connection to be created in database
-      Process.sleep(100)
-
-      # Start the map server to load the connection
-      ensure_map_started(map.id)
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
 
       update_params = %{
         "mass_status" => 2
@@ -165,15 +154,12 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           ship_size_type: 2
         })
 
-      # Allow time for connection to be created in database
-      Process.sleep(100)
-
-      # Start the map server to load the connection
-      ensure_map_started(map.id)
+      # Update the map cache with the connection we just created
+      WandererApp.Map.add_connection(map.id, connection)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/connections/#{connection.id}")
 
-      # Response may be 204 (no content), 200 with data, or 404 (idempotent delete)
+      # Response may be 204 (no content) or 200 with data
       case conn.status do
         204 ->
           assert response(conn, 204)
@@ -182,26 +168,24 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
           assert %{"data" => _} = json_response(conn, 200)
 
         _ ->
-          # Accept other valid status codes (including 404 for idempotent delete)
-          assert conn.status in [200, 204, 404]
+          # Accept other valid status codes
+          assert conn.status in [200, 204]
       end
     end
   end
 
   describe "error handling for connections" do
     setup do
-      # Setup DDRT (R-tree) mock stubs for system positioning
-      setup_ddrt_mocks()
-
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
 
-      # Create an active subscription for the map if subscriptions are enabled
-      create_active_subscription_for_map(map.id)
-
-      # Start the map server using the new async manager pattern
-      ensure_map_started(map.id)
+      # Start the map server for this test map
+      # {:ok, _pid} =
+      #   DynamicSupervisor.start_child(
+      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
+      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
+      #   )
 
       conn =
         build_conn()
@@ -214,29 +198,7 @@ defmodule WandererAppWeb.MapConnectionAPIControllerSuccessTest do
         |> assign(:owner_character_id, character.eve_id)
         |> assign(:owner_user_id, user.id)
 
-      ensure_map_stopped(map.id)
-
-      # Seed static solar system data
-      insert(:solar_system, %{
-        solar_system_id: 30_000_142,
-        solar_system_name: "Jita",
-        security: "0.9"
-      })
-
-      insert(:solar_system, %{
-        solar_system_id: 30_000_144,
-        solar_system_name: "Perimeter",
-        security: "0.9"
-      })
-
-      insert(:solar_system, %{
-        solar_system_id: 31_000_005,
-        solar_system_name: "Thera",
-        system_class: 12,
-        security: "-0.9"
-      })
-
-      {:ok, conn: conn, map: map, user: user, character: character}
+      %{conn: conn, user: user, character: character, map: map}
     end
 
     test "CREATE: fails with missing required parameters", %{conn: conn, map: map} do

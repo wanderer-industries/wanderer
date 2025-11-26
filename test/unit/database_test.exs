@@ -1,10 +1,6 @@
 defmodule WandererApp.DatabaseTest do
   use WandererApp.DataCase, async: false
 
-  import Mox
-
-  setup :verify_on_exit!
-
   @moduletag :skip
 
   describe "database connectivity" do

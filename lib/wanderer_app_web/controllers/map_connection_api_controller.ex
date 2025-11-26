@@ -11,7 +11,7 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   require Logger
 
   alias OpenApiSpex.Schema
-  alias WandererApp.MapConnectionRepo
+  alias WandererApp.Map, as: MapData
   alias WandererApp.Map.Operations
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.ResponseSchemas
@@ -180,8 +180,9 @@ defmodule WandererAppWeb.MapConnectionAPIController do
 
   def index(%{assigns: %{map_id: map_id}} = conn, params) do
     with {:ok, src_filter} <- parse_optional(params, "solar_system_source"),
-         {:ok, tgt_filter} <- parse_optional(params, "solar_system_target"),
-         {:ok, conns} <- MapConnectionRepo.get_by_map(map_id) do
+         {:ok, tgt_filter} <- parse_optional(params, "solar_system_target") do
+      conns = MapData.list_connections!(map_id)
+
       conns =
         conns
         |> filter_by_source(src_filter)

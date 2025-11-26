@@ -232,11 +232,7 @@ defmodule WandererApp.Test.DatabaseAccessManager do
           []
       end
     rescue
-      # Catch any exceptions
       _ -> []
-    catch
-      # Catch exit signals when supervisor is shutting down
-      :exit, _ -> []
     end
   end
 
@@ -250,11 +246,7 @@ defmodule WandererApp.Test.DatabaseAccessManager do
           false
       end
     rescue
-      # Catch any exceptions
       _ -> false
-    catch
-      # Catch exit signals when process is shutting down
-      :exit, _ -> false
     end
   end
 end

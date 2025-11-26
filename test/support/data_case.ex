@@ -36,12 +36,13 @@ defmodule WandererApp.DataCase do
   setup tags do
     WandererApp.DataCase.setup_sandbox(tags)
 
-    # Set up mocks for this test process
-    WandererApp.Test.Mocks.setup_test_mocks()
-
     # Set up integration test environment
     WandererApp.Test.IntegrationConfig.setup_integration_environment()
     WandererApp.Test.IntegrationConfig.setup_test_reliability_configs()
+
+    # Ensure Mox is in global mode for each test
+    # This prevents tests that set private mode from affecting other tests
+    WandererApp.Test.MockAllowance.ensure_global_mocks()
 
     # Cleanup after test
     on_exit(fn ->
@@ -60,31 +61,14 @@ defmodule WandererApp.DataCase do
       {:ok, _} = WandererApp.Repo.start_link()
     end
 
-    # Use shared mode if requested or if running as a ConnCase test (to avoid ownership issues)
-    # Otherwise use non-shared mode for proper test isolation
-    shared = (tags[:shared] || tags[:conn_case] || not tags[:async]) and not tags[:async]
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: not tags[:async])
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
-    # Start the sandbox owner and link it to the test process
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WandererApp.Repo, shared: shared)
-
-    # Store the sandbox owner pid BEFORE registering on_exit
-    # This ensures it's available for use in setup callbacks
+    # Store the sandbox owner pid for allowing background processes
     Process.put(:sandbox_owner_pid, pid)
-
-    # Register cleanup - this will be called last (LIFO order)
-    on_exit(fn ->
-      # Only stop if the owner is still alive
-      if Process.alive?(pid) do
-        Ecto.Adapters.SQL.Sandbox.stop_owner(pid)
-      end
-    end)
 
     # Allow critical system processes to access the database
     allow_system_processes_database_access()
-
-    # Set $callers to enable automatic allowance propagation to child processes
-    # This makes child processes inherit database access from the test process
-    Process.put(:"$callers", [pid])
   end
 
   @doc """
@@ -121,9 +105,7 @@ defmodule WandererApp.DataCase do
       WandererApp.Server.TheraDataFetcher,
       WandererApp.ExternalEvents.MapEventRelay,
       WandererApp.ExternalEvents.WebhookDispatcher,
-      WandererApp.ExternalEvents.SseStreamManager,
-      # Task.Supervisor for Task.async_stream calls (e.g., from MapPool background tasks)
-      Task.Supervisor
+      WandererApp.ExternalEvents.SseStreamManager
     ]
 
     Enum.each(system_processes, fn process_name ->
@@ -135,27 +117,16 @@ defmodule WandererApp.DataCase do
           :ok
       end
     end)
+  end
 
-    # Grant database access to MapPoolSupervisor and MapPoolDynamicSupervisor
-    # This must be done early and repeatedly to catch dynamically spawned children
-    owner_pid = Process.get(:sandbox_owner_pid) || self()
+  @doc """
+  Grants database access to a process with comprehensive monitoring.
 
-    case Process.whereis(WandererApp.Map.MapPoolSupervisor) do
-      pid when is_pid(pid) ->
-        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
-        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
-      _ ->
-        :ok
-    end
-
-    # Also grant to MapPoolDynamicSupervisor which actually spawns MapPool processes
-    case Process.whereis(WandererApp.Map.MapPoolDynamicSupervisor) do
-      pid when is_pid(pid) ->
-        WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
-        WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
-      _ ->
-        :ok
-    end
+  This function provides enhanced database access granting with monitoring
+  for child processes and automatic access granting.
+  """
+  def allow_database_access(pid, owner_pid \\ self()) do
+    WandererApp.Test.DatabaseAccessManager.grant_database_access(pid, owner_pid)
   end
 
   @doc """

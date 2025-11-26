@@ -3,8 +3,7 @@ defmodule WandererApp.Api.MapPing do
 
   use Ash.Resource,
     domain: WandererApp.Api,
-    data_layer: AshPostgres.DataLayer,
-    primary_read_warning?: false
+    data_layer: AshPostgres.DataLayer
 
   postgres do
     repo(WandererApp.Repo)
@@ -37,18 +36,7 @@ defmodule WandererApp.Api.MapPing do
       :message
     ]
 
-    defaults [:destroy]
-
-    update :update do
-      require_atomic? false
-    end
-
-    read :read do
-      primary? true
-
-      # Security: Filter to only pings from actor's map
-      prepare WandererApp.Api.Preparations.FilterPingsByActorMap
-    end
+    defaults [:read, :update, :destroy]
 
     create :new do
       accept [
@@ -60,6 +48,14 @@ defmodule WandererApp.Api.MapPing do
       ]
 
       primary?(true)
+
+      argument :map_id, :uuid, allow_nil?: false
+      argument :system_id, :uuid, allow_nil?: false
+      argument :character_id, :uuid, allow_nil?: false
+
+      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:system_id, :system, on_lookup: :relate, on_no_match: nil)
+      change manage_relationship(:character_id, :character, on_lookup: :relate, on_no_match: nil)
     end
 
     read :by_map do

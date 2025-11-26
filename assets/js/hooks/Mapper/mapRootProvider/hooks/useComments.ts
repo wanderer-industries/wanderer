@@ -1,5 +1,5 @@
-import { CommentSystem, CommentType, OutCommand, OutCommandHandler, UseCommentsData } from '@/hooks/Mapper/types';
 import { useCallback, useRef, useState } from 'react';
+import { CommentSystem, CommentType, OutCommand, OutCommandHandler, UseCommentsData } from '@/hooks/Mapper/types';
 
 interface UseCommentsProps {
   outCommand: OutCommandHandler;
@@ -8,12 +8,12 @@ interface UseCommentsProps {
 export const useComments = ({ outCommand }: UseCommentsProps): UseCommentsData => {
   const [lastUpdateKey, setLastUpdateKey] = useState(0);
 
-  const commentBySystemsRef = useRef<Map<number, CommentSystem>>(new Map());
+  const commentBySystemsRef = useRef<Map<string, CommentSystem>>(new Map());
 
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
 
-  const loadComments = useCallback(async (systemId: number) => {
+  const loadComments = useCallback(async (systemId: string) => {
     let cSystem = commentBySystemsRef.current.get(systemId);
     if (cSystem?.loading || cSystem?.loaded) {
       return;
@@ -45,7 +45,7 @@ export const useComments = ({ outCommand }: UseCommentsProps): UseCommentsData =
     setLastUpdateKey(x => x + 1);
   }, []);
 
-  const addComment = useCallback((systemId: number, comment: CommentType) => {
+  const addComment = useCallback((systemId: string, comment: CommentType) => {
     const cSystem = commentBySystemsRef.current.get(systemId);
     if (cSystem) {
       cSystem.comments.push(comment);
@@ -61,9 +61,8 @@ export const useComments = ({ outCommand }: UseCommentsProps): UseCommentsData =
     setLastUpdateKey(x => x + 1);
   }, []);
 
-  const removeComment = useCallback((systemId: number, commentId: string) => {
+  const removeComment = useCallback((systemId: string, commentId: string) => {
     const cSystem = commentBySystemsRef.current.get(systemId);
-    console.log('cSystem', cSystem);
     if (!cSystem) {
       return;
     }
