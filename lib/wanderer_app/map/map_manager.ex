@@ -9,6 +9,8 @@ defmodule WandererApp.Map.Manager do
 
   alias WandererApp.Map.Server
 
+  @environment Application.compile_env(:wanderer_app, :environment)
+
   @maps_start_chunk_size 20
   @maps_start_interval 500
   @maps_queue :maps_queue
@@ -19,7 +21,7 @@ defmodule WandererApp.Map.Manager do
 
   # Test-aware async task runner
   defp safe_async_task(fun) do
-    if Mix.env() == :test do
+    if @environment == :test do
       # In tests, run synchronously to avoid database ownership issues
       try do
         fun.()
@@ -139,7 +141,7 @@ defmodule WandererApp.Map.Manager do
 
     WandererApp.Queue.clear(@maps_queue)
 
-    if Mix.env() == :test do
+    if @environment == :test do
       # In tests, run synchronously to avoid database ownership issues
       Logger.debug(fn -> "Starting maps synchronously in test mode" end)
 

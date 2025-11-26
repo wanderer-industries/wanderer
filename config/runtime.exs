@@ -127,6 +127,7 @@ restrict_acls_creation =
   |> String.to_existing_atom()
 
 config :wanderer_app,
+  environment: config_env(),
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
   custom_route_base_url: System.get_env("CUSTOM_ROUTE_BASE_URL"),

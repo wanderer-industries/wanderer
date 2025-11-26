@@ -20,16 +20,18 @@ defmodule WandererApp.Map.MapPool do
   @garbage_collection_interval :timer.hours(4)
   # Use very long timeouts in test environment to prevent background tasks from running during tests
   # This avoids database connection ownership errors when tests finish before async tasks complete
-  @systems_cleanup_timeout if Mix.env() == :test,
+  @environment Application.compile_env(:wanderer_app, :environment)
+
+  @systems_cleanup_timeout if @environment == :test,
                              do: :timer.hours(24),
                              else: :timer.minutes(30)
-  @characters_cleanup_timeout if Mix.env() == :test,
+  @characters_cleanup_timeout if @environment == :test,
                                 do: :timer.hours(24),
                                 else: :timer.minutes(5)
-  @connections_cleanup_timeout if Mix.env() == :test,
+  @connections_cleanup_timeout if @environment == :test,
                                  do: :timer.hours(24),
                                  else: :timer.minutes(5)
-  @backup_state_timeout if Mix.env() == :test,
+  @backup_state_timeout if @environment == :test,
                           do: :timer.hours(24),
                           else: :timer.minutes(1)
 
