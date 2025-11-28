@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.88.4](https://github.com/wanderer-industries/wanderer/compare/v1.88.3...v1.88.4) (2025-11-27)
+
+
+
+
+### Bug Fixes:
+
+* defensive check for undefined excluded systems
+
+## [v1.88.3](https://github.com/wanderer-industries/wanderer/compare/v1.88.2...v1.88.3) (2025-11-26)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed env issues
+
 ## [v1.88.1](https://github.com/wanderer-industries/wanderer/compare/v1.88.0...v1.88.1) (2025-11-26)
 
 

@@ -31,7 +31,7 @@ export function useSystemKills({ systemId, outCommand, showAllVisible = false, s
     storedSettings: { settingsKills },
   } = useMapRootState();
 
-  const excludedSystems = useStableValue(settingsKills.excludedSystems);
+  const excludedSystems = useStableValue(settingsKills.excludedSystems ?? []);
 
   const effectiveSystemIds = useMemo(() => {
     if (showAllVisible) {
