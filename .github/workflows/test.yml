@@ -19,15 +19,19 @@ env:
 
 jobs:
   test:
-    name: Test Suite
+    name: Test Suite (Partition ${{ matrix.partition }})
     runs-on: ubuntu-latest
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [1, 2, 3, 4]
+
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: wanderer_test
+          POSTGRES_DB: wanderer_test${{ matrix.partition }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -35,7 +39,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,11 +106,13 @@ jobs:
           
       - name: Run tests with coverage
         id: tests
+        env:
+          MIX_TEST_PARTITION: ${{ matrix.partition }}
         run: |
-          # Run tests with coverage
-          output=$(mix test --cover 2>&1 || true)
+          # Run tests with coverage using partitioning
+          output=$(mix test --cover --partitions 4 2>&1 || true)
           echo "$output" > test_output.txt
-          
+
           # Parse test results
           if echo "$output" | grep -q "0 failures"; then
             echo "status=✅ All Passed" >> $GITHUB_OUTPUT
@@ -115,16 +121,16 @@ jobs:
             echo "status=❌ Some Failed" >> $GITHUB_OUTPUT
             test_status="failed"
           fi
-          
+
           # Extract test counts
           test_line=$(echo "$output" | grep -E "[0-9]+ tests?, [0-9]+ failures?" | head -1 || echo "0 tests, 0 failures")
           total_tests=$(echo "$test_line" | grep -o '[0-9]\+ tests\?' | grep -o '[0-9]\+' | head -1 || echo "0")
           failures=$(echo "$test_line" | grep -o '[0-9]\+ failures\?' | grep -o '[0-9]\+' | head -1 || echo "0")
-          
+
           echo "total=$total_tests" >> $GITHUB_OUTPUT
           echo "failures=$failures" >> $GITHUB_OUTPUT
           echo "passed=$((total_tests - failures))" >> $GITHUB_OUTPUT
-          
+
           # Calculate success rate
           if [ "$total_tests" -gt 0 ]; then
             success_rate=$(echo "scale=1; ($total_tests - $failures) * 100 / $total_tests" | bc)
@@ -132,7 +138,7 @@ jobs:
             success_rate="0"
           fi
           echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
-          
+
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
         continue-on-error: true

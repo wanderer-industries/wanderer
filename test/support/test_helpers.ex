@@ -175,6 +175,39 @@ defmodule WandererApp.TestHelpers do
   end
 
   @doc """
+  Waits for a condition to become true, with configurable timeout and interval.
+  More efficient than fixed sleeps - uses small polling intervals.
+
+  ## Options
+    * `:timeout` - Maximum time to wait in milliseconds (default: 5000)
+    * `:interval` - Polling interval in milliseconds (default: 10)
+
+  ## Examples
+      wait_until(fn -> Process.whereis(:my_server) != nil end)
+      wait_until(fn -> cache_has_value?() end, timeout: 2000, interval: 5)
+  """
+  def wait_until(condition_fn, opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, 5000)
+    interval = Keyword.get(opts, :interval, 10)
+    deadline = System.monotonic_time(:millisecond) + timeout
+
+    do_wait_until(condition_fn, deadline, interval)
+  end
+
+  defp do_wait_until(condition_fn, deadline, interval) do
+    if condition_fn.() do
+      :ok
+    else
+      if System.monotonic_time(:millisecond) < deadline do
+        Process.sleep(interval)
+        do_wait_until(condition_fn, deadline, interval)
+      else
+        {:error, :timeout}
+      end
+    end
+  end
+
+  @doc """
   Ensures a map server is started for testing.
   This function has been simplified to use the standard map startup flow.
   For integration tests, use WandererApp.MapTestHelpers.ensure_map_started/1 instead.
@@ -183,8 +216,13 @@ defmodule WandererApp.TestHelpers do
     # Use the standard map startup flow through Map.Manager
     :ok = WandererApp.Map.Manager.start_map(map_id)
 
-    # Wait a bit for the map to fully initialize
-    :timer.sleep(500)
+    # Wait for the map to be in started_maps cache with efficient polling
+    wait_until(fn ->
+      case WandererApp.Cache.lookup("map_#{map_id}:started") do
+        {:ok, true} -> true
+        _ -> false
+      end
+    end, timeout: 5000, interval: 20)
 
     :ok
   end

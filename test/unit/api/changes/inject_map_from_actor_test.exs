@@ -1,5 +1,6 @@
 defmodule WandererApp.Api.Changes.InjectMapFromActorTest do
-  use ExUnit.Case, async: false
+  # Tests Ash changeset logic but doesn't need database
+  use ExUnit.Case, async: true
 
   alias WandererApp.Api.ActorWithMap
 

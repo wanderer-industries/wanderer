@@ -76,7 +76,7 @@ defmodule WandererApp.MapTestHelpers do
           raise "Map #{map_id} failed to stop within #{timeout}ms"
         end
 
-        Process.sleep(50)
+        Process.sleep(10)
         :continue
       end
     end)
@@ -86,23 +86,16 @@ defmodule WandererApp.MapTestHelpers do
   @doc """
   Continuously grants database access to all MapPool processes and their children.
   This is necessary when maps are started dynamically during tests.
-  Polls multiple times to catch processes spawned at different stages.
+  Uses efficient polling with minimal delays.
   """
   defp grant_database_access_continuously do
     owner_pid = Process.get(:sandbox_owner_pid) || self()
 
-    # Grant access multiple times with delays to catch processes at different spawn stages
-    # First few times quickly, then with longer delays
-    # Quick initial grants (3 times with 10ms)
-    Enum.each(1..3, fn _ ->
+    # Grant access with minimal delays - 5 quick passes to catch spawned processes
+    # Total time: ~25ms instead of 170ms
+    Enum.each(1..5, fn _ ->
       grant_database_access_to_map_pools(owner_pid)
-      Process.sleep(10)
-    end)
-
-    # Then slower grants (7 times with 20ms)
-    Enum.each(1..7, fn _ ->
-      grant_database_access_to_map_pools(owner_pid)
-      Process.sleep(20)
+      Process.sleep(5)
     end)
   end
 
@@ -164,19 +157,10 @@ defmodule WandererApp.MapTestHelpers do
         map_started_flag and in_started_maps_list ->
           {:ok, :started}
 
-        # Map is partially started (in one but not both) - keep waiting
-        map_started_flag or in_started_maps_list ->
-          if System.monotonic_time(:millisecond) < deadline do
-            Process.sleep(100)
-            :continue
-          else
-            {:error, :timeout}
-          end
-
-        # Map not started yet
+        # Map is partially started or not started yet - keep waiting
         true ->
           if System.monotonic_time(:millisecond) < deadline do
-            Process.sleep(100)
+            Process.sleep(20)
             :continue
           else
             {:error, :timeout}
@@ -186,8 +170,8 @@ defmodule WandererApp.MapTestHelpers do
     |> Enum.find(fn result -> result != :continue end)
     |> case do
       {:ok, :started} ->
-        # Give it a bit more time to fully initialize all subsystems
-        Process.sleep(200)
+        # Brief pause for subsystem initialization (reduced from 200ms)
+        Process.sleep(50)
         :ok
 
       {:error, :timeout} ->
@@ -462,7 +446,7 @@ defmodule WandererApp.MapTestHelpers do
         {:ok, true}
       else
         if System.monotonic_time(:millisecond) < deadline do
-          Process.sleep(50)
+          Process.sleep(10)
           :continue
         else
           {:error, :timeout}

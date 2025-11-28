@@ -1,5 +1,9 @@
 import Config
 
+# Disable Ash async operations in tests to ensure transactional safety
+# This prevents Ash from spawning tasks that could bypass the Ecto sandbox
+config :ash, :disable_async?, true
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

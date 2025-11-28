@@ -128,6 +128,8 @@ defmodule WandererApp.Api.MapCharacterSettings do
       require_atomic? false
 
       accept([
+        :tracked,
+        :followed,
         :ship,
         :ship_name,
         :ship_item_id,

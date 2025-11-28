@@ -81,8 +81,9 @@ defmodule WandererApp.Test.IntegrationConfig do
         :ok
     end
 
-    # Give the supervisor a moment to fully initialize its children
-    Process.sleep(100)
+    # Wait for MapPoolDynamicSupervisor to be ready using efficient polling
+    # instead of a fixed 100ms sleep
+    wait_for_process(WandererApp.Map.MapPoolDynamicSupervisor, 2000)
 
     # Start Map.Manager AFTER MapPoolSupervisor
     case GenServer.whereis(WandererApp.Map.Manager) do
@@ -94,6 +95,27 @@ defmodule WandererApp.Test.IntegrationConfig do
     end
 
     :ok
+  end
+
+  # Efficiently wait for a process to be registered
+  defp wait_for_process(name, timeout) do
+    deadline = System.monotonic_time(:millisecond) + timeout
+    do_wait_for_process(name, deadline)
+  end
+
+  defp do_wait_for_process(name, deadline) do
+    case Process.whereis(name) do
+      pid when is_pid(pid) ->
+        :ok
+
+      nil ->
+        if System.monotonic_time(:millisecond) < deadline do
+          Process.sleep(5)
+          do_wait_for_process(name, deadline)
+        else
+          :ok
+        end
+    end
   end
 
   @doc """

@@ -17,6 +17,10 @@ defmodule WandererAppWeb.MapPingsEventHandler do
     {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
 
     pings
+    |> Enum.filter(fn ping ->
+      # Skip pings where system or character associations are nil (deleted)
+      not is_nil(ping.system) and not is_nil(ping.character)
+    end)
     |> Enum.reduce(socket, fn %{
                                 id: id,
                                 type: type,

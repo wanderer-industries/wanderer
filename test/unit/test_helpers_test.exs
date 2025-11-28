@@ -1,5 +1,6 @@
 defmodule WandererApp.TestHelpersTest do
-  use ExUnit.Case
+  # Pure unit tests - no database or external dependencies
+  use ExUnit.Case, async: true
 
   alias WandererApp.TestHelpers
 
