@@ -662,12 +662,45 @@ defmodule WandererApp.Map.Server.Impl do
             not Enum.member?(presence_character_ids, character_id)
           end)
 
+        # Log presence changes for debugging
+        if length(new_present_character_ids) > 0 or length(not_present_character_ids) > 0 do
+          Logger.debug(fn ->
+            "[MapServer] Map #{map_id} presence update - " <>
+              "newly_present: #{inspect(new_present_character_ids)}, " <>
+              "no_longer_present: #{inspect(not_present_character_ids)}, " <>
+              "total_present: #{length(presence_character_ids)}"
+          end)
+        end
+
         WandererApp.Cache.insert(
           "map_#{map_id}:old_presence_character_ids",
           presence_character_ids
         )
 
+        # Track new characters
+        if length(new_present_character_ids) > 0 do
+          Logger.debug(fn ->
+            "[MapServer] Map #{map_id} - starting tracking for #{length(new_present_character_ids)} newly present characters"
+          end)
+        end
+
         CharactersImpl.track_characters(map_id, new_present_character_ids)
+
+        # Untrack characters no longer present (grace period has expired)
+        if length(not_present_character_ids) > 0 do
+          Logger.debug(fn ->
+            "[MapServer] Map #{map_id} - #{length(not_present_character_ids)} characters no longer in presence " <>
+              "(grace period expired or never had one) - will be untracked"
+          end)
+
+          # Emit telemetry for presence-based untracking
+          :telemetry.execute(
+            [:wanderer_app, :map, :presence, :characters_left],
+            %{count: length(not_present_character_ids), system_time: System.system_time()},
+            %{map_id: map_id, character_ids: not_present_character_ids}
+          )
+        end
+
         CharactersImpl.untrack_characters(map_id, not_present_character_ids)
 
         broadcast!(

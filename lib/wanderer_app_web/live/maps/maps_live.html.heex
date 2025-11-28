@@ -165,12 +165,12 @@
       field={f[:only_tracked_characters]}
       label="Allow only tracked characters"
     />
-    <.input type="checkbox" field={f[:sse_enabled]} label="Enable Server-Sent Events (SSE)" />
     <.input
       :if={@live_action == :create}
       type="checkbox"
       field={f[:create_default_acl]}
       label="Create default access list"
+      checked={Phoenix.HTML.Form.normalize_value("checkbox", f[:create_default_acl].value) == true or is_nil(f[:create_default_acl].value)}
     />
     <.live_select
       field={f[:acls]}

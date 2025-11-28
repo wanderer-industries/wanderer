@@ -1,5 +1,18 @@
 defmodule WandererApp.Character.TrackerManager.Impl do
-  @moduledoc false
+  @moduledoc """
+  Implementation of the character tracker manager.
+
+  This module manages the lifecycle of character trackers and handles:
+  - Starting/stopping character tracking
+  - Garbage collection of inactive trackers (5-minute timeout)
+  - Processing the untrack queue (5-minute interval)
+
+  ## Logging
+
+  This module emits detailed logs for debugging character tracking issues:
+  - WARNING: Unexpected states or potential issues
+  - DEBUG: Start/stop tracking events, garbage collection, queue processing
+  """
   require Logger
 
   defstruct [
@@ -27,6 +40,11 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
+    Logger.debug("[TrackerManager] Initialized with intervals: " <>
+      "garbage_collection=#{div(@garbage_collection_interval, 60_000)}min, " <>
+      "untrack=#{div(@untrack_characters_interval, 60_000)}min, " <>
+      "inactive_timeout=#{div(@inactive_character_timeout, 60_000)}min")
+
     %{
       characters: [],
       opts: args
@@ -37,6 +55,10 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def start(state) do
     {:ok, tracked_characters} = WandererApp.Cache.lookup("tracked_characters", [])
     WandererApp.Cache.insert("tracked_characters", [])
+
+    if length(tracked_characters) > 0 do
+      Logger.debug("[TrackerManager] Restoring #{length(tracked_characters)} tracked characters from cache")
+    end
 
     tracked_characters
     |> Enum.each(fn character_id ->
@@ -53,7 +75,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         true
       )
 
-      Logger.debug(fn -> "Add character to track_characters_queue: #{inspect(character_id)}" end)
+      Logger.debug(fn ->
+        "[TrackerManager] Queuing character #{character_id} for tracking start"
+      end)
 
       WandererApp.Cache.insert_or_update(
         "track_characters_queue",
@@ -71,13 +95,33 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
          true <- Enum.member?(characters, character_id),
          false <- WandererApp.Cache.has_key?("#{character_id}:track_requested") do
-      Logger.debug(fn -> "Shutting down character tracker: #{inspect(character_id)}" end)
+      Logger.debug(fn ->
+        "[TrackerManager] Stopping tracker for character #{character_id} - " <>
+          "reason: no active maps (garbage collected after #{div(@inactive_character_timeout, 60_000)} minutes)"
+      end)
 
       WandererApp.Cache.delete("character:#{character_id}:last_active_time")
       WandererApp.Character.delete_character_state(character_id)
       WandererApp.Character.TrackerPoolDynamicSupervisor.stop_tracking(character_id)
 
-      :telemetry.execute([:wanderer_app, :character, :tracker, :stopped], %{count: 1})
+      :telemetry.execute(
+        [:wanderer_app, :character, :tracker, :stopped],
+        %{count: 1, system_time: System.system_time()},
+        %{character_id: character_id, reason: :garbage_collection}
+      )
+    else
+      {:ok, characters} when is_list(characters) ->
+        Logger.debug(fn ->
+          "[TrackerManager] Character #{character_id} not in tracked list, skipping stop"
+        end)
+
+      false ->
+        Logger.debug(fn ->
+          "[TrackerManager] Character #{character_id} has pending track request, skipping stop"
+        end)
+
+      _ ->
+        :ok
     end
 
     WandererApp.Cache.insert_or_update(
@@ -101,6 +145,10 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         } = track_settings
       ) do
     if track do
+      Logger.debug(fn ->
+        "[TrackerManager] Enabling tracking for character #{character_id} on map #{map_id}"
+      end)
+
       remove_from_untrack_queue(map_id, character_id)
 
       {:ok, character_state} =
@@ -108,6 +156,11 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
       WandererApp.Character.update_character_state(character_id, character_state)
     else
+      Logger.debug(fn ->
+        "[TrackerManager] Queuing character #{character_id} for untracking from map #{map_id} - " <>
+          "will be processed within #{div(@untrack_characters_interval, 60_000)} minutes"
+      end)
+
       add_to_untrack_queue(map_id, character_id)
     end
 
@@ -130,8 +183,19 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       "character_untrack_queue",
       [],
       fn untrack_queue ->
-        untrack_queue
-        |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
+        original_length = length(untrack_queue)
+        filtered =
+          untrack_queue
+          |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)
+
+        if length(filtered) < original_length do
+          Logger.debug(fn ->
+            "[TrackerManager] Removed character #{character_id} from untrack queue for map #{map_id} - " <>
+              "character re-enabled tracking"
+          end)
+        end
+
+        filtered
       end
     )
   end
@@ -170,6 +234,12 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :check_start_queue, @check_start_queue_interval)
     {:ok, track_characters_queue} = WandererApp.Cache.lookup("track_characters_queue", [])
 
+    if length(track_characters_queue) > 0 do
+      Logger.debug(fn ->
+        "[TrackerManager] Processing start queue: #{length(track_characters_queue)} characters"
+      end)
+    end
+
     track_characters_queue
     |> Enum.each(fn character_id ->
       track_character(character_id, %{})
@@ -186,35 +256,66 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     {:ok, characters} = WandererApp.Cache.lookup("tracked_characters", [])
 
-    characters
-    |> Task.async_stream(
-      fn character_id ->
-        case WandererApp.Cache.lookup("character:#{character_id}:last_active_time") do
-          {:ok, nil} ->
-            :skip
+    Logger.debug(fn ->
+      "[TrackerManager] Running garbage collection on #{length(characters)} tracked characters"
+    end)
 
-          {:ok, last_active_time} ->
-            duration = DateTime.diff(DateTime.utc_now(), last_active_time, :second)
-
-            if duration * 1000 > @inactive_character_timeout do
-              {:stop, character_id}
-            else
+    inactive_characters =
+      characters
+      |> Task.async_stream(
+        fn character_id ->
+          case WandererApp.Cache.lookup("character:#{character_id}:last_active_time") do
+            {:ok, nil} ->
+              # Character is still active (no last_active_time set)
               :skip
-            end
-        end
-      end,
-      max_concurrency: System.schedulers_online() * 4,
-      on_timeout: :kill_task,
-      timeout: :timer.seconds(60)
-    )
-    |> Enum.each(fn result ->
-      case result do
-        {:ok, {:stop, character_id}} ->
-          Process.send_after(self(), {:stop_track, character_id}, 100)
 
-        _ ->
-          :ok
-      end
+            {:ok, last_active_time} ->
+              duration_seconds = DateTime.diff(DateTime.utc_now(), last_active_time, :second)
+              duration_ms = duration_seconds * 1000
+
+              if duration_ms > @inactive_character_timeout do
+                Logger.debug(fn ->
+                  "[TrackerManager] Character #{character_id} marked for garbage collection - " <>
+                    "inactive for #{div(duration_seconds, 60)} minutes " <>
+                    "(threshold: #{div(@inactive_character_timeout, 60_000)} minutes)"
+                end)
+
+                {:stop, character_id, duration_seconds}
+              else
+                :skip
+              end
+          end
+        end,
+        max_concurrency: System.schedulers_online() * 4,
+        on_timeout: :kill_task,
+        timeout: :timer.seconds(60)
+      )
+      |> Enum.reduce([], fn result, acc ->
+        case result do
+          {:ok, {:stop, character_id, duration}} ->
+            [{character_id, duration} | acc]
+
+          _ ->
+            acc
+        end
+      end)
+
+    if length(inactive_characters) > 0 do
+      Logger.debug(fn ->
+        "[TrackerManager] Garbage collection found #{length(inactive_characters)} inactive characters to stop"
+      end)
+
+      # Emit telemetry for garbage collection
+      :telemetry.execute(
+        [:wanderer_app, :character, :tracker, :garbage_collection],
+        %{inactive_count: length(inactive_characters), total_tracked: length(characters)},
+        %{character_ids: Enum.map(inactive_characters, fn {id, _} -> id end)}
+      )
+    end
+
+    inactive_characters
+    |> Enum.each(fn {character_id, _duration} ->
+      Process.send_after(self(), {:stop_track, character_id}, 100)
     end)
 
     state
@@ -226,9 +327,22 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       ) do
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
-    WandererApp.Cache.lookup!("character_untrack_queue", [])
+    untrack_queue = WandererApp.Cache.lookup!("character_untrack_queue", [])
+
+    if length(untrack_queue) > 0 do
+      Logger.debug(fn ->
+        "[TrackerManager] Processing untrack queue: #{length(untrack_queue)} character-map pairs"
+      end)
+    end
+
+    untrack_queue
     |> Task.async_stream(
       fn {map_id, character_id} ->
+        Logger.debug(fn ->
+          "[TrackerManager] Untracking character #{character_id} from map #{map_id} - " <>
+            "reason: character no longer present on map"
+        end)
+
         remove_from_untrack_queue(map_id, character_id)
 
         WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
@@ -255,12 +369,36 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
         WandererApp.Character.update_character_state(character_id, character_state)
         WandererApp.Map.Server.Impl.broadcast!(map_id, :untrack_character, character_id)
+
+        # Emit telemetry for untrack event
+        :telemetry.execute(
+          [:wanderer_app, :character, :tracker, :untracked_from_map],
+          %{system_time: System.system_time()},
+          %{character_id: character_id, map_id: map_id, reason: :presence_left}
+        )
+
+        {:ok, character_id, map_id}
       end,
       max_concurrency: System.schedulers_online() * 4,
       on_timeout: :kill_task,
       timeout: :timer.seconds(30)
     )
-    |> Enum.each(fn _result -> :ok end)
+    |> Enum.each(fn result ->
+      case result do
+        {:ok, {:ok, character_id, map_id}} ->
+          Logger.debug(fn ->
+            "[TrackerManager] Successfully untracked character #{character_id} from map #{map_id}"
+          end)
+
+        {:exit, reason} ->
+          Logger.warning(fn ->
+            "[TrackerManager] Untrack task exited with reason: #{inspect(reason)}"
+          end)
+
+        _ ->
+          :ok
+      end
+    end)
 
     state
   end
@@ -268,9 +406,17 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def handle_info({:stop_track, character_id}, state) do
     if not WandererApp.Cache.has_key?("character:#{character_id}:is_stop_tracking") do
       WandererApp.Cache.insert("character:#{character_id}:is_stop_tracking", true)
-      Logger.debug(fn -> "Stopping character tracker: #{inspect(character_id)}" end)
+
+      Logger.debug(fn ->
+        "[TrackerManager] Executing stop_track for character #{character_id}"
+      end)
+
       stop_tracking(state, character_id)
       WandererApp.Cache.delete("character:#{character_id}:is_stop_tracking")
+    else
+      Logger.debug(fn ->
+        "[TrackerManager] Character #{character_id} already being stopped, skipping duplicate request"
+      end)
     end
 
     state
@@ -279,7 +425,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   def track_character(character_id, opts) do
     with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
          false <- Enum.member?(characters, character_id) do
-      Logger.debug(fn -> "Start character tracker: #{inspect(character_id)}" end)
+      Logger.debug(fn ->
+        "[TrackerManager] Starting tracker for character #{character_id}"
+      end)
 
       WandererApp.Cache.insert_or_update(
         "tracked_characters",
@@ -312,7 +460,30 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         character_id,
         %{opts: opts}
       ])
+
+      # Emit telemetry for tracker start
+      :telemetry.execute(
+        [:wanderer_app, :character, :tracker, :started],
+        %{count: 1, system_time: System.system_time()},
+        %{character_id: character_id}
+      )
     else
+      true ->
+        Logger.debug(fn ->
+          "[TrackerManager] Character #{character_id} already being tracked"
+        end)
+
+        WandererApp.Cache.insert_or_update(
+          "track_characters_queue",
+          [],
+          fn existing ->
+            existing
+            |> Enum.reject(fn c_id -> c_id == character_id end)
+          end
+        )
+
+        WandererApp.Cache.delete("#{character_id}:track_requested")
+
       _ ->
         WandererApp.Cache.insert_or_update(
           "track_characters_queue",

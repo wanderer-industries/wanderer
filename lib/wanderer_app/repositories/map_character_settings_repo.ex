@@ -59,8 +59,8 @@ defmodule WandererApp.MapCharacterSettingsRepo do
            map_id: map_id,
            character_id: character_id
          }) do
-      {:ok, _} ->
-        :ok
+      {:ok, settings} ->
+        {:ok, settings}
 
       error ->
         Logger.error(
@@ -77,8 +77,8 @@ defmodule WandererApp.MapCharacterSettingsRepo do
            map_id: map_id,
            character_id: character_id
          }) do
-      {:ok, _} ->
-        :ok
+      {:ok, settings} ->
+        {:ok, settings}
 
       error ->
         Logger.error(
