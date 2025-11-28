@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.88.6](https://github.com/wanderer-industries/wanderer/compare/v1.88.5...v1.88.6) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed tracking issues
+
 ## [v1.88.5](https://github.com/wanderer-industries/wanderer/compare/v1.88.4...v1.88.5) (2025-11-28)
 
 
