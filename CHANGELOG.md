@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.88.5](https://github.com/wanderer-industries/wanderer/compare/v1.88.4...v1.88.5) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed env errors
+
 ## [v1.88.4](https://github.com/wanderer-industries/wanderer/compare/v1.88.3...v1.88.4) (2025-11-27)
 
 
