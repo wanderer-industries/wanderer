@@ -172,10 +172,6 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
           case Commands.pingCancelled:
             pingCancelled(data as CommandPingCancelled);
             break;
-
-          case Commands.showWormholeSignatures:
-            break;
-
           default:
             console.warn(`JOipP Interface handlers: Unknown command: ${type}`, data);
             break;

@@ -40,7 +40,6 @@ export enum Commands {
   showTracking = 'show_tracking',
   pingAdded = 'ping_added',
   pingCancelled = 'ping_cancelled',
-  showWormholeSignatures = 'show_wormhole_signatures',
 }
 
 export type Command =
@@ -76,8 +75,7 @@ export type Command =
   | Commands.updateTracking
   | Commands.showTracking
   | Commands.pingAdded
-  | Commands.pingCancelled
-  | Commands.showWormholeSignatures;
+  | Commands.pingCancelled;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -211,7 +209,6 @@ export interface CommandData {
   [Commands.showTracking]: CommandShowTracking;
   [Commands.pingAdded]: CommandPingAdded;
   [Commands.pingCancelled]: CommandPingCancelled;
-  [Commands.showWormholeSignatures]: CommandShowWormholeSignatures;
 }
 
 export interface MapHandlers {

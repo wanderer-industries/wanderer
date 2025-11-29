@@ -12,9 +12,15 @@ export interface MapContextMenuProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
+  onShowWormholesReference?: () => void;
 }
 
-export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTrackingDialog }: MapContextMenuProps) => {
+export const MapContextMenu = ({
+  onShowOnTheMap,
+  onShowMapSettings,
+  onShowTrackingDialog,
+  onShowWormholesReference,
+}: MapContextMenuProps) => {
   const {
     outCommand,
     storedSettings: { setInterfaceSettings },
@@ -50,6 +56,12 @@ export const MapContextMenu = ({ onShowOnTheMap, onShowMapSettings, onShowTracki
           label: 'On the map',
           icon: 'pi pi-hashtag',
           command: onShowOnTheMap,
+          visible: canTrackCharacters,
+        },
+        {
+          label: 'Wormholes Ref.',
+          icon: 'pi pi-bullseye',
+          command: onShowWormholesReference,
           visible: canTrackCharacters,
         },
         { separator: true, visible: true },

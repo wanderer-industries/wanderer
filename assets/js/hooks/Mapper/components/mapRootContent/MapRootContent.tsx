@@ -35,7 +35,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
-  const [showWormholeSignatures, setShowWormholeSignatures] = useState(false);
+  const [showWormholeList, setShowWormholeList] = useState(false);
 
   /* Important Notice - this solution needs for use one instance of MapInterface */
   const mapInterface = isReady ? <MapInterface /> : null;
@@ -43,14 +43,11 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const handleShowOnTheMap = useCallback(() => setShowOnTheMap(true), []);
   const handleShowMapSettings = useCallback(() => setShowMapSettings(true), []);
   const handleShowTrackingDialog = useCallback(() => setShowTrackingDialog(true), []);
+  const handleShowWormholesReference = useCallback(() => setShowWormholeList(true), []);
 
   useMapEventListener(event => {
     if (event.name === Commands.showTracking) {
       setShowTrackingDialog(true);
-      return true;
-    }
-    if (event.name === Commands.showWormholeSignatures) {
-      setShowWormholeSignatures(true);
       return true;
     }
   });
@@ -71,6 +68,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
                 onShowOnTheMap={handleShowOnTheMap}
                 onShowMapSettings={handleShowMapSettings}
                 onShowTrackingDialog={handleShowTrackingDialog}
+                onShowWormholesReference={handleShowWormholesReference}
                 additionalContent={<PingsInterface hasLeftOffset />}
               />
             </div>
@@ -85,6 +83,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
                   onShowOnTheMap={handleShowOnTheMap}
                   onShowMapSettings={handleShowMapSettings}
                   onShowTrackingDialog={handleShowTrackingDialog}
+                  onShowWormholesReference={handleShowWormholesReference}
                 />
               </div>
             </Topbar>
@@ -99,12 +98,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         {showTrackingDialog && (
           <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
         )}
-        {showWormholeSignatures && (
-          <WormholeSignaturesDialog
-            visible={showWormholeSignatures}
-            onHide={() => setShowWormholeSignatures(false)}
-          />
-        )}
+        <WormholeSignaturesDialog visible={showWormholeList} onHide={() => setShowWormholeList(false)} />
 
         {hasOldSettings && <OldSettingsDialog />}
       </Layout>

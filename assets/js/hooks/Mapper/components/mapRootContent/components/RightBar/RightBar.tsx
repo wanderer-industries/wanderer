@@ -14,6 +14,7 @@ interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
+  onShowWormholesReference?: () => void;
   additionalContent?: ReactNode;
 }
 
@@ -21,6 +22,7 @@ export const RightBar = ({
   onShowOnTheMap,
   onShowMapSettings,
   onShowTrackingDialog,
+  onShowWormholesReference,
   additionalContent,
 }: RightBarProps) => {
   const {
@@ -88,6 +90,16 @@ export const RightBar = ({
                   onClick={onShowOnTheMap}
                 >
                   <i className="pi pi-hashtag"></i>
+                </button>
+              </WdTooltipWrapper>
+
+              <WdTooltipWrapper content="Wormholes Reference" position={TooltipPosition.left}>
+                <button
+                  className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                  type="button"
+                  onClick={onShowWormholesReference}
+                >
+                  <i className="pi pi-bullseye"></i>
                 </button>
               </WdTooltipWrapper>
             </div>
