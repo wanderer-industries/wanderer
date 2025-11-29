@@ -151,10 +151,23 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
       remove_from_untrack_queue(map_id, character_id)
 
-      {:ok, character_state} =
-        WandererApp.Character.Tracker.update_settings(character_id, track_settings)
+      case WandererApp.Character.Tracker.update_settings(character_id, track_settings) do
+        {:ok, character_state} ->
+          WandererApp.Character.update_character_state(character_id, character_state)
 
-      WandererApp.Character.update_character_state(character_id, character_state)
+        {:error, :not_found} ->
+          # Tracker process not running yet - this is expected during initial tracking setup
+          # The tracking_start_time cache key was already set by TrackingUtils.track_character
+          Logger.debug(fn ->
+            "[TrackerManager] Tracker not yet running for character #{character_id} - " <>
+              "tracking will be active via cache key"
+          end)
+
+        {:error, reason} ->
+          Logger.warning(fn ->
+            "[TrackerManager] Failed to update settings for character #{character_id}: #{inspect(reason)}"
+          end)
+      end
     else
       Logger.debug(fn ->
         "[TrackerManager] Queuing character #{character_id} for untracking from map #{map_id} - " <>

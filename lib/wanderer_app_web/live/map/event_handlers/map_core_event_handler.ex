@@ -17,6 +17,13 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     socket
   end
 
+  def handle_server_event(%{event: :acl_members_changed, payload: _payload}, socket) do
+    # ACL members have changed - notify frontend to refresh tracking data
+    # This ensures users see newly added characters as available for tracking
+    socket
+    |> MapEventHandler.push_map_event("refresh_tracking_data", %{})
+  end
+
   def handle_server_event(
         :refresh_permissions,
         %{assigns: %{current_user: current_user, map_slug: map_slug}} = socket

@@ -116,7 +116,9 @@ defmodule WandererAppWeb.PresenceGracePeriodManager do
       |> Map.new()
 
     if length(timers_to_cancel) > 0 do
-      Logger.debug("[PresenceGracePeriod] Cleared state for map #{map_id} - cancelled #{length(timers_to_cancel)} timers")
+      Logger.debug(
+        "[PresenceGracePeriod] Cleared state for map #{map_id} - cancelled #{length(timers_to_cancel)} timers"
+      )
     end
 
     new_state = %{

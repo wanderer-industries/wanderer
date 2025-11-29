@@ -68,6 +68,9 @@ defmodule WandererApp.Map.Server.AclsImpl do
     WandererApp.Map.update_map_state(map_id, %{
       map: Map.merge(old_map, map_update)
     })
+
+    # Broadcast to map channel so all viewers can refresh their available characters
+    WandererApp.Map.Server.Impl.broadcast!(map_id, :acl_members_changed, %{})
   end
 
   def handle_acl_updated(map_id, acl_id) do
@@ -87,6 +90,10 @@ defmodule WandererApp.Map.Server.AclsImpl do
         acl_id
         |> update_acl()
         |> broadcast_acl_updates(map_id)
+
+      # Broadcast to map channel so all viewers can refresh their available characters
+      # This fixes the issue where users don't see newly added ACL members as available for tracking
+      WandererApp.Map.Server.Impl.broadcast!(map_id, :acl_members_changed, %{acl_id: acl_id})
     end
   end
 
@@ -108,6 +115,9 @@ defmodule WandererApp.Map.Server.AclsImpl do
       |> Map.get(:characters, [])
 
     WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
+
+    # Broadcast to map channel so all viewers can refresh their available characters
+    WandererApp.Map.Server.Impl.broadcast!(map_id, :acl_members_changed, %{})
   end
 
   def track_acls([]), do: :ok

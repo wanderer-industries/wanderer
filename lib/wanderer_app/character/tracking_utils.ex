@@ -212,6 +212,9 @@ defmodule WandererApp.Character.TrackingUtils do
       {:ok, %{tracked: false} = existing_settings} ->
         if track do
           {:ok, updated_settings} = WandererApp.MapCharacterSettingsRepo.track(existing_settings)
+          # Ensure character is in map state (fixes race condition where character
+          # might not be synced yet from presence updates)
+          :ok = WandererApp.Map.add_character(map_id, character)
           :ok = track([character], map_id, true, caller_pid)
           {:ok, updated_settings}
         else
@@ -228,6 +231,9 @@ defmodule WandererApp.Character.TrackingUtils do
               tracked: true
             })
 
+          # Add character to map state immediately (fixes race condition where
+          # character wouldn't appear on map until next update_presence cycle)
+          :ok = WandererApp.Map.add_character(map_id, character)
           :ok = track([character], map_id, true, caller_pid)
           {:ok, settings}
         else
@@ -290,6 +296,31 @@ defmodule WandererApp.Character.TrackingUtils do
 
     if is_track_allowed do
       :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
+
+      # Immediately set tracking_start_time cache key to enable map tracking
+      # This ensures the character is tracked for updates even before the
+      # Tracker process is fully started (avoids race condition)
+      tracking_start_key = "character:#{character_id}:map:#{map_id}:tracking_start_time"
+
+      case WandererApp.Cache.lookup(tracking_start_key) do
+        {:ok, nil} ->
+          WandererApp.Cache.put(tracking_start_key, DateTime.utc_now())
+
+          # Clear stale location caches for fresh tracking
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+          WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+
+        _ ->
+          # Already tracking, no need to update
+          :ok
+      end
+
+      # Also call update_track_settings to update character state when tracker is ready
+      WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+        map_id: map_id,
+        track: true
+      })
     end
 
     :ok
