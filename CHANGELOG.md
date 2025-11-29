@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.88.9](https://github.com/wanderer-industries/wanderer/compare/v1.88.8...v1.88.9) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed linked signatures cleanup
+
 ## [v1.88.8](https://github.com/wanderer-industries/wanderer/compare/v1.88.7...v1.88.8) (2025-11-28)
 
 
