@@ -405,11 +405,20 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
         :ok = Ash.destroy!(s)
 
-        Logger.warning(
-          "[cleanup_linked_signatures] for system #{system.solar_system_id}: #{inspect(eve_id)}"
-        )
+        # Handle case where parent system was already deleted
+        case system do
+          nil ->
+            Logger.warning(
+              "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+            )
 
-        Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+          %{solar_system_id: solar_system_id} ->
+            Logger.warning(
+              "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
+            )
+
+            Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+        end
       rescue
         e ->
           Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
