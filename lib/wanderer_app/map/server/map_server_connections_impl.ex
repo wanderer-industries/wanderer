@@ -859,14 +859,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
         @frigate_ship_size
 
-      # C4 to null gets frigate (unless C4 is shattered)
-      (source_system_info.system_class == @c4 and target_system_info.system_class == @ns and
-         not source_system_info.is_shattered) or
-          (target_system_info.system_class == @c4 and
-             source_system_info.system_class == @ns and
-             not target_system_info.is_shattered) ->
-        @frigate_ship_size
-
       true ->
         # Default to large for other wormhole connections
         @large_ship_size
