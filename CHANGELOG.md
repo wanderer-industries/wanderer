@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.88.10](https://github.com/wanderer-industries/wanderer/compare/v1.88.9...v1.88.10) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed pings cleanup
+
 ## [v1.88.9](https://github.com/wanderer-industries/wanderer/compare/v1.88.8...v1.88.9) (2025-11-29)
 
 
