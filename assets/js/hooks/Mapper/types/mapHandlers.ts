@@ -38,6 +38,7 @@ export enum Commands {
   updateTracking = 'update_tracking',
   userSettingsUpdated = 'user_settings_updated',
   showTracking = 'show_tracking',
+  refreshTrackingData = 'refresh_tracking_data',
   pingAdded = 'ping_added',
   pingCancelled = 'ping_cancelled',
 }
@@ -74,6 +75,7 @@ export type Command =
   | Commands.updateActivity
   | Commands.updateTracking
   | Commands.showTracking
+  | Commands.refreshTrackingData
   | Commands.pingAdded
   | Commands.pingCancelled;
 
@@ -145,6 +147,7 @@ export type CommandUserSettingsUpdated = {
 };
 
 export type CommandShowTracking = null;
+export type CommandRefreshTrackingData = Record<string, never>;
 export type CommandUpdateActivity = {
   characterId: number;
   systemId: number;
@@ -206,6 +209,7 @@ export interface CommandData {
   [Commands.systemCommentRemoved]: CommandCommentRemoved;
   [Commands.systemCommentsUpdated]: unknown;
   [Commands.showTracking]: CommandShowTracking;
+  [Commands.refreshTrackingData]: CommandRefreshTrackingData;
   [Commands.pingAdded]: CommandPingAdded;
   [Commands.pingCancelled]: CommandPingCancelled;
 }

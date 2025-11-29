@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
+import { createContext, useCallback, useContext, useRef, useState, useEffect } from 'react';
+import { Commands, OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { IncomingEvent, WithChildren } from '@/hooks/Mapper/types/common.ts';
 import { CommandInCharactersTrackingInfo } from '@/hooks/Mapper/types/commandsIn.ts';
+import { useMapEventListener } from '@/hooks/Mapper/events';
 
 type DiffTrackingInfo = { characterId: string; tracked: boolean };
 
@@ -121,6 +122,14 @@ export const TrackingProvider = ({ children }: WithChildren) => {
     },
     [outCommand],
   );
+
+  // Listen for refresh_tracking_data event (triggered when ACL members change)
+  useMapEventListener(event => {
+    if (event.name === Commands.refreshTrackingData) {
+      loadTracking();
+      return true;
+    }
+  });
 
   return (
     <TrackingContext.Provider
