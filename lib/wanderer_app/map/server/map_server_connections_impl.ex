@@ -57,6 +57,12 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   @known_space [@hs, @ls, @ns, @pochven]
 
+  # Individual space type lists for granular scope matching
+  @hi_space [@hs]
+  @low_space [@ls]
+  @null_space [@ns]
+  @pochven_space [@pochven]
+
   @prohibited_systems [@jita]
   @prohibited_system_classes [
     @a1,
@@ -644,30 +650,48 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         start_time
       )
 
-  def can_add_location(_scope, nil), do: false
+  def can_add_location(_scopes, nil), do: false
 
-  def can_add_location(:none, _solar_system_id), do: false
+  def can_add_location([], _solar_system_id), do: false
 
-  def can_add_location(scope, solar_system_id) do
+  def can_add_location(scopes, solar_system_id) when is_list(scopes) do
     {:ok, system_static_info} = get_system_static_info(solar_system_id)
 
-    case scope do
-      :wormholes ->
-        not is_prohibited_system_class?(system_static_info.system_class) and
-          not (@prohibited_systems |> Enum.member?(solar_system_id)) and
-          @wh_space |> Enum.member?(system_static_info.system_class)
-
-      :stargates ->
-        not is_prohibited_system_class?(system_static_info.system_class) and
-          @known_space |> Enum.member?(system_static_info.system_class)
-
-      :all ->
-        not is_prohibited_system_class?(system_static_info.system_class)
-
-      _ ->
-        false
-    end
+    not is_prohibited_system_class?(system_static_info.system_class) and
+      not (@prohibited_systems |> Enum.member?(solar_system_id)) and
+      system_matches_any_scope?(system_static_info.system_class, scopes)
   end
+
+  # Legacy support for single scope atom
+  def can_add_location(:none, _solar_system_id), do: false
+
+  def can_add_location(scope, solar_system_id) when is_atom(scope) do
+    can_add_location(legacy_scope_to_scopes(scope), solar_system_id)
+  end
+
+  # Helper function to check if a system class matches any of the selected scopes
+  defp system_matches_any_scope?(_system_class, []), do: false
+
+  defp system_matches_any_scope?(system_class, scopes) do
+    Enum.any?(scopes, fn scope ->
+      system_matches_scope?(system_class, scope)
+    end)
+  end
+
+  # Individual scope matching functions
+  defp system_matches_scope?(system_class, :wormholes), do: system_class in @wh_space
+  defp system_matches_scope?(system_class, :hi), do: system_class in @hi_space
+  defp system_matches_scope?(system_class, :low), do: system_class in @low_space
+  defp system_matches_scope?(system_class, :null), do: system_class in @null_space
+  defp system_matches_scope?(system_class, :pochven), do: system_class in @pochven_space
+  defp system_matches_scope?(_system_class, _), do: false
+
+  # Legacy scope to new scopes array conversion
+  defp legacy_scope_to_scopes(:wormholes), do: [:wormholes]
+  defp legacy_scope_to_scopes(:stargates), do: [:hi, :low, :null, :pochven]
+  defp legacy_scope_to_scopes(:all), do: [:wormholes, :hi, :low, :null, :pochven]
+  defp legacy_scope_to_scopes(:none), do: []
+  defp legacy_scope_to_scopes(_), do: [:wormholes]
 
   def is_prohibited_system_class?(system_class) do
     @prohibited_system_classes |> Enum.member?(system_class)
@@ -688,17 +712,41 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
         )
 
-  def is_connection_valid(_scope, from_solar_system_id, to_solar_system_id)
+  def is_connection_valid(_scopes, from_solar_system_id, to_solar_system_id)
       when is_nil(from_solar_system_id) or is_nil(to_solar_system_id),
       do: false
 
+  def is_connection_valid([], _from_solar_system_id, _to_solar_system_id), do: false
+
+  # New array-based scopes support
+  def is_connection_valid(scopes, from_solar_system_id, to_solar_system_id)
+      when is_list(scopes) and from_solar_system_id != to_solar_system_id do
+    with {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
+         {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do
+      # Connection is valid if:
+      # 1. Neither system is prohibited
+      # 2. At least one system matches one of the selected scopes
+      not is_prohibited_system_class?(from_system_static_info.system_class) and
+        not is_prohibited_system_class?(to_system_static_info.system_class) and
+        not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
+        not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
+        (system_matches_any_scope?(from_system_static_info.system_class, scopes) or
+           system_matches_any_scope?(to_system_static_info.system_class, scopes))
+    else
+      _ -> false
+    end
+  end
+
+  # Legacy support: :all scope
   def is_connection_valid(:all, from_solar_system_id, to_solar_system_id),
     do: from_solar_system_id != to_solar_system_id
 
+  # Legacy support: :none scope
   def is_connection_valid(:none, _from_solar_system_id, _to_solar_system_id), do: false
 
+  # Legacy support: single atom scope (including :stargates which is used for connection type detection)
   def is_connection_valid(scope, from_solar_system_id, to_solar_system_id)
-      when from_solar_system_id != to_solar_system_id do
+      when is_atom(scope) and from_solar_system_id != to_solar_system_id do
     with {:ok, known_jumps} <- find_solar_system_jump(from_solar_system_id, to_solar_system_id),
          {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
          {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do
@@ -712,7 +760,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         :stargates ->
           # For stargates, we need to check:
-          # 1. Both systems are in known space (HS, LS, NS)
+          # 1. Both systems are in known space (HS, LS, NS, Pochven)
           # 2. There is a known jump between them
           # 3. Neither system is prohibited
           from_system_static_info.system_class in @known_space and
@@ -720,13 +768,17 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             not is_prohibited_system_class?(from_system_static_info.system_class) and
             not is_prohibited_system_class?(to_system_static_info.system_class) and
             not (known_jumps |> Enum.empty?())
+
+        _ ->
+          # For other legacy scopes, convert to array and use new logic
+          is_connection_valid(legacy_scope_to_scopes(scope), from_solar_system_id, to_solar_system_id)
       end
     else
       _ -> false
     end
   end
 
-  def is_connection_valid(_scope, _from_solar_system_id, _to_solar_system_id), do: false
+  def is_connection_valid(_scopes, _from_solar_system_id, _to_solar_system_id), do: false
 
   def get_connection_mark_eol_time(map_id, connection_id, default \\ DateTime.utc_now()) do
     WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:mark_eol_time")

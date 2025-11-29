@@ -13,6 +13,8 @@ defmodule WandererApp.Api.Map do
   postgres do
     repo(WandererApp.Repo)
     table("maps_v1")
+
+    migration_defaults scopes: "'{wormholes}'"
   end
 
   json_api do
@@ -111,6 +113,7 @@ defmodule WandererApp.Api.Map do
         :slug,
         :description,
         :scope,
+        :scopes,
         :only_tracked_characters,
         :owner_id,
         :sse_enabled
@@ -135,6 +138,7 @@ defmodule WandererApp.Api.Map do
         :slug,
         :description,
         :scope,
+        :scopes,
         :only_tracked_characters,
         :owner_id,
         :sse_enabled
@@ -209,7 +213,7 @@ defmodule WandererApp.Api.Map do
     end
 
     create :duplicate do
-      accept [:name, :description, :scope, :only_tracked_characters]
+      accept [:name, :description, :scope, :scopes, :only_tracked_characters]
       argument :source_map_id, :uuid, allow_nil?: false
       argument :copy_acls, :boolean, default: true
       argument :copy_user_settings, :boolean, default: true
@@ -225,9 +229,14 @@ defmodule WandererApp.Api.Map do
             description =
               Ash.Changeset.get_attribute(changeset, :description) || source_map.description
 
+            # Use provided scopes or fall back to source map scopes
+            scopes =
+              Ash.Changeset.get_attribute(changeset, :scopes) || source_map.scopes
+
             changeset
             |> Ash.Changeset.change_attribute(:description, description)
             |> Ash.Changeset.change_attribute(:scope, source_map.scope)
+            |> Ash.Changeset.change_attribute(:scopes, scopes)
             |> Ash.Changeset.change_attribute(
               :only_tracked_characters,
               source_map.only_tracked_characters
@@ -357,6 +366,24 @@ defmodule WandererApp.Api.Map do
       default(false)
       allow_nil?(false)
       public?(true)
+    end
+
+    attribute :scopes, {:array, :atom} do
+      default([:wormholes])
+      allow_nil?(true)
+      public?(true)
+
+      constraints(
+        items: [
+          one_of: [
+            :wormholes,
+            :hi,
+            :low,
+            :null,
+            :pochven
+          ]
+        ]
+      )
     end
 
     create_timestamp(:inserted_at)

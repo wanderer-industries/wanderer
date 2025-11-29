@@ -814,14 +814,16 @@ defmodule WandererApp.Map.Server.CharactersImpl do
        do: :ok
 
   defp update_location(
-         %{map: %{scope: scope}, map_id: map_id, map_opts: map_opts} =
+         %{map: map, map_id: map_id, map_opts: map_opts} =
            _state,
          character_id,
          location,
          old_location
        ) do
+    scopes = get_effective_scopes(map)
+
     ConnectionsImpl.is_connection_valid(
-      scope,
+      scopes,
       old_location.solar_system_id,
       location.solar_system_id
     )
@@ -878,6 +880,18 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = _location),
     do: is_nil(structure_id) && is_nil(station_id)
+
+  # Get effective scopes from map, with fallback to legacy scope
+  defp get_effective_scopes(%{scopes: scopes}) when is_list(scopes) and scopes != [], do: scopes
+  defp get_effective_scopes(%{scope: scope}) when is_atom(scope), do: legacy_scope_to_scopes(scope)
+  defp get_effective_scopes(_), do: [:wormholes]
+
+  # Legacy scope to new scopes array conversion
+  defp legacy_scope_to_scopes(:wormholes), do: [:wormholes]
+  defp legacy_scope_to_scopes(:stargates), do: [:hi, :low, :null, :pochven]
+  defp legacy_scope_to_scopes(:all), do: [:wormholes, :hi, :low, :null, :pochven]
+  defp legacy_scope_to_scopes(:none), do: []
+  defp legacy_scope_to_scopes(_), do: [:wormholes]
 
   defp add_character(
          map_id,
