@@ -115,11 +115,20 @@ defmodule WandererApp.Map.Manager do
         Enum.each(pings, fn %{id: ping_id, map_id: map_id, type: type} = ping ->
           {:ok, %{system: system}} = ping |> Ash.load([:system])
 
-          Server.Impl.broadcast!(map_id, :ping_cancelled, %{
-            id: ping_id,
-            solar_system_id: system.solar_system_id,
-            type: type
-          })
+          # Handle case where parent system was already deleted
+          case system do
+            nil ->
+              Logger.warning(
+                "[cleanup_expired_pings] ping #{ping_id} destroyed (parent system already deleted)"
+              )
+
+            %{solar_system_id: solar_system_id} ->
+              Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+                id: ping_id,
+                solar_system_id: solar_system_id,
+                type: type
+              })
+          end
 
           Ash.destroy!(ping)
         end)
