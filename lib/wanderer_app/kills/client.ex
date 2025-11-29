@@ -182,7 +182,7 @@ defmodule WandererApp.Kills.Client do
   end
 
   # Guard against duplicate disconnection events
-  def handle_info({:disconnected, reason}, %{connected: false, connecting: false} = state) do
+  def handle_info({:disconnected, _reason}, %{connected: false, connecting: false} = state) do
     {:noreply, state}
   end
 
@@ -566,7 +566,7 @@ defmodule WandererApp.Kills.Client do
     end
   end
 
-  defp check_health(%{socket_pid: pid} = state) do
+  defp check_health(%{socket_pid: pid}) do
     if socket_alive?(pid) do
       :healthy
     else
@@ -588,22 +588,6 @@ defmodule WandererApp.Kills.Client do
 
   defp schedule_health_check do
     Process.send_after(self(), :health_check, @health_check_interval)
-  end
-
-  defp handle_connection_lost(%{connected: false} = _state) do
-    Logger.debug("[Client] Connection already lost, skipping cleanup")
-  end
-
-  defp handle_connection_lost(state) do
-    Logger.warning("[Client] Connection lost, cleaning up and reconnecting")
-
-    # Clean up existing socket
-    if state.socket_pid do
-      disconnect_socket(state.socket_pid)
-    end
-
-    # Reset state and trigger reconnection
-    send(self(), {:disconnected, :connection_lost})
   end
 
   # Handler module for WebSocket events
@@ -640,7 +624,7 @@ defmodule WandererApp.Kills.Client do
       }
 
       case GenSocketClient.join(transport, "killmails:lobby", join_params) do
-        {:ok, response} ->
+        {:ok, _response} ->
           send(state.parent, {:connected, self()})
           # Reset disconnected flag on successful connection
           {:ok, %{state | disconnected: false}}

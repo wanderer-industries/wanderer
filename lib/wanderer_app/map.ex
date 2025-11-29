@@ -177,7 +177,7 @@ defmodule WandererApp.Map do
   end
 
   def list_hubs(map_id, hubs) do
-    {:ok, map} = map_id |> get_map()
+    {:ok, _map} = map_id |> get_map()
 
     {:ok, hubs}
   end
@@ -315,7 +315,7 @@ defmodule WandererApp.Map do
     end
   end
 
-  def update_subscription_settings!(%{map_id: map_id} = map, %{
+  def update_subscription_settings!(%{map_id: map_id} = _map, %{
         characters_limit: characters_limit,
         hubs_limit: hubs_limit
       }) do
@@ -326,7 +326,7 @@ defmodule WandererApp.Map do
     |> get_map!()
   end
 
-  def update_options!(%{map_id: map_id} = map, options) do
+  def update_options!(%{map_id: map_id} = _map, options) do
     map_id
     |> update_map(%{options: options})
 

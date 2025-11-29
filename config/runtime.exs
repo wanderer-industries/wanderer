@@ -264,7 +264,7 @@ config :logger,
         case config_env() do
           :prod -> "info"
           :dev -> "info"
-          :test -> "debug"
+          :test -> "warning"
         end
       )
     )

@@ -113,13 +113,6 @@ defmodule WandererAppWeb.MapLive do
   end
 
   @impl true
-  def handle_info(info, socket),
-    do:
-      {:noreply,
-       socket
-       |> WandererAppWeb.MapEventHandler.handle_event(info)}
-
-  @impl true
   def handle_event("change_subscription_tab", %{"tab" => tab}, socket),
     do: {:noreply, socket |> assign(active_subscription_tab: tab)}
 

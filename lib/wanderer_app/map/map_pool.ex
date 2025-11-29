@@ -329,6 +329,9 @@ defmodule WandererApp.Map.MapPool do
     end
   end
 
+  @impl true
+  def handle_call(:error, _, state), do: {:stop, :error, :ok, state}
+
   defp do_start_map(map_id, %{map_ids: map_ids, uuid: uuid} = state) do
     if map_id in map_ids do
       # Map already started
@@ -343,8 +346,6 @@ defmodule WandererApp.Map.MapPool do
           Registry.update_value(@unique_registry, Module.concat(__MODULE__, uuid), fn r_map_ids ->
             [map_id | r_map_ids]
           end)
-
-        completed_operations = [:registry | completed_operations]
 
         case registry_result do
           {new_value, _old_value} when is_list(new_value) ->
@@ -363,12 +364,8 @@ defmodule WandererApp.Map.MapPool do
             raise "Failed to add to cache: #{inspect(reason)}"
         end
 
-        completed_operations = [:cache | completed_operations]
-
         # Step 3: Start the map server using extracted helper
         do_initialize_map_server(map_id)
-
-        completed_operations = [:map_server | completed_operations]
 
         # Step 4: Update GenServer state (last, as this is in-memory and fast)
         new_state = %{state | map_ids: [map_id | map_ids]}
@@ -445,8 +442,6 @@ defmodule WandererApp.Map.MapPool do
           r_map_ids |> Enum.reject(fn id -> id == map_id end)
         end)
 
-      completed_operations = [:registry | completed_operations]
-
       case registry_result do
         {new_value, _old_value} when is_list(new_value) ->
           :ok
@@ -464,13 +459,9 @@ defmodule WandererApp.Map.MapPool do
           raise "Failed to delete from cache: #{inspect(reason)}"
       end
 
-      completed_operations = [:cache | completed_operations]
-
       # Step 3: Stop the map server (clean up all map resources)
       map_id
       |> Server.Impl.stop_map()
-
-      completed_operations = [:map_server | completed_operations]
 
       # Step 4: Update GenServer state (last, as this is in-memory and fast)
       new_state = %{state | map_ids: map_ids |> Enum.reject(fn id -> id == map_id end)}
@@ -559,9 +550,6 @@ defmodule WandererApp.Map.MapPool do
     # Note: We don't rollback map_server stop as Server.Impl.stop_map() is idempotent
     # and the cleanup operations are safe to leave in a "stopped" state
   end
-
-  @impl true
-  def handle_call(:error, _, state), do: {:stop, :error, :ok, state}
 
   @impl true
   def handle_info(:backup_state, %{map_ids: map_ids, uuid: uuid} = state) do

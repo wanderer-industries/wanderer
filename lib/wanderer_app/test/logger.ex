@@ -5,7 +5,11 @@ defmodule WandererApp.Test.Logger do
   """
 
   @callback info(message :: iodata() | (-> iodata())) :: :ok
+  @callback info(message :: iodata() | (-> iodata()), metadata :: keyword()) :: :ok
   @callback error(message :: iodata() | (-> iodata())) :: :ok
+  @callback error(message :: iodata() | (-> iodata()), metadata :: keyword()) :: :ok
   @callback warning(message :: iodata() | (-> iodata())) :: :ok
+  @callback warning(message :: iodata() | (-> iodata()), metadata :: keyword()) :: :ok
   @callback debug(message :: iodata() | (-> iodata())) :: :ok
+  @callback debug(message :: iodata() | (-> iodata()), metadata :: keyword()) :: :ok
 end

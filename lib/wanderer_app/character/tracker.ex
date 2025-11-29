@@ -598,9 +598,6 @@ defmodule WandererApp.Character.Tracker do
 
                 {:error, :skipped}
             end
-
-          _ ->
-            {:error, :skipped}
         end
 
       _ ->
@@ -799,7 +796,7 @@ defmodule WandererApp.Character.Tracker do
         corporation_id
         |> WandererApp.Esi.get_corporation_info()
         |> case do
-          {:ok, %{"name" => corporation_name, "ticker" => corporation_ticker} = corporation_info} ->
+          {:ok, %{"name" => corporation_name, "ticker" => corporation_ticker}} ->
             {:ok, character} =
               WandererApp.Character.get_character(character_id)
 
@@ -1002,7 +999,7 @@ defmodule WandererApp.Character.Tracker do
   defp maybe_update_active_maps(
          %{character_id: character_id, active_maps: active_maps} =
            state,
-         %{map_id: map_id, track: true} = track_settings
+         %{map_id: map_id, track: true}
        ) do
     if not Enum.member?(active_maps, map_id) do
       WandererApp.Cache.put(

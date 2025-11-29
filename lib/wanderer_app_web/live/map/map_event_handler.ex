@@ -230,6 +230,7 @@ defmodule WandererAppWeb.MapEventHandler do
   def handle_event(socket, {:DOWN, ref, :process, _pid, reason}) when is_reference(ref) do
     # Task failed, log the error and update the client
     Logger.error("Task failed: #{inspect(reason)}")
+    socket
   end
 
   def handle_event(socket, event),

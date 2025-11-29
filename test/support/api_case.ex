@@ -170,9 +170,7 @@ defmodule WandererAppWeb.ApiCase do
     |> Plug.Conn.put_req_header("content-type", "application/vnd.api+json")
   end
 
-  @doc """
-  Creates an active subscription for a map to bypass subscription checks in tests.
-  """
+  # Creates an active subscription for a map to bypass subscription checks in tests.
   defp create_active_subscription_for_map(map_id) do
     # Create a subscription with a non-alpha plan (status defaults to :active)
     {:ok, _subscription} =

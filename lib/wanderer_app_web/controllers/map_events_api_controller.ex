@@ -65,24 +65,6 @@ defmodule WandererAppWeb.MapEventsAPIController do
                             items: @event_schema
                           })
 
-  @events_list_params %OpenApiSpex.Schema{
-    type: :object,
-    properties: %{
-      since: %OpenApiSpex.Schema{
-        type: :string,
-        format: :date_time,
-        description: "Return events after this timestamp (ISO8601)"
-      },
-      limit: %OpenApiSpex.Schema{
-        type: :integer,
-        minimum: 1,
-        maximum: 100,
-        default: 100,
-        description: "Maximum number of events to return"
-      }
-    }
-  }
-
   # -----------------------------------------------------------------
   # OpenApiSpex Operations
   # -----------------------------------------------------------------
@@ -173,7 +155,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
         |> put_status(:bad_request)
         |> json(%{error: "Invalid 'limit' parameter. Must be between 1 and 100."})
 
-      {:error, reason} ->
+      {:error, _reason} ->
         conn
         |> put_status(:internal_server_error)
         |> json(%{error: "Internal server error"})
@@ -184,7 +166,7 @@ defmodule WandererAppWeb.MapEventsAPIController do
   # Private Functions
   # -----------------------------------------------------------------
 
-  defp get_map(conn, map_identifier) do
+  defp get_map(conn, _map_identifier) do
     # The map should already be loaded by the CheckMapApiKey plug
     case conn.assigns[:map] do
       nil -> {:error, :map_not_found}

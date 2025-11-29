@@ -209,7 +209,7 @@
                               rows={@transactions}
                               class="!max-h-[40vh] !overflow-y-auto"
                             >
-                              <:col :let={transaction}>
+                              <:col :let={_transaction}>
                                 <div class=" text-22">
                                   <.icon name="hero-credit-card-solid" class="h-5 w-5" />
                                 </div>
@@ -267,7 +267,7 @@
                                 rows={@active_map_subscriptions}
                                 class="!max-h-[40vh] !overflow-y-auto"
                               >
-                                <:col :let={subscription}>
+                                <:col :let={_subscription}>
                                   <div class=" text-22">
                                     <.icon name="hero-check-badge-solid" class="w-5 h-5" />
                                   </div>

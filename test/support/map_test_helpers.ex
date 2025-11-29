@@ -83,11 +83,9 @@ defmodule WandererApp.MapTestHelpers do
     |> Enum.find(&(&1 == :ok))
   end
 
-  @doc """
-  Continuously grants database access to all MapPool processes and their children.
-  This is necessary when maps are started dynamically during tests.
-  Uses efficient polling with minimal delays.
-  """
+  # Continuously grants database access to all MapPool processes and their children.
+  # This is necessary when maps are started dynamically during tests.
+  # Uses efficient polling with minimal delays.
   defp grant_database_access_continuously do
     owner_pid = Process.get(:sandbox_owner_pid) || self()
 

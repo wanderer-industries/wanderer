@@ -5,8 +5,6 @@ defmodule WandererAppWeb.MapAuditLive do
 
   alias WandererAppWeb.UserActivity
 
-  @active_subscription_periods ["2M", "3M"]
-
   def mount(
         %{"slug" => map_slug, "period" => period, "activity" => activity} = _params,
         _session,

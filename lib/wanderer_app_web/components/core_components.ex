@@ -284,6 +284,7 @@ defmodule WandererAppWeb.CoreComponents do
   """
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
+  attr(:data, :any, default: nil)
   attr(:rest, :global, include: ~w(disabled form name value))
 
   slot(:inner_block, required: true)
@@ -296,6 +297,7 @@ defmodule WandererAppWeb.CoreComponents do
         "phx-submit-loading:opacity-75 p-button p-component p-button-outlined p-button-sm",
         @class
       ]}
+      data={@data}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -614,7 +616,7 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:empty_label, :string, default: nil)
   attr(:rows, :list, required: true)
   attr(:row_id, :any, default: nil, doc: "the function for generating the row id")
-  attr(:row_selected, :boolean, default: false, doc: "the function for generating the row id")
+  attr(:row_selected, :any, default: false, doc: "the function for generating the row id")
   attr(:row_click, :any, default: nil, doc: "the function for handling phx-click on each row")
 
   attr(:row_item, :any,
@@ -703,13 +705,21 @@ defmodule WandererAppWeb.CoreComponents do
     """
   end
 
+  attr(:field, :any, required: true)
   attr(:placeholder, :string, default: nil)
   attr(:label, :string, default: nil)
   attr(:label_class, :string, default: nil)
   attr(:input_class, :string, default: nil)
   attr(:dropdown_extra_class, :string, default: nil)
   attr(:option_extra_class, :string, default: nil)
+  attr(:mode, :atom, default: nil)
+  attr(:options, :list, default: [])
+  attr(:debounce, :integer, default: nil)
+  attr(:update_min_len, :integer, default: nil)
+  attr(:available_option_class, :string, default: nil)
+  attr(:value_mapper, :any, default: nil)
   slot(:inner_block)
+  slot(:option)
 
   def live_select(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns =

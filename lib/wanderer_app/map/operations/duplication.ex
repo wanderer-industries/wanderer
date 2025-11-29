@@ -12,7 +12,6 @@ defmodule WandererApp.Map.Operations.Duplication do
   """
 
   require Logger
-  import Ash.Query, only: [filter: 2]
 
   alias WandererApp.Api
   alias WandererApp.Api.{MapSystem, MapConnection, MapSystemSignature, MapCharacterSettings}

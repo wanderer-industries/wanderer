@@ -34,11 +34,15 @@ defmodule WandererApp.Test.Mocks do
 
   defp setup_default_stubs do
     # Set up default stubs for logger mock (these methods are called during application startup)
-    Test.LoggerMock
-    |> Mox.stub(:info, fn _message -> :ok end)
-    |> Mox.stub(:warning, fn _message -> :ok end)
-    |> Mox.stub(:error, fn _message -> :ok end)
-    |> Mox.stub(:debug, fn _message -> :ok end)
+    # Support both 1-arity (message only) and 2-arity (message + metadata) versions
+    Mox.stub(Test.LoggerMock, :info, fn _message -> :ok end)
+    Mox.stub(Test.LoggerMock, :info, fn _message, _metadata -> :ok end)
+    Mox.stub(Test.LoggerMock, :warning, fn _message -> :ok end)
+    Mox.stub(Test.LoggerMock, :warning, fn _message, _metadata -> :ok end)
+    Mox.stub(Test.LoggerMock, :error, fn _message -> :ok end)
+    Mox.stub(Test.LoggerMock, :error, fn _message, _metadata -> :ok end)
+    Mox.stub(Test.LoggerMock, :debug, fn _message -> :ok end)
+    Mox.stub(Test.LoggerMock, :debug, fn _message, _metadata -> :ok end)
 
     # Set up default stubs for PubSub mock
     Test.PubSubMock

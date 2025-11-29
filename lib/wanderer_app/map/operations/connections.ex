@@ -93,10 +93,8 @@ defmodule WandererApp.Map.Operations.Connections do
     end
   end
 
-  @doc """
-  Determines the ship size for a connection, applying wormhole‑specific rules
-  for C1, C13, and C4⇄NS links, falling back to the caller’s provided size or Large.
-  """
+  # Determines the ship size for a connection, applying wormhole-specific rules
+  # for C1, C13, and C4⇄NS links, falling back to the caller's provided size or Large.
   defp resolve_ship_size(type_val, ship_size_val, src_info, tgt_info) do
     case parse_type(type_val) do
       @connection_type_wormhole ->

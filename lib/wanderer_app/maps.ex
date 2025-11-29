@@ -128,7 +128,7 @@ defmodule WandererApp.Maps do
         tracked: tracked
       }
 
-  defp get_map_characters(%{id: map_id} = map) do
+  defp get_map_characters(%{id: map_id} = _map) do
     WandererApp.Cache.lookup!("map_characters-#{map_id}")
     |> case do
       nil ->
