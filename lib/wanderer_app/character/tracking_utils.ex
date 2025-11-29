@@ -114,8 +114,88 @@ defmodule WandererApp.Character.TrackingUtils do
 
   # Private implementation of update character tracking
   defp do_update_character_tracking(character, map_id, track, caller_pid) do
-    WandererApp.MapCharacterSettingsRepo.get(map_id, character.id)
-    |> case do
+    # First check current tracking state to avoid unnecessary permission checks
+    current_settings = WandererApp.MapCharacterSettingsRepo.get(map_id, character.id)
+
+    case {track, current_settings} do
+      # Already tracked and wants to stay tracked - no permission check needed
+      {true, {:ok, %{tracked: true} = settings}} ->
+        do_update_character_tracking_impl(character, map_id, track, caller_pid, {:ok, settings})
+
+      # Wants to enable tracking - check permissions first
+      {true, settings_result} ->
+        case check_character_tracking_permission(character, map_id) do
+          {:ok, :allowed} ->
+            do_update_character_tracking_impl(character, map_id, track, caller_pid, settings_result)
+
+          {:error, reason} ->
+            Logger.warning(
+              "[CharacterTracking] Character #{character.id} cannot be tracked on map #{map_id}: #{reason}"
+            )
+
+            {:error, reason}
+        end
+
+      # Untracking is always allowed
+      {false, settings_result} ->
+        do_update_character_tracking_impl(character, map_id, track, caller_pid, settings_result)
+    end
+  end
+
+  # Check if a character has permission to be tracked on a map
+  defp check_character_tracking_permission(character, map_id) do
+    with {:ok, %{acls: acls, owner_id: owner_id}} <-
+           WandererApp.MapRepo.get(map_id,
+             acls: [
+               :owner_id,
+               members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+             ]
+           ) do
+      # Check if character is the map owner
+      if character.id == owner_id do
+        {:ok, :allowed}
+      else
+        # Check if character belongs to same user as owner (Option 3 check)
+        case check_same_user_as_owner(character, owner_id) do
+          true ->
+            {:ok, :allowed}
+
+          false ->
+            # Check ACL-based permissions
+            [character_permissions] =
+              WandererApp.Permissions.check_characters_access([character], acls)
+
+            map_permissions = WandererApp.Permissions.get_permissions(character_permissions)
+
+            if map_permissions.track_character and map_permissions.view_system do
+              {:ok, :allowed}
+            else
+              {:error,
+               "Character does not have tracking permission on this map. Please add the character to a map access list or ensure you are the map owner."}
+            end
+        end
+      end
+    else
+      {:error, _} ->
+        {:error, "Failed to verify map permissions"}
+    end
+  end
+
+  # Check if character belongs to the same user as the map owner
+  defp check_same_user_as_owner(_character, nil), do: false
+
+  defp check_same_user_as_owner(character, owner_id) do
+    case WandererApp.Character.get_character(owner_id) do
+      {:ok, owner_character} ->
+        character.user_id != nil and character.user_id == owner_character.user_id
+
+      _ ->
+        false
+    end
+  end
+
+  defp do_update_character_tracking_impl(character, map_id, track, caller_pid, settings_result) do
+    case settings_result do
       # Untracking flow
       {:ok, %{tracked: true} = existing_settings} ->
         if not track do

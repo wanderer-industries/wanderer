@@ -21,7 +21,7 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -35,17 +35,17 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Elixir/OTP
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
-          
+
       - name: Cache Elixir dependencies
         uses: actions/cache@v3
         with:
@@ -54,12 +54,12 @@ jobs:
             _build
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
-          
+
       - name: Install Elixir dependencies
         run: |
           mix deps.get
           mix deps.compile
-          
+
       - name: Check code formatting
         id: format
         run: |
@@ -71,42 +71,42 @@ jobs:
             echo "count=1" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        
+
       - name: Compile code and capture warnings
         id: compile
         run: |
           # Capture compilation output
           output=$(mix compile 2>&1 || true)
           echo "$output" > compile_output.txt
-          
+
           # Count warnings
           warning_count=$(echo "$output" | grep -c "warning:" || echo "0")
-          
+
           # Check if compilation succeeded
           if mix compile > /dev/null 2>&1; then
             echo "status=✅ Success" >> $GITHUB_OUTPUT
           else
             echo "status=❌ Failed" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "warnings=$warning_count" >> $GITHUB_OUTPUT
           echo "output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         continue-on-error: true
-        
+
       - name: Setup database
         run: |
           mix ecto.create
           mix ecto.migrate
-          
+
       - name: Run tests with coverage
         id: tests
         run: |
           # Run tests with coverage
           output=$(mix test --cover 2>&1 || true)
           echo "$output" > test_output.txt
-          
+
           # Parse test results
           if echo "$output" | grep -q "0 failures"; then
             echo "status=✅ All Passed" >> $GITHUB_OUTPUT
@@ -115,16 +115,16 @@ jobs:
             echo "status=❌ Some Failed" >> $GITHUB_OUTPUT
             test_status="failed"
           fi
-          
+
           # Extract test counts
           test_line=$(echo "$output" | grep -E "[0-9]+ tests?, [0-9]+ failures?" | head -1 || echo "0 tests, 0 failures")
           total_tests=$(echo "$test_line" | grep -o '[0-9]\+ tests\?' | grep -o '[0-9]\+' | head -1 || echo "0")
           failures=$(echo "$test_line" | grep -o '[0-9]\+ failures\?' | grep -o '[0-9]\+' | head -1 || echo "0")
-          
+
           echo "total=$total_tests" >> $GITHUB_OUTPUT
           echo "failures=$failures" >> $GITHUB_OUTPUT
           echo "passed=$((total_tests - failures))" >> $GITHUB_OUTPUT
-          
+
           # Calculate success rate
           if [ "$total_tests" -gt 0 ]; then
             success_rate=$(echo "scale=1; ($total_tests - $failures) * 100 / $total_tests" | bc)
@@ -132,26 +132,26 @@ jobs:
             success_rate="0"
           fi
           echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
-          
+
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
         continue-on-error: true
-        
+
       - name: Generate coverage report
         id: coverage
         run: |
           # Generate coverage report with GitHub format
           output=$(mix coveralls.github 2>&1 || true)
           echo "$output" > coverage_output.txt
-          
+
           # Extract coverage percentage
           coverage=$(echo "$output" | grep -o '[0-9]\+\.[0-9]\+%' | head -1 | sed 's/%//' || echo "0")
           if [ -z "$coverage" ]; then
             coverage="0"
           fi
-          
+
           echo "percentage=$coverage" >> $GITHUB_OUTPUT
-          
+
           # Determine status
           if (( $(echo "$coverage >= 80" | bc -l) )); then
             echo "status=✅ Excellent" >> $GITHUB_OUTPUT
@@ -161,14 +161,14 @@ jobs:
             echo "status=❌ Needs Improvement" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        
+
       - name: Run Credo analysis
         id: credo
         run: |
           # Run Credo and capture output
           output=$(mix credo --strict --format=json 2>&1 || true)
           echo "$output" > credo_output.txt
-          
+
           # Try to parse JSON output
           if echo "$output" | jq . > /dev/null 2>&1; then
             issues=$(echo "$output" | jq '.issues | length' 2>/dev/null || echo "0")
@@ -183,12 +183,12 @@ jobs:
             normal_issues="0"
             low_issues="0"
           fi
-          
+
           echo "total_issues=$issues" >> $GITHUB_OUTPUT
           echo "high_issues=$high_issues" >> $GITHUB_OUTPUT
           echo "normal_issues=$normal_issues" >> $GITHUB_OUTPUT
           echo "low_issues=$low_issues" >> $GITHUB_OUTPUT
-          
+
           # Determine status
           if [ "$issues" -eq 0 ]; then
             echo "status=✅ Clean" >> $GITHUB_OUTPUT
@@ -198,24 +198,24 @@ jobs:
             echo "status=❌ Needs Attention" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        
+
       - name: Run Dialyzer analysis
         id: dialyzer
         run: |
           # Ensure PLT is built
           mix dialyzer --plt
-          
+
           # Run Dialyzer and capture output
           output=$(mix dialyzer --format=github 2>&1 || true)
           echo "$output" > dialyzer_output.txt
-          
+
           # Count warnings and errors
           warnings=$(echo "$output" | grep -c "warning:" || echo "0")
           errors=$(echo "$output" | grep -c "error:" || echo "0")
-          
+
           echo "warnings=$warnings" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
-          
+
           # Determine status
           if [ "$errors" -eq 0 ] && [ "$warnings" -eq 0 ]; then
             echo "status=✅ Clean" >> $GITHUB_OUTPUT
@@ -225,7 +225,7 @@ jobs:
             echo "status=❌ Has Errors" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        
+
       - name: Create test results summary
         id: summary
         run: |
@@ -236,11 +236,11 @@ jobs:
           coverage_score=${{ steps.coverage.outputs.percentage }}
           credo_score=$(echo "scale=0; (100 - ${{ steps.credo.outputs.total_issues }} * 2)" | bc | sed 's/^-.*$/0/')
           dialyzer_score=$(echo "scale=0; (100 - ${{ steps.dialyzer.outputs.warnings }} * 2 - ${{ steps.dialyzer.outputs.errors }} * 10)" | bc | sed 's/^-.*$/0/')
-          
+
           overall_score=$(echo "scale=1; ($format_score + $compile_score + $test_score + $coverage_score + $credo_score + $dialyzer_score) / 6" | bc)
-          
+
           echo "overall_score=$overall_score" >> $GITHUB_OUTPUT
-          
+
           # Determine overall status
           if (( $(echo "$overall_score >= 90" | bc -l) )); then
             echo "overall_status=🌟 Excellent" >> $GITHUB_OUTPUT
@@ -252,7 +252,7 @@ jobs:
             echo "overall_status=❌ Poor" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        
+
       - name: Find existing PR comment
         if: github.event_name == 'pull_request'
         id: find_comment
@@ -261,7 +261,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body-includes: '## 🧪 Test Results Summary'
-          
+
       - name: Create or update PR comment
         if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v4
@@ -271,11 +271,11 @@ jobs:
           edit-mode: replace
           body: |
             ## 🧪 Test Results Summary
-            
+
             **Overall Quality Score: ${{ steps.summary.outputs.overall_score }}%** ${{ steps.summary.outputs.overall_status }}
-            
+
             ### 📊 Metrics Dashboard
-            
+
             | Category | Status | Count | Details |
             |----------|---------|-------|---------|
             | 📝 **Code Formatting** | ${{ steps.format.outputs.status }} | ${{ steps.format.outputs.count }} issues | `mix format --check-formatted` |
@@ -284,50 +284,50 @@ jobs:
             | 📊 **Coverage** | ${{ steps.coverage.outputs.status }} | ${{ steps.coverage.outputs.percentage }}% | `mix coveralls` |
             | 🎯 **Credo** | ${{ steps.credo.outputs.status }} | ${{ steps.credo.outputs.total_issues }} issues | High: ${{ steps.credo.outputs.high_issues }}, Normal: ${{ steps.credo.outputs.normal_issues }}, Low: ${{ steps.credo.outputs.low_issues }} |
             | 🔍 **Dialyzer** | ${{ steps.dialyzer.outputs.status }} | ${{ steps.dialyzer.outputs.errors }} errors, ${{ steps.dialyzer.outputs.warnings }} warnings | `mix dialyzer` |
-            
+
             ### 🎯 Quality Gates
-            
+
             Based on the project's quality thresholds:
             - **Compilation Warnings**: ${{ steps.compile.outputs.warnings }}/148 (limit: 148)
-            - **Credo Issues**: ${{ steps.credo.outputs.total_issues }}/87 (limit: 87)  
+            - **Credo Issues**: ${{ steps.credo.outputs.total_issues }}/87 (limit: 87)
             - **Dialyzer Warnings**: ${{ steps.dialyzer.outputs.warnings }}/161 (limit: 161)
             - **Test Coverage**: ${{ steps.coverage.outputs.percentage }}%/50% (minimum: 50%)
             - **Test Failures**: ${{ steps.tests.outputs.failures }}/0 (limit: 0)
-            
+
             <details>
             <summary>📈 Progress Toward Goals</summary>
-            
+
             Target goals for the project:
             - ✨ **Zero compilation warnings** (currently: ${{ steps.compile.outputs.warnings }})
             - ✨ **≤10 Credo issues** (currently: ${{ steps.credo.outputs.total_issues }})
             - ✨ **Zero Dialyzer warnings** (currently: ${{ steps.dialyzer.outputs.warnings }})
             - ✨ **≥85% test coverage** (currently: ${{ steps.coverage.outputs.percentage }}%)
             - ✅ **Zero test failures** (currently: ${{ steps.tests.outputs.failures }})
-            
+
             </details>
-            
+
             <details>
             <summary>🔧 Quick Actions</summary>
-            
+
             To improve code quality:
             ```bash
             # Fix formatting issues
             mix format
-            
+
             # View detailed Credo analysis
             mix credo --strict
-            
+
             # Check Dialyzer warnings
             mix dialyzer
-            
+
             # Generate detailed coverage report
             mix coveralls.html
             ```
-            
+
             </details>
-            
+
             ---
-            
+
             🤖 *Auto-generated by GitHub Actions* • Updated: ${{ github.event.head_commit.timestamp }}
-            
+
             > **Note**: This comment will be updated automatically when new commits are pushed to this PR.

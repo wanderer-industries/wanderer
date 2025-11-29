@@ -1,7 +1,7 @@
 import { MarkdownComment } from '@/hooks/Mapper/components/mapInterface/components/Comments/components';
-import { useEffect, useRef, useState } from 'react';
-import { CommentType } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { CommentType } from '@/hooks/Mapper/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface CommentsProps {}
 
@@ -14,7 +14,9 @@ export const Comments = ({}: CommentsProps) => {
     comments: { loadComments, comments, lastUpdateKey },
   } = useMapRootState();
 
-  const [systemId] = selectedSystems;
+  const systemId = useMemo(() => {
+    return +selectedSystems[0];
+  }, [selectedSystems]);
 
   const ref = useRef({ loadComments, systemId });
   ref.current = { loadComments, systemId };

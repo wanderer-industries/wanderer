@@ -432,7 +432,7 @@ config :wanderer_app, :license_manager,
 config :wanderer_app, :sse,
   enabled:
     config_dir
-    |> get_var_from_path_or_env("WANDERER_SSE_ENABLED", "true")
+    |> get_var_from_path_or_env("WANDERER_SSE_ENABLED", "false")
     |> String.to_existing_atom(),
   max_connections_total:
     config_dir |> get_int_from_path_or_env("WANDERER_SSE_MAX_CONNECTIONS", 1000),
@@ -447,6 +447,6 @@ config :wanderer_app, :sse,
 config :wanderer_app, :external_events,
   webhooks_enabled:
     config_dir
-    |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "true")
+    |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "false")
     |> String.to_existing_atom(),
   webhook_timeout_ms: config_dir |> get_int_from_path_or_env("WANDERER_WEBHOOK_TIMEOUT_MS", 15000)

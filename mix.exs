@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.87.0"
+  @version "1.88.12"
 
   def project do
     [
@@ -97,12 +97,12 @@ defmodule WandererApp.MixProject do
       {:dart_sass, "~> 0.5.1", runtime: Mix.env() == :dev},
       {:oauth2, "~> 1.0 or ~> 2.0"},
       {:ueberauth, "~> 0.10.0"},
-      {:req, "~> 0.4.0"},
-      {:ash, "~> 3.4"},
-      {:ash_cloak, "~> 0.1.2"},
+      {:req, "~> 0.5"},
+      {:ash, "~> 3.9"},
+      {:ash_cloak, "~> 0.1.7"},
       {:ash_json_api, "~> 1.4"},
       {:ash_phoenix, "~> 2.1"},
-      {:ash_postgres, "~> 2.4"},
+      {:ash_postgres, "~> 2.6"},
       {:exsync, "~> 0.4", only: :dev},
       {:nimble_csv, "~> 1.2.0"},
       {:ecto_ulid_next, "~> 1.0.2"},

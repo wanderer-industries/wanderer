@@ -337,7 +337,7 @@
         options={Enum.map(@valid_types, fn valid_type -> {valid_type.label, valid_type.id} end)}
       />
       
-<!-- API Key Section with grid layout -->
+<!-- Modal action buttons -->
       <div class="modal-action">
         <.button class="mt-2" type="submit" phx-disable-with="Saving...">
           {(@live_action == :add_invite_link && "Add") || "Save"}

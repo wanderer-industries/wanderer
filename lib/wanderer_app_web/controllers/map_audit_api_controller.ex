@@ -115,7 +115,7 @@ defmodule WandererAppWeb.MapAuditAPIController do
          {:ok, period} <- APIUtils.require_param(params, "period"),
          query <- WandererApp.Map.Audit.get_map_activity_query(map_id, period, "all"),
          {:ok, data} <-
-           Ash.read(query) do
+           Ash.read(query, read_opts()) do
       data = Enum.map(data, &map_audit_event_to_json/1)
       json(conn, %{data: data})
     else
@@ -128,6 +128,18 @@ defmodule WandererAppWeb.MapAuditAPIController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Request failed: #{inspect(reason)}"})
+    end
+  end
+
+  # In test environment, disable concurrency to avoid Ecto Sandbox ownership issues
+  # In production, allow concurrent loading for better performance
+  defp read_opts do
+    base_opts = [authorize?: false]
+
+    if Application.get_env(:wanderer_app, :sql_sandbox) do
+      Keyword.put(base_opts, :max_concurrency, 0)
+    else
+      base_opts
     end
   end
 

@@ -30,7 +30,11 @@ defmodule WandererApp.Api.MapInvite do
       :token
     ]
 
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
+
+    update :update do
+      require_atomic? false
+    end
 
     create :new do
       accept [
@@ -41,10 +45,6 @@ defmodule WandererApp.Api.MapInvite do
       ]
 
       primary?(true)
-
-      argument :map_id, :uuid, allow_nil?: true
-
-      change manage_relationship(:map_id, :map, on_lookup: :relate, on_no_match: nil)
     end
 
     read :by_map do

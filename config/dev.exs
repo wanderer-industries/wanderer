@@ -63,6 +63,7 @@ config :wanderer_app, WandererAppWeb.Endpoint,
   ]
 
 config :wanderer_app,
+  environment: :dev,
   dev_routes: true
 
 # Do not include metadata nor timestamps in development logs

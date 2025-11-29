@@ -9,6 +9,8 @@ defmodule WandererApp.Map.Manager do
 
   alias WandererApp.Map.Server
 
+  @environment Application.compile_env(:wanderer_app, :environment)
+
   @maps_start_chunk_size 20
   @maps_start_interval 500
   @maps_queue :maps_queue
@@ -19,7 +21,7 @@ defmodule WandererApp.Map.Manager do
 
   # Test-aware async task runner
   defp safe_async_task(fun) do
-    if Mix.env() == :test do
+    if @environment == :test do
       # In tests, run synchronously to avoid database ownership issues
       try do
         fun.()
@@ -113,11 +115,20 @@ defmodule WandererApp.Map.Manager do
         Enum.each(pings, fn %{id: ping_id, map_id: map_id, type: type} = ping ->
           {:ok, %{system: system}} = ping |> Ash.load([:system])
 
-          Server.Impl.broadcast!(map_id, :ping_cancelled, %{
-            id: ping_id,
-            solar_system_id: system.solar_system_id,
-            type: type
-          })
+          # Handle case where parent system was already deleted
+          case system do
+            nil ->
+              Logger.warning(
+                "[cleanup_expired_pings] ping #{ping_id} destroyed (parent system already deleted)"
+              )
+
+            %{solar_system_id: solar_system_id} ->
+              Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+                id: ping_id,
+                solar_system_id: solar_system_id,
+                type: type
+              })
+          end
 
           Ash.destroy!(ping)
         end)
@@ -139,7 +150,7 @@ defmodule WandererApp.Map.Manager do
 
     WandererApp.Queue.clear(@maps_queue)
 
-    if Mix.env() == :test do
+    if @environment == :test do
       # In tests, run synchronously to avoid database ownership issues
       Logger.debug(fn -> "Starting maps synchronously in test mode" end)
 

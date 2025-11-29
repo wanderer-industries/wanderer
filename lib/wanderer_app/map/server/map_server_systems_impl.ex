@@ -106,7 +106,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       ) do
     system =
       WandererApp.Map.find_system_by_location(map_id, %{
-        solar_system_id: solar_system_id |> String.to_integer()
+        solar_system_id: solar_system_id
       })
 
     {:ok, comment} =
@@ -118,7 +118,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     comment =
       comment
-      |> Ash.load!([:character, :system])
+      |> Ash.load!([:character])
 
     Impl.broadcast!(map_id, :system_comment_added, %{
       solar_system_id: solar_system_id,
@@ -132,8 +132,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         user_id,
         character_id
       ) do
-    {:ok, %{system: system} = comment} =
+    {:ok, %{system_id: system_id} = comment} =
       WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
+
+    {:ok, system} = WandererApp.Api.MapSystem.by_id(system_id)
 
     :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
 
@@ -212,6 +214,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         update
       ),
       do: update_system(map_id, :update_temporary_name, [:temporary_name], update)
+
+  def update_system_custom_name(
+        map_id,
+        update
+      ),
+      do: update_system(map_id, :update_custom_name, [:custom_name], update)
 
   def update_system_locked(
         map_id,
@@ -397,11 +405,20 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
         :ok = Ash.destroy!(s)
 
-        Logger.warning(
-          "[cleanup_linked_signatures] for system #{system.solar_system_id}: #{inspect(eve_id)}"
-        )
+        # Handle case where parent system was already deleted
+        case system do
+          nil ->
+            Logger.warning(
+              "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+            )
 
-        Impl.broadcast!(map_id, :signatures_updated, system.solar_system_id)
+          %{solar_system_id: solar_system_id} ->
+            Logger.warning(
+              "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
+            )
+
+            Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+        end
       rescue
         e ->
           Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
@@ -647,104 +664,135 @@ defmodule WandererApp.Map.Server.SystemsImpl do
          user_id,
          character_id
        ) do
-    extra_info = system_info |> Map.get(:extra_info)
-    rtree_name = "rtree_#{map_id}"
-    {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
+    # Verify the map exists in the database before attempting to create a system
+    # This prevents foreign key constraint errors when tests roll back transactions
+    with {:ok, _map} <- WandererApp.MapRepo.get(map_id),
+         {:ok, %{map_opts: map_opts}} <- WandererApp.Map.get_map_state(map_id) do
+      extra_info = system_info |> Map.get(:extra_info)
+      rtree_name = "rtree_#{map_id}"
 
-    %{"x" => x, "y" => y} =
-      coordinates
-      |> case do
-        %{"x" => x, "y" => y} ->
-          %{"x" => x, "y" => y}
+      %{"x" => x, "y" => y} =
+        coordinates
+        |> case do
+          %{"x" => x, "y" => y} ->
+            %{"x" => x, "y" => y}
 
-        _ ->
-          %{x: x, y: y} =
-            WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
+          _ ->
+            %{x: x, y: y} =
+              WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
 
-          %{"x" => x, "y" => y}
-      end
+            %{"x" => x, "y" => y}
+        end
 
-    {:ok, system} =
-      case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
-        {:ok, existing_system} when not is_nil(existing_system) ->
-          use_old_coordinates = Map.get(system_info, :use_old_coordinates, false)
+      system_result =
+        case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
+          {:ok, existing_system} when not is_nil(existing_system) ->
+            use_old_coordinates = Map.get(system_info, :use_old_coordinates, false)
 
-          if use_old_coordinates do
-            @ddrt.insert(
-              {solar_system_id,
-               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-                 position_x: existing_system.position_x,
-                 position_y: existing_system.position_y
-               })},
-              rtree_name
-            )
+            if use_old_coordinates do
+              @ddrt.insert(
+                {solar_system_id,
+                 WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                   position_x: existing_system.position_x,
+                   position_y: existing_system.position_y
+                 })},
+                rtree_name
+              )
 
-            existing_system
-            |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
-          else
-            @ddrt.insert(
-              {solar_system_id,
-               WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-                 position_x: x,
-                 position_y: y
-               })},
-              rtree_name
-            )
+              existing_system
+              |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
+            else
+              @ddrt.insert(
+                {solar_system_id,
+                 WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                   position_x: x,
+                   position_y: y
+                 })},
+                rtree_name
+              )
 
-            existing_system
-            |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
-            |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
-            |> WandererApp.MapSystemRepo.cleanup_tags!()
-            |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
-            |> WandererApp.MapSystemRepo.cleanup_linked_sig_eve_id!()
-            |> maybe_update_extra_info(extra_info)
-            |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
-          end
+              existing_system
+              |> WandererApp.MapSystemRepo.update_position!(%{position_x: x, position_y: y})
+              |> WandererApp.MapSystemRepo.cleanup_labels!(map_opts)
+              |> WandererApp.MapSystemRepo.cleanup_tags!()
+              |> WandererApp.MapSystemRepo.cleanup_temporary_name!()
+              |> WandererApp.MapSystemRepo.cleanup_linked_sig_eve_id!()
+              |> maybe_update_extra_info(extra_info)
+              |> WandererApp.MapSystemRepo.update_visible(%{visible: true})
+            end
 
-        _ ->
-          {:ok, solar_system_info} =
-            WandererApp.CachedInfo.get_system_static_info(solar_system_id)
+          _ ->
+            case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+              {:ok, solar_system_info} ->
+                @ddrt.insert(
+                  {solar_system_id,
+                   WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
+                     position_x: x,
+                     position_y: y
+                   })},
+                  rtree_name
+                )
 
-          @ddrt.insert(
-            {solar_system_id,
-             WandererApp.Map.PositionCalculator.get_system_bounding_rect(%{
-               position_x: x,
-               position_y: y
-             })},
-            rtree_name
+                WandererApp.MapSystemRepo.create(%{
+                  map_id: map_id,
+                  solar_system_id: solar_system_id,
+                  name: solar_system_info.solar_system_name,
+                  position_x: x,
+                  position_y: y
+                })
+
+              {:error, reason} ->
+                Logger.error("Failed to get system static info for #{solar_system_id}: #{inspect(reason)}")
+                {:error, :system_info_not_found}
+            end
+        end
+
+      case system_result do
+        {:ok, system} ->
+          :ok = WandererApp.Map.add_system(map_id, system)
+
+          WandererApp.Cache.put(
+            "map_#{map_id}:system_#{system.id}:last_activity",
+            DateTime.utc_now(),
+            ttl: @system_inactive_timeout
           )
 
-          WandererApp.MapSystemRepo.create(%{
-            map_id: map_id,
-            solar_system_id: solar_system_id,
-            name: solar_system_info.solar_system_name,
-            position_x: x,
-            position_y: y
+          Impl.broadcast!(map_id, :add_system, system)
+
+          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+          Logger.debug(fn ->
+            "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+          end)
+
+          WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+            solar_system_id: system.solar_system_id,
+            position_x: system.position_x,
+            position_y: system.position_y
           })
+
+          track_add_system(map_id, user_id, character_id, system.solar_system_id)
+
+          :ok
+
+        {:error, reason} = error ->
+          Logger.error("Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}")
+          error
       end
+    else
+      {:error, :not_found} ->
+        Logger.debug(fn ->
+          "Cannot add system #{solar_system_id} to map #{map_id}: map does not exist in database"
+        end)
 
-    :ok = WandererApp.Map.add_system(map_id, system)
+        {:error, :map_not_found}
 
-    WandererApp.Cache.put(
-      "map_#{map_id}:system_#{system.id}:last_activity",
-      DateTime.utc_now(),
-      ttl: @system_inactive_timeout
-    )
+      error ->
+        Logger.error("Failed to verify map #{map_id} exists: #{inspect(error)}")
+        {:error, :map_verification_failed}
+    end
+  end
 
-    Impl.broadcast!(map_id, :add_system, system)
-
-    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-    Logger.debug(fn ->
-      "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
-    end)
-
-    WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-      solar_system_id: system.solar_system_id,
-      name: system.name,
-      position_x: system.position_x,
-      position_y: system.position_y
-    })
-
+  defp track_add_system(map_id, user_id, character_id, solar_system_id) do
     WandererApp.User.ActivityTracker.track_map_event(:system_added, %{
       character_id: character_id,
       user_id: user_id,
@@ -930,6 +978,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     Impl.broadcast!(map_id, :update_system, updated_system)
 
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+    # This may fail if the relay is not available (e.g., in tests), which is fine
     WandererApp.ExternalEvents.broadcast(map_id, :system_metadata_changed, %{
       solar_system_id: updated_system.solar_system_id,
       name: updated_system.name,
@@ -938,5 +987,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       description: updated_system.description,
       status: updated_system.status
     })
+
+    :ok
   end
 end

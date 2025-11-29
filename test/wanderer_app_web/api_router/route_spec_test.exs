@@ -1,4 +1,5 @@
 defmodule WandererAppWeb.ApiRouter.RouteSpecTest do
+  # Pure unit tests - no database or external dependencies
   use ExUnit.Case, async: true
 
   alias WandererAppWeb.ApiRouter.RouteSpec

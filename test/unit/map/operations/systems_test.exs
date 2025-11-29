@@ -1,9 +1,13 @@
 defmodule WandererApp.Map.Operations.SystemsTest do
   use WandererApp.DataCase
 
+  import Mox
+
   alias WandererApp.Map.Operations.Systems
   alias WandererApp.MapTestHelpers
   alias WandererAppWeb.Factory
+
+  setup :verify_on_exit!
 
   describe "parameter validation" do
     test "validates missing connection assigns for create_system" do

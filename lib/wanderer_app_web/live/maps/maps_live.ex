@@ -20,6 +20,7 @@ defmodule WandererAppWeb.MapsLive do
     user_characters =
       active_characters
       |> Enum.map(&map_character/1)
+      |> Enum.reject(&is_nil/1)
 
     {:ok,
      socket
@@ -107,7 +108,18 @@ defmodule WandererAppWeb.MapsLive do
     WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
-        map = map |> map_map()
+        # Load the owner association to get character details
+        map =
+          case Ash.load(map, :owner) do
+            {:ok, loaded_map} -> loaded_map |> map_map()
+            _ -> map |> map_map()
+          end
+
+        # Add owner to characters list, filtering out nil values
+        characters =
+          [map.owner |> map_character() | socket.assigns.characters]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
 
         socket
         |> assign(:active_page, :maps)
@@ -115,10 +127,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:page_title, "Maps - Edit")
         |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
         |> assign(:map_slug, map_slug)
-        |> assign(
-          :characters,
-          [map.owner |> map_character() | socket.assigns.characters] |> Enum.uniq()
-        )
+        |> assign(:characters, characters)
         |> assign(
           :form,
           map |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
@@ -154,6 +163,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:map_slug, map_slug)
         |> assign(:map_id, map.id)
         |> assign(:public_api_key, map.public_api_key)
+        |> assign(:sse_enabled, map.sse_enabled)
         |> assign(:map, map)
         |> assign(
           export_settings: export_settings |> _get_export_map_data(),
@@ -221,6 +231,27 @@ defmodule WandererAppWeb.MapsLive do
       WandererApp.Api.Map.update_api_key(map, %{public_api_key: new_api_key})
 
     {:noreply, assign(socket, public_api_key: new_api_key)}
+  end
+
+  def handle_event("toggle-sse", _params, socket) do
+    new_sse_enabled = not socket.assigns.sse_enabled
+    map = socket.assigns.map
+
+    case WandererApp.Api.Map.toggle_sse(map, %{sse_enabled: new_sse_enabled}) do
+      {:ok, updated_map} ->
+        {:noreply, assign(socket, sse_enabled: new_sse_enabled, map: updated_map)}
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        error_message =
+          errors
+          |> Enum.map(fn error -> Map.get(error, :message, "Unknown error") end)
+          |> Enum.join(", ")
+
+        {:noreply, put_flash(socket, :error, error_message)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update SSE setting")}
+    end
   end
 
   @impl true

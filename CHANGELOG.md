@@ -2,6 +2,122 @@
 
 <!-- changelog -->
 
+## [v1.88.12](https://github.com/wanderer-industries/wanderer/compare/v1.88.11...v1.88.12) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed c4 -> ns connections auto size issues
+
+## [v1.88.11](https://github.com/wanderer-industries/wanderer/compare/v1.88.10...v1.88.11) (2025-11-29)
+
+
+
+
+## [v1.88.10](https://github.com/wanderer-industries/wanderer/compare/v1.88.9...v1.88.10) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed pings cleanup
+
+## [v1.88.9](https://github.com/wanderer-industries/wanderer/compare/v1.88.8...v1.88.9) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed linked signatures cleanup
+
+## [v1.88.8](https://github.com/wanderer-industries/wanderer/compare/v1.88.7...v1.88.8) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed pings issue
+
+## [v1.88.7](https://github.com/wanderer-industries/wanderer/compare/v1.88.6...v1.88.7) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed tracking issues
+
+## [v1.88.6](https://github.com/wanderer-industries/wanderer/compare/v1.88.5...v1.88.6) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed tracking issues
+
+## [v1.88.5](https://github.com/wanderer-industries/wanderer/compare/v1.88.4...v1.88.5) (2025-11-28)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed env errors
+
+## [v1.88.4](https://github.com/wanderer-industries/wanderer/compare/v1.88.3...v1.88.4) (2025-11-27)
+
+
+
+
+### Bug Fixes:
+
+* defensive check for undefined excluded systems
+
+## [v1.88.3](https://github.com/wanderer-industries/wanderer/compare/v1.88.2...v1.88.3) (2025-11-26)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed env issues
+
+## [v1.88.1](https://github.com/wanderer-industries/wanderer/compare/v1.88.0...v1.88.1) (2025-11-26)
+
+
+
+
+### Bug Fixes:
+
+* sse enable checkbox, and kills ticker
+
+* apiv1 token auth and structure fixes
+
+* removed ipv6 distribution env settings
+
+* tests: updated tests
+
+* tests: updated tests
+
+* clean up id generation
+
+* resolve issue with async event processing
+
+## [v1.88.0](https://github.com/wanderer-industries/wanderer/compare/v1.87.0...v1.88.0) (2025-11-25)
+
+
+
+
+### Features:
+
+* Add zkb and eve who links for characters where it possibly was add
+
 ## [v1.87.0](https://github.com/wanderer-industries/wanderer/compare/v1.86.1...v1.87.0) (2025-11-25)
 
 

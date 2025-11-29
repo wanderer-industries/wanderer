@@ -1,5 +1,5 @@
 defmodule WandererAppWeb.AuthTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.ConnCase, async: false
 
   alias WandererAppWeb.Plugs.CheckMapApiKey
   alias WandererAppWeb.Plugs.CheckAclApiKey
@@ -132,22 +132,6 @@ defmodule WandererAppWeb.AuthTest do
       assert result.status == 400
     end
 
-    test "rejects request for non-existent map" do
-      non_existent_id = "550e8400-e29b-41d4-a716-446655440000"
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer test_api_key_123")
-        |> put_private(:phoenix_router, WandererAppWeb.Router)
-        |> Map.put(:params, %{"map_identifier" => non_existent_id})
-        |> Plug.Conn.fetch_query_params()
-
-      result = CheckMapApiKey.call(conn, CheckMapApiKey.init([]))
-
-      assert result.halted
-      assert result.status == 404
-    end
-
     test "rejects request for map without API key configured", %{map: map} do
       # Update map to have no API key using the proper action
       {:ok, map_without_key} = Ash.update(map, %{public_api_key: nil}, action: :update_api_key)
@@ -163,6 +147,24 @@ defmodule WandererAppWeb.AuthTest do
 
       assert result.halted
       assert result.status == 401
+    end
+  end
+
+  describe "CheckMapApiKey plug without fixtures" do
+    test "rejects request for non-existent map" do
+      non_existent_id = "550e8400-e29b-41d4-a716-446655440000"
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer test_api_key_123")
+        |> put_private(:phoenix_router, WandererAppWeb.Router)
+        |> Map.put(:params, %{"map_identifier" => non_existent_id})
+        |> Plug.Conn.fetch_query_params()
+
+      result = CheckMapApiKey.call(conn, CheckMapApiKey.init([]))
+
+      assert result.halted
+      assert result.status == 404
     end
   end
 
@@ -248,6 +250,25 @@ defmodule WandererAppWeb.AuthTest do
       assert result.status == 401
     end
 
+    test "rejects request for ACL without API key configured", %{acl: acl} do
+      # Update ACL to have no API key
+      {:ok, acl_without_key} = Ash.update(acl, %{api_key: nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer test_acl_key_456")
+        |> put_private(:phoenix_router, WandererAppWeb.Router)
+        |> Map.put(:params, %{"id" => acl_without_key.id})
+        |> Plug.Conn.fetch_query_params()
+
+      result = CheckAclApiKey.call(conn, CheckAclApiKey.init([]))
+
+      assert result.halted
+      assert result.status == 401
+    end
+  end
+
+  describe "CheckAclApiKey plug without fixtures" do
     test "rejects request with missing ACL ID" do
       conn =
         build_conn()
@@ -276,23 +297,6 @@ defmodule WandererAppWeb.AuthTest do
 
       assert result.halted
       assert result.status == 404
-    end
-
-    test "rejects request for ACL without API key configured", %{acl: acl} do
-      # Update ACL to have no API key
-      {:ok, acl_without_key} = Ash.update(acl, %{api_key: nil})
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer test_acl_key_456")
-        |> put_private(:phoenix_router, WandererAppWeb.Router)
-        |> Map.put(:params, %{"id" => acl_without_key.id})
-        |> Plug.Conn.fetch_query_params()
-
-      result = CheckAclApiKey.call(conn, CheckAclApiKey.init([]))
-
-      assert result.halted
-      assert result.status == 401
     end
   end
 

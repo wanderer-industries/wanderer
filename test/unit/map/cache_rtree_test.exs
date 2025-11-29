@@ -1,5 +1,5 @@
 defmodule WandererApp.Map.CacheRTreeTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias WandererApp.Map.CacheRTree
 
@@ -374,8 +374,9 @@ defmodule WandererApp.Map.CacheRTreeTest do
       assert {:ok, %{}} = CacheRTree.insert(systems, name)
 
       # Query for a specific position
+      # System 11: x = 1*200=200, y = 1*100=100, box = [{200, 330}, {100, 134}]
       {:ok, ids} = CacheRTree.query([{200, 330}, {100, 134}], name)
-      assert 30_000_012 in ids
+      assert 30_000_011 in ids
 
       # Delete some systems
       to_delete = Enum.map(1..10, &(&1 + 30_000_000))

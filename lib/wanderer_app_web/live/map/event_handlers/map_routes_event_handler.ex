@@ -60,7 +60,10 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
     ping_system_ids =
       pings
-      |> Enum.map(fn %{system: %{solar_system_id: solar_system_id}} -> "#{solar_system_id}" end)
+      |> Enum.flat_map(fn
+        %{system: %{solar_system_id: solar_system_id}} -> ["#{solar_system_id}"]
+        _ -> []
+      end)
 
     route_hubs = (ping_system_ids ++ hubs) |> Enum.uniq()
 

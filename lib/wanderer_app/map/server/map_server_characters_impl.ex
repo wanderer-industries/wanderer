@@ -1,5 +1,19 @@
 defmodule WandererApp.Map.Server.CharactersImpl do
-  @moduledoc false
+  @moduledoc """
+  Handles character-related operations for map servers.
+
+  This module manages:
+  - Character tracking on maps
+  - Permission-based character cleanup
+  - Character presence updates
+
+  ## Logging
+
+  This module emits detailed logs for debugging character tracking issues:
+  - INFO: Character track/untrack events, permission cleanup results
+  - WARNING: Permission failures, unexpected states
+  - DEBUG: Detailed permission check results
+  """
 
   require Logger
 
@@ -15,6 +29,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     if Enum.empty?(invalidate_character_ids) do
       :ok
     else
+      Logger.debug(fn ->
+        "[CharactersImpl] Running permission cleanup for map #{map_id} - " <>
+          "checking #{length(invalidate_character_ids)} characters"
+      end)
+
       {:ok, %{acls: acls}} =
         WandererApp.MapRepo.get(map_id,
           acls: [
@@ -30,6 +49,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   def track_characters(_map_id, []), do: :ok
 
   def track_characters(map_id, [character_id | rest]) do
+    Logger.debug(fn ->
+      "[CharactersImpl] Starting tracking for character #{character_id} on map #{map_id} - " <>
+        "reason: character joined presence"
+    end)
+
     track_character(map_id, character_id)
     track_characters(map_id, rest)
   end
@@ -41,6 +65,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         |> WandererApp.Map.get_map!()
         |> Map.get(:characters, [])
 
+      if length(character_ids) > 0 do
+        Logger.debug(fn ->
+          "[CharactersImpl] Scheduling permission check for #{length(character_ids)} characters on map #{map_id}"
+        end)
+      end
+
       WandererApp.Cache.insert("map_#{map_id}:invalidate_character_ids", character_ids)
 
       :ok
@@ -48,6 +78,13 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   def untrack_characters(map_id, character_ids) do
+    if length(character_ids) > 0 do
+      Logger.debug(fn ->
+        "[CharactersImpl] Untracking #{length(character_ids)} characters from map #{map_id} - " <>
+          "reason: characters no longer in presence_character_ids (grace period expired or user disconnected)"
+      end)
+    end
+
     character_ids
     |> Enum.each(fn character_id ->
       character_map_active = is_character_map_active?(map_id, character_id)
@@ -58,13 +95,32 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp untrack_character(true, map_id, character_id) do
+    Logger.info(fn ->
+      "[CharactersImpl] Untracking character #{character_id} from map #{map_id} - " <>
+        "character was actively tracking this map"
+    end)
+
+    # Emit telemetry for tracking
+    :telemetry.execute(
+      [:wanderer_app, :character, :tracking, :stopped],
+      %{system_time: System.system_time()},
+      %{character_id: character_id, map_id: map_id, reason: :presence_expired}
+    )
+
     WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
       map_id: map_id,
       track: false
     })
   end
 
-  defp untrack_character(_is_character_map_active, _map_id, _character_id), do: :ok
+  defp untrack_character(false, map_id, character_id) do
+    Logger.debug(fn ->
+      "[CharactersImpl] Skipping untrack for character #{character_id} on map #{map_id} - " <>
+        "character was not actively tracking this map"
+    end)
+
+    :ok
+  end
 
   defp is_character_map_active?(map_id, character_id) do
     case WandererApp.Character.get_character_state(character_id) do
@@ -79,59 +135,134 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   defp process_invalidate_characters(invalidate_character_ids, map_id, acls) do
     {:ok, %{map: %{owner_id: owner_id}}} = WandererApp.Map.get_map_state(map_id)
 
-    invalidate_character_ids
-    |> Task.async_stream(
-      fn character_id ->
-        character_id
-        |> WandererApp.Character.get_character()
-        |> case do
-          {:ok, %{user_id: nil}} ->
-            {:remove_character, character_id}
+    # Option 3: Get owner's user_id to allow all characters from the same user
+    owner_user_id = get_owner_user_id(owner_id)
 
-          {:ok, character} ->
-            [character_permissions] =
-              WandererApp.Permissions.check_characters_access([character], acls)
-
-            map_permissions =
-              WandererApp.Permissions.get_map_permissions(
-                character_permissions,
-                owner_id,
-                [character_id]
-              )
-
-            case map_permissions do
-              %{view_system: false} ->
-                {:remove_character, character_id}
-
-              %{track_character: false} ->
-                {:remove_character, character_id}
-
-              _ ->
-                :ok
-            end
-
-          _ ->
-            :ok
-        end
-      end,
-      timeout: :timer.seconds(60),
-      max_concurrency: System.schedulers_online() * 4,
-      on_timeout: :kill_task
-    )
-    |> Enum.reduce([], fn
-      {:ok, {:remove_character, character_id}}, acc ->
-        [character_id | acc]
-
-      {:ok, _result}, acc ->
-        acc
-
-      {:error, reason}, acc ->
-        Logger.error("Error in cleanup_characters: #{inspect(reason)}")
-        acc
+    Logger.debug(fn ->
+      "[CharacterCleanup] Map #{map_id} - validating permissions for #{length(invalidate_character_ids)} characters"
     end)
-    |> case do
-      [] -> :ok
-      character_ids_to_remove -> remove_and_untrack_characters(map_id, character_ids_to_remove)
+
+    results =
+      invalidate_character_ids
+      |> Task.async_stream(
+        fn character_id ->
+          character_id
+          |> WandererApp.Character.get_character()
+          |> case do
+            {:ok, %{user_id: nil}} ->
+              {:remove_character, character_id, :no_user_id}
+
+            {:ok, character} ->
+              # Option 3: Check if character belongs to the same user as owner
+              is_same_user_as_owner =
+                owner_user_id != nil and character.user_id == owner_user_id
+
+              if is_same_user_as_owner do
+                # All characters from the map owner's account have full access
+                :ok
+              else
+                [character_permissions] =
+                  WandererApp.Permissions.check_characters_access([character], acls)
+
+                map_permissions =
+                  WandererApp.Permissions.get_map_permissions(
+                    character_permissions,
+                    owner_id,
+                    [character_id]
+                  )
+
+                case map_permissions do
+                  %{view_system: false} ->
+                    {:remove_character, character_id, :no_view_permission}
+
+                  %{track_character: false} ->
+                    {:remove_character, character_id, :no_track_permission}
+
+                  _ ->
+                    :ok
+                end
+              end
+
+            _ ->
+              :ok
+          end
+        end,
+        timeout: :timer.seconds(60),
+        max_concurrency: System.schedulers_online() * 4,
+        on_timeout: :kill_task
+      )
+      |> Enum.reduce([], fn
+        {:ok, {:remove_character, character_id, reason}}, acc ->
+          [{character_id, reason} | acc]
+
+        {:ok, _result}, acc ->
+          acc
+
+        {:error, reason}, acc ->
+          Logger.error(
+            "[CharacterCleanup] Error checking character permissions: #{inspect(reason)}"
+          )
+
+          acc
+      end)
+
+    case results do
+      [] ->
+        Logger.debug(fn ->
+          "[CharacterCleanup] Map #{map_id} - all #{length(invalidate_character_ids)} characters passed permission check"
+        end)
+
+        :ok
+
+      characters_to_remove ->
+        # Group by reason for better logging
+        by_reason = Enum.group_by(characters_to_remove, fn {_id, reason} -> reason end)
+
+        Enum.each(by_reason, fn {reason, chars} ->
+          char_ids = Enum.map(chars, fn {id, _} -> id end)
+          reason_str = permission_removal_reason_to_string(reason)
+
+          Logger.debug(fn ->
+            "[CharacterCleanup] Map #{map_id} - removing #{length(char_ids)} characters: #{reason_str} - " <>
+              "character_ids: #{inspect(char_ids)}"
+          end)
+
+          # Emit telemetry for each removal reason
+          :telemetry.execute(
+            [:wanderer_app, :character, :tracking, :permission_revoked],
+            %{count: length(char_ids), system_time: System.system_time()},
+            %{map_id: map_id, character_ids: char_ids, reason: reason}
+          )
+        end)
+
+        character_ids_to_remove = Enum.map(characters_to_remove, fn {id, _} -> id end)
+
+        Logger.debug(fn ->
+          "[CharacterCleanup] Map #{map_id} - total #{length(character_ids_to_remove)} characters " <>
+            "will be removed due to permission issues (NO GRACE PERIOD)"
+        end)
+
+        remove_and_untrack_characters(map_id, character_ids_to_remove)
+    end
+  end
+
+  defp permission_removal_reason_to_string(:no_user_id),
+    do: "no user_id associated with character"
+
+  defp permission_removal_reason_to_string(:no_view_permission), do: "lost view_system permission"
+
+  defp permission_removal_reason_to_string(:no_track_permission),
+    do: "lost track_character permission"
+
+  defp permission_removal_reason_to_string(reason), do: "#{inspect(reason)}"
+
+  # Helper to get the owner's user_id for Option 3
+  defp get_owner_user_id(nil), do: nil
+
+  defp get_owner_user_id(owner_id) do
+    case WandererApp.Character.get_character(owner_id) do
+      {:ok, %{user_id: user_id}} -> user_id
+      _ -> nil
     end
   end
 
@@ -161,9 +292,17 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   end
 
   defp remove_and_untrack_characters(map_id, character_ids) do
-    Logger.debug(fn ->
-      "Map #{map_id} - remove and untrack characters #{inspect(character_ids)}"
+    # Option 4: Enhanced logging for character removal
+    Logger.info(fn ->
+      "[CharacterCleanup] Map #{map_id} - starting removal of #{length(character_ids)} characters: #{inspect(character_ids)}"
     end)
+
+    # Emit telemetry for monitoring
+    :telemetry.execute(
+      [:wanderer_app, :map, :characters_cleanup, :removal_started],
+      %{character_count: length(character_ids), system_time: System.system_time()},
+      %{map_id: map_id, character_ids: character_ids}
+    )
 
     map_id
     |> untrack_characters(character_ids)
@@ -174,9 +313,20 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       {:ok, settings} ->
         settings
         |> Enum.each(fn s ->
+          Logger.info(fn ->
+            "[CharacterCleanup] Map #{map_id} - destroying settings and removing character #{s.character_id}"
+          end)
+
           WandererApp.MapCharacterSettingsRepo.destroy!(s)
           remove_character(map_id, s.character_id)
         end)
+
+        # Emit telemetry for successful removal
+        :telemetry.execute(
+          [:wanderer_app, :map, :characters_cleanup, :removal_complete],
+          %{removed_count: length(settings), system_time: System.system_time()},
+          %{map_id: map_id}
+        )
 
       _ ->
         :ok

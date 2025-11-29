@@ -1,5 +1,9 @@
 import Config
 
+# Disable Ash async operations in tests to ensure transactional safety
+# This prevents Ash from spawning tasks that could bypass the Ecto sandbox
+config :ash, :disable_async?, true
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -24,7 +28,11 @@ config :wanderer_app,
   pubsub_client: Test.PubSubMock,
   cached_info: WandererApp.CachedInfo.Mock,
   character_api_disabled: false,
-  environment: :test
+  environment: :test,
+  map_subscriptions_enabled: false,
+  wanderer_kills_service_enabled: false,
+  sse: [enabled: false],
+  external_events: [webhooks_enabled: false]
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

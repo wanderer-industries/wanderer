@@ -1,10 +1,12 @@
 import clsx from 'clsx';
 import classes from './PassageCard.module.scss';
 import { PassageWithSourceTarget } from '@/hooks/Mapper/types';
-import { SystemView, TimeAgo, TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { SystemView, TimeAgo, TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { ZKB_ICON } from '@/hooks/Mapper/icons';
+import { charEveWhoLink, charZKBLink } from '@/hooks/Mapper/helpers/linkHelpers.ts';
 
 type PassageCardType = {
   // compact?: boolean;
@@ -32,6 +34,9 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
     const date = new Date(inserted_at);
     return date.toLocaleString();
   }, [inserted_at]);
+
+  const handleOpenZKB = useCallback(() => window.open(charZKBLink(char.eve_id), '_blank'), [char]);
+  const handleOpenEveWho = useCallback(() => window.open(charEveWhoLink(char.eve_id), '_blank'), [char]);
 
   return (
     <div className={clsx(classes.CharacterCard, 'w-full text-xs', 'flex flex-col box-border')}>
@@ -81,7 +86,7 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
             {/*here name and ship name*/}
             <div className="grid gap-1 justify-between grid-cols-[max-content_1fr]">
               {/*char name*/}
-              <div className="grid gap-1 grid-cols-[auto_1px_1fr]">
+              <div className="grid gap-1 grid-cols-[auto_1px_1fr_auto]">
                 <span
                   className={clsx(classes.MaxWidth, 'text-ellipsis overflow-hidden whitespace-nowrap', {
                     [classes.CardBorderLeftIsOwn]: isOwn,
@@ -94,6 +99,21 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
                 <div className="h-3 border-r border-neutral-500 my-0.5"></div>
                 {char.alliance_ticker && <span className="text-neutral-400">{char.alliance_ticker}</span>}
                 {!char.alliance_ticker && <span className="text-neutral-400">{char.corporation_ticker}</span>}
+
+                <div className={clsx('flex gap-1 items-center h-full ml-[2px]')}>
+                  <WdImgButton
+                    width={16}
+                    height={16}
+                    tooltip={{ position: TooltipPosition.top, content: 'Open zkillboard' }}
+                    source={ZKB_ICON}
+                    onClick={handleOpenZKB}
+                  />
+                  <WdImgButton
+                    tooltip={{ position: TooltipPosition.top, content: 'Open Eve Who' }}
+                    className={clsx('pi pi-user', '!text-[12px] relative top-[-1px]')}
+                    onClick={handleOpenEveWho}
+                  />
+                </div>
               </div>
 
               {/*ship name*/}

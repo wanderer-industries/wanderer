@@ -32,7 +32,43 @@ defmodule WandererAppWeb.ConnCase do
   end
 
   setup tags do
+    # Tag this as a ConnCase test for shared sandbox mode
+    tags = Map.put(tags, :conn_case, true)
+
     WandererApp.DataCase.setup_sandbox(tags)
+
+    # Set up mocks for this test process
+    WandererApp.Test.Mocks.setup_test_mocks()
+
+    # Set up integration test environment (including Map.Manager)
+    WandererApp.Test.IntegrationConfig.setup_integration_environment()
+    WandererApp.Test.IntegrationConfig.setup_test_reliability_configs()
+
+    # Cleanup after test
+    on_exit(fn ->
+      WandererApp.Test.IntegrationConfig.cleanup_integration_environment()
+    end)
+
     {:ok, conn: Phoenix.ConnTest.build_conn()}
+  end
+
+  @doc """
+  Creates an active subscription for a map to bypass subscription checks in tests.
+  Call this in your test setup after creating a map if subscriptions are enabled.
+  """
+  def create_active_subscription_for_map(map_id) do
+    if WandererApp.Env.map_subscriptions_enabled?() do
+      {:ok, _subscription} =
+        Ash.create(WandererApp.Api.MapSubscription, %{
+          map_id: map_id,
+          plan: :omega,
+          characters_limit: 100,
+          hubs_limit: 10,
+          auto_renew?: true,
+          active_till: DateTime.utc_now() |> DateTime.add(30, :day)
+        })
+    end
+
+    :ok
   end
 end

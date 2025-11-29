@@ -1,16 +1,25 @@
 defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
-  use WandererAppWeb.ConnCase, async: true
+  use WandererAppWeb.IntegrationConnCase, async: false
 
   import Mox
+
+  setup :verify_on_exit!
   import WandererAppWeb.Factory
+  import WandererApp.MapTestHelpers
 
   setup :verify_on_exit!
 
   describe "successful CRUD operations for map systems" do
     setup do
+      # Setup DDRT (R-tree) mock stubs for system positioning
+      setup_ddrt_mocks()
+
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(map.id)
 
       conn =
         build_conn()
@@ -23,14 +32,31 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         |> assign(:owner_character_id, character.eve_id)
         |> assign(:owner_user_id, user.id)
 
-      # Start the map server for the test map using the proper PartitionSupervisor
-      # {:ok, _pid} =
-      #   DynamicSupervisor.start_child(
-      #     {:via, PartitionSupervisor, {WandererApp.Map.DynamicSupervisors, self()}},
-      #     {WandererApp.Map.ServerSupervisor, map_id: map.id}
-      #   )
+      # Map server will be started in individual tests after data insertion
+      # Ensure it's stopped first to prevent state leakage from previous tests
+      ensure_map_stopped(map.id)
 
-      %{conn: conn, user: user, character: character, map: map}
+      # Seed static solar system data
+      insert(:solar_system, %{
+        solar_system_id: 30_000_142,
+        solar_system_name: "Jita",
+        security: "0.9"
+      })
+
+      insert(:solar_system, %{
+        solar_system_id: 30_000_144,
+        solar_system_name: "Perimeter",
+        security: "0.9"
+      })
+
+      insert(:solar_system, %{
+        solar_system_id: 31_000_005,
+        solar_system_name: "Thera",
+        system_class: 12,
+        security: "-0.9"
+      })
+
+      {:ok, %{conn: conn, map: map, user: user, character: character}}
     end
 
     test "READ: successfully retrieves systems for a map", %{conn: conn, map: map} do
@@ -54,6 +80,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
           position_y: 400,
           status: 0
         })
+
+      # Start the map server to load the systems
+      ensure_map_started(map.id)
 
       conn = get(conn, ~p"/api/maps/#{map.slug}/systems")
 
@@ -79,6 +108,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
     end
 
     test "CREATE: successfully creates a single system", %{conn: conn, map: map} do
+      # Start the map server
+      ensure_map_started(map.id)
+
       system_params = %{
         "systems" => [
           %{
@@ -115,6 +147,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "status" => 1
       }
 
+      # Start the map server to load the system
+      ensure_map_started(map.id)
+
       conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
 
       response = json_response(conn, 200)
@@ -141,6 +176,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "custom_name" => "My Trade Hub"
       }
 
+      # Start the map server to load the system
+      ensure_map_started(map.id)
+
       conn = put(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}", update_params)
 
       response = json_response(conn, 200)
@@ -159,6 +197,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
           solar_system_id: 30_000_142,
           name: "Jita"
         })
+
+      # Start the map server to load the system
+      ensure_map_started(map.id)
 
       conn = delete(conn, ~p"/api/maps/#{map.slug}/systems/#{system.id}")
 
@@ -184,6 +225,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         "system_ids" => [system1.id, system2.id]
       }
 
+      # Start the map server to load the systems
+      ensure_map_started(map.id)
+
       conn = delete(conn, ~p"/api/maps/#{map.slug}/systems", delete_params)
 
       response = json_response(conn, 200)
@@ -201,9 +245,15 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
 
   describe "error handling for systems" do
     setup do
+      # Setup DDRT (R-tree) mock stubs for system positioning
+      setup_ddrt_mocks()
+
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
+
+      # Create an active subscription for the map if subscriptions are enabled
+      create_active_subscription_for_map(map.id)
 
       conn =
         build_conn()
@@ -215,6 +265,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
         |> assign(:map, map)
         |> assign(:owner_character_id, character.eve_id)
         |> assign(:owner_user_id, user.id)
+
+      # Start the map server using the new async manager pattern
+      ensure_map_started(map.id)
 
       %{conn: conn, user: user, character: character, map: map}
     end

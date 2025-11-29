@@ -1,6 +1,8 @@
 defmodule WandererApp.MapCharacterSettingsRepo do
   use WandererApp, :repository
 
+  require Logger
+
   def get(map_id, character_id) do
     case WandererApp.Api.MapCharacterSettings.read_by_map_and_character(%{
            map_id: map_id,
@@ -53,22 +55,38 @@ defmodule WandererApp.MapCharacterSettingsRepo do
   def get_tracked_by_map_all(map_id),
     do: WandererApp.Api.MapCharacterSettings.tracked_by_map_all(%{map_id: map_id})
 
-  def track(settings) do
-    {:ok, _} = get(settings.map_id, settings.character_id)
-    # Only update the tracked field, preserving other fields
-    WandererApp.Api.MapCharacterSettings.track(%{
-      map_id: settings.map_id,
-      character_id: settings.character_id
-    })
+  def track(%{map_id: map_id, character_id: character_id}) do
+    # First ensure the record exists (get creates if not exists)
+    case get(map_id, character_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        # Now update the tracked field
+        settings
+        |> WandererApp.Api.MapCharacterSettings.update(%{tracked: true})
+
+      error ->
+        Logger.error(
+          "Failed to track character: #{character_id} on map: #{map_id}, #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
   end
 
-  def untrack(settings) do
-    {:ok, _} = get(settings.map_id, settings.character_id)
-    # Only update the tracked field, preserving other fields
-    WandererApp.Api.MapCharacterSettings.untrack(%{
-      map_id: settings.map_id,
-      character_id: settings.character_id
-    })
+  def untrack(%{map_id: map_id, character_id: character_id}) do
+    # First ensure the record exists (get creates if not exists)
+    case get(map_id, character_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        # Now update the tracked field
+        settings
+        |> WandererApp.Api.MapCharacterSettings.update(%{tracked: false})
+
+      error ->
+        Logger.error(
+          "Failed to untrack character: #{character_id} on map: #{map_id}, #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
   end
 
   def track!(settings) do
@@ -85,18 +103,36 @@ defmodule WandererApp.MapCharacterSettingsRepo do
     end
   end
 
-  def follow(settings) do
-    WandererApp.Api.MapCharacterSettings.follow(%{
-      map_id: settings.map_id,
-      character_id: settings.character_id
-    })
+  def follow(%{map_id: map_id, character_id: character_id} = _settings) do
+    # First ensure the record exists (get creates if not exists)
+    case get(map_id, character_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        settings
+        |> WandererApp.Api.MapCharacterSettings.update(%{followed: true})
+
+      error ->
+        Logger.error(
+          "Failed to follow character: #{character_id} on map: #{map_id}, #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
   end
 
-  def unfollow(settings) do
-    WandererApp.Api.MapCharacterSettings.unfollow(%{
-      map_id: settings.map_id,
-      character_id: settings.character_id
-    })
+  def unfollow(%{map_id: map_id, character_id: character_id} = _settings) do
+    # First ensure the record exists (get creates if not exists)
+    case get(map_id, character_id) do
+      {:ok, settings} when not is_nil(settings) ->
+        settings
+        |> WandererApp.Api.MapCharacterSettings.update(%{followed: false})
+
+      error ->
+        Logger.error(
+          "Failed to unfollow character: #{character_id} on map: #{map_id}, #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
   end
 
   def follow!(settings) do
