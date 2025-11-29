@@ -32,6 +32,15 @@
     <.icon name="hero-chart-bar-solid" class="w-6 h-6" />
   </button>
 
+  <button
+    id="show-wormhole-signatures-button"
+    class="h-8 w-8 hover:text-white"
+    phx-click="show_wormhole_signatures"
+    title="Wormhole Signatures Reference"
+  >
+    <.icon name="hero-sparkles-solid" class="w-6 h-6" />
+  </button>
+
   <.link
     :if={(@user_permissions || %{}) |> Map.get(:delete_map, false)}
     id={"map-audit-#{@map_slug}"}

@@ -219,6 +219,15 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:reply, %{user_settings: user_settings}, socket}
   end
 
+  def handle_ui_event("show_wormhole_signatures", _event, socket) do
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event(
+       "show_wormhole_signatures",
+       %{}
+     )}
+  end
+
   def handle_ui_event(
         "update_user_settings",
         user_settings_form,

@@ -9,6 +9,7 @@ import { MapContextMenu } from '@/hooks/Mapper/components/mapRootContent/compone
 import { useSkipContextMenu } from '@/hooks/Mapper/hooks/useSkipContextMenu';
 import { MapSettings } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings';
 import { CharacterActivity } from '@/hooks/Mapper/components/mapRootContent/components/CharacterActivity';
+import { WormholeSignaturesDialog } from '@/hooks/Mapper/components/mapRootContent/components/WormholeSignaturesDialog';
 import { useCharacterActivityHandlers } from './hooks/useCharacterActivityHandlers';
 import { TrackingDialog } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog';
 import { useMapEventListener } from '@/hooks/Mapper/events';
@@ -34,6 +35,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   const [showOnTheMap, setShowOnTheMap] = useState(false);
   const [showMapSettings, setShowMapSettings] = useState(false);
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
+  const [showWormholeSignatures, setShowWormholeSignatures] = useState(false);
 
   /* Important Notice - this solution needs for use one instance of MapInterface */
   const mapInterface = isReady ? <MapInterface /> : null;
@@ -45,6 +47,10 @@ export const MapRootContent = ({}: MapRootContentProps) => {
   useMapEventListener(event => {
     if (event.name === Commands.showTracking) {
       setShowTrackingDialog(true);
+      return true;
+    }
+    if (event.name === Commands.showWormholeSignatures) {
+      setShowWormholeSignatures(true);
       return true;
     }
   });
@@ -92,6 +98,12 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         )}
         {showTrackingDialog && (
           <TrackingDialog visible={showTrackingDialog} onHide={() => setShowTrackingDialog(false)} />
+        )}
+        {showWormholeSignatures && (
+          <WormholeSignaturesDialog
+            visible={showWormholeSignatures}
+            onHide={() => setShowWormholeSignatures(false)}
+          />
         )}
 
         {hasOldSettings && <OldSettingsDialog />}
