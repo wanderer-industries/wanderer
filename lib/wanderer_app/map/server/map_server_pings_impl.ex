@@ -5,7 +5,7 @@ defmodule WandererApp.Map.Server.PingsImpl do
 
   alias WandererApp.Map.Server.Impl
 
-  @ping_auto_expire_timeout :timer.minutes(15)
+  # @ping_auto_expire_timeout :timer.minutes(15) # reserved for future use
 
   def add_ping(
         map_id,

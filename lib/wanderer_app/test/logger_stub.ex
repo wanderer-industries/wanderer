@@ -10,11 +10,23 @@ defmodule WandererApp.Test.LoggerStub do
   def info(_message), do: :ok
 
   @impl true
+  def info(_message, _metadata), do: :ok
+
+  @impl true
   def error(_message), do: :ok
+
+  @impl true
+  def error(_message, _metadata), do: :ok
 
   @impl true
   def warning(_message), do: :ok
 
   @impl true
+  def warning(_message, _metadata), do: :ok
+
+  @impl true
   def debug(_message), do: :ok
+
+  @impl true
+  def debug(_message, _metadata), do: :ok
 end

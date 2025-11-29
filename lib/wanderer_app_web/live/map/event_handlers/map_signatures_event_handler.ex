@@ -168,7 +168,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
               current_user: %{id: current_user_id},
               map_id: map_id,
               main_character_id: main_character_id,
-              map_user_settings: map_user_settings,
+              map_user_settings: _map_user_settings,
               user_permissions: %{update_system: true}
             } = assigns
         } = socket
@@ -380,7 +380,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
 
   def handle_ui_event(
         "undo_delete_signatures",
-        %{"system_id" => solar_system_id, "eve_ids" => eve_ids} = payload,
+        %{"system_id" => solar_system_id, "eve_ids" => eve_ids} = _payload,
         %{
           assigns: %{
             map_id: map_id,

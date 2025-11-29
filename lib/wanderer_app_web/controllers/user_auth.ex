@@ -37,7 +37,7 @@ defmodule WandererAppWeb.UserAuth do
           nil ->
             {:halt, redirect_require_login(socket)}
 
-          %User{characters: characters} ->
+          %User{characters: _characters} ->
             {:cont, new_socket}
         end
 
@@ -110,13 +110,6 @@ defmodule WandererAppWeb.UserAuth do
   defp redirect_not_admin(socket) do
     socket
     |> LiveView.redirect(to: ~p"/")
-  end
-
-  defp track_characters([]), do: :ok
-
-  defp track_characters([%{id: character_id} | characters]) do
-    :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
-    track_characters(characters)
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

@@ -79,7 +79,7 @@ defmodule WandererAppWeb.MapSubscription do
     {:noreply, socket}
   end
 
-  defp get_title(%{plan: plan, auto_renew?: auto_renew?, active_till: active_till} = subscription) do
+  defp get_title(%{plan: plan, auto_renew?: auto_renew?, active_till: active_till}) do
     if plan != :alpha do
       "Active subscription: omega \nActive till: #{Calendar.strftime(active_till, "%m/%d/%Y")} \nAuto renew: #{auto_renew?}"
     else

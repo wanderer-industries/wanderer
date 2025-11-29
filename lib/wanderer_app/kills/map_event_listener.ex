@@ -46,7 +46,7 @@ defmodule WandererApp.Kills.MapEventListener do
   end
 
   @impl true
-  def handle_info(%{event: :map_server_started, payload: map_info}, state) do
+  def handle_info(%{event: :map_server_started, payload: _map_info}, state) do
     {:noreply, schedule_subscription_update(state)}
   end
 
@@ -191,7 +191,7 @@ defmodule WandererApp.Kills.MapEventListener do
             # Client is not connected, retry with backoff
             schedule_retry_update(state)
 
-          error ->
+          _error ->
             schedule_retry_update(state)
         end
       rescue

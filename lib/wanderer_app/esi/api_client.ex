@@ -8,7 +8,6 @@ defmodule WandererApp.Esi.ApiClient do
   @ttl :timer.hours(1)
 
   @wanderrer_user_agent "(wanderer-industries@proton.me; +https://github.com/wanderer-industries/wanderer)"
-  @req_esi_options [base_url: "https://esi.evetech.net", finch: WandererApp.Finch]
 
   @cache_opts [cache: true]
   @retry_opts [retry: false, retry_log_level: :warning]
@@ -74,7 +73,7 @@ defmodule WandererApp.Esi.ApiClient do
         |> Keyword.merge(@timeout_opts)
       )
 
-  def get_routes_eve(hubs, origin, params, opts),
+  def get_routes_eve(hubs, origin, _params, _opts),
     do:
       {:ok,
        hubs
@@ -100,33 +99,6 @@ defmodule WandererApp.Esi.ApiClient do
            _ -> {:error, :failed}
          end
        end)}
-
-  defp do_get_routes_eve(origin, destination, params, opts) do
-    esi_params =
-      Map.merge(params, %{
-        connections: params.connections |> Enum.join(","),
-        avoid: params.avoid |> Enum.join(",")
-      })
-
-    do_get(
-      "/route/#{origin}/#{destination}/?#{esi_params |> Plug.Conn.Query.encode()}",
-      opts,
-      @cache_opts
-    )
-    |> case do
-      {:ok, result} ->
-        %{
-          "origin" => origin,
-          "destination" => destination,
-          "systems" => result,
-          "success" => true
-        }
-
-      error ->
-        Logger.warning("Error getting routes: #{inspect(error)}")
-        %{"origin" => origin, "destination" => destination, "systems" => [], "success" => false}
-    end
-  end
 
   @decorate cacheable(
               cache: Cache,
@@ -273,6 +245,8 @@ defmodule WandererApp.Esi.ApiClient do
               opts: [ttl: @ttl]
             )
   defp get_search(character_eve_id, search_val, categories_val, merged_opts) do
+    # Note: search_val and categories_val are used by the @decorate cacheable annotation above
+    _unused = {search_val, categories_val}
     get_character_auth_data(character_eve_id, "search", merged_opts)
   end
 
@@ -348,7 +322,7 @@ defmodule WandererApp.Esi.ApiClient do
   defp with_cache_opts(opts),
     do: opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
 
-  defp do_get(path, api_opts \\ [], opts \\ [], pool \\ @general_pool) do
+  defp do_get(path, api_opts, opts, pool \\ @general_pool) do
     case Cachex.get(:api_cache, path) do
       {:ok, cached_data} when not is_nil(cached_data) ->
         {:ok, cached_data}
@@ -358,7 +332,7 @@ defmodule WandererApp.Esi.ApiClient do
     end
   end
 
-  defp do_get_request(path, api_opts \\ [], opts \\ [], pool \\ @general_pool) do
+  defp do_get_request(path, api_opts, opts, pool) do
     try do
       req_options_for_pool(pool)
       |> Req.new()
@@ -448,7 +422,7 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, %{status: status} = _error} when status in [401, 403] ->
           do_get_retry(path, api_opts, opts)
 
-        {:ok, %{status: status, headers: headers}} ->
+        {:ok, %{status: status}} ->
           {:error, "Unexpected status: #{status}"}
 
         {:error, %Mint.TransportError{reason: :timeout}} ->
@@ -832,10 +806,10 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp handle_refresh_token_result(
          {:error, %OAuth2.Error{reason: :econnrefused} = error},
-         character,
+         _character,
          character_id,
          expires_at,
-         scopes
+         _scopes
        ) do
     expires_at_datetime = DateTime.from_unix!(expires_at)
     time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)

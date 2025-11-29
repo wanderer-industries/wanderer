@@ -89,14 +89,4 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
     end
   end
 
-  defp stop_child(uuid) do
-    case Registry.lookup(@registry, uuid) do
-      [{pid, _}] ->
-        GenServer.cast(pid, :stop)
-
-      _ ->
-        Logger.warn("Unable to locate pool assigned to #{inspect(uuid)}")
-        :ok
-    end
-  end
 end

@@ -94,7 +94,7 @@ defmodule WandererAppWeb.Plugs.ResponseSanitizer do
     case Application.get_env(:wanderer_app, :environment) do
       :dev ->
         nonce = generate_nonce()
-        conn = put_private(conn, :csp_nonce, nonce)
+        _conn = put_private(conn, :csp_nonce, nonce)
 
         base_policy
         |> Enum.map(fn directive ->

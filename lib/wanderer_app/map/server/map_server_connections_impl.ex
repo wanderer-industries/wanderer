@@ -100,7 +100,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   @connection_type_wormhole 0
   @connection_type_stargate 1
-  @connection_type_bridge 2
+  # @connection_type_bridge 2 # reserved for future use
   @medium_ship_size 1
 
   def get_connection_auto_expire_hours(), do: WandererApp.Env.map_connection_auto_expire_hours()
@@ -403,7 +403,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
            time_status: time_status,
            solar_system_source: solar_system_source,
            solar_system_target: solar_system_target
-         } = updated_connection
+         } = _updated_connection
        ) do
     with source_system when not is_nil(source_system) <-
            WandererApp.Map.find_system_by_location(
@@ -900,9 +900,6 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         @connection_time_status_default
     end
   end
-
-  defp get_time_status(_source_solar_system_id, _target_solar_system_id, _ship_size_type),
-    do: @connection_time_status_default
 
   defp get_new_time_status(_start_time, @connection_time_status_default),
     do: @connection_time_status_eol_24

@@ -178,6 +178,10 @@ defmodule WandererApp.ExternalEvents.Event do
     end
   end
 
+  defp serialize_payload(payload, visited) when is_map(payload) do
+    Map.new(payload, fn {k, v} -> {to_string(k), serialize_value(v, visited)} end)
+  end
+
   # Get allowed fields based on struct type
   defp get_allowed_fields(module) do
     module_name = module |> Module.split() |> List.last()
@@ -190,10 +194,6 @@ defmodule WandererApp.ExternalEvents.Event do
       # Default minimal fields for unknown types
       _ -> [:id, :name]
     end
-  end
-
-  defp serialize_payload(payload, visited) when is_map(payload) do
-    Map.new(payload, fn {k, v} -> {to_string(k), serialize_value(v, visited)} end)
   end
 
   defp serialize_fields(fields, visited) do

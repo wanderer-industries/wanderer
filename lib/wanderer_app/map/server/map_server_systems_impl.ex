@@ -129,8 +129,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   def remove_system_comment(
         map_id,
         comment_id,
-        user_id,
-        character_id
+        _user_id,
+        _character_id
       ) do
     {:ok, %{system_id: system_id} = comment} =
       WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
@@ -309,7 +309,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
-        {:ok, result} ->
+        {:ok, _result} ->
           :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
           @ddrt.delete([solar_system_id], "rtree_#{map_id}")
           Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
@@ -863,10 +863,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     updated_system
   end
 
-  defp maybe_update_labels(system, _labels), do: system
-
   defp maybe_update_labels(
-         %{name: old_labels} = system,
+         %{labels: old_labels} = system,
          labels
        )
        when not is_nil(labels) and old_labels != labels do

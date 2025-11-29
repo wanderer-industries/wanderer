@@ -5,7 +5,6 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
   require Logger
 
   alias BetterNumber, as: Number
-  alias WandererApp.License.LicenseManager
 
   @impl true
   def mount(socket) do
@@ -99,7 +98,7 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
             type: :in
           })
 
-        {:ok, user} =
+        {:ok, _user} =
           user
           |> WandererApp.Api.User.update_balance(%{
             balance: (user_balance || 0.0) - amount
