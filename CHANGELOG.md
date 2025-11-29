@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.88.12](https://github.com/wanderer-industries/wanderer/compare/v1.88.11...v1.88.12) (2025-11-29)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed c4 -> ns connections auto size issues
+
 ## [v1.88.11](https://github.com/wanderer-industries/wanderer/compare/v1.88.10...v1.88.11) (2025-11-29)
 
 
