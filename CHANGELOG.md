@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.89.0](https://github.com/wanderer-industries/wanderer/compare/v1.88.13...v1.89.0) (2025-11-30)
+
+
+
+
+### Features:
+
+* removed unnecessary command
+
+* rework wormholes reference
+
 ## [v1.88.13](https://github.com/wanderer-industries/wanderer/compare/v1.88.12...v1.88.13) (2025-11-29)
 
 
