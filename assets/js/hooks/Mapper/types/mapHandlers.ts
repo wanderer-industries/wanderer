@@ -158,7 +158,6 @@ export type CommandUpdateTracking = {
 };
 export type CommandPingAdded = PingData[];
 export type CommandPingCancelled = Pick<PingData, 'type' | 'id'>;
-export type CommandShowWormholeSignatures = null;
 
 export interface UserSettings {
   primaryCharacterId?: string;
