@@ -53,6 +53,7 @@ defmodule WandererApp.Character.TrackingUtils do
 
   @doc """
   Builds tracking data for all characters with access to a map.
+  Only includes characters that have actual tracking permission.
   """
   def build_tracking_data(map_id, current_user_id) do
     with {:ok, map} <-
@@ -65,12 +66,16 @@ defmodule WandererApp.Character.TrackingUtils do
          {:ok, user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
          {:ok, %{characters: characters_with_access}} <-
            WandererApp.Maps.load_characters(map, current_user_id) do
+      # Filter to only characters with actual tracking permission
+      characters_with_tracking_permission =
+        filter_characters_with_tracking_permission(characters_with_access, map)
+
       # Map characters to tracking data
       {:ok, characters_data} =
-        build_character_tracking_data(characters_with_access)
+        build_character_tracking_data(characters_with_tracking_permission)
 
       {:ok, main_character} =
-        get_main_character(user_settings, characters_with_access, characters_with_access)
+        get_main_character(user_settings, characters_with_tracking_permission, characters_with_tracking_permission)
 
       following_character_eve_id =
         case user_settings do
@@ -110,6 +115,70 @@ defmodule WandererApp.Character.TrackingUtils do
          tracked: char.tracked
        }
      end)}
+  end
+
+  # Filter characters to only include those with actual tracking permission
+  # This prevents showing characters in the tracking dialog that will fail when toggled
+  defp filter_characters_with_tracking_permission(characters, %{id: map_id, owner_id: owner_id}) do
+    # Load ACLs with members properly (same approach as get_map_characters)
+    acls = load_map_acls_with_members(map_id)
+
+    Enum.filter(characters, fn character ->
+      has_tracking_permission?(character, owner_id, acls)
+    end)
+  end
+
+  # Load ACLs with members in the correct format for permission checking
+  defp load_map_acls_with_members(map_id) do
+    case WandererApp.Api.MapAccessList.read_by_map(%{map_id: map_id},
+           load: [access_list: [:owner, :members]]
+         ) do
+      {:ok, map_access_lists} ->
+        map_access_lists
+        |> Enum.map(fn mal -> mal.access_list end)
+        |> Enum.reject(&is_nil/1)
+
+      _ ->
+        []
+    end
+  end
+
+  # Check if a character has tracking permission on a map
+  # Returns true if the character can be tracked, false otherwise
+  defp has_tracking_permission?(character, owner_id, acls) do
+    cond do
+      # Map owner always has tracking permission
+      character.id == owner_id ->
+        true
+
+      # Character belongs to same user as map owner
+      # Note: character data from load_characters may not have user_id, so we need to load it
+      check_same_user_as_owner_by_id(character.id, owner_id) ->
+        true
+
+      # Check ACL-based permissions
+      true ->
+        case WandererApp.Permissions.check_characters_access([character], acls) do
+          [character_permissions] ->
+            map_permissions = WandererApp.Permissions.get_permissions(character_permissions)
+            map_permissions.track_character and map_permissions.view_system
+
+          _ ->
+            false
+        end
+    end
+  end
+
+  # Check if character belongs to the same user as the map owner (by character IDs)
+  defp check_same_user_as_owner_by_id(_character_id, nil), do: false
+
+  defp check_same_user_as_owner_by_id(character_id, owner_id) do
+    with {:ok, character} <- WandererApp.Character.get_character(character_id),
+         {:ok, owner_character} <- WandererApp.Character.get_character(owner_id) do
+      character.user_id != nil and character.user_id == owner_character.user_id
+    else
+      _ -> false
+    end
   end
 
   # Private implementation of update character tracking
