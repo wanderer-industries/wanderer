@@ -3,6 +3,8 @@ defmodule WandererAppWeb.CharactersTrackingLive do
 
   require Logger
 
+  alias WandererApp.Character.TrackingUtils
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, maps} = WandererApp.Maps.get_available_maps(socket.assigns.current_user)
@@ -70,21 +72,30 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     %{result: characters} = socket.assigns.characters
 
     case characters |> Enum.find(&(&1.id == character_id)) do
-      %{tracked: false} ->
-        WandererApp.MapCharacterSettingsRepo.track(%{
-          character_id: character_id,
-          map_id: selected_map.id
-        })
+      %{tracked: current_tracked, eve_id: eve_id} ->
+        # Use TrackingUtils.update_tracking to properly set/unset the tracking_start_time
+        # cache key, which is required for the character to appear in get_tracked_character_ids
+        case TrackingUtils.update_tracking(
+               selected_map.id,
+               eve_id,
+               current_user.id,
+               not current_tracked,
+               self(),
+               false
+             ) do
+          {:ok, _tracking_data, _event} ->
+            :ok
 
-      %{tracked: true} ->
-        WandererApp.MapCharacterSettingsRepo.untrack(%{
-          character_id: character_id,
-          map_id: selected_map.id
-        })
+          {:error, reason} ->
+            Logger.error(
+              "Failed to toggle tracking for character #{character_id} on map #{selected_map.id}: #{inspect(reason)}"
+            )
+        end
 
-        WandererApp.Map.Server.untrack_characters(selected_map.id, [
-          character_id
-        ])
+      nil ->
+        Logger.warning(
+          "Character #{character_id} not found in available characters for map #{selected_map.id}"
+        )
     end
 
     {:noreply,
