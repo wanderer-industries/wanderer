@@ -183,6 +183,20 @@ defmodule WandererAppWeb.Factory do
               character
             end
 
+          # Update with alliance data if provided
+          character =
+            if Map.has_key?(attrs, :alliance_id) or Map.has_key?(attrs, :alliance_ticker) do
+              alliance_attrs =
+                Map.take(attrs, [:alliance_id, :alliance_name, :alliance_ticker])
+
+              {:ok, updated_character} =
+                Ash.update(character, alliance_attrs, action: :update_alliance)
+
+              updated_character
+            else
+              character
+            end
+
           character
 
         {:error, error} ->
@@ -211,6 +225,20 @@ defmodule WandererAppWeb.Factory do
 
               {:ok, updated_character} =
                 Ash.update(character, corp_attrs, action: :update_corporation)
+
+              updated_character
+            else
+              character
+            end
+
+          # Update with alliance data if provided
+          character =
+            if Map.has_key?(attrs, :alliance_id) or Map.has_key?(attrs, :alliance_ticker) do
+              alliance_attrs =
+                Map.take(attrs, [:alliance_id, :alliance_name, :alliance_ticker])
+
+              {:ok, updated_character} =
+                Ash.update(character, alliance_attrs, action: :update_alliance)
 
               updated_character
             else
