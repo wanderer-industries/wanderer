@@ -82,7 +82,8 @@ defmodule WandererAppWeb.Router do
     "allow-modals",
     "allow-same-origin",
     "allow-downloads",
-    "allow-popups"
+    "allow-popups",
+    "allow-popups-to-escape-sandbox"
   ]
 
   pipeline :admin_bauth do
