@@ -26,9 +26,13 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   end
 
   defp apply_action(socket, :index, _params) do
+    # Unsubscribe from previous map if any
+    socket = maybe_unsubscribe_from_map(socket)
+
     socket
     |> assign(:active_page, :characters_tracking)
     |> assign(:page_title, "Characters Tracking")
+    |> assign(selected_map: nil, selected_map_slug: nil)
   end
 
   defp apply_action(
@@ -37,6 +41,10 @@ defmodule WandererAppWeb.CharactersTrackingLive do
          %{"slug" => map_slug} = _params
        ) do
     selected_map = maps |> Enum.find(&(&1.slug == map_slug))
+
+    # Unsubscribe from previous map and subscribe to new one
+    socket = maybe_unsubscribe_from_map(socket)
+    socket = maybe_subscribe_to_map(socket, selected_map)
 
     socket
     |> assign(:active_page, :characters_tracking)
@@ -49,6 +57,27 @@ defmodule WandererAppWeb.CharactersTrackingLive do
       WandererApp.Maps.load_characters(selected_map, current_user.id)
     end)
   end
+
+  # Subscribe to map PubSub channel to receive ACL update notifications
+  defp maybe_subscribe_to_map(socket, nil), do: socket
+
+  defp maybe_subscribe_to_map(socket, %{id: map_id}) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(WandererApp.PubSub, map_id)
+    end
+
+    socket
+  end
+
+  # Unsubscribe from previous map's PubSub channel
+  defp maybe_unsubscribe_from_map(%{assigns: %{selected_map: nil}} = socket), do: socket
+
+  defp maybe_unsubscribe_from_map(%{assigns: %{selected_map: %{id: map_id}}} = socket) do
+    Phoenix.PubSub.unsubscribe(WandererApp.PubSub, map_id)
+    socket
+  end
+
+  defp maybe_unsubscribe_from_map(socket), do: socket
 
   @impl true
   def handle_event("select_map_" <> map_slug, _, socket) do
@@ -113,6 +142,20 @@ defmodule WandererAppWeb.CharactersTrackingLive do
   @impl true
   def handle_event(_, _, socket) do
     {:noreply, socket}
+  end
+
+  # Handle ACL members changed event - reload characters list
+  @impl true
+  def handle_info(
+        %{event: :acl_members_changed},
+        %{assigns: %{selected_map: selected_map, current_user: current_user}} = socket
+      )
+      when not is_nil(selected_map) do
+    {:noreply,
+     socket
+     |> assign_async(:characters, fn ->
+       WandererApp.Maps.load_characters(selected_map, current_user.id)
+     end)}
   end
 
   @impl true
