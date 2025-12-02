@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.89.4](https://github.com/wanderer-industries/wanderer/compare/v1.89.3...v1.89.4) (2025-12-02)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed acl character update issues
+
 ## [v1.89.3](https://github.com/wanderer-industries/wanderer/compare/v1.89.2...v1.89.3) (2025-11-30)
 
 
