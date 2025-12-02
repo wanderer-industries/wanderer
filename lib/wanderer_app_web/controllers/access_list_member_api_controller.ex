@@ -433,11 +433,30 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
   # ---------------------------------------------------------------------------
 
   defp broadcast_acl_updated(acl_id) do
+    # Invalidate map_characters cache for all maps using this ACL
+    # This ensures the tracking page shows updated members even when map server isn't running
+    invalidate_map_characters_cache(acl_id)
+
     Phoenix.PubSub.broadcast(
       WandererApp.PubSub,
       "acls:#{acl_id}",
       {:acl_updated, %{acl_id: acl_id}}
     )
+  end
+
+  defp invalidate_map_characters_cache(acl_id) do
+    case Ash.read(
+           WandererApp.Api.MapAccessList
+           |> Ash.Query.for_read(:read_by_acl, %{acl_id: acl_id})
+         ) do
+      {:ok, map_acls} ->
+        Enum.each(map_acls, fn %{map_id: map_id} ->
+          WandererApp.Cache.delete("map_characters-#{map_id}")
+        end)
+
+      {:error, error} ->
+        Logger.warning("Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}")
+    end
   end
 
   @doc false

@@ -174,9 +174,11 @@ defmodule WandererApp.Maps do
             map_member_alliance_ids: map_member_alliance_ids
           }
 
+        # Cache with 5 minute TTL so ACL changes are picked up even when map server isn't running
         WandererApp.Cache.insert(
           "map_characters-#{map_id}",
-          map_characters
+          map_characters,
+          ttl: :timer.minutes(5)
         )
 
         {:ok, map_characters}

@@ -56,13 +56,7 @@ defmodule WandererApp.Character.TrackingUtils do
   Only includes characters that have actual tracking permission.
   """
   def build_tracking_data(map_id, current_user_id) do
-    with {:ok, map} <-
-           WandererApp.MapRepo.get(map_id,
-             acls: [
-               :owner_id,
-               members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
-             ]
-           ),
+    with {:ok, map} <- WandererApp.MapRepo.get(map_id),
          {:ok, user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
          {:ok, %{characters: characters_with_access}} <-
            WandererApp.Maps.load_characters(map, current_user_id) do

@@ -2,6 +2,7 @@ defmodule WandererAppWeb.AccessListsLive do
   use WandererAppWeb, :live_view
 
   alias WandererApp.ExternalEvents.AclEventBroadcaster
+  require Ash.Query
   require Logger
 
   @impl true
@@ -281,11 +282,7 @@ defmodule WandererAppWeb.AccessListsLive do
     |> Enum.find(&(&1.id == member_id))
     |> WandererApp.Api.AccessListMember.destroy!()
 
-    Phoenix.PubSub.broadcast(
-      WandererApp.PubSub,
-      "acls:#{socket.assigns.selected_acl_id}",
-      {:acl_updated, %{acl_id: socket.assigns.selected_acl_id}}
-    )
+    broadcast_acl_updated(socket.assigns.selected_acl_id)
 
     {:noreply,
      socket
@@ -444,11 +441,7 @@ defmodule WandererAppWeb.AccessListsLive do
 
         :telemetry.execute([:wanderer_app, :acl, :member, :update], %{count: 1})
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "acls:#{socket.assigns.selected_acl_id}",
-          {:acl_updated, %{acl_id: socket.assigns.selected_acl_id}}
-        )
+        broadcast_acl_updated(socket.assigns.selected_acl_id)
 
         socket
         |> assign(
@@ -574,11 +567,7 @@ defmodule WandererAppWeb.AccessListsLive do
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "acls:#{access_list_id}",
-          {:acl_updated, %{acl_id: access_list_id}}
-        )
+        broadcast_acl_updated(access_list_id)
 
         {:ok, member}
 
@@ -613,11 +602,7 @@ defmodule WandererAppWeb.AccessListsLive do
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "acls:#{access_list_id}",
-          {:acl_updated, %{acl_id: access_list_id}}
-        )
+        broadcast_acl_updated(access_list_id)
 
         {:ok, member}
 
@@ -653,11 +638,7 @@ defmodule WandererAppWeb.AccessListsLive do
 
         :telemetry.execute([:wanderer_app, :acl, :member, :add], %{count: 1})
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "acls:#{access_list_id}",
-          {:acl_updated, %{acl_id: access_list_id}}
-        )
+        broadcast_acl_updated(access_list_id)
 
         {:ok, member}
 
@@ -736,5 +717,32 @@ defmodule WandererAppWeb.AccessListsLive do
 
   defp map_ui_acl(acl, selected_id) do
     acl |> Map.put(:selected, acl.id == selected_id)
+  end
+
+  # Broadcast ACL update and invalidate map_characters cache for all maps using this ACL
+  # This ensures the tracking page shows updated members even when map server isn't running
+  defp broadcast_acl_updated(acl_id) do
+    invalidate_map_characters_cache(acl_id)
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "acls:#{acl_id}",
+      {:acl_updated, %{acl_id: acl_id}}
+    )
+  end
+
+  defp invalidate_map_characters_cache(acl_id) do
+    case Ash.read(
+           WandererApp.Api.MapAccessList
+           |> Ash.Query.for_read(:read_by_acl, %{acl_id: acl_id})
+         ) do
+      {:ok, map_acls} ->
+        Enum.each(map_acls, fn %{map_id: map_id} ->
+          WandererApp.Cache.delete("map_characters-#{map_id}")
+        end)
+
+      {:error, error} ->
+        Logger.warning("Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}")
+    end
   end
 end
