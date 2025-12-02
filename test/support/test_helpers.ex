@@ -217,12 +217,16 @@ defmodule WandererApp.TestHelpers do
     :ok = WandererApp.Map.Manager.start_map(map_id)
 
     # Wait for the map to be in started_maps cache with efficient polling
-    wait_until(fn ->
-      case WandererApp.Cache.lookup("map_#{map_id}:started") do
-        {:ok, true} -> true
-        _ -> false
-      end
-    end, timeout: 5000, interval: 20)
+    wait_until(
+      fn ->
+        case WandererApp.Cache.lookup("map_#{map_id}:started") do
+          {:ok, true} -> true
+          _ -> false
+        end
+      end,
+      timeout: 5000,
+      interval: 20
+    )
 
     :ok
   end

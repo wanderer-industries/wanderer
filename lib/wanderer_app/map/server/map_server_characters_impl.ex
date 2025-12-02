@@ -883,7 +883,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   # Get effective scopes from map, with fallback to legacy scope
   defp get_effective_scopes(%{scopes: scopes}) when is_list(scopes) and scopes != [], do: scopes
-  defp get_effective_scopes(%{scope: scope}) when is_atom(scope), do: legacy_scope_to_scopes(scope)
+
+  defp get_effective_scopes(%{scope: scope}) when is_atom(scope),
+    do: legacy_scope_to_scopes(scope)
+
   defp get_effective_scopes(_), do: [:wormholes]
 
   # Legacy scope to new scopes array conversion

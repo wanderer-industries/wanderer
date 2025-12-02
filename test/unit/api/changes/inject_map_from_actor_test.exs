@@ -26,7 +26,7 @@ defmodule WandererApp.Api.Changes.InjectMapFromActorTest do
 
       # Should not add our "required" error (map_id is in params)
       # Note: Ash may add other validation errors for invalid map_id
-      refute result.errors |> Enum.any?(&(String.contains?(&1.message || "", "required")))
+      refute result.errors |> Enum.any?(&String.contains?(&1.message || "", "required"))
     end
 
     test "adds error when no map context and no map_id provided" do
@@ -41,7 +41,7 @@ defmodule WandererApp.Api.Changes.InjectMapFromActorTest do
       result = WandererApp.Api.Changes.InjectMapFromActor.change(changeset, [], context)
 
       # Should add our "required" error
-      assert result.errors |> Enum.any?(&(String.contains?(&1.message || "", "required")))
+      assert result.errors |> Enum.any?(&String.contains?(&1.message || "", "required"))
     end
 
     test "ActorHelpers.get_map extracts from ActorWithMap" do

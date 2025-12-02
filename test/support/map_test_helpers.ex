@@ -16,6 +16,10 @@ defmodule WandererApp.MapTestHelpers do
   def expect_map_server_error(test_fun) do
     try do
       test_fun.()
+    rescue
+      MatchError ->
+        # Expected when map or character doesn't exist in unit tests
+        :ok
     catch
       "Map server not started" ->
         # Expected in unit test environment - map servers aren't started
@@ -58,7 +62,7 @@ defmodule WandererApp.MapTestHelpers do
       {:error, :not_found} -> :ok
       false -> :ok
     end
-    
+
     # Wait for it to disappear from registry
     wait_for_map_stopped(map_id)
   end

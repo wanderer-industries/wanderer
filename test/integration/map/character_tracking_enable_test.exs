@@ -34,7 +34,11 @@ defmodule WandererApp.Map.CharacterTrackingEnableTest do
     setup_ddrt_mocks()
 
     # Create test user
-    user = create_user(%{name: "Tracking Test User", hash: "tracking_test_hash_#{:rand.uniform(1_000_000)}"})
+    user =
+      create_user(%{
+        name: "Tracking Test User",
+        hash: "tracking_test_hash_#{:rand.uniform(1_000_000)}"
+      })
 
     # Create test character with location tracking scopes
     character =

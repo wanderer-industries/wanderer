@@ -410,8 +410,12 @@ defmodule WandererApp.EveDataService do
 
   defp get_security(security) do
     case security do
-      nil -> {:ok, ""}
-      _ -> {:ok, String.to_float(security) |> get_true_security() |> :erlang.float_to_binary(decimals: 1)}
+      nil ->
+        {:ok, ""}
+
+      _ ->
+        {:ok,
+         String.to_float(security) |> get_true_security() |> :erlang.float_to_binary(decimals: 1)}
     end
   end
 

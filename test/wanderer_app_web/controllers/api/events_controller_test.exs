@@ -2,7 +2,22 @@ defmodule WandererAppWeb.Api.EventsControllerTest do
   use WandererAppWeb.ConnCase, async: false
 
   import WandererAppWeb.Factory
-  import WandererApp.EnvHelper
+
+  # Enable SSE globally for these tests
+  setup do
+    # Store original value
+    original_sse_config = Application.get_env(:wanderer_app, :sse, [])
+
+    # Enable SSE for tests
+    Application.put_env(:wanderer_app, :sse, Keyword.put(original_sse_config, :enabled, true))
+
+    on_exit(fn ->
+      # Restore original value
+      Application.put_env(:wanderer_app, :sse, original_sse_config)
+    end)
+
+    :ok
+  end
 
   describe "GET /api/maps/:map_identifier/events/stream - SSE access control" do
     setup do

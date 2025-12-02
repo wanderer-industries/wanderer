@@ -31,6 +31,13 @@ defmodule WandererApp.Api.UserActivity do
 
     includes([:character, :user])
 
+    default_fields([
+      :entity_id,
+      :entity_type,
+      :event_type,
+      :event_data
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 
@@ -86,10 +93,12 @@ defmodule WandererApp.Api.UserActivity do
 
     attribute :entity_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :entity_type, :atom do
       default "map"
+      public? true
 
       constraints(
         one_of: [
@@ -104,6 +113,7 @@ defmodule WandererApp.Api.UserActivity do
 
     attribute :event_type, :atom do
       default "custom"
+      public? true
 
       constraints(
         one_of: [
@@ -153,7 +163,9 @@ defmodule WandererApp.Api.UserActivity do
       allow_nil?(false)
     end
 
-    attribute :event_data, :string
+    attribute :event_data, :string do
+      public? true
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

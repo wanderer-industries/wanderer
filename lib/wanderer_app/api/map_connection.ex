@@ -22,6 +22,19 @@ defmodule WandererApp.Api.MapConnection do
 
     includes([:map])
 
+    default_fields([
+      :solar_system_source,
+      :solar_system_target,
+      :mass_status,
+      :time_status,
+      :ship_size_type,
+      :type,
+      :wormhole_type,
+      :count_of_passage,
+      :locked,
+      :custom_info
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 
@@ -197,15 +210,20 @@ defmodule WandererApp.Api.MapConnection do
   attributes do
     uuid_primary_key :id
 
-    attribute :solar_system_source, :integer
-    attribute :solar_system_target, :integer
+    attribute :solar_system_source, :integer do
+      public? true
+    end
+
+    attribute :solar_system_target, :integer do
+      public? true
+    end
 
     # where 0 - greater than half
     # where 1 - less than half
     # where 2 - critical less than 10%
     attribute :mass_status, :integer do
       default(0)
-
+      public? true
       allow_nil?(true)
     end
 
@@ -218,7 +236,7 @@ defmodule WandererApp.Api.MapConnection do
     # 6 - EOL 48h
     attribute :time_status, :integer do
       default(0)
-
+      public? true
       allow_nil?(true)
     end
 
@@ -229,7 +247,7 @@ defmodule WandererApp.Api.MapConnection do
     # where 4 - Capital
     attribute :ship_size_type, :integer do
       default(2)
-
+      public? true
       allow_nil?(true)
     end
 
@@ -238,21 +256,26 @@ defmodule WandererApp.Api.MapConnection do
     # where 2 - Bridge
     attribute :type, :integer do
       default(0)
-
+      public? true
       allow_nil?(true)
     end
 
-    attribute :wormhole_type, :string
+    attribute :wormhole_type, :string do
+      public? true
+    end
 
     attribute :count_of_passage, :integer do
       default(0)
-
+      public? true
       allow_nil?(true)
     end
 
-    attribute :locked, :boolean
+    attribute :locked, :boolean do
+      public? true
+    end
 
     attribute :custom_info, :string do
+      public? true
       allow_nil? true
     end
 

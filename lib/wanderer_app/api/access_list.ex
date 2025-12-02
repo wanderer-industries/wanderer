@@ -16,6 +16,11 @@ defmodule WandererApp.Api.AccessList do
 
     includes([:owner, :members])
 
+    default_fields([
+      :name,
+      :description
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 
@@ -79,12 +84,15 @@ defmodule WandererApp.Api.AccessList do
 
     attribute :name, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :description, :string do
       allow_nil? true
+      public? true
     end
 
+    # Note: api_key intentionally not public for security
     attribute :api_key, :string do
       allow_nil? true
     end

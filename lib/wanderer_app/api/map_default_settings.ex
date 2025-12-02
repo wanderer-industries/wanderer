@@ -23,6 +23,10 @@ defmodule WandererApp.Api.MapDefaultSettings do
       :updated_by
     ])
 
+    default_fields([
+      :settings
+    ])
+
     routes do
       base("/map_default_settings")
 
@@ -93,6 +97,7 @@ defmodule WandererApp.Api.MapDefaultSettings do
 
     attribute :settings, :string do
       allow_nil? false
+      public? true
       constraints min_length: 2
       description "JSON string containing the default map settings"
     end

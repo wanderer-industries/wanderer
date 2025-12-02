@@ -41,6 +41,21 @@ defmodule WandererApp.Api.MapSystemStructure do
       :system
     ])
 
+    default_fields([
+      :structure_type_id,
+      :structure_type,
+      :character_eve_id,
+      :solar_system_name,
+      :solar_system_id,
+      :name,
+      :notes,
+      :owner_name,
+      :owner_ticker,
+      :owner_id,
+      :status,
+      :end_time
+    ])
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)
@@ -151,50 +166,62 @@ defmodule WandererApp.Api.MapSystemStructure do
 
     attribute :structure_type_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :structure_type, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :character_eve_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :solar_system_name, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :solar_system_id, :integer do
       allow_nil? false
+      public? true
     end
 
     attribute :name, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :notes, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :owner_name, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :owner_ticker, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :owner_id, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :status, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :end_time, :utc_datetime_usec do
       allow_nil? true
+      public? true
     end
 
     create_timestamp :inserted_at

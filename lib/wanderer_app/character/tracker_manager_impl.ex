@@ -40,10 +40,12 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
 
-    Logger.debug("[TrackerManager] Initialized with intervals: " <>
-      "garbage_collection=#{div(@garbage_collection_interval, 60_000)}min, " <>
-      "untrack=#{div(@untrack_characters_interval, 60_000)}min, " <>
-      "inactive_timeout=#{div(@inactive_character_timeout, 60_000)}min")
+    Logger.debug(
+      "[TrackerManager] Initialized with intervals: " <>
+        "garbage_collection=#{div(@garbage_collection_interval, 60_000)}min, " <>
+        "untrack=#{div(@untrack_characters_interval, 60_000)}min, " <>
+        "inactive_timeout=#{div(@inactive_character_timeout, 60_000)}min"
+    )
 
     %{
       characters: [],
@@ -57,7 +59,9 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     WandererApp.Cache.insert("tracked_characters", [])
 
     if length(tracked_characters) > 0 do
-      Logger.debug("[TrackerManager] Restoring #{length(tracked_characters)} tracked characters from cache")
+      Logger.debug(
+        "[TrackerManager] Restoring #{length(tracked_characters)} tracked characters from cache"
+      )
     end
 
     tracked_characters
@@ -197,6 +201,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       [],
       fn untrack_queue ->
         original_length = length(untrack_queue)
+
         filtered =
           untrack_queue
           |> Enum.reject(fn {m_id, c_id} -> m_id == map_id and c_id == character_id end)

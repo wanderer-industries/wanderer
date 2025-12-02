@@ -75,7 +75,11 @@ defmodule WandererApp.Character.TrackingUtils do
         build_character_tracking_data(characters_with_tracking_permission)
 
       {:ok, main_character} =
-        get_main_character(user_settings, characters_with_tracking_permission, characters_with_tracking_permission)
+        get_main_character(
+          user_settings,
+          characters_with_tracking_permission,
+          characters_with_tracking_permission
+        )
 
       following_character_eve_id =
         case user_settings do
@@ -195,7 +199,13 @@ defmodule WandererApp.Character.TrackingUtils do
       {true, settings_result} ->
         case check_character_tracking_permission(character, map_id) do
           {:ok, :allowed} ->
-            do_update_character_tracking_impl(character, map_id, track, caller_pid, settings_result)
+            do_update_character_tracking_impl(
+              character,
+              map_id,
+              track,
+              caller_pid,
+              settings_result
+            )
 
           {:error, reason} ->
             Logger.warning(
