@@ -20,13 +20,20 @@ defmodule WandererApp.Map.Server.MapScopesTest do
   @jita 30_000_142
 
   # Test solar system IDs
-  @wh_system_id 31_000_001  # J100001 - C1 wormhole
-  @c2_system_id 31_000_002  # C2 wormhole
-  @thera_id 31_000_005      # Thera
-  @hs_system_id 30_000_001  # Highsec system
-  @ls_system_id 30_000_100  # Lowsec system
-  @ns_system_id 30_000_200  # Nullsec system
-  @pochven_id 30_000_300    # Pochven system
+  # J100001 - C1 wormhole
+  @wh_system_id 31_000_001
+  # C2 wormhole
+  @c2_system_id 31_000_002
+  # Thera
+  @thera_id 31_000_005
+  # Highsec system
+  @hs_system_id 30_000_001
+  # Lowsec system
+  @ls_system_id 30_000_100
+  # Nullsec system
+  @ns_system_id 30_000_200
+  # Pochven system
+  @pochven_id 30_000_300
 
   setup do
     # Set up system static info cache directly (the impl uses Cachex, not mocks)
@@ -143,7 +150,9 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "prohibited systems are blocked" do
       # Jita is prohibited
       assert ConnectionsImpl.can_add_location([:hi], @jita) == false
-      assert ConnectionsImpl.can_add_location([:wormholes, :hi, :low, :null, :pochven], @jita) == false
+
+      assert ConnectionsImpl.can_add_location([:wormholes, :hi, :low, :null, :pochven], @jita) ==
+               false
     end
   end
 
@@ -191,17 +200,23 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     end
 
     test "returns false when systems are the same" do
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @wh_system_id) == false
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @wh_system_id) ==
+               false
+
       assert ConnectionsImpl.is_connection_valid([:hi], @hs_system_id, @hs_system_id) == false
     end
 
     test "connection valid when at least one system matches a scope" do
       # WH to HS: valid if either :wormholes or :hi is selected
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) ==
+               true
+
       assert ConnectionsImpl.is_connection_valid([:hi], @wh_system_id, @hs_system_id) == true
 
       # WH to WH: valid only if :wormholes is selected
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @c2_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @c2_system_id) ==
+               true
+
       assert ConnectionsImpl.is_connection_valid([:hi], @wh_system_id, @c2_system_id) == false
 
       # HS to LS: valid if :hi or :low is selected

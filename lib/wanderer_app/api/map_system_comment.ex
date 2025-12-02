@@ -19,6 +19,10 @@ defmodule WandererApp.Api.MapSystemComment do
       :character
     ])
 
+    default_fields([
+      :text
+    ])
+
     routes do
       base("/map_system_comments")
 
@@ -73,6 +77,7 @@ defmodule WandererApp.Api.MapSystemComment do
 
     attribute :text, :string do
       allow_nil? false
+      public? true
     end
 
     create_timestamp(:inserted_at)

@@ -179,5 +179,4 @@ defmodule WandererApp.Map.MapPoolDynamicSupervisor do
         {:ok, pid}
     end
   end
-
 end

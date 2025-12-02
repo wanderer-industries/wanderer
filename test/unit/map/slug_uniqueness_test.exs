@@ -172,7 +172,9 @@ defmodule WandererApp.Map.SlugUniquenessTest do
     end
 
     @tag :slow
-    test "concurrent creation with different names creates different base slugs", %{character: character} do
+    test "concurrent creation with different names creates different base slugs", %{
+      character: character
+    } do
       # Create concurrent requests with different names (should all succeed)
       tasks =
         for i <- 1..5 do

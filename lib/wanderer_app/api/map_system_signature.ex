@@ -16,6 +16,20 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     includes([:system])
 
+    default_fields([
+      :eve_id,
+      :character_eve_id,
+      :name,
+      :description,
+      :temporary_name,
+      :type,
+      :linked_system_id,
+      :kind,
+      :group,
+      :custom_info,
+      :deleted
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 
@@ -184,42 +198,56 @@ defmodule WandererApp.Api.MapSystemSignature do
 
     attribute :eve_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :character_eve_id, :string do
       allow_nil? false
+      public? true
     end
 
     attribute :name, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :description, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :temporary_name, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :type, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :linked_system_id, :integer do
       allow_nil? true
+      public? true
     end
 
-    attribute :kind, :string
-    attribute :group, :string
+    attribute :kind, :string do
+      public? true
+    end
+
+    attribute :group, :string do
+      public? true
+    end
 
     attribute :custom_info, :string do
       allow_nil? true
+      public? true
     end
 
     attribute :deleted, :boolean do
       allow_nil? false
       default false
+      public? true
     end
 
     attribute :update_forced_at, :utc_datetime do

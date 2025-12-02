@@ -30,10 +30,7 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       cleanup_cache(map_id)
     end)
 
-    {:ok,
-     map_id: map_id,
-     character_id: character_id,
-     character_id_2: character_id_2}
+    {:ok, map_id: map_id, character_id: character_id, character_id_2: character_id_2}
   end
 
   defp cleanup_cache(map_id) do
@@ -271,7 +268,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       assert Map.has_key?(state.timers, {map_id, character_id})
 
       # Simulate grace period expiration by sending the message directly
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id, character_id}
+      )
+
       # Small wait for the message to be processed
       :timer.sleep(20)
 
@@ -295,7 +296,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       PresenceGracePeriodManager.process_presence_change_sync(map_id, presence_data)
 
       # Timer was cancelled, but let's simulate the message arriving anyway
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id, character_id}
+      )
+
       :timer.sleep(20)
 
       # Character should still be in cache (message was ignored)
@@ -318,7 +323,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       cleanup_cache(map_id)
 
       # Send expired message
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id, character_id}
+      )
+
       :timer.sleep(20)
 
       # Should handle gracefully without crashing
@@ -341,7 +350,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       assert length(cached_before) == 2
 
       # Only expire character_id
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id, character_id}
+      )
+
       :timer.sleep(20)
 
       # Only character_id_2 should remain
@@ -387,7 +400,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       assert get_presence_character_ids(map_id_2) == [character_id]
 
       # Expire grace period for map_id_1
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id_1, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id_1, character_id}
+      )
+
       :timer.sleep(20)
 
       # map_id_1 should be empty, map_id_2 should still have character
@@ -626,7 +643,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       PresenceGracePeriodManager.process_presence_change_sync(map_id, [])
 
       # Simulate grace period expiration
-      send(Process.whereis(PresenceGracePeriodManager), {:grace_period_expired, map_id, character_id})
+      send(
+        Process.whereis(PresenceGracePeriodManager),
+        {:grace_period_expired, map_id, character_id}
+      )
+
       :timer.sleep(20)
 
       assert_receive {:telemetry, :expired, measurements, metadata}, 500
@@ -664,10 +685,11 @@ defmodule WandererAppWeb.PresenceGracePeriodManagerTest do
       character_id_2: character_id_2
     } do
       # Complex scenario: multiple characters, some tracked, some not
-      presence_data = build_presence_data([
-        {character_id, true},
-        {character_id_2, false}
-      ])
+      presence_data =
+        build_presence_data([
+          {character_id, true},
+          {character_id_2, false}
+        ])
 
       PresenceGracePeriodManager.process_presence_change_sync(map_id, presence_data)
 

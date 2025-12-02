@@ -269,7 +269,9 @@ defmodule WandererApp.CharactersTrackingLiveTest do
         )
 
       {:ok, time_after_second_on} = WandererApp.Cache.lookup(tracking_key)
-      assert not is_nil(time_after_second_on), "tracking_start_time should be set after second toggle ON"
+
+      assert not is_nil(time_after_second_on),
+             "tracking_start_time should be set after second toggle ON"
 
       {:ok, settings_on_again} = WandererApp.MapCharacterSettingsRepo.get(map.id, character.id)
       assert settings_on_again.tracked == true

@@ -771,7 +771,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
         _ ->
           # For other legacy scopes, convert to array and use new logic
-          is_connection_valid(legacy_scope_to_scopes(scope), from_solar_system_id, to_solar_system_id)
+          is_connection_valid(
+            legacy_scope_to_scopes(scope),
+            from_solar_system_id,
+            to_solar_system_id
+          )
       end
     else
       _ -> false

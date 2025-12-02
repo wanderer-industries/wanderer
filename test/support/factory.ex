@@ -860,7 +860,11 @@ defmodule WandererAppWeb.Factory do
 
     # Automatically compute solar_system_name_lc from solar_system_name if not provided
     if Map.has_key?(attrs, :solar_system_name) and not Map.has_key?(attrs, :solar_system_name_lc) do
-      Map.put(merged_attrs, :solar_system_name_lc, String.downcase(merged_attrs.solar_system_name))
+      Map.put(
+        merged_attrs,
+        :solar_system_name_lc,
+        String.downcase(merged_attrs.solar_system_name)
+      )
     else
       merged_attrs
     end

@@ -679,7 +679,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
           _ ->
             %{x: x, y: y} =
-              WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
+              WandererApp.Map.PositionCalculator.get_new_system_position(
+                nil,
+                rtree_name,
+                map_opts
+              )
 
             %{"x" => x, "y" => y}
         end
@@ -742,7 +746,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                 })
 
               {:error, reason} ->
-                Logger.error("Failed to get system static info for #{solar_system_id}: #{inspect(reason)}")
+                Logger.error(
+                  "Failed to get system static info for #{solar_system_id}: #{inspect(reason)}"
+                )
+
                 {:error, :system_info_not_found}
             end
         end
@@ -775,7 +782,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           :ok
 
         {:error, reason} = error ->
-          Logger.error("Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}")
+          Logger.error(
+            "Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}"
+          )
+
           error
       end
     else

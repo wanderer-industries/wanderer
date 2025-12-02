@@ -88,5 +88,4 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
         {:ok, pid}
     end
   end
-
 end

@@ -14,6 +14,10 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
       # Setup DDRT (R-tree) mock stubs for system positioning
       setup_ddrt_mocks()
 
+      # Setup system static info cache with test systems
+      # This is required because CachedInfo reads from Cachex cache first
+      setup_system_static_info_cache()
+
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})
       map = insert(:map, %{owner_id: character.id})
@@ -36,7 +40,8 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
       # Ensure it's stopped first to prevent state leakage from previous tests
       ensure_map_stopped(map.id)
 
-      # Seed static solar system data
+      # Seed static solar system data in database
+      # (Also populate cache above for CachedInfo lookups)
       insert(:solar_system, %{
         solar_system_id: 30_000_142,
         solar_system_name: "Jita",
@@ -247,6 +252,9 @@ defmodule WandererAppWeb.MapSystemAPIControllerSuccessTest do
     setup do
       # Setup DDRT (R-tree) mock stubs for system positioning
       setup_ddrt_mocks()
+
+      # Setup system static info cache with test systems
+      setup_system_static_info_cache()
 
       user = insert(:user)
       character = insert(:character, %{user_id: user.id})

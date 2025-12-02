@@ -123,7 +123,6 @@ defmodule WandererAppWeb.LicenseApiController do
     end
   end
 
-
   @doc """
   Updates a license's expiration date.
 

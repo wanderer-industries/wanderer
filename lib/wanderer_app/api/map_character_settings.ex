@@ -27,6 +27,11 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     includes([:map, :character])
 
+    default_fields([
+      :tracked,
+      :followed
+    ])
+
     derive_filter?(true)
     derive_sort?(true)
 
@@ -219,14 +224,17 @@ defmodule WandererApp.Api.MapCharacterSettings do
 
     attribute :tracked, :boolean do
       default false
+      public? true
       allow_nil? true
     end
 
     attribute :followed, :boolean do
       default false
+      public? true
       allow_nil? true
     end
 
+    # Note: These attributes are encrypted (AshCloak) and intentionally not public
     attribute :solar_system_id, :integer
     attribute :structure_id, :integer
     attribute :station_id, :integer
