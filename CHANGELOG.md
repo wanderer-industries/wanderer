@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.89.6](https://github.com/wanderer-industries/wanderer/compare/v1.89.5...v1.89.6) (2025-12-02)
+
+
+
+
+### Bug Fixes:
+
+* kills: fixed zkb links (added "allow-popups-to-escape-sandbox" to CSP)
+
 ## [v1.89.5](https://github.com/wanderer-industries/wanderer/compare/v1.89.4...v1.89.5) (2025-12-02)
 
 
