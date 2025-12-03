@@ -712,7 +712,7 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:input_class, :string, default: nil)
   attr(:dropdown_extra_class, :string, default: nil)
   attr(:option_extra_class, :string, default: nil)
-  attr(:mode, :atom, default: nil)
+  attr(:mode, :atom, default: :single)
   attr(:options, :list, default: [])
   attr(:debounce, :integer, default: nil)
   attr(:update_min_len, :integer, default: nil)
