@@ -403,21 +403,41 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     |> Enum.each(fn s ->
       try do
         {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
-        :ok = Ash.destroy!(s)
 
-        # Handle case where parent system was already deleted
-        case system do
-          nil ->
-            Logger.warning(
-              "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+        # Use Ash.destroy (not destroy!) to handle already-deleted signatures gracefully
+        case Ash.destroy(s) do
+          :ok ->
+            # Handle case where parent system was already deleted
+            case system do
+              nil ->
+                Logger.debug(fn ->
+                  "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+                end)
+
+              %{solar_system_id: solar_system_id} ->
+                Logger.debug(fn ->
+                  "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
+                end)
+
+                Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+            end
+
+          {:error, %Ash.Error.Invalid{errors: errors}} ->
+            # Check if this is a StaleRecord error (signature already deleted)
+            if Enum.any?(errors, &match?(%Ash.Error.Changes.StaleRecord{}, &1)) do
+              Logger.debug(fn ->
+                "[cleanup_linked_signatures] signature #{eve_id} already deleted (StaleRecord)"
+              end)
+            else
+              Logger.error(
+                "[cleanup_linked_signatures] Failed to destroy signature #{eve_id}: #{inspect(errors)}"
+              )
+            end
+
+          {:error, error} ->
+            Logger.error(
+              "[cleanup_linked_signatures] Failed to destroy signature: #{inspect(error)}"
             )
-
-          %{solar_system_id: solar_system_id} ->
-            Logger.warning(
-              "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
-            )
-
-            Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
         end
       rescue
         e ->
