@@ -1,7 +1,7 @@
 defmodule WandererAppWeb.ApiSpec do
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{OpenApi, Info, Paths, Components, SecurityScheme, Server, Schema}
+  alias OpenApiSpex.{OpenApi, Info, Paths, Components, SecurityScheme, Server}
   alias WandererAppWeb.{Endpoint, Router}
   alias WandererAppWeb.Schemas.ApiSchemas
 

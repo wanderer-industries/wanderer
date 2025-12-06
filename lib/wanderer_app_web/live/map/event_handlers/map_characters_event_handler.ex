@@ -300,13 +300,13 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{"character_eve_id" => character_eve_id},
         %{
           assigns: %{
-            map_id: map_id,
-            current_user: %{id: current_user_id}
+            map_id: _map_id,
+            current_user: %{id: _current_user_id}
           }
         } = socket
       )
       when not is_nil(character_eve_id) do
-    {:ok, character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
+    {:ok, _character} = WandererApp.Character.get_by_eve_id("#{character_eve_id}")
 
     {:noreply, socket}
   end
@@ -337,12 +337,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       structure_id: character.structure_id,
       station_id: character.station_id
     }
-
-  defp get_map_with_acls(map_id) do
-    with {:ok, map} <- WandererApp.Api.Map.by_id(map_id) do
-      {:ok, Ash.load!(map, :acls)}
-    end
-  end
 
   def needs_tracking_setup?(
         only_tracked_characters,

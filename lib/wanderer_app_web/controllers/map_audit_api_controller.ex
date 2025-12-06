@@ -4,8 +4,6 @@ defmodule WandererAppWeb.MapAuditAPIController do
 
   require Logger
 
-  alias WandererApp.Api
-
   alias WandererAppWeb.Helpers.APIUtils
 
   # -----------------------------------------------------------------

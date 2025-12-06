@@ -38,7 +38,7 @@ defmodule WandererApp.Character.TrackingConfigUtils do
       %{id: "default", title: "Default", value: default_count}
     ]
 
-    {:ok, pools_count} =
+    {:ok, _pools_count} =
       Cachex.get(
         :esi_auth_cache,
         "configs_total_count"

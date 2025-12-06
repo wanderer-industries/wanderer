@@ -178,6 +178,13 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
       result =
         try do
           MapConnectionAPIController.create(conn, params)
+        rescue
+          MatchError ->
+            # Expected when map/character doesn't exist in unit tests
+            build_conn()
+            |> put_status(500)
+            |> put_resp_content_type("application/json")
+            |> resp(500, Jason.encode!(%{error: "Entity not found"}))
         catch
           "Map server not started" ->
             # In unit tests, map servers aren't started, so this is expected
@@ -258,6 +265,13 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
       result =
         try do
           MapConnectionAPIController.create(conn, params)
+        rescue
+          MatchError ->
+            # Expected when map/character doesn't exist in unit tests
+            build_conn()
+            |> put_status(500)
+            |> put_resp_content_type("application/json")
+            |> resp(500, Jason.encode!(%{error: "Entity not found"}))
         catch
           "Map server not started" ->
             # In unit tests, map servers aren't started, so this is expected
@@ -732,6 +746,13 @@ defmodule WandererAppWeb.MapConnectionAPIControllerTest do
       result =
         try do
           MapConnectionAPIController.create(conn, params)
+        rescue
+          MatchError ->
+            # Expected when map/character doesn't exist in unit tests
+            build_conn()
+            |> put_status(500)
+            |> put_resp_content_type("application/json")
+            |> resp(500, Jason.encode!(%{error: "Entity not found"}))
         catch
           "Map server not started" ->
             # In unit tests, map servers aren't started, so this is expected

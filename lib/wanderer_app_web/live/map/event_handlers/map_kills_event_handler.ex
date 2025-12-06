@@ -11,7 +11,7 @@ defmodule WandererAppWeb.MapKillsEventHandler do
 
   def handle_server_event(
         %{event: :init_kills},
-        %{assigns: %{map_id: map_id} = assigns} = socket
+        %{assigns: %{map_id: map_id} = _assigns} = socket
       ) do
     # Get kill counts from cache
     case WandererApp.Map.get_map(map_id) do

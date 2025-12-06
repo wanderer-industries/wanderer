@@ -38,6 +38,4 @@ defmodule WandererApp.MapPingsRepo do
 
     :ok
   end
-
-  def destroy(_ping_id), do: :ok
 end

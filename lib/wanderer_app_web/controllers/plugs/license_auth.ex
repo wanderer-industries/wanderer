@@ -12,7 +12,6 @@ defmodule WandererAppWeb.Plugs.LicenseAuth do
   require Logger
 
   alias WandererApp.License.LicenseManager
-  alias WandererApp.Helpers.Config
 
   @doc """
   Authenticates requests using the LM_AUTH_KEY.
@@ -21,7 +20,7 @@ defmodule WandererAppWeb.Plugs.LicenseAuth do
   """
   def authenticate_lm(conn, _opts) do
     auth_header = get_req_header(conn, "authorization")
-    lm_auth_key = Config.get_env(:wanderer_app, :lm_auth_key)
+    lm_auth_key = Application.get_env(:wanderer_app, :lm_auth_key)
 
     case auth_header do
       ["Bearer " <> token] ->

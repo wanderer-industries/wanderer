@@ -115,13 +115,20 @@
         </div>
       </div>
       <.link
-        disabled={@selected_acl_id == "" or not can_add_members?(@access_list, @current_user)}
+        :if={@selected_acl_id != "" and can_add_members?(@access_list, @current_user)}
         class="btn mt-2 w-full btn-neutral rounded-none"
         patch={~p"/access-lists/#{@selected_acl_id}/add-members"}
       >
         <.icon name="hero-plus-solid" class="w-6 h-6" />
         <h3 class="card-title text-center text-md">Add Members</h3>
       </.link>
+      <div
+        :if={@selected_acl_id == "" or not can_add_members?(@access_list, @current_user)}
+        class="btn mt-2 w-full btn-neutral rounded-none btn-disabled"
+      >
+        <.icon name="hero-plus-solid" class="w-6 h-6" />
+        <h3 class="card-title text-center text-md">Add Members</h3>
+      </div>
     </div>
   </main>
 </div>

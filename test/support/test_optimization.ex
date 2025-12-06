@@ -12,8 +12,6 @@ defmodule WandererApp.TestOptimization do
 
   alias WandererApp.TestOptimization.{
     DependencyAnalyzer,
-    ParallelExecutor,
-    ResourcePool,
     TestOrderOptimizer
   }
 
@@ -327,7 +325,7 @@ defmodule WandererApp.TestOptimization do
     end)
   end
 
-  defp generate_resource_pools(analysis) do
+  defp generate_resource_pools(_analysis) do
     %{
       database: %{
         size: optimal_worker_count() * 2,
@@ -527,7 +525,7 @@ defmodule WandererApp.TestOptimization.ParallelExecutor do
   end
 
   defp setup_resource_pools(pool_configs) do
-    Enum.each(pool_configs, fn {name, config} ->
+    Enum.each(pool_configs, fn {_name, _config} ->
       # In practice, you'd set up actual resource pools here
       # For example, database connection pools, mock registries, etc.
       :ok

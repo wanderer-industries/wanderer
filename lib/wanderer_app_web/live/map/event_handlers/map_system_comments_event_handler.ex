@@ -97,7 +97,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
         %{"solarSystemId" => solar_system_id} = _event,
         %{
           assigns: %{
-            current_user: current_user,
+            current_user: _current_user,
             has_tracked_characters?: true,
             map_id: map_id,
             user_permissions: %{add_system: true}
@@ -109,7 +109,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
       solar_system_id: solar_system_id
     })
     |> case do
-      %{id: system_id} = system when not is_nil(system_id) ->
+      %{id: system_id} = _system when not is_nil(system_id) ->
         {:ok, comments} = WandererApp.MapSystemCommentRepo.get_by_system(system_id)
 
         {:reply,

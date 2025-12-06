@@ -18,6 +18,15 @@ defmodule WandererApp.Api.MapSubscription do
       :map
     ])
 
+    default_fields([
+      :plan,
+      :status,
+      :characters_limit,
+      :hubs_limit,
+      :active_till,
+      :auto_renew?
+    ])
+
     # Enable automatic filtering and sorting
     derive_filter?(true)
     derive_sort?(true)
@@ -135,6 +144,7 @@ defmodule WandererApp.Api.MapSubscription do
 
     attribute :plan, :atom do
       default "alpha"
+      public? true
 
       constraints(
         one_of: [
@@ -150,6 +160,7 @@ defmodule WandererApp.Api.MapSubscription do
 
     attribute :status, :atom do
       default "active"
+      public? true
 
       constraints(
         one_of: [
@@ -164,22 +175,24 @@ defmodule WandererApp.Api.MapSubscription do
 
     attribute :characters_limit, :integer do
       default(100)
-
+      public? true
       allow_nil?(true)
     end
 
     attribute :hubs_limit, :integer do
       default(10)
-
+      public? true
       allow_nil?(true)
     end
 
     attribute :active_till, :utc_datetime do
       allow_nil? true
+      public? true
     end
 
     attribute :auto_renew?, :boolean do
       allow_nil? false
+      public? true
     end
 
     create_timestamp(:inserted_at)

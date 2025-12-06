@@ -58,7 +58,14 @@ defmodule WandererApp.Map.AclBroadcastTest do
       enable_map_broadcast(map.id)
 
       # Initialize the map cache so it has ACL info
-      {:ok, db_map} = WandererApp.MapRepo.get(map.id, acls: [:owner_id, members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]])
+      {:ok, db_map} =
+        WandererApp.MapRepo.get(map.id,
+          acls: [
+            :owner_id,
+            members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+          ]
+        )
+
       WandererApp.Map.update_map(map.id, %{
         acls: db_map.acls,
         scope: db_map.scope,
@@ -105,7 +112,14 @@ defmodule WandererApp.Map.AclBroadcastTest do
       enable_map_broadcast(map.id)
 
       # Initialize the map cache so it has ACL info
-      {:ok, db_map} = WandererApp.MapRepo.get(map.id, acls: [:owner_id, members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]])
+      {:ok, db_map} =
+        WandererApp.MapRepo.get(map.id,
+          acls: [
+            :owner_id,
+            members: [:role, :eve_character_id, :eve_corporation_id, :eve_alliance_id]
+          ]
+        )
+
       WandererApp.Map.update_map(map.id, %{
         acls: db_map.acls,
         scope: db_map.scope,
@@ -228,12 +242,13 @@ defmodule WandererApp.Map.AclBroadcastTest do
       Phoenix.PubSub.subscribe(WandererApp.PubSub, "acls:#{acl.id}")
 
       # Add member to ACL
-      {:ok, _member} = Ash.create(WandererApp.Api.AccessListMember, %{
-        access_list_id: acl.id,
-        eve_character_id: new_character.eve_id,
-        name: "New Member",
-        role: "member"
-      })
+      {:ok, _member} =
+        Ash.create(WandererApp.Api.AccessListMember, %{
+          access_list_id: acl.id,
+          eve_character_id: new_character.eve_id,
+          name: "New Member",
+          role: "member"
+        })
 
       # Broadcast ACL update (this is what the controller does)
       Phoenix.PubSub.broadcast(

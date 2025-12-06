@@ -91,13 +91,6 @@ defmodule WandererApp.Test.DatabaseAccessManager do
     end)
   end
 
-  defp setup_child_process_monitoring(parent_pid, owner_pid) do
-    spawn_link(fn ->
-      Process.monitor(parent_pid)
-      monitor_for_new_processes(parent_pid, owner_pid, get_process_children(parent_pid))
-    end)
-  end
-
   defp grant_access_to_linked_processes(pid, owner_pid) do
     case Process.info(pid, :links) do
       {:links, links} ->
@@ -115,47 +108,6 @@ defmodule WandererApp.Test.DatabaseAccessManager do
 
       nil ->
         :ok
-    end
-  end
-
-  defp setup_continuous_monitoring(genserver_pid, owner_pid) do
-    spawn_link(fn ->
-      Process.monitor(genserver_pid)
-      continuously_monitor_genserver(genserver_pid, owner_pid)
-    end)
-  end
-
-  defp continuously_monitor_genserver(genserver_pid, owner_pid) do
-    if Process.alive?(genserver_pid) do
-      # Check for new linked processes
-      grant_access_to_linked_processes(genserver_pid, owner_pid)
-
-      # Check for new child processes
-      current_children = get_process_children(genserver_pid)
-
-      Enum.each(current_children, fn child_pid ->
-        grant_database_access(child_pid, owner_pid)
-      end)
-
-      # Continue monitoring
-      :timer.sleep(100)
-      continuously_monitor_genserver(genserver_pid, owner_pid)
-    end
-  end
-
-  defp monitor_for_new_processes(parent_pid, owner_pid, previous_children) do
-    if Process.alive?(parent_pid) do
-      current_children = get_process_children(parent_pid)
-      new_children = current_children -- previous_children
-
-      # Grant access to new child processes
-      Enum.each(new_children, fn child_pid ->
-        grant_database_access(child_pid, owner_pid)
-      end)
-
-      # Continue monitoring
-      :timer.sleep(50)
-      monitor_for_new_processes(parent_pid, owner_pid, current_children)
     end
   end
 

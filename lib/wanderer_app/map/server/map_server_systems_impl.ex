@@ -129,8 +129,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   def remove_system_comment(
         map_id,
         comment_id,
-        user_id,
-        character_id
+        _user_id,
+        _character_id
       ) do
     {:ok, %{system_id: system_id} = comment} =
       WandererApp.MapSystemCommentRepo.get_by_id(comment_id)
@@ -309,7 +309,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       map_id
       |> WandererApp.MapSystemRepo.remove_from_map(solar_system_id)
       |> case do
-        {:ok, result} ->
+        {:ok, _result} ->
           :ok = WandererApp.Map.remove_system(map_id, solar_system_id)
           @ddrt.delete([solar_system_id], "rtree_#{map_id}")
           Impl.broadcast!(map_id, :systems_removed, [solar_system_id])
@@ -403,21 +403,41 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     |> Enum.each(fn s ->
       try do
         {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
-        :ok = Ash.destroy!(s)
 
-        # Handle case where parent system was already deleted
-        case system do
-          nil ->
-            Logger.warning(
-              "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+        # Use Ash.destroy (not destroy!) to handle already-deleted signatures gracefully
+        case Ash.destroy(s) do
+          :ok ->
+            # Handle case where parent system was already deleted
+            case system do
+              nil ->
+                Logger.debug(fn ->
+                  "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
+                end)
+
+              %{solar_system_id: solar_system_id} ->
+                Logger.debug(fn ->
+                  "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
+                end)
+
+                Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+            end
+
+          {:error, %Ash.Error.Invalid{errors: errors}} ->
+            # Check if this is a StaleRecord error (signature already deleted)
+            if Enum.any?(errors, &match?(%Ash.Error.Changes.StaleRecord{}, &1)) do
+              Logger.debug(fn ->
+                "[cleanup_linked_signatures] signature #{eve_id} already deleted (StaleRecord)"
+              end)
+            else
+              Logger.error(
+                "[cleanup_linked_signatures] Failed to destroy signature #{eve_id}: #{inspect(errors)}"
+              )
+            end
+
+          {:error, error} ->
+            Logger.error(
+              "[cleanup_linked_signatures] Failed to destroy signature: #{inspect(error)}"
             )
-
-          %{solar_system_id: solar_system_id} ->
-            Logger.warning(
-              "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
-            )
-
-            Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
         end
       rescue
         e ->
@@ -679,7 +699,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
           _ ->
             %{x: x, y: y} =
-              WandererApp.Map.PositionCalculator.get_new_system_position(nil, rtree_name, map_opts)
+              WandererApp.Map.PositionCalculator.get_new_system_position(
+                nil,
+                rtree_name,
+                map_opts
+              )
 
             %{"x" => x, "y" => y}
         end
@@ -742,7 +766,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                 })
 
               {:error, reason} ->
-                Logger.error("Failed to get system static info for #{solar_system_id}: #{inspect(reason)}")
+                Logger.error(
+                  "Failed to get system static info for #{solar_system_id}: #{inspect(reason)}"
+                )
+
                 {:error, :system_info_not_found}
             end
         end
@@ -775,7 +802,10 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           :ok
 
         {:error, reason} = error ->
-          Logger.error("Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}")
+          Logger.error(
+            "Failed to add system #{solar_system_id} to map #{map_id}: #{inspect(reason)}"
+          )
+
           error
       end
     else
@@ -863,10 +893,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     updated_system
   end
 
-  defp maybe_update_labels(system, _labels), do: system
-
   defp maybe_update_labels(
-         %{name: old_labels} = system,
+         %{labels: old_labels} = system,
          labels
        )
        when not is_nil(labels) and old_labels != labels do

@@ -144,6 +144,7 @@ defmodule WandererApp.DataCase do
       pid when is_pid(pid) ->
         WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
         WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
+
       _ ->
         :ok
     end
@@ -153,6 +154,7 @@ defmodule WandererApp.DataCase do
       pid when is_pid(pid) ->
         WandererApp.Test.DatabaseAccessManager.grant_supervision_tree_access(pid, owner_pid)
         WandererApp.Test.MockOwnership.allow_supervision_tree(pid, owner_pid)
+
       _ ->
         :ok
     end

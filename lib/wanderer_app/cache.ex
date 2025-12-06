@@ -45,7 +45,7 @@ defmodule WandererApp.Cache do
   def insert({id, key}, value, opts) when is_binary(id) and (is_binary(key) or is_atom(key)),
     do: insert("#{id}:#{key}", value, opts)
 
-  def insert(key, nil, opts) when is_binary(key) or is_atom(key), do: delete(key)
+  def insert(key, nil, _opts) when is_binary(key) or is_atom(key), do: delete(key)
   def insert(key, value, opts) when is_binary(key) or is_atom(key), do: put(key, value, opts)
 
   def insert_or_update(key, value, update_fn, opts \\ [])

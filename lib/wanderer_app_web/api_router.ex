@@ -12,7 +12,6 @@ defmodule WandererAppWeb.ApiRouter do
   """
 
   use Phoenix.Router
-  import WandererAppWeb.ApiRouterHelpers
   alias WandererAppWeb.{ApiRoutes, ApiRouter.RouteSpec}
   require Logger
 
@@ -171,7 +170,7 @@ defmodule WandererAppWeb.ApiRouter do
     |> halt()
   end
 
-  defp find_similar_routes(path_info, version) do
+  defp find_similar_routes(path_info, _version) do
     # Find routes with similar paths in current or other versions
     all_routes = ApiRoutes.table()
 

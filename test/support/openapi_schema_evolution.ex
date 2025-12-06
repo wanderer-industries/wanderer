@@ -8,16 +8,10 @@ defmodule WandererAppWeb.OpenAPISchemaEvolution do
 
   # alias WandererAppWeb.OpenAPISpecAnalyzer  # Currently unused
 
-  @breaking_change_types [
-    :removed_endpoint,
-    :removed_operation,
-    :removed_required_field,
-    :removed_enum_value,
-    :type_narrowing,
-    :removed_response_code,
-    :required_field_added,
-    :parameter_location_changed
-  ]
+  # Breaking change types for reference:
+  # :removed_endpoint, :removed_operation, :removed_required_field,
+  # :removed_enum_value, :type_narrowing, :removed_response_code,
+  # :required_field_added, :parameter_location_changed
 
   @doc """
   Detects breaking changes between two API specifications.

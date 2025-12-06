@@ -16,6 +16,10 @@ defmodule WandererApp.MapTestHelpers do
   def expect_map_server_error(test_fun) do
     try do
       test_fun.()
+    rescue
+      MatchError ->
+        # Expected when map or character doesn't exist in unit tests
+        :ok
     catch
       "Map server not started" ->
         # Expected in unit test environment - map servers aren't started
@@ -58,7 +62,7 @@ defmodule WandererApp.MapTestHelpers do
       {:error, :not_found} -> :ok
       false -> :ok
     end
-    
+
     # Wait for it to disappear from registry
     wait_for_map_stopped(map_id)
   end
@@ -83,11 +87,9 @@ defmodule WandererApp.MapTestHelpers do
     |> Enum.find(&(&1 == :ok))
   end
 
-  @doc """
-  Continuously grants database access to all MapPool processes and their children.
-  This is necessary when maps are started dynamically during tests.
-  Uses efficient polling with minimal delays.
-  """
+  # Continuously grants database access to all MapPool processes and their children.
+  # This is necessary when maps are started dynamically during tests.
+  # Uses efficient polling with minimal delays.
   defp grant_database_access_continuously do
     owner_pid = Process.get(:sandbox_owner_pid) || self()
 

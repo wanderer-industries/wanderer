@@ -5,8 +5,6 @@ defmodule WandererAppWeb.OpenApiV1Spec do
 
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{OpenApi, Info, Server, Components}
-
   @impl OpenApiSpex.OpenApi
   def spec do
     # This is called by the modify_open_api option in the router

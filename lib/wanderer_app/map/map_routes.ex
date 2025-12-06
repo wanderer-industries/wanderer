@@ -77,7 +77,7 @@ defmodule WandererApp.Map.Routes do
     end
   end
 
-  def find(_map_id, hubs, origin, routes_settings, true) do
+  def find(_map_id, hubs, origin, _routes_settings, true) do
     origin = origin |> String.to_integer()
     hubs = hubs |> Enum.map(&(&1 |> String.to_integer()))
 

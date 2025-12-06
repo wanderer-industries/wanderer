@@ -669,7 +669,7 @@ defmodule WandererAppWeb.AccessListsLive do
     """
   end
 
-  slot(:option)
+  attr(:option, :any, required: true)
 
   def search_member_item(assigns) do
     ~H"""

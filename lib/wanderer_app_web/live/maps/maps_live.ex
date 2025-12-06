@@ -77,7 +77,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:active_page, :maps)
         |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
         |> assign(:page_title, "Maps - Create")
-        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(:available_scopes, available_scopes())
         |> assign(
           :form,
           AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
@@ -86,7 +86,8 @@ defmodule WandererAppWeb.MapsLive do
             ],
             prepare_source: fn form ->
               form
-              |> Map.put("scope", "wormholes")
+              # Default to wormholes scope for new maps
+              |> Map.put("scopes", [:wormholes])
             end
           )
         )
@@ -115,6 +116,9 @@ defmodule WandererAppWeb.MapsLive do
             _ -> map |> map_map()
           end
 
+        # Auto-initialize scopes from legacy scope if scopes is empty/nil
+        map = maybe_initialize_scopes_from_legacy(map)
+
         # Add owner to characters list, filtering out nil values
         characters =
           [map.owner |> map_character() | socket.assigns.characters]
@@ -125,7 +129,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:active_page, :maps)
         |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
         |> assign(:page_title, "Maps - Edit")
-        |> assign(:scopes, ["wormholes", "stargates", "none", "all"])
+        |> assign(:available_scopes, available_scopes())
         |> assign(:map_slug, map_slug)
         |> assign(:characters, characters)
         |> assign(
@@ -215,13 +219,6 @@ defmodule WandererAppWeb.MapsLive do
     {:noreply, socket}
   end
 
-  @impl true
-  def handle_event("set-default-scope", %{"id" => id}, socket) do
-    send_update(LiveSelect.Component, options: ["wormholes", "stargates", "none", "all"], id: id)
-
-    {:noreply, socket}
-  end
-
   def handle_event("generate-map-api-key", _params, socket) do
     new_api_key = UUID.uuid4()
 
@@ -257,27 +254,25 @@ defmodule WandererAppWeb.MapsLive do
   @impl true
   def handle_event(
         "live_select_change",
-        %{"id" => id, "text" => text} = _change_event,
+        %{"id" => id, "text" => _text} = _change_event,
         socket
       ) do
-    options =
-      if text == "" do
-        socket.assigns.scopes
-      else
-        socket.assigns.scopes
-      end
-
-    send_update(LiveSelect.Component, options: options, id: id)
+    # This handler is for ACL live_select component
+    send_update(LiveSelect.Component, options: socket.assigns.acls, id: id)
 
     {:noreply, socket}
   end
 
   def handle_event("validate", %{"form" => form} = _params, socket) do
+    # Process scopes from checkbox form data
+    scopes = parse_scopes_from_form(form)
+
     form =
       AshPhoenix.Form.validate(
         socket.assigns.form,
         form
         |> Map.put("acls", form["acls"] || [])
+        |> Map.put("scopes", scopes)
         |> Map.put(
           "only_tracked_characters",
           (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
@@ -293,15 +288,10 @@ defmodule WandererAppWeb.MapsLive do
         %{assigns: %{current_user: current_user}} = socket
       )
       when not is_nil(current_user) do
-    scope =
-      form
-      |> Map.get("scope")
-      |> case do
-        "" -> "wormholes"
-        scope -> scope
-      end
+    # Process scopes from checkbox form data
+    scopes = parse_scopes_from_form(form)
 
-    form = form |> Map.put("scope", scope)
+    form = form |> Map.put("scopes", scopes)
 
     case WandererApp.Api.Map.new(form) do
       {:ok, new_map} ->
@@ -426,18 +416,13 @@ defmodule WandererAppWeb.MapsLive do
         # Successfully found the map, proceed with loading and updating
         {:ok, map_with_acls} = Ash.load(map, :acls)
 
-        scope =
-          form
-          |> Map.get("scope")
-          |> case do
-            "" -> "wormholes"
-            scope -> scope
-          end
+        # Process scopes from checkbox form data
+        scopes = parse_scopes_from_form(form)
 
         form =
           form
           |> Map.put("acls", form["acls"] || [])
-          |> Map.put("scope", scope)
+          |> Map.put("scopes", scopes)
           |> Map.put(
             "only_tracked_characters",
             (form["only_tracked_characters"] || "false") |> String.to_existing_atom()
@@ -819,5 +804,75 @@ defmodule WandererAppWeb.MapsLive do
   defp map_map(%{acls: acls} = map) do
     map
     |> Map.put(:acls, acls |> Enum.map(&map_acl/1))
+  end
+
+  defp available_scopes do
+    [
+      %{value: "wormholes", label: "Wormholes", description: "J-space systems"},
+      %{value: "hi", label: "High-Sec", description: "Security 0.5 - 1.0"},
+      %{value: "low", label: "Low-Sec", description: "Security 0.1 - 0.4"},
+      %{value: "null", label: "Null-Sec", description: "Security 0.0 and below"},
+      %{value: "pochven", label: "Pochven", description: "Triglavian space"}
+    ]
+  end
+
+  # Auto-initialize scopes from legacy scope setting if scopes is empty/nil
+  defp maybe_initialize_scopes_from_legacy(%{scopes: scopes} = map)
+       when is_list(scopes) and scopes != [] do
+    # Scopes already set, don't override
+    map
+  end
+
+  defp maybe_initialize_scopes_from_legacy(%{scope: scope} = map) do
+    # Convert legacy scope to new scopes format
+    scopes = legacy_scope_to_scopes(scope)
+    Map.put(map, :scopes, scopes)
+  end
+
+  defp maybe_initialize_scopes_from_legacy(map) do
+    # No scope field, default to wormholes
+    Map.put(map, :scopes, [:wormholes])
+  end
+
+  # Convert legacy scope atom to new scopes list
+  defp legacy_scope_to_scopes(:wormholes), do: [:wormholes]
+  defp legacy_scope_to_scopes(:stargates), do: [:hi, :low, :null]
+  defp legacy_scope_to_scopes(:none), do: []
+  defp legacy_scope_to_scopes(:all), do: [:wormholes, :hi, :low, :null, :pochven]
+  defp legacy_scope_to_scopes(_), do: [:wormholes]
+
+  defp parse_scopes_from_form(form) do
+    # Extract selected scopes from form data
+    # Form sends scopes as "scopes" => %{"wormholes" => "true", "hi" => "true", ...}
+    form
+    |> Map.get("scopes", %{})
+    |> case do
+      scopes when is_map(scopes) ->
+        scopes
+        |> Enum.filter(fn {_key, value} -> value == "true" end)
+        |> Enum.map(fn {key, _value} -> String.to_existing_atom(key) end)
+
+      scopes when is_list(scopes) ->
+        # Already a list of atoms/strings
+        scopes
+        |> Enum.map(fn
+          scope when is_atom(scope) -> scope
+          scope when is_binary(scope) -> String.to_existing_atom(scope)
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  # Helper function to get current scopes from form for checkbox state
+  def get_current_scopes(form) do
+    scopes = Phoenix.HTML.Form.input_value(form, :scopes) || []
+
+    scopes
+    |> Enum.map(fn
+      scope when is_atom(scope) -> Atom.to_string(scope)
+      scope when is_binary(scope) -> scope
+    end)
   end
 end

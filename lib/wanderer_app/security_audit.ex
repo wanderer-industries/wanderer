@@ -487,15 +487,6 @@ defmodule WandererApp.SecurityAudit do
 
   # Private functions
 
-  defp store_audit_entry(_audit_entry) do
-    # Handle async processing if enabled
-    # if async_enabled?() do
-    #   WandererApp.SecurityAudit.AsyncProcessor.log_event(audit_entry)
-    # else
-    #   do_store_audit_entry(audit_entry)
-    # end
-  end
-
   @doc false
   def do_store_audit_entry(audit_entry) do
     # Ensure event_type is properly formatted
@@ -629,11 +620,6 @@ defmodule WandererApp.SecurityAudit do
     else
       "audit_#{:os.system_time(:microsecond)}_#{System.unique_integer([:positive])}"
     end
-  end
-
-  defp async_enabled? do
-    Application.get_env(:wanderer_app, __MODULE__, [])
-    |> Keyword.get(:async, false)
   end
 
   defp emit_telemetry_event(audit_entry) do

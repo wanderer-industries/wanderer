@@ -76,11 +76,6 @@ defmodule WandererApp.Map.Operations do
           {:ok, map()} | {:skip, :exists} | {:error, String.t()}
   defdelegate create_connection(map_id, attrs, char_id), to: Connections
 
-  @doc "Create a connection from a Plug.Conn"
-  @spec create_connection(Plug.Conn.t(), map()) ::
-          {:ok, :created} | {:skip, :exists} | {:error, atom()}
-  defdelegate create_connection(conn, attrs), to: Connections
-
   @doc "Update a connection"
   @spec update_connection(String.t(), String.t(), map()) ::
           {:ok, map()} | {:error, String.t()}

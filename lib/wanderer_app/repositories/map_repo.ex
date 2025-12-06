@@ -84,7 +84,7 @@ defmodule WandererApp.MapRepo do
             end
         end
 
-      error in Ash.Error.Query.NotFound ->
+      _error in Ash.Error.Query.NotFound ->
         Logger.debug("Map not found with slug: #{slug}")
         {:error, :not_found}
 

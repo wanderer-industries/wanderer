@@ -220,7 +220,7 @@ defmodule WandererAppWeb.Plugs.RequestValidator do
 
   defp validate_params(_params, _max_length, _max_depth, _current_depth), do: :ok
 
-  defp validate_param_value(key, value, max_length, max_depth, current_depth)
+  defp validate_param_value(key, value, max_length, _max_depth, _current_depth)
        when is_binary(value) do
     cond do
       String.length(value) > max_length ->

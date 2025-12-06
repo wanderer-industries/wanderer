@@ -123,12 +123,6 @@ defmodule WandererAppWeb.LicenseApiController do
     end
   end
 
-  def update_validity(conn, %{"id" => _license_id}) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "Missing required parameter: is_valid"})
-  end
-
   @doc """
   Updates a license's expiration date.
 

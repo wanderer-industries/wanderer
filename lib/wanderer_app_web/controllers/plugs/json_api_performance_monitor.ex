@@ -36,7 +36,7 @@ defmodule WandererAppWeb.Plugs.JsonApiPerformanceMonitor do
       conn
       |> register_before_send(fn conn ->
         end_time = System.monotonic_time(:millisecond)
-        duration = end_time - start_time
+        _duration = end_time - start_time
 
         # Extract response metadata
         response_metadata = extract_response_metadata(conn, request_metadata)

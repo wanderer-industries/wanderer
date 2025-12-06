@@ -156,7 +156,7 @@ defmodule WandererApp.Map.Server.Impl do
         Logger.error("Cannot start map #{map_id}: map not loaded")
         {:error, :map_not_loaded}
 
-      map ->
+      _map ->
         with :ok <- AclsImpl.track_acls(acls |> Enum.map(& &1.access_list_id)) do
           @pubsub_client.subscribe(
             WandererApp.PubSub,
