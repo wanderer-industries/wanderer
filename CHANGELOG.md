@@ -2,6 +2,23 @@
 
 <!-- changelog -->
 
+## [v1.90.0](https://github.com/wanderer-industries/wanderer/compare/v1.89.6...v1.90.0) (2025-12-06)
+
+
+
+
+### Features:
+
+* core: Added several map scopes support (Wh, Hi, Low, Null, Pochven)
+
+### Bug Fixes:
+
+* core: fixed clean up for linked signatures
+
+* core: fixed issue with default select mode
+
+* apiV1 default fields updates
+
 ## [v1.89.6](https://github.com/wanderer-industries/wanderer/compare/v1.89.5...v1.89.6) (2025-12-02)
 
 
