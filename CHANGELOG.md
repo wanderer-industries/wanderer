@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.1](https://github.com/wanderer-industries/wanderer/compare/v1.90.0...v1.90.1) (2025-12-08)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connections and signatures remove issues, added comprehensive audit log for auto removed connections and signatures
+
 ## [v1.90.0](https://github.com/wanderer-industries/wanderer/compare/v1.89.6...v1.90.0) (2025-12-06)
 
 
