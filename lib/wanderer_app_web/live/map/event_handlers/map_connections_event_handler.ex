@@ -120,10 +120,16 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         {:ok, signatures} =
           WandererApp.Api.MapSystemSignature.by_linked_system_id(solar_system_target_id)
 
-        signatures
-        |> Enum.filter(fn s ->
-          s.system_id == source_system.id
-        end)
+        filtered_signatures =
+          signatures
+          |> Enum.filter(fn s ->
+            s.system_id == source_system.id
+          end)
+
+        # Collect eve_ids for audit logging
+        deleted_eve_ids = Enum.map(filtered_signatures, & &1.eve_id)
+
+        filtered_signatures
         |> Enum.each(fn s ->
           if not is_nil(s.temporary_name) && s.temporary_name == target_system.temporary_name do
             map_id
@@ -142,6 +148,17 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           s
           |> WandererApp.Api.MapSystemSignature.destroy!()
         end)
+
+        # Audit log signatures deleted with connection
+        if deleted_eve_ids != [] do
+          WandererApp.User.ActivityTracker.track_map_event(:signatures_removed, %{
+            character_id: main_character_id,
+            user_id: current_user_id,
+            map_id: map_id,
+            solar_system_id: solar_system_source_id,
+            signatures: deleted_eve_ids
+          })
+        end
 
         WandererApp.Map.Server.Impl.broadcast!(
           map_id,

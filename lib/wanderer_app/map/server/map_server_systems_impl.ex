@@ -383,6 +383,16 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     |> Enum.each(fn connection ->
       try do
         Logger.debug(fn -> "Removing connection from map: #{inspect(connection)}" end)
+
+        # Audit logging for cascade deletion (no user/character context)
+        WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
+          character_id: nil,
+          user_id: nil,
+          map_id: map_id,
+          solar_system_source_id: connection.solar_system_source,
+          solar_system_target_id: connection.solar_system_target
+        })
+
         :ok = WandererApp.MapConnectionRepo.destroy(map_id, connection)
         :ok = WandererApp.Map.remove_connection(map_id, connection)
         Impl.broadcast!(map_id, :remove_connections, [connection])
@@ -418,6 +428,15 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                 Logger.debug(fn ->
                   "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
                 end)
+
+                # Audit logging for cascade deletion (no user/character context)
+                WandererApp.User.ActivityTracker.track_map_event(:signatures_removed, %{
+                  character_id: nil,
+                  user_id: nil,
+                  map_id: map_id,
+                  solar_system_id: solar_system_id,
+                  signatures: [eve_id]
+                })
 
                 Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
             end
@@ -546,12 +565,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             |> case do
               {:ok, solar_system_info} ->
                 # Use upsert instead of create - handles race conditions gracefully
+                # visible: true ensures previously-deleted systems become visible again
                 WandererApp.MapSystemRepo.upsert(%{
                   map_id: map_id,
                   solar_system_id: location.solar_system_id,
                   name: solar_system_info.solar_system_name,
                   position_x: position.x,
-                  position_y: position.y
+                  position_y: position.y,
+                  visible: true
                 })
                 |> case do
                   {:ok, system} ->

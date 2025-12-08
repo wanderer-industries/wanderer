@@ -349,6 +349,27 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                       solar_system_source: solar_system_source_id,
                       solar_system_target: solar_system_target_id
                     } ->
+      # Emit telemetry for connection auto-deletion
+      :telemetry.execute(
+        [:wanderer_app, :map, :connection_cleanup, :delete],
+        %{system_time: System.system_time()},
+        %{
+          map_id: map_id,
+          solar_system_source_id: solar_system_source_id,
+          solar_system_target_id: solar_system_target_id,
+          reason: :auto_cleanup
+        }
+      )
+
+      # Log auto-deletion for audit trail (no user/character context for auto-cleanup)
+      WandererApp.User.ActivityTracker.track_map_event(:map_connection_removed, %{
+        character_id: nil,
+        user_id: nil,
+        map_id: map_id,
+        solar_system_source_id: solar_system_source_id,
+        solar_system_target_id: solar_system_target_id
+      })
+
       delete_connection(map_id, %{
         solar_system_source_id: solar_system_source_id,
         solar_system_target_id: solar_system_target_id

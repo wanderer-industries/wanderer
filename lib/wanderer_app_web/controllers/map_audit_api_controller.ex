@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapAuditAPIController do
 
   require Logger
 
+  alias WandererAppWeb.UserActivityItem
   alias WandererAppWeb.Helpers.APIUtils
 
   # -----------------------------------------------------------------
@@ -153,10 +154,10 @@ defmodule WandererAppWeb.MapAuditAPIController do
 
     result
     |> Map.put(:character, WandererAppWeb.MapEventHandler.map_ui_character_stat(character))
-    |> Map.put(:event_name, WandererAppWeb.UserActivity.get_event_name(event_type))
+    |> Map.put(:event_name, WandererAppWeb.UserActivityItem.get_event_name(event_type))
     |> Map.put(
       :event_data,
-      WandererAppWeb.UserActivity.get_event_data(
+      WandererAppWeb.UserActivityItem.get_event_data(
         event_type,
         Jason.decode!(event_data) |> Map.drop(["character_id"])
       )

@@ -3,8 +3,6 @@ defmodule WandererAppWeb.MapAuditLive do
 
   require Logger
 
-  alias WandererAppWeb.UserActivity
-
   def mount(
         %{"slug" => map_slug, "period" => period, "activity" => activity} = _params,
         _session,

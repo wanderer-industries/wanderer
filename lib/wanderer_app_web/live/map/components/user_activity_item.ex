@@ -1,4 +1,4 @@
-defmodule WandererAppWeb.UserActivity do
+defmodule WandererAppWeb.UserActivityItem do
   use WandererAppWeb, :live_component
   use LiveViewEvents
 
