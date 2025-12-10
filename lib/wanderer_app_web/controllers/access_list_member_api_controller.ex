@@ -455,7 +455,9 @@ defmodule WandererAppWeb.AccessListMemberAPIController do
         end)
 
       {:error, error} ->
-        Logger.warning("Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}")
+        Logger.warning(
+          "Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}"
+        )
     end
   end
 

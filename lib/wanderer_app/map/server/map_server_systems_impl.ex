@@ -1029,12 +1029,16 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
     # This may fail if the relay is not available (e.g., in tests), which is fine
     WandererApp.ExternalEvents.broadcast(map_id, :system_metadata_changed, %{
+      system_id: updated_system.id,
       solar_system_id: updated_system.solar_system_id,
       name: updated_system.name,
       temporary_name: updated_system.temporary_name,
       labels: updated_system.labels,
       description: updated_system.description,
-      status: updated_system.status
+      status: updated_system.status,
+      locked: updated_system.locked,
+      position_x: updated_system.position_x,
+      position_y: updated_system.position_y
     })
 
     :ok

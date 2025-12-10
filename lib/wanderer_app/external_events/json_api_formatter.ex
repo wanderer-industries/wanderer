@@ -98,8 +98,8 @@ defmodule WandererApp.ExternalEvents.JsonApiFormatter do
       "id" => payload["system_id"] || payload[:system_id],
       "attributes" => %{
         "locked" => payload["locked"] || payload[:locked],
-        "x" => payload["x"] || payload[:x],
-        "y" => payload["y"] || payload[:y],
+        "position_x" => payload["position_x"] || payload[:position_x],
+        "position_y" => payload["position_y"] || payload[:position_y],
         "updated_at" => event.timestamp
       },
       "relationships" => %{
