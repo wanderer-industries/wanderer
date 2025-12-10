@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.2](https://github.com/wanderer-industries/wanderer/compare/v1.90.1...v1.90.2) (2025-12-10)
+
+
+
+
+### Bug Fixes:
+
+* core: added system position updates to SSE
+
 ## [v1.90.1](https://github.com/wanderer-industries/wanderer/compare/v1.90.0...v1.90.1) (2025-12-08)
 
 
