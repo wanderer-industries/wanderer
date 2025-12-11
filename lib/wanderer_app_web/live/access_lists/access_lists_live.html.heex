@@ -82,11 +82,14 @@
         </h3>
 
         <div
-          class="dropzone droppable draggable-dropzone--occupied flex flex-col gap-1 w-full rounded-none h-[calc(100vh-211px)] !overflow-y-auto"
+          class={[
+            "dropzone droppable draggable-dropzone--occupied flex flex-col gap-1 w-full rounded-none h-[calc(100vh-191px)] !overflow-y-auto",
+            classes("!h-[calc(100vh-240px)]": length(@members) > @members_per_page)
+          ]}
           id="acl_members"
         >
           <div
-            :for={member <- @members |> Enum.sort_by(&{&1.role, &1.name}, &<=/2)}
+            :for={member <- paginated_members(@members, @members_page, @members_per_page)}
             draggable="true"
             id={member.id}
             class="draggable !p-1 h-10 cursor-move bg-black bg-opacity-25 hover:text-white"
@@ -113,10 +116,32 @@
             </div>
           </div>
         </div>
+        <div>
+        <div :if={length(@members) > @members_per_page} class="flex items-center justify-between px-3 py-2 border-t border-gray-500 bg-black bg-opacity-25">
+          <span class="text-sm text-gray-400">
+            Page {@members_page} of {total_pages(@members, @members_per_page)} ({length(@members)} members)
+          </span>
+          <div class="flex gap-2">
+            <button
+              phx-click="members_prev_page"
+              disabled={@members_page <= 1}
+              class={"btn btn-sm btn-ghost " <> if(@members_page <= 1, do: "btn-disabled", else: "")}
+            >
+              <.icon name="hero-chevron-left" class="w-4 h-4" />
+            </button>
+            <button
+              phx-click="members_next_page"
+              disabled={@members_page >= total_pages(@members, @members_per_page)}
+              class={"btn btn-sm btn-ghost " <> if(@members_page >= total_pages(@members, @members_per_page), do: "btn-disabled", else: "")}
+            >
+              <.icon name="hero-chevron-right" class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
       <.link
         :if={@selected_acl_id != "" and can_add_members?(@access_list, @current_user)}
-        class="btn mt-2 w-full btn-neutral rounded-none"
+        class="btn w-full btn-neutral rounded-none"
         patch={~p"/access-lists/#{@selected_acl_id}/add-members"}
       >
         <.icon name="hero-plus-solid" class="w-6 h-6" />
@@ -128,6 +153,7 @@
       >
         <.icon name="hero-plus-solid" class="w-6 h-6" />
         <h3 class="card-title text-center text-md">Add Members</h3>
+      </div>
       </div>
     </div>
   </main>
@@ -153,10 +179,10 @@
       placeholder="Select an owner"
       options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
     />
-    
+
 <!-- Divider between above inputs and the API key section -->
     <hr class="my-4 border-gray-600" />
-    
+
 <!-- API Key Section with grid layout -->
     <div class="mt-2">
       <label class="block text-sm font-medium text-gray-200 mb-1">ACL API key</label>

@@ -5,6 +5,8 @@ defmodule WandererAppWeb.AccessListsLive do
   require Ash.Query
   require Logger
 
+  @members_per_page 50
+
   @impl true
   def mount(_params, %{"user_id" => user_id} = _session, socket) when not is_nil(user_id) do
     {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
@@ -25,7 +27,9 @@ defmodule WandererAppWeb.AccessListsLive do
        user_id: user_id,
        access_lists: access_lists |> Enum.map(fn acl -> map_ui_acl(acl, nil) end),
        characters: characters,
-       members: []
+       members: [],
+       members_page: 1,
+       members_per_page: @members_per_page
      )}
   end
 
@@ -39,7 +43,9 @@ defmodule WandererAppWeb.AccessListsLive do
        allow_acl_creation: false,
        access_lists: [],
        characters: [],
-       members: []
+       members: [],
+       members_page: 1,
+       members_per_page: @members_per_page
      )}
   end
 
@@ -93,10 +99,8 @@ defmodule WandererAppWeb.AccessListsLive do
       |> assign(:page_title, "Access Lists - Members")
       |> assign(:selected_acl_id, acl_id)
       |> assign(:access_list, access_list)
-      |> assign(
-        :members,
-        members
-      )
+      |> assign(:members, members)
+      |> assign(:members_page, 1)
     else
       _ ->
         socket
@@ -322,6 +326,20 @@ defmodule WandererAppWeb.AccessListsLive do
     new_params = Map.put(socket.assigns.form.params || %{}, "api_key", new_api_key)
     form = AshPhoenix.Form.validate(socket.assigns.form, new_params)
     {:noreply, assign(socket, form: form)}
+  end
+
+  @impl true
+  def handle_event("members_prev_page", _, socket) do
+    new_page = max(1, socket.assigns.members_page - 1)
+    {:noreply, assign(socket, :members_page, new_page)}
+  end
+
+  @impl true
+  def handle_event("members_next_page", _, socket) do
+    total_members = length(socket.assigns.members)
+    max_page = max(1, ceil(total_members / socket.assigns.members_per_page))
+    new_page = min(max_page, socket.assigns.members_page + 1)
+    {:noreply, assign(socket, :members_page, new_page)}
   end
 
   @impl true
@@ -719,6 +737,17 @@ defmodule WandererAppWeb.AccessListsLive do
     acl |> Map.put(:selected, acl.id == selected_id)
   end
 
+  defp paginated_members(members, page, per_page) do
+    members
+    |> Enum.sort_by(&{&1.role, &1.name}, &<=/2)
+    |> Enum.drop((page - 1) * per_page)
+    |> Enum.take(per_page)
+  end
+
+  defp total_pages(members, per_page) do
+    max(1, ceil(length(members) / per_page))
+  end
+
   # Broadcast ACL update and invalidate map_characters cache for all maps using this ACL
   # This ensures the tracking page shows updated members even when map server isn't running
   defp broadcast_acl_updated(acl_id) do
@@ -742,7 +771,9 @@ defmodule WandererAppWeb.AccessListsLive do
         end)
 
       {:error, error} ->
-        Logger.warning("Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}")
+        Logger.warning(
+          "Failed to invalidate map_characters cache for ACL #{acl_id}: #{inspect(error)}"
+        )
     end
   end
 end
