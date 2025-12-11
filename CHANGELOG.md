@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.3](https://github.com/wanderer-industries/wanderer/compare/v1.90.2...v1.90.3) (2025-12-11)
+
+
+
+
+### Bug Fixes:
+
+* core: added pagination for long ACL lists
+
 ## [v1.90.2](https://github.com/wanderer-industries/wanderer/compare/v1.90.1...v1.90.2) (2025-12-10)
 
 
