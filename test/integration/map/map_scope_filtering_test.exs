@@ -227,18 +227,43 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
              "Null-sec should be allowed with [:wormholes, :null] scopes"
     end
 
-    test "maybe_add_system filters out high-sec when scopes is [:wormholes, :null]" do
-      # When scopes is [:wormholes, :null], high-sec systems should be filtered
+    test "maybe_add_system filters out high-sec when not jumping from wormhole" do
+      # When scopes is [:wormholes, :null] and NOT jumping from wormhole,
+      # high-sec systems should be filtered
       location = %{solar_system_id: @hs_system_halenan}
+      # old_location is nil (no previous system)
       result = SystemsImpl.maybe_add_system("map_id", location, nil, [], [:wormholes, :null])
-      # Returns :ok because system was filtered out (not an error, just skipped)
+      assert result == :ok
+
+      # old_location is also high-sec (k-space to k-space)
+      old_location = %{solar_system_id: @hs_system_mili}
+      result = SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
       assert result == :ok
     end
 
-    test "maybe_add_system filters out low-sec when scopes is [:wormholes, :null]" do
+    test "maybe_add_system filters out low-sec when not jumping from wormhole" do
       location = %{solar_system_id: @ls_system_halmah}
-      result = SystemsImpl.maybe_add_system("map_id", location, nil, [], [:wormholes, :null])
+      # old_location is high-sec (k-space to k-space)
+      old_location = %{solar_system_id: @hs_system_halenan}
+      result = SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
       assert result == :ok
+    end
+
+    test "maybe_add_system allows border high-sec when jumping FROM wormhole" do
+      # When jumping FROM a wormhole TO high-sec with :wormholes scope,
+      # the high-sec should be added as a border system
+      location = %{solar_system_id: @hs_system_halenan}
+      old_location = %{solar_system_id: @wh_system_j100001}
+
+      # This should attempt to add the system (not filter it out)
+      # The result will be an error because the map doesn't exist,
+      # but that proves the filtering logic allowed it through
+      result = SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes])
+
+      # The function attempts to add (returns error because map doesn't exist)
+      # This proves border behavior is working - system was NOT filtered out
+      assert match?({:error, _}, result),
+             "Border system should attempt to be added (error because map doesn't exist)"
     end
 
     test "is_connection_valid allows WH to HS with [:wormholes, :null] (border behavior)" do

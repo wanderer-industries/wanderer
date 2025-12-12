@@ -506,10 +506,25 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     # Check if the system matches the map's configured scopes before adding
     should_add =
       case scopes do
-        nil -> true
-        [] -> true
+        nil ->
+          true
+
+        [] ->
+          true
+
         scopes when is_list(scopes) ->
-          ConnectionsImpl.can_add_location(scopes, location.solar_system_id)
+          # First check: does the location directly match scopes?
+          if ConnectionsImpl.can_add_location(scopes, location.solar_system_id) do
+            true
+          else
+            # Second check: wormhole border behavior
+            # If :wormholes scope is enabled AND old_location is a wormhole,
+            # allow this system to be added as a border system (so you can see
+            # where your wormhole exits to)
+            :wormholes in scopes and
+              not is_nil(old_location) and
+              ConnectionsImpl.can_add_location([:wormholes], old_location.solar_system_id)
+          end
       end
 
     if should_add do
