@@ -744,15 +744,33 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       when is_list(scopes) and from_solar_system_id != to_solar_system_id do
     with {:ok, from_system_static_info} <- get_system_static_info(from_solar_system_id),
          {:ok, to_system_static_info} <- get_system_static_info(to_solar_system_id) do
-      # Connection is valid if:
-      # 1. Neither system is prohibited
-      # 2. At least one system matches one of the selected scopes
-      not is_prohibited_system_class?(from_system_static_info.system_class) and
-        not is_prohibited_system_class?(to_system_static_info.system_class) and
-        not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
-        not (@prohibited_systems |> Enum.member?(to_solar_system_id)) and
-        (system_matches_any_scope?(from_system_static_info.system_class, scopes) or
-           system_matches_any_scope?(to_system_static_info.system_class, scopes))
+      # First check: neither system is prohibited
+      not_prohibited =
+        not is_prohibited_system_class?(from_system_static_info.system_class) and
+          not is_prohibited_system_class?(to_system_static_info.system_class) and
+          not (@prohibited_systems |> Enum.member?(from_solar_system_id)) and
+          not (@prohibited_systems |> Enum.member?(to_solar_system_id))
+
+      if not_prohibited do
+        from_is_wormhole = from_system_static_info.system_class in @wh_space
+        to_is_wormhole = to_system_static_info.system_class in @wh_space
+        wormholes_enabled = :wormholes in scopes
+
+        # Wormhole border behavior: if wormholes scope is enabled AND at least one
+        # system is a wormhole, allow the connection (adds border k-space systems)
+        # Otherwise: BOTH systems must match the configured scopes
+        if wormholes_enabled and (from_is_wormhole or to_is_wormhole) do
+          # At least one system matches (wormhole matches :wormholes, or other matches its scope)
+          system_matches_any_scope?(from_system_static_info.system_class, scopes) or
+            system_matches_any_scope?(to_system_static_info.system_class, scopes)
+        else
+          # Non-wormhole movement: both systems must match scopes
+          system_matches_any_scope?(from_system_static_info.system_class, scopes) and
+            system_matches_any_scope?(to_system_static_info.system_class, scopes)
+        end
+      else
+        false
+      end
     else
       _ -> false
     end

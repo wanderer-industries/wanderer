@@ -403,64 +403,76 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
+  # When destination systems are deleted, unlink signatures instead of destroying them.
+  # This preserves the user's scan data while removing the stale link.
   defp cleanup_linked_signatures(map_id, removed_solar_system_ids) do
-    removed_solar_system_ids
-    |> Enum.map(fn solar_system_id ->
-      WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
-    end)
-    |> List.flatten()
-    |> Enum.uniq_by(& &1.system_id)
-    |> Enum.each(fn s ->
-      try do
-        {:ok, %{eve_id: eve_id, system: system}} = s |> Ash.load([:system])
+    # Group signatures by their source system for efficient broadcasting
+    signatures_by_system =
+      removed_solar_system_ids
+      |> Enum.flat_map(fn solar_system_id ->
+        WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
+      end)
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.group_by(fn sig -> sig.system_id end)
 
-        # Use Ash.destroy (not destroy!) to handle already-deleted signatures gracefully
-        case Ash.destroy(s) do
-          :ok ->
-            # Handle case where parent system was already deleted
-            case system do
-              nil ->
-                Logger.debug(fn ->
-                  "[cleanup_linked_signatures] signature #{eve_id} destroyed (parent system already deleted)"
-                end)
+    signatures_by_system
+    |> Enum.each(fn {_system_id, signatures} ->
+      signatures
+      |> Enum.each(fn sig ->
+        try do
+          {:ok, %{eve_id: eve_id, system: system}} = sig |> Ash.load([:system])
 
-              %{solar_system_id: solar_system_id} ->
-                Logger.debug(fn ->
-                  "[cleanup_linked_signatures] for system #{solar_system_id}: #{inspect(eve_id)}"
-                end)
+          # Clear the linked_system_id instead of destroying the signature
+          case WandererApp.Api.MapSystemSignature.update_linked_system(sig, %{
+                 linked_system_id: nil
+               }) do
+            {:ok, _updated_sig} ->
+              case system do
+                nil ->
+                  Logger.debug(fn ->
+                    "[cleanup_linked_signatures] signature #{eve_id} unlinked (parent system already deleted)"
+                  end)
 
-                # Audit logging for cascade deletion (no user/character context)
-                WandererApp.User.ActivityTracker.track_map_event(:signatures_removed, %{
-                  character_id: nil,
-                  user_id: nil,
-                  map_id: map_id,
-                  solar_system_id: solar_system_id,
-                  signatures: [eve_id]
-                })
+                %{solar_system_id: solar_system_id} ->
+                  Logger.debug(fn ->
+                    "[cleanup_linked_signatures] unlinked signature #{eve_id} in system #{solar_system_id}"
+                  end)
 
-                Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
-            end
+                  # Audit logging for cascade unlink (no user/character context)
+                  WandererApp.User.ActivityTracker.track_map_event(:signatures_unlinked, %{
+                    character_id: nil,
+                    user_id: nil,
+                    map_id: map_id,
+                    solar_system_id: solar_system_id,
+                    signatures: [eve_id]
+                  })
+              end
 
-          {:error, %Ash.Error.Invalid{errors: errors}} ->
-            # Check if this is a StaleRecord error (signature already deleted)
-            if Enum.any?(errors, &match?(%Ash.Error.Changes.StaleRecord{}, &1)) do
-              Logger.debug(fn ->
-                "[cleanup_linked_signatures] signature #{eve_id} already deleted (StaleRecord)"
-              end)
-            else
+            {:error, error} ->
               Logger.error(
-                "[cleanup_linked_signatures] Failed to destroy signature #{eve_id}: #{inspect(errors)}"
+                "[cleanup_linked_signatures] Failed to unlink signature #{sig.eve_id}: #{inspect(error)}"
               )
-            end
-
-          {:error, error} ->
-            Logger.error(
-              "[cleanup_linked_signatures] Failed to destroy signature: #{inspect(error)}"
-            )
+          end
+        rescue
+          e ->
+            Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
         end
-      rescue
-        e ->
-          Logger.error("Failed to cleanup linked signature: #{inspect(e)}")
+      end)
+
+      # Broadcast once per source system after all its signatures are processed
+      case List.first(signatures) do
+        %{system: %{solar_system_id: solar_system_id}} ->
+          Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+
+        _ ->
+          # Try to get the system info if not preloaded
+          case List.first(signatures) |> Ash.load([:system]) do
+            {:ok, %{system: %{solar_system_id: solar_system_id}}} ->
+              Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+
+            _ ->
+              :ok
+          end
       end
     end)
   end
@@ -485,8 +497,32 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
-  def maybe_add_system(map_id, location, old_location, map_opts)
+  def maybe_add_system(map_id, location, old_location, map_opts, scopes \\ nil)
+
+  def maybe_add_system(map_id, location, old_location, map_opts, scopes)
       when not is_nil(location) do
+    alias WandererApp.Map.Server.ConnectionsImpl
+
+    # Check if the system matches the map's configured scopes before adding
+    should_add =
+      case scopes do
+        nil -> true
+        [] -> true
+        scopes when is_list(scopes) ->
+          ConnectionsImpl.can_add_location(scopes, location.solar_system_id)
+      end
+
+    if should_add do
+      do_add_system_from_location(map_id, location, old_location, map_opts)
+    else
+      # System filtered out by scope settings - this is expected behavior
+      :ok
+    end
+  end
+
+  def maybe_add_system(_map_id, _location, _old_location, _map_opts, _scopes), do: :ok
+
+  defp do_add_system_from_location(map_id, location, old_location, map_opts) do
     :telemetry.execute(
       [:wanderer_app, :map, :system_addition, :start],
       %{system_time: System.system_time()},
@@ -693,8 +729,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         :ok
     end
   end
-
-  def maybe_add_system(_map_id, _location, _old_location, _map_opts), do: :ok
 
   defp do_add_system(
          map_id,

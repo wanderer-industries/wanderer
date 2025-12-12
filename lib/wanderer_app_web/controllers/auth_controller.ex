@@ -42,11 +42,17 @@ defmodule WandererAppWeb.AuthController do
 
           WandererApp.Character.update_character(character.id, character_update)
 
+          # Update corporation/alliance data from ESI to ensure access control is current
+          update_character_affiliation(character)
+
           {:ok, character}
 
         {:error, _error} ->
           {:ok, character} = WandererApp.Api.Character.create(character_data)
           :telemetry.execute([:wanderer_app, :user, :character, :registered], %{count: 1})
+
+          # Fetch initial corporation/alliance data for new characters
+          update_character_affiliation(character)
 
           {:ok, character}
       end
@@ -113,4 +119,102 @@ defmodule WandererAppWeb.AuthController do
   end
 
   def maybe_update_character_user_id(_character, _user_id), do: :ok
+
+  # Updates character's corporation and alliance data from ESI.
+  # This ensures ACL-based access control uses current corporation membership,
+  # even for characters not actively being tracked on any map.
+  defp update_character_affiliation(%{id: character_id, eve_id: eve_id} = character) do
+    # Run async to not block the SSO callback
+    Task.start(fn ->
+      character_eve_id = eve_id |> String.to_integer()
+
+      case WandererApp.Esi.post_characters_affiliation([character_eve_id]) do
+        {:ok, [affiliation_info]} when is_map(affiliation_info) ->
+          new_corporation_id = Map.get(affiliation_info, "corporation_id")
+          new_alliance_id = Map.get(affiliation_info, "alliance_id")
+
+          # Check if corporation changed
+          corporation_changed = character.corporation_id != new_corporation_id
+          alliance_changed = character.alliance_id != new_alliance_id
+
+          if corporation_changed or alliance_changed do
+            update_affiliation_data(character_id, character, new_corporation_id, new_alliance_id)
+          end
+
+        {:error, error} ->
+          Logger.warning(
+            "[AuthController] Failed to fetch affiliation for character #{character_id}: #{inspect(error)}"
+          )
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+
+  defp update_character_affiliation(_character), do: :ok
+
+  defp update_affiliation_data(character_id, character, corporation_id, alliance_id) do
+    # Fetch corporation info
+    corporation_update =
+      case WandererApp.Esi.get_corporation_info(corporation_id) do
+        {:ok, %{"name" => corp_name, "ticker" => corp_ticker}} ->
+          %{
+            corporation_id: corporation_id,
+            corporation_name: corp_name,
+            corporation_ticker: corp_ticker
+          }
+
+        _ ->
+          %{corporation_id: corporation_id}
+      end
+
+    # Fetch alliance info if present
+    alliance_update =
+      case alliance_id do
+        nil ->
+          %{alliance_id: nil, alliance_name: nil, alliance_ticker: nil}
+
+        _ ->
+          case WandererApp.Esi.get_alliance_info(alliance_id) do
+            {:ok, %{"name" => alliance_name, "ticker" => alliance_ticker}} ->
+              %{
+                alliance_id: alliance_id,
+                alliance_name: alliance_name,
+                alliance_ticker: alliance_ticker
+              }
+
+            _ ->
+              %{alliance_id: alliance_id}
+          end
+      end
+
+    full_update = Map.merge(corporation_update, alliance_update)
+
+    # Update database
+    case character.corporation_id != corporation_id do
+      true ->
+        {:ok, _} = WandererApp.Api.Character.update_corporation(character, corporation_update)
+
+      false ->
+        :ok
+    end
+
+    case character.alliance_id != alliance_id do
+      true ->
+        {:ok, _} = WandererApp.Api.Character.update_alliance(character, alliance_update)
+
+      false ->
+        :ok
+    end
+
+    # Update cache
+    WandererApp.Character.update_character(character_id, full_update)
+
+    Logger.info(
+      "[AuthController] Updated affiliation for character #{character_id}: " <>
+        "corp #{character.corporation_id} -> #{corporation_id}, " <>
+        "alliance #{character.alliance_id} -> #{alliance_id}"
+    )
+  end
 end

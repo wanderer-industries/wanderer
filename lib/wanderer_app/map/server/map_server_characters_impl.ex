@@ -829,7 +829,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     )
     |> case do
       true ->
-        # Add new location system
+        # Connection is valid (at least one system matches scopes)
+        # Add BOTH systems including border systems - filtering already done by is_connection_valid
         case SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts) do
           :ok ->
             :ok
