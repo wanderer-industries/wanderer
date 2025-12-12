@@ -300,7 +300,7 @@ defmodule WandererAppWeb.Factory do
     # Include owner_id in the form data just like the LiveView does
     create_attrs =
       built_attrs
-      |> Map.take([:name, :slug, :description, :scope, :only_tracked_characters])
+      |> Map.take([:name, :slug, :description, :scope, :scopes, :only_tracked_characters])
       |> Map.put(:owner_id, owner_id)
 
     # Debug: ensure owner_id is valid

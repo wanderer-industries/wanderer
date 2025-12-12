@@ -830,8 +830,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     |> case do
       true ->
         # Connection is valid (at least one system matches scopes)
-        # Add BOTH systems including border systems - filtering already done by is_connection_valid
-        case SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts) do
+        # Add systems that match the map's scopes - individual system filtering by maybe_add_system
+        case SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts, scopes) do
           :ok ->
             :ok
 
@@ -841,8 +841,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             )
         end
 
-        # Add old location system (in case it wasn't on map)
-        case SystemsImpl.maybe_add_system(map_id, old_location, location, map_opts) do
+        # Add old location system (in case it wasn't on map) - only if it matches scopes
+        case SystemsImpl.maybe_add_system(map_id, old_location, location, map_opts, scopes) do
           :ok ->
             :ok
 
@@ -882,13 +882,16 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = _location),
     do: is_nil(structure_id) && is_nil(station_id)
 
-  # Get effective scopes from map, with fallback to legacy scope
-  defp get_effective_scopes(%{scopes: scopes}) when is_list(scopes) and scopes != [], do: scopes
+  @doc """
+  Get effective scopes from map, with fallback to legacy scope.
+  Returns the scopes array that should be used for filtering.
+  """
+  def get_effective_scopes(%{scopes: scopes}) when is_list(scopes) and scopes != [], do: scopes
 
-  defp get_effective_scopes(%{scope: scope}) when is_atom(scope),
+  def get_effective_scopes(%{scope: scope}) when is_atom(scope),
     do: legacy_scope_to_scopes(scope)
 
-  defp get_effective_scopes(_), do: [:wormholes]
+  def get_effective_scopes(_), do: [:wormholes]
 
   # Legacy scope to new scopes array conversion
   defp legacy_scope_to_scopes(:wormholes), do: [:wormholes]

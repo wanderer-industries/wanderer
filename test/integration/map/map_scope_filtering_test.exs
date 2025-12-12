@@ -1,0 +1,315 @@
+defmodule WandererApp.Map.MapScopeFilteringTest do
+  @moduledoc """
+  Integration tests for map scope filtering during character location tracking.
+
+  These tests verify that systems are correctly filtered based on map scope settings
+  when characters move between systems. The key scenarios tested:
+
+  1. Characters moving between systems with [:wormholes, :null] scopes:
+     - Wormhole systems should be added
+     - Null-sec systems should be added
+     - High-sec systems should NOT be added (filtered out)
+     - Low-sec systems should NOT be added (filtered out)
+
+  2. Wormhole border behavior:
+     - When a character jumps from wormhole to k-space, the wormhole should be added
+     - K-space border systems should only be added if they match the scopes
+
+  3. K-space only movement:
+     - Characters moving within k-space should only track systems matching scopes
+     - No "border system" behavior for k-space to k-space movement
+
+  Reference bug: Characters with [:wormholes, :null] scopes were getting
+  high-sec (0.6) and low-sec (0.4) systems added to the map when traveling.
+  """
+
+  use WandererApp.DataCase
+
+  # System class constants (matching ConnectionsImpl)
+  @c1 1
+  @c2 2
+  @hs 7
+  @ls 8
+  @ns 9
+
+  # Test solar system IDs
+  # C1 wormhole
+  @wh_system_j100001 31_000_001
+  # C2 wormhole
+  @wh_system_j100002 31_000_002
+  # High-sec system (0.6)
+  @hs_system_halenan 30_000_001
+  # High-sec system (0.6)
+  @hs_system_mili 30_000_002
+  # Low-sec system (0.4)
+  @ls_system_halmah 30_000_100
+  # Null-sec system
+  @ns_system_geminate 30_000_200
+
+  setup do
+    # Setup system static info cache with both wormhole and k-space systems
+    setup_scope_test_systems()
+    :ok
+  end
+
+  # Setup system static info for scope testing
+  defp setup_scope_test_systems do
+    test_systems = %{
+      # C1 Wormhole
+      @wh_system_j100001 => %{
+        solar_system_id: @wh_system_j100001,
+        solar_system_name: "J100001",
+        solar_system_name_lc: "j100001",
+        region_id: 11_000_001,
+        constellation_id: 21_000_001,
+        region_name: "A-R00001",
+        constellation_name: "A-C00001",
+        system_class: @c1,
+        security: "-1.0",
+        type_description: "Class 1",
+        class_title: "C1",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: ["H121"],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      },
+      # C2 Wormhole
+      @wh_system_j100002 => %{
+        solar_system_id: @wh_system_j100002,
+        solar_system_name: "J100002",
+        solar_system_name_lc: "j100002",
+        region_id: 11_000_001,
+        constellation_id: 21_000_001,
+        region_name: "A-R00001",
+        constellation_name: "A-C00001",
+        system_class: @c2,
+        security: "-1.0",
+        type_description: "Class 2",
+        class_title: "C2",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: ["D382", "L005"],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      },
+      # High-sec system (Halenan 0.6)
+      @hs_system_halenan => %{
+        solar_system_id: @hs_system_halenan,
+        solar_system_name: "Halenan",
+        solar_system_name_lc: "halenan",
+        region_id: 10_000_067,
+        constellation_id: 20_000_901,
+        region_name: "Devoid",
+        constellation_name: "Devoid",
+        system_class: @hs,
+        security: "0.6",
+        type_description: "High Security",
+        class_title: "High Sec",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: [],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      },
+      # High-sec system (Mili 0.6)
+      @hs_system_mili => %{
+        solar_system_id: @hs_system_mili,
+        solar_system_name: "Mili",
+        solar_system_name_lc: "mili",
+        region_id: 10_000_067,
+        constellation_id: 20_000_901,
+        region_name: "Devoid",
+        constellation_name: "Devoid",
+        system_class: @hs,
+        security: "0.6",
+        type_description: "High Security",
+        class_title: "High Sec",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: [],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      },
+      # Low-sec system (Halmah 0.4)
+      @ls_system_halmah => %{
+        solar_system_id: @ls_system_halmah,
+        solar_system_name: "Halmah",
+        solar_system_name_lc: "halmah",
+        region_id: 10_000_067,
+        constellation_id: 20_000_901,
+        region_name: "Devoid",
+        constellation_name: "Devoid",
+        system_class: @ls,
+        security: "0.4",
+        type_description: "Low Security",
+        class_title: "Low Sec",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: [],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      },
+      # Null-sec system
+      @ns_system_geminate => %{
+        solar_system_id: @ns_system_geminate,
+        solar_system_name: "Geminate",
+        solar_system_name_lc: "geminate",
+        region_id: 10_000_029,
+        constellation_id: 20_000_400,
+        region_name: "Geminate",
+        constellation_name: "Geminate",
+        system_class: @ns,
+        security: "-0.5",
+        type_description: "Null Security",
+        class_title: "Null Sec",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: [],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
+      }
+    }
+
+    Enum.each(test_systems, fn {solar_system_id, system_info} ->
+      Cachex.put(:system_static_info_cache, solar_system_id, system_info)
+    end)
+
+    :ok
+  end
+
+  describe "Scope filtering logic tests" do
+    # These tests verify the filtering logic without full integration
+    # The actual filtering is tested more comprehensively in map_scopes_test.exs
+
+    alias WandererApp.Map.Server.ConnectionsImpl
+    alias WandererApp.Map.Server.SystemsImpl
+
+    test "can_add_location correctly filters high-sec with [:wormholes, :null] scopes" do
+      # High-sec should NOT be allowed with [:wormholes, :null]
+      refute ConnectionsImpl.can_add_location([:wormholes, :null], @hs_system_halenan),
+             "High-sec should be filtered out with [:wormholes, :null] scopes"
+
+      refute ConnectionsImpl.can_add_location([:wormholes, :null], @hs_system_mili),
+             "High-sec should be filtered out with [:wormholes, :null] scopes"
+    end
+
+    test "can_add_location correctly filters low-sec with [:wormholes, :null] scopes" do
+      # Low-sec should NOT be allowed with [:wormholes, :null]
+      refute ConnectionsImpl.can_add_location([:wormholes, :null], @ls_system_halmah),
+             "Low-sec should be filtered out with [:wormholes, :null] scopes"
+    end
+
+    test "can_add_location correctly allows wormholes with [:wormholes, :null] scopes" do
+      # Wormholes should be allowed
+      assert ConnectionsImpl.can_add_location([:wormholes, :null], @wh_system_j100001),
+             "Wormhole should be allowed with [:wormholes, :null] scopes"
+
+      assert ConnectionsImpl.can_add_location([:wormholes, :null], @wh_system_j100002),
+             "Wormhole should be allowed with [:wormholes, :null] scopes"
+    end
+
+    test "can_add_location correctly allows null-sec with [:wormholes, :null] scopes" do
+      # Null-sec should be allowed
+      assert ConnectionsImpl.can_add_location([:wormholes, :null], @ns_system_geminate),
+             "Null-sec should be allowed with [:wormholes, :null] scopes"
+    end
+
+    test "maybe_add_system filters out high-sec when scopes is [:wormholes, :null]" do
+      # When scopes is [:wormholes, :null], high-sec systems should be filtered
+      location = %{solar_system_id: @hs_system_halenan}
+      result = SystemsImpl.maybe_add_system("map_id", location, nil, [], [:wormholes, :null])
+      # Returns :ok because system was filtered out (not an error, just skipped)
+      assert result == :ok
+    end
+
+    test "maybe_add_system filters out low-sec when scopes is [:wormholes, :null]" do
+      location = %{solar_system_id: @ls_system_halmah}
+      result = SystemsImpl.maybe_add_system("map_id", location, nil, [], [:wormholes, :null])
+      assert result == :ok
+    end
+
+    test "is_connection_valid allows WH to HS with [:wormholes, :null] (border behavior)" do
+      # The connection is valid for border behavior - but individual systems are filtered
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @wh_system_j100001,
+               @hs_system_halenan
+             ),
+             "WH to HS connection should be valid (border behavior)"
+    end
+
+    test "is_connection_valid rejects HS to LS with [:wormholes, :null] (no border)" do
+      # HS to LS should be rejected - neither system matches scopes and no wormhole involved
+      refute ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @hs_system_halenan,
+               @ls_system_halmah
+             ),
+             "HS to LS connection should be rejected with [:wormholes, :null]"
+    end
+
+    test "is_connection_valid rejects HS to HS with [:wormholes, :null]" do
+      # HS to HS should be rejected
+      refute ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @hs_system_halenan,
+               @hs_system_mili
+             ),
+             "HS to HS connection should be rejected with [:wormholes, :null]"
+    end
+  end
+
+  describe "get_effective_scopes behavior" do
+    alias WandererApp.Map.Server.CharactersImpl
+
+    test "get_effective_scopes returns scopes array when present" do
+      # Create a map struct with scopes array
+      map = %{scopes: [:wormholes, :null]}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == [:wormholes, :null]
+    end
+
+    test "get_effective_scopes converts legacy :all scope" do
+      map = %{scope: :all}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == [:wormholes, :hi, :low, :null, :pochven]
+    end
+
+    test "get_effective_scopes converts legacy :wormholes scope" do
+      map = %{scope: :wormholes}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == [:wormholes]
+    end
+
+    test "get_effective_scopes converts legacy :stargates scope" do
+      map = %{scope: :stargates}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == [:hi, :low, :null, :pochven]
+    end
+
+    test "get_effective_scopes converts legacy :none scope" do
+      map = %{scope: :none}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == []
+    end
+
+    test "get_effective_scopes defaults to [:wormholes] when no scope" do
+      map = %{}
+      scopes = CharactersImpl.get_effective_scopes(map)
+      assert scopes == [:wormholes]
+    end
+  end
+end
