@@ -296,6 +296,30 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       do: update_connection(map_id, :update_custom_info, [:custom_info], connection_update)
 
   def cleanup_connections(map_id) do
+    # Defensive check: Skip cleanup if cache appears invalid
+    # This prevents incorrectly deleting connections when cache is empty due to
+    # race conditions during map restart or cache corruption
+    case WandererApp.Map.get_map(map_id) do
+      {:error, :not_found} ->
+        Logger.warning(
+          "[cleanup_connections] Skipping map #{map_id} - cache miss detected, " <>
+            "map data not found in cache"
+        )
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :cleanup_connections, :cache_miss],
+          %{system_time: System.system_time()},
+          %{map_id: map_id}
+        )
+
+        :ok
+
+      {:ok, _map} ->
+        do_cleanup_connections(map_id)
+    end
+  end
+
+  defp do_cleanup_connections(map_id) do
     connection_auto_expire_hours = get_connection_auto_expire_hours()
     connection_auto_eol_hours = get_connection_auto_eol_hours()
     connection_eol_expire_timeout_hours = get_eol_expire_timeout_mins() / 60

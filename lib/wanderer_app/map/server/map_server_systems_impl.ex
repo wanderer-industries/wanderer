@@ -147,6 +147,30 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   end
 
   def cleanup_systems(map_id) do
+    # Defensive check: Skip cleanup if cache appears invalid
+    # This prevents incorrectly deleting systems when cache is empty due to
+    # race conditions during map restart or cache corruption
+    case WandererApp.Map.get_map(map_id) do
+      {:error, :not_found} ->
+        Logger.warning(
+          "[cleanup_systems] Skipping map #{map_id} - cache miss detected, " <>
+            "map data not found in cache"
+        )
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :cleanup_systems, :cache_miss],
+          %{system_time: System.system_time()},
+          %{map_id: map_id}
+        )
+
+        :ok
+
+      {:ok, _map} ->
+        do_cleanup_systems(map_id)
+    end
+  end
+
+  defp do_cleanup_systems(map_id) do
     expired_systems =
       map_id
       |> WandererApp.Map.list_systems!()
