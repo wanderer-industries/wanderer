@@ -25,8 +25,8 @@ defmodule WandererAppWeb.PresenceGracePeriodManager do
 
   require Logger
 
-  # 1 hour grace period before removing disconnected characters
-  @grace_period_ms :timer.hours(1)
+  # 15 minutes grace period before removing disconnected characters
+  @grace_period_ms :timer.minutes(15)
 
   defstruct pending_removals: %{}, timers: %{}
 
