@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.8](https://github.com/wanderer-industries/wanderer/compare/v1.90.7...v1.90.8) (2025-12-15)
+
+
+
+
+### Bug Fixes:
+
+* core: skip systems or connections cleanup for not started maps
+
 ## [v1.90.7](https://github.com/wanderer-industries/wanderer/compare/v1.90.6...v1.90.7) (2025-12-15)
 
 
