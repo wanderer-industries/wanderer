@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.9](https://github.com/wanderer-industries/wanderer/compare/v1.90.8...v1.90.9) (2025-12-15)
+
+
+
+
+### Bug Fixes:
+
+* core: reduce chracters untrack grace period to 15 mins (after change/close/disconnect from map)
+
 ## [v1.90.8](https://github.com/wanderer-industries/wanderer/compare/v1.90.7...v1.90.8) (2025-12-15)
 
 
