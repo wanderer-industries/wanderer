@@ -12,6 +12,7 @@ defmodule WandererApp.Map do
   defstruct map_id: nil,
             name: nil,
             scope: :none,
+            scopes: nil,
             owner_id: nil,
             characters: [],
             systems: Map.new(),
@@ -22,11 +23,15 @@ defmodule WandererApp.Map do
             characters_limit: nil,
             hubs_limit: nil
 
-  def new(%{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs}) do
+  def new(%{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs} = input) do
+    # Extract the new scopes array field if present (nil if not set)
+    scopes = Map.get(input, :scopes)
+
     map =
       struct!(__MODULE__,
         map_id: map_id,
         scope: scope,
+        scopes: scopes,
         owner_id: owner_id,
         name: name,
         acls: acls,

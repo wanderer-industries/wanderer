@@ -337,4 +337,137 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
       assert scopes == [:wormholes]
     end
   end
+
+  describe "WandererApp.Map struct and new/1 function" do
+    alias WandererApp.Map.Server.CharactersImpl
+
+    test "Map struct includes scopes field" do
+      # Verify the struct has the scopes field
+      map_struct = %WandererApp.Map{}
+      assert Map.has_key?(map_struct, :scopes)
+      assert map_struct.scopes == nil
+    end
+
+    test "Map.new/1 extracts scopes from input" do
+      # Simulate input from database (Ash resource)
+      input = %{
+        id: "test-map-id",
+        name: "Test Map",
+        scope: :wormholes,
+        scopes: [:wormholes, :null],
+        owner_id: "owner-123",
+        acls: [],
+        hubs: []
+      }
+
+      map = WandererApp.Map.new(input)
+
+      assert map.map_id == "test-map-id"
+      assert map.name == "Test Map"
+      assert map.scope == :wormholes
+      assert map.scopes == [:wormholes, :null]
+    end
+
+    test "Map.new/1 handles missing scopes (nil)" do
+      # When scopes is not present in input, it should be nil
+      input = %{
+        id: "test-map-id",
+        name: "Test Map",
+        scope: :all,
+        owner_id: "owner-123",
+        acls: [],
+        hubs: []
+      }
+
+      map = WandererApp.Map.new(input)
+
+      assert map.map_id == "test-map-id"
+      assert map.scope == :all
+      assert map.scopes == nil
+    end
+
+    test "get_effective_scopes uses scopes field from Map struct when present" do
+      # Create map struct with both scope and scopes
+      input = %{
+        id: "test-map-id",
+        name: "Test Map",
+        scope: :all,
+        scopes: [:wormholes, :null],
+        owner_id: "owner-123",
+        acls: [],
+        hubs: []
+      }
+
+      map = WandererApp.Map.new(input)
+
+      # get_effective_scopes should prioritize scopes over scope
+      effective = CharactersImpl.get_effective_scopes(map)
+      assert effective == [:wormholes, :null]
+    end
+
+    test "get_effective_scopes falls back to legacy scope when scopes is nil" do
+      # Create map struct with only legacy scope
+      input = %{
+        id: "test-map-id",
+        name: "Test Map",
+        scope: :all,
+        owner_id: "owner-123",
+        acls: [],
+        hubs: []
+      }
+
+      map = WandererApp.Map.new(input)
+
+      # get_effective_scopes should convert legacy :all scope
+      effective = CharactersImpl.get_effective_scopes(map)
+      assert effective == [:wormholes, :hi, :low, :null, :pochven]
+    end
+
+    test "get_effective_scopes falls back to legacy scope when scopes is empty list" do
+      # Empty scopes list should fall back to legacy scope
+      input = %{
+        id: "test-map-id",
+        name: "Test Map",
+        scope: :stargates,
+        scopes: [],
+        owner_id: "owner-123",
+        acls: [],
+        hubs: []
+      }
+
+      map = WandererApp.Map.new(input)
+
+      # get_effective_scopes should fall back to legacy scope conversion
+      effective = CharactersImpl.get_effective_scopes(map)
+      assert effective == [:hi, :low, :null, :pochven]
+    end
+
+    test "Map.new/1 extracts all scope variations correctly" do
+      # Test various scope combinations
+      test_cases = [
+        {[:wormholes], [:wormholes]},
+        {[:hi, :low], [:hi, :low]},
+        {[:wormholes, :hi, :low, :null, :pochven], [:wormholes, :hi, :low, :null, :pochven]},
+        {[:null], [:null]}
+      ]
+
+      for {input_scopes, expected_scopes} <- test_cases do
+        input = %{
+          id: "test-map-id",
+          name: "Test Map",
+          scope: :wormholes,
+          scopes: input_scopes,
+          owner_id: "owner-123",
+          acls: [],
+          hubs: []
+        }
+
+        map = WandererApp.Map.new(input)
+        effective = CharactersImpl.get_effective_scopes(map)
+
+        assert effective == expected_scopes,
+               "Expected #{inspect(expected_scopes)}, got #{inspect(effective)} for input #{inspect(input_scopes)}"
+      end
+    end
+  end
 end

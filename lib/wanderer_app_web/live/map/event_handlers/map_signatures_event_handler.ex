@@ -363,8 +363,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             linked_sig_eve_id: nil
           })
 
-          s
-          |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
+          # Use the wrapper to log unlink operations
+          WandererApp.Map.Server.SignaturesImpl.update_signature_linked_system(s, %{
             linked_system_id: nil
           })
         end)

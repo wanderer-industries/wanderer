@@ -4,6 +4,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   require Logger
 
   alias WandererApp.Map.Server.Impl
+  alias WandererApp.Map.Server.SignaturesImpl
 
   @ddrt Application.compile_env(:wanderer_app, :ddrt)
   @system_auto_expire_minutes 15
@@ -423,7 +424,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           {:ok, %{eve_id: eve_id, system: system}} = sig |> Ash.load([:system])
 
           # Clear the linked_system_id instead of destroying the signature
-          case WandererApp.Api.MapSystemSignature.update_linked_system(sig, %{
+          # Use the wrapper to log unlink operations
+          case SignaturesImpl.update_signature_linked_system(sig, %{
                  linked_system_id: nil
                }) do
             {:ok, _updated_sig} ->

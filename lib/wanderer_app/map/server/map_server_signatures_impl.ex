@@ -256,6 +256,37 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
   defp maybe_update_connection_mass_status(_map_id, _old_sig, _updated_sig), do: :ok
 
+  @doc """
+  Wrapper for updating a signature's linked_system_id with logging.
+  Logs all unlink operations (when linked_system_id is set to nil) with context
+  to help diagnose unexpected unlinking issues.
+  """
+  def update_signature_linked_system(signature, %{linked_system_id: nil} = params) do
+    # Log all unlink operations with context for debugging
+    Logger.warning(
+      "[Signature Unlink] eve_id=#{signature.eve_id} " <>
+        "system_id=#{signature.system_id} " <>
+        "old_linked_system_id=#{signature.linked_system_id} " <>
+        "stacktrace=#{format_stacktrace()}"
+    )
+
+    MapSystemSignature.update_linked_system(signature, params)
+  end
+
+  def update_signature_linked_system(signature, params) do
+    MapSystemSignature.update_linked_system(signature, params)
+  end
+
+  defp format_stacktrace do
+    {:current_stacktrace, stacktrace} = Process.info(self(), :current_stacktrace)
+
+    stacktrace
+    |> Enum.take(10)
+    |> Enum.map_join(" <- ", fn {mod, fun, arity, _} ->
+      "#{inspect(mod)}.#{fun}/#{arity}"
+    end)
+  end
+
   defp track_activity(event, map_id, solar_system_id, user_id, character_id, signatures) do
     ActivityTracker.track_map_event(event, %{
       map_id: map_id,

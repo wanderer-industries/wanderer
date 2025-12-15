@@ -822,12 +822,21 @@ defmodule WandererApp.Map.Server.CharactersImpl do
        ) do
     scopes = get_effective_scopes(map)
 
-    ConnectionsImpl.is_connection_valid(
-      scopes,
-      old_location.solar_system_id,
-      location.solar_system_id
+    is_valid =
+      ConnectionsImpl.is_connection_valid(
+        scopes,
+        old_location.solar_system_id,
+        location.solar_system_id
+      )
+
+    Logger.debug(
+      "[CharacterTracking] update_location: map=#{map_id}, " <>
+        "from=#{old_location.solar_system_id}, to=#{location.solar_system_id}, " <>
+        "scopes=#{inspect(scopes)}, map.scopes=#{inspect(map[:scopes])}, " <>
+        "map.scope=#{inspect(map[:scope])}, is_valid=#{is_valid}"
     )
-    |> case do
+
+    case is_valid do
       true ->
         # Connection is valid (at least one system matches scopes)
         # Add systems that match the map's scopes - individual system filtering by maybe_add_system
