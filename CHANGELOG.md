@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.7](https://github.com/wanderer-industries/wanderer/compare/v1.90.6...v1.90.7) (2025-12-15)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed scopes
+
 ## [v1.90.6](https://github.com/wanderer-industries/wanderer/compare/v1.90.5...v1.90.6) (2025-12-12)
 
 
