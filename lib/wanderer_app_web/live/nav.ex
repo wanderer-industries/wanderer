@@ -16,6 +16,8 @@ defmodule WandererAppWeb.Nav do
     show_admin =
       socket.assigns.current_user_role == :admin
 
+    latest_post = WandererApp.Blog.recent_posts(1) |> List.first()
+
     {:cont,
      socket
      |> attach_hook(:active_tab, :handle_params, &set_active_tab/3)
@@ -25,7 +27,8 @@ defmodule WandererAppWeb.Nav do
        show_admin: show_admin,
        show_sidebar: true,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
-       app_version: WandererApp.Env.vsn()
+       app_version: WandererApp.Env.vsn(),
+       latest_post: latest_post
      )}
   end
 
