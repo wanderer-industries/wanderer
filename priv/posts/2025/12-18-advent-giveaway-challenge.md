@@ -1,12 +1,15 @@
 %{
 title: "Christmas Giveaway Challenge",
 author: "Wanderer Team",
-cover_image_uri: "/images/news/2025/12-18-advent-giveaway/advent-giveaway.png",
+cover_image_uri: "/images/news/2025/12-18-advent-giveaway/cover.jpg",
 tags: ~w(event giveaway challenge christmas advent partnership),
 description: "Join our Advent Christmas Giveaway Challenge! Win exclusive partnership codes every day for a week. Be the fastest to claim your reward!"
 }
 
 ---
+
+
+![Christmas Giveaway Challenge](/images/news/2025/12-18-advent-giveaway/cover.jpg "Christmas Giveaway Challenge")
 
 ### The Season of Giving
 
@@ -37,8 +40,8 @@ Starting next week, we'll be giving away **1 exclusive partnership code every da
 
 - **Event Name:** Advent Christmas Giveaway
 - **Duration:** 1 week (7 days, 7 codes)
-- **Organizer:** @Demiro (Wanderer core developer)
-- **Event Link:** *Coming soon — will be added here*
+- **Organizer:** @Demiro (Wanderer core developer, EventCortex CTO)
+- **Event Link:** [Advent Christmas Giveaway - EventCortex](https://eventcortex.com/events/invite/cYdBywu1ygfVS3UN6ZZcmDzL1q85aDmH)
 
 ---
 
@@ -54,11 +57,6 @@ Starting next week, we'll be giving away **1 exclusive partnership code every da
 
 Partnership codes can be redeemed in EVE Online for **exclusive partnership SKINs** — unique ship skins that let you fly in style! This is your chance to grab one for free — if you're fast enough!
 
----
-
-### Stay Tuned
-
-The event link and detailed schedule will be announced soon. Keep an eye on our channels for updates.
 
 Good luck, and may the fastest capsuleer win!
 
