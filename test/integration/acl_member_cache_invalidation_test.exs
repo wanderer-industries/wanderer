@@ -186,7 +186,9 @@ defmodule WandererApp.AclMemberCacheInvalidationTest do
 
       # Verify cache was invalidated
       cached_data_after = WandererApp.Cache.lookup!(cache_key)
-      assert is_nil(cached_data_after), "Cache should be invalidated after adding corporation member"
+
+      assert is_nil(cached_data_after),
+             "Cache should be invalidated after adding corporation member"
     end
 
     @tag :integration

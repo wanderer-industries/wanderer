@@ -23,7 +23,10 @@ defmodule WandererApp.Map do
             characters_limit: nil,
             hubs_limit: nil
 
-  def new(%{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs} = input) do
+  def new(
+        %{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs} =
+          input
+      ) do
     # Extract the new scopes array field if present (nil if not set)
     scopes = Map.get(input, :scopes)
 

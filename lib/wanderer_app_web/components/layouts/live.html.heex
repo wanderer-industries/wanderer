@@ -31,11 +31,7 @@
     </div>
   </aside>
 
-  <.new_version_banner
-    app_version={@app_version}
-    enabled={true}
-    latest_post={@latest_post}
-  />
+  <.new_version_banner app_version={@app_version} enabled={true} latest_post={@latest_post} />
 </div>
 
 <.live_component module={WandererAppWeb.Alerts} id="notifications" view_flash={@flash} />

@@ -92,6 +92,31 @@ map_subscription_extra_hubs_10_price =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_EXTRA_HUBS_10_PRICE", 10_000_000)
 
+# Parse promo codes from environment variable
+# Format: "CODE1:10,CODE2:20" where numbers are discount percentages
+promo_codes =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_PROMO_CODES", "")
+  |> case do
+    "" ->
+      %{}
+
+    codes_string ->
+      codes_string
+      |> String.split(",")
+      |> Enum.map(fn entry ->
+        case String.split(String.trim(entry), ":") do
+          [code, discount] ->
+            {String.upcase(String.trim(code)), String.to_integer(String.trim(discount))}
+
+          _ ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new()
+  end
+
 map_connection_auto_expire_hours =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_CONNECTION_AUTO_EXPIRE_HOURS", 24)
@@ -176,7 +201,8 @@ config :wanderer_app,
       }
     ],
     extra_characters_50: map_subscription_extra_characters_50_price,
-    extra_hubs_10: map_subscription_extra_hubs_10_price
+    extra_hubs_10: map_subscription_extra_hubs_10_price,
+    promo_codes: promo_codes
   },
   # Finch pool configuration - separate pools for different services
   # ESI Character Tracking pool - high capacity for bulk character operations

@@ -230,7 +230,8 @@ defmodule WandererApp.Map.Server.MapScopesTest do
       assert ConnectionsImpl.is_connection_valid([:null], @hs_system_id, @ls_system_id) == false
 
       # HS to LS with [:hi, :low]: valid (both match)
-      assert ConnectionsImpl.is_connection_valid([:hi, :low], @hs_system_id, @ls_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:hi, :low], @hs_system_id, @ls_system_id) ==
+               true
 
       # HS to HS: valid with [:hi] (both match)
       assert ConnectionsImpl.is_connection_valid([:hi], @hs_system_id, 30_000_002) == true
@@ -356,13 +357,15 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "WORMHOLE BORDER: WH->Hi-Sec with [:wormholes] is VALID (border k-space added)" do
       # Border case: moving from WH to k-space
       # Valid because :wormholes enabled AND one system is WH
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) ==
+               true
     end
 
     test "WORMHOLE BORDER: Hi-Sec->WH with [:wormholes] is VALID (border k-space added)" do
       # Border case: moving from k-space to WH
       # Valid because :wormholes enabled AND one system is WH
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @wh_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @wh_system_id) ==
+               true
     end
 
     test "K-SPACE ONLY: Hi-Sec->Hi-Sec with [:wormholes] is REJECTED" do
@@ -373,13 +376,21 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "K-SPACE ONLY: Null->Hi-Sec with [:wormholes, :null] is REJECTED (no border for k-space)" do
       # Neither system is a wormhole, so no border behavior
       # Null matches :null, but Hi-Sec doesn't match any scope -> BOTH must match
-      assert ConnectionsImpl.is_connection_valid([:wormholes, :null], @ns_system_id, @hs_system_id) ==
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @ns_system_id,
+               @hs_system_id
+             ) ==
                false
     end
 
     test "K-SPACE ONLY: Hi-Sec->Low-Sec with [:wormholes, :null] is REJECTED" do
       # Neither Hi-Sec nor Low-Sec match [:wormholes, :null], no WH involved
-      assert ConnectionsImpl.is_connection_valid([:wormholes, :null], @hs_system_id, @ls_system_id) ==
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @hs_system_id,
+               @ls_system_id
+             ) ==
                false
     end
 
@@ -402,7 +413,11 @@ defmodule WandererApp.Map.Server.MapScopesTest do
 
     test "WORMHOLE BORDER: Pochven->WH with [:wormholes, :pochven] is VALID" do
       # WH is wormhole, :wormholes enabled -> border behavior applies
-      assert ConnectionsImpl.is_connection_valid([:wormholes, :pochven], @pochven_id, @wh_system_id) ==
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :pochven],
+               @pochven_id,
+               @wh_system_id
+             ) ==
                true
     end
 
@@ -414,9 +429,12 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "border systems: WH->Hi-Sec->WH path with [:wormholes] scope" do
       # Simulates a character path through k-space between WHs
       # First jump: WH to Hi-Sec - valid (wormhole border)
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @wh_system_id, @hs_system_id) ==
+               true
+
       # Second jump: Hi-Sec to WH - valid (wormhole border)
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @c2_system_id) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @c2_system_id) ==
+               true
     end
 
     test "excluded path: k-space chain with [:wormholes] scope remains excluded" do
@@ -428,10 +446,19 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "excluded path: Null->Hi-Sec->Low-Sec with [:wormholes, :null] - only Null tracked" do
       # Character in Null (tracked) jumps to Hi-Sec (border - but NO wormhole!) -> REJECTED
       # This is the key case: k-space to k-space should NOT add border systems
-      assert ConnectionsImpl.is_connection_valid([:wormholes, :null], @ns_system_id, @hs_system_id) ==
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @ns_system_id,
+               @hs_system_id
+             ) ==
                false
+
       # Hi-Sec to Low-Sec also rejected (neither matches)
-      assert ConnectionsImpl.is_connection_valid([:wormholes, :null], @hs_system_id, @ls_system_id) ==
+      assert ConnectionsImpl.is_connection_valid(
+               [:wormholes, :null],
+               @hs_system_id,
+               @ls_system_id
+             ) ==
                false
     end
   end

@@ -237,7 +237,10 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
 
       # old_location is also high-sec (k-space to k-space)
       old_location = %{solar_system_id: @hs_system_mili}
-      result = SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
+
+      result =
+        SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
+
       assert result == :ok
     end
 
@@ -245,7 +248,10 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
       location = %{solar_system_id: @ls_system_halmah}
       # old_location is high-sec (k-space to k-space)
       old_location = %{solar_system_id: @hs_system_halenan}
-      result = SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
+
+      result =
+        SystemsImpl.maybe_add_system("map_id", location, old_location, [], [:wormholes, :null])
+
       assert result == :ok
     end
 

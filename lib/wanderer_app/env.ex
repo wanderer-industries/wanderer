@@ -42,6 +42,35 @@ defmodule WandererApp.Env do
   def corp_eve_id(), do: get_key(:corp_id, -1)
   def subscription_settings(), do: get_key(:subscription_settings)
 
+  @doc """
+  Returns the promo code configuration map.
+  Keys are uppercase code strings, values are discount percentages.
+  """
+  def promo_codes() do
+    case subscription_settings() do
+      %{promo_codes: codes} when is_map(codes) -> codes
+      _ -> %{}
+    end
+  end
+
+  @doc """
+  Validates a promo code and returns the discount percentage.
+  Returns {:ok, discount_percent} if valid, {:error, :invalid_code} otherwise.
+  Codes are case-insensitive.
+  """
+  def validate_promo_code(nil), do: {:error, :invalid_code}
+  def validate_promo_code(""), do: {:error, :invalid_code}
+
+  def validate_promo_code(code) when is_binary(code) do
+    normalized = String.upcase(String.trim(code))
+
+    case Map.get(promo_codes(), normalized) do
+      nil -> {:error, :invalid_code}
+      discount when is_integer(discount) and discount > 0 and discount <= 100 -> {:ok, discount}
+      _ -> {:error, :invalid_code}
+    end
+  end
+
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "restrict_maps_creation"

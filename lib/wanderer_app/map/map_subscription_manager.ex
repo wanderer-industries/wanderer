@@ -72,28 +72,36 @@ defmodule WandererApp.Map.SubscriptionManager do
     :ok
   end
 
+  def estimate_price(params, renew?, promo_code \\ nil)
+
   def estimate_price(
         %{
           "period" => period,
           "characters_limit" => characters_limit,
           "hubs_limit" => hubs_limit
-        },
-        renew?
+        } = params,
+        renew?,
+        promo_code
       )
-      when is_binary(characters_limit),
-      do:
-        estimate_price(
-          %{
-            period: period |> String.to_integer(),
-            characters_limit: characters_limit |> String.to_integer(),
-            hubs_limit: hubs_limit |> String.to_integer()
-          },
-          renew?
-        )
+      when is_binary(characters_limit) do
+    # Extract promo_code from params if passed there (from form)
+    promo_code = promo_code || Map.get(params, "promo_code")
+
+    estimate_price(
+      %{
+        period: period |> String.to_integer(),
+        characters_limit: characters_limit |> String.to_integer(),
+        hubs_limit: hubs_limit |> String.to_integer()
+      },
+      renew?,
+      promo_code
+    )
+  end
 
   def estimate_price(
         %{characters_limit: characters_limit, hubs_limit: hubs_limit} = params,
-        renew?
+        renew?,
+        promo_code
       ) do
     %{
       plans: plans,
@@ -136,7 +144,7 @@ defmodule WandererApp.Map.SubscriptionManager do
 
     total_price = estimated_price * period
 
-    {:ok, discount} =
+    {:ok, period_discount} =
       calc_discount(
         period,
         total_price,
@@ -144,13 +152,27 @@ defmodule WandererApp.Map.SubscriptionManager do
         renew?
       )
 
-    {:ok, total_price, discount}
+    # Calculate promo discount on price after period discount
+    price_after_period_discount = total_price - period_discount
+
+    {:ok, promo_discount, promo_valid?} =
+      calc_promo_discount(promo_code, price_after_period_discount)
+
+    total_discount = period_discount + promo_discount
+
+    {:ok, total_price, total_discount, promo_valid?}
   end
 
+  def calc_additional_price(params, selected_subscription, promo_code \\ nil)
+
   def calc_additional_price(
-        %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit},
-        selected_subscription
+        %{"characters_limit" => characters_limit, "hubs_limit" => hubs_limit} = params,
+        selected_subscription,
+        promo_code
       ) do
+    # Extract promo_code from params if passed there (from form)
+    promo_code = promo_code || Map.get(params, "promo_code")
+
     %{
       plans: plans,
       extra_characters_50: extra_characters_50,
@@ -189,7 +211,7 @@ defmodule WandererApp.Map.SubscriptionManager do
 
     total_price = additional_price * period
 
-    {:ok, discount} =
+    {:ok, period_discount} =
       calc_discount(
         period,
         total_price,
@@ -197,7 +219,15 @@ defmodule WandererApp.Map.SubscriptionManager do
         false
       )
 
-    {:ok, total_price, discount}
+    # Calculate promo discount on price after period discount
+    price_after_period_discount = total_price - period_discount
+
+    {:ok, promo_discount, promo_valid?} =
+      calc_promo_discount(promo_code, price_after_period_discount)
+
+    total_discount = period_discount + promo_discount
+
+    {:ok, total_price, total_discount, promo_valid?}
   end
 
   defp get_active_months(subscription) do
@@ -255,6 +285,22 @@ defmodule WandererApp.Map.SubscriptionManager do
        when period >= 3,
        do: {:ok, round(total_price * month_3_discount)}
 
+  # Calculates the promo code discount amount.
+  # Returns {:ok, discount_amount, is_valid?}
+  defp calc_promo_discount(nil, _price), do: {:ok, 0, false}
+  defp calc_promo_discount("", _price), do: {:ok, 0, false}
+
+  defp calc_promo_discount(promo_code, price) when is_binary(promo_code) do
+    case WandererApp.Env.validate_promo_code(promo_code) do
+      {:ok, discount_percent} ->
+        discount_amount = round(price * discount_percent / 100)
+        {:ok, discount_amount, true}
+
+      {:error, :invalid_code} ->
+        {:ok, 0, false}
+    end
+  end
+
   def get_balance(map) do
     map
     |> WandererApp.MapRepo.load_relationships([
@@ -302,7 +348,8 @@ defmodule WandererApp.Map.SubscriptionManager do
 
   defp renew_subscription(%{auto_renew?: true, map: map} = subscription)
        when is_map(subscription) do
-    with {:ok, estimated_price, discount} <- estimate_price(subscription, true),
+    # No promo code for auto-renewals, ignore the promo_valid? return value
+    with {:ok, estimated_price, discount, _promo_valid?} <- estimate_price(subscription, true),
          {:ok, map_balance} <- get_balance(map) do
       case map_balance >= estimated_price do
         true ->
