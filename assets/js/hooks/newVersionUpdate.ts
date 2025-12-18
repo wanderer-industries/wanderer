@@ -57,7 +57,7 @@ export default {
     };
 
     refreshZone.addEventListener('click', handleUpdate);
-    refreshZone.addEventListener('mouseover', handleUpdate);
+    // refreshZone.addEventListener('mouseover', handleUpdate);
 
     this.updated();
   },

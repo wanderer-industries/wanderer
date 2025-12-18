@@ -23,6 +23,7 @@ defmodule WandererAppWeb.Layouts do
 
   attr :app_version, :string
   attr :enabled, :boolean
+  attr :latest_post, :any, default: nil
 
   def new_version_banner(assigns) do
     ~H"""
@@ -36,27 +37,89 @@ defmodule WandererAppWeb.Layouts do
     >
       <div class="hs-overlay-backdrop transition duration absolute left-0 top-0 w-full h-full bg-gray-900 bg-opacity-50 dark:bg-opacity-80 dark:bg-neutral-900">
       </div>
-      <div class="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex items-center">
-        <div class="rounded w-9 h-9 w-[80px] h-[66px] flex items-center justify-center relative z-20">
-          <.icon name="hero-chevron-double-right" class="w-9 h-9 mr-[-40px]" />
-        </div>
-        <div id="refresh-area">
-          <.live_component module={WandererAppWeb.MapRefresh} id="map-refresh" />
+      <div class="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] flex flex-col items-center gap-6">
+        <div class="flex items-center">
+          <div class="rounded w-9 h-9 w-[80px] h-[66px] flex items-center justify-center relative z-20">
+            <.icon name="hero-chevron-double-right" class="w-9 h-9 mr-[-40px]" />
+          </div>
+          <div id="refresh-area">
+            <.live_component module={WandererAppWeb.MapRefresh} id="map-refresh" />
+          </div>
+
+          <div class="rounded h-[66px] flex items-center justify-center relative z-20">
+            <div class=" flex items-center w-[200px] h-full">
+              <.icon name="hero-chevron-double-left" class="w-9 h-9 mr-[20px]" />
+              <div class=" flex flex-col items-center justify-center h-full">
+                <div class="text-white text-nowrap text-sm [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                  Update Required
+                </div>
+                <a
+                  href="/changelog"
+                  target="_blank"
+                  class="text-sm link-secondary [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                >
+                  What's new?
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="rounded h-[66px] flex items-center justify-center relative z-20">
-          <div class=" flex items-center w-[200px] h-full">
-            <.icon name="hero-chevron-double-left" class="w-9 h-9 mr-[20px]" />
-            <div class=" flex flex-col items-center justify-center h-full">
-              <div class="text-white text-nowrap text-sm [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
-                Update Required
+        <div class="flex flex-row gap-6 z-20">
+          <div
+            :if={@latest_post}
+            class="bg-gray-800/80 rounded-lg overflow-hidden min-w-[300px] backdrop-blur-sm border border-gray-700"
+          >
+            <a href={"/news/#{@latest_post.id}"} target="_blank" class="block group/post">
+              <div class="relative">
+                <img
+                  src={@latest_post.cover_image_uri}
+                  class="w-[300px] h-[140px] object-cover opacity-80 group-hover/post:opacity-100 transition-opacity"
+                />
+                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/70">
+                </div>
+                <div class="absolute top-2 left-2 flex items-center gap-1 bg-orange-500/90 px-2 py-0.5 rounded text-xs font-semibold">
+                  <.icon name="hero-newspaper-solid" class="w-3 h-3" />
+                  <span>Latest News</span>
+                </div>
+                <div class="absolute bottom-0 left-0 w-full p-3">
+                  <% [first_part | rest] = String.split(@latest_post.title, ":", parts: 2) %>
+                  <h3 class="text-white text-sm font-bold ccp-font [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                    {first_part}
+                  </h3>
+                  <p
+                    :if={rest != []}
+                    class="text-gray-200 text-xs ccp-font text-ellipsis overflow-hidden whitespace-nowrap [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                  >
+                    {List.first(rest)}
+                  </p>
+                </div>
               </div>
+            </a>
+          </div>
+
+          <div class="bg-gray-800/80 rounded-lg p-4 min-w-[280px] backdrop-blur-sm border border-gray-700">
+            <div class="flex items-center gap-2 mb-3">
+              <.icon name="hero-gift-solid" class="w-5 h-5 text-green-400" />
+              <span class="text-white font-semibold text-sm [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                Support Wanderer
+              </span>
+            </div>
+            <div class="text-gray-300 text-xs mb-3 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+              Buy PLEX from the official EVE Online store using our promocode to support the development.
+            </div>
+            <div class="flex items-center gap-3">
+              <code class="bg-gray-900/60 px-2 py-1 rounded text-green-400 text-sm font-mono border border-gray-600">
+                WANDERER
+              </code>
               <a
-                href="/changelog"
+                href="https://www.eveonline.com/plex"
                 target="_blank"
-                class="text-sm link-secondary [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-sm text-green-400 hover:text-green-300 transition-colors"
               >
-                What's new?
+                <span>Get PLEX</span>
+                <.icon name="hero-arrow-top-right-on-square-mini" class="w-4 h-4" />
               </a>
             </div>
           </div>
