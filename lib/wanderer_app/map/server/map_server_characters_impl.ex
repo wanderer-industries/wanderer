@@ -569,6 +569,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
               end
             )
 
+            # Broadcast permission update to trigger LiveView refresh
+            broadcast_permission_update(character_id)
+
             :has_update
 
           {:character_corporation, _info} ->
@@ -579,6 +582,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                 [character_id | ids] |> Enum.uniq()
               end
             )
+
+            # Broadcast permission update to trigger LiveView refresh
+            broadcast_permission_update(character_id)
 
             :has_update
 
@@ -952,5 +958,22 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       map_id: map_id,
       track: true
     })
+  end
+
+  # Broadcasts permission update to trigger LiveView refresh for the character's user.
+  # This is called when a character's corporation or alliance changes, ensuring
+  # users are kicked off maps they no longer have access to.
+  defp broadcast_permission_update(character_id) do
+    case WandererApp.Character.get_character(character_id) do
+      {:ok, %{eve_id: eve_id}} when not is_nil(eve_id) ->
+        Phoenix.PubSub.broadcast(
+          WandererApp.PubSub,
+          "character:#{eve_id}",
+          :update_permissions
+        )
+
+      _ ->
+        :ok
+    end
   end
 end

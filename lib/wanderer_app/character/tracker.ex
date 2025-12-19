@@ -731,6 +731,14 @@ defmodule WandererApp.Character.Tracker do
       {:character_alliance, {character_id, character_update}}
     )
 
+    # Broadcast permission update to trigger LiveView refresh
+    # This ensures users are kicked off maps they no longer have access to
+    @pubsub_client.broadcast(
+      WandererApp.PubSub,
+      "character:#{character.eve_id}",
+      :update_permissions
+    )
+
     state
     |> Map.merge(%{alliance_id: nil})
   end
@@ -767,6 +775,14 @@ defmodule WandererApp.Character.Tracker do
               WandererApp.PubSub,
               "character:#{character_id}:alliance",
               {:character_alliance, {character_id, character_update}}
+            )
+
+            # Broadcast permission update to trigger LiveView refresh
+            # This ensures users are kicked off maps they no longer have access to
+            @pubsub_client.broadcast(
+              WandererApp.PubSub,
+              "character:#{character.eve_id}",
+              :update_permissions
             )
 
             state
@@ -821,6 +837,14 @@ defmodule WandererApp.Character.Tracker do
                   corporation_name: corporation_name,
                   corporation_ticker: corporation_ticker
                 }}}
+            )
+
+            # Broadcast permission update to trigger LiveView refresh
+            # This ensures users are kicked off maps they no longer have access to
+            @pubsub_client.broadcast(
+              WandererApp.PubSub,
+              "character:#{character.eve_id}",
+              :update_permissions
             )
 
             state

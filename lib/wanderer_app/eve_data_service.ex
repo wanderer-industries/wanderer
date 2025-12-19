@@ -7,7 +7,8 @@ defmodule WandererApp.EveDataService do
 
   alias WandererApp.Utils.JSONUtil
 
-  @eve_db_dump_url "https://www.fuzzwork.co.uk/dump/latest"
+  # @eve_db_dump_url "https://www.fuzzwork.co.uk/dump/latest"
+  @eve_db_dump_url "https://wanderer-industries.github.io/wanderer-assets/sde-files"
 
   @dump_file_names [
     "invGroups.csv",
