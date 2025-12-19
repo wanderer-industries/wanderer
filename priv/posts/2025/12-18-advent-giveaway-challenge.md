@@ -1,5 +1,5 @@
 %{
-title: "Christmas Giveaway Challenge",
+title: "Event: Christmas Giveaway Challenge",
 author: "Wanderer Team",
 cover_image_uri: "/images/news/2025/12-18-advent-giveaway/cover.jpg",
 tags: ~w(event giveaway challenge christmas advent partnership),
