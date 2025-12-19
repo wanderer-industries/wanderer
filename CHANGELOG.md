@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.12](https://github.com/wanderer-industries/wanderer/compare/v1.90.11...v1.90.12) (2025-12-19)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed permissions update after character corp updates
+
 ## [v1.90.11](https://github.com/wanderer-industries/wanderer/compare/v1.90.10...v1.90.11) (2025-12-18)
 
 
