@@ -503,6 +503,9 @@ defmodule WandererAppWeb.Router do
       ] do
       live("/", AdminLive, :index)
       live("/invite", AdminLive, :add_invite_link)
+      live("/maps", AdminMapsLive, :index)
+      live("/maps/:id/edit", AdminMapsLive, :edit)
+      live("/maps/:id/acls", AdminMapsLive, :view_acls)
     end
 
     error_tracker_dashboard("/errors",

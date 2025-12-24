@@ -67,6 +67,8 @@ defmodule WandererApp.Api.Map do
     )
 
     define(:duplicate, action: :duplicate)
+    define(:admin_all, action: :admin_all)
+    define(:restore, action: :restore)
   end
 
   calculations do
@@ -105,6 +107,12 @@ defmodule WandererApp.Api.Map do
 
     read :available do
       prepare WandererApp.Api.Preparations.FilterMapsByRoles
+    end
+
+    read :admin_all do
+      # Admin-only action that bypasses FilterMapsByRoles
+      # Returns ALL maps including soft-deleted ones with owner and ACLs loaded
+      prepare build(load: [:owner, :acls])
     end
 
     create :new do
@@ -192,6 +200,14 @@ defmodule WandererApp.Api.Map do
       require_atomic? false
 
       change(set_attribute(:deleted, true))
+    end
+
+    update :restore do
+      # Admin-only action to restore a soft-deleted map
+      accept([])
+      require_atomic? false
+
+      change(set_attribute(:deleted, false))
     end
 
     update :update_api_key do

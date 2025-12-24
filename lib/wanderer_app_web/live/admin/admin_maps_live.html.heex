@@ -1,0 +1,240 @@
+<main class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 overflow-auto">
+  <div class="page-content">
+    <div class="container-fluid px-[0.625rem]">
+      <!-- Header -->
+      <div class="grid grid-cols-1 pb-6">
+        <div class="md:flex items-center justify-between px-[2px]">
+          <h4 class="text-[18px] font-medium text-gray-800 mb-sm-0 grow dark:text-gray-100 mb-2 md:mb-0">
+            Admin - Maps Management
+          </h4>
+          <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">
+            <.icon name="hero-arrow-left-solid" class="w-4 h-4" /> Back to Admin
+          </.link>
+        </div>
+      </div>
+      
+<!-- Search and Filters -->
+      <div class="card dark:bg-zinc-800 dark:border-zinc-600 mb-4">
+        <div class="card-body flex flex-row gap-4 items-center">
+          <div class="flex-1">
+            <input
+              type="text"
+              placeholder="Search by name or slug..."
+              value={@search_term}
+              phx-keyup="search"
+              phx-debounce="300"
+              name="search"
+              class="input input-bordered w-full"
+            />
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              class="checkbox"
+              checked={@show_deleted}
+              phx-click="toggle_deleted"
+            />
+            <span class="text-sm">Show deleted</span>
+          </label>
+        </div>
+      </div>
+      
+<!-- Maps Table -->
+      <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+        <div class="card-body">
+          <.async_result :let={maps} assign={@maps}>
+            <:loading>
+              <div class="flex justify-center p-8">
+                <span class="loading loading-spinner loading-lg"></span>
+              </div>
+            </:loading>
+            <:failed :let={reason}>
+              <div class="alert alert-error">{inspect(reason)}</div>
+            </:failed>
+
+            <% filtered_maps = filter_maps(maps, @search_term, @show_deleted) %>
+            <% paginated_maps = paginate(filtered_maps, @page, @per_page) %>
+
+            <.table id="admin-maps" rows={paginated_maps} class="!max-h-[60vh] !overflow-y-auto">
+              <:col :let={map} label="Name">
+                <div class="flex items-center gap-2">
+                  <span class={if map.deleted, do: "line-through text-gray-500", else: ""}>
+                    {map.name}
+                  </span>
+                  <span :if={map.deleted} class="badge badge-error badge-sm">Deleted</span>
+                </div>
+              </:col>
+              <:col :let={map} label="Slug">
+                <span class="text-sm text-gray-400">{map.slug}</span>
+              </:col>
+              <:col :let={map} label="Owner">
+                {owner_name(map.owner)}
+              </:col>
+              <:col :let={map} label="Created">
+                <span class="text-sm">{format_date(map.inserted_at)}</span>
+              </:col>
+              <:col :let={map} label="Scope">
+                <span class="badge badge-ghost badge-sm">{map.scope}</span>
+              </:col>
+              <:action :let={map}>
+                <.link
+                  patch={~p"/admin/maps/#{map.id}/edit"}
+                  class="btn btn-ghost btn-xs hover:text-white"
+                  title="Edit"
+                >
+                  <.icon name="hero-pencil-solid" class="w-4 h-4" />
+                </.link>
+              </:action>
+              <:action :let={map}>
+                <.link
+                  patch={~p"/admin/maps/#{map.id}/acls"}
+                  class="btn btn-ghost btn-xs hover:text-white"
+                  title="View ACLs"
+                >
+                  <.icon name="hero-shield-check-solid" class="w-4 h-4" />
+                </.link>
+              </:action>
+              <:action :let={map}>
+                <button
+                  :if={not map.deleted}
+                  phx-click="delete_map"
+                  phx-value-id={map.id}
+                  data={[confirm: "Are you sure you want to delete this map?"]}
+                  class="btn btn-ghost btn-xs hover:text-red-500"
+                  title="Delete"
+                >
+                  <.icon name="hero-trash-solid" class="w-4 h-4" />
+                </button>
+                <button
+                  :if={map.deleted}
+                  phx-click="restore_map"
+                  phx-value-id={map.id}
+                  data={[confirm: "Are you sure you want to restore this map?"]}
+                  class="btn btn-ghost btn-xs hover:text-green-500"
+                  title="Restore"
+                >
+                  <.icon name="hero-arrow-path-solid" class="w-4 h-4" />
+                </button>
+              </:action>
+            </.table>
+            
+<!-- Pagination -->
+            <div
+              :if={length(filtered_maps) > @per_page}
+              class="flex items-center justify-between mt-4"
+            >
+              <span class="text-sm text-gray-400">
+                Page {@page} of {total_pages(filtered_maps, @per_page)} ({length(filtered_maps)} maps)
+              </span>
+              <div class="flex gap-2">
+                <button
+                  phx-click="page"
+                  phx-value-page={max(1, @page - 1)}
+                  disabled={@page <= 1}
+                  class={"btn btn-sm btn-ghost " <> if(@page <= 1, do: "btn-disabled", else: "")}
+                >
+                  <.icon name="hero-chevron-left" class="w-4 h-4" />
+                </button>
+                <button
+                  phx-click="page"
+                  phx-value-page={min(total_pages(filtered_maps, @per_page), @page + 1)}
+                  disabled={@page >= total_pages(filtered_maps, @per_page)}
+                  class={"btn btn-sm btn-ghost " <> if(@page >= total_pages(filtered_maps, @per_page), do: "btn-disabled", else: "")}
+                >
+                  <.icon name="hero-chevron-right" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+<!-- Empty state -->
+            <div :if={length(filtered_maps) == 0} class="text-center py-8 text-gray-400">
+              No maps found
+            </div>
+          </.async_result>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<!-- Edit Modal -->
+  <.modal
+    :if={@live_action == :edit and not is_nil(@selected_map)}
+    title="Edit Map"
+    class="!w-[500px]"
+    id="edit_map_modal"
+    show
+    on_cancel={JS.patch(~p"/admin/maps")}
+  >
+    <.form :let={f} for={@form} phx-change="validate" phx-submit="save">
+      <.input type="text" field={f[:name]} label="Name" placeholder="Map name" />
+      <.input type="text" field={f[:slug]} label="Slug" placeholder="map-slug" />
+      <.input
+        type="textarea"
+        field={f[:description]}
+        label="Description"
+        placeholder="Description"
+      />
+      <.input
+        type="select"
+        field={f[:scope]}
+        label="Scope"
+        options={[
+          {"Wormholes", :wormholes},
+          {"Stargates", :stargates},
+          {"None", :none},
+          {"All", :all}
+        ]}
+      />
+      <.input
+        type="select"
+        field={f[:owner_id]}
+        label="Owner"
+        options={@owner_options}
+        prompt="Select owner..."
+      />
+      <div class="modal-action">
+        <.button type="submit" phx-disable-with="Saving...">
+          Save Changes
+        </.button>
+      </div>
+    </.form>
+  </.modal>
+  
+<!-- View ACLs Modal -->
+  <.modal
+    :if={@live_action == :view_acls and not is_nil(@selected_map)}
+    title={"ACLs for: #{@selected_map.name}"}
+    class="!w-[600px]"
+    id="view_acls_modal"
+    show
+    on_cancel={JS.patch(~p"/admin/maps")}
+  >
+    <div class="space-y-4">
+      <div :if={Enum.empty?(@selected_map.acls)} class="text-gray-400 text-center py-4">
+        No ACLs assigned to this map
+      </div>
+      <div :for={acl <- @selected_map.acls} class="card bg-base-200">
+        <div class="card-body p-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold">{acl.name}</h3>
+              <p class="text-sm text-gray-400">{acl.description || "No description"}</p>
+            </div>
+            <div class="badge badge-ghost">
+              {length(acl.members)} members
+            </div>
+          </div>
+          <div class="text-sm mt-2">
+            <span class="text-gray-400">Owner:</span>
+            <span>{if acl.owner, do: acl.owner.name, else: "Unknown"}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-action">
+      <.link patch={~p"/admin/maps"} class="btn btn-ghost">
+        Close
+      </.link>
+    </div>
+  </.modal>
+</main>
