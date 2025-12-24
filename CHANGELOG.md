@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.90.13](https://github.com/wanderer-industries/wanderer/compare/v1.90.12...v1.90.13) (2025-12-19)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed welcome page
+
 ## [v1.90.12](https://github.com/wanderer-industries/wanderer/compare/v1.90.11...v1.90.12) (2025-12-19)
 
 
