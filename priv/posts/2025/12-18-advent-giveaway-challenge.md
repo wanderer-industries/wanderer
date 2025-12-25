@@ -11,11 +11,15 @@ description: "Join our Advent Christmas Giveaway Challenge! Win exclusive partne
 
 ![Christmas Giveaway Challenge](/images/news/2025/12-18-advent-giveaway/cover.jpg "Christmas Giveaway Challenge")
 
+### Event Details
+
+- **Event Name:** Advent Christmas Giveaway
+- **Duration:** 1 week (7 days, 7 codes)
+- **Event Link:** [Advent Christmas Giveaway](https://eventcortex.com/events/invite/cYdBywu1ygfVS3UN6ZZcmDzL1q85aDmH)
+
 ### The Season of Giving
 
 This holiday season, we're spreading some festive cheer with a special event for our community: the **Advent Christmas Giveaway Challenge**!
-
-Starting next week, we'll be giving away **1 exclusive partnership code every day for 7 days**. But here's the twist — it's a challenge!
 
 ---
 
@@ -34,14 +38,7 @@ Starting next week, we'll be giving away **1 exclusive partnership code every da
    - Each day features a single partnership code.
    - Miss today? Come back tomorrow for another chance!
 
----
 
-### Event Details
-
-- **Event Name:** Advent Christmas Giveaway
-- **Duration:** 1 week (7 days, 7 codes)
-- **Organizer:** @Demiro (Wanderer core developer, EventCortex CTO)
-- **Event Link:** [Advent Christmas Giveaway - EventCortex](https://eventcortex.com/events/invite/cYdBywu1ygfVS3UN6ZZcmDzL1q85aDmH)
 
 ---
 

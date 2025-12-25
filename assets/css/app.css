@@ -1001,3 +1001,27 @@ body > div:first-of-type {
 .verticalTabsContainer .p-tabview-panel {
   flex-grow: 1;
 }
+
+/* Blog post CTA links - only in main post content */
+.post-content a {
+  display: inline-block;
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  color: white !important;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  text-decoration: none !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+}
+
+.post-content a:hover {
+  background: linear-gradient(135deg, #db2777 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+}
+
+.post-content a:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.3);
+}
