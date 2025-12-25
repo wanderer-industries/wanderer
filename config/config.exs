@@ -145,6 +145,12 @@ config :git_ops,
   manage_readme_version: "README.md",
   version_tag_prefix: "v"
 
+# SDE (Static Data Export) Configuration
+config :wanderer_app, :sde,
+  source: :wanderer_assets,
+  base_url: "https://raw.githubusercontent.com/wanderer-industries/wanderer-assets/main/sde-files",
+  cache_ttl: :timer.hours(24)
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

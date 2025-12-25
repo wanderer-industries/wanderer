@@ -79,8 +79,51 @@ defmodule WandererAppWeb.AdminLive do
 
   @impl true
   def handle_event("update-eve-db-data", _params, socket) do
-    WandererApp.EveDataService.update_eve_data()
-    {:noreply, socket |> put_flash(:info, "EVE Data updated. Please restart server.")}
+    case WandererApp.EveDataService.update_eve_data() do
+      :ok ->
+        sde_info = WandererApp.EveDataService.get_sde_info()
+
+        {:noreply,
+         socket
+         |> assign(sde_info: sde_info, available_sde_update: nil)
+         |> put_flash(:info, "EVE Data updated successfully to version #{sde_info.version}.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to update EVE Data: #{inspect(reason)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("check-sde-updates", _params, socket) do
+    case WandererApp.EveDataService.check_for_updates() do
+      {:ok, :up_to_date} ->
+        {:noreply,
+         socket
+         |> assign(available_sde_update: nil)
+         |> put_flash(:info, "SDE data is up to date.")}
+
+      {:ok, :update_available, metadata} ->
+        {:noreply,
+         socket
+         |> assign(available_sde_update: metadata)
+         |> put_flash(
+           :info,
+           "Update available: version #{metadata["sde_version"]} (released #{metadata["release_date"]})"
+         )}
+
+      {:ok, :update_available} ->
+        {:noreply,
+         socket
+         |> assign(available_sde_update: %{"sde_version" => "unknown"})
+         |> put_flash(:info, "Update may be available (version tracking not supported by source).")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to check for updates: #{inspect(reason)}")}
+    end
   end
 
   @impl true
@@ -297,6 +340,8 @@ defmodule WandererAppWeb.AdminLive do
     {:ok, tracker_stats} = WandererApp.Character.TrackingConfigUtils.load_tracker_stats()
     active_tracking_pool = WandererApp.Character.TrackingConfigUtils.get_active_pool!()
 
+    sde_info = WandererApp.EveDataService.get_sde_info()
+
     socket
     |> assign(:active_page, :admin)
     |> assign(:uri, URI.parse(uri))
@@ -313,6 +358,8 @@ defmodule WandererAppWeb.AdminLive do
     |> assign(:invites, invites)
     |> assign(:tracker_stats, tracker_stats)
     |> assign(:active_tracking_pool, active_tracking_pool)
+    |> assign(:sde_info, sde_info)
+    |> assign(:available_sde_update, nil)
   end
 
   defp apply_action(socket, :add_invite_link, _params, uri) do

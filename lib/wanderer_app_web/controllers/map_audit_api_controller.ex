@@ -154,10 +154,10 @@ defmodule WandererAppWeb.MapAuditAPIController do
 
     result
     |> Map.put(:character, WandererAppWeb.MapEventHandler.map_ui_character_stat(character))
-    |> Map.put(:event_name, WandererAppWeb.UserActivityItem.get_event_name(event_type))
+    |> Map.put(:event_name, UserActivityItem.get_event_name(event_type))
     |> Map.put(
       :event_data,
-      WandererAppWeb.UserActivityItem.get_event_data(
+      UserActivityItem.get_event_data(
         event_type,
         Jason.decode!(event_data) |> Map.drop(["character_id"])
       )

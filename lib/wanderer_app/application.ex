@@ -109,6 +109,7 @@ defmodule WandererApp.Application do
 
         [
           WandererApp.Esi.InitClientsTask,
+          WandererApp.SDE.UpdateCheckerTask,
           WandererApp.Scheduler,
           WandererApp.Server.ServerStatusTracker,
           WandererApp.Server.TheraDataFetcher,

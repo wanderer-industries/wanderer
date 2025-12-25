@@ -1,13 +1,30 @@
 defmodule WandererApp.EveDataService do
   @moduledoc """
-  Service for loading data from the EVE DB dumps & JSON files
+  Service for loading data from the EVE DB dumps & JSON files.
+
+  ## SDE Data Sources
+
+  This service supports multiple SDE (Static Data Export) sources:
+
+  - `:wanderer_assets` - Primary source from wanderer-industries/wanderer-assets (default)
+  - `:fuzzworks` - Legacy source from fuzzwork.co.uk (deprecated)
+
+  Configure via environment variable `SDE_SOURCE` or in config:
+
+      config :wanderer_app, :sde,
+        source: :wanderer_assets
+
+  ## Version Tracking
+
+  When using wanderer_assets source, version information is tracked via
+  `sde_metadata.json` and stored locally in `.sde_version` file.
   """
 
   require Logger
 
+  alias WandererApp.SDE.Source
+  alias WandererApp.SdeVersionRepo
   alias WandererApp.Utils.JSONUtil
-
-  @eve_db_dump_url "https://www.fuzzwork.co.uk/dump/latest"
 
   @dump_file_names [
     "invGroups.csv",
@@ -19,27 +36,248 @@ defmodule WandererApp.EveDataService do
     "mapSolarSystemJumps.csv"
   ]
 
-  def update_eve_data() do
-    download_files()
+  @sde_version_file ".sde_version"
 
-    Logger.info("Downloading files finished!")
+  # Timeout for metadata fetch requests (30 seconds)
+  @metadata_receive_timeout :timer.seconds(30)
 
-    get_db_data()
-    |> Ash.bulk_create(WandererApp.Api.MapSolarSystem, :create)
+  # Timeout for file download requests (5 minutes per chunk for large files)
+  @file_download_receive_timeout :timer.minutes(5)
 
-    Logger.info("MapSolarSystem updated!")
+  @doc """
+  Updates EVE static data from the configured SDE source.
 
-    get_ship_types_data()
-    |> Ash.bulk_create(WandererApp.Api.ShipTypeInfo, :create)
+  Downloads all required CSV files, processes them, and populates the database
+  with solar system, ship type, and system jump data.
 
-    Logger.info("ShipTypeInfo updated!")
+  After a successful update, saves the SDE version (if available from source).
+  """
+  @spec update_eve_data() :: :ok | {:error, term()}
+  def update_eve_data do
+    source = Source.get_source()
+    start_time = System.monotonic_time(:millisecond)
+    Logger.info("Starting EVE data update from #{inspect(source)}")
 
-    get_solar_system_jumps_data()
-    |> Ash.bulk_create(WandererApp.Api.MapSolarSystemJumps, :create)
+    result =
+      with :ok <- download_files(),
+           _ = Logger.info("Downloading files finished!"),
+           :ok <- bulk_create_solar_systems(),
+           :ok <- bulk_create_ship_types(),
+           :ok <- bulk_create_solar_system_jumps() do
+        # Save version only after all creates succeed
+        save_sde_version_from_source()
+        cleanup_files()
+        :ok
+      end
 
-    Logger.info("MapSolarSystemJumps updated!")
+    duration = System.monotonic_time(:millisecond) - start_time
 
-    cleanup_files()
+    case result do
+      :ok ->
+        :telemetry.execute(
+          [:wanderer_app, :sde, :update, :success],
+          %{duration: duration},
+          %{source: source}
+        )
+
+      {:error, reason} ->
+        :telemetry.execute(
+          [:wanderer_app, :sde, :update, :error],
+          %{duration: duration},
+          %{source: source, reason: reason}
+        )
+    end
+
+    result
+  end
+
+  defp bulk_create_solar_systems do
+    result =
+      get_db_data()
+      |> Ash.bulk_create(WandererApp.Api.MapSolarSystem, :create)
+
+    case check_bulk_result(result, "MapSolarSystem") do
+      :ok ->
+        Logger.info("MapSolarSystem updated!")
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp bulk_create_ship_types do
+    result =
+      get_ship_types_data()
+      |> Ash.bulk_create(WandererApp.Api.ShipTypeInfo, :create)
+
+    case check_bulk_result(result, "ShipTypeInfo") do
+      :ok ->
+        Logger.info("ShipTypeInfo updated!")
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp bulk_create_solar_system_jumps do
+    result =
+      get_solar_system_jumps_data()
+      |> Ash.bulk_create(WandererApp.Api.MapSolarSystemJumps, :create)
+
+    case check_bulk_result(result, "MapSolarSystemJumps") do
+      :ok ->
+        Logger.info("MapSolarSystemJumps updated!")
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp check_bulk_result(%Ash.BulkResult{status: :success}, _resource_name), do: :ok
+
+  defp check_bulk_result(
+         %Ash.BulkResult{status: status, errors: errors, error_count: error_count},
+         resource_name
+       )
+       when status in [:error, :partial_success] do
+    Logger.error(
+      "Bulk create failed for #{resource_name}: status=#{status}, error_count=#{error_count}, errors=#{inspect(errors, limit: 10)}"
+    )
+
+    :telemetry.execute(
+      [:wanderer_app, :sde, :bulk_create, :error],
+      %{error_count: error_count || length(errors || [])},
+      %{resource: resource_name, status: status, errors: summarize_errors(errors)}
+    )
+
+    {:error,
+     {:bulk_create_failed, resource_name,
+      %{status: status, error_count: error_count, errors: summarize_errors(errors)}}}
+  end
+
+  defp check_bulk_result(result, resource_name) do
+    Logger.error(
+      "Unexpected bulk create result for #{resource_name}: #{inspect(result, limit: 5)}"
+    )
+
+    {:error, {:unexpected_bulk_result, resource_name, result}}
+  end
+
+  defp summarize_errors(nil), do: []
+  defp summarize_errors(errors) when is_list(errors), do: Enum.take(errors, 5)
+  defp summarize_errors(errors), do: [errors]
+
+  @doc """
+  Returns information about the current SDE configuration and version.
+
+  Returns a map with:
+  - `:source` - The configured source module name
+  - `:source_name` - Human-readable source name
+  - `:version` - Current SDE version (if tracked)
+  - `:last_updated` - When the SDE was last updated
+  - `:base_url` - The base URL for the SDE source
+  """
+  @spec get_sde_info() :: map()
+  def get_sde_info do
+    source = Source.get_source()
+
+    source_name =
+      case source do
+        WandererApp.SDE.WandererAssets -> "Wanderer Assets"
+        WandererApp.SDE.Fuzzworks -> "Fuzzworks (Legacy)"
+        _ -> "Unknown"
+      end
+
+    %{
+      source: source,
+      source_name: source_name,
+      version: get_current_sde_version(),
+      last_updated: get_sde_last_updated(),
+      base_url: source.base_url()
+    }
+  end
+
+  @doc """
+  Checks if an SDE update is available from the remote source.
+
+  Returns:
+  - `{:ok, :up_to_date}` - Current version matches remote
+  - `{:ok, :update_available, metadata}` - New version available
+  - `{:ok, :update_available}` - Update check not supported (Fuzzworks)
+  - `{:error, reason}` - Failed to check for updates
+  """
+  @spec check_for_updates() ::
+          {:ok, :up_to_date}
+          | {:ok, :update_available}
+          | {:ok, :update_available, map()}
+          | {:error, term()}
+  def check_for_updates do
+    source = Source.get_source()
+
+    result =
+      case source.metadata_url() do
+        nil ->
+          # Fuzzworks doesn't support version tracking
+          {:ok, :update_available}
+
+        url ->
+          with {:ok, metadata} <- fetch_metadata(url) do
+            current_version = get_current_sde_version()
+
+            if metadata["sde_version"] != current_version do
+              {:ok, :update_available, metadata}
+            else
+              {:ok, :up_to_date}
+            end
+          end
+      end
+
+    # Emit telemetry for update check
+    status =
+      case result do
+        {:ok, :up_to_date} -> :up_to_date
+        {:ok, :update_available} -> :update_available
+        {:ok, :update_available, _} -> :update_available
+        {:error, _} -> :error
+      end
+
+    :telemetry.execute(
+      [:wanderer_app, :sde, :check],
+      %{count: 1},
+      %{source: source, status: status}
+    )
+
+    result
+  end
+
+  @doc """
+  Fetches SDE metadata from the remote source.
+
+  Only supported for wanderer_assets source.
+  """
+  @spec fetch_metadata(String.t()) :: {:ok, map()} | {:error, term()}
+  def fetch_metadata(url) do
+    Logger.debug("Fetching SDE metadata from #{url}")
+
+    case Req.get(url, receive_timeout: @metadata_receive_timeout) do
+      {:ok, %{status: 200, body: body}} when is_map(body) ->
+        {:ok, body}
+
+      {:ok, %{status: 200, body: body}} when is_binary(body) ->
+        case Jason.decode(body) do
+          {:ok, metadata} -> {:ok, metadata}
+          {:error, reason} -> {:error, {:json_decode_error, reason}}
+        end
+
+      {:ok, %{status: status}} ->
+        {:error, {:http_error, status}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def load_wormhole_types() do
@@ -139,7 +377,7 @@ defmodule WandererApp.EveDataService do
     data
   end
 
-  defp cleanup_files() do
+  defp cleanup_files do
     tasks =
       @dump_file_names
       |> Enum.map(fn file_name ->
@@ -148,7 +386,7 @@ defmodule WandererApp.EveDataService do
         end)
       end)
 
-    Task.await_many(tasks, :timer.minutes(30))
+    Task.await_many(tasks, :timer.seconds(30))
   end
 
   defp cleanup_file(file_name) do
@@ -163,30 +401,217 @@ defmodule WandererApp.EveDataService do
     :ok
   end
 
-  defp download_files() do
-    tasks =
+  defp download_files do
+    source = Source.get_source()
+    Logger.info("Downloading SDE files from #{source.base_url()}")
+
+    results =
       @dump_file_names
       |> Enum.map(fn file_name ->
         Task.async(fn ->
-          download_file(file_name)
+          download_file(file_name, source)
         end)
       end)
+      |> Task.await_many(:timer.minutes(30))
 
-    Task.await_many(tasks, :timer.minutes(30))
+    # Check if all downloads succeeded
+    case Enum.find(results, fn result -> result != :ok end) do
+      nil -> :ok
+      {:error, reason} -> {:error, reason}
+      error -> {:error, error}
+    end
   end
 
-  defp download_file(file_name) do
-    url = "#{@eve_db_dump_url}/#{file_name}"
+  defp download_file(file_name, source) do
+    url = source.file_url(file_name)
     Logger.info("Downloading file from #{url}")
 
     download_path = Path.join([:code.priv_dir(:wanderer_app), "repo", "data", file_name])
 
-    Req.get!(url, raw: true, into: File.stream!(download_path, [:write])).body
-    |> Stream.run()
+    case Req.get(url,
+           raw: true,
+           into: File.stream!(download_path, [:write]),
+           receive_timeout: @file_download_receive_timeout
+         ) do
+      {:ok, %{status: 200} = response} ->
+        Stream.run(response.body)
+        Logger.info("File downloaded successfully to #{download_path}")
+        :ok
 
-    Logger.info("File downloaded successfully to #{download_path}")
+      {:ok, %{status: status}} ->
+        Logger.error("Failed to download #{file_name}: HTTP #{status}")
+        {:error, {:http_error, status, file_name}}
 
-    :ok
+      {:error, reason} ->
+        Logger.error("Failed to download #{file_name}: #{inspect(reason)}")
+        {:error, {:download_failed, file_name, reason}}
+    end
+  end
+
+  # Version management functions
+
+  defp save_sde_version_from_source do
+    source = Source.get_source()
+
+    case source.metadata_url() do
+      nil ->
+        # Source doesn't support version tracking (Fuzzworks)
+        # Still record the update with source info
+        record_sde_update(nil, source, nil)
+        Logger.debug("SDE source #{inspect(source)} doesn't support version tracking")
+        :ok
+
+      url ->
+        case fetch_metadata(url) do
+          {:ok, metadata} ->
+            version = metadata["sde_version"]
+            release_date = parse_release_date(metadata["release_date"])
+            record_sde_update(version, source, release_date, metadata: metadata)
+            Logger.info("Recorded SDE update: version #{version}")
+            :ok
+
+          {:error, reason} ->
+            Logger.warning(
+              "Failed to fetch SDE metadata for version tracking: #{inspect(reason)}"
+            )
+
+            :ok
+        end
+    end
+  end
+
+  defp record_sde_update(version, source, release_date, opts \\ []) do
+    case source_to_atom(source) do
+      {:ok, source_atom} ->
+        case SdeVersionRepo.record_update(version, source_atom, release_date, opts) do
+          {:ok, record} ->
+            Logger.info("SDE version recorded in database: #{record.sde_version}")
+
+            :telemetry.execute(
+              [:wanderer_app, :sde, :version, :recorded],
+              %{count: 1},
+              %{version: record.sde_version, source: source_atom}
+            )
+
+            save_sde_version_to_file(version)
+            {:ok, record}
+
+          {:error, error} ->
+            Logger.warning("Failed to record SDE version in database: #{inspect(error)}")
+            save_sde_version_to_file(version)
+            {:error, error}
+        end
+
+      :error ->
+        Logger.warning("Unknown SDE source #{inspect(source)}, skipping database record")
+        save_sde_version_to_file(version)
+        {:error, :unknown_source}
+    end
+  end
+
+  defp source_to_atom(WandererApp.SDE.WandererAssets), do: {:ok, :wanderer_assets}
+  defp source_to_atom(WandererApp.SDE.Fuzzworks), do: {:ok, :fuzzworks}
+  defp source_to_atom(_), do: :error
+
+  defp parse_release_date(nil), do: nil
+
+  defp parse_release_date(date_string) when is_binary(date_string) do
+    case DateTime.from_iso8601(date_string) do
+      {:ok, dt, _} -> dt
+      _ -> nil
+    end
+  end
+
+  defp save_sde_version_to_file(nil), do: :ok
+
+  defp save_sde_version_to_file(version) when is_binary(version) do
+    path = sde_version_path()
+    content = Jason.encode!(%{version: version, updated_at: DateTime.utc_now()})
+
+    case File.write(path, content) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("Failed to save SDE version to file: #{inspect(reason)}")
+        :ok
+    end
+  end
+
+  @doc """
+  Returns the current SDE version from the database.
+
+  Falls back to file-based tracking if database is unavailable.
+  """
+  @spec get_current_sde_version() :: String.t() | nil
+  def get_current_sde_version do
+    case SdeVersionRepo.get_latest() do
+      {:ok, %{sde_version: version}} ->
+        version
+
+      _ ->
+        get_sde_version_from_file()
+    end
+  end
+
+  defp get_sde_last_updated do
+    case SdeVersionRepo.get_latest() do
+      {:ok, %{applied_at: applied_at}} ->
+        applied_at
+
+      _ ->
+        get_sde_updated_from_file()
+    end
+  end
+
+  @doc """
+  Returns the history of SDE updates from the database.
+  """
+  @spec get_sde_history(keyword()) :: {:ok, list()} | {:error, term()}
+  def get_sde_history(opts \\ []) do
+    SdeVersionRepo.get_history(opts)
+  end
+
+  # File-based fallback functions
+
+  defp get_sde_version_from_file do
+    path = sde_version_path()
+
+    case File.read(path) do
+      {:ok, content} ->
+        case Jason.decode(content) do
+          {:ok, %{"version" => version}} -> version
+          _ -> nil
+        end
+
+      {:error, _} ->
+        nil
+    end
+  end
+
+  defp get_sde_updated_from_file do
+    path = sde_version_path()
+
+    case File.read(path) do
+      {:ok, content} ->
+        case Jason.decode(content) do
+          {:ok, %{"updated_at" => updated_at}} ->
+            case DateTime.from_iso8601(updated_at) do
+              {:ok, dt, _} -> dt
+              _ -> nil
+            end
+
+          _ ->
+            nil
+        end
+
+      {:error, _} ->
+        nil
+    end
+  end
+
+  defp sde_version_path do
+    Path.join([:code.priv_dir(:wanderer_app), "repo", "data", @sde_version_file])
   end
 
   defp load_map_constellations() do

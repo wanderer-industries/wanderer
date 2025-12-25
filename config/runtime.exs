@@ -450,3 +450,22 @@ config :wanderer_app, :external_events,
     |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "false")
     |> String.to_existing_atom(),
   webhook_timeout_ms: config_dir |> get_int_from_path_or_env("WANDERER_WEBHOOK_TIMEOUT_MS", 15000)
+
+# SDE (Static Data Export) Runtime Configuration
+sde_source =
+  case get_var_from_path_or_env(config_dir, "SDE_SOURCE", "wanderer_assets") do
+    "wanderer_assets" -> :wanderer_assets
+    "fuzzworks" -> :fuzzworks
+    other -> raise "Invalid SDE_SOURCE: #{inspect(other)}. Valid options: wanderer_assets, fuzzworks"
+  end
+
+sde_base_url =
+  config_dir
+  |> get_var_from_path_or_env(
+    "SDE_BASE_URL",
+    "https://raw.githubusercontent.com/wanderer-industries/wanderer-assets/main/sde-files"
+  )
+
+config :wanderer_app, :sde,
+  source: sde_source,
+  base_url: sde_base_url
