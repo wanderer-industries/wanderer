@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.0](https://github.com/wanderer-industries/wanderer/compare/v1.90.13...v1.91.0) (2025-12-24)
+
+
+
+
+### Features:
+
+* admin: added maps administration view with basic info, search, restore/delete, acls view and edit options
+
 ## [v1.90.13](https://github.com/wanderer-industries/wanderer/compare/v1.90.12...v1.90.13) (2025-12-19)
 
 
