@@ -780,17 +780,39 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         to_is_wormhole = to_system_static_info.system_class in @wh_space
         wormholes_enabled = :wormholes in scopes
 
-        # Wormhole border behavior: if wormholes scope is enabled AND at least one
-        # system is a wormhole, allow the connection (adds border k-space systems)
-        # Otherwise: BOTH systems must match the configured scopes
-        if wormholes_enabled and (from_is_wormhole or to_is_wormhole) do
-          # At least one system matches (wormhole matches :wormholes, or other matches its scope)
-          system_matches_any_scope?(from_system_static_info.system_class, scopes) or
-            system_matches_any_scope?(to_system_static_info.system_class, scopes)
-        else
-          # Non-wormhole movement: both systems must match scopes
-          system_matches_any_scope?(from_system_static_info.system_class, scopes) and
-            system_matches_any_scope?(to_system_static_info.system_class, scopes)
+        cond do
+          # Case 1: Wormhole border behavior - at least one system is a wormhole
+          # and :wormholes is enabled, allow the connection (adds border k-space systems)
+          wormholes_enabled and (from_is_wormhole or to_is_wormhole) ->
+            # At least one system matches (wormhole matches :wormholes, or other matches its scope)
+            system_matches_any_scope?(from_system_static_info.system_class, scopes) or
+              system_matches_any_scope?(to_system_static_info.system_class, scopes)
+
+          # Case 2: K-space to K-space with :wormholes enabled - check if it's a wormhole connection
+          # If neither system is a wormhole AND there's no stargate between them, it's a wormhole connection
+          wormholes_enabled and not from_is_wormhole and not to_is_wormhole ->
+            # Check if there's a known stargate connection
+            case find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
+              {:ok, known_jumps} when known_jumps == [] ->
+                # No stargate exists - this is a wormhole connection through k-space
+                true
+
+              {:ok, _known_jumps} ->
+                # Stargate exists - this is NOT a wormhole, check normal scope matching
+                system_matches_any_scope?(from_system_static_info.system_class, scopes) and
+                  system_matches_any_scope?(to_system_static_info.system_class, scopes)
+
+              _ ->
+                # Error fetching jumps - fall back to scope matching
+                system_matches_any_scope?(from_system_static_info.system_class, scopes) and
+                  system_matches_any_scope?(to_system_static_info.system_class, scopes)
+            end
+
+          # Case 3: Non-wormhole movement without :wormholes scope
+          # Both systems must match the configured scopes
+          true ->
+            system_matches_any_scope?(from_system_static_info.system_class, scopes) and
+              system_matches_any_scope?(to_system_static_info.system_class, scopes)
         end
       else
         false

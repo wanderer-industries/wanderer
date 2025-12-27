@@ -56,7 +56,7 @@ defmodule WandererApp.Map.Server.AclsImpl do
         end
       )
 
-    map_update = %{acls: map.acls, scope: map.scope}
+    map_update = %{acls: map.acls, scope: map.scope, scopes: map.scopes}
 
     WandererApp.Map.update_map(map_id, map_update)
     WandererApp.Cache.delete("map_characters-#{map_id}")

@@ -244,18 +244,19 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     test "connection with multiple scopes" do
       # With [:wormholes, :hi]:
       # - WH to WH: valid (both match :wormholes)
-      # - HS to HS: valid (both match :hi)
+      # - HS to HS: valid (both match :hi, or wormhole if no stargate)
       # - WH to HS: valid (wormhole border behavior - WH is wormhole, :wormholes enabled)
       scopes = [:wormholes, :hi]
       assert ConnectionsImpl.is_connection_valid(scopes, @wh_system_id, @c2_system_id) == true
       assert ConnectionsImpl.is_connection_valid(scopes, @hs_system_id, 30_000_002) == true
       assert ConnectionsImpl.is_connection_valid(scopes, @wh_system_id, @hs_system_id) == true
 
-      # LS to NS should not be valid with [:wormholes, :hi] (neither is WH, neither matches)
-      assert ConnectionsImpl.is_connection_valid(scopes, @ls_system_id, @ns_system_id) == false
+      # LS to NS with [:wormholes, :hi] - if no stargate exists, it's a wormhole connection
+      # With :wormholes enabled, wormhole connections are valid
+      assert ConnectionsImpl.is_connection_valid(scopes, @ls_system_id, @ns_system_id) == true
 
-      # HS to LS should not be valid with [:wormholes, :hi] (neither is WH, only HS matches)
-      assert ConnectionsImpl.is_connection_valid(scopes, @hs_system_id, @ls_system_id) == false
+      # HS to LS with [:wormholes, :hi] - if no stargate exists, it's a wormhole connection
+      assert ConnectionsImpl.is_connection_valid(scopes, @hs_system_id, @ls_system_id) == true
     end
 
     test "all scopes allows any connection" do
@@ -368,30 +369,32 @@ defmodule WandererApp.Map.Server.MapScopesTest do
                true
     end
 
-    test "K-SPACE ONLY: Hi-Sec->Hi-Sec with [:wormholes] is REJECTED" do
-      # No wormhole involved, neither matches :wormholes
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, 30_000_002) == false
+    test "K-SPACE ONLY: Hi-Sec->Hi-Sec with [:wormholes] is VALID when no stargate exists" do
+      # If no stargate exists between two k-space systems, it's a wormhole connection
+      # (The test systems don't have stargate data, so this is treated as a wormhole)
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, 30_000_002) == true
     end
 
-    test "K-SPACE ONLY: Null->Hi-Sec with [:wormholes, :null] is REJECTED (no border for k-space)" do
-      # Neither system is a wormhole, so no border behavior
-      # Null matches :null, but Hi-Sec doesn't match any scope -> BOTH must match
+    test "K-SPACE ONLY: Null->Hi-Sec with [:wormholes, :null] is VALID when no stargate exists" do
+      # If no stargate exists, this is a wormhole connection through k-space
+      # With [:wormholes] enabled, wormhole connections are valid
       assert ConnectionsImpl.is_connection_valid(
                [:wormholes, :null],
                @ns_system_id,
                @hs_system_id
              ) ==
-               false
+               true
     end
 
-    test "K-SPACE ONLY: Hi-Sec->Low-Sec with [:wormholes, :null] is REJECTED" do
-      # Neither Hi-Sec nor Low-Sec match [:wormholes, :null], no WH involved
+    test "K-SPACE ONLY: Hi-Sec->Low-Sec with [:wormholes, :null] is VALID when no stargate exists" do
+      # If no stargate exists, this is a wormhole connection
+      # With [:wormholes] enabled, wormhole connections are valid
       assert ConnectionsImpl.is_connection_valid(
                [:wormholes, :null],
                @hs_system_id,
                @ls_system_id
              ) ==
-               false
+               true
     end
 
     test "K-SPACE ONLY: Low-Sec->Hi-Sec with [:low] is REJECTED (no border for k-space)" do
@@ -437,29 +440,90 @@ defmodule WandererApp.Map.Server.MapScopesTest do
                true
     end
 
-    test "excluded path: k-space chain with [:wormholes] scope remains excluded" do
-      # If character moves within k-space (no WH involved), should be excluded
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, 30_000_002) == false
-      assert ConnectionsImpl.is_connection_valid([:wormholes], 30_000_002, @ls_system_id) == false
+    test "k-space chain with [:wormholes] scope is VALID when no stargates exist" do
+      # If no stargates exist between k-space systems, they're wormhole connections
+      # With [:wormholes] scope, these should be tracked
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, 30_000_002) == true
+      assert ConnectionsImpl.is_connection_valid([:wormholes], 30_000_002, @ls_system_id) == true
     end
 
-    test "excluded path: Null->Hi-Sec->Low-Sec with [:wormholes, :null] - only Null tracked" do
-      # Character in Null (tracked) jumps to Hi-Sec (border - but NO wormhole!) -> REJECTED
-      # This is the key case: k-space to k-space should NOT add border systems
+    test "k-space chain with [:wormholes, :null] - wormhole connections are tracked" do
+      # If no stargates exist, these are wormhole connections through k-space
+      # With [:wormholes] enabled, all wormhole connections are tracked
       assert ConnectionsImpl.is_connection_valid(
                [:wormholes, :null],
                @ns_system_id,
                @hs_system_id
              ) ==
-               false
+               true
 
-      # Hi-Sec to Low-Sec also rejected (neither matches)
+      # Hi-Sec to Low-Sec is also a wormhole connection (no stargate in test data)
       assert ConnectionsImpl.is_connection_valid(
                [:wormholes, :null],
                @hs_system_id,
                @ls_system_id
              ) ==
-               false
+               true
+    end
+  end
+
+  describe "wormhole connections in k-space (unknown connections)" do
+    @moduledoc """
+    These tests verify the behavior for k-space to k-space connections that are
+    NOT known stargates. Such connections should be treated as wormhole connections.
+
+    Scenario: A player jumps from Low-Sec to Hi-Sec. If there's no stargate between
+    these systems, the jump must have been through a wormhole. With [:wormholes] scope,
+    this connection SHOULD be valid.
+
+    The connection TYPE (stargate vs wormhole) is determined separately in
+    maybe_add_connection using is_connection_valid(:stargates, ...).
+    """
+
+    test "Low-Sec to Hi-Sec with [:wormholes] is valid when no stargate exists (wormhole connection)" do
+      # When there's no stargate between low-sec and hi-sec, the jump must be through a wormhole
+      # With [:wormholes] scope, this wormhole connection should be valid
+      #
+      # The test systems @ls_system_id and @hs_system_id don't have a known stargate between them
+      # (they're test systems not in the EVE jump database), so this should be treated as a wormhole
+
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @hs_system_id)
+
+      # Connection is valid because no stargate exists - it's a wormhole connection
+      assert result == true,
+             "K-space to K-space with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Hi-Sec to Low-Sec with [:wormholes] is valid when no stargate exists" do
+      # Test the reverse direction
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ls_system_id)
+
+      assert result == true,
+             "Hi-Sec to Low-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Null-Sec to Hi-Sec with [:wormholes] is valid when no stargate exists" do
+      # Null to Hi-Sec through wormhole
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @hs_system_id)
+
+      assert result == true,
+             "Null-Sec to Hi-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Low-Sec to Null-Sec with [:wormholes] is valid when no stargate exists" do
+      # Low to Null through wormhole
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @ns_system_id)
+
+      assert result == true,
+             "Low-Sec to Null-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Pochven to Hi-Sec with [:wormholes] is valid when no stargate exists" do
+      # Pochven has special wormhole connections to k-space
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @hs_system_id)
+
+      assert result == true,
+             "Pochven to Hi-Sec with [:wormholes] should be valid when no stargate exists"
     end
   end
 end
