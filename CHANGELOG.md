@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.4](https://github.com/wanderer-industries/wanderer/compare/v1.91.3...v1.91.4) (2025-12-30)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed connections create between k-space systems (considered as wh connection)
+
 ## [v1.91.3](https://github.com/wanderer-industries/wanderer/compare/v1.91.2...v1.91.3) (2025-12-28)
 
 
