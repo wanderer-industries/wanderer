@@ -547,9 +547,24 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             # If :wormholes scope is enabled AND old_location is a wormhole,
             # allow this system to be added as a border system (so you can see
             # where your wormhole exits to)
-            :wormholes in scopes and
-              not is_nil(old_location) and
-              ConnectionsImpl.can_add_location([:wormholes], old_location.solar_system_id)
+            wormhole_border_from_wh_space =
+              :wormholes in scopes and
+                not is_nil(old_location) and
+                ConnectionsImpl.can_add_location([:wormholes], old_location.solar_system_id)
+
+            # Third check: k-space wormhole connection
+            # If :wormholes scope is enabled AND there's no stargate between the systems,
+            # this is a wormhole connection through k-space - add both systems
+            kspace_wormhole_connection =
+              :wormholes in scopes and
+                not is_nil(old_location) and
+                not is_nil(old_location.solar_system_id) and
+                ConnectionsImpl.is_kspace_wormhole_connection?(
+                  old_location.solar_system_id,
+                  location.solar_system_id
+                )
+
+            wormhole_border_from_wh_space or kspace_wormhole_connection
           end
       end
 

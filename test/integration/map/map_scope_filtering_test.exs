@@ -49,6 +49,8 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
   setup do
     # Setup system static info cache with both wormhole and k-space systems
     setup_scope_test_systems()
+    # Setup known stargates between adjacent k-space systems
+    setup_kspace_stargates()
     :ok
   end
 
@@ -186,6 +188,30 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
     Enum.each(test_systems, fn {solar_system_id, system_info} ->
       Cachex.put(:system_static_info_cache, solar_system_id, system_info)
     end)
+
+    :ok
+  end
+
+  # Setup known stargates between adjacent k-space systems
+  # This ensures that k-space to k-space connections WITH stargates are properly filtered
+  # (connections WITHOUT stargates are treated as wormhole connections)
+  defp setup_kspace_stargates do
+    # Stargate between Halenan (HS) and Mili (HS) - adjacent high-sec systems
+    # Cache key format: "jump_#{smaller_id}_#{larger_id}"
+    halenan_mili_key = "jump_#{@hs_system_halenan}_#{@hs_system_mili}"
+
+    WandererApp.Cache.insert(halenan_mili_key, %{
+      from_solar_system_id: @hs_system_halenan,
+      to_solar_system_id: @hs_system_mili
+    })
+
+    # Stargate between Halenan (HS) and Halmah (LS) - adjacent high-sec to low-sec
+    halenan_halmah_key = "jump_#{@hs_system_halenan}_#{@ls_system_halmah}"
+
+    WandererApp.Cache.insert(halenan_halmah_key, %{
+      from_solar_system_id: @hs_system_halenan,
+      to_solar_system_id: @ls_system_halmah
+    })
 
     :ok
   end

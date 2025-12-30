@@ -887,6 +887,44 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     end
   end
 
+  @doc """
+  Check if a connection between two k-space systems is a wormhole connection.
+  Returns true if:
+  1. Both systems are k-space (not wormhole space)
+  2. There is no known stargate between them
+
+  This is used to detect wormhole connections through k-space, like when
+  a player jumps from low-sec to low-sec through a wormhole.
+  """
+  def is_kspace_wormhole_connection?(from_solar_system_id, to_solar_system_id)
+      when is_nil(from_solar_system_id) or is_nil(to_solar_system_id),
+      do: false
+
+  def is_kspace_wormhole_connection?(from_solar_system_id, to_solar_system_id)
+      when from_solar_system_id == to_solar_system_id,
+      do: false
+
+  def is_kspace_wormhole_connection?(from_solar_system_id, to_solar_system_id) do
+    with {:ok, from_info} <- get_system_static_info(from_solar_system_id),
+         {:ok, to_info} <- get_system_static_info(to_solar_system_id) do
+      from_is_wormhole = from_info.system_class in @wh_space
+      to_is_wormhole = to_info.system_class in @wh_space
+
+      # Both must be k-space (not wormhole space)
+      if not from_is_wormhole and not to_is_wormhole do
+        # Check if there's a known stargate
+        case find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
+          {:ok, []} -> true  # No stargate = wormhole connection
+          _ -> false  # Stargate exists or error
+        end
+      else
+        false
+      end
+    else
+      _ -> false
+    end
+  end
+
   defp get_system_static_info(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
       {:ok, system_static_info} when not is_nil(system_static_info) ->

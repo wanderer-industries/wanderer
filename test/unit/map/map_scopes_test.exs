@@ -56,8 +56,12 @@ defmodule WandererApp.Map.Server.MapScopesTest do
       30_000_101 => %{solar_system_id: 30_000_101, system_class: @ls},
       # Nullsec system
       30_000_200 => %{solar_system_id: 30_000_200, system_class: @ns},
+      # Another nullsec for tests
+      30_000_201 => %{solar_system_id: 30_000_201, system_class: @ns},
       # Pochven system
       30_000_300 => %{solar_system_id: 30_000_300, system_class: @pochven},
+      # Another pochven for tests
+      30_000_301 => %{solar_system_id: 30_000_301, system_class: @pochven},
       # Jita (prohibited system - highsec)
       30_000_142 => %{solar_system_id: 30_000_142, system_class: @hs}
     }
@@ -524,6 +528,85 @@ defmodule WandererApp.Map.Server.MapScopesTest do
 
       assert result == true,
              "Pochven to Hi-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    # Same-space-type wormhole connections
+    # These verify that jumps within the same security class are valid when no stargate exists
+
+    test "Low-Sec to Low-Sec with [:wormholes] is valid when no stargate exists" do
+      # A wormhole can connect two low-sec systems
+      # With [:wormholes] scope and no known stargate, this should be tracked
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, 30_000_101)
+
+      assert result == true,
+             "Low-Sec to Low-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Hi-Sec to Hi-Sec with [:wormholes] is valid when no stargate exists" do
+      # A wormhole can connect two hi-sec systems
+      # With [:wormholes] scope and no known stargate, this should be tracked
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, 30_000_002)
+
+      assert result == true,
+             "Hi-Sec to Hi-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Null-Sec to Null-Sec with [:wormholes] is valid when no stargate exists" do
+      # A wormhole can connect two null-sec systems
+      # With [:wormholes] scope and no known stargate, this should be tracked
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, 30_000_201)
+
+      assert result == true,
+             "Null-Sec to Null-Sec with [:wormholes] should be valid when no stargate exists"
+    end
+
+    test "Pochven to Pochven with [:wormholes] is valid when no stargate exists" do
+      # A wormhole can connect two Pochven systems
+      # With [:wormholes] scope and no known stargate, this should be tracked
+      result = ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, 30_000_301)
+
+      assert result == true,
+             "Pochven to Pochven with [:wormholes] should be valid when no stargate exists"
+    end
+
+    # Cross-space-type comprehensive tests
+    # Verify all k-space combinations work correctly
+
+    test "all k-space combinations with [:wormholes] are valid when no stargate exists" do
+      # Test all combinations of k-space security types
+      # All should be valid because no stargates exist in test data = wormhole connections
+
+      # Hi-Sec combinations
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ls_system_id) == true,
+             "Hi->Low should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ns_system_id) == true,
+             "Hi->Null should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @pochven_id) == true,
+             "Hi->Pochven should be valid"
+
+      # Low-Sec combinations
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @hs_system_id) == true,
+             "Low->Hi should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @ns_system_id) == true,
+             "Low->Null should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @pochven_id) == true,
+             "Low->Pochven should be valid"
+
+      # Null-Sec combinations
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @hs_system_id) == true,
+             "Null->Hi should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @ls_system_id) == true,
+             "Null->Low should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @pochven_id) == true,
+             "Null->Pochven should be valid"
+
+      # Pochven combinations
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @hs_system_id) == true,
+             "Pochven->Hi should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ls_system_id) == true,
+             "Pochven->Low should be valid"
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ns_system_id) == true,
+             "Pochven->Null should be valid"
     end
   end
 end
