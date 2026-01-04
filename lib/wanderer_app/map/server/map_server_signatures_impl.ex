@@ -170,16 +170,20 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   end
 
   defp remove_signature(map_id, sig, system, delete_conn?) do
-    # optionally remove the linked connection
-    if delete_conn? && sig.linked_system_id do
+    # Check if this signature is the active one for the target system
+    # This prevents deleting connections when old/orphan signatures are removed
+    is_active = sig.linked_system_id && is_active_signature_for_target?(map_id, sig)
+
+    # Only delete connection if this signature is the active one
+    if delete_conn? && is_active do
       ConnectionsImpl.delete_connection(map_id, %{
         solar_system_source_id: system.solar_system_id,
         solar_system_target_id: sig.linked_system_id
       })
     end
 
-    # clear any linked_sig_eve_id on the target system
-    if sig.linked_system_id do
+    # Only clear linked_sig_eve_id if this signature is the active one
+    if is_active do
       SystemsImpl.update_system_linked_sig_eve_id(map_id, %{
         solar_system_id: sig.linked_system_id,
         linked_sig_eve_id: nil
@@ -188,6 +192,16 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
     sig
     |> MapSystemSignature.destroy!()
+  end
+
+  defp is_active_signature_for_target?(map_id, sig) do
+    case MapSystem.read_by_map_and_solar_system(%{
+           map_id: map_id,
+           solar_system_id: sig.linked_system_id
+         }) do
+      {:ok, target_system} -> target_system.linked_sig_eve_id == sig.eve_id
+      _ -> false
+    end
   end
 
   def apply_update_signature(

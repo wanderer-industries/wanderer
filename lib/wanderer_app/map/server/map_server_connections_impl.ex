@@ -5,6 +5,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   alias WandererApp.Map.Server.Impl
   alias WandererApp.Map.Server.SignaturesImpl
+  alias WandererApp.Map.Server.SystemsImpl
 
   # @ccp1 -1
   @c1 1
@@ -957,6 +958,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
+
+        # Clear linked_sig_eve_id on target system when connection is deleted
+        # This ensures old signatures become orphaned and won't affect future connections
+        SystemsImpl.update_system_linked_sig_eve_id(map_id, %{
+          solar_system_id: location.solar_system_id,
+          linked_sig_eve_id: nil
+        })
 
       _error ->
         :ok
