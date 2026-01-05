@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.6](https://github.com/wanderer-industries/wanderer/compare/v1.91.5...v1.91.6) (2026-01-04)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed new connections got deleted after linked signature cleanup
+
 ## [v1.91.5](https://github.com/wanderer-industries/wanderer/compare/v1.91.4...v1.91.5) (2025-12-30)
 
 
