@@ -16,7 +16,7 @@ defmodule WandererApp.Map.Manager do
   @maps_queue :maps_queue
   @check_maps_queue_interval :timer.seconds(1)
 
-  @pings_cleanup_interval :timer.minutes(10)
+  @pings_cleanup_interval :timer.minutes(1)
   @pings_expire_minutes 60
 
   # Test-aware async task runner
@@ -99,6 +99,7 @@ defmodule WandererApp.Map.Manager do
   def handle_info(:cleanup_pings, state) do
     try do
       cleanup_expired_pings()
+      cleanup_orphaned_pings()
       {:noreply, state}
     rescue
       e ->
@@ -137,6 +138,51 @@ defmodule WandererApp.Map.Manager do
 
       {:error, error} ->
         Logger.error("Failed to fetch expired pings: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  defp cleanup_orphaned_pings() do
+    case WandererApp.MapPingsRepo.get_orphaned_pings() do
+      {:ok, []} ->
+        :ok
+
+      {:ok, orphaned_pings} ->
+        Logger.info(
+          "[cleanup_orphaned_pings] Found #{length(orphaned_pings)} orphaned pings, cleaning up..."
+        )
+
+        Enum.each(orphaned_pings, fn %{id: ping_id, map_id: map_id, type: type, system: system} = ping ->
+          reason =
+            cond do
+              is_nil(ping.system) -> "system deleted"
+              is_nil(ping.character) -> "character deleted"
+              is_nil(ping.map) -> "map deleted"
+              not is_nil(system) and system.visible == false -> "system hidden (visible=false)"
+              true -> "unknown"
+            end
+
+          Logger.warning(
+            "[cleanup_orphaned_pings] Destroying orphaned ping #{ping_id} (map_id: #{map_id}, reason: #{reason})"
+          )
+
+          # Broadcast cancellation if map_id is still valid
+          if map_id do
+            Server.Impl.broadcast!(map_id, :ping_cancelled, %{
+              id: ping_id,
+              solar_system_id: nil,
+              type: type
+            })
+          end
+
+          Ash.destroy!(ping)
+        end)
+
+        Logger.info("[cleanup_orphaned_pings] Cleaned up #{length(orphaned_pings)} orphaned pings")
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to fetch orphaned pings: #{inspect(error)}")
         {:error, error}
     end
   end

@@ -14,8 +14,8 @@ export const useCommandPings = () => {
     ref.current.update({ pings });
   }, []);
 
-  const pingCancelled = useCallback(({ type, id }: CommandPingCancelled) => {
-    const newPings = ref.current.pings.filter(x => x.id !== id && x.type !== type);
+  const pingCancelled = useCallback(({ id }: CommandPingCancelled) => {
+    const newPings = ref.current.pings.filter(x => x.id !== id);
     ref.current.update({ pings: newPings });
   }, []);
 

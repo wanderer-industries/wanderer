@@ -41,6 +41,7 @@ export enum Commands {
   refreshTrackingData = 'refresh_tracking_data',
   pingAdded = 'ping_added',
   pingCancelled = 'ping_cancelled',
+  pingBlocked = 'ping_blocked',
 }
 
 export type Command =
@@ -77,7 +78,8 @@ export type Command =
   | Commands.showTracking
   | Commands.refreshTrackingData
   | Commands.pingAdded
-  | Commands.pingCancelled;
+  | Commands.pingCancelled
+  | Commands.pingBlocked;
 
 export type CommandInit = {
   systems: SolarSystemRawType[];
@@ -161,6 +163,10 @@ export type CommandUpdateTracking = {
 };
 export type CommandPingAdded = PingData[];
 export type CommandPingCancelled = Pick<PingData, 'type' | 'id'>;
+export type CommandPingBlocked = {
+  reason: string;
+  message: string;
+};
 
 export interface UserSettings {
   primaryCharacterId?: string;
@@ -212,6 +218,7 @@ export interface CommandData {
   [Commands.refreshTrackingData]: CommandRefreshTrackingData;
   [Commands.pingAdded]: CommandPingAdded;
   [Commands.pingCancelled]: CommandPingCancelled;
+  [Commands.pingBlocked]: CommandPingBlocked;
 }
 
 export interface MapHandlers {

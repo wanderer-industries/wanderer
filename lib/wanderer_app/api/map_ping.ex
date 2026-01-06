@@ -80,6 +80,10 @@ defmodule WandererApp.Api.MapPing do
 
       filter(expr(inserted_at <= ^arg(:inserted_before)))
     end
+
+    # Admin action for cleanup - no actor filtering
+    read :all_pings do
+    end
   end
 
   attributes do

@@ -81,12 +81,41 @@ defmodule WandererAppWeb.MapPingsEventHandler do
       when not is_nil(main_character_id) do
     {:ok, pings} = WandererApp.MapPingsRepo.get_by_map(map_id)
 
-    no_exisiting_pings =
+    # Filter out orphaned pings (system/character deleted or system hidden)
+    # These should not block new ping creation
+    valid_pings =
       pings
+      |> Enum.filter(fn ping ->
+        not is_nil(ping.system) and not is_nil(ping.character) and
+          (is_nil(ping.system.visible) or ping.system.visible == true)
+      end)
+
+    existing_rally_pings =
+      valid_pings
       |> Enum.filter(fn %{type: type} ->
         type == 1
       end)
-      |> Enum.empty?()
+
+    no_exisiting_pings = Enum.empty?(existing_rally_pings)
+    orphaned_count = length(pings) - length(valid_pings)
+
+    # Log detailed info about existing pings for debugging
+    if length(existing_rally_pings) > 0 do
+      ping_details =
+        existing_rally_pings
+        |> Enum.map(fn p ->
+          "id=#{p.id}, type=#{p.type}, system_id=#{inspect(p.system_id)}, character_id=#{inspect(p.character_id)}, inserted_at=#{p.inserted_at}"
+        end)
+        |> Enum.join("; ")
+
+      Logger.warning(
+        "add_ping BLOCKED: map_id=#{map_id}, existing_rally_pings=#{length(existing_rally_pings)}: [#{ping_details}]"
+      )
+    else
+      Logger.debug(
+        "add_ping check: map_id=#{map_id}, total_pings=#{length(pings)}, valid_pings=#{length(valid_pings)}, orphaned=#{orphaned_count}, rally_pings=0, can_create=true"
+      )
+    end
 
     if no_exisiting_pings do
       map_id
@@ -97,9 +126,16 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         character_id: main_character_id,
         user_id: current_user.id
       })
-    end
 
-    {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> MapEventHandler.push_map_event("ping_blocked", %{
+         reason: "rally_point_exists",
+         message: "A rally point already exists on this map"
+       })}
+    end
   end
 
   def handle_ui_event(
@@ -117,6 +153,8 @@ defmodule WandererAppWeb.MapPingsEventHandler do
           socket
       )
       when not is_nil(main_character_id) do
+    Logger.debug("handle_ui_event cancel_ping: id=#{id}, type=#{type}, map_id=#{map_id}")
+
     map_id
     |> WandererApp.Map.Server.cancel_ping(%{
       id: id,
@@ -125,6 +163,80 @@ defmodule WandererAppWeb.MapPingsEventHandler do
       user_id: current_user.id
     })
 
+    {:noreply, socket}
+  end
+
+  # Catch add_ping when main_character_id is nil
+  def handle_ui_event(
+        "add_ping",
+        _event,
+        %{assigns: %{main_character_id: nil}} = socket
+      ) do
+    Logger.warning("add_ping blocked: main_character_id is nil")
+
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event("ping_blocked", %{
+       reason: "no_main_character",
+       message: "Please select a main character to create pings"
+     })}
+  end
+
+  # Catch add_ping when has_tracked_characters? is false
+  def handle_ui_event(
+        "add_ping",
+        _event,
+        %{assigns: %{has_tracked_characters?: false}} = socket
+      ) do
+    Logger.warning("add_ping blocked: no tracked characters")
+
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event("ping_blocked", %{
+       reason: "no_tracked_characters",
+       message: "Please add a tracked character to create pings"
+     })}
+  end
+
+  # Catch add_ping when subscription is not active
+  def handle_ui_event(
+        "add_ping",
+        _event,
+        %{assigns: %{is_subscription_active?: false}} = socket
+      ) do
+    Logger.warning("add_ping blocked: subscription not active")
+
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event("ping_blocked", %{
+       reason: "subscription_inactive",
+       message: "Map subscription is not active"
+     })}
+  end
+
+  # Catch add_ping when user doesn't have update_system permission
+  def handle_ui_event(
+        "add_ping",
+        _event,
+        %{assigns: %{user_permissions: %{update_system: false}}} = socket
+      ) do
+    Logger.warning("add_ping blocked: no update_system permission")
+
+    {:noreply,
+     socket
+     |> MapEventHandler.push_map_event("ping_blocked", %{
+       reason: "no_permission",
+       message: "You don't have permission to create pings on this map"
+     })}
+  end
+
+  # Catch cancel_ping failures with feedback
+  def handle_ui_event(
+        "cancel_ping",
+        _event,
+        %{assigns: %{main_character_id: nil}} = socket
+      ) do
+    Logger.warning("cancel_ping blocked: main_character_id is nil")
     {:noreply, socket}
   end
 

@@ -72,7 +72,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
 
   const {
     storedSettings: { interfaceSettings },
-    data: { systemSignatures: mapSystemSignatures },
+    data: { systemSignatures: mapSystemSignatures, pings },
   } = useMapRootState();
 
   const systemStaticInfo = useMemo(() => {
@@ -108,7 +108,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
       visibleNodes,
       showKSpaceBG,
       isThickConnections,
-      pings,
       systemHighlighted,
     },
     outCommand,
