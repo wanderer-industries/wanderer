@@ -63,7 +63,6 @@ export const useComments = ({ outCommand }: UseCommentsProps): UseCommentsData =
 
   const removeComment = useCallback((systemId: number, commentId: string) => {
     const cSystem = commentBySystemsRef.current.get(systemId);
-    console.log('cSystem', cSystem);
     if (!cSystem) {
       return;
     }

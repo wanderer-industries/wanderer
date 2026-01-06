@@ -51,14 +51,18 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         map_ui_ping(ping_info)
       ])
 
-  def handle_server_event(%{event: :ping_cancelled, payload: ping_info}, socket),
-    do:
-      socket
-      |> MapEventHandler.push_map_event("ping_cancelled", %{
-        id: ping_info.id,
-        solar_system_id: ping_info.solar_system_id,
-        type: ping_info.type
-      })
+  def handle_server_event(%{event: :ping_cancelled, payload: ping_info}, socket) do
+    Logger.debug(
+      "handle_server_event :ping_cancelled - id: #{ping_info.id}, is_version_valid?: #{inspect(socket.assigns[:is_version_valid?])}"
+    )
+
+    socket
+    |> MapEventHandler.push_map_event("ping_cancelled", %{
+      id: ping_info.id,
+      solar_system_id: ping_info.solar_system_id,
+      type: ping_info.type
+    })
+  end
 
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
@@ -153,8 +157,6 @@ defmodule WandererAppWeb.MapPingsEventHandler do
           socket
       )
       when not is_nil(main_character_id) do
-    Logger.debug("handle_ui_event cancel_ping: id=#{id}, type=#{type}, map_id=#{map_id}")
-
     map_id
     |> WandererApp.Map.Server.cancel_ping(%{
       id: id,
@@ -172,8 +174,6 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         _event,
         %{assigns: %{main_character_id: nil}} = socket
       ) do
-    Logger.warning("add_ping blocked: main_character_id is nil")
-
     {:noreply,
      socket
      |> MapEventHandler.push_map_event("ping_blocked", %{
@@ -188,8 +188,6 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         _event,
         %{assigns: %{has_tracked_characters?: false}} = socket
       ) do
-    Logger.warning("add_ping blocked: no tracked characters")
-
     {:noreply,
      socket
      |> MapEventHandler.push_map_event("ping_blocked", %{
@@ -204,8 +202,6 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         _event,
         %{assigns: %{is_subscription_active?: false}} = socket
       ) do
-    Logger.warning("add_ping blocked: subscription not active")
-
     {:noreply,
      socket
      |> MapEventHandler.push_map_event("ping_blocked", %{
@@ -220,8 +216,6 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         _event,
         %{assigns: %{user_permissions: %{update_system: false}}} = socket
       ) do
-    Logger.warning("add_ping blocked: no update_system permission")
-
     {:noreply,
      socket
      |> MapEventHandler.push_map_event("ping_blocked", %{
@@ -236,7 +230,15 @@ defmodule WandererAppWeb.MapPingsEventHandler do
         _event,
         %{assigns: %{main_character_id: nil}} = socket
       ) do
-    Logger.warning("cancel_ping blocked: main_character_id is nil")
+    {:noreply, socket}
+  end
+
+  # Catch-all for cancel_ping to debug why it doesn't match
+  def handle_ui_event(
+        "cancel_ping",
+        event,
+        %{assigns: assigns} = socket
+      ) do
     {:noreply, socket}
   end
 

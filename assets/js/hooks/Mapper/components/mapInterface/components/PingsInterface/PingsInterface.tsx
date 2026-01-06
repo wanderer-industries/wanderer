@@ -121,6 +121,7 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
 
   useEffect(() => {
     if (!ping) {
+      setIsShow(false);
       return;
     }
 
@@ -161,27 +162,26 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
     };
   }, [interfaceSettings]);
 
-  if (!ping) {
-    return null;
-  }
+  const isShowSelectedSystem = ping && selectedSystem != null && selectedSystem !== ping.solar_system_id;
 
-  const isShowSelectedSystem = selectedSystem != null && selectedSystem !== ping.solar_system_id;
-
+  // Only render Toast when there's a ping
   return (
     <>
-      <Toast
-        position={placement as never}
-        className={clsx('!max-w-[initial] w-[500px]', hasLeftOffset ? offsets.withLeftMenu : offsets.default)}
-        ref={toast}
-        content={({ message }) => (
-          <section
-            className={clsx(
-              'flex flex-col p-3 w-full border border-stone-800 shadow-md animate-fadeInDown rounded-[5px]',
-              'bg-gradient-to-tr from-transparent to-sky-700/60 bg-stone-900/70',
-            )}
-          >
-            <div className="flex gap-3">
-              <i className={clsx('pi text-yellow-500 text-2xl', 'relative top-[2px]', ICONS[ping.type])}></i>
+      {ping && (
+        <Toast
+          key={ping.id}
+          position={placement as never}
+          className={clsx('!max-w-[initial] w-[500px]', hasLeftOffset ? offsets.withLeftMenu : offsets.default)}
+          ref={toast}
+          content={({ message }) => (
+            <section
+              className={clsx(
+                'flex flex-col p-3 w-full border border-stone-800 shadow-md animate-fadeInDown rounded-[5px]',
+                'bg-gradient-to-tr from-transparent to-sky-700/60 bg-stone-900/70',
+              )}
+            >
+              <div className="flex gap-3">
+                <i className={clsx('pi text-yellow-500 text-2xl', 'relative top-[2px]', ICONS[ping.type])}></i>
               <div className="flex flex-col gap-1 w-full">
                 <div className="flex justify-between">
                   <div>
@@ -253,28 +253,33 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
               {/*/>*/}
             </div>
           </section>
-        )}
-      ></Toast>
+          )}
+        ></Toast>
+      )}
 
-      <WdButton
-        icon="pi pi-bell"
-        severity="warning"
-        aria-label="Notification"
-        size="small"
-        className="w-[33px] h-[33px]"
-        outlined
-        onClick={handleClickShow}
-        disabled={isShow}
-      />
+      {ping && (
+        <>
+          <WdButton
+            icon="pi pi-bell"
+            severity="warning"
+            aria-label="Notification"
+            size="small"
+            className="w-[33px] h-[33px]"
+            outlined
+            onClick={handleClickShow}
+            disabled={isShow}
+          />
 
-      <ConfirmPopup
-        target={cfRef.current}
-        visible={cfVisible}
-        onHide={cfHide}
-        message="Are you sure you want to delete ping?"
-        icon="pi pi-exclamation-triangle text-orange-400"
-        accept={removePing}
-      />
+          <ConfirmPopup
+            target={cfRef.current}
+            visible={cfVisible}
+            onHide={cfHide}
+            message="Are you sure you want to delete ping?"
+            icon="pi pi-exclamation-triangle text-orange-400"
+            accept={removePing}
+          />
+        </>
+      )}
     </>
   );
 };

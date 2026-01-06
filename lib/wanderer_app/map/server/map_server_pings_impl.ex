@@ -72,20 +72,23 @@ defmodule WandererApp.Map.Server.PingsImpl do
           type: type
         } = _ping_info
       ) do
-    Logger.debug("cancel_ping called: map_id=#{map_id}, ping_id=#{ping_id}, type=#{type}")
 
-    case WandererApp.MapPingsRepo.get_by_id(ping_id) do
+    result = WandererApp.MapPingsRepo.get_by_id(ping_id)
+
+    case result do
       {:ok,
        %{system: %{id: system_id, name: system_name, solar_system_id: solar_system_id}} = ping} ->
         with {:ok, character} <- WandererApp.Character.get_character(character_id),
              :ok <- WandererApp.MapPingsRepo.destroy(ping) do
-          Logger.debug("Ping #{ping_id} destroyed successfully")
+          Logger.debug("Ping #{ping_id} destroyed successfully, broadcasting :ping_cancelled")
 
           Impl.broadcast!(map_id, :ping_cancelled, %{
             id: ping_id,
             solar_system_id: solar_system_id,
             type: type
           })
+
+          Logger.debug("Broadcast :ping_cancelled sent for ping #{ping_id}")
 
           # Broadcast rally point removal events to external clients (webhooks/SSE)
           if type == 1 do
@@ -113,8 +116,6 @@ defmodule WandererApp.Map.Server.PingsImpl do
 
       # Handle case where ping exists but system was deleted (nil)
       {:ok, %{system: nil} = ping} ->
-        Logger.warning("Ping #{ping_id} has no associated system, destroying orphaned ping")
-
         case WandererApp.MapPingsRepo.destroy(ping) do
           :ok ->
             Impl.broadcast!(map_id, :ping_cancelled, %{
@@ -129,19 +130,22 @@ defmodule WandererApp.Map.Server.PingsImpl do
 
       {:error, %Ash.Error.Query.NotFound{}} ->
         # Ping already deleted (possibly by cascade deletion from map/system/character removal,
-        # auto-expiry, or concurrent cancellation). This is not an error - the desired state
-        # (ping is gone) is already achieved. Just broadcast the cancellation event.
-        Logger.debug(
-          "Ping #{ping_id} not found during cancellation - already deleted, skipping broadcast"
-        )
+        # auto-expiry, or concurrent cancellation). Broadcast cancellation so frontend updates.
+        Impl.broadcast!(map_id, :ping_cancelled, %{
+          id: ping_id,
+          solar_system_id: nil,
+          type: type
+        })
 
         :ok
 
       {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{} | _]}} ->
         # Same as above, but Ash wraps NotFound inside Invalid in some cases
-        Logger.debug(
-          "Ping #{ping_id} not found during cancellation - already deleted, skipping broadcast"
-        )
+        Impl.broadcast!(map_id, :ping_cancelled, %{
+          id: ping_id,
+          solar_system_id: nil,
+          type: type
+        })
 
         :ok
 

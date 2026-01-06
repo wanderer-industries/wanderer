@@ -16,7 +16,7 @@ defmodule WandererApp.Map.Manager do
   @maps_queue :maps_queue
   @check_maps_queue_interval :timer.seconds(1)
 
-  @pings_cleanup_interval :timer.minutes(1)
+  @pings_cleanup_interval :timer.minutes(5)
   @pings_expire_minutes 60
 
   # Test-aware async task runner
