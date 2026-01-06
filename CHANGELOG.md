@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.9](https://github.com/wanderer-industries/wanderer/compare/v1.91.8...v1.91.9) (2026-01-06)
+
+
+
+
+### Bug Fixes:
+
+* core: fixed rally point cancel logic
+
 ## [v1.91.8](https://github.com/wanderer-industries/wanderer/compare/v1.91.7...v1.91.8) (2026-01-06)
 
 
