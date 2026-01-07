@@ -78,7 +78,8 @@ defmodule WandererApp.Map.Operations.Signatures do
       )
       when is_integer(solar_system_id) do
     with {:ok, validated_char_uuid} <- validate_character_eve_id(params, char_id),
-         {:ok, system} <- MapSystem.by_map_id_and_solar_system_id(map_id, solar_system_id) do
+         {:ok, system} <-
+           MapSystem.read_by_map_and_solar_system(%{map_id: map_id, solar_system_id: solar_system_id}) do
       attrs =
         params
         |> Map.put("system_id", system.id)
