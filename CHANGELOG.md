@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.10](https://github.com/wanderer-industries/wanderer/compare/v1.91.9...v1.91.10) (2026-01-07)
+
+
+
+
+### Bug Fixes:
+
+* remove actor context requirement from sig api
+
 ## [v1.91.9](https://github.com/wanderer-industries/wanderer/compare/v1.91.8...v1.91.9) (2026-01-06)
 
 
