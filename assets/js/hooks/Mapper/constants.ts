@@ -89,6 +89,16 @@ export const K162_TYPES: K162Type[] = [
     whClassName: 'C248',
   },
   {
+    label: 'C1/C2/C3',
+    value: 'c1_c2_c3',
+    whClassName: 'E004_D382_L477',
+  },
+  {
+    label: 'C4/C5',
+    value: 'c4_c5',
+    whClassName: 'M001_L614',
+  },
+  {
     label: 'C1',
     value: 'c1',
     whClassName: 'E004',
