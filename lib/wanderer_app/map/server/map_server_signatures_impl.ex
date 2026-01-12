@@ -167,6 +167,9 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       updated_count: length(updated_ids),
       removed_count: length(removed_ids)
     })
+
+    # Always return :ok - external event failures should not affect the main operation
+    :ok
   end
 
   defp remove_signature(map_id, sig, system, delete_conn?) do
