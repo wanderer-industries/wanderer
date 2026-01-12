@@ -479,7 +479,8 @@ defmodule WandererApp.Map.Server.Impl do
       restrict_offline_showing:
         options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom(),
       allowed_copy_for: options |> Map.get("allowed_copy_for", "admin"),
-      allowed_paste_for: options |> Map.get("allowed_paste_for", "member")
+      allowed_paste_for: options |> Map.get("allowed_paste_for", "member"),
+      auto_layout: options |> Map.get("auto_layout", "false") |> String.to_existing_atom()
     ]
   end
 

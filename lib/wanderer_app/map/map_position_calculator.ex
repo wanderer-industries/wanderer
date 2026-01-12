@@ -222,7 +222,7 @@ defmodule WandererApp.Map.PositionCalculator do
     else
       system = Map.get(system_props, id)
       # If locked, use original X, otherwise use calculated X
-      actual_x = if system.locked, do: float(system.position_x), else: x
+      actual_x = if Map.get(system, :locked, false), do: float(system.position_x), else: x
 
       visited = MapSet.put(visited, id)
       # Use the undirected adj but skip already visited nodes (effectively following a spanning tree)

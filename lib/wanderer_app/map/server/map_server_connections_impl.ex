@@ -151,7 +151,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_source_id: solar_system_source_id,
           solar_system_target_id: solar_system_target_id,
           character_id: character_id
-        } = connection_info
+        } = connection_info,
+        retrigger_layout \\ true
       ),
       do:
         maybe_add_connection(
@@ -162,7 +163,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           },
           character_id,
           true,
-          connection_info |> Map.get(:extra_info)
+          connection_info |> Map.get(:extra_info),
+          retrigger_layout
         )
 
   def paste_connections(
@@ -179,13 +181,20 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       solar_system_source_id = source |> String.to_integer()
       solar_system_target_id = target |> String.to_integer()
 
+      # Disable retrigger_layout for each individual connection
       add_connection(map_id, %{
         solar_system_source_id: solar_system_source_id,
         solar_system_target_id: solar_system_target_id,
         character_id: character_id,
         extra_info: connection
-      })
+      }, false)
     end)
+
+    # Retrigger layout once at the end if auto_layout is on
+    {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
+    if Keyword.get(map_opts, :auto_layout, false) do
+      SystemsImpl.layout_systems(map_id, nil)
+    end
   end
 
   def delete_connection(
@@ -534,7 +543,18 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         old_location,
         character_id,
         is_manual,
-        extra_info
+        extra_info,
+        retrigger_layout \\ true
+      )
+
+  def maybe_add_connection(
+        map_id,
+        location,
+        old_location,
+        character_id,
+        is_manual,
+        extra_info,
+        retrigger_layout
       )
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
@@ -646,6 +666,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_target_id: location.solar_system_id
         })
 
+        if retrigger_layout do
+          {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
+          if Keyword.get(map_opts, :auto_layout, false) do
+            SystemsImpl.layout_systems(map_id, nil)
+          end
+        end
+
         :ok
 
       {:error, :already_exists} ->
@@ -670,7 +697,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         _old_location,
         _character_id,
         _is_manual,
-        _connection_extra_info
+        _connection_extra_info,
+        _retrigger_layout
       ),
       do: :ok
 

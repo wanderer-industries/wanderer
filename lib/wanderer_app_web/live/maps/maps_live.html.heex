@@ -473,6 +473,11 @@
                     label="Show offline characters to admins & managers only"
                   />
                   <.input
+                    type="checkbox"
+                    field={f[:auto_layout]}
+                    label="Retrigger layout on new connection added"
+                  />
+                  <.input
                     type="select"
                     field={f[:allowed_copy_for]}
                     class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
