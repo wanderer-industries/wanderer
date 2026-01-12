@@ -58,7 +58,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_tag",
     "update_system_temporary_name",
     "update_system_status",
-    "manual_paste_systems_and_connections"
+    "manual_paste_systems_and_connections",
+    "layout_systems"
   ]
 
   @map_system_comments_events [

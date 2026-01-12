@@ -283,6 +283,35 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
         )
 
+  def layout_systems(map_id, system_ids) do
+    {:ok, all_systems} = WandererApp.Map.list_systems(map_id)
+    {:ok, connections} = WandererApp.Map.list_connections(map_id)
+
+    Logger.info("Layouting systems for map #{map_id} with system_ids #{inspect(system_ids)}")
+
+    systems_to_layout =
+      case system_ids do
+        nil -> all_systems
+        [] -> all_systems
+        ids -> all_systems |> Enum.filter(fn %{solar_system_id: sid} -> sid in ids end)
+      end
+
+    {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
+
+    WandererApp.Map.PositionCalculator.layout_systems(
+      systems_to_layout,
+      connections,
+      map_opts
+    )
+    |> Enum.each(fn updated_system ->
+      update_system_position(map_id, %{
+        solar_system_id: updated_system.solar_system_id,
+        position_x: updated_system.position_x,
+        position_y: updated_system.position_y
+      })
+    end)
+  end
+
   def add_hub(
         map_id,
         hub_info

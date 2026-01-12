@@ -257,6 +257,8 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_connection_custom_info(map_id, connection_update), to: ConnectionsImpl
   defdelegate update_signatures(map_id, signatures_update), to: SignaturesImpl
 
+  defdelegate layout_systems(map_id, system_ids), to: SystemsImpl
+
   def import_settings(map_id, settings, user_id) do
     WandererApp.Cache.put(
       "map_#{map_id}:importing",
