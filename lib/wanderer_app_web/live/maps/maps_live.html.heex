@@ -439,60 +439,79 @@
                   for={@options_form}
                   phx-change="update_options"
                 >
-                  <.input
-                    type="select"
-                    field={f[:layout]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Map systems layout"
-                    placeholder="Map default layout"
-                    options={@layout_options}
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:store_custom_labels]}
-                    label="Store system custom labels"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_temp_system_name]}
-                    label="Allow temporary system names"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_linked_signature_id]}
-                    label="Show linked signature ID as custom label part"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_linked_signature_id_temp_name]}
-                    label="Show linked signature ID as temporary name part"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:restrict_offline_showing]}
-                    label="Show offline characters to admins & managers only"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:auto_layout]}
-                    label="Retrigger layout on new connection added"
-                  />
-                  <.input
-                    type="select"
-                    field={f[:allowed_copy_for]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Copy map data allowed for"
-                    placeholder="Select role to allow map data copy"
-                    options={@allowed_copy_for_options}
-                  />
-                  <.input
-                    type="select"
-                    field={f[:allowed_paste_for]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Paste map data allowed for"
-                    placeholder="Select role to allow map data paste"
-                    options={@allowed_paste_for_options}
-                  />
+                  <div class="flex flex-col gap-2 p-1">
+                    <div class="border border-dashed border-stone-600 rounded p-3">
+                      <p class="text-xs text-stone-400 mb-2 uppercase tracking-wider font-bold">
+                        Layout Settings
+                      </p>
+                      <div class="flex flex-col gap-1">
+                        <.input
+                          type="select"
+                          field={f[:layout]}
+                          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                          label="Map systems layout"
+                          placeholder="Map default layout"
+                          options={@layout_options}
+                        />
+                        <.input
+                          type="checkbox"
+                          field={f[:auto_layout]}
+                          label="Retrigger layout on new connection added"
+                        />
+                        <.input
+                          type="checkbox"
+                          field={f[:show_temp_system_name]}
+                          label="Allow hierarchical numbering (Temporary Name)"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="border border-dashed border-stone-600 rounded p-3 mt-2">
+                      <p class="text-xs text-stone-400 mb-2 uppercase tracking-wider font-bold">
+                        General Settings
+                      </p>
+                      <div class="flex flex-col gap-1">
+                        <.input
+                          type="checkbox"
+                          field={f[:store_custom_labels]}
+                          label="Store system custom labels"
+                        />
+                        <.input
+                          type="checkbox"
+                          field={f[:show_linked_signature_id]}
+                          label="Show linked signature ID as custom label part"
+                        />
+                        <.input
+                          type="checkbox"
+                          field={f[:show_linked_signature_id_temp_name]}
+                          label="Show linked signature ID as temporary name part"
+                        />
+                        <.input
+                          type="checkbox"
+                          field={f[:restrict_offline_showing]}
+                          label="Show offline characters to admins & managers only"
+                        />
+                        <.input
+                          type="select"
+                          field={f[:allowed_copy_for]}
+                          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                          label="Copy map data allowed for"
+                          placeholder="Select role to allow map data copy"
+                          options={@allowed_copy_for_options}
+                          wrapper_class="mt-2"
+                        />
+                        <.input
+                          type="select"
+                          field={f[:allowed_paste_for]}
+                          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                          label="Paste map data allowed for"
+                          placeholder="Select role to allow map data paste"
+                          options={@allowed_paste_for_options}
+                          wrapper_class="mt-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </.form>
               </div>
 
