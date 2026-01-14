@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.91.11](https://github.com/wanderer-industries/wanderer/compare/v1.91.10...v1.91.11) (2026-01-13)
+
+
+
+
+### Bug Fixes:
+
+* allow sig api when map relay is off
+
 ## [v1.91.10](https://github.com/wanderer-industries/wanderer/compare/v1.91.9...v1.91.10) (2026-01-07)
 
 
