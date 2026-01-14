@@ -3,9 +3,9 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
-  SOLAR_SYSTEM_CLASS_IDS,
-  SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
-  WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
+    SOLAR_SYSTEM_CLASS_IDS,
+    SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
+    WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
@@ -91,7 +91,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
           if (k162TypeInfo) {
             // Check if the k162Type matches our target system class
-            return customInfo.k162Type === targetSystemClassGroup;
+            return k162TypeInfo.value.includes(targetSystemClassGroup);
           }
         }
 
