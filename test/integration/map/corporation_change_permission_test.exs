@@ -26,9 +26,9 @@ defmodule WandererApp.Map.CorporationChangePermissionTest do
 
   setup :verify_on_exit!
 
-  @test_corp_id_a 98000001
-  @test_corp_id_b 98000002
-  @test_alliance_id_a 99000001
+  @test_corp_id_a 98_000_001
+  @test_corp_id_b 98_000_002
+  @test_alliance_id_a 99_000_001
 
   setup do
     # Configure the PubSubMock to forward to real Phoenix.PubSub for broadcast testing
@@ -70,7 +70,8 @@ defmodule WandererApp.Map.CorporationChangePermissionTest do
       simulate_corporation_change(character, @test_corp_id_b)
 
       # Should receive :update_permissions broadcast
-      assert_receive :update_permissions, 1000,
+      assert_receive :update_permissions,
+                     1000,
                      "Should receive :update_permissions when corporation changes"
     end
 
@@ -94,7 +95,8 @@ defmodule WandererApp.Map.CorporationChangePermissionTest do
       simulate_alliance_removal(character)
 
       # Should receive :update_permissions broadcast
-      assert_receive :update_permissions, 1000,
+      assert_receive :update_permissions,
+                     1000,
                      "Should receive :update_permissions when alliance is removed"
     end
   end

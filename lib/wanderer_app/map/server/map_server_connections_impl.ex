@@ -915,8 +915,10 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       if not from_is_wormhole and not to_is_wormhole do
         # Check if there's a known stargate
         case find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
-          {:ok, []} -> true  # No stargate = wormhole connection
-          _ -> false  # Stargate exists or error
+          # No stargate = wormhole connection
+          {:ok, []} -> true
+          # Stargate exists or error
+          _ -> false
         end
       else
         false
