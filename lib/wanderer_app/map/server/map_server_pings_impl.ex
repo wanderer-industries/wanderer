@@ -72,7 +72,6 @@ defmodule WandererApp.Map.Server.PingsImpl do
           type: type
         } = _ping_info
       ) do
-
     result = WandererApp.MapPingsRepo.get_by_id(ping_id)
 
     case result do

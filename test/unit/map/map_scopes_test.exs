@@ -577,35 +577,55 @@ defmodule WandererApp.Map.Server.MapScopesTest do
       # All should be valid because no stargates exist in test data = wormhole connections
 
       # Hi-Sec combinations
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ls_system_id) == true,
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ls_system_id) ==
+               true,
              "Hi->Low should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ns_system_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @ns_system_id) ==
+               true,
              "Hi->Null should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @pochven_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @hs_system_id, @pochven_id) ==
+               true,
              "Hi->Pochven should be valid"
 
       # Low-Sec combinations
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @hs_system_id) == true,
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @hs_system_id) ==
+               true,
              "Low->Hi should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @ns_system_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @ns_system_id) ==
+               true,
              "Low->Null should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @pochven_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ls_system_id, @pochven_id) ==
+               true,
              "Low->Pochven should be valid"
 
       # Null-Sec combinations
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @hs_system_id) == true,
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @hs_system_id) ==
+               true,
              "Null->Hi should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @ls_system_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @ls_system_id) ==
+               true,
              "Null->Low should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @pochven_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @ns_system_id, @pochven_id) ==
+               true,
              "Null->Pochven should be valid"
 
       # Pochven combinations
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @hs_system_id) == true,
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @hs_system_id) ==
+               true,
              "Pochven->Hi should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ls_system_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ls_system_id) ==
+               true,
              "Pochven->Low should be valid"
-      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ns_system_id) == true,
+
+      assert ConnectionsImpl.is_connection_valid([:wormholes], @pochven_id, @ns_system_id) ==
+               true,
              "Pochven->Null should be valid"
     end
   end
