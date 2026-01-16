@@ -487,10 +487,17 @@ defmodule WandererAppWeb.MapSystemAPIController do
   )
 
   def create(conn, params) do
-    # Support both batch format {"systems": [...], "connections": [...]}
-    # and single system format {"solar_system_id": ..., ...}
+    # Support multiple formats:
+    # 1. Batch format: {"systems": [...], "connections": [...]}
+    # 2. Wrapped batch format: {"data": {"systems": [...], "connections": [...]}}
+    # 3. Single system format: {"solar_system_id": ..., ...}
     {systems, connections} =
       cond do
+        Map.has_key?(params, "data") and is_map(params["data"]) ->
+          # Wrapped batch format - extract from data wrapper
+          data = params["data"]
+          {Map.get(data, "systems", []), Map.get(data, "connections", [])}
+
         Map.has_key?(params, "systems") ->
           # Batch format
           {Map.get(params, "systems", []), Map.get(params, "connections", [])}

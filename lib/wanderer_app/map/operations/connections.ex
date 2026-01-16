@@ -63,13 +63,21 @@ defmodule WandererApp.Map.Operations.Connections do
     if is_nil(src_info) or is_nil(tgt_info) do
       {:error, :invalid_system_info}
     else
+      # Build extra_info map with optional connection attributes
+      extra_info =
+        %{}
+        |> maybe_add_extra("time_status", attrs["time_status"])
+        |> maybe_add_extra("mass_status", attrs["mass_status"])
+        |> maybe_add_extra("locked", attrs["locked"])
+
       info = %{
         solar_system_source_id: src_info.solar_system_id,
         solar_system_target_id: tgt_info.solar_system_id,
         character_id: char_id,
         type: parse_type(attrs["type"]),
         ship_size_type:
-          resolve_ship_size(attrs["type"], attrs["ship_size_type"], src_info, tgt_info)
+          resolve_ship_size(attrs["type"], attrs["ship_size_type"], src_info, tgt_info),
+        extra_info: if(extra_info == %{}, do: nil, else: extra_info)
       }
 
       case Server.add_connection(map_id, info) do
@@ -161,6 +169,9 @@ defmodule WandererApp.Map.Operations.Connections do
   end
 
   defp parse_type(_), do: @connection_type_wormhole
+
+  defp maybe_add_extra(map, _key, nil), do: map
+  defp maybe_add_extra(map, key, value), do: Map.put(map, key, value)
 
   defp parse_int(nil, field), do: {:error, {:missing_field, field}}
   defp parse_int(val, _) when is_integer(val), do: {:ok, val}
