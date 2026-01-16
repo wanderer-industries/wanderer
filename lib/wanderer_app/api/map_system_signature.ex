@@ -123,7 +123,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :group,
         :type,
         :custom_info,
-        :deleted
+        :deleted,
+        :linked_system_id
       ]
     end
 

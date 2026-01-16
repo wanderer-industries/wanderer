@@ -152,7 +152,8 @@ defmodule WandererApp.Map.Manager do
           "[cleanup_orphaned_pings] Found #{length(orphaned_pings)} orphaned pings, cleaning up..."
         )
 
-        Enum.each(orphaned_pings, fn %{id: ping_id, map_id: map_id, type: type, system: system} = ping ->
+        Enum.each(orphaned_pings, fn %{id: ping_id, map_id: map_id, type: type, system: system} =
+                                       ping ->
           reason =
             cond do
               is_nil(ping.system) -> "system deleted"
@@ -178,7 +179,10 @@ defmodule WandererApp.Map.Manager do
           Ash.destroy!(ping)
         end)
 
-        Logger.info("[cleanup_orphaned_pings] Cleaned up #{length(orphaned_pings)} orphaned pings")
+        Logger.info(
+          "[cleanup_orphaned_pings] Cleaned up #{length(orphaned_pings)} orphaned pings"
+        )
+
         :ok
 
       {:error, error} ->
