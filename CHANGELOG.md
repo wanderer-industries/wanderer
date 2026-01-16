@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.92.0](https://github.com/wanderer-industries/wanderer/compare/v1.91.11...v1.92.0) (2026-01-14)
+
+
+
+
+### Features:
+
+* Added ability to select a range of wh classes for k162.
+
+### Bug Fixes:
+
+* core: Show c1/c2/c3 or c4/c5 or link signature modal
+
 ## [v1.91.11](https://github.com/wanderer-industries/wanderer/compare/v1.91.10...v1.91.11) (2026-01-13)
 
 
