@@ -311,4 +311,117 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
       {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
     end
   end
+
+  @doc """
+  Link a signature to a target system.
+
+  This creates the association between a wormhole signature and the system it leads to.
+  It also updates the connection's time_status and ship_size_type based on the signature data.
+  """
+  operation(:link,
+    summary: "Link a signature to a target system",
+    description: """
+    Links a wormhole signature to its destination system. This operation:
+    - Sets the signature's linked_system_id to the target system
+    - Updates the signature's group to "Wormhole"
+    - Sets the target system's linked_sig_eve_id (if not already set)
+    - Copies temporary_name from signature to target system
+    - Updates the connection's time_status and ship_size_type from signature data
+    """,
+    parameters: [
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ],
+      id: [in: :path, description: "Signature UUID", type: :string, required: true]
+    ],
+    request_body:
+      {"Link request", "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           solar_system_target: %OpenApiSpex.Schema{
+             type: :integer,
+             description: "Target solar system ID to link to"
+           }
+         },
+         required: [:solar_system_target],
+         example: %{solar_system_target: 31_001_922}
+       }},
+    responses: [
+      ok:
+        {"Linked signature", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{data: @signature_schema},
+           example: %{data: @signature_schema.example}
+         }},
+      unprocessable_entity:
+        {"Error", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             error: %OpenApiSpex.Schema{
+               type: :string,
+               description: "Error type"
+             }
+           },
+           example: %{error: "target_system_not_found"}
+         }}
+    ]
+  )
+
+  def link(conn, %{"id" => id} = params) do
+    case MapOperations.link_signature(conn, id, params) do
+      {:ok, sig} -> json(conn, %{data: sig})
+      {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
+    end
+  end
+
+  @doc """
+  Unlink a signature from its target system.
+  """
+  operation(:unlink,
+    summary: "Unlink a signature from its target system",
+    description: "Removes the link between a signature and its destination system.",
+    parameters: [
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug)",
+        type: :string,
+        required: true
+      ],
+      id: [in: :path, description: "Signature UUID", type: :string, required: true]
+    ],
+    responses: [
+      ok:
+        {"Unlinked signature", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{data: @signature_schema},
+           example: %{data: Map.put(@signature_schema.example, :linked_system_id, nil)}
+         }},
+      unprocessable_entity:
+        {"Error", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             error: %OpenApiSpex.Schema{
+               type: :string,
+               description: "Error type"
+             }
+           },
+           example: %{error: "not_linked"}
+         }}
+    ]
+  )
+
+  def unlink(conn, %{"id" => id}) do
+    case MapOperations.unlink_signature(conn, id) do
+      {:ok, sig} -> json(conn, %{data: sig})
+      {:error, error} -> conn |> put_status(:unprocessable_entity) |> json(%{error: error})
+    end
+  end
 end

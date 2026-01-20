@@ -126,4 +126,12 @@ defmodule WandererApp.Map.Operations do
   @doc "Delete a signature in a map"
   @spec delete_signature(String.t(), String.t()) :: :ok | {:error, String.t()}
   defdelegate delete_signature(map_id, sig_id), to: Signatures
+
+  @doc "Link a signature to a target system"
+  @spec link_signature(Plug.Conn.t(), String.t(), map()) :: {:ok, map()} | {:error, atom()}
+  defdelegate link_signature(conn, sig_id, params), to: Signatures
+
+  @doc "Unlink a signature from its target system"
+  @spec unlink_signature(Plug.Conn.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  defdelegate unlink_signature(conn, sig_id), to: Signatures
 end

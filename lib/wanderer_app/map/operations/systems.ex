@@ -200,16 +200,22 @@ defmodule WandererApp.Map.Operations.Systems do
 
   defp normalize_coordinates(%{"coordinates" => %{"x" => x, "y" => y}})
        when is_number(x) and is_number(y),
-       do: %{x: x, y: y}
+       do: %{"x" => x, "y" => y}
 
   defp normalize_coordinates(%{coordinates: %{x: x, y: y}}) when is_number(x) and is_number(y),
-    do: %{x: x, y: y}
+    do: %{"x" => x, "y" => y}
 
   defp normalize_coordinates(params) do
-    %{
-      x: params |> Map.get("position_x", Map.get(params, :position_x, 0)),
-      y: params |> Map.get("position_y", Map.get(params, :position_y, 0))
-    }
+    x = params |> Map.get("position_x", Map.get(params, :position_x))
+    y = params |> Map.get("position_y", Map.get(params, :position_y))
+
+    # Only return coordinates if both x and y are provided
+    # Otherwise return nil to let the server use auto-positioning
+    if is_number(x) and is_number(y) do
+      %{"x" => x, "y" => y}
+    else
+      nil
+    end
   end
 
   defp apply_system_updates(map_id, system_id, attrs, %{x: x, y: y}) do
