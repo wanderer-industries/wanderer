@@ -327,6 +327,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         group: sig["group"],
         type: Map.get(sig, "type"),
         custom_info: Map.get(sig, "custom_info"),
+        linked_system_id: Map.get(sig, "linked_system_id"),
         # Use character_eve_id from sig if provided, otherwise use the default
         character_eve_id: Map.get(sig, "character_eve_id", character_eve_id),
         deleted: false

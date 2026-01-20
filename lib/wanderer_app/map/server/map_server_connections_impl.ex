@@ -595,6 +595,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         time_status = get_extra_info(extra_info, "time_status", time_status)
         mass_status = get_extra_info(extra_info, "mass_status", 0)
         locked = get_extra_info(extra_info, "locked", false)
+        wormhole_type = get_extra_info(extra_info, "wormhole_type", nil)
 
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
@@ -605,7 +606,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             ship_size_type: ship_size_type,
             time_status: time_status,
             mass_status: mass_status,
-            locked: locked
+            locked: locked,
+            wormhole_type: wormhole_type
           })
 
         if connection_type == @connection_type_wormhole do

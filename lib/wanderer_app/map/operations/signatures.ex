@@ -7,6 +7,7 @@ defmodule WandererApp.Map.Operations.Signatures do
   alias WandererApp.Map.Operations
   alias WandererApp.Api.{Character, MapSystem, MapSystemSignature}
   alias WandererApp.Map.Server
+  alias WandererApp.Utils.EVEUtil
 
   @spec validate_character_eve_id(map() | nil, String.t()) ::
           {:ok, String.t()} | {:error, :invalid_character} | {:error, :unexpected_error}
@@ -252,4 +253,161 @@ defmodule WandererApp.Map.Operations.Signatures do
   end
 
   def delete_signature(_conn, _sig_id), do: {:error, :missing_params}
+
+  @doc """
+  Links a signature to a target system, creating the association between
+  the signature and the wormhole connection to that system.
+
+  This also:
+  - Updates the signature's group to "Wormhole"
+  - Sets the target system's linked_sig_eve_id
+  - Copies temporary_name from signature to target system
+  - Updates connection time_status and ship_size_type from signature data
+  """
+  @spec link_signature(Plug.Conn.t(), String.t(), map()) :: {:ok, map()} | {:error, atom()}
+  def link_signature(
+        %{assigns: %{map_id: map_id}} = _conn,
+        sig_id,
+        %{"solar_system_target" => solar_system_target}
+      )
+      when is_integer(solar_system_target) do
+    with {:ok, signature} <- MapSystemSignature.by_id(sig_id),
+         {:ok, source_system} <- MapSystem.by_id(signature.system_id),
+         true <- source_system.map_id == map_id,
+         target_system when not is_nil(target_system) <-
+           WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: solar_system_target}) do
+      # Update signature group to Wormhole and set linked_system_id
+      {:ok, updated_signature} =
+        signature
+        |> MapSystemSignature.update_group!(%{group: "Wormhole"})
+        |> MapSystemSignature.update_linked_system(%{linked_system_id: solar_system_target})
+
+      # Only update target system if it doesn't already have a linked signature
+      if is_nil(target_system.linked_sig_eve_id) do
+        # Set the target system's linked_sig_eve_id
+        Server.update_system_linked_sig_eve_id(map_id, %{
+          solar_system_id: solar_system_target,
+          linked_sig_eve_id: signature.eve_id
+        })
+
+        # Copy temporary_name if present
+        if not is_nil(signature.temporary_name) do
+          Server.update_system_temporary_name(map_id, %{
+            solar_system_id: solar_system_target,
+            temporary_name: signature.temporary_name
+          })
+        end
+
+        # Update connection time_status from signature custom_info
+        signature_time_status =
+          if not is_nil(signature.custom_info) do
+            case Jason.decode(signature.custom_info) do
+              {:ok, map} -> Map.get(map, "time_status")
+              {:error, _} -> nil
+            end
+          else
+            nil
+          end
+
+        if not is_nil(signature_time_status) do
+          Server.update_connection_time_status(map_id, %{
+            solar_system_source_id: source_system.solar_system_id,
+            solar_system_target_id: solar_system_target,
+            time_status: signature_time_status
+          })
+        end
+
+        # Update connection ship_size_type from signature wormhole type
+        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
+
+        if not is_nil(signature_ship_size_type) do
+          Server.update_connection_ship_size_type(map_id, %{
+            solar_system_source_id: source_system.solar_system_id,
+            solar_system_target_id: solar_system_target,
+            ship_size_type: signature_ship_size_type
+          })
+        end
+      end
+
+      # Broadcast update
+      Server.Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
+
+      # Return the updated signature
+      result =
+        updated_signature
+        |> Map.from_struct()
+        |> Map.put(:solar_system_id, source_system.solar_system_id)
+        |> Map.drop([:system_id, :__meta__, :system, :aggregates, :calculations])
+
+      {:ok, result}
+    else
+      false ->
+        {:error, :not_found}
+
+      nil ->
+        {:error, :target_system_not_found}
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        {:error, :not_found}
+
+      err ->
+        Logger.error("[link_signature] Unexpected error: #{inspect(err)}")
+        {:error, :unexpected_error}
+    end
+  end
+
+  def link_signature(_conn, _sig_id, %{"solar_system_target" => _}),
+    do: {:error, :invalid_solar_system_target}
+
+  def link_signature(_conn, _sig_id, _params), do: {:error, :missing_params}
+
+  @doc """
+  Unlinks a signature from its target system.
+  """
+  @spec unlink_signature(Plug.Conn.t(), String.t()) :: {:ok, map()} | {:error, atom()}
+  def unlink_signature(%{assigns: %{map_id: map_id}} = _conn, sig_id) do
+    with {:ok, signature} <- MapSystemSignature.by_id(sig_id),
+         {:ok, source_system} <- MapSystem.by_id(signature.system_id),
+         :ok <- (if source_system.map_id == map_id, do: :ok, else: {:error, :not_found}),
+         :ok <- (if not is_nil(signature.linked_system_id), do: :ok, else: {:error, :not_linked}) do
+      # Clear the target system's linked_sig_eve_id
+      Server.update_system_linked_sig_eve_id(map_id, %{
+        solar_system_id: signature.linked_system_id,
+        linked_sig_eve_id: nil
+      })
+
+      # Clear the signature's linked_system_id using the wrapper for logging
+      {:ok, updated_signature} =
+        Server.SignaturesImpl.update_signature_linked_system(signature, %{
+          linked_system_id: nil
+        })
+
+      # Broadcast update
+      Server.Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
+
+      # Return the updated signature
+      result =
+        updated_signature
+        |> Map.from_struct()
+        |> Map.put(:solar_system_id, source_system.solar_system_id)
+        |> Map.drop([:system_id, :__meta__, :system, :aggregates, :calculations])
+
+      {:ok, result}
+    else
+      {:error, :not_found} ->
+        {:error, :not_found}
+
+      {:error, :not_linked} ->
+        {:error, :not_linked}
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        {:error, :not_found}
+
+      err ->
+        Logger.error("[unlink_signature] Unexpected error: #{inspect(err)}")
+        {:error, :unexpected_error}
+    end
+  end
+
+  def unlink_signature(_conn, _sig_id), do: {:error, :missing_params}
 end
