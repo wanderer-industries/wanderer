@@ -368,8 +368,8 @@ defmodule WandererApp.Map.Operations.Signatures do
   def unlink_signature(%{assigns: %{map_id: map_id}} = _conn, sig_id) do
     with {:ok, signature} <- MapSystemSignature.by_id(sig_id),
          {:ok, source_system} <- MapSystem.by_id(signature.system_id),
-         :ok <- (if source_system.map_id == map_id, do: :ok, else: {:error, :not_found}),
-         :ok <- (if not is_nil(signature.linked_system_id), do: :ok, else: {:error, :not_linked}) do
+         :ok <- if(source_system.map_id == map_id, do: :ok, else: {:error, :not_found}),
+         :ok <- if(not is_nil(signature.linked_system_id), do: :ok, else: {:error, :not_linked}) do
       # Clear the target system's linked_sig_eve_id
       Server.update_system_linked_sig_eve_id(map_id, %{
         solar_system_id: signature.linked_system_id,

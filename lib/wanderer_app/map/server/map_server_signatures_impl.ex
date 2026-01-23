@@ -109,8 +109,10 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         nil ->
           MapSystemSignature.create!(sig)
 
-        _ ->
-          :noop
+        existing ->
+          # If signature already exists, update it instead of ignoring
+          # This handles the case where frontend sends existing sigs as "added"
+          apply_update_signature(map_id, existing, sig)
       end
     end)
 
