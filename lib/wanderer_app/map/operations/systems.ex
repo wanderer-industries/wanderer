@@ -36,7 +36,8 @@ defmodule WandererApp.Map.Operations.Systems do
   # Private helper for batch upsert
   defp create_system_batch(%{map_id: map_id, user_id: user_id, char_id: char_id}, params) do
     with {:ok, solar_system_id} <- fetch_system_id(params) do
-      update_existing = fetch_update_existing(params, false)
+      # Default to true so re-submitting with new position updates the system
+      update_existing = fetch_update_existing(params, true)
 
       map_id
       |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
@@ -46,9 +47,13 @@ defmodule WandererApp.Map.Operations.Systems do
 
         {:error, :already_exists} ->
           if update_existing do
-            do_update_system(map_id, user_id, char_id, solar_system_id, params)
+            # Mark as skip so it counts as "updated" not "created"
+            case do_update_system(map_id, user_id, char_id, solar_system_id, params) do
+              {:ok, _} -> {:skip, :updated}
+              error -> error
+            end
           else
-            :ok
+            {:skip, :already_exists}
           end
       end
     end
