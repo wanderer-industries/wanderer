@@ -141,7 +141,8 @@ defmodule WandererApp.Api.MapSystemSignature do
         :type,
         :custom_info,
         :deleted,
-        :update_forced_at
+        :update_forced_at,
+        :linked_system_id
       ]
 
       primary? true
