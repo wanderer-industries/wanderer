@@ -85,6 +85,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.Hovered]: hovered,
           [classes.Gate]: isGate,
           [classes.Bridge]: isBridge,
+          [classes.CrossList]: data.is_cross_list,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -100,6 +101,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.Frigate]: isWormhole && data.ship_size_type === ShipSizeStatus.small,
           [classes.Gate]: isGate,
           [classes.Bridge]: isBridge,
+          [classes.CrossList]: data.is_cross_list,
         })}
         d={path}
         markerEnd={markerEnd}
