@@ -5,6 +5,7 @@ defmodule WandererApp.Map.Operations.Signatures do
 
   require Logger
   alias WandererApp.Map.Operations
+  alias WandererApp.Map.Operations.Connections
   alias WandererApp.Api.{Character, MapSystem, MapSystemSignature}
   alias WandererApp.Map.Server
   alias WandererApp.Utils.EVEUtil
@@ -79,11 +80,7 @@ defmodule WandererApp.Map.Operations.Signatures do
       )
       when is_integer(solar_system_id) do
     with {:ok, validated_char_uuid} <- validate_character_eve_id(params, char_id),
-         {:ok, system} <-
-           MapSystem.read_by_map_and_solar_system(%{
-             map_id: map_id,
-             solar_system_id: solar_system_id
-           }) do
+         {:ok, system} <- ensure_system_on_map(map_id, solar_system_id, user_id, char_id) do
       attrs =
         params
         |> Map.put("system_id", system.id)
@@ -99,6 +96,21 @@ defmodule WandererApp.Map.Operations.Signatures do
              delete_connection_with_sigs: false
            }) do
         :ok ->
+          # Handle linked_system_id if provided - auto-add system and create/update connection
+          linked_system_id = Map.get(params, "linked_system_id")
+          wormhole_type = Map.get(params, "type")
+
+          if is_integer(linked_system_id) do
+            handle_linked_system(
+              map_id,
+              solar_system_id,
+              linked_system_id,
+              wormhole_type,
+              user_id,
+              char_id
+            )
+          end
+
           # Try to fetch the created signature to return with proper fields
           with {:ok, sigs} <-
                  MapSystemSignature.by_system_id_and_eve_ids(system.id, [attrs["eve_id"]]),
@@ -134,6 +146,13 @@ defmodule WandererApp.Map.Operations.Signatures do
         Logger.error("[create_signature] Unexpected error during character validation")
         {:error, :unexpected_error}
 
+      {:error, :invalid_solar_system} ->
+        Logger.error(
+          "[create_signature] Invalid solar_system_id: #{solar_system_id} (not a valid EVE system)"
+        )
+
+        {:error, :invalid_solar_system}
+
       _ ->
         Logger.error(
           "[create_signature] System not found for solar_system_id: #{solar_system_id}"
@@ -151,6 +170,228 @@ defmodule WandererApp.Map.Operations.Signatures do
       do: {:error, :missing_params}
 
   def create_signature(_conn, _params), do: {:error, :missing_params}
+
+  # Ensures a system exists on the map, auto-adding it if not present.
+  # Returns {:ok, system} if successful, {:error, reason} otherwise.
+  @spec ensure_system_on_map(String.t(), integer(), String.t(), String.t()) ::
+          {:ok, map()} | {:error, atom()}
+  defp ensure_system_on_map(map_id, solar_system_id, user_id, char_id) do
+    case MapSystem.read_by_map_and_solar_system(%{
+           map_id: map_id,
+           solar_system_id: solar_system_id
+         }) do
+      {:ok, system} ->
+        {:ok, system}
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        # System not on map, try to auto-add it
+        add_system_to_map(map_id, solar_system_id, user_id, char_id)
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        # Check if it's a NotFound wrapped in Invalid
+        if Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) do
+          add_system_to_map(map_id, solar_system_id, user_id, char_id)
+        else
+          Logger.error("[ensure_system_on_map] Unexpected Ash error: #{inspect(errors)}")
+          {:error, :unexpected_error}
+        end
+
+      error ->
+        Logger.error("[ensure_system_on_map] Unexpected error: #{inspect(error)}")
+        {:error, :unexpected_error}
+    end
+  end
+
+  # Adds a system to the map and returns the created system record.
+  @spec add_system_to_map(String.t(), integer(), String.t(), String.t()) ::
+          {:ok, map()} | {:error, atom()}
+  defp add_system_to_map(map_id, solar_system_id, user_id, char_id) do
+    # First verify the solar_system_id is valid in EVE static data
+    case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+      {:ok, nil} ->
+        {:error, :invalid_solar_system}
+
+      {:ok, _static_info} ->
+        # Add system to map (coordinates nil = auto-position)
+        case Server.add_system(
+               map_id,
+               %{solar_system_id: solar_system_id, coordinates: nil, extra: %{}},
+               user_id,
+               char_id,
+               update_existing: false
+             ) do
+          :ok ->
+            # System added async, wait briefly and fetch it
+            # The map server processes synchronously within the same process context
+            Process.sleep(100)
+
+            case MapSystem.read_by_map_and_solar_system(%{
+                   map_id: map_id,
+                   solar_system_id: solar_system_id
+                 }) do
+              {:ok, system} ->
+                Logger.info(
+                  "[create_signature] Auto-added system #{solar_system_id} to map #{map_id}"
+                )
+
+                {:ok, system}
+
+              error ->
+                Logger.error(
+                  "[add_system_to_map] Failed to fetch system after add: #{inspect(error)}"
+                )
+
+                {:error, :system_add_failed}
+            end
+
+          error ->
+            Logger.error("[add_system_to_map] Failed to add system: #{inspect(error)}")
+            {:error, :system_add_failed}
+        end
+
+      {:error, _} ->
+        {:error, :invalid_solar_system}
+    end
+  end
+
+  # Handles the linked_system_id logic: auto-adds the linked system and creates/updates connection
+  @spec handle_linked_system(
+          String.t(),
+          integer(),
+          integer(),
+          String.t() | nil,
+          String.t(),
+          String.t()
+        ) :: :ok | {:error, atom()}
+  defp handle_linked_system(
+         map_id,
+         source_system_id,
+         linked_system_id,
+         wormhole_type,
+         user_id,
+         char_id
+       ) do
+    # Ensure the linked system is on the map
+    case ensure_system_on_map(map_id, linked_system_id, user_id, char_id) do
+      {:ok, _linked_system} ->
+        # Check if connection exists between the systems
+        case Connections.get_connection_by_systems(map_id, source_system_id, linked_system_id) do
+          {:ok, nil} ->
+            # No connection exists, create one
+            create_connection_with_wormhole_type(
+              map_id,
+              source_system_id,
+              linked_system_id,
+              wormhole_type,
+              char_id
+            )
+
+          {:ok, _existing_conn} ->
+            # Connection exists, update wormhole type if provided
+            update_connection_wormhole_type(
+              map_id,
+              source_system_id,
+              linked_system_id,
+              wormhole_type
+            )
+
+          {:error, reason} ->
+            Logger.warning(
+              "[handle_linked_system] Failed to check connection: #{inspect(reason)}"
+            )
+
+            {:error, :connection_check_failed}
+        end
+
+      {:error, :invalid_solar_system} ->
+        Logger.warning(
+          "[handle_linked_system] Invalid linked_system_id: #{linked_system_id} (not a valid EVE system)"
+        )
+
+        {:error, :invalid_linked_system}
+
+      {:error, reason} ->
+        Logger.warning("[handle_linked_system] Failed to add linked system: #{inspect(reason)}")
+        {:error, :linked_system_add_failed}
+    end
+  end
+
+  # Creates a connection between two systems with the specified wormhole type
+  @spec create_connection_with_wormhole_type(
+          String.t(),
+          integer(),
+          integer(),
+          String.t() | nil,
+          String.t()
+        ) :: :ok | {:error, atom()}
+  defp create_connection_with_wormhole_type(
+         map_id,
+         source_system_id,
+         target_system_id,
+         wormhole_type,
+         char_id
+       ) do
+    conn_attrs = %{
+      "solar_system_source" => source_system_id,
+      "solar_system_target" => target_system_id,
+      "type" => 0,
+      "wormhole_type" => wormhole_type
+    }
+
+    case Connections.create(conn_attrs, map_id, char_id) do
+      {:ok, :created} ->
+        Logger.info(
+          "[create_signature] Auto-created connection #{source_system_id} <-> #{target_system_id} (type: #{wormhole_type || "unknown"})"
+        )
+
+        :ok
+
+      {:skip, :exists} ->
+        # Connection already exists (race condition), update it instead
+        update_connection_wormhole_type(map_id, source_system_id, target_system_id, wormhole_type)
+
+      error ->
+        Logger.warning(
+          "[create_connection_with_wormhole_type] Failed to create connection: #{inspect(error)}"
+        )
+
+        {:error, :connection_create_failed}
+    end
+  end
+
+  # Updates the wormhole type and ship size for an existing connection
+  @spec update_connection_wormhole_type(String.t(), integer(), integer(), String.t() | nil) ::
+          :ok | {:error, atom()}
+  defp update_connection_wormhole_type(_map_id, _source, _target, nil), do: :ok
+
+  defp update_connection_wormhole_type(map_id, source_system_id, target_system_id, wormhole_type) do
+    # Get ship size from wormhole type
+    ship_size_type = EVEUtil.get_wh_size(wormhole_type)
+
+    if not is_nil(ship_size_type) do
+      case Server.update_connection_ship_size_type(map_id, %{
+             solar_system_source_id: source_system_id,
+             solar_system_target_id: target_system_id,
+             ship_size_type: ship_size_type
+           }) do
+        :ok ->
+          Logger.info(
+            "[create_signature] Updated connection #{source_system_id} <-> #{target_system_id} ship_size_type to #{ship_size_type} (wormhole: #{wormhole_type})"
+          )
+
+          :ok
+
+        error ->
+          Logger.warning(
+            "[update_connection_wormhole_type] Failed to update ship size: #{inspect(error)}"
+          )
+
+          {:error, :ship_size_update_failed}
+      end
+    else
+      :ok
+    end
+  end
 
   @spec update_signature(Plug.Conn.t(), String.t(), map()) :: {:ok, map()} | {:error, atom()}
   def update_signature(

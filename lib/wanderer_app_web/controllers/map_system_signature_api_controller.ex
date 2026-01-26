@@ -190,9 +190,37 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   The `character_eve_id` field is optional. If provided, it must be a valid character
   that exists in the database, otherwise a 422 error will be returned. If not provided,
   the signature will be associated with the map owner's character.
+
+  ## Auto-add System Behavior
+
+  If the `solar_system_id` is not already on the map, it will be automatically added.
+  The system must be a valid EVE Online solar system ID.
+
+  ## Linked System and Connection Behavior
+
+  If `linked_system_id` is provided (for wormhole signatures):
+  - The linked system will be automatically added to the map if not present
+  - A connection will be created between the source and linked systems if one doesn't exist
+  - If a connection already exists, its ship size will be updated based on the wormhole `type`
+  - The wormhole `type` (e.g., "H296", "C2", "K162") is used to determine connection ship size:
+    - H296 → XL/Freighter size (1B kg max mass)
+    - N770, D845 → Large size (375M kg max mass)
+    - etc.
   """
   operation(:create,
     summary: "Create a new signature",
+    description: """
+    Creates a new cosmic signature in the specified solar system.
+
+    **Auto-add behavior**: If the solar_system_id is not already on the map, it will be
+    automatically added. The system must be a valid EVE Online solar system ID.
+
+    **Linked system behavior**: If linked_system_id is provided:
+    - The linked system is auto-added to the map if not present
+    - A wormhole connection is auto-created between the systems
+    - The connection's ship_size_type is inferred from the wormhole type (e.g., H296 → XL)
+    - If the connection already exists, its ship size is updated based on the wormhole type
+    """,
     parameters: [
       map_identifier: [
         in: :path,
@@ -218,7 +246,7 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
              error: %OpenApiSpex.Schema{
                type: :string,
                description:
-                 "Error type (e.g., 'invalid_character', 'system_not_found', 'missing_params')"
+                 "Error type (e.g., 'invalid_character', 'invalid_solar_system', 'missing_params')"
              }
            },
            example: %{error: "invalid_character"}
