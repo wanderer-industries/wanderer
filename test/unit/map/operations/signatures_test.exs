@@ -464,9 +464,8 @@ defmodule WandererApp.Map.Operations.SignaturesTest do
           Task.async(fn ->
             params = %{"solar_system_id" => 30_000_140 + i}
             result = Signatures.create_signature(conn, params)
-            # We expect either system_not_found (system doesn't exist in test) 
-            # or the MapTestHelpers would have caught the map server error
-            assert {:error, :system_not_found} = result
+            # Fake solar_system_ids aren't in EVE static data, so we get :invalid_solar_system
+            assert {:error, :invalid_solar_system} = result
           end)
         end)
 
