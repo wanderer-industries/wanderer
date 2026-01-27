@@ -100,7 +100,7 @@ defmodule WandererApp.Map.Operations.Signatures do
           linked_system_id = Map.get(params, "linked_system_id")
           wormhole_type = Map.get(params, "type")
 
-          if is_integer(linked_system_id) do
+          if is_integer(linked_system_id) and linked_system_id != solar_system_id do
             handle_linked_system(
               map_id,
               solar_system_id,
@@ -171,86 +171,61 @@ defmodule WandererApp.Map.Operations.Signatures do
 
   def create_signature(_conn, _params), do: {:error, :missing_params}
 
-  # Ensures a system exists on the map, auto-adding it if not present.
-  # Returns {:ok, system} if successful, {:error, reason} otherwise.
+  # Check cache (not DB) to ensure system is actually visible on the map.
   @spec ensure_system_on_map(String.t(), integer(), String.t(), String.t()) ::
           {:ok, map()} | {:error, atom()}
   defp ensure_system_on_map(map_id, solar_system_id, user_id, char_id) do
-    case MapSystem.read_by_map_and_solar_system(%{
-           map_id: map_id,
-           solar_system_id: solar_system_id
-         }) do
-      {:ok, system} ->
-        {:ok, system}
-
-      {:error, %Ash.Error.Query.NotFound{}} ->
-        # System not on map, try to auto-add it
-        add_system_to_map(map_id, solar_system_id, user_id, char_id)
-
-      {:error, %Ash.Error.Invalid{errors: errors}} ->
-        # Check if it's a NotFound wrapped in Invalid
-        if Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) do
-          add_system_to_map(map_id, solar_system_id, user_id, char_id)
-        else
-          Logger.error("[ensure_system_on_map] Unexpected Ash error: #{inspect(errors)}")
-          {:error, :unexpected_error}
-        end
-
-      error ->
-        Logger.error("[ensure_system_on_map] Unexpected error: #{inspect(error)}")
-        {:error, :unexpected_error}
+    case WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: solar_system_id}) do
+      nil -> add_system_to_map(map_id, solar_system_id, user_id, char_id)
+      system -> {:ok, system}
     end
   end
 
-  # Adds a system to the map and returns the created system record.
   @spec add_system_to_map(String.t(), integer(), String.t(), String.t()) ::
           {:ok, map()} | {:error, atom()}
   defp add_system_to_map(map_id, solar_system_id, user_id, char_id) do
-    # First verify the solar_system_id is valid in EVE static data
-    case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+    with {:ok, static_info} when not is_nil(static_info) <-
+           WandererApp.CachedInfo.get_system_static_info(solar_system_id),
+         :ok <-
+           Server.add_system(
+             map_id,
+             %{solar_system_id: solar_system_id, coordinates: nil},
+             user_id,
+             char_id
+           ),
+         system when not is_nil(system) <- fetch_system_after_add(map_id, solar_system_id) do
+      Logger.info("[create_signature] Auto-added system #{solar_system_id} to map #{map_id}")
+      {:ok, system}
+    else
       {:ok, nil} ->
         {:error, :invalid_solar_system}
 
-      {:ok, _static_info} ->
-        # Add system to map (coordinates nil = auto-position)
-        case Server.add_system(
-               map_id,
-               %{solar_system_id: solar_system_id, coordinates: nil, extra: %{}},
-               user_id,
-               char_id,
-               update_existing: false
-             ) do
-          :ok ->
-            # System added async, wait briefly and fetch it
-            # The map server processes synchronously within the same process context
-            Process.sleep(100)
-
-            case MapSystem.read_by_map_and_solar_system(%{
-                   map_id: map_id,
-                   solar_system_id: solar_system_id
-                 }) do
-              {:ok, system} ->
-                Logger.info(
-                  "[create_signature] Auto-added system #{solar_system_id} to map #{map_id}"
-                )
-
-                {:ok, system}
-
-              error ->
-                Logger.error(
-                  "[add_system_to_map] Failed to fetch system after add: #{inspect(error)}"
-                )
-
-                {:error, :system_add_failed}
-            end
-
-          error ->
-            Logger.error("[add_system_to_map] Failed to add system: #{inspect(error)}")
-            {:error, :system_add_failed}
-        end
-
       {:error, _} ->
         {:error, :invalid_solar_system}
+
+      nil ->
+        Logger.error("[add_system_to_map] Failed to fetch system after add")
+        {:error, :system_add_failed}
+
+      error ->
+        Logger.error("[add_system_to_map] Failed to add system: #{inspect(error)}")
+        {:error, :system_add_failed}
+    end
+  end
+
+  defp fetch_system_after_add(map_id, solar_system_id) do
+    case WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: solar_system_id}) do
+      nil ->
+        case MapSystem.read_by_map_and_solar_system(%{
+               map_id: map_id,
+               solar_system_id: solar_system_id
+             }) do
+          {:ok, system} -> system
+          _ -> nil
+        end
+
+      system ->
+        system
     end
   end
 
