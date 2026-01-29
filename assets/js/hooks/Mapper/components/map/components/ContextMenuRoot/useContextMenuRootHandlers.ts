@@ -46,6 +46,22 @@ export const useContextMenuRootHandlers = ({ onAddSystem, onCommand }: UseContex
     ref.current.onAddSystem?.({ coordinates: position });
   }, [position]);
 
+  const onAutoLayout = useCallback(async () => {
+    const { onCommand } = ref.current;
+    if (!onCommand) {
+      return;
+    }
+
+    console.log('Auto layouting systems');
+
+    await onCommand({
+      type: OutCommand.layoutSystems,
+      data: {
+        system_ids: [], // Layout all systems
+      },
+    });
+  }, []);
+
   const onPasteSystemsAnsConnections = useCallback(async () => {
     const { pasteSystemsAndConnections, onCommand, position } = ref.current;
     if (!position || !onCommand || !pasteSystemsAndConnections) {
@@ -72,5 +88,6 @@ export const useContextMenuRootHandlers = ({ onAddSystem, onCommand }: UseContex
     contextMenuRef,
     onAddSystem: onAddSystemCallback,
     onPasteSystemsAnsConnections,
+    onAutoLayout,
   };
 };

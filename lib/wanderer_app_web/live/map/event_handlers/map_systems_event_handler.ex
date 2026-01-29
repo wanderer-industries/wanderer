@@ -164,6 +164,25 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "layout_systems",
+        %{"system_ids" => system_ids},
+        %{
+          assigns: %{
+            map_id: map_id,
+            main_character_id: main_character_id,
+            has_tracked_characters?: true,
+            user_permissions: %{update_system: true}
+          }
+        } = socket
+      )
+      when not is_nil(main_character_id) do
+    map_id
+    |> WandererApp.Map.Server.layout_systems(system_ids)
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
         "update_system_position",
         position,
         %{

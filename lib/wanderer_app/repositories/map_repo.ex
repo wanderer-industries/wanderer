@@ -11,7 +11,8 @@ defmodule WandererApp.MapRepo do
     "show_temp_system_name" => "false",
     "restrict_offline_showing" => "false",
     "allowed_copy_for" => "admin_map",
-    "allowed_paste_for" => "add_system"
+    "allowed_paste_for" => "add_system",
+    "auto_layout" => "false"
   }
 
   def get(map_id, relationships \\ []) do

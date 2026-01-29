@@ -281,6 +281,7 @@ export enum OutCommand {
   addPing = 'add_ping',
   cancelPing = 'cancel_ping',
   startTracking = 'startTracking',
+  layoutSystems = 'layout_systems',
 
   // Only UI commands
   openSettings = 'open_settings',

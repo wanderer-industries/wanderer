@@ -13,12 +13,14 @@ export interface ContextMenuRootProps {
   pasteSystemsAndConnections: PasteSystemsAndConnections | undefined;
   onAddSystem(): void;
   onPasteSystemsAnsConnections(): void;
+  onAutoLayout(): void;
 }
 
 export const ContextMenuRoot: React.FC<ContextMenuRootProps> = ({
   contextMenuRef,
   onAddSystem,
   onPasteSystemsAnsConnections,
+  onAutoLayout,
   pasteSystemsAndConnections,
 }) => {
   const {
@@ -34,35 +36,40 @@ export const ContextMenuRoot: React.FC<ContextMenuRootProps> = ({
         icon: PrimeIcons.PLUS,
         command: onAddSystem,
       },
+      {
+        label: 'Auto Layout',
+        icon: PrimeIcons.REFRESH,
+        command: onAutoLayout,
+      },
       ...(pasteSystemsAndConnections != null
         ? [
-            {
-              icon: 'pi pi-clipboard',
-              disabled: !allowPaste,
-              command: onPasteSystemsAnsConnections,
-              template: () => {
-                if (allowPaste) {
-                  return (
-                    <WdMenuItem icon="pi pi-clipboard">
-                      Paste
-                    </WdMenuItem>
-                  );
-                }
-
+          {
+            icon: 'pi pi-clipboard',
+            disabled: !allowPaste,
+            command: onPasteSystemsAnsConnections,
+            template: () => {
+              if (allowPaste) {
                 return (
-                  <MenuItemWithInfo
-                    infoTitle="Action is blocked because you don’t have permission to Paste."
-                    infoClass={clsx(PrimeIcons.QUESTION_CIRCLE, 'text-stone-500 mr-[12px]')}
-                    tooltipWrapperClassName="flex"
-                  >
-                    <WdMenuItem disabled icon="pi pi-clipboard">
-                      Paste
-                    </WdMenuItem>
-                  </MenuItemWithInfo>
+                  <WdMenuItem icon="pi pi-clipboard">
+                    Paste
+                  </WdMenuItem>
                 );
-              },
+              }
+
+              return (
+                <MenuItemWithInfo
+                  infoTitle="Action is blocked because you don’t have permission to Paste."
+                  infoClass={clsx(PrimeIcons.QUESTION_CIRCLE, 'text-stone-500 mr-[12px]')}
+                  tooltipWrapperClassName="flex"
+                >
+                  <WdMenuItem disabled icon="pi pi-clipboard">
+                    Paste
+                  </WdMenuItem>
+                </MenuItemWithInfo>
+              );
             },
-          ]
+          },
+        ]
         : []),
     ];
   }, [userPermissions, options, onAddSystem, pasteSystemsAndConnections, onPasteSystemsAnsConnections]);

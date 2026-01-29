@@ -281,9 +281,9 @@ const MapComp = ({
           deleteKeyCode={['']}
           {...(isPanAndDrag
             ? {
-                selectionOnDrag: true,
-                panOnDrag: [2],
-              }
+              selectionOnDrag: true,
+              panOnDrag: [2],
+            }
             : {})}
           // TODO need create clear example with problem with that flag
           //  if system is not visible edge not drawing (and any render in Custom node is not happening)

@@ -41,4 +41,5 @@ export type SolarSystemConnection = {
   target: string;
 
   type?: ConnectionType;
+  is_cross_list?: boolean;
 };

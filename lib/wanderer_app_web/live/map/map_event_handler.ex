@@ -58,7 +58,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_system_tag",
     "update_system_temporary_name",
     "update_system_status",
-    "manual_paste_systems_and_connections"
+    "manual_paste_systems_and_connections",
+    "layout_systems"
   ]
 
   @map_system_comments_events [
@@ -339,19 +340,34 @@ defmodule WandererAppWeb.MapEventHandler do
           time_status: time_status,
           type: type,
           ship_size_type: ship_size_type,
-          locked: locked
+          locked: locked,
+          custom_info: custom_info
         } = _connection
-      ),
-      do: %{
-        id: "#{solar_system_source}_#{solar_system_target}",
-        mass_status: mass_status,
-        time_status: time_status,
-        type: type,
-        ship_size_type: ship_size_type,
-        locked: locked,
-        source: "#{solar_system_source}",
-        target: "#{solar_system_target}"
-      }
+      ) do
+    is_cross_list =
+      case custom_info do
+        nil ->
+          false
+
+        info ->
+          case Jason.decode(info) do
+            {:ok, %{"is_cross_list" => val}} -> val
+            _ -> false
+          end
+      end
+
+    %{
+      id: "#{solar_system_source}_#{solar_system_target}",
+      mass_status: mass_status,
+      time_status: time_status,
+      type: type,
+      ship_size_type: ship_size_type,
+      locked: locked,
+      source: "#{solar_system_source}",
+      target: "#{solar_system_target}",
+      is_cross_list: is_cross_list
+    }
+  end
 
   def map_ui_system(
         %{
