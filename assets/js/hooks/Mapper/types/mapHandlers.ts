@@ -25,6 +25,7 @@ export enum Commands {
   detailedKillsUpdated = 'detailed_kills_updated',
   routes = 'routes',
   userRoutes = 'user_routes',
+  routesListBy = 'routes_list_by',
   centerSystem = 'center_system',
   selectSystem = 'select_system',
   selectSystems = 'select_systems',
@@ -62,6 +63,7 @@ export type Command =
   | Commands.detailedKillsUpdated
   | Commands.routes
   | Commands.userRoutes
+  | Commands.routesListBy
   | Commands.selectSystem
   | Commands.selectSystems
   | Commands.centerSystem
@@ -121,6 +123,7 @@ export type CommandSignaturesUpdated = string;
 export type CommandMapUpdated = Partial<CommandInit>;
 export type CommandRoutes = RoutesList;
 export type CommandUserRoutes = RoutesList;
+export type CommandRoutesListBy = RoutesList;
 export type CommandKillsUpdated = Kill[];
 export type CommandDetailedKillsUpdated = Record<string, DetailedKill[]>;
 export type CommandSelectSystem = string | undefined;
@@ -199,6 +202,7 @@ export interface CommandData {
   [Commands.mapUpdated]: CommandMapUpdated;
   [Commands.routes]: CommandRoutes;
   [Commands.userRoutes]: CommandUserRoutes;
+  [Commands.routesListBy]: CommandRoutesListBy;
   [Commands.killsUpdated]: CommandKillsUpdated;
   [Commands.detailedKillsUpdated]: CommandDetailedKillsUpdated;
   [Commands.selectSystem]: CommandSelectSystem;
@@ -232,6 +236,7 @@ export enum OutCommand {
   deleteUserHub = 'delete_user_hub',
   getRoutes = 'get_routes',
   getUserRoutes = 'get_user_routes',
+  getRoutesBy = 'get_routes_by',
   getCharacterJumps = 'get_character_jumps',
   getStructures = 'get_structures',
   getSignatures = 'get_signatures',

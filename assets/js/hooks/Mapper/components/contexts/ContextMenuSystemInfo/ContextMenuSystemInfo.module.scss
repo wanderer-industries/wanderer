@@ -8,3 +8,15 @@
     }
   }
 }
+
+.ContextMenu {
+  width: max-content;
+  min-width: unset;
+
+  :global {
+    .p-submenu-list {
+      width: max-content;
+      min-width: unset !important;
+    }
+  }
+}

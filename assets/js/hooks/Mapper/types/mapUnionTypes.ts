@@ -20,6 +20,7 @@ export type MapUnionTypes = {
   systemSignatures: Record<string, SystemSignature[]>;
   routes?: RoutesList;
   userRoutes?: RoutesList;
+  routesListBy?: RoutesList;
   kills: Record<number, number>;
   connections: SolarSystemConnection[];
   userPermissions: Partial<UserPermissions>;

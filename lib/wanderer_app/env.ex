@@ -14,6 +14,7 @@ defmodule WandererApp.Env do
   def base_url(), do: get_key(:web_app_url, "<BASE_URL>")
   def base_metrics_only(), do: get_key(:base_metrics_only, false)
   def custom_route_base_url(), do: get_key(:custom_route_base_url, "<CUSTOM_ROUTE_BASE_URL>")
+  def route_builder_base_url(), do: get_key(:route_builder_base_url, "http://localhost:2001")
   def invites(), do: get_key(:invites, false)
 
   def map_subscriptions_enabled?(), do: get_key(:map_subscriptions_enabled, false)

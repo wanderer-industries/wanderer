@@ -43,6 +43,25 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
           }
         )
 
+  def handle_server_event(
+        %{
+          event: :routes_list_by,
+          payload: {solar_system_id, %{routes: routes, systems_static_data: systems_static_data}}
+        },
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event(
+          "routes_list_by",
+          %{
+            solar_system_id: solar_system_id,
+            loading: false,
+            routes: routes,
+            systems_static_data: systems_static_data
+          }
+        )
+
   def handle_server_event(event, socket),
     do: MapCoreEventHandler.handle_server_event(event, socket)
 
@@ -140,6 +159,33 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_ui_event(
+        "get_routes_by",
+        %{"system_id" => solar_system_id, "routes_settings" => routes_settings} = event,
+        %{assigns: %{map_id: map_id, map_loaded?: true}} = socket
+      ) do
+    routes_type = Map.get(event, "type", "blueLoot")
+    security_type = Map.get(event, "securityType", "both")
+    routes_settings =
+      routes_settings
+      |> get_routes_settings()
+      |> Map.put(:security_type, security_type)
+
+    Task.async(fn ->
+      {:ok, routes} =
+        WandererApp.Map.RoutesBy.find(
+          map_id,
+          solar_system_id,
+          routes_settings,
+          routes_type
+        )
+
+      {:routes_list_by, {solar_system_id, routes}}
+    end)
+
+    {:noreply, socket}
   end
 
   def handle_ui_event(
