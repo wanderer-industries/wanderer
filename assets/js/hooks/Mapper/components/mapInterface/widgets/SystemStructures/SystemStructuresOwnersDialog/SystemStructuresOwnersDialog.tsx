@@ -1,13 +1,13 @@
-import React, { useCallback, useState } from 'react';
-import { Dialog } from 'primereact/dialog';
-import { AutoComplete } from 'primereact/autocomplete';
 import clsx from 'clsx';
+import { AutoComplete } from 'primereact/autocomplete';
+import { Dialog } from 'primereact/dialog';
+import React, { useCallback, useState } from 'react';
 
-import { StructureItem } from '../helpers';
-import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand } from '@/hooks/Mapper/types';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useToast } from '@/hooks/Mapper/ToastProvider';
+import { OutCommand } from '@/hooks/Mapper/types';
+import { StructureItem } from '../helpers';
 
 interface StructuresOwnersEditDialogProps {
   visible: boolean;
@@ -30,7 +30,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
 
   const [prevQuery, setPrevQuery] = useState('');
   const [prevResults, setPrevResults] = useState<{ label: string; value: string }[]>([]);
-  const [editData, setEditData] = useState<StructureItem[]>(structures)
+  const [editData, setEditData] = useState<StructureItem[]>(structures);
 
   // Searching corporation owners via auto-complete
   const searchOwners = useCallback(
@@ -63,43 +63,64 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
           summary: 'Failed to fetch owners',
           detail: `${err}`,
           life: 10000,
-        })
+        });
       }
     },
     [prevQuery, prevResults, outCommand],
   );
 
-
   // when user picks a corp from auto-complete
   const handleSelectOwner = (selected: { label: string; value: string }) => {
     setOwnerInput(selected.label);
 
-    setEditData(structures.map(item => {
-      return { ...item, ownerName: selected.label, ownerId: selected.value }
-    }))
+    setEditData(
+      structures.map(item => {
+        return { ...item, ownerName: selected.label, ownerId: selected.value };
+      }),
+    );
   };
 
   const handleSaveClick = async () => {
     if (!editData) return;
 
-    // fetch corporation ticker if we have an ownerId
-    for (const structure of editData) {
-      if (structure.ownerId) {
+    // Get all unique owner IDs that need ticker lookup
+    const allOwnerIds = editData.filter(x => x.ownerId != null).map(x => x.ownerId as string);
+
+    const uniqueOwnerIds = [...new Set(allOwnerIds)];
+
+    // Fetch all tickers in parallel
+    const tickerResults = await Promise.all(
+      uniqueOwnerIds.map(async ownerId => {
         try {
-          // TODO fix it
           const { ticker } = await outCommand({
             type: OutCommand.getCorporationTicker,
-            data: { corp_id: structure.ownerId },
+            data: { corp_id: ownerId },
           });
-          structure.ownerTicker = ticker ?? '';
+          return { ownerId, ticker: ticker ?? '' };
         } catch (err) {
-          console.error('Failed to fetch ticker:', err);
-          structure.ownerTicker = '';
+          console.error('Failed to fetch ticker for ownerId:', ownerId, err);
+          return { ownerId, ticker: '' };
         }
+      }),
+    );
+
+    // Create a map of ownerId -> ticker for quick lookup
+    const tickerMap = new Map(tickerResults.map(r => [r.ownerId, r.ticker]));
+
+    // Create new array with updated values (no mutation)
+    const updatedStructures = editData.map(structure => {
+      if (!structure.ownerId) {
+        return structure;
       }
-    }
-    onSave(editData);
-    onClose()
+
+      return {
+        ...structure,
+        ownerTicker: tickerMap.get(structure.ownerId) ?? '',
+      };
+    });
+
+    onSave(updatedStructures);
+    onClose();
   };
 
   return (
@@ -111,8 +132,7 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
     >
       <div className="flex flex-col gap-2 text-[14px]">
         <div className="flex gap-2">
-          Updating the corporation name below will update all structures currently
-          saved within the system.
+          Updating the corporation name below will update all structures currently saved within the system.
         </div>
 
         <hr />
@@ -121,9 +141,12 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
           <label className="grid grid-cols-[100px_1fr] gap-2 items-start mt-2">
             <span className="mt-1">Structures to update:</span>
             <ul>
-              {structures && structures.map((item, i) => (
-                <li key={i}>{item.structureType || 'Unknown Type'} - {item.name}</li>
-              ))}
+              {structures &&
+                structures.map((item, i) => (
+                  <li key={i}>
+                    {item.structureType || 'Unknown Type'} - {item.name}
+                  </li>
+                ))}
             </ul>
           </label>
         </div>
@@ -147,7 +170,6 @@ export const SystemStructuresOwnersDialog: React.FC<StructuresOwnersEditDialogPr
             />
           </label>
         </div>
-
       </div>
 
       <div className="flex justify-end items-center gap-2 mt-4">
