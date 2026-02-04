@@ -45,7 +45,17 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       :active?
     ]
 
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    # Custom destroy to invalidate cache
+    destroy :destroy do
+      require_atomic? false
+
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.ExternalEvents.WebhookDispatcher.invalidate_cache(record.map_id)
+               {:ok, record}
+             end)
+    end
 
     update :update do
       accept [
@@ -60,6 +70,12 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       ]
 
       require_atomic? false
+
+      # Invalidate cache when subscription is updated
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.ExternalEvents.WebhookDispatcher.invalidate_cache(record.map_id)
+               {:ok, record}
+             end)
     end
 
     read :by_map do
@@ -124,6 +140,12 @@ defmodule WandererApp.Api.MapWebhookSubscription do
         secret = generate_webhook_secret()
         Ash.Changeset.force_change_attribute(changeset, :secret, secret)
       end
+
+      # Invalidate cache when subscription is created
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.ExternalEvents.WebhookDispatcher.invalidate_cache(record.map_id)
+               {:ok, record}
+             end)
     end
 
     update :rotate_secret do
@@ -134,6 +156,11 @@ defmodule WandererApp.Api.MapWebhookSubscription do
         new_secret = generate_webhook_secret()
         Ash.Changeset.change_attribute(changeset, :secret, new_secret)
       end
+
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.ExternalEvents.WebhookDispatcher.invalidate_cache(record.map_id)
+               {:ok, record}
+             end)
     end
   end
 

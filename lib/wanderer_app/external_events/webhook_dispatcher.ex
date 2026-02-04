@@ -166,6 +166,37 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
   end
 
   defp get_active_subscriptions(map_id) do
+    # Use cache to avoid DB query on every event
+    cache_key = "map:#{map_id}"
+
+    case Cachex.get(:webhook_subscriptions_cache, cache_key) do
+      {:ok, nil} ->
+        # Cache miss - fetch from DB and cache
+        fetch_and_cache_subscriptions(map_id, cache_key)
+
+      {:ok, subscriptions} ->
+        # Cache hit
+        {:ok, subscriptions}
+
+      {:error, _reason} ->
+        # Cache error - fall back to DB
+        fetch_subscriptions_from_db(map_id)
+    end
+  end
+
+  defp fetch_and_cache_subscriptions(map_id, cache_key) do
+    case fetch_subscriptions_from_db(map_id) do
+      {:ok, subscriptions} = result ->
+        # Cache for 5 minutes (TTL set on cache, but explicit here for clarity)
+        Cachex.put(:webhook_subscriptions_cache, cache_key, subscriptions)
+        result
+
+      error ->
+        error
+    end
+  end
+
+  defp fetch_subscriptions_from_db(map_id) do
     try do
       subscriptions = MapWebhookSubscription.active_by_map!(map_id)
       {:ok, subscriptions}
@@ -409,17 +440,25 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
   end
 
   defp webhooks_allowed?(map_id, webhooks_globally_enabled) do
-    with true <- webhooks_globally_enabled,
-         {:ok, map} <- WandererApp.Api.Map.by_id(map_id),
-         true <- map.webhooks_enabled do
-      :ok
-    else
-      false -> {:error, :webhooks_globally_disabled}
-      nil -> {:error, :webhooks_globally_disabled}
-      {:error, :not_found} -> {:error, :map_not_found}
-      %{webhooks_enabled: false} -> {:error, :webhooks_disabled_for_map}
-      {:error, reason} -> {:error, reason}
-      error -> {:error, {:unexpected_error, error}}
+    cond do
+      not webhooks_globally_enabled ->
+        {:error, :webhooks_globally_disabled}
+
+      not WandererApp.Map.webhooks_enabled?(map_id) ->
+        {:error, :webhooks_disabled_for_map}
+
+      true ->
+        :ok
     end
+  end
+
+  @doc """
+  Invalidates the webhook subscriptions cache for a map.
+  Called when subscriptions are created, updated, or deleted.
+  """
+  def invalidate_cache(map_id) do
+    cache_key = "map:#{map_id}"
+    Cachex.del(:webhook_subscriptions_cache, cache_key)
+    :ok
   end
 end
