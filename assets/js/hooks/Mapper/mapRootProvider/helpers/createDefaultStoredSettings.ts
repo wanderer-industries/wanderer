@@ -3,6 +3,7 @@ import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
   DEFAULT_MAP_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
+  DEFAULT_ROUTES_BY_SETTINGS,
   DEFAULT_ROUTES_SETTINGS,
   DEFAULT_WIDGET_LOCAL_SETTINGS,
   getDefaultWidgetProps,
@@ -17,6 +18,11 @@ export const createWidgetSettings = <T>(settings: T) => {
 };
 
 export const createDefaultStoredSettings = (): MapUserSettings => {
+  const defaultRoutesBy = {
+    ...DEFAULT_ROUTES_BY_SETTINGS,
+    routes: { ...DEFAULT_ROUTES_BY_SETTINGS.routes },
+  };
+
   return {
     version: STORED_SETTINGS_VERSION,
     migratedFromOld: false,
@@ -24,6 +30,7 @@ export const createDefaultStoredSettings = (): MapUserSettings => {
     localWidget: createWidgetSettings(DEFAULT_WIDGET_LOCAL_SETTINGS),
     widgets: createWidgetSettings(getDefaultWidgetProps()),
     routes: createWidgetSettings(DEFAULT_ROUTES_SETTINGS),
+    routesBy: createWidgetSettings(defaultRoutesBy),
     onTheMap: createWidgetSettings(DEFAULT_ON_THE_MAP_SETTINGS),
     signaturesWidget: createWidgetSettings(DEFAULT_SIGNATURE_SETTINGS),
     interface: createWidgetSettings(STORED_INTERFACE_DEFAULT_VALUES),
@@ -43,6 +50,11 @@ export const getDefaultSettingsByType = (type: SettingsTypes): SettingsWrapper<a
       return createWidgetSettings(getDefaultWidgetProps());
     case SettingsTypes.routes:
       return createWidgetSettings(DEFAULT_ROUTES_SETTINGS);
+    case SettingsTypes.routesBy:
+      return createWidgetSettings({
+        ...DEFAULT_ROUTES_BY_SETTINGS,
+        routes: { ...DEFAULT_ROUTES_BY_SETTINGS.routes },
+      });
     case SettingsTypes.onTheMap:
       return createWidgetSettings(DEFAULT_ON_THE_MAP_SETTINGS);
     case SettingsTypes.signaturesWidget:

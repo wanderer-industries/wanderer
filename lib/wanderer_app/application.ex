@@ -112,6 +112,7 @@ defmodule WandererApp.Application do
           WandererApp.Scheduler,
           WandererApp.Server.ServerStatusTracker,
           WandererApp.Server.TheraDataFetcher,
+          WandererApp.Server.TurnurDataFetcher,
           {WandererApp.Character.TrackerPoolSupervisor, []},
           {WandererApp.Map.MapPoolSupervisor, []},
           WandererApp.Character.TrackerManager,

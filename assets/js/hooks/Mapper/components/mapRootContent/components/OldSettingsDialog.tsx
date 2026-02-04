@@ -38,9 +38,11 @@ export const OldSettingsDialog = () => {
         localWidget: createSettings(widgetLocal, {}),
         widgets: createSettings(widgetsOld, {}),
         routes: createSettings(widgetRoutes, {}),
+        routesBy: createSettings(widgetRoutes, {}),
         onTheMap: createSettings(onTheMapOld, {}),
         signaturesWidget: createSettings(signatures, {}),
         interface: createSettings(interfaceSettings, {}),
+        map: createSettings(null, { viewport: { zoom: 1, x: 0, y: 0 } }),
       };
 
       if (asFile) {

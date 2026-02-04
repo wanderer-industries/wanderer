@@ -58,7 +58,8 @@ defmodule WandererApp.Map.RoutesBy do
       avoid: avoidance_list,
       count: 40,
       type: type,
-      security_type: security_type
+      security_type: security_type,
+      routes_settings: routes_settings
     }
 
     stations_by_system = WandererApp.RouteBuilderClient.stations_for(type)
@@ -109,7 +110,8 @@ defmodule WandererApp.Map.RoutesBy do
         |> Enum.map(fn station ->
           %{
             station_id: Map.get(station, "station_id") || Map.get(station, :station_id),
-            station_name: Map.get(station, "name") || Map.get(station, :name)
+            station_name: Map.get(station, "name") || Map.get(station, :name),
+            special: Map.get(station, "special") || Map.get(station, :special) || false
           }
         end)
         |> Enum.filter(fn station ->

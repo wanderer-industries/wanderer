@@ -16,6 +16,7 @@ type MappedSystem = SolarSystemStaticInfoRaw | undefined;
 export type RouteStationSummary = {
   station_id: number;
   station_name: string;
+  special?: boolean;
 };
 
 export type Route = {

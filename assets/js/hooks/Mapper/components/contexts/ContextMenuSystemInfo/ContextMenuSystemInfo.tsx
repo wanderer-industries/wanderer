@@ -14,6 +14,7 @@ import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormhol
 import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
 import { useGetOwnOnlineCharacters } from '@/hooks/Mapper/components/hooks/useGetOwnOnlineCharacters.ts';
+import { sortStationsByDistance } from './sortStationsByDistance.ts';
 
 export interface ContextMenuSystemInfoProps {
   systemStatics: Map<number, SolarSystemStaticInfoRaw>;
@@ -90,33 +91,38 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
   const getStationsMenu = useCallback(
     (stations: RouteStationSummary[]) => {
       const chars = getOwnOnlineCharacters().filter(x => x.online);
-      if (chars.length === 0) {
-        return [
-          {
-            label: 'Stations',
-            icon: PrimeIcons.MAP_MARKER,
-            items: [{ label: 'No online characters', disabled: true }],
-          },
-        ];
-      }
+      const sortedStations = sortStationsByDistance(stations);
+
+      // eslint-disable-next-line no-console
+      console.log('JOipP', `sortedStations`, sortedStations);
 
       return [
         {
           label: 'Stations',
           icon: PrimeIcons.MAP_MARKER,
-          items: stations.map(station => {
+          items: sortedStations.map(station => {
             const destinationId = station.station_id.toString();
+            const specialClass = station.special ? '[&_.p-menuitem-text]:text-orange-400' : '';
+
+            if (chars.length === 0) {
+              return {
+                label: station.station_name,
+                className: specialClass || undefined,
+                items: [{ label: 'No online characters', disabled: true }],
+              };
+            }
 
             if (chars.length === 1) {
               return {
                 label: station.station_name,
+                className: specialClass || undefined,
                 items: getStationWaypointItems(destinationId, chars.slice(0, 1)),
               };
             }
 
             return {
               label: station.station_name,
-              className: 'w-[500px]',
+              className: `${specialClass} w-[500px]`.trim(),
               items: [
                 {
                   label: 'All',

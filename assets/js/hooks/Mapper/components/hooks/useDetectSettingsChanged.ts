@@ -6,6 +6,7 @@ export const useDetectSettingsChanged = () => {
     storedSettings: {
       interfaceSettings,
       settingsRoutes,
+      settingsRoutesBy,
       settingsLocal,
       settingsSignatures,
       settingsOnTheMap,
@@ -16,7 +17,15 @@ export const useDetectSettingsChanged = () => {
 
   useEffect(
     () => setCounter(x => x + 1),
-    [interfaceSettings, settingsRoutes, settingsLocal, settingsSignatures, settingsOnTheMap, settingsKills],
+    [
+      interfaceSettings,
+      settingsRoutes,
+      settingsRoutesBy,
+      settingsLocal,
+      settingsSignatures,
+      settingsOnTheMap,
+      settingsKills,
+    ],
   );
 
   return counter;
