@@ -4,7 +4,14 @@ import { AutoComplete } from 'primereact/autocomplete';
 import { Calendar } from 'primereact/calendar';
 import clsx from 'clsx';
 
-import { formatToISO, statusesRequiringTimer, StructureItem, StructureStatus } from '../helpers';
+import {
+  calendarDateToUtcIso,
+  formatToISO,
+  statusesRequiringTimer,
+  StructureItem,
+  StructureStatus,
+  utcToCalendarDate,
+} from '../helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
@@ -72,7 +79,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
 
       // If this is the endTime (Date from Calendar), we store as ISO or string:
       if (field === 'endTime' && val instanceof Date) {
-        return { ...prev, endTime: val.toISOString() };
+        return { ...prev, endTime: calendarDateToUtcIso(val) };
       }
 
       return { ...prev, [field]: val };
@@ -188,7 +195,7 @@ export const SystemStructuresDialog: React.FC<StructuresEditDialogProps> = ({
               Timer <br /> (Eve Time):
             </span>
             <Calendar
-              value={editData.endTime ? new Date(editData.endTime) : undefined}
+              value={editData.endTime ? utcToCalendarDate(editData.endTime) : undefined}
               onChange={e => handleChange('endTime', e.value ?? '')}
               showTime
               hourFormat="24"

@@ -1,6 +1,16 @@
 import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { FINAL_DURATION_MS } from '../constants';
 
+// Strip frontend-only fields that should never be sent to the backend.
+// "linked_system" is an object the frontend uses; the backend expects "linked_system_id" (integer)
+// which is set via a separate linkSignatureToSystem call.
+function stripFrontendFields(s: ExtendedSystemSignature) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { linked_system, pendingDeletion, pendingAddition, pendingUntil, finalTimeoutId, character_name, ...rest } =
+    s as any;
+  return rest;
+}
+
 export function prepareUpdatePayload(
   systemId: string,
   added: ExtendedSystemSignature[],
@@ -9,9 +19,9 @@ export function prepareUpdatePayload(
 ) {
   return {
     system_id: systemId,
-    added: added.map(s => ({ ...s })),
-    updated: updated.map(s => ({ ...s })),
-    removed: removed.map(s => ({ ...s })),
+    added: added.map(stripFrontendFields),
+    updated: updated.map(stripFrontendFields),
+    removed: removed.map(stripFrontendFields),
   };
 }
 
