@@ -2,9 +2,11 @@ defmodule WandererApp.ExternalEvents.SseAccessControl do
   @moduledoc """
   Handles SSE access control checks including subscription validation.
 
-  Note: Community Edition mode is automatically handled by the
-  WandererApp.Map.is_subscription_active?/1 function, which returns
-  {:ok, true} when subscriptions are disabled globally.
+  IMPORTANT: This module is optimized for high-frequency calls during event delivery.
+  All checks use cached data to avoid database queries on every event.
+
+  Note: Community Edition mode is automatically handled - when subscriptions are
+  disabled globally, we skip the subscription check entirely.
   """
 
   @doc """
@@ -15,16 +17,14 @@ defmodule WandererApp.ExternalEvents.SseAccessControl do
   - {:error, reason} if SSE is not allowed
 
   Checks in order:
-  1. Global SSE enabled (config)
-  2. Map exists
-  3. Map SSE enabled (per-map setting)
-  4. Subscription active (CE mode handled internally)
+  1. Global SSE enabled (config check - no DB)
+  2. Map SSE enabled (cache check - no DB)
+  3. Subscription active (cache check or skipped in CE mode - no DB)
   """
   def sse_allowed?(map_id) do
     with :ok <- check_sse_globally_enabled(),
-         {:ok, map} <- fetch_map(map_id),
-         :ok <- check_map_sse_enabled(map),
-         :ok <- check_subscription_or_ce(map_id) do
+         :ok <- check_map_sse_enabled_cached(map_id),
+         :ok <- check_subscription_or_ce_cached(map_id) do
       :ok
     end
   end
@@ -37,31 +37,47 @@ defmodule WandererApp.ExternalEvents.SseAccessControl do
     end
   end
 
-  # Fetches the map by ID.
-  # Returns {:ok, map} or {:error, :map_not_found}
-  defp fetch_map(map_id) do
-    case WandererApp.Api.Map.by_id(map_id) do
-      {:ok, _map} = result -> result
-      _ -> {:error, :map_not_found}
+  # Uses the map cache with fallback to DB query
+  defp check_map_sse_enabled_cached(map_id) do
+    case WandererApp.Map.sse_enabled_with_status(map_id) do
+      {:ok, true} -> :ok
+      {:ok, false} -> {:error, :sse_disabled_for_map}
+      {:error, :not_found} -> {:error, :map_not_found}
     end
   end
 
-  defp check_map_sse_enabled(map) do
-    if map.sse_enabled do
+  # Checks subscription status using cached data.
+  # In CE mode (subscriptions disabled globally), this is a fast config check.
+  # In Enterprise mode, uses cached map state's subscription settings.
+  defp check_subscription_or_ce_cached(map_id) do
+    # Fast path: CE mode - subscriptions disabled globally
+    if not WandererApp.Env.map_subscriptions_enabled?() do
       :ok
     else
-      {:error, :sse_disabled_for_map}
+      # Enterprise mode: check cached subscription status from map state
+      check_subscription_from_cache(map_id)
     end
   end
 
-  # Checks if map has active subscription or if running Community Edition.
-  #
-  # Returns :ok if:
-  # - Community Edition (handled internally by is_subscription_active?/1), OR
-  # - Map has active subscription
-  #
-  # Returns {:error, :subscription_required} if subscription check fails.
-  defp check_subscription_or_ce(map_id) do
+  # Checks subscription status from the map cache.
+  # Falls back to DB query only if cache miss.
+  defp check_subscription_from_cache(map_id) do
+    case WandererApp.Map.subscription_active_cached?(map_id) do
+      {:ok, true} ->
+        :ok
+
+      {:ok, false} ->
+        {:error, :subscription_required}
+
+      {:error, :not_cached} ->
+        # Cache miss - fall back to DB check
+        # This should be rare as maps are initialized when accessed
+        fallback_subscription_check(map_id)
+    end
+  end
+
+  # Fallback to DB query - only used when cache miss
+  defp fallback_subscription_check(map_id) do
     case WandererApp.Map.is_subscription_active?(map_id) do
       {:ok, true} -> :ok
       {:ok, false} -> {:error, :subscription_required}

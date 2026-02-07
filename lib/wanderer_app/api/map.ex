@@ -218,6 +218,11 @@ defmodule WandererApp.Api.Map do
     update :toggle_webhooks do
       accept [:webhooks_enabled]
       require_atomic? false
+
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.Map.update_webhooks_enabled(record.id, record.webhooks_enabled)
+               {:ok, record}
+             end)
     end
 
     update :toggle_sse do
@@ -226,6 +231,11 @@ defmodule WandererApp.Api.Map do
 
       # Validate subscription when enabling SSE
       validate &validate_sse_subscription/2
+
+      change after_action(fn _changeset, record, _context ->
+               WandererApp.Map.update_sse_enabled(record.id, record.sse_enabled)
+               {:ok, record}
+             end)
     end
 
     create :duplicate do
