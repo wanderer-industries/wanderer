@@ -8,6 +8,8 @@ defmodule WandererApp.Map do
   require Logger
 
   @map_state_cache :map_state_cache
+  # Default plan indicates no active subscription (free tier)
+  @default_subscription_plan :alpha
 
   defstruct map_id: nil,
             name: nil,
@@ -21,7 +23,10 @@ defmodule WandererApp.Map do
             acls: [],
             options: Map.new(),
             characters_limit: nil,
-            hubs_limit: nil
+            hubs_limit: nil,
+            sse_enabled: false,
+            webhooks_enabled: false,
+            subscription_plan: @default_subscription_plan
 
   def new(
         %{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs} =
@@ -29,6 +34,9 @@ defmodule WandererApp.Map do
       ) do
     # Extract the new scopes array field if present (nil if not set)
     scopes = Map.get(input, :scopes)
+    # Extract SSE/webhooks settings (default to false if not present)
+    sse_enabled = Map.get(input, :sse_enabled, false)
+    webhooks_enabled = Map.get(input, :webhooks_enabled, false)
 
     map =
       struct!(__MODULE__,
@@ -38,7 +46,9 @@ defmodule WandererApp.Map do
         owner_id: owner_id,
         name: name,
         acls: acls,
-        hubs: hubs
+        hubs: hubs,
+        sse_enabled: sse_enabled,
+        webhooks_enabled: webhooks_enabled
       )
 
     update_map(map_id, map)
@@ -136,7 +146,7 @@ defmodule WandererApp.Map do
 
   def is_subscription_active?(map_id, _map_subscriptions_enabled) do
     {:ok, %{plan: plan}} = WandererApp.Map.SubscriptionManager.get_active_map_subscription(map_id)
-    {:ok, plan != :alpha}
+    {:ok, plan != @default_subscription_plan}
   end
 
   def get_options(map_id),
@@ -323,12 +333,17 @@ defmodule WandererApp.Map do
     end
   end
 
-  def update_subscription_settings!(%{map_id: map_id} = _map, %{
-        characters_limit: characters_limit,
-        hubs_limit: hubs_limit
-      }) do
+  def update_subscription_settings!(%{map_id: map_id} = _map, subscription_settings) do
+    characters_limit = Map.get(subscription_settings, :characters_limit)
+    hubs_limit = Map.get(subscription_settings, :hubs_limit)
+    plan = Map.get(subscription_settings, :plan, @default_subscription_plan)
+
     map_id
-    |> update_map(%{characters_limit: characters_limit, hubs_limit: hubs_limit})
+    |> update_map(%{
+      characters_limit: characters_limit,
+      hubs_limit: hubs_limit,
+      subscription_plan: plan
+    })
 
     map_id
     |> get_map!()
@@ -340,6 +355,99 @@ defmodule WandererApp.Map do
 
     map_id
     |> get_map!()
+  end
+
+  @doc """
+  Updates SSE enabled setting in the map cache.
+  Called when the map's sse_enabled setting changes.
+  """
+  def update_sse_enabled(map_id, sse_enabled)
+      when is_binary(map_id) and is_boolean(sse_enabled) do
+    update_map(map_id, %{sse_enabled: sse_enabled})
+    :ok
+  end
+
+  @doc """
+  Updates webhooks enabled setting in the map cache.
+  Called when the map's webhooks_enabled setting changes.
+  """
+  def update_webhooks_enabled(map_id, webhooks_enabled)
+      when is_binary(map_id) and is_boolean(webhooks_enabled) do
+    update_map(map_id, %{webhooks_enabled: webhooks_enabled})
+    :ok
+  end
+
+  @doc """
+  Checks if SSE is enabled for a map using the cache.
+  Falls back to DB query if map is not in cache.
+  Returns a boolean (defaults to false if map not found).
+  """
+  def sse_enabled?(map_id) do
+    case get_map(map_id) do
+      {:ok, map} ->
+        Map.get(map, :sse_enabled, false)
+
+      {:error, :not_found} ->
+        # Cache miss - fall back to DB
+        case WandererApp.Api.Map.by_id(map_id) do
+          {:ok, db_map} -> db_map.sse_enabled
+          _ -> false
+        end
+    end
+  end
+
+  @doc """
+  Checks if SSE is enabled for a map with explicit not_found handling.
+  Returns {:ok, boolean} or {:error, :not_found}.
+  """
+  def sse_enabled_with_status(map_id) do
+    case get_map(map_id) do
+      {:ok, map} ->
+        {:ok, Map.get(map, :sse_enabled, false)}
+
+      {:error, :not_found} ->
+        # Cache miss - fall back to DB
+        case WandererApp.Api.Map.by_id(map_id) do
+          {:ok, db_map} -> {:ok, db_map.sse_enabled}
+          _ -> {:error, :not_found}
+        end
+    end
+  end
+
+  @doc """
+  Checks if webhooks are enabled for a map using the cache.
+  Falls back to DB query if map is not in cache.
+  """
+  def webhooks_enabled?(map_id) do
+    case get_map(map_id) do
+      {:ok, map} ->
+        Map.get(map, :webhooks_enabled, false)
+
+      {:error, :not_found} ->
+        # Cache miss - fall back to DB
+        case WandererApp.Api.Map.by_id(map_id) do
+          {:ok, db_map} -> db_map.webhooks_enabled
+          _ -> false
+        end
+    end
+  end
+
+  @doc """
+  Checks if subscription is active for a map using the cache.
+  Returns {:ok, true} if active, {:ok, false} if not, or {:error, :not_cached} if not in cache.
+
+  Note: In CE mode (subscriptions disabled), use is_subscription_active?/1 which
+  handles this case without cache lookup.
+  """
+  def subscription_active_cached?(map_id) do
+    case get_map(map_id) do
+      {:ok, map} ->
+        plan = Map.get(map, :subscription_plan, @default_subscription_plan)
+        {:ok, plan != @default_subscription_plan}
+
+      _ ->
+        {:error, :not_cached}
+    end
   end
 
   def add_systems!(map, []), do: map
