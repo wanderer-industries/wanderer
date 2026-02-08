@@ -1,0 +1,166 @@
+<main class="w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 overflow-auto">
+  <div class="page-content">
+    <div class="container-fluid px-[0.625rem]">
+      <!-- Header -->
+      <div class="grid grid-cols-1 pb-6">
+        <div class="md:flex items-center justify-between px-[2px]">
+          <h4 class="text-[18px] font-medium text-gray-800 mb-sm-0 grow dark:text-gray-100 mb-2 md:mb-0">
+            Admin - Characters
+          </h4>
+          <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">
+            <.icon name="hero-arrow-left-solid" class="w-4 h-4" /> Back to Admin
+          </.link>
+        </div>
+      </div>
+      
+<!-- Search and Filters -->
+      <div class="card dark:bg-zinc-800 dark:border-zinc-600 mb-4">
+        <div class="card-body flex flex-row gap-4 items-center">
+          <div class="flex-1">
+            <input
+              type="text"
+              placeholder="Search by name, corporation, or alliance..."
+              value={@search_term}
+              phx-keyup="search"
+              phx-debounce="300"
+              name="search"
+              class="input input-bordered w-full"
+            />
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              class="checkbox"
+              checked={@show_deleted}
+              phx-click="toggle_deleted"
+            />
+            <span class="text-sm">Show deleted</span>
+          </label>
+        </div>
+      </div>
+      
+<!-- Characters Table -->
+      <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+        <div class="card-body">
+          <.async_result :let={characters} assign={@characters}>
+            <:loading>
+              <div class="flex justify-center p-8">
+                <span class="loading loading-spinner loading-lg"></span>
+              </div>
+            </:loading>
+            <:failed :let={reason}>
+              <div class="alert alert-error">{inspect(reason)}</div>
+            </:failed>
+
+            <% filtered = filter_characters(characters, @search_term, @show_deleted) %>
+            <% sorted = sort_characters(filtered, @sort_by, @sort_dir) %>
+            <% paginated = paginate(sorted, @page, @per_page) %>
+
+            <div class="overflow-x-auto !max-h-[60vh] !overflow-y-auto">
+              <table class="table table-xs">
+                <thead>
+                  <tr>
+                    <th
+                      :for={
+                        {label, field} <- [
+                          {"Character", :name},
+                          {"Corporation", :corporation},
+                          {"Alliance", :alliance},
+                          {"User Account", :user},
+                          {"Registered", :registered}
+                        ]
+                      }
+                      phx-click="sort"
+                      phx-value-field={field}
+                      class="cursor-pointer select-none hover:bg-base-200"
+                    >
+                      <div class="flex items-center gap-1">
+                        {label}
+                        <span :if={@sort_by == field}>
+                          <.icon :if={@sort_dir == :asc} name="hero-chevron-up" class="w-3 h-3" />
+                          <.icon
+                            :if={@sort_dir == :desc}
+                            name="hero-chevron-down"
+                            class="w-3 h-3"
+                          />
+                        </span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="admin-characters" phx-update="replace">
+                  <tr :for={char <- paginated} id={"char-#{char.id}"}>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <.avatar url={member_icon_url(char.eve_id)} label={char.name} />
+                        <span class={if char.deleted, do: "line-through text-gray-500", else: ""}>
+                          {char.name}
+                        </span>
+                        <span :if={char.deleted} class="badge badge-error badge-sm">
+                          Deleted
+                        </span>
+                        <span :if={char.online} class="badge badge-success badge-sm">
+                          Online
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span :if={char.corporation_name}>
+                        {char.corporation_name}
+                        <span :if={char.corporation_ticker} class="text-gray-400">
+                          [{char.corporation_ticker}]
+                        </span>
+                      </span>
+                    </td>
+                    <td>
+                      <span :if={char.alliance_name}>
+                        {char.alliance_name}
+                        <span :if={char.alliance_ticker} class="text-gray-400">
+                          [{char.alliance_ticker}]
+                        </span>
+                      </span>
+                    </td>
+                    <td>{user_name(char.user)}</td>
+                    <td>
+                      <span class="text-sm">{format_date(char.inserted_at)}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+<!-- Pagination -->
+            <div :if={length(filtered) > @per_page} class="flex items-center justify-between mt-4">
+              <span class="text-sm text-gray-400">
+                Page {@page} of {total_pages(filtered, @per_page)} ({length(filtered)} characters)
+              </span>
+              <div class="flex gap-2">
+                <button
+                  phx-click="page"
+                  phx-value-page={max(1, @page - 1)}
+                  disabled={@page <= 1}
+                  class={"btn btn-sm btn-ghost " <> if(@page <= 1, do: "btn-disabled", else: "")}
+                >
+                  <.icon name="hero-chevron-left" class="w-4 h-4" />
+                </button>
+                <button
+                  phx-click="page"
+                  phx-value-page={min(total_pages(filtered, @per_page), @page + 1)}
+                  disabled={@page >= total_pages(filtered, @per_page)}
+                  class={"btn btn-sm btn-ghost " <> if(@page >= total_pages(filtered, @per_page), do: "btn-disabled", else: "")}
+                >
+                  <.icon name="hero-chevron-right" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+<!-- Empty state -->
+            <div :if={length(filtered) == 0} class="text-center py-8 text-gray-400">
+              No characters found
+            </div>
+          </.async_result>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
