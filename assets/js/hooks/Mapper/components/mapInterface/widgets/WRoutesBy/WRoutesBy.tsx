@@ -141,6 +141,7 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
   return (
     <RoutesWidget
       title={titleNode}
+      nohubsPlaceholder="Not found any destinations"
       renderContent={(content /*, compact*/) => (
         <div className="h-full grid grid-rows-[1fr_auto]" ref={ref}>
           {content}

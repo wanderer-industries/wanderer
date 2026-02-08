@@ -41,7 +41,7 @@ export const RoutesWidgetContent = () => {
   const {
     data: { selectedSystems, systems, isSubscriptionActive },
   } = useMapRootState();
-  const { hubs = [], routesList, isRestricted, loading } = useRouteProvider();
+  const { hubs = [], routesList, isRestricted, loading, nohubsPlaceholder } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
@@ -105,7 +105,11 @@ export const RoutesWidgetContent = () => {
   }
 
   if (hubs.length === 0) {
-    return <div className="w-full h-full flex justify-center items-center select-none">Routes not set</div>;
+    return (
+      <div className="w-full h-full flex justify-center items-center select-none">
+        {nohubsPlaceholder ?? 'Routes not set'}
+      </div>
+    );
   }
 
   return (

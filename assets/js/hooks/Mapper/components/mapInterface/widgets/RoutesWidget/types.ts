@@ -15,6 +15,7 @@ export type RoutesWidgetProps = {
   addHubCommand?: AddHubCommand;
   toggleHubCommand?: ToggleHubCommand;
   isRestricted?: boolean;
+  nohubsPlaceholder?: string;
 };
 
 export type RoutesProviderInnerProps = RoutesWidgetProps;
