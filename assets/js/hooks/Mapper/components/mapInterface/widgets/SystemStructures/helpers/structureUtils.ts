@@ -43,6 +43,29 @@ export function mapServerStructure(serverData: any): StructureItem {
   };
 }
 
+export function utcToCalendarDate(utcIso: string): Date {
+  // Parse ISO components manually to avoid browser quirks with
+  // 6-digit microsecond precision from Elixir's :utc_datetime_usec.
+  const m = utcIso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  if (m) {
+    const [, yr, mo, dy, hr, mi, sc] = m;
+    return new Date(+yr, +mo - 1, +dy, +hr, +mi, +sc);
+  }
+  // Fallback for non-ISO strings
+  const d = new Date(utcIso);
+  return new Date(d.getTime() + d.getTimezoneOffset() * 60_000);
+}
+
+export function calendarDateToUtcIso(localDate: Date): string {
+  // Read local-time components (which represent EVE/UTC time) and
+  // build the ISO string directly — no timezone arithmetic needed.
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())}` +
+    `T${pad(localDate.getHours())}:${pad(localDate.getMinutes())}:${pad(localDate.getSeconds())}.000Z`
+  );
+}
+
 export function formatToISO(datetimeLocal: string): string {
   if (!datetimeLocal) return '';
 

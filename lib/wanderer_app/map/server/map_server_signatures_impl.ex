@@ -276,6 +276,21 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   defp maybe_update_connection_mass_status(_map_id, _old_sig, _updated_sig), do: :ok
 
   @doc """
+  Finds the "forward" signature in a target system that links back to the source system.
+  Used for back-link detection: when a K162 is linked from System B → System A,
+  finds the existing signature in System A that already links to System B (e.g., H296).
+  """
+  def find_forward_signature(target_system_uuid, source_solar_system_id) do
+    target_system_uuid
+    |> MapSystemSignature.by_system_id!()
+    |> Enum.find(fn sig -> sig.linked_system_id == source_solar_system_id end)
+  rescue
+    e ->
+      Logger.warning("[find_forward_signature] Error: #{inspect(e)}")
+      nil
+  end
+
+  @doc """
   Wrapper for updating a signature's linked_system_id with logging.
   Logs all unlink operations (when linked_system_id is set to nil) with context
   to help diagnose unexpected unlinking issues.
@@ -319,7 +334,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   @doc false
   defp parse_signatures(signatures, character_eve_id, system_id) do
     Enum.map(signatures, fn sig ->
-      %{
+      base = %{
         system_id: system_id,
         eve_id: sig["eve_id"],
         name: sig["name"],
@@ -329,11 +344,19 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
         group: sig["group"],
         type: Map.get(sig, "type"),
         custom_info: Map.get(sig, "custom_info"),
-        linked_system_id: Map.get(sig, "linked_system_id"),
         # Use character_eve_id from sig if provided, otherwise use the default
         character_eve_id: Map.get(sig, "character_eve_id", character_eve_id),
         deleted: false
       }
+
+      # Only include linked_system_id when explicitly provided in the payload.
+      # Frontend sends "linked_system" (object), not "linked_system_id" (integer).
+      # Including nil would silently clear the DB value via the Ash :update action.
+      if Map.has_key?(sig, "linked_system_id") do
+        Map.put(base, :linked_system_id, sig["linked_system_id"])
+      else
+        base
+      end
     end)
   end
 

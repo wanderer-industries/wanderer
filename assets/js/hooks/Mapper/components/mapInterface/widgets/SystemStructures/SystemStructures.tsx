@@ -1,4 +1,4 @@
-import React, { useCallback, ClipboardEvent, useRef } from 'react';
+import React, { useCallback, ClipboardEvent, useRef, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import {
@@ -13,7 +13,9 @@ import { Widget } from '@/hooks/Mapper/components/mapInterface/components';
 
 import { SystemStructuresContent } from './SystemStructuresContent/SystemStructuresContent';
 import { useSystemStructures } from './hooks/useSystemStructures';
-import { processSnippetText } from './helpers';
+import { processSnippetText, StructureItem } from './helpers';
+import { SystemStructuresOwnersDialog } from './SystemStructuresOwnersDialog/SystemStructuresOwnersDialog';
+import clsx from 'clsx';
 
 export const SystemStructures: React.FC = () => {
   const {
@@ -24,6 +26,7 @@ export const SystemStructures: React.FC = () => {
   const isNotSelectedSystem = selectedSystems.length !== 1;
 
   const { structures, handleUpdateStructures } = useSystemStructures({ systemId, outCommand });
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const labelRef = useRef<HTMLDivElement>(null);
   const isCompact = useMaxWidth(labelRef, 260);
@@ -48,6 +51,18 @@ export const SystemStructures: React.FC = () => {
     [processClipboard],
   );
 
+  const handleSave = (updatedStructures: StructureItem[]) => {
+    handleUpdateStructures(updatedStructures)
+  }
+
+  const handleOpenDialog = useCallback(() => {
+    setShowEditDialog(true)
+  }, [])
+
+  const handleCloseDialog = useCallback(() => {
+    setShowEditDialog(false)
+    }, [])
+
   const handlePasteTimer = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -71,8 +86,19 @@ export const SystemStructures: React.FC = () => {
         </div>
 
         <LayoutEventBlocker className="flex gap-2.5">
+          {structures.length > 1 && (
+            <WdImgButton
+              className={clsx(PrimeIcons.USER_EDIT, 'text-sky-400 hover:text-sky-200 transition duration-300')}
+              onClick={handleOpenDialog}
+              tooltip={{
+                position: TooltipPosition.left,
+                // @ts-ignore
+                content: 'Update all structure owners',
+              }}
+            />
+          )}
           <WdImgButton
-            className={`${PrimeIcons.CLOCK} text-sky-400 hover:text-sky-200 transition duration-300`}
+            className={clsx(PrimeIcons.CLOCK, 'text-sky-400 hover:text-sky-200 transition duration-300')}
             onClick={handlePasteTimer}
             tooltip={{
               position: TooltipPosition.left,
@@ -117,6 +143,15 @@ export const SystemStructures: React.FC = () => {
           <SystemStructuresContent structures={structures} onUpdateStructures={handleUpdateStructures} />
         )}
       </Widget>
+
+      {showEditDialog && (
+        <SystemStructuresOwnersDialog
+          visible={showEditDialog}
+          structures={structures}
+          onClose={handleCloseDialog}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 };
