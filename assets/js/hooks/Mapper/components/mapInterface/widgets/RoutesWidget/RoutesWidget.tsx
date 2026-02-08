@@ -86,13 +86,6 @@ export const RoutesWidgetContent = () => {
     [handleClick],
   );
 
-
-  // useEffect(() => {
-  //   // eslint-disable-next-line no-console
-  //   console.log('JOipP', `loading`, loading);
-  // }, [loading]);
-
-
   if (isRestricted && !isSubscriptionActive) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -114,7 +107,6 @@ export const RoutesWidgetContent = () => {
   if (hubs.length === 0) {
     return <div className="w-full h-full flex justify-center items-center select-none">Routes not set</div>;
   }
-
 
   return (
     <>

@@ -93,9 +93,6 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
       const chars = getOwnOnlineCharacters().filter(x => x.online);
       const sortedStations = sortStationsByDistance(stations);
 
-      // eslint-disable-next-line no-console
-      console.log('JOipP', `sortedStations`, sortedStations);
-
       return [
         {
           label: 'Stations',
