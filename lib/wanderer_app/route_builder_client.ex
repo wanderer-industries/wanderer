@@ -19,7 +19,7 @@ defmodule WandererApp.RouteBuilderClient do
           security_type: security_type
         } = payload
       ) do
-    url = "#{WandererApp.Env.route_builder_base_url()}/route/findClosest"
+    url = "#{WandererApp.Env.custom_route_base_url()}/route/findClosest"
 
     routes_settings = Map.get(payload, :routes_settings, %{})
     destinations = destinations_for(type, security_type, routes_settings)

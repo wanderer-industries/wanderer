@@ -67,10 +67,6 @@ wanderer_kills_base_url =
   config_dir
   |> get_var_from_path_or_env("WANDERER_KILLS_BASE_URL", "ws://wanderer-kills:4004")
 
-route_builder_base_url =
-  config_dir
-  |> get_var_from_path_or_env("WANDERER_ROUTE_BUILDER_BASE_URL", "http://localhost:2001")
-
 map_subscriptions_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
@@ -178,7 +174,6 @@ config :wanderer_app,
   character_api_disabled: character_api_disabled,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,
-  route_builder_base_url: route_builder_base_url,
   map_subscriptions_enabled: map_subscriptions_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
