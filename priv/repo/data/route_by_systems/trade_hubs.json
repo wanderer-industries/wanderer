@@ -1,0 +1,355 @@
+{
+  "generated_at": "2026-02-03T09:56:41.703Z",
+  "systems": [
+    {
+      "system_id": 30000142,
+      "system_name": "Jita",
+      "stations": [
+        {
+          "station_id": 60000361,
+          "name": "Jita IV - Moon 6 - Ytiri Storage"
+        },
+        {
+          "station_id": 60000364,
+          "name": "Jita V - Moon 14 - Ytiri Storage"
+        },
+        {
+          "station_id": 60000451,
+          "name": "Jita IV - Moon 6 - Hyasyoda Corporation Refinery"
+        },
+        {
+          "station_id": 60000463,
+          "name": "Jita VI - Hyasyoda Corporation Refinery"
+        },
+        {
+          "station_id": 60002953,
+          "name": "Jita V - Moon 17 - Caldari Constructions Production Plant"
+        },
+        {
+          "station_id": 60002959,
+          "name": "Jita IV - Moon 10 - Caldari Constructions Production Plant"
+        },
+        {
+          "station_id": 60003055,
+          "name": "Jita IV - Moon 11 - Expert Housing Production Plant"
+        },
+        {
+          "station_id": 60003460,
+          "name": "Jita IV - Moon 10 - Caldari Business Tribunal Law School"
+        },
+        {
+          "station_id": 60003463,
+          "name": "Jita VII - Moon 2 - Caldari Business Tribunal Law School"
+        },
+        {
+          "station_id": 60003466,
+          "name": "Jita IV - Moon 4 - Caldari Business Tribunal Bureau Offices"
+        },
+        {
+          "station_id": 60003469,
+          "name": "Jita IV - Caldari Business Tribunal Information Center"
+        },
+        {
+          "station_id": 60003757,
+          "name": "Jita IV - Moon 5 - Caldari Navy Assembly Plant"
+        },
+        {
+          "station_id": 60003760,
+          "name": "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
+        },
+        {
+          "station_id": 60004423,
+          "name": "Jita IV - Moon 6 - Caldari Provisions School"
+        },
+        {
+          "station_id": 60015169,
+          "name": "Jita VI - Paragon Fulfillment Center"
+        }
+      ]
+    },
+    {
+      "system_id": 30002187,
+      "system_name": "Amarr",
+      "stations": [
+        {
+          "station_id": 60002569,
+          "name": "Amarr VIII (Oris) - Moon 4 - Expert Distribution Retail Center"
+        },
+        {
+          "station_id": 60008494,
+          "name": "Amarr VIII (Oris) - Emperor Family Academy"
+        },
+        {
+          "station_id": 60008950,
+          "name": "Amarr VI (Zorast) - Moon 2 - Theology Council Tribunal"
+        },
+        {
+          "station_id": 60015168,
+          "name": "Amarr VII (Nemantizor) - Paragon Fulfillment Center"
+        }
+      ]
+    },
+    {
+      "system_id": 30002659,
+      "system_name": "Dodixie",
+      "stations": [
+        {
+          "station_id": 60001864,
+          "name": "Dodixie IX - Moon 9 - Nugoeihuvi Corporation Development Studio"
+        },
+        {
+          "station_id": 60001867,
+          "name": "Dodixie VIII - Moon 3 - Nugoeihuvi Corporation Development Studio"
+        },
+        {
+          "station_id": 60011866,
+          "name": "Dodixie IX - Moon 20 - Federation Navy Assembly Plant"
+        },
+        {
+          "station_id": 60015170,
+          "name": "Dodixie V - Paragon Fulfillment Center"
+        }
+      ]
+    },
+    {
+      "system_id": 30002053,
+      "system_name": "Hek",
+      "stations": [
+        {
+          "station_id": 60004516,
+          "name": "Hek IV - Krusual Tribe Bureau"
+        },
+        {
+          "station_id": 60005236,
+          "name": "Hek II - Moon 1 - Minmatar Mining Corporation Mineral Reserve"
+        },
+        {
+          "station_id": 60005686,
+          "name": "Hek VIII - Moon 12 - Boundless Creation Factory"
+        },
+        {
+          "station_id": 60011287,
+          "name": "Hek VIII - Moon 17 - Aliastra Retail Center"
+        },
+        {
+          "station_id": 60015140,
+          "name": "Hek VII - Tribal Liberation Force Logistic Support"
+        },
+        {
+          "station_id": 60015171,
+          "name": "Hek IX - Paragon Fulfillment Center"
+        }
+      ]
+    },
+    {
+      "system_id": 30002510,
+      "system_name": "Rens",
+      "stations": [
+        {
+          "station_id": 60004588,
+          "name": "Rens VI - Moon 8 - Brutor Tribe Treasury"
+        },
+        {
+          "station_id": 60004594,
+          "name": "Rens VII - Moon 17 - Brutor Tribe Bureau"
+        },
+        {
+          "station_id": 60005725,
+          "name": "Rens VI - Six Kin Development Warehouse"
+        },
+        {
+          "station_id": 60009106,
+          "name": "Rens VIII - Moon 3 - TransStellar Shipping Storage"
+        },
+        {
+          "station_id": 60012721,
+          "name": "Rens VII - Moon 20 - Sisters of EVE Bureau"
+        },
+        {
+          "station_id": 60012724,
+          "name": "Rens VII - Moon 21 - Sisters of EVE Bureau"
+        },
+        {
+          "station_id": 60012727,
+          "name": "Rens VII - Moon 19 - Sisters of EVE Bureau"
+        },
+        {
+          "station_id": 60015172,
+          "name": "Rens V - Paragon Fulfillment Center"
+        }
+      ]
+    }
+  ],
+  "system_ids": [
+    30000142,
+    30002187,
+    30002659,
+    30002053,
+    30002510
+  ],
+  "system_stations": {
+    "30000142": [
+      {
+        "station_id": 60000361,
+        "name": "Jita IV - Moon 6 - Ytiri Storage"
+      },
+      {
+        "station_id": 60000364,
+        "name": "Jita V - Moon 14 - Ytiri Storage"
+      },
+      {
+        "station_id": 60000451,
+        "name": "Jita IV - Moon 6 - Hyasyoda Corporation Refinery"
+      },
+      {
+        "station_id": 60000463,
+        "name": "Jita VI - Hyasyoda Corporation Refinery"
+      },
+      {
+        "station_id": 60002953,
+        "name": "Jita V - Moon 17 - Caldari Constructions Production Plant"
+      },
+      {
+        "station_id": 60002959,
+        "name": "Jita IV - Moon 10 - Caldari Constructions Production Plant"
+      },
+      {
+        "station_id": 60003055,
+        "name": "Jita IV - Moon 11 - Expert Housing Production Plant"
+      },
+      {
+        "station_id": 60003460,
+        "name": "Jita IV - Moon 10 - Caldari Business Tribunal Law School"
+      },
+      {
+        "station_id": 60003463,
+        "name": "Jita VII - Moon 2 - Caldari Business Tribunal Law School"
+      },
+      {
+        "station_id": 60003466,
+        "name": "Jita IV - Moon 4 - Caldari Business Tribunal Bureau Offices"
+      },
+      {
+        "station_id": 60003469,
+        "name": "Jita IV - Caldari Business Tribunal Information Center"
+      },
+      {
+        "station_id": 60003757,
+        "name": "Jita IV - Moon 5 - Caldari Navy Assembly Plant"
+      },
+      {
+        "station_id": 60003760,
+        "name": "Jita IV - Moon 4 - Caldari Navy Assembly Plant",
+        "special": true
+      },
+      {
+        "station_id": 60004423,
+        "name": "Jita IV - Moon 6 - Caldari Provisions School"
+      },
+      {
+        "station_id": 60015169,
+        "name": "Jita VI - Paragon Fulfillment Center"
+      }
+    ],
+    "30002053": [
+      {
+        "station_id": 60004516,
+        "name": "Hek IV - Krusual Tribe Bureau"
+      },
+      {
+        "station_id": 60005236,
+        "name": "Hek II - Moon 1 - Minmatar Mining Corporation Mineral Reserve"
+      },
+      {
+        "station_id": 60005686,
+        "name": "Hek VIII - Moon 12 - Boundless Creation Factory",
+        "special": true
+      },
+      {
+        "station_id": 60011287,
+        "name": "Hek VIII - Moon 17 - Aliastra Retail Center"
+      },
+      {
+        "station_id": 60015140,
+        "name": "Hek VII - Tribal Liberation Force Logistic Support"
+      },
+      {
+        "station_id": 60015171,
+        "name": "Hek IX - Paragon Fulfillment Center"
+      }
+    ],
+    "30002187": [
+      {
+        "station_id": 60002569,
+        "name": "Amarr VIII (Oris) - Moon 4 - Expert Distribution Retail Center"
+      },
+      {
+        "station_id": 60008494,
+        "name": "Amarr VIII (Oris) - Emperor Family Academy",
+        "special": true
+      },
+      {
+        "station_id": 60008950,
+        "name": "Amarr VI (Zorast) - Moon 2 - Theology Council Tribunal"
+      },
+      {
+        "station_id": 60015168,
+        "name": "Amarr VII (Nemantizor) - Paragon Fulfillment Center"
+      }
+    ],
+    "30002510": [
+      {
+        "station_id": 60004588,
+        "name": "Rens VI - Moon 8 - Brutor Tribe Treasury",
+        "special": true
+      },
+      {
+        "station_id": 60004594,
+        "name": "Rens VII - Moon 17 - Brutor Tribe Bureau"
+      },
+      {
+        "station_id": 60005725,
+        "name": "Rens VI - Six Kin Development Warehouse"
+      },
+      {
+        "station_id": 60009106,
+        "name": "Rens VIII - Moon 3 - TransStellar Shipping Storage"
+      },
+      {
+        "station_id": 60012721,
+        "name": "Rens VII - Moon 20 - Sisters of EVE Bureau"
+      },
+      {
+        "station_id": 60012724,
+        "name": "Rens VII - Moon 21 - Sisters of EVE Bureau"
+      },
+      {
+        "station_id": 60012727,
+        "name": "Rens VII - Moon 19 - Sisters of EVE Bureau"
+      },
+      {
+        "station_id": 60015172,
+        "name": "Rens V - Paragon Fulfillment Center"
+      }
+    ],
+    "30002659": [
+      {
+        "station_id": 60001864,
+        "name": "Dodixie IX - Moon 9 - Nugoeihuvi Corporation Development Studio"
+      },
+      {
+        "station_id": 60001867,
+        "name": "Dodixie VIII - Moon 3 - Nugoeihuvi Corporation Development Studio"
+      },
+      {
+        "station_id": 60011866,
+        "name": "Dodixie IX - Moon 20 - Federation Navy Assembly Plant",
+        "special": true
+      },
+      {
+        "station_id": 60015170,
+        "name": "Dodixie V - Paragon Fulfillment Center"
+      }
+    ]
+  }
+}

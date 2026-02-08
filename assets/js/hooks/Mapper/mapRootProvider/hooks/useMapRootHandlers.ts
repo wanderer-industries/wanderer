@@ -38,6 +38,7 @@ import {
   useMapInit,
   useMapUpdated,
   useRoutes,
+  useRoutesListBy,
   useUserRoutes,
 } from './api';
 
@@ -61,6 +62,7 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
   const mapUpdated = useMapUpdated();
   const mapRoutes = useRoutes();
   const mapUserRoutes = useUserRoutes();
+  const mapRoutesListBy = useRoutesListBy();
   const { addComment, removeComment } = useCommandComments();
   const { pingAdded, pingCancelled } = useCommandPings();
   const { pingBlocked } = useCommandPingBlocked();
@@ -114,6 +116,9 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
             break;
           case Commands.userRoutes:
             mapUserRoutes(data as CommandRoutes);
+            break;
+          case Commands.routesListBy:
+            mapRoutesListBy(data as CommandRoutes);
             break;
 
           case Commands.signaturesUpdated: // USED

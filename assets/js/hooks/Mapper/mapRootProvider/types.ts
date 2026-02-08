@@ -47,6 +47,22 @@ export type RoutesType = {
   avoid: number[];
 };
 
+export type RoutesByCategoryType =
+  | 'blueLoot'
+  | 'redLoot'
+  | 'thera'
+  | 'turnur'
+  | 'so_cleaning'
+  | 'trade_hubs';
+
+export type RoutesByScopeType = 'ALL' | 'HIGH';
+
+export type RoutesByType = {
+  routes: RoutesType;
+  scope: RoutesByScopeType;
+  type: RoutesByCategoryType;
+};
+
 export type LocalWidgetSettings = {
   compact: boolean;
   showOffline: boolean;
@@ -79,6 +95,7 @@ export type MapUserSettings = {
   interface: SettingsWrapper<InterfaceStoredSettings>;
   onTheMap: SettingsWrapper<OnTheMapSettingsType>;
   routes: SettingsWrapper<RoutesType>;
+  routesBy: SettingsWrapper<RoutesByType>;
   localWidget: SettingsWrapper<LocalWidgetSettings>;
   signaturesWidget: SettingsWrapper<SignatureSettingsType>;
   killsWidget: SettingsWrapper<KillsWidgetSettings>;
@@ -98,6 +115,7 @@ export enum SettingsTypes {
   localWidget = 'localWidget',
   widgets = 'widgets',
   routes = 'routes',
+  routesBy = 'routesBy',
   onTheMap = 'onTheMap',
   signaturesWidget = 'signaturesWidget',
   interface = 'interface',

@@ -41,7 +41,7 @@ export const RoutesWidgetContent = () => {
   const {
     data: { selectedSystems, systems, isSubscriptionActive },
   } = useMapRootState();
-  const { hubs = [], routesList, isRestricted, loading } = useRouteProvider();
+  const { hubs = [], routesList, isRestricted, loading, nohubsPlaceholder } = useRouteProvider();
 
   const [systemId] = selectedSystems;
 
@@ -105,7 +105,11 @@ export const RoutesWidgetContent = () => {
   }
 
   if (hubs.length === 0) {
-    return <div className="w-full h-full flex justify-center items-center select-none">Routes not set</div>;
+    return (
+      <div className="w-full h-full flex justify-center items-center select-none">
+        {nohubsPlaceholder ?? 'Routes not set'}
+      </div>
+    );
   }
 
   return (
@@ -129,7 +133,6 @@ export const RoutesWidgetContent = () => {
                       offset: 10,
                     }}
                   />
-
                   <SystemView
                     systemId={route.destination.toString()}
                     className={clsx('select-none text-center cursor-context-menu')}
@@ -138,7 +141,7 @@ export const RoutesWidgetContent = () => {
                     showCustomName
                   />
                 </div>
-                <div className="text-right pl-1">{route.has_connection ? route.systems?.length ?? 2 : ''}</div>
+                <div className="text-right pl-1">{route.has_connection ? (route.systems?.length ?? 2) : ''}</div>
                 <div className="pl-2 pb-0.5">
                   <RoutesList data={route} onContextMenu={handleContextMenu} />
                 </div>
@@ -147,9 +150,7 @@ export const RoutesWidgetContent = () => {
           })}
         </div>
       </LoadingWrapper>
-
       <ContextMenuSystemInfo
-        hubs={hubs}
         routes={preparedRoutes}
         systems={systems}
         systemStatics={systemStatics}
@@ -162,9 +163,10 @@ export const RoutesWidgetContent = () => {
 
 type RoutesWidgetCompProps = {
   title: ReactNode | string;
+  renderContent?: (content: ReactNode, compact: boolean) => ReactNode;
 };
 
-export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
+export const RoutesWidgetComp = ({ title, renderContent }: RoutesWidgetCompProps) => {
   const [routeSettingsVisible, setRouteSettingsVisible] = useState(false);
   const { data, update, addHubCommand } = useRouteProvider();
 
@@ -183,7 +185,7 @@ export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
   const onAddSystem = useCallback(() => setOpenAddSystem(true), []);
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
-    async item => addHubCommand(item.value.toString()),
+    async item => addHubCommand?.(item.value.toString()),
     [addHubCommand],
   );
 
@@ -191,15 +193,17 @@ export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
     <Widget
       label={
         <div className="flex justify-between items-center text-xs w-full" ref={ref}>
-          <span className="select-none">{title}</span>
+          <div className="select-none flex items-center gap-2">{title}</div>
           <LayoutEventBlocker className="flex items-center gap-2">
-            <WdImgButton
-              className={PrimeIcons.PLUS_CIRCLE}
-              onClick={onAddSystem}
-              tooltip={{
-                content: 'Click here to add new system to routes',
-              }}
-            />
+            {addHubCommand && (
+              <WdImgButton
+                className={PrimeIcons.PLUS_CIRCLE}
+                onClick={onAddSystem}
+                tooltip={{
+                  content: 'Click here to add new system to routes',
+                }}
+              />
+            )}
 
             <WdTooltipWrapper content="Show shortest route" position={TooltipPosition.top}>
               <WdCheckbox
@@ -223,24 +227,38 @@ export const RoutesWidgetComp = ({ title }: RoutesWidgetCompProps) => {
         </div>
       }
     >
-      <RoutesWidgetContent />
+      {renderContent ? (
+        renderContent(
+          <div className="h-full overflow-auto bg-opacity-5 custom-scrollbar">
+            <RoutesWidgetContent />
+          </div>,
+          compact,
+        )
+      ) : (
+        <div className="h-full overflow-auto bg-opacity-5 custom-scrollbar">
+          <RoutesWidgetContent />
+        </div>
+      )}
+
       <RoutesSettingsDialog visible={routeSettingsVisible} setVisible={setRouteSettingsVisible} />
 
-      <AddSystemDialog
-        title="Add system to routes"
-        visible={openAddSystem}
-        setVisible={() => setOpenAddSystem(false)}
-        onSubmit={handleSubmitAddSystem}
-      />
+      {addHubCommand && (
+        <AddSystemDialog
+          title="Add system to routes"
+          visible={openAddSystem}
+          setVisible={() => setOpenAddSystem(false)}
+          onSubmit={handleSubmitAddSystem}
+        />
+      )}
     </Widget>
   );
 };
 
 export const RoutesWidget = forwardRef<RoutesImperativeHandle, RoutesWidgetProps & RoutesWidgetCompProps>(
-  ({ title, ...props }, ref) => {
+  ({ title, renderContent, ...props }, ref) => {
     return (
       <RoutesProvider {...props} ref={ref}>
-        <RoutesWidgetComp title={title} />
+        <RoutesWidgetComp title={title} renderContent={renderContent} />
       </RoutesProvider>
     );
   },

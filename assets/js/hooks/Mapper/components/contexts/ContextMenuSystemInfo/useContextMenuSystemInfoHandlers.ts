@@ -38,7 +38,7 @@ export const useContextMenuSystemInfoHandlers = () => {
       return;
     }
 
-    ref.current.toggleHubCommand(system);
+    ref.current.toggleHubCommand?.(system);
     setSystem(undefined);
   }, []);
 
