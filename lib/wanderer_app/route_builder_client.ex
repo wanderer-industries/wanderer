@@ -7,6 +7,9 @@ defmodule WandererApp.RouteBuilderClient do
 
   @timeout_opts [pool_timeout: 5_000, receive_timeout: :timer.seconds(30)]
   @loot_dir Path.join(["repo", "data", "route_by_systems"])
+  @available_routes_by ["blueLoot", "redLoot", "thera", "turnur", "so_cleaning", "trade_hubs"]
+
+  def available_routes_by(), do: @available_routes_by
 
   def find_closest(
         %{

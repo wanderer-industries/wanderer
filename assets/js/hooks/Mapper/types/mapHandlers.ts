@@ -3,6 +3,7 @@ import { ActivitySummary, CharacterTypeRaw, TrackingCharacter } from '@/hooks/Ma
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { DetailedKill, Kill } from '@/hooks/Mapper/types/kills.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
+import { RoutesByCategoryType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types/system.ts';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes.ts';
 
@@ -103,6 +104,7 @@ export type CommandInit = {
   options: MapOptions;
   reset?: boolean;
   is_subscription_active?: boolean;
+  available_routes_by?: RoutesByCategoryType[];
   main_character_eve_id?: string | null;
   following_character_eve_id?: string | null;
   map_slug?: string;

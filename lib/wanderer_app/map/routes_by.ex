@@ -38,7 +38,7 @@ defmodule WandererApp.Map.RoutesBy do
     :include_frig
   ]
 
-  def find(map_id, origin, routes_settings, type) do
+  def find(map_id, origin, routes_settings, type, count \\ 1) do
     origin = parse_origin(origin)
     routes_settings = @default_routes_settings |> Map.merge(routes_settings || %{})
 
@@ -56,7 +56,7 @@ defmodule WandererApp.Map.RoutesBy do
       flag: routes_settings.path_type,
       connections: connections,
       avoid: avoidance_list,
-      count: 40,
+      count: count,
       type: type,
       security_type: security_type,
       routes_settings: routes_settings

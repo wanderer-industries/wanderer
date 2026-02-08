@@ -5,6 +5,13 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
+  @alpha_routes_limit_by_type %{
+    "trade_hubs" => 5,
+    :trade_hubs => 5
+  }
+  @default_alpha_routes_limit 1
+  @paid_routes_limit 15
+
   def handle_server_event(
         %{
           event: :routes,
@@ -168,6 +175,13 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
       ) do
     routes_type = Map.get(event, "type", "blueLoot")
     security_type = Map.get(event, "securityType", "both")
+    is_subscription_active? = Map.get(socket.assigns, :is_subscription_active?, false)
+    routes_limit =
+      if is_subscription_active? == true do
+        @paid_routes_limit
+      else
+        Map.get(@alpha_routes_limit_by_type, routes_type, @default_alpha_routes_limit)
+      end
     routes_settings =
       routes_settings
       |> get_routes_settings()
@@ -179,7 +193,8 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
           map_id,
           solar_system_id,
           routes_settings,
-          routes_type
+          routes_type,
+          routes_limit
         )
 
       {:routes_list_by, {solar_system_id, routes}}

@@ -78,6 +78,7 @@ const INITIAL_DATA: MapRootData = {
   routes: undefined,
   userRoutes: undefined,
   routesListBy: undefined,
+  availableRoutesBy: [],
   kills: [],
   connections: [],
   detailedKills: {},

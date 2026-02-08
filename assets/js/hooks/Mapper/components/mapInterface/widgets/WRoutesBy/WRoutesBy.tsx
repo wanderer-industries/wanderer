@@ -10,9 +10,10 @@ import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth.ts';
 import clsx from 'clsx';
 import { RoutesByCategoryType, RoutesByScopeType, RoutesType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { DEFAULT_ROUTES_SETTINGS } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { TooltipPosition, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
+import { PrimeIcons } from 'primereact/api';
 
 export type RoutesByType = RoutesByCategoryType;
-export type RoutesBySecurityType = RoutesByScopeType;
 
 type WRoutesByProps = {
   type?: RoutesByType;
@@ -67,6 +68,25 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
   const securityType = settingsRoutesBy.scope ?? 'ALL';
   const routesSettings = settingsRoutesBy.routes ?? DEFAULT_ROUTES_SETTINGS;
   const routesListBy = data.routesListBy;
+  const availableRoutesBy = data.availableRoutesBy;
+
+  const routesByOptions = useMemo(() => {
+    if (!availableRoutesBy || availableRoutesBy.length === 0) {
+      return ROUTES_BY_OPTIONS;
+    }
+
+    return ROUTES_BY_OPTIONS.filter(option => availableRoutesBy.includes(option.value as RoutesByType));
+  }, [availableRoutesBy]);
+
+  const resolvedCriteriaType = useMemo(() => {
+    const optionValues = routesByOptions.map(option => option.value as RoutesByType);
+
+    if (optionValues.length === 0) {
+      return criteriaType;
+    }
+
+    return optionValues.includes(criteriaType) ? criteriaType : optionValues[0];
+  }, [routesByOptions, criteriaType]);
 
   const loadRoutesCommand: LoadRoutesCommand = useCallback(
     async (systemId, currentRoutesSettings) => {
@@ -74,13 +94,13 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
         type: OutCommand.getRoutesBy,
         data: {
           system_id: systemId,
-          type: criteriaType,
+          type: resolvedCriteriaType,
           securityType: securityType === 'HIGH' ? 'high' : 'both',
           routes_settings: currentRoutesSettings,
         },
       });
     },
-    [outCommand, criteriaType, securityType],
+    [outCommand, resolvedCriteriaType, securityType],
   );
 
   const hubs = useMemo(() => routesListBy?.routes?.map(route => route.destination.toString()) ?? [], [routesListBy]);
@@ -89,17 +109,11 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
     data: routesSettings,
     loadRoutesCommand,
     routesList: routesListBy,
-    deps: [criteriaType, securityType],
+    deps: [resolvedCriteriaType, securityType],
   });
 
   const updateRoutesSettings = useCallback(
-    (next: Partial<RoutesType> | ((prev: RoutesType) => Partial<RoutesType>)) =>
-      settingsRoutesByUpdate(prev => ({
-        routes: {
-          ...prev.routes,
-          ...(typeof next === 'function' ? next(prev.routes) : next),
-        },
-      })),
+    (next: RoutesType) => settingsRoutesByUpdate(prev => ({ ...prev, routes: next })),
     [settingsRoutesByUpdate],
   );
 
@@ -108,9 +122,25 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
   const compactSmall = useMaxWidth(ref, 180);
   const compactMiddle = useMaxWidth(ref, 245);
 
+  const titleNode = useMemo(
+    () => (
+      <div className="flex items-center gap-2">
+        <span className="select-none">{title}</span>
+        <WdImgButton
+          className={PrimeIcons.QUESTION_CIRCLE}
+          tooltip={{
+            position: TooltipPosition.top,
+            content: 'Alpha map users can access only 1 route',
+          }}
+        />
+      </div>
+    ),
+    [title],
+  );
+
   return (
     <RoutesWidget
-      title={title}
+      title={titleNode}
       renderContent={(content /*, compact*/) => (
         <div className="h-full grid grid-rows-[1fr_auto]" ref={ref}>
           {content}
@@ -119,12 +149,12 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
               <Dropdown
                 value={securityType}
                 options={ROUTES_BY_SECURITY_OPTIONS}
-                onChange={e => settingsRoutesByUpdate({ scope: e.value as RoutesBySecurityType })}
+                onChange={e => settingsRoutesByUpdate(prev => ({ ...prev, scope: e.value as RoutesByScopeType }))}
                 className="w-[90px] [&_span]:!text-[12px]"
               />
             )}
             <Dropdown
-              value={criteriaType}
+              value={resolvedCriteriaType}
               itemTemplate={e => (
                 <div className="flex items-center gap-2">
                   {e.icon && <img src={e.icon} height="18" width="18" />}
@@ -151,8 +181,8 @@ export const WRoutesBy = ({ type = 'blueLoot', title = 'Routes By' }: WRoutesByP
                   </div>
                 );
               }}
-              options={ROUTES_BY_OPTIONS}
-              onChange={e => settingsRoutesByUpdate({ type: e.value as RoutesByType })}
+              options={routesByOptions}
+              onChange={e => settingsRoutesByUpdate(prev => ({ ...prev, type: e.value as RoutesByCategoryType }))}
               className={clsx({
                 ['w-[130px]']: !compactMiddle,
                 ['w-[65px]']: compactMiddle,

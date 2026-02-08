@@ -24,6 +24,7 @@ export const useMapInit = () => {
         user_permissions,
         options,
         is_subscription_active,
+        available_routes_by,
         main_character_eve_id,
         following_character_eve_id,
         user_hubs,
@@ -83,6 +84,10 @@ export const useMapInit = () => {
 
       if (is_subscription_active) {
         updateData.isSubscriptionActive = is_subscription_active;
+      }
+
+      if (available_routes_by) {
+        updateData.availableRoutesBy = available_routes_by;
       }
 
       if (system_static_infos) {
