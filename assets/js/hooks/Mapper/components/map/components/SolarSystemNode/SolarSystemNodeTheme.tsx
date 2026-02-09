@@ -17,6 +17,7 @@ import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/u
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
 import { useLocalCounter } from '@/hooks/Mapper/components/hooks/useLocalCounter.ts';
+import { SyncIntelAction } from '@/hooks/Mapper/components/map/components/SyncIntelAction';
 
 // let render = 0;
 export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) => {
@@ -140,6 +141,9 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
+                  )}
+                  {nodeVars.hasIntelSource && (
+                    <SyncIntelAction solarSystemId={nodeVars.solarSystemId} />
                   )}
                 </div>
 

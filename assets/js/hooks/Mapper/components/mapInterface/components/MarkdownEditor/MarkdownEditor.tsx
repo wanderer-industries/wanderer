@@ -46,6 +46,7 @@ export interface MarkdownEditorProps {
   onChange: (value: string) => void;
   height?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
 export const MarkdownEditor = ({
@@ -54,6 +55,7 @@ export const MarkdownEditor = ({
   overlayContent,
   height = '70px',
   className,
+  readOnly = false,
 }: MarkdownEditorProps) => {
   const [hasShift, setHasShift] = useState(false);
 
@@ -71,7 +73,7 @@ export const MarkdownEditor = ({
   }, []);
 
   return (
-    <div className={clsx(classes.MarkdownEditor, 'relative')}>
+    <div className={clsx(classes.MarkdownEditor, 'relative', { 'opacity-50': readOnly })}>
       <CodeMirror
         value={value}
         height={height}
@@ -80,6 +82,8 @@ export const MarkdownEditor = ({
         theme={oneDark}
         onChange={handleOnChange}
         placeholder="Start typing..."
+        readOnly={readOnly}
+        editable={!readOnly}
       />
       <div
         className={clsx('absolute top-0 left-0 h-full pointer-events-none', {

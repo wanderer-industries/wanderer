@@ -10,8 +10,13 @@ import { parseMapUserSettings } from '@/hooks/Mapper/components/helpers';
 import fastDeepEqual from 'fast-deep-equal';
 import { useDetectSettingsChanged } from '@/hooks/Mapper/components/hooks';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { IntelSettings } from './IntelSettings.tsx';
 
-export const AdminSettings = () => {
+interface AdminSettingsProps {
+  intelSharingEnabled?: boolean;
+}
+
+export const AdminSettings = ({ intelSharingEnabled = false }: AdminSettingsProps) => {
   const {
     storedSettings: { getSettingsForExport },
     outCommand,
@@ -90,27 +95,30 @@ export const AdminSettings = () => {
 
   return (
     <div className="w-full h-full flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <div>
-          <WdButton
-            // @ts-ignore
-            ref={cfRef}
-            onClick={cfShow}
-            icon="pi pi-save"
-            size="small"
-            severity="danger"
-            label="Save as Map Default"
-            className="py-[4px]"
-            disabled={!hasSettingsForExport || !isDirty}
-          />
+      <div className="flex flex-col gap-2">
+        <span className="text-stone-300 text-[13px] font-semibold">Default Settings</span>
+        <div className="flex flex-col gap-1">
+          <div>
+            <WdButton
+              // @ts-ignore
+              ref={cfRef}
+              onClick={cfShow}
+              icon="pi pi-save"
+              size="small"
+              severity="danger"
+              label="Save as Map Default"
+              className="py-[4px]"
+              disabled={!hasSettingsForExport || !isDirty}
+            />
+          </div>
+
+          {!isDirty && <span className="text-red-500/70 text-[12px]">*Local and remote are identical.</span>}
+
+          <span className="text-stone-500 text-[12px]">
+            *Will save your current settings as the default for all new users of this map. This action will overwrite any
+            existing default settings.
+          </span>
         </div>
-
-        {!isDirty && <span className="text-red-500/70 text-[12px]">*Local and remote are identical.</span>}
-
-        <span className="text-stone-500 text-[12px]">
-          *Will save your current settings as the default for all new users of this map. This action will overwrite any
-          existing default settings.
-        </span>
       </div>
 
       <Toast ref={toast} />
@@ -123,6 +131,16 @@ export const AdminSettings = () => {
         icon="pi pi-exclamation-triangle"
         accept={handleSync}
       />
+
+      {intelSharingEnabled && (
+        <>
+          <hr className="border-stone-700" />
+          <div className="flex flex-col gap-2">
+            <span className="text-stone-300 text-[13px] font-semibold">Intel Source</span>
+            <IntelSettings />
+          </div>
+        </>
+      )}
     </div>
   );
 };

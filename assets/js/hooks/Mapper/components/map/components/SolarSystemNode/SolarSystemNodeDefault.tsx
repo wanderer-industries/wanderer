@@ -18,6 +18,7 @@ import { Tag } from 'primereact/tag';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
 import { useLocalCounter } from '@/hooks/Mapper/components/hooks/useLocalCounter.ts';
+import { SyncIntelAction } from '@/hooks/Mapper/components/map/components/SyncIntelAction';
 
 // let render = 0;
 export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>) => {
@@ -160,6 +161,9 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
                         )}
                       />
                     </WdTooltipWrapper>
+                  )}
+                  {nodeVars.hasIntelSource && (
+                    <SyncIntelAction solarSystemId={nodeVars.solarSystemId} />
                   )}
                 </div>
 

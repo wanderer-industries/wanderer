@@ -69,6 +69,7 @@ defmodule WandererApp.Api.Map do
     define(:duplicate, action: :duplicate)
     define(:admin_all, action: :admin_all)
     define(:restore, action: :restore)
+    define(:set_intel_source_map, action: :set_intel_source_map)
   end
 
   calculations do
@@ -193,6 +194,22 @@ defmodule WandererApp.Api.Map do
     update :update_options do
       accept [:options]
       require_atomic? false
+    end
+
+    update :set_intel_source_map do
+      accept [:intel_source_map_id]
+      require_atomic? false
+
+      validate fn changeset, _context ->
+        source_id = Ash.Changeset.get_attribute(changeset, :intel_source_map_id)
+        map_id = changeset.data.id
+
+        if source_id != nil and source_id == map_id do
+          {:error, field: :intel_source_map_id, message: "a map cannot be its own intel source"}
+        else
+          :ok
+        end
+      end
     end
 
     update :mark_as_deleted do
@@ -432,6 +449,17 @@ defmodule WandererApp.Api.Map do
     end
 
     has_many :transactions, WandererApp.Api.MapTransaction do
+      public? false
+    end
+
+    belongs_to :intel_source_map, WandererApp.Api.Map do
+      attribute_writable? true
+      public? true
+      allow_nil? true
+    end
+
+    has_many :intel_subscriber_maps, WandererApp.Api.Map do
+      destination_attribute :intel_source_map_id
       public? false
     end
   end

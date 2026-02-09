@@ -24,10 +24,15 @@ export interface MapSettingsProps {
 
 export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const { outCommand } = useMapRootState();
+  const {
+    outCommand,
+    data: { clientEnv },
+  } = useMapRootState();
 
   const { renderSettingItem, setUserRemoteSettings } = useMapSettings();
   const isAdmin = useMapCheckPermissions([UserPermission.ADMIN_MAP]);
+
+  const intelSharingEnabled = clientEnv?.intelSharingEnabled ?? false;
 
   const refVars = useRef({ outCommand, onHide, visible });
   refVars.current = { outCommand, onHide, visible };
@@ -103,7 +108,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
 
             {isAdmin && (
               <TabPanel header="Admin Settings" className="h-full" headerClassName="color-warn">
-                <AdminSettings />
+                <AdminSettings intelSharingEnabled={intelSharingEnabled} />
               </TabPanel>
             )}
           </TabView>
