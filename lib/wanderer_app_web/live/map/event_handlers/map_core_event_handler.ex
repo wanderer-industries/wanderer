@@ -343,9 +343,189 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:noreply, socket}
   end
 
+  def handle_ui_event(
+        "get_intel_source_maps",
+        _params,
+        %{
+          assigns: %{
+            current_user: current_user,
+            map_id: map_id,
+            user_permissions: %{manage_map: true}
+          }
+        } = socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      case WandererApp.Maps.get_available_maps(current_user) do
+        {:ok, maps} ->
+          character_ids = Enum.map(current_user.characters, & &1.id)
+
+          candidates =
+            Enum.filter(maps, fn m -> m.id != map_id and not m.deleted end)
+
+          loaded_candidates =
+            case Ash.load(candidates, :user_permissions, actor: current_user) do
+              {:ok, loaded} -> loaded
+              _ -> candidates
+            end
+
+          eligible_maps =
+            loaded_candidates
+            |> Enum.filter(fn m ->
+              m.owner_id in character_ids or
+                has_manage_access?(m, character_ids)
+            end)
+            |> Enum.map(fn m -> %{id: m.id, name: m.name, slug: m.slug} end)
+
+          {:reply, %{maps: eligible_maps}, socket}
+
+        _error ->
+          {:reply, %{maps: []}, socket}
+      end
+    else
+      {:reply, %{maps: []}, socket}
+    end
+  end
+
+  def handle_ui_event("get_intel_source_maps", _params, socket) do
+    {:reply, %{maps: []}, socket}
+  end
+
+  def handle_ui_event(
+        "set_intel_source_map",
+        %{"intel_source_map_id" => source_map_id},
+        %{
+          assigns: %{
+            map_id: map_id,
+            user_permissions: %{manage_map: true}
+          }
+        } = socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      source_map_id = if source_map_id in [nil, ""], do: nil, else: source_map_id
+      current_user = socket.assigns[:current_user]
+
+      with {:ok, source_map} <- fetch_source_map(source_map_id),
+           :ok <- validate_no_circular_ref(map_id, source_map),
+           :ok <- validate_source_access(current_user, source_map),
+           {:ok, map} <- WandererApp.MapRepo.get(map_id),
+           {:ok, _updated_map} <-
+             WandererApp.MapRepo.set_intel_source_map(map, source_map_id) do
+        if source_map_id do
+          Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
+            WandererApp.Map.IntelSync.sync_all_visible_systems(map_id, source_map_id)
+          end)
+        end
+
+        source_name = if source_map, do: source_map.name, else: nil
+
+        {:reply,
+         %{
+           success: true,
+           intel_source_map_id: source_map_id,
+           intel_source_map_name: source_name
+         }, socket}
+      else
+        {:error, :circular_reference} ->
+          {:reply, %{success: false, error: "circular_reference"}, socket}
+
+        {:error, :unauthorized_source} ->
+          {:reply, %{success: false, error: "unauthorized_source"}, socket}
+
+        {:error, reason} ->
+          Logger.error("Failed to set intel source map: #{inspect(reason)}")
+          {:reply, %{success: false, error: "update_failed"}, socket}
+      end
+    else
+      {:reply, %{success: false, error: "feature_disabled"}, socket}
+    end
+  end
+
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
+  end
+
+  defp maybe_add_intel_source_info(options, map_id) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      with {:ok, %{intel_source_map_id: source_id}} when not is_nil(source_id) <-
+             WandererApp.MapRepo.get(map_id),
+           {:ok, source_map} <- WandererApp.MapRepo.get(source_id) do
+        options
+        |> Map.put("intel_source_map_id", source_id)
+        |> Map.put("intel_source_map_name", source_map.name)
+      else
+        _ ->
+          options
+          |> Map.put("intel_source_map_id", nil)
+          |> Map.put("intel_source_map_name", nil)
+      end
+    else
+      options
+    end
+  end
+
+  defp fetch_source_map(nil), do: {:ok, nil}
+
+  defp fetch_source_map(source_map_id) do
+    case WandererApp.MapRepo.get(source_map_id) do
+      {:ok, source_map} -> {:ok, source_map}
+      _ -> {:error, :source_not_found}
+    end
+  end
+
+  defp validate_no_circular_ref(_map_id, nil), do: :ok
+
+  defp validate_no_circular_ref(map_id, %{id: source_id}) do
+    if source_id == map_id do
+      {:error, :circular_reference}
+    else
+      walk_intel_chain(map_id, source_id, MapSet.new([map_id, source_id]))
+    end
+  end
+
+  defp walk_intel_chain(_map_id, current_id, _visited) when is_nil(current_id), do: :ok
+
+  defp walk_intel_chain(map_id, current_id, visited) do
+    case WandererApp.MapRepo.get(current_id) do
+      {:ok, %{intel_source_map_id: nil}} ->
+        :ok
+
+      {:ok, %{intel_source_map_id: next_id}} ->
+        if MapSet.member?(visited, next_id) do
+          {:error, :circular_reference}
+        else
+          walk_intel_chain(map_id, next_id, MapSet.put(visited, next_id))
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp validate_source_access(_current_user, nil), do: :ok
+
+  defp validate_source_access(current_user, source_map) do
+    case WandererApp.Maps.get_user_role_for_map(source_map, current_user) do
+      role when role in [:admin, :manager] -> :ok
+      _ -> {:error, :unauthorized_source}
+    end
+  end
+
+  defp has_manage_access?(map, character_ids) do
+    user_permissions =
+      case Map.get(map, :user_permissions) do
+        perms when is_list(perms) -> perms
+        _ -> []
+      end
+
+    permissions =
+      WandererApp.Permissions.get_map_permissions(
+        user_permissions,
+        map.owner_id,
+        character_ids
+      )
+
+    permissions.admin_map or permissions.manage_map
   end
 
   defp save_default_settings(map_id, settings, current_user) do
@@ -438,15 +618,17 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          user_permissions,
          owner_id
        ) do
-    with user_permissions <-
-           WandererApp.Permissions.get_map_permissions(
-             user_permissions,
-             owner_id,
-             current_user_characters |> Enum.map(& &1.id)
-           ),
-         {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
-         {:ok, %{characters: available_map_characters}} =
-           WandererApp.Maps.load_characters(map, current_user_id) do
+    user_permissions =
+      WandererApp.Permissions.get_map_permissions(
+        user_permissions,
+        owner_id,
+        current_user_characters |> Enum.map(& &1.id)
+      )
+
+    with {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id) do
+      {:ok, %{characters: available_map_characters}} =
+        WandererApp.Maps.load_characters(map, current_user_id)
+
       tracked_data =
         get_tracked_data(
           available_map_characters,
@@ -686,6 +868,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       map_id
       |> WandererApp.Map.get_options()
 
+    options = maybe_add_intel_source_info(options, map_id)
+
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
@@ -716,6 +900,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           user_permissions: user_permissions,
           characters: map_characters,
           options: options,
+          client_env: WandererApp.Env.to_client_env(),
           classes: WandererApp.CachedInfo.get_wormhole_classes!(),
           wormholes: WandererApp.CachedInfo.get_wormhole_types!(),
           effects: WandererApp.CachedInfo.get_effects!(),

@@ -15,6 +15,7 @@ import { SettingsListItem } from './types.ts';
 import { ImportExport } from './components/ImportExport.tsx';
 import { ServerSettings } from './components/ServerSettings.tsx';
 import { AdminSettings } from './components/AdminSettings.tsx';
+import { IntelSettings } from './components/IntelSettings.tsx';
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 
 export interface MapSettingsProps {
@@ -24,10 +25,16 @@ export interface MapSettingsProps {
 
 export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const { outCommand } = useMapRootState();
+  const {
+    outCommand,
+    data: { clientEnv },
+  } = useMapRootState();
 
   const { renderSettingItem, setUserRemoteSettings } = useMapSettings();
   const isAdmin = useMapCheckPermissions([UserPermission.ADMIN_MAP]);
+  const isManager = useMapCheckPermissions([UserPermission.MANAGE_MAP]);
+
+  const intelSharingEnabled = clientEnv?.intelSharingEnabled ?? false;
 
   const refVars = useRef({ outCommand, onHide, visible });
   refVars.current = { outCommand, onHide, visible };
@@ -100,6 +107,12 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
             <TabPanel header="Server Settings" className="h-full" headerClassName="color-warn">
               <ServerSettings />
             </TabPanel>
+
+            {(isManager || isAdmin) && intelSharingEnabled && (
+              <TabPanel header="Intel Source" className="h-full" headerClassName="color-warn">
+                <IntelSettings />
+              </TabPanel>
+            )}
 
             {isAdmin && (
               <TabPanel header="Admin Settings" className="h-full" headerClassName="color-warn">

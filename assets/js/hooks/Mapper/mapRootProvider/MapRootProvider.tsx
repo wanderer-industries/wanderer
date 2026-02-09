@@ -99,6 +99,7 @@ const INITIAL_DATA: MapRootData = {
   pings: [],
   loadingPublicRoutes: false,
   map_slug: null,
+  clientEnv: { intelSharingEnabled: false, detailedKillsDisabled: false },
 };
 
 export enum InterfaceStoredSettingsProps {

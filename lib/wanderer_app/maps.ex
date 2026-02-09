@@ -362,4 +362,31 @@ defmodule WandererApp.Maps do
         {:error, error}
     end
   end
+
+  @doc """
+  Returns the user's effective role for a map (:admin, :manager, :member, :viewer, or nil).
+  Used for intel source map eligibility checks.
+  """
+  def get_user_role_for_map(map, current_user) do
+    with {:ok, loaded_map} <- Ash.load(map, :user_permissions, actor: current_user) do
+      character_ids = Enum.map(current_user.characters, & &1.id)
+
+      permissions =
+        WandererApp.Permissions.get_map_permissions(
+          loaded_map.user_permissions,
+          loaded_map.owner_id,
+          character_ids
+        )
+
+      cond do
+        permissions.admin_map -> :admin
+        permissions.manage_map -> :manager
+        permissions.add_system -> :member
+        permissions.view_system -> :viewer
+        true -> nil
+      end
+    else
+      _ -> nil
+    end
+  end
 end

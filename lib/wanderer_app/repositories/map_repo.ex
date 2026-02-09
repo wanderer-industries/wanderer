@@ -195,4 +195,8 @@ defmodule WandererApp.MapRepo do
     {:ok, data} = options_to_form_data(options)
     data
   end
+
+  def set_intel_source_map(map, source_map_id) do
+    WandererApp.Api.Map.set_intel_source_map(map, %{intel_source_map_id: source_map_id})
+  end
 end

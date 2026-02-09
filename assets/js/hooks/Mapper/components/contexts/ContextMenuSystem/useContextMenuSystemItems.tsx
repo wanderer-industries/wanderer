@@ -49,8 +49,10 @@ export const useContextMenuSystemItems = ({
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
 
   const {
-    data: { pings, isSubscriptionActive },
+    data: { pings, isSubscriptionActive, options: mapOptions },
   } = useMapRootState();
+
+  const hasIntelSource = !!mapOptions?.intel_source_map_id;
 
   const ping = useMemo(() => (pings.length === 1 ? pings[0] : undefined), [pings]);
   const isShowPingBtn = useMemo(() => {
@@ -75,6 +77,17 @@ export const useContextMenuSystemItems = ({
       return [];
     }
 
+    const tagItem = { ...getTags(), disabled: hasIntelSource };
+    const statusItem = { ...getStatus(), disabled: hasIntelSource };
+    const labelsItems = getLabels().map(item => ({
+      ...item,
+      disabled: hasIntelSource || item.disabled,
+      items: (item.items as MenuItem[] | undefined)?.map(child => ({
+        ...child,
+        disabled: hasIntelSource || child.disabled,
+      })),
+    }));
+
     return [
       {
         className: classes.FastActions,
@@ -92,9 +105,9 @@ export const useContextMenuSystemItems = ({
         },
       },
       { separator: true },
-      getTags(),
-      getStatus(),
-      ...getLabels(),
+      tagItem,
+      statusItem,
+      ...labelsItems,
       ...getWaypointMenu(systemId, systemStaticInfo.system_class),
       {
         label: !hubs.includes(systemId) ? 'Add Route' : 'Remove Route',
@@ -200,5 +213,6 @@ export const useContextMenuSystemItems = ({
     onTogglePing,
     ping,
     isShowPingBtn,
+    hasIntelSource,
   ]);
 };
