@@ -126,7 +126,10 @@
                   <li
                     class={[
                       "p-unselectable-text",
-                      classes("p-tabview-selected p-highlight": false)
+                      classes(
+                        "p-tabview-selected p-highlight":
+                          @active_subscription_tab == "top_donators"
+                      )
                     ]}
                     role="presentation"
                     data-pc-name=""
@@ -140,12 +143,11 @@
                       aria-selected="false"
                       aria-disabled="false"
                       data-pc-section="headeraction"
-                      phx-click="change_settings_tab"
-                      phx-value-tab="balance"
+                      phx-click="change_subscription_tab"
+                      phx-value-tab="top_donators"
                     >
                       <span class="p-tabview-title" data-pc-section="headertitle">
                         <.icon name="hero-arrow-up-solid" class="w-4 h-4" />&nbsp;Top Donators
-                        <span class="badge">coming soon</span>
                       </span>
                     </a>
                   </li>
@@ -185,6 +187,19 @@
                   readonly={
                     (@user_permissions || %{}) |> Map.get(:delete_map, false) |> Kernel.not()
                   }
+                />
+
+                <.live_component
+                  :if={
+                    @active_subscription_tab == "top_donators" &&
+                      not is_nil(assigns |> Map.get(:map_id))
+                  }
+                  module={WandererAppWeb.Maps.MapTopDonatorsComponent}
+                  id="map-top-donators-component"
+                  map_id={@map_id}
+                  notify_to={self()}
+                  event_name="top_donators_event"
+                  current_user={@current_user}
                 />
               </div>
             </div>
