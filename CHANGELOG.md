@@ -2,6 +2,53 @@
 
 <!-- changelog -->
 
+## [v1.95.0](https://github.com/wanderer-industries/wanderer/compare/v1.94.0...v1.95.0) (2026-02-11)
+
+
+
+
+### Features:
+
+* subscriptions: Added top map donators support
+
+* Added lost files
+
+* Added paywall for RoutesBy widget
+
+* removed unnecessary env variable for routes
+
+* Add systems with Security Status cleaning. Add trade hubs. Add ability to store data for this widget
+
+* Add Routes By widget. Allow to find nearest blue loot and red loot stations. Added ability to set waypoint to station.
+
+* auto add system on sig addition
+
+* map: Reviewed changes
+
+* map: Logic for multiple owner updates
+
+* map: wip New Dialog for Structure Owners
+
+### Bug Fixes:
+
+* signatures: Fixed back linked sigs data sync and leading to system override issues
+
+* signatures: Moved C1/C2/C3 and C4/C5 to the bottom of the available list
+
+* use cache for sse
+
+* adding system when linked signature is provided
+
+* saving updates to unknown sigs
+
+* wh position and sig type change
+
+* api updates and linked sig addition
+
+* api fixes and format
+
+* Wrong file added to commits
+
 ## [v1.94.0](https://github.com/wanderer-industries/wanderer/compare/v1.93.0...v1.94.0) (2026-02-08)
 
 
