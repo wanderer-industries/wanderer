@@ -513,6 +513,7 @@ defmodule WandererAppWeb.Router do
       live("/maps", AdminMapsLive, :index)
       live("/maps/:id/edit", AdminMapsLive, :edit)
       live("/maps/:id/acls", AdminMapsLive, :view_acls)
+      live("/characters", AdminCharactersLive, :index)
     end
 
     error_tracker_dashboard("/errors",

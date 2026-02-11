@@ -11,6 +11,7 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
     {:ok,
      assign(socket,
        is_topping_up?: false,
+       is_withdrawing?: false,
        error: nil
      )}
   end
@@ -61,11 +62,101 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
            {"ALL", nil}
          ]
        )
-       |> assign(is_topping_up?: true)}
+       |> assign(is_topping_up?: true, is_withdrawing?: false)}
 
   @impl true
   def handle_event("hide_topup", _, socket),
     do: {:noreply, socket |> assign(is_topping_up?: false)}
+
+  @impl true
+  def handle_event("show_withdraw", _, socket),
+    do:
+      {:noreply,
+       socket
+       |> assign(
+         :withdraw_amounts,
+         [
+           {"50M", 50_000_000},
+           {"100M", 100_000_000},
+           {"250M", 250_000_000},
+           {"500M", 500_000_000},
+           {"1B", 1_000_000_000},
+           {"2.5B", 2_500_000_000},
+           {"5B", 5_000_000_000},
+           {"10B", 10_000_000_000},
+           {"ALL", nil}
+         ]
+       )
+       |> assign(is_withdrawing?: true, is_topping_up?: false)}
+
+  @impl true
+  def handle_event("hide_withdraw", _, socket),
+    do: {:noreply, socket |> assign(is_withdrawing?: false)}
+
+  @impl true
+  def handle_event(
+        "withdraw",
+        %{"amount" => amount} = _event,
+        %{assigns: %{current_user: current_user, map: map, map_id: map_id}} = socket
+      ) do
+    user =
+      current_user.id
+      |> WandererApp.User.load()
+
+    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
+
+    amount =
+      if amount == "" do
+        map_balance
+      else
+        amount |> Decimal.new() |> Decimal.to_float()
+      end
+
+    case amount <= map_balance do
+      true ->
+        {:ok, _t} =
+          WandererApp.Api.MapTransaction.create(%{
+            map_id: map_id,
+            user_id: current_user.id,
+            amount: amount,
+            type: :out
+          })
+
+        {:ok, user_balance} =
+          user
+          |> WandererApp.User.get_balance()
+
+        {:ok, _user} =
+          user
+          |> WandererApp.Api.User.update_balance(%{
+            balance: (user_balance || 0.0) + amount
+          })
+
+        {:ok, user_balance} =
+          current_user.id
+          |> WandererApp.User.load()
+          |> WandererApp.User.get_balance()
+
+        {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
+
+        {:noreply,
+         socket
+         |> assign(
+           is_withdrawing?: false,
+           map_balance: map_balance,
+           user_balance: user_balance
+         )}
+
+      _ ->
+        notify_to(
+          socket.assigns.notify_to,
+          socket.assigns.event_name,
+          {:flash, :error, "Not enough ISK in map balance!"}
+        )
+
+        {:noreply, socket}
+    end
+  end
 
   @impl true
   def handle_event(
@@ -142,13 +233,22 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         <div class="stat">
           <div class="stat-figure text-primary">
             <.button
-              :if={not @is_topping_up?}
+              :if={not @is_topping_up? and not @is_withdrawing?}
               class="mt-2"
               type="button"
               phx-click="show_topup"
               phx-target={@myself}
             >
               Top Up
+            </.button>
+            <.button
+              :if={not @is_topping_up? and not @is_withdrawing?}
+              class="mt-2"
+              type="button"
+              phx-click="show_withdraw"
+              phx-target={@myself}
+            >
+              Withdraw
             </.button>
           </div>
           <div class="stat-title">Map balance</div>
@@ -207,6 +307,32 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
           </.button>
           <.button class="mt-2" type="submit">
             Top Up
+          </.button>
+        </div>
+      </.form>
+
+      <.form
+        :let={f}
+        :if={@is_withdrawing?}
+        for={@topup_form}
+        class="mt-2"
+        phx-submit="withdraw"
+        phx-target={@myself}
+      >
+        <.input
+          type="select"
+          field={f[:amount]}
+          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+          label="Withdraw amount"
+          placeholder="Select withdraw amount"
+          options={@withdraw_amounts}
+        />
+        <div class="modal-action">
+          <.button class="mt-2" type="button" phx-click="hide_withdraw" phx-target={@myself}>
+            Cancel
+          </.button>
+          <.button class="mt-2" type="submit">
+            Withdraw
           </.button>
         </div>
       </.form>

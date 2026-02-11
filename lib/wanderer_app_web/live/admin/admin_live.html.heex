@@ -24,6 +24,18 @@
             </.link>
           </div>
         </div>
+        <div class="card dark:bg-zinc-800 dark:border-zinc-600">
+          <div class="card-body">
+            <span class="text-gray-400 dark:text-gray-400">Characters</span>
+            <.link
+              class="btn mt-2 w-full btn-neutral rounded-none"
+              navigate={~p"/admin/characters"}
+            >
+              <.icon name="hero-users-solid" class="w-6 h-6" />
+              <h3 class="card-title text-center text-md">View All Characters</h3>
+            </.link>
+          </div>
+        </div>
         <div :if={@restrict_maps_creation?} class="card dark:bg-zinc-800 dark:border-zinc-600">
           <div class="card-body">
             <.button class="mt-2" type="button" phx-click="create-map">

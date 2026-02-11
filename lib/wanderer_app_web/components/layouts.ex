@@ -257,6 +257,11 @@ defmodule WandererAppWeb.Layouts do
               </.link>
             </li>
             <li :if={@show_admin}>
+              <.link navigate="/admin/characters">
+                Characters
+              </.link>
+            </li>
+            <li :if={@show_admin}>
               <.link navigate="/admin/errors">
                 Errors
               </.link>
