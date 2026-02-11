@@ -595,6 +595,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         time_status = get_extra_info(extra_info, "time_status", time_status)
         mass_status = get_extra_info(extra_info, "mass_status", 0)
         locked = get_extra_info(extra_info, "locked", false)
+        wormhole_type = get_extra_info(extra_info, "wormhole_type", nil)
 
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
@@ -605,7 +606,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             ship_size_type: ship_size_type,
             time_status: time_status,
             mass_status: mass_status,
-            locked: locked
+            locked: locked,
+            wormhole_type: wormhole_type
           })
 
         if connection_type == @connection_type_wormhole do
@@ -915,8 +917,10 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       if not from_is_wormhole and not to_is_wormhole do
         # Check if there's a known stargate
         case find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
-          {:ok, []} -> true  # No stargate = wormhole connection
-          _ -> false  # Stargate exists or error
+          # No stargate = wormhole connection
+          {:ok, []} -> true
+          # Stargate exists or error
+          _ -> false
         end
       else
         false

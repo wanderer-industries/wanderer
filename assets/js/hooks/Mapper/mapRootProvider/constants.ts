@@ -7,6 +7,7 @@ import {
   MiniMapPlacement,
   OnTheMapSettingsType,
   PingsPlacement,
+  RoutesByType,
   RoutesType,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { DEFAULT_WIDGETS, STORED_VISIBLE_WIDGETS_DEFAULT } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
@@ -41,6 +42,12 @@ export const DEFAULT_WIDGET_LOCAL_SETTINGS: LocalWidgetSettings = {
   compact: true,
   showOffline: false,
   showShipName: false,
+};
+
+export const DEFAULT_ROUTES_BY_SETTINGS: RoutesByType = {
+  routes: DEFAULT_ROUTES_SETTINGS,
+  scope: 'ALL',
+  type: 'blueLoot',
 };
 
 export const DEFAULT_ON_THE_MAP_SETTINGS: OnTheMapSettingsType = {

@@ -116,6 +116,7 @@ defmodule WandererApp.Map.Server.AclScopesPropagationTest do
 
       # Fetch again to confirm persistence
       {:ok, refetched_map} = WandererApp.MapRepo.get(map.id, [])
+
       assert refetched_map.scopes == [:wormholes, :hi, :low, :null],
              "Refetched map should have updated scopes"
     end

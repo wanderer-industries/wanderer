@@ -56,6 +56,12 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     map_slug,
     'routes',
   );
+  const [settingsRoutesBy, settingsRoutesByUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'routesBy',
+  );
 
   const [settingsLocal, settingsLocalUpdate] = useSettingsValueAndSetter(
     mapUserSettings,
@@ -188,6 +194,8 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     setInterfaceSettings,
     settingsRoutes,
     settingsRoutesUpdate,
+    settingsRoutesBy,
+    settingsRoutesByUpdate,
     settingsLocal,
     settingsLocalUpdate,
     settingsSignatures,

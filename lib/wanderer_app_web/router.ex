@@ -299,6 +299,8 @@ defmodule WandererAppWeb.Router do
     resources "/structures", MapSystemStructureAPIController, except: [:new, :edit]
     get "/structure-timers", MapSystemStructureAPIController, :structure_timers
     resources "/signatures", MapSystemSignatureAPIController, except: [:new, :edit]
+    post "/signatures/:id/link", MapSystemSignatureAPIController, :link
+    delete "/signatures/:id/link", MapSystemSignatureAPIController, :unlink
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
   end
@@ -339,6 +341,11 @@ defmodule WandererAppWeb.Router do
   scope "/api/common", WandererAppWeb do
     pipe_through [:api]
     get "/system-static-info", CommonAPIController, :show_system_static
+  end
+
+  scope "/route", WandererAppWeb do
+    pipe_through [:api]
+    post "/findClosest", RouteBuilderController, :find_closest
   end
 
   scope "/api" do

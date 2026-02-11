@@ -6,4 +6,5 @@ export * from './SystemStructures';
 export * from './WSystemKills';
 export * from './WRoutesUser';
 export * from './WRoutesPublic';
+export * from './WRoutesBy';
 export * from './CommentsWidget';

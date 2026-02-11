@@ -63,13 +63,31 @@ defmodule WandererApp.Map.Operations.Connections do
     if is_nil(src_info) or is_nil(tgt_info) do
       {:error, :invalid_system_info}
     else
+      # Get wormhole_type for ship size inference
+      wormhole_type = attrs["wormhole_type"]
+
+      # Build extra_info map with optional connection attributes
+      extra_info =
+        %{}
+        |> maybe_add_extra("time_status", attrs["time_status"])
+        |> maybe_add_extra("mass_status", attrs["mass_status"])
+        |> maybe_add_extra("locked", attrs["locked"])
+        |> maybe_add_extra("wormhole_type", wormhole_type)
+
       info = %{
         solar_system_source_id: src_info.solar_system_id,
         solar_system_target_id: tgt_info.solar_system_id,
         character_id: char_id,
         type: parse_type(attrs["type"]),
         ship_size_type:
-          resolve_ship_size(attrs["type"], attrs["ship_size_type"], src_info, tgt_info)
+          resolve_ship_size(
+            attrs["type"],
+            attrs["ship_size_type"],
+            wormhole_type,
+            src_info,
+            tgt_info
+          ),
+        extra_info: if(extra_info == %{}, do: nil, else: extra_info)
       }
 
       case Server.add_connection(map_id, info) do
@@ -95,10 +113,11 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # Determines the ship size for a connection, applying wormhole-specific rules
   # for C1, C13, and C4⇄NS links, falling back to the caller's provided size or Large.
-  defp resolve_ship_size(type_val, ship_size_val, src_info, tgt_info) do
+  # If wormhole_type is provided (e.g., "H296"), infer ship size from it.
+  defp resolve_ship_size(type_val, ship_size_val, wormhole_type, src_info, tgt_info) do
     case parse_type(type_val) do
       @connection_type_wormhole ->
-        wormhole_ship_size(ship_size_val, src_info, tgt_info)
+        wormhole_ship_size(ship_size_val, wormhole_type, src_info, tgt_info)
 
       _other ->
         # Stargates and others just use the parsed or default size
@@ -108,13 +127,43 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # -- Wormhole‑specific sizing rules ----------------------------------------
 
-  defp wormhole_ship_size(ship_size_val, src, tgt) do
+  defp wormhole_ship_size(ship_size_val, wormhole_type, src, tgt) do
+    # First, try to infer from wormhole_type (e.g., "H296", "C5", etc.)
+    inferred_size = infer_ship_size_from_wormhole_type(wormhole_type)
+    # Parse ship_size_val early to handle string values correctly
+    parsed_ship_size = parse_ship_size(ship_size_val, nil)
+
     cond do
-      c1_system?(src, tgt) -> @medium_ship_size
-      c13_system?(src, tgt) -> @small_ship_size
-      c4_to_ns?(src, tgt) -> @small_ship_size
-      true -> parse_ship_size(ship_size_val, @large_ship_size)
+      # If user explicitly provided a ship_size_val, use it
+      not is_nil(parsed_ship_size) ->
+        parsed_ship_size
+
+      # If we could infer from wormhole_type, use that
+      not is_nil(inferred_size) ->
+        inferred_size
+
+      # Otherwise fall back to system class rules
+      c1_system?(src, tgt) ->
+        @medium_ship_size
+
+      c13_system?(src, tgt) ->
+        @small_ship_size
+
+      c4_to_ns?(src, tgt) ->
+        @small_ship_size
+
+      true ->
+        @large_ship_size
     end
+  end
+
+  # Infer ship size from wormhole type name using EVE static data
+  defp infer_ship_size_from_wormhole_type(nil), do: nil
+  defp infer_ship_size_from_wormhole_type(""), do: nil
+  defp infer_ship_size_from_wormhole_type("K162"), do: nil
+
+  defp infer_ship_size_from_wormhole_type(wormhole_type) do
+    WandererApp.Utils.EVEUtil.get_wh_size(wormhole_type)
   end
 
   defp c1_system?(%{system_class: @c1_system_class}, _), do: true
@@ -161,6 +210,9 @@ defmodule WandererApp.Map.Operations.Connections do
   end
 
   defp parse_type(_), do: @connection_type_wormhole
+
+  defp maybe_add_extra(map, _key, nil), do: map
+  defp maybe_add_extra(map, key, value), do: Map.put(map, key, value)
 
   defp parse_int(nil, field), do: {:error, {:missing_field, field}}
   defp parse_int(val, _) when is_integer(val), do: {:ok, val}

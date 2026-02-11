@@ -5,6 +5,8 @@ defmodule WandererApp.Api.MapTransaction do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer
 
+  import Ecto.Query
+
   postgres do
     repo(WandererApp.Repo)
     table("map_transactions_v1")
@@ -19,6 +21,7 @@ defmodule WandererApp.Api.MapTransaction do
     define(:by_map, action: :by_map)
     define(:by_user, action: :by_user)
     define(:create, action: :create)
+    define(:top_donators, action: :top_donators)
   end
 
   actions do
@@ -44,6 +47,35 @@ defmodule WandererApp.Api.MapTransaction do
       prepare build(load: [:map])
       argument(:user_id, :uuid, allow_nil?: false)
       filter(expr(user_id == ^arg(:user_id)))
+    end
+
+    action :top_donators, {:array, :struct} do
+      argument(:map_id, :string, allow_nil?: false)
+      argument(:after, :utc_datetime, allow_nil?: true)
+
+      run fn input, _context ->
+        base =
+          from(t in __MODULE__,
+            where:
+              t.map_id == ^input.arguments.map_id and
+                t.type == :in and
+                not is_nil(t.user_id),
+            group_by: [t.user_id],
+            select: %{user_id: t.user_id, total_amount: sum(t.amount)},
+            order_by: [desc: sum(t.amount)],
+            limit: 10
+          )
+
+        query =
+          case input.arguments[:after] do
+            nil -> base
+            after_date -> base |> where([t], t.inserted_at >= ^after_date)
+          end
+
+        query
+        |> WandererApp.Repo.all()
+        |> then(&{:ok, &1})
+      end
     end
   end
 

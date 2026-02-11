@@ -36,7 +36,8 @@ defmodule WandererApp.Map.Operations.Systems do
   # Private helper for batch upsert
   defp create_system_batch(%{map_id: map_id, user_id: user_id, char_id: char_id}, params) do
     with {:ok, solar_system_id} <- fetch_system_id(params) do
-      update_existing = fetch_update_existing(params, false)
+      # Default to true so re-submitting with new position updates the system
+      update_existing = fetch_update_existing(params, true)
 
       map_id
       |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
@@ -46,9 +47,13 @@ defmodule WandererApp.Map.Operations.Systems do
 
         {:error, :already_exists} ->
           if update_existing do
-            do_update_system(map_id, user_id, char_id, solar_system_id, params)
+            # Mark as skip so it counts as "updated" not "created"
+            case do_update_system(map_id, user_id, char_id, solar_system_id, params) do
+              {:ok, _} -> {:skip, :updated}
+              error -> error
+            end
           else
-            :ok
+            {:skip, :already_exists}
           end
       end
     end
@@ -200,16 +205,22 @@ defmodule WandererApp.Map.Operations.Systems do
 
   defp normalize_coordinates(%{"coordinates" => %{"x" => x, "y" => y}})
        when is_number(x) and is_number(y),
-       do: %{x: x, y: y}
+       do: %{"x" => x, "y" => y}
 
   defp normalize_coordinates(%{coordinates: %{x: x, y: y}}) when is_number(x) and is_number(y),
-    do: %{x: x, y: y}
+    do: %{"x" => x, "y" => y}
 
   defp normalize_coordinates(params) do
-    %{
-      x: params |> Map.get("position_x", Map.get(params, :position_x, 0)),
-      y: params |> Map.get("position_y", Map.get(params, :position_y, 0))
-    }
+    x = params |> Map.get("position_x", Map.get(params, :position_x))
+    y = params |> Map.get("position_y", Map.get(params, :position_y))
+
+    # Only return coordinates if both x and y are provided
+    # Otherwise return nil to let the server use auto-positioning
+    if is_number(x) and is_number(y) do
+      %{"x" => x, "y" => y}
+    else
+      nil
+    end
   end
 
   defp apply_system_updates(map_id, system_id, attrs, %{x: x, y: y}) do

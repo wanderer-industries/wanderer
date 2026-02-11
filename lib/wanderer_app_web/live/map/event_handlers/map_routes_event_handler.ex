@@ -5,6 +5,13 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
 
+  @alpha_routes_limit_by_type %{
+    "trade_hubs" => 5,
+    :trade_hubs => 5
+  }
+  @default_alpha_routes_limit 1
+  @paid_routes_limit 15
+
   def handle_server_event(
         %{
           event: :routes,
@@ -35,6 +42,25 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
         socket
         |> MapEventHandler.push_map_event(
           "user_routes",
+          %{
+            solar_system_id: solar_system_id,
+            loading: false,
+            routes: routes,
+            systems_static_data: systems_static_data
+          }
+        )
+
+  def handle_server_event(
+        %{
+          event: :routes_list_by,
+          payload: {solar_system_id, %{routes: routes, systems_static_data: systems_static_data}}
+        },
+        socket
+      ),
+      do:
+        socket
+        |> MapEventHandler.push_map_event(
+          "routes_list_by",
           %{
             solar_system_id: solar_system_id,
             loading: false,
@@ -140,6 +166,41 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_ui_event(
+        "get_routes_by",
+        %{"system_id" => solar_system_id, "routes_settings" => routes_settings} = event,
+        %{assigns: %{map_id: map_id, map_loaded?: true}} = socket
+      ) do
+    routes_type = Map.get(event, "type", "blueLoot")
+    security_type = Map.get(event, "securityType", "both")
+    is_subscription_active? = Map.get(socket.assigns, :is_subscription_active?, false)
+    routes_limit =
+      if is_subscription_active? == true do
+        @paid_routes_limit
+      else
+        Map.get(@alpha_routes_limit_by_type, routes_type, @default_alpha_routes_limit)
+      end
+    routes_settings =
+      routes_settings
+      |> get_routes_settings()
+      |> Map.put(:security_type, security_type)
+
+    Task.async(fn ->
+      {:ok, routes} =
+        WandererApp.Map.RoutesBy.find(
+          map_id,
+          solar_system_id,
+          routes_settings,
+          routes_type,
+          routes_limit
+        )
+
+      {:routes_list_by, {solar_system_id, routes}}
+    end)
+
+    {:noreply, socket}
   end
 
   def handle_ui_event(

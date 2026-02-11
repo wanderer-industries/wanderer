@@ -7,6 +7,7 @@ import {
   SystemStructures,
   WRoutesPublic,
   WRoutesUser,
+  WRoutesBy,
   WSystemKills,
 } from '@/hooks/Mapper/components/mapInterface/widgets';
 
@@ -18,6 +19,7 @@ export enum WidgetsIds {
   signatures = 'signatures',
   local = 'local',
   routes = 'routes',
+  routesBy = 'routesBy',
   structures = 'structures',
   kills = 'kills',
   comments = 'comments',
@@ -59,6 +61,13 @@ export const DEFAULT_WIDGETS: WindowProps[] = [
     size: { width: 510, height: 200 },
     zIndex: 0,
     content: () => <WRoutesPublic />,
+  },
+  {
+    id: WidgetsIds.routesBy,
+    position: { x: 10, y: 740 },
+    size: { width: 510, height: 200 },
+    zIndex: 0,
+    content: () => <WRoutesBy />,
   },
   {
     id: WidgetsIds.userRoutes,
@@ -111,6 +120,10 @@ export const WIDGETS_CHECKBOXES_PROPS: WidgetsCheckboxesType = [
   {
     id: WidgetsIds.routes,
     label: 'Routes',
+  },
+  {
+    id: WidgetsIds.routesBy,
+    label: 'Routes By',
   },
   {
     id: WidgetsIds.userRoutes,

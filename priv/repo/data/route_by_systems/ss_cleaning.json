@@ -1,0 +1,290 @@
+{
+  "type_id": null,
+  "generated_at": "2026-02-03T08:42:38.039Z",
+  "bands": [
+    "low"
+  ],
+  "system_ids_by_band": {
+    "high": [],
+    "low": [
+      30000012,
+      30000014,
+      30000015,
+      30000205,
+      30001385,
+      30002060,
+      30002062,
+      30002065,
+      30002246,
+      30002249,
+      30002402,
+      30002404,
+      30002406,
+      30002407,
+      30002414,
+      30002419,
+      30002420,
+      30002725,
+      30002726,
+      30002728,
+      30002730,
+      30003057,
+      30003059,
+      30003061,
+      30003818,
+      30003819,
+      30004280,
+      30004281,
+      30004284,
+      30005079,
+      30005080,
+      30005328
+    ]
+  },
+  "system_stations": {
+    "30000012": [
+      {
+        "station_id": 60012292,
+        "name": "Asabona IX - Moon 5 - CONCORD Bureau"
+      }
+    ],
+    "30000014": [
+      {
+        "station_id": 60012298,
+        "name": "Shamahi IX - Moon 12 - CONCORD Bureau"
+      }
+    ],
+    "30000015": [
+      {
+        "station_id": 60012301,
+        "name": "Sendaya V - CONCORD Bureau"
+      }
+    ],
+    "30000205": [
+      {
+        "station_id": 60013045,
+        "name": "Obe VI - Moon 2 - DED Testing Facilities"
+      }
+    ],
+    "30001385": [
+      {
+        "station_id": 60012334,
+        "name": "Jan VI - Moon 21 - CONCORD Academy"
+      }
+    ],
+    "30002060": [
+      {
+        "station_id": 60012970,
+        "name": "Evati IX - Moon 1 - DED Assembly Plant"
+      }
+    ],
+    "30002062": [
+      {
+        "station_id": 60012976,
+        "name": "Todifrauan VII - Moon 8 - DED Assembly Plant"
+      }
+    ],
+    "30002065": [
+      {
+        "station_id": 60012973,
+        "name": "Lasleinur VI - Moon 17 - DED Assembly Plant"
+      }
+    ],
+    "30002246": [
+      {
+        "station_id": 60012940,
+        "name": "Neziel I - DED Assembly Plant"
+      }
+    ],
+    "30002249": [
+      {
+        "station_id": 60012934,
+        "name": "Ruchy I - DED Testing Facilities"
+      }
+    ],
+    "30002402": [
+      {
+        "station_id": 60012457,
+        "name": "Istodard IX - Moon 5 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012460,
+        "name": "Istodard IX - Moon 16 - CONCORD Bureau"
+      }
+    ],
+    "30002404": [
+      {
+        "station_id": 60012454,
+        "name": "Half VII - Moon 1 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012469,
+        "name": "Half VII - Moon 4 - CONCORD Assembly Plant"
+      }
+    ],
+    "30002406": [
+      {
+        "station_id": 60012463,
+        "name": "Hedaleolfarber VII - Moon 17 - CONCORD Treasury"
+      }
+    ],
+    "30002407": [
+      {
+        "station_id": 60012466,
+        "name": "Altbrard IX - Moon 8 - CONCORD Testing Facilities"
+      }
+    ],
+    "30002414": [
+      {
+        "station_id": 60012418,
+        "name": "Klingt III - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012430,
+        "name": "Klingt VIII - CONCORD Logistic Support"
+      },
+      {
+        "station_id": 60012433,
+        "name": "Klingt IX - CONCORD Assembly Plant"
+      }
+    ],
+    "30002419": [
+      {
+        "station_id": 60012421,
+        "name": "Aeditide V - CONCORD Bureau"
+      }
+    ],
+    "30002420": [
+      {
+        "station_id": 60012424,
+        "name": "Egbinger XII - CONCORD Academy"
+      },
+      {
+        "station_id": 60012427,
+        "name": "Egbinger V - CONCORD Treasury"
+      }
+    ],
+    "30002725": [
+      {
+        "station_id": 60012490,
+        "name": "Goinard IV - Moon 2 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012499,
+        "name": "Goinard III - Moon 2 - CONCORD Bureau"
+      }
+    ],
+    "30002726": [
+      {
+        "station_id": 60012505,
+        "name": "Raeghoscon VIII - CONCORD Logistic Support"
+      }
+    ],
+    "30002728": [
+      {
+        "station_id": 60012496,
+        "name": "Lermireve VIII - Moon 15 - CONCORD Treasury"
+      }
+    ],
+    "30002730": [
+      {
+        "station_id": 60012493,
+        "name": "Esmes IV - Moon 2 - CONCORD Treasury"
+      }
+    ],
+    "30003057": [
+      {
+        "station_id": 60012373,
+        "name": "Groothese X - Moon 13 - CONCORD Bureau"
+      }
+    ],
+    "30003059": [
+      {
+        "station_id": 60012364,
+        "name": "Adeel VIII - Moon 1 - CONCORD Treasury"
+      }
+    ],
+    "30003061": [
+      {
+        "station_id": 60012376,
+        "name": "Mormelot I - CONCORD Testing Facilities"
+      }
+    ],
+    "30003818": [
+      {
+        "station_id": 60012439,
+        "name": "Aulbres X - Moon 2 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012442,
+        "name": "Aulbres VII - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012445,
+        "name": "Aulbres X - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012448,
+        "name": "Aulbres VII - Moon 16 - CONCORD Assembly Plant"
+      },
+      {
+        "station_id": 60012451,
+        "name": "Aulbres V - Moon 4 - CONCORD Logistic Support"
+      }
+    ],
+    "30003819": [
+      {
+        "station_id": 60012436,
+        "name": "Barleguet IV - Moon 2 - CONCORD Bureau"
+      }
+    ],
+    "30004280": [
+      {
+        "station_id": 60013003,
+        "name": "Nalnifan IV - Moon 2 - DED Assembly Plant"
+      }
+    ],
+    "30004281": [
+      {
+        "station_id": 60013000,
+        "name": "Jerhesh VI - Moon 11 - DED Logistic Support"
+      }
+    ],
+    "30004284": [
+      {
+        "station_id": 60012997,
+        "name": "Defsunun IV - Moon 1 - DED Assembly Plant"
+      }
+    ],
+    "30005079": [
+      {
+        "station_id": 60012472,
+        "name": "Zatamaka XI - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012478,
+        "name": "Zatamaka VII - Moon 2 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012481,
+        "name": "Zatamaka X - Moon 2 - CONCORD Bureau"
+      }
+    ],
+    "30005080": [
+      {
+        "station_id": 60012475,
+        "name": "Rannoze V - Moon 8 - CONCORD Bureau"
+      },
+      {
+        "station_id": 60012487,
+        "name": "Rannoze VII - Moon 2 - CONCORD Assembly Plant"
+      }
+    ],
+    "30005328": [
+      {
+        "station_id": 60012928,
+        "name": "Reblier VIII - Moon 7 - DED Logistic Support"
+      }
+    ]
+  }
+}
