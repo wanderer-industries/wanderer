@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.96.0](https://github.com/wanderer-industries/wanderer/compare/v1.95.0...v1.96.0) (2026-02-12)
+
+
+
+
+### Features:
+
+* signatures: Fixed creator visibility issues. Added 4.5 hour color for unsplashed
+
 ## [v1.95.0](https://github.com/wanderer-industries/wanderer/compare/v1.94.0...v1.95.0) (2026-02-11)
 
 
