@@ -29,6 +29,7 @@ export const useMapInit = () => {
         following_character_eve_id,
         user_hubs,
         map_slug,
+        client_env,
       } = props;
 
       const updateData: Partial<MapRootData> = {};
@@ -106,6 +107,10 @@ export const useMapInit = () => {
 
       if ('map_slug' in props) {
         updateData.map_slug = map_slug;
+      }
+
+      if ('client_env' in props) {
+        updateData.clientEnv = client_env;
       }
 
       update(updateData);

@@ -4,7 +4,7 @@ import { CharacterTypeRaw } from '@/hooks/Mapper/types/character.ts';
 import { SolarSystemRawType } from '@/hooks/Mapper/types/system.ts';
 import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
-import { MapOptions, PingData, UserPermissions } from '@/hooks/Mapper/types';
+import { ClientEnv, MapOptions, PingData, UserPermissions } from '@/hooks/Mapper/types';
 import { SystemSignature } from '@/hooks/Mapper/types/signatures';
 import { RoutesByCategoryType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
@@ -32,4 +32,5 @@ export type MapUnionTypes = {
   mainCharacterEveId: string | null;
   followingCharacterEveId: string | null;
   pings: PingData[];
+  clientEnv: ClientEnv;
 };
