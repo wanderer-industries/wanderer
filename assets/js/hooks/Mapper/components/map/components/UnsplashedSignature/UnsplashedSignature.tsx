@@ -39,6 +39,10 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
     return customInfo?.time_status === TimeStatus._1h;
   }, [customInfo]);
 
+  const is4H = useMemo(() => {
+    return customInfo?.time_status === TimeStatus._4h;
+  }, [customInfo]);
+
   const whClassStyle = useMemo(() => {
     if (signature.type === 'K162' && k162TypeOption) {
       const k162Data = wormholesData[k162TypeOption.whClassName];
@@ -65,6 +69,7 @@ export const UnsplashedSignature = ({ signature }: UnsplashedSignatureProps) => 
         <svg width="13" height="8" viewBox="0 0 13 8" xmlns="http://www.w3.org/2000/svg">
           <rect y="1" width="13" height="4" rx="2" className={whClassStyle} fill="currentColor" />
           {isEOL && <rect x="4" width="5" height="6" rx="1" className={clsx(classes.Eol)} fill="#a153ac" />}
+          {is4H && <rect x="4" width="5" height="6" rx="1" className={clsx(classes.Eol)} fill="#d8b4fe" />}
         </svg>
       </div>
     </WdTooltipWrapper>

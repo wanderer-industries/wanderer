@@ -35,7 +35,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
 
     const extended = serverSigs.map(s => ({
       ...s,
-      character_name: characters.find(c => c.eve_id === s.character_eve_id)?.name,
+      character_name: s.character_name ?? characters.find(c => c.eve_id === s.character_eve_id)?.name,
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
