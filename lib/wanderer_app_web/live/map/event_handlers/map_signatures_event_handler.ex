@@ -434,31 +434,45 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  def get_system_signatures(system_id),
-    do:
-      system_id
-      |> WandererApp.Api.MapSystemSignature.by_system_id!()
-      |> Enum.map(fn %{
-                       inserted_at: inserted_at,
-                       updated_at: updated_at,
-                       linked_system_id: linked_system_id
-                     } = s ->
-        s
-        |> Map.take([
-          :eve_id,
-          :character_eve_id,
-          :name,
-          :temporary_name,
-          :description,
-          :kind,
-          :group,
-          :type,
-          :custom_info
-        ])
-        |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
-        |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
-        |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+  def get_system_signatures(system_id) do
+    signatures = system_id |> WandererApp.Api.MapSystemSignature.by_system_id!()
+
+    character_eve_ids =
+      signatures |> Enum.map(& &1.character_eve_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    character_names_map =
+      character_eve_ids
+      |> Enum.reduce(%{}, fn eve_id, acc ->
+        case WandererApp.Character.get_by_eve_id(eve_id) do
+          {:ok, character} -> Map.put(acc, eve_id, character.name)
+          _ -> acc
+        end
       end)
+
+    signatures
+    |> Enum.map(fn %{
+                     inserted_at: inserted_at,
+                     updated_at: updated_at,
+                     linked_system_id: linked_system_id
+                   } = s ->
+      s
+      |> Map.take([
+        :eve_id,
+        :character_eve_id,
+        :name,
+        :temporary_name,
+        :description,
+        :kind,
+        :group,
+        :type,
+        :custom_info
+      ])
+      |> Map.put(:character_name, Map.get(character_names_map, s.character_eve_id))
+      |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
+      |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+      |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+    end)
+  end
 
   defp get_integer(nil), do: nil
   defp get_integer(value) when is_binary(value), do: String.to_integer(value)
