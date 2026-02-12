@@ -112,3 +112,23 @@ export const useUserRoutes = () => {
     update({ userRoutes: value });
   }, []);
 };
+
+export const useRoutesListBy = () => {
+  const {
+    update,
+    data: { routesListBy },
+  } = useMapRootState();
+
+  const ref = useRef({ update, routesListBy });
+  ref.current = { update, routesListBy };
+
+  return useCallback((value: CommandRoutes) => {
+    const { update, routesListBy } = ref.current;
+
+    if (areRoutesListsEqual(routesListBy, value)) {
+      return;
+    }
+
+    update({ routesListBy: value });
+  }, []);
+};

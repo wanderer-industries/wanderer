@@ -6,6 +6,7 @@ import { RoutesList } from '@/hooks/Mapper/types/routes.ts';
 import { SolarSystemConnection } from '@/hooks/Mapper/types/connection.ts';
 import { ClientEnv, MapOptions, PingData, UserPermissions } from '@/hooks/Mapper/types';
 import { SystemSignature } from '@/hooks/Mapper/types/signatures';
+import { RoutesByCategoryType } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export type MapUnionTypes = {
   wormholesData: Record<string, WormholeDataRaw>;
@@ -20,6 +21,8 @@ export type MapUnionTypes = {
   systemSignatures: Record<string, SystemSignature[]>;
   routes?: RoutesList;
   userRoutes?: RoutesList;
+  routesListBy?: RoutesList;
+  availableRoutesBy?: RoutesByCategoryType[];
   kills: Record<number, number>;
   connections: SolarSystemConnection[];
   userPermissions: Partial<UserPermissions>;

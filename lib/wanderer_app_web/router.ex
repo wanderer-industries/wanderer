@@ -343,6 +343,11 @@ defmodule WandererAppWeb.Router do
     get "/system-static-info", CommonAPIController, :show_system_static
   end
 
+  scope "/route", WandererAppWeb do
+    pipe_through [:api]
+    post "/findClosest", RouteBuilderController, :find_closest
+  end
+
   scope "/api" do
     pipe_through [:api_spec]
     get "/openapi", OpenApiSpex.Plug.RenderSpec, :show
@@ -508,6 +513,7 @@ defmodule WandererAppWeb.Router do
       live("/maps", AdminMapsLive, :index)
       live("/maps/:id/edit", AdminMapsLive, :edit)
       live("/maps/:id/acls", AdminMapsLive, :view_acls)
+      live("/characters", AdminCharactersLive, :index)
     end
 
     error_tracker_dashboard("/errors",

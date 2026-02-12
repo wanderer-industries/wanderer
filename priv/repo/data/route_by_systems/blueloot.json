@@ -1,0 +1,947 @@
+{
+  "type_id": 30747,
+  "generated_at": "2026-01-30T13:53:23.834Z",
+  "bands": [
+    "high",
+    "low"
+  ],
+  "system_ids_by_band": {
+    "high": [
+      30000055,
+      30000053,
+      30000159,
+      30000160,
+      30000187,
+      30000133,
+      30000181,
+      30001359,
+      30001391,
+      30001395,
+      30001397,
+      30001676,
+      30001679,
+      30001677,
+      30002558,
+      30002569,
+      30002571,
+      30002568,
+      30002572,
+      30002771,
+      30002800,
+      30002815,
+      30002816,
+      30002988,
+      30002992,
+      30002993,
+      30003017,
+      30003018,
+      30003024,
+      30003025,
+      30003029,
+      30003030,
+      30003048,
+      30003053,
+      30003055,
+      30003389,
+      30003394,
+      30003402,
+      30003409,
+      30003412,
+      30003447,
+      30003449,
+      30003469,
+      30003404,
+      30003413,
+      30002191,
+      30002193,
+      30002252,
+      30003553,
+      30003554,
+      30003555,
+      30002190,
+      30002187,
+      30004077,
+      30004078,
+      30004079,
+      30004083,
+      30004084,
+      30004111,
+      30004112,
+      30004114,
+      30005009,
+      30005011,
+      30005017,
+      30005018,
+      30005039,
+      30005040,
+      30005043,
+      30005052,
+      30005054,
+      30005204,
+      30005199
+    ],
+    "low": [
+      30000017,
+      30000040,
+      30000041,
+      30000072,
+      30000074,
+      30000162,
+      30000163,
+      30000164,
+      30000196,
+      30000197,
+      30001390,
+      30001361,
+      30002414,
+      30002415,
+      30002418,
+      30002559,
+      30002560,
+      30002769,
+      30002975,
+      30002977,
+      30002980,
+      30002059,
+      30002065,
+      30003467,
+      30002058,
+      30002067,
+      30003556,
+      30004239,
+      30004240,
+      30004241,
+      30004288,
+      30004291,
+      30004296,
+      30005010,
+      30005020,
+      30005030,
+      30005031,
+      30005034,
+      30005035,
+      30005275,
+      30005276
+    ]
+  },
+  "system_stations": {
+    "30000017": [
+      {
+        "station_id": 60014071,
+        "name": "Futzchag IX - Moon 9 - Thukker Mix Factory"
+      },
+      {
+        "station_id": 60014074,
+        "name": "Futzchag II - Thukker Mix Factory"
+      }
+    ],
+    "30000040": [
+      {
+        "station_id": 60014095,
+        "name": "Uzistoon VII - Moon 2 - Thukker Mix Factory"
+      }
+    ],
+    "30000041": [
+      {
+        "station_id": 60014098,
+        "name": "Bairshir IV - Moon 11 - Thukker Mix Factory"
+      }
+    ],
+    "30000053": [
+      {
+        "station_id": 60014137,
+        "name": "Ibaria III - Thukker Mix Warehouse"
+      }
+    ],
+    "30000055": [
+      {
+        "station_id": 60014140,
+        "name": "Zemalu IX - Moon 2 - Thukker Mix Factory"
+      }
+    ],
+    "30000072": [
+      {
+        "station_id": 60014068,
+        "name": "Nakah I - Moon 1 - Thukker Mix Factory"
+      }
+    ],
+    "30000074": [
+      {
+        "station_id": 60014065,
+        "name": "Hasateem VI - Moon 12 - Thukker Mix Factory"
+      }
+    ],
+    "30000133": [
+      {
+        "station_id": 60001810,
+        "name": "Hirtamon VII - Moon 6 - Zainou Biotech Production"
+      },
+      {
+        "station_id": 60001807,
+        "name": "Hirtamon VII - Moon 5 - Zainou Biotech Production"
+      }
+    ],
+    "30000159": [
+      {
+        "station_id": 60010195,
+        "name": "Ikami X - CreoDron Factory"
+      }
+    ],
+    "30000160": [
+      {
+        "station_id": 60010192,
+        "name": "Reisen VI - CreoDron Factory"
+      }
+    ],
+    "30000162": [
+      {
+        "station_id": 60001801,
+        "name": "Maila IV - Zainou Biotech Production"
+      },
+      {
+        "station_id": 60001804,
+        "name": "Maila VI - Moon 1 - Zainou Biotech Production"
+      }
+    ],
+    "30000163": [
+      {
+        "station_id": 60010198,
+        "name": "Akora IX - Moon 19 - CreoDron Factory"
+      }
+    ],
+    "30000164": [
+      {
+        "station_id": 60010201,
+        "name": "Messoya VIII - Moon 6 - CreoDron Factory"
+      }
+    ],
+    "30000181": [
+      {
+        "station_id": 60001783,
+        "name": "Korsiki III - Moon 15 - Zainou Biotech Production"
+      }
+    ],
+    "30000187": [
+      {
+        "station_id": 60001786,
+        "name": "Wuos VI - Zainou Biotech Research Center"
+      }
+    ],
+    "30000196": [
+      {
+        "station_id": 60001798,
+        "name": "Otosela V - Moon 13 - Zainou Biotech Production"
+      }
+    ],
+    "30000197": [
+      {
+        "station_id": 60001795,
+        "name": "Uemon VIII - Moon 10 - Zainou Biotech Production"
+      }
+    ],
+    "30001359": [
+      {
+        "station_id": 60001780,
+        "name": "Semiki IV - Zainou Biohazard Containment Facility"
+      }
+    ],
+    "30001361": [
+      {
+        "station_id": 60001777,
+        "name": "Aurohunen III - Zainou Biotech Production"
+      }
+    ],
+    "30001390": [
+      {
+        "station_id": 60001816,
+        "name": "Pakkonen IV - Moon 11 - Zainou Biotech Research Center"
+      }
+    ],
+    "30001391": [
+      {
+        "station_id": 60001813,
+        "name": "Piekura VIII - Moon 15 - Zainou Biotech Production"
+      }
+    ],
+    "30001395": [
+      {
+        "station_id": 60001768,
+        "name": "Ylandoki II - Zainou Biotech Production"
+      }
+    ],
+    "30001397": [
+      {
+        "station_id": 60001765,
+        "name": "Isseras IV - Zainou Biotech Production"
+      }
+    ],
+    "30001676": [
+      {
+        "station_id": 60008527,
+        "name": "Mimen X - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008521,
+        "name": "Mimen VIII - Emperor Family Bureau"
+      }
+    ],
+    "30001677": [
+      {
+        "station_id": 60008518,
+        "name": "Thashkarai VII - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30001679": [
+      {
+        "station_id": 60008524,
+        "name": "Unkah VI - Moon 7 - Emperor Family Bureau"
+      }
+    ],
+    "30002058": [
+      {
+        "station_id": 60014134,
+        "name": "Ardar IV - Moon 2 - Thukker Mix Factory"
+      }
+    ],
+    "30002059": [
+      {
+        "station_id": 60014131,
+        "name": "Auner VIII - Moon 10 - Thukker Mix Factory"
+      }
+    ],
+    "30002065": [
+      {
+        "station_id": 60014143,
+        "name": "Lasleinur IV - Moon 16 - Thukker Mix Factory"
+      }
+    ],
+    "30002067": [
+      {
+        "station_id": 60014146,
+        "name": "Brin V - Moon 7 - Thukker Mix Factory"
+      }
+    ],
+    "30002187": [
+      {
+        "station_id": 60008494,
+        "name": "Amarr VIII (Oris) - Emperor Family Academy"
+      }
+    ],
+    "30002190": [
+      {
+        "station_id": 60008500,
+        "name": "Mabnen IV - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30002191": [
+      {
+        "station_id": 60008503,
+        "name": "Toshabia VI - Moon 6 - Emperor Family Bureau"
+      }
+    ],
+    "30002193": [
+      {
+        "station_id": 60008497,
+        "name": "Kehour VIII - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30002252": [
+      {
+        "station_id": 60010240,
+        "name": "Bika III - CreoDron Factory"
+      },
+      {
+        "station_id": 60010243,
+        "name": "Bika VIII - Moon 11 - CreoDron Warehouse"
+      },
+      {
+        "station_id": 60010246,
+        "name": "Bika V - Moon 1 - CreoDron Warehouse"
+      },
+      {
+        "station_id": 60010249,
+        "name": "Bika VII - Moon 1 - CreoDron Factory"
+      }
+    ],
+    "30002414": [
+      {
+        "station_id": 60010183,
+        "name": "Klingt IX - Moon 11 - CreoDron Factory"
+      }
+    ],
+    "30002415": [
+      {
+        "station_id": 60010180,
+        "name": "Weld IV - Moon 4 - CreoDron Factory"
+      }
+    ],
+    "30002418": [
+      {
+        "station_id": 60010186,
+        "name": "Hegfunden VIII - Moon 14 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010189,
+        "name": "Hegfunden VIII - Moon 26 - CreoDron Factory"
+      }
+    ],
+    "30002558": [
+      {
+        "station_id": 60010168,
+        "name": "Endrulf VIII - Moon 1 - CreoDron Warehouse"
+      },
+      {
+        "station_id": 60010171,
+        "name": "Endrulf IV - Moon 1 - CreoDron Warehouse"
+      }
+    ],
+    "30002559": [
+      {
+        "station_id": 60010174,
+        "name": "Ingunn V - Moon 21 - CreoDron Factory"
+      }
+    ],
+    "30002560": [
+      {
+        "station_id": 60010177,
+        "name": "Gultratren V - Moon 22 - CreoDron Factory"
+      }
+    ],
+    "30002568": [
+      {
+        "station_id": 60010297,
+        "name": "Onga X - Moon 11 - CreoDron Warehouse"
+      },
+      {
+        "station_id": 60010291,
+        "name": "Onga VI - CreoDron Factory"
+      }
+    ],
+    "30002569": [
+      {
+        "station_id": 60010294,
+        "name": "Osaumuni VII - Moon 16 - CreoDron Factory"
+      }
+    ],
+    "30002571": [
+      {
+        "station_id": 60010288,
+        "name": "Oremmulf IX - Moon 6 - CreoDron Factory"
+      },
+      {
+        "station_id": 60014110,
+        "name": "Oremmulf V - Moon 20 - Thukker Mix Warehouse"
+      }
+    ],
+    "30002572": [
+      {
+        "station_id": 60014107,
+        "name": "Hurjafren VII - Moon 25 - Thukker Mix Factory"
+      }
+    ],
+    "30002769": [
+      {
+        "station_id": 60001819,
+        "name": "Enderailen IV - Zainou Biotech Production"
+      }
+    ],
+    "30002771": [
+      {
+        "station_id": 60001822,
+        "name": "Kulelen V - Moon 8 - Zainou Biotech Production"
+      }
+    ],
+    "30002800": [
+      {
+        "station_id": 60001792,
+        "name": "Haatomo VI - Moon 6 - Zainou Biotech Production"
+      },
+      {
+        "station_id": 60001789,
+        "name": "Haatomo VII - Moon 7 - Zainou Biotech Production"
+      }
+    ],
+    "30002815": [
+      {
+        "station_id": 60001774,
+        "name": "Isenairos V - Moon 7 - Zainou Biotech Production"
+      }
+    ],
+    "30002816": [
+      {
+        "station_id": 60001771,
+        "name": "Saila VIII - Moon 16 - Zainou Biotech Production"
+      }
+    ],
+    "30002975": [
+      {
+        "station_id": 60008551,
+        "name": "Roushzar II - Emperor Family Bureau"
+      }
+    ],
+    "30002977": [
+      {
+        "station_id": 60008542,
+        "name": "Arayar VII - Moon 16 - Emperor Family Bureau"
+      }
+    ],
+    "30002980": [
+      {
+        "station_id": 60008545,
+        "name": "Sosan II - Emperor Family Academy"
+      },
+      {
+        "station_id": 60008548,
+        "name": "Sosan III - Moon 4 - Emperor Family Academy"
+      }
+    ],
+    "30002988": [
+      {
+        "station_id": 60008536,
+        "name": "Nakatre II - Emperor Family Bureau"
+      }
+    ],
+    "30002992": [
+      {
+        "station_id": 60008530,
+        "name": "Akes V - Moon 2 - Emperor Family Academy"
+      }
+    ],
+    "30002993": [
+      {
+        "station_id": 60008533,
+        "name": "Riavayed IX - Moon 2 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008539,
+        "name": "Riavayed II - Emperor Family Bureau"
+      }
+    ],
+    "30003017": [
+      {
+        "station_id": 60010258,
+        "name": "Harerget VIII - Moon 1 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010252,
+        "name": "Harerget V - Moon 1 - CreoDron Factory"
+      }
+    ],
+    "30003018": [
+      {
+        "station_id": 60010261,
+        "name": "Azer III - Moon 6 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010255,
+        "name": "Azer VI - Moon 1 - CreoDron Warehouse"
+      }
+    ],
+    "30003024": [
+      {
+        "station_id": 60010219,
+        "name": "Marosier IV - Moon 2 - CreoDron Factory"
+      }
+    ],
+    "30003025": [
+      {
+        "station_id": 60010216,
+        "name": "Lirsautton I - CreoDron Factory"
+      }
+    ],
+    "30003029": [
+      {
+        "station_id": 60010222,
+        "name": "Jaschercis IV - Moon 2 - CreoDron Factory"
+      }
+    ],
+    "30003030": [
+      {
+        "station_id": 60010225,
+        "name": "Ardallabier III - Moon 14 - CreoDron Factory"
+      }
+    ],
+    "30003048": [
+      {
+        "station_id": 60010120,
+        "name": "Carirgnottin VIII - CreoDron Factory"
+      }
+    ],
+    "30003053": [
+      {
+        "station_id": 60010126,
+        "name": "Avele V - Moon 11 - CreoDron Warehouse"
+      }
+    ],
+    "30003055": [
+      {
+        "station_id": 60010129,
+        "name": "Aydoteaux II - CreoDron Factory"
+      },
+      {
+        "station_id": 60010123,
+        "name": "Aydoteaux VIII - Moon 12 - CreoDron Warehouse"
+      }
+    ],
+    "30003389": [
+      {
+        "station_id": 60014077,
+        "name": "Altrinur XI - Moon 3 - Thukker Mix Factory"
+      },
+      {
+        "station_id": 60014080,
+        "name": "Altrinur XII - Moon 2 - Thukker Mix Factory"
+      }
+    ],
+    "30003394": [
+      {
+        "station_id": 60014125,
+        "name": "Freatlidur V - Moon 4 - Thukker Mix Factory"
+      },
+      {
+        "station_id": 60014128,
+        "name": "Freatlidur VII - Moon 3 - Thukker Mix Factory"
+      }
+    ],
+    "30003402": [
+      {
+        "station_id": 60014083,
+        "name": "Totkubad III - Thukker Mix Factory"
+      }
+    ],
+    "30003404": [
+      {
+        "station_id": 60014086,
+        "name": "Agtver VI - Thukker Mix Factory"
+      }
+    ],
+    "30003409": [
+      {
+        "station_id": 60014101,
+        "name": "Leurtmar III - Thukker Mix Factory"
+      }
+    ],
+    "30003412": [
+      {
+        "station_id": 60005719,
+        "name": "Elgoi VI - Moon 1 - Eifyr and Co. Biotech Production"
+      },
+      {
+        "station_id": 60014104,
+        "name": "Elgoi VIII - Moon 19 - Thukker Mix Factory"
+      }
+    ],
+    "30003413": [
+      {
+        "station_id": 60005722,
+        "name": "Eram V - Moon 2 - Eifyr and Co. Biotech Production"
+      }
+    ],
+    "30003447": [
+      {
+        "station_id": 60010144,
+        "name": "Josekorn IV - CreoDron Factory"
+      },
+      {
+        "station_id": 60010150,
+        "name": "Josekorn VIII - CreoDron Factory"
+      },
+      {
+        "station_id": 60010153,
+        "name": "Josekorn X - Moon 1 - CreoDron Factory"
+      }
+    ],
+    "30003449": [
+      {
+        "station_id": 60010147,
+        "name": "Hakeri XI - Moon 5 - CreoDron Factory"
+      }
+    ],
+    "30003467": [
+      {
+        "station_id": 60014116,
+        "name": "Frulegur IX - Moon 5 - Thukker Mix Factory"
+      }
+    ],
+    "30003469": [
+      {
+        "station_id": 60014113,
+        "name": "Hodrold VII - Moon 8 - Thukker Mix Factory"
+      }
+    ],
+    "30003553": [
+      {
+        "station_id": 60010141,
+        "name": "Warouh VII - Moon 1 - CreoDron Factory"
+      }
+    ],
+    "30003554": [
+      {
+        "station_id": 60010132,
+        "name": "Jambu VI - Moon 3 - CreoDron Factory"
+      }
+    ],
+    "30003555": [
+      {
+        "station_id": 60010138,
+        "name": "Bittanshal VII - Moon 9 - CreoDron Factory"
+      }
+    ],
+    "30003556": [
+      {
+        "station_id": 60010135,
+        "name": "Arton II - CreoDron Factory"
+      }
+    ],
+    "30004077": [
+      {
+        "station_id": 60008509,
+        "name": "Hiroudeh VIII - Moon 3 - Emperor Family Bureau"
+      }
+    ],
+    "30004078": [
+      {
+        "station_id": 60008515,
+        "name": "Dresi I - Moon 18 - Emperor Family Bureau"
+      }
+    ],
+    "30004079": [
+      {
+        "station_id": 60008506,
+        "name": "Aphend VII - Moon 4 - Emperor Family Academy"
+      }
+    ],
+    "30004083": [
+      {
+        "station_id": 60008512,
+        "name": "Gensela X - Emperor Family Bureau"
+      }
+    ],
+    "30004084": [
+      {
+        "station_id": 60010228,
+        "name": "Ghesis V - Moon 2 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010231,
+        "name": "Ghesis V - Moon 9 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010234,
+        "name": "Ghesis V - Moon 13 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010237,
+        "name": "Ghesis V - Moon 3 - CreoDron Factory"
+      }
+    ],
+    "30004111": [
+      {
+        "station_id": 60010279,
+        "name": "Yarebap VII - Moon 8 - CreoDron Factory"
+      }
+    ],
+    "30004112": [
+      {
+        "station_id": 60010276,
+        "name": "Mandoo III - Moon 11 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010282,
+        "name": "Mandoo III - Moon 5 - CreoDron Factory"
+      }
+    ],
+    "30004114": [
+      {
+        "station_id": 60010285,
+        "name": "Peyiri XI - Moon 21 - CreoDron Warehouse"
+      }
+    ],
+    "30004239": [
+      {
+        "station_id": 60008566,
+        "name": "Kamih VII - Moon 4 - Emperor Family Bureau"
+      }
+    ],
+    "30004240": [
+      {
+        "station_id": 60008569,
+        "name": "Hier IV - Moon 3 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008572,
+        "name": "Hier VII - Emperor Family Bureau"
+      }
+    ],
+    "30004241": [
+      {
+        "station_id": 60008575,
+        "name": "Jasson I - Moon 4 - Emperor Family Bureau"
+      }
+    ],
+    "30004288": [
+      {
+        "station_id": 60010267,
+        "name": "Ghekon V - Moon 5 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010273,
+        "name": "Ghekon II - Moon 2 - CreoDron Factory"
+      }
+    ],
+    "30004291": [
+      {
+        "station_id": 60010270,
+        "name": "Anohel VI - Moon 14 - CreoDron Factory"
+      }
+    ],
+    "30004296": [
+      {
+        "station_id": 60010264,
+        "name": "Bapraya IV - Moon 1 - CreoDron Factory"
+      }
+    ],
+    "30005009": [
+      {
+        "station_id": 60010159,
+        "name": "Allebin VIII - Moon 4 - CreoDron Factory"
+      }
+    ],
+    "30005010": [
+      {
+        "station_id": 60010162,
+        "name": "Atlulle VIII - Moon 6 - CreoDron Factory"
+      },
+      {
+        "station_id": 60010165,
+        "name": "Atlulle III - CreoDron Factory"
+      }
+    ],
+    "30005011": [
+      {
+        "station_id": 60010156,
+        "name": "Droselory VI - Moon 17 - CreoDron Warehouse"
+      }
+    ],
+    "30005017": [
+      {
+        "station_id": 60010207,
+        "name": "Yona VI - Moon 5 - CreoDron Factory"
+      }
+    ],
+    "30005018": [
+      {
+        "station_id": 60010210,
+        "name": "Noghere VII - Moon 15 - CreoDron Warehouse"
+      },
+      {
+        "station_id": 60010213,
+        "name": "Noghere VIII - Moon 18 - CreoDron Warehouse"
+      }
+    ],
+    "30005020": [
+      {
+        "station_id": 60010204,
+        "name": "Seyllin VIII - Moon 14 - CreoDron Warehouse"
+      }
+    ],
+    "30005030": [
+      {
+        "station_id": 60008578,
+        "name": "Fensi V - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30005031": [
+      {
+        "station_id": 60008584,
+        "name": "Nebian VIII - Moon 4 - Emperor Family Bureau"
+      }
+    ],
+    "30005034": [
+      {
+        "station_id": 60008581,
+        "name": "Bridi II - Moon 1 - Emperor Family Academy"
+      }
+    ],
+    "30005035": [
+      {
+        "station_id": 60008587,
+        "name": "Ami XI - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30005039": [
+      {
+        "station_id": 60008611,
+        "name": "Leva II - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008602,
+        "name": "Leva XI - Moon 8 - Emperor Family Bureau"
+      }
+    ],
+    "30005040": [
+      {
+        "station_id": 60008608,
+        "name": "Nishah VII - Moon 5 - Emperor Family Treasury"
+      }
+    ],
+    "30005043": [
+      {
+        "station_id": 60008605,
+        "name": "Nakregde VII - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30005052": [
+      {
+        "station_id": 60008554,
+        "name": "Soumi V - Moon 4 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008557,
+        "name": "Soumi I - Moon 1 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008563,
+        "name": "Soumi VII - Moon 1 - Emperor Family Bureau"
+      }
+    ],
+    "30005054": [
+      {
+        "station_id": 60008560,
+        "name": "Nare VI - Moon 16 - Emperor Family Bureau"
+      }
+    ],
+    "30005199": [
+      {
+        "station_id": 60012739,
+        "name": "Tar III - Secure Commerce Commission Depository"
+      }
+    ],
+    "30005204": [
+      {
+        "station_id": 60012736,
+        "name": "Yulai III - Moon 1 - Secure Commerce Commission Depository"
+      }
+    ],
+    "30005275": [
+      {
+        "station_id": 60008596,
+        "name": "Azedi III - Emperor Family Bureau"
+      }
+    ],
+    "30005276": [
+      {
+        "station_id": 60008599,
+        "name": "Sharza VII - Moon 3 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008590,
+        "name": "Sharza VII - Moon 5 - Emperor Family Bureau"
+      },
+      {
+        "station_id": 60008593,
+        "name": "Sharza VI - Moon 4 - Emperor Family Bureau"
+      }
+    ]
+  }
+}

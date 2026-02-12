@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererApp.Map.Server.SignaturesImpl
   alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(
@@ -279,7 +280,8 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         linked_system_id: solar_system_target
       })
 
-      if is_nil(target_system.linked_sig_eve_id) do
+      if is_nil(target_system.linked_sig_eve_id) or
+           target_system.linked_sig_eve_id == signature_eve_id do
         map_id
         |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
           solar_system_id: solar_system_target,
@@ -301,6 +303,37 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             nil
           end
 
+        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
+
+        # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
+        # look for a forward signature in the target system that links back to our source
+        {signature_time_status, signature_ship_size_type} =
+          if is_nil(signature_ship_size_type) do
+            case SignaturesImpl.find_forward_signature(target_system.id, solar_system_source) do
+              nil ->
+                {signature_time_status, signature_ship_size_type}
+
+              forward_sig ->
+                Logger.info(
+                  "[link_signature_to_system] Back-link detected: " <>
+                    "using forward sig type=#{forward_sig.type} from target system"
+                )
+
+                forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
+
+                forward_time_status =
+                  if is_nil(signature_time_status) and not is_nil(forward_sig.custom_info) do
+                    forward_sig.custom_info |> Jason.decode!() |> Map.get("time_status")
+                  else
+                    signature_time_status
+                  end
+
+                {forward_time_status, forward_ship_size}
+            end
+          else
+            {signature_time_status, signature_ship_size_type}
+          end
+
         if not is_nil(signature_time_status) do
           map_id
           |> WandererApp.Map.Server.update_connection_time_status(%{
@@ -309,8 +342,6 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             time_status: signature_time_status
           })
         end
-
-        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
 
         if not is_nil(signature_ship_size_type) do
           map_id
@@ -403,31 +434,45 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  def get_system_signatures(system_id),
-    do:
-      system_id
-      |> WandererApp.Api.MapSystemSignature.by_system_id!()
-      |> Enum.map(fn %{
-                       inserted_at: inserted_at,
-                       updated_at: updated_at,
-                       linked_system_id: linked_system_id
-                     } = s ->
-        s
-        |> Map.take([
-          :eve_id,
-          :character_eve_id,
-          :name,
-          :temporary_name,
-          :description,
-          :kind,
-          :group,
-          :type,
-          :custom_info
-        ])
-        |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
-        |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
-        |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+  def get_system_signatures(system_id) do
+    signatures = system_id |> WandererApp.Api.MapSystemSignature.by_system_id!()
+
+    character_eve_ids =
+      signatures |> Enum.map(& &1.character_eve_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    character_names_map =
+      character_eve_ids
+      |> Enum.reduce(%{}, fn eve_id, acc ->
+        case WandererApp.Character.get_by_eve_id(eve_id) do
+          {:ok, character} -> Map.put(acc, eve_id, character.name)
+          _ -> acc
+        end
       end)
+
+    signatures
+    |> Enum.map(fn %{
+                     inserted_at: inserted_at,
+                     updated_at: updated_at,
+                     linked_system_id: linked_system_id
+                   } = s ->
+      s
+      |> Map.take([
+        :eve_id,
+        :character_eve_id,
+        :name,
+        :temporary_name,
+        :description,
+        :kind,
+        :group,
+        :type,
+        :custom_info
+      ])
+      |> Map.put(:character_name, Map.get(character_names_map, s.character_eve_id))
+      |> Map.put(:linked_system, MapEventHandler.get_system_static_info(linked_system_id))
+      |> Map.put(:inserted_at, inserted_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+      |> Map.put(:updated_at, updated_at |> Calendar.strftime("%Y/%m/%d %H:%M:%S"))
+    end)
+  end
 
   defp get_integer(nil), do: nil
   defp get_integer(value) when is_binary(value), do: String.to_integer(value)

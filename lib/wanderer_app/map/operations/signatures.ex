@@ -498,8 +498,9 @@ defmodule WandererApp.Map.Operations.Signatures do
         |> MapSystemSignature.update_group!(%{group: "Wormhole"})
         |> MapSystemSignature.update_linked_system(%{linked_system_id: solar_system_target})
 
-      # Only update target system if it doesn't already have a linked signature
-      if is_nil(target_system.linked_sig_eve_id) do
+      # Update target system if it has no linked signature or is already linked to the same signature
+      if is_nil(target_system.linked_sig_eve_id) or
+           target_system.linked_sig_eve_id == signature.eve_id do
         # Set the target system's linked_sig_eve_id
         Server.update_system_linked_sig_eve_id(map_id, %{
           solar_system_id: solar_system_target,
@@ -525,6 +526,44 @@ defmodule WandererApp.Map.Operations.Signatures do
             nil
           end
 
+        # Update connection ship_size_type from signature wormhole type
+        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
+
+        # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
+        # look for a forward signature in the target system that links back to our source
+        {signature_time_status, signature_ship_size_type} =
+          if is_nil(signature_ship_size_type) do
+            case Server.SignaturesImpl.find_forward_signature(
+                   target_system.id,
+                   source_system.solar_system_id
+                 ) do
+              nil ->
+                {signature_time_status, signature_ship_size_type}
+
+              forward_sig ->
+                Logger.info(
+                  "[link_signature] Back-link detected: " <>
+                    "using forward sig type=#{forward_sig.type} from target system"
+                )
+
+                forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
+
+                forward_time_status =
+                  if is_nil(signature_time_status) and not is_nil(forward_sig.custom_info) do
+                    case Jason.decode(forward_sig.custom_info) do
+                      {:ok, map} -> Map.get(map, "time_status")
+                      {:error, _} -> nil
+                    end
+                  else
+                    signature_time_status
+                  end
+
+                {forward_time_status, forward_ship_size}
+            end
+          else
+            {signature_time_status, signature_ship_size_type}
+          end
+
         if not is_nil(signature_time_status) do
           Server.update_connection_time_status(map_id, %{
             solar_system_source_id: source_system.solar_system_id,
@@ -532,9 +571,6 @@ defmodule WandererApp.Map.Operations.Signatures do
             time_status: signature_time_status
           })
         end
-
-        # Update connection ship_size_type from signature wormhole type
-        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
 
         if not is_nil(signature_ship_size_type) do
           Server.update_connection_ship_size_type(map_id, %{

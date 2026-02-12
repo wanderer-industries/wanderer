@@ -13,7 +13,7 @@ export type SystemViewProps = {
 
 export const SystemView = ({ systemId, systemInfo: customSystemInfo, showCustomName, ...rest }: SystemViewProps) => {
   const memSystems = useMemo(() => [systemId], [systemId]);
-  const { systems, loading } = useLoadSystemStatic({ systems: memSystems });
+  const { systems, lastUpdateKey, loading } = useLoadSystemStatic({ systems: memSystems });
 
   const {
     data: { systems: mapSystems },
@@ -23,9 +23,10 @@ export const SystemView = ({ systemId, systemInfo: customSystemInfo, showCustomN
     if (!systemId) {
       return customSystemInfo;
     }
+
     return systems.get(parseInt(systemId));
     // eslint-disable-next-line
-  }, [customSystemInfo, systemId, systems, loading]);
+  }, [customSystemInfo, systemId, systems, lastUpdateKey, loading]);
 
   const mapSystemInfo = useMemo(() => {
     if (!showCustomName) {

@@ -86,6 +86,11 @@ defmodule WandererApp.Application do
       Supervisor.child_spec({Cachex, name: :wanderer_app_cache},
         id: :wanderer_app_cache_worker
       ),
+      # Cache for webhook subscriptions - 5 minute TTL to reduce DB load
+      Supervisor.child_spec(
+        {Cachex, name: :webhook_subscriptions_cache, default_ttl: :timer.minutes(5)},
+        id: :webhook_subscriptions_cache_worker
+      ),
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
       {PartitionSupervisor,
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
@@ -113,6 +118,7 @@ defmodule WandererApp.Application do
           WandererApp.Scheduler,
           WandererApp.Server.ServerStatusTracker,
           WandererApp.Server.TheraDataFetcher,
+          WandererApp.Server.TurnurDataFetcher,
           {WandererApp.Character.TrackerPoolSupervisor, []},
           {WandererApp.Map.MapPoolSupervisor, []},
           WandererApp.Character.TrackerManager,

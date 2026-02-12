@@ -2,6 +2,24 @@
 
 <!-- changelog -->
 
+## [v1.94.0](https://github.com/wanderer-industries/wanderer/compare/v1.93.0...v1.94.0) (2026-02-08)
+
+
+
+
+### Features:
+
+* administration: Added registered characters admin view with cort/ally info, sort and filter options
+
+## [v1.93.0](https://github.com/wanderer-industries/wanderer/compare/v1.92.0...v1.93.0) (2026-02-08)
+
+
+
+
+### Features:
+
+* subscriptions: Added an ability to withdraw from map to user balance
+
 ## [v1.92.0](https://github.com/wanderer-industries/wanderer/compare/v1.91.11...v1.92.0) (2026-01-14)
 
 

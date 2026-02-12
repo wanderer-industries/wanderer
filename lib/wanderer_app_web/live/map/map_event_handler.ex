@@ -102,11 +102,13 @@ defmodule WandererAppWeb.MapEventHandler do
 
   @map_routes_events [
     :routes,
-    :user_routes
+    :user_routes,
+    :routes_list_by
   ]
 
   @map_routes_ui_events [
     "get_routes",
+    "get_routes_by",
     "get_user_routes",
     "set_autopilot_waypoint",
     "add_hub",

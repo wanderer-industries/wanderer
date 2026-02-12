@@ -13,12 +13,19 @@ export type SystemStaticInfoShort = Pick<
 
 type MappedSystem = SolarSystemStaticInfoRaw | undefined;
 
+export type RouteStationSummary = {
+  station_id: number;
+  station_name: string;
+  special?: boolean;
+};
+
 export type Route = {
   destination: number;
   has_connection: boolean;
   origin: number;
   systems?: number[];
   mapped_systems?: MappedSystem[];
+  stations?: RouteStationSummary[];
   success?: boolean;
 };
 
