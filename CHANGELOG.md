@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.96.2](https://github.com/wanderer-industries/wanderer/compare/v1.96.1...v1.96.2) (2026-02-13)
+
+
+
+
+### Bug Fixes:
+
+* Added icons for RoutesBy
+
 ## [v1.96.1](https://github.com/wanderer-industries/wanderer/compare/v1.96.0...v1.96.1) (2026-02-12)
 
 
