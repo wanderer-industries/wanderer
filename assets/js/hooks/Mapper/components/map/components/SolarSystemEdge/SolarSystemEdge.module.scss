@@ -46,6 +46,10 @@
     stroke-dasharray: 10 5;
     stroke-linecap: round;
   }
+
+  &.CrossList {
+    stroke: #ff0000;
+  }
 }
 
 .EdgePathFront {
@@ -92,6 +96,10 @@
     &.Hovered {
       stroke-width: 3px;
     }
+  }
+
+  &.CrossList {
+    stroke: #ff0000;
   }
 }
 

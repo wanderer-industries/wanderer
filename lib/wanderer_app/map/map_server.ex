@@ -72,6 +72,8 @@ defmodule WandererApp.Map.Server do
 
   defdelegate delete_systems(map_id, solar_system_ids, user_id, character_id), to: Impl
 
+  defdelegate layout_systems(map_id, system_ids), to: Impl
+
   defdelegate add_connection(map_id, connection_info), to: Impl
 
   defdelegate delete_connection(map_id, connection_info), to: Impl

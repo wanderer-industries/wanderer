@@ -257,6 +257,8 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_connection_custom_info(map_id, connection_update), to: ConnectionsImpl
   defdelegate update_signatures(map_id, signatures_update), to: SignaturesImpl
 
+  defdelegate layout_systems(map_id, system_ids), to: SystemsImpl
+
   def import_settings(map_id, settings, user_id) do
     WandererApp.Cache.put(
       "map_#{map_id}:importing",
@@ -477,7 +479,8 @@ defmodule WandererApp.Map.Server.Impl do
       restrict_offline_showing:
         options |> Map.get("restrict_offline_showing", "false") |> String.to_existing_atom(),
       allowed_copy_for: options |> Map.get("allowed_copy_for", "admin"),
-      allowed_paste_for: options |> Map.get("allowed_paste_for", "member")
+      allowed_paste_for: options |> Map.get("allowed_paste_for", "member"),
+      auto_layout: options |> Map.get("auto_layout", "false") |> String.to_existing_atom()
     ]
   end
 

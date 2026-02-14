@@ -283,6 +283,72 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
         )
 
+  def layout_systems(map_id, system_ids) do
+    {:ok, all_systems} = WandererApp.Map.list_systems(map_id)
+    {:ok, connections} = WandererApp.Map.list_connections(map_id)
+
+    Logger.info("Layouting systems for map #{map_id} with system_ids #{inspect(system_ids)}")
+
+    systems_to_layout =
+      case system_ids do
+        nil -> all_systems
+        [] -> all_systems
+        ids -> all_systems |> Enum.filter(fn %{solar_system_id: sid} -> sid in ids end)
+      end
+
+    {:ok, %{map_opts: map_opts}} = WandererApp.Map.get_map_state(map_id)
+
+    {updated_systems, cross_list_conn_ids} =
+      WandererApp.Map.PositionCalculator.layout_systems(
+        systems_to_layout,
+        connections,
+        map_opts
+      )
+
+    show_temp_system_name = map_opts |> Keyword.get(:show_temp_system_name, false)
+
+    updated_systems
+    |> Enum.each(fn updated_system ->
+      hierarchical_name = Map.get(updated_system, :hierarchical_name)
+
+      if show_temp_system_name and not is_nil(hierarchical_name) and hierarchical_name != "0" do
+        update_system_temporary_name(map_id, %{
+          solar_system_id: updated_system.solar_system_id,
+          temporary_name: hierarchical_name
+        })
+      end
+
+      update_system_position(map_id, %{
+        solar_system_id: updated_system.solar_system_id,
+        position_x: updated_system.position_x,
+        position_y: updated_system.position_y
+      })
+    end)
+
+    connections
+    |> Enum.each(fn conn ->
+      is_cross_list = conn.id in cross_list_conn_ids
+      current_info = conn.custom_info || "{}"
+
+      new_info =
+        case Jason.decode(current_info) do
+          {:ok, info_map} when is_map(info_map) ->
+            info_map |> Map.put("is_cross_list", is_cross_list) |> Jason.encode!()
+
+          _ ->
+            Jason.encode!(%{"is_cross_list" => is_cross_list})
+        end
+
+      if new_info != current_info do
+        {:ok, updated_conn} =
+          WandererApp.MapConnectionRepo.update_custom_info(conn, %{custom_info: new_info})
+
+        WandererApp.Map.update_connection(map_id, updated_conn)
+        Impl.broadcast!(map_id, :update_connection, updated_conn)
+      end
+    end)
+  end
+
   def add_hub(
         map_id,
         hub_info
