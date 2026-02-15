@@ -314,10 +314,10 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         settings
         |> Enum.each(fn s ->
           Logger.info(fn ->
-            "[CharacterCleanup] Map #{map_id} - destroying settings and removing character #{s.character_id}"
+            "[CharacterCleanup] Map #{map_id} - untracking settings and removing character #{s.character_id}"
           end)
 
-          WandererApp.MapCharacterSettingsRepo.destroy!(s)
+          WandererApp.MapCharacterSettingsRepo.untrack!(%{map_id: s.map_id, character_id: s.character_id})
           remove_character(map_id, s.character_id)
         end)
 
@@ -780,10 +780,14 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     old_alliance_id = Map.get(cached_values, alliance_key)
 
     if character.alliance_id != old_alliance_id do
-      {
-        [{:character_alliance, %{alliance_id: character.alliance_id}} | updates],
-        Map.put(cache_updates, alliance_key, character.alliance_id)
-      }
+      cache_updates = Map.put(cache_updates, alliance_key, character.alliance_id)
+
+      if is_nil(old_alliance_id) do
+        # Initial cache population, not a real change - just update cache
+        {updates, cache_updates}
+      else
+        {[{:character_alliance, %{alliance_id: character.alliance_id}} | updates], cache_updates}
+      end
     else
       {updates, cache_updates}
     end
@@ -802,10 +806,15 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     old_corporation_id = Map.get(cached_values, corporation_key)
 
     if character.corporation_id != old_corporation_id do
-      {
-        [{:character_corporation, %{corporation_id: character.corporation_id}} | updates],
-        Map.put(cache_updates, corporation_key, character.corporation_id)
-      }
+      cache_updates = Map.put(cache_updates, corporation_key, character.corporation_id)
+
+      if is_nil(old_corporation_id) do
+        # Initial cache population, not a real change - just update cache
+        {updates, cache_updates}
+      else
+        {[{:character_corporation, %{corporation_id: character.corporation_id}} | updates],
+         cache_updates}
+      end
     else
       {updates, cache_updates}
     end
@@ -952,12 +961,28 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     {:ok, character} =
       WandererApp.Character.get_character(character_id)
 
-    add_character(map_id, character, true)
+    case WandererApp.Api.MapCharacterSettings.read_by_map_and_character(%{
+           map_id: map_id,
+           character_id: character_id
+         }) do
+      {:ok, %{tracked: false}} ->
+        # Was explicitly untracked (e.g., by permission cleanup) - don't re-enable
+        Logger.debug(fn ->
+          "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
+            "character was explicitly untracked"
+        end)
 
-    WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-      map_id: map_id,
-      track: true
-    })
+        add_character(map_id, character, false)
+
+      _ ->
+        # New character or already tracked - enable tracking
+        add_character(map_id, character, true)
+
+        WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+          map_id: map_id,
+          track: true
+        })
+    end
   end
 
   # Broadcasts permission update to trigger LiveView refresh for the character's user.
