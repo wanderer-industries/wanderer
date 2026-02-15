@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.96.3](https://github.com/wanderer-industries/wanderer/compare/v1.96.2...v1.96.3) (2026-02-15)
+
+
+
+
+### Bug Fixes:
+
+* tracking: Fixed character tracking issues
+
 ## [v1.96.2](https://github.com/wanderer-industries/wanderer/compare/v1.96.1...v1.96.2) (2026-02-13)
 
 
