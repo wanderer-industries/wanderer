@@ -17,6 +17,7 @@ import { useCallback } from 'react';
 import classes from './CharacterCard.module.scss';
 import { ZKB_ICON } from '@/hooks/Mapper/icons';
 import { charEveWhoLink, charZKBLink } from '@/hooks/Mapper/helpers/linkHelpers.ts';
+import { WdCharStateWrapper } from '../../characters/components';
 
 export type CharacterCardProps = {
   compact?: boolean;
@@ -29,6 +30,9 @@ export type CharacterCardProps = {
   showAllyLogo?: boolean;
   showAllyLogoPlaceholder?: boolean;
   simpleMode?: boolean;
+  isExpired?: boolean;
+  isMain?: boolean;
+  isFollowing?: boolean;
 } & WithIsOwnCharacter &
   WithClassName;
 
@@ -55,6 +59,10 @@ export const CharacterCard = ({
   showTicker,
   useSystemsCache,
   className,
+  isExpired,
+  isMain,
+  isFollowing,
+
   ...char
 }: CharacterCardInnerProps) => {
   const handleSelect = useCallback(() => {
@@ -204,7 +212,22 @@ export const CharacterCard = ({
     <div className={clsx('w-full text-xs box-border')} onClick={handleSelect}>
       <div className="w-full flex items-center gap-2">
         <div className="flex items-center gap-1">
-          <WdEveEntityPortrait eveId={char.eve_id} size={WdEveEntityPortraitSize.w33} />
+          <WdCharStateWrapper
+            eve_id={char.eve_id}
+            location={char.location}
+            isExpired={isExpired}
+            isOnline={char.online}
+            isMain={isMain}
+            isFollowing={isFollowing}
+          >
+            <WdEveEntityPortrait
+              eveId={char.eve_id}
+              size={WdEveEntityPortraitSize.w33}
+              className={clsx({
+                ['border-red-600/50']: isExpired,
+              })}
+            />
+          </WdCharStateWrapper>
 
           {showCorporationLogo && (
             <WdTooltipWrapper position={TooltipPosition.top} content={char.corporation_name}>

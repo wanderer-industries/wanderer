@@ -108,6 +108,7 @@ export type CommandInit = {
   main_character_eve_id?: string | null;
   following_character_eve_id?: string | null;
   map_slug?: string;
+  expired_characters: string[];
 };
 
 export type CommandAddSystems = SolarSystemRawType[];

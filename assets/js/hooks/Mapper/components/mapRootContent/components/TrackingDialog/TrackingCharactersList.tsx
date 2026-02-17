@@ -4,12 +4,16 @@ import { DataTable } from 'primereact/datatable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrackingCharacter } from '@/hooks/Mapper/types';
 import { useTracking } from '@/hooks/Mapper/components/mapRootContent/components/TrackingDialog/TrackingProvider.tsx';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export const TrackingCharactersList = () => {
   const [selected, setSelected] = useState<TrackingCharacter[]>([]);
   const { trackingCharacters, main, following, updateTracking } = useTracking();
   const refVars = useRef({ trackingCharacters });
   refVars.current = { trackingCharacters };
+  const {
+    data: { expiredCharacters },
+  } = useMapRootState();
 
   useEffect(() => {
     setSelected(trackingCharacters.filter(x => x.tracked));
@@ -66,7 +70,9 @@ export const TrackingCharactersList = () => {
         bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
         headerClassName="[&_div]:ml-2"
         body={row => {
-          return <CharacterCard showCorporationLogo showTicker isOwn {...row.character} />;
+          const isExpired = expiredCharacters.includes(row.character.eve_id);
+
+          return <CharacterCard showCorporationLogo showTicker isOwn isExpired={isExpired} {...row.character} />;
         }}
       />
     </DataTable>

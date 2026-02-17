@@ -854,16 +854,11 @@ defmodule WandererApp.Esi.ApiClient do
 
     with {:ok, _} <- WandererApp.Api.Character.update(character, attrs) do
       WandererApp.Character.update_character(character_id, attrs)
-      :ok
     else
       error ->
         Logger.error("Failed to clear tokens for #{character_id}: #{inspect(error)}")
     end
 
-    Phoenix.PubSub.broadcast(
-      WandererApp.PubSub,
-      "character:#{character_id}",
-      :character_token_invalid
-    )
+    :ok
   end
 end
