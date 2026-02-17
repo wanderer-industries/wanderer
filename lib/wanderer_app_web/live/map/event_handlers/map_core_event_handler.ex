@@ -553,21 +553,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          {:ok, map_character_ids} <-
            WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", []) do
       events =
-        case tracked_characters |> Enum.any?(&(&1.access_token == nil)) do
+        case track_character && not has_tracked_characters? do
           true ->
-            [:invalid_token_message]
+            [:empty_tracked_characters]
 
           _ ->
             []
-        end
-
-      events =
-        case track_character && not has_tracked_characters? do
-          true ->
-            events ++ [:empty_tracked_characters]
-
-          _ ->
-            events
         end
 
       character_limit_reached? = map_character_ids |> Enum.count() >= characters_limit
@@ -623,6 +614,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             nil
         end
 
+      expired_characters = tracked_characters |> Enum.filter(&(&1.access_token == nil)) |> Enum.map(& &1.eve_id)
+
       initial_data =
         %{
           kills: kills_data,
@@ -630,6 +623,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             map_character_ids
             |> WandererApp.Character.get_character_eve_ids!(),
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
+          expired_characters: expired_characters,
           system_static_infos: nil,
           wormholes: nil,
           effects: nil,
