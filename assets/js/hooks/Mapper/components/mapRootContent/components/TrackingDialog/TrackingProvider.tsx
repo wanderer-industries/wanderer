@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { Commands, OutCommand, TrackingCharacter } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { IncomingEvent, WithChildren } from '@/hooks/Mapper/types/common.ts';
