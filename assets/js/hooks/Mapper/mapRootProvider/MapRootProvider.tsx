@@ -56,6 +56,7 @@ export type MapRootData = MapUnionTypes & {
   trackingCharactersData: TrackingCharacter[];
   loadingPublicRoutes: boolean;
   map_slug: string | null;
+  expiredCharacters: string[];
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -102,6 +103,7 @@ const INITIAL_DATA: MapRootData = {
   pings: [],
   loadingPublicRoutes: false,
   map_slug: null,
+  expiredCharacters: [],
 };
 
 export enum InterfaceStoredSettingsProps {

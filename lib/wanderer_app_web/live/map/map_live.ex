@@ -55,16 +55,6 @@ defmodule WandererAppWeb.MapLive do
     {:noreply, socket |> push_navigate(to: ~p"/#{map_slug}")}
   end
 
-  @impl true
-  def handle_info(:character_token_invalid, socket),
-    do:
-      {:noreply,
-       socket
-       |> put_flash(
-         :error,
-         "One of your characters has expired token. Please refresh it on characters page."
-       )}
-
   def handle_info(:no_main_character_set, socket),
     do:
       {:noreply,

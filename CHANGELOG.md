@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.96.4](https://github.com/wanderer-industries/wanderer/compare/v1.96.3...v1.96.4) (2026-02-17)
+
+
+
+
+### Bug Fixes:
+
+* Change character token validity status. Now we will see red frame and icon for tracked characters which token was expired.
+
 ## [v1.96.3](https://github.com/wanderer-industries/wanderer/compare/v1.96.2...v1.96.3) (2026-02-15)
 
 

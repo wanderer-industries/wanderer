@@ -38,7 +38,7 @@ const TrackingDialogComp = ({ visible, onHide }: TrackingDialogProps) => {
       resizable={false}
       visible={visible}
       onHide={onHide}
-      className="w-[640px] h-[400px] text-text-color min-h-0"
+      className="w-[640px] h-[600px] text-text-color min-h-0"
     >
       <TabView
         className="vertical-tabs-container h-full [&_.p-tabview-panels]:!pr-0"

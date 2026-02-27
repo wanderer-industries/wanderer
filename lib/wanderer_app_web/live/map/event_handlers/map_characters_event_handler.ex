@@ -385,14 +385,6 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     end
   end
 
-  defp handle_tracking_event(:invalid_token_message, socket, _map_id) do
-    socket
-    |> put_flash(
-      :error,
-      "One of your characters has expired token. Please refresh it on characters page."
-    )
-  end
-
   defp handle_tracking_event(:map_character_limit, socket, _map_id) do
     socket
     |> put_flash(
