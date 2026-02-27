@@ -265,6 +265,10 @@ defmodule WandererApp.Character.Tracker do
         end
 
       _ ->
+        Logger.debug(fn ->
+          "[Tracker] update_online skipped for character #{character_id} - no valid access token"
+        end)
+
         {:error, :skipped}
     end
   end
@@ -601,6 +605,10 @@ defmodule WandererApp.Character.Tracker do
         end
 
       _ ->
+        Logger.debug(fn ->
+          "[Tracker] update_location skipped for character #{character_id} - no valid access token"
+        end)
+
         {:error, :skipped}
     end
   end

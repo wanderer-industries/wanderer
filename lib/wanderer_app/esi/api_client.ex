@@ -833,20 +833,44 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp handle_refresh_token_result(
          {:error, %OAuth2.Error{} = error},
-         character,
+         _character,
          character_id,
          expires_at,
-         scopes
+         _scopes
        ) do
-    invalidate_character_tokens(character, character_id, expires_at, scopes)
-    Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
-    {:error, :invalid_grant}
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
+
+    Logger.warning("TOKEN_REFRESH_FAILED: Transient OAuth2 error during token refresh",
+      character_id: character_id,
+      error: inspect(error),
+      time_since_expiry_seconds: time_since_expiry
+    )
+
+    :telemetry.execute([:wanderer_app, :token, :refresh_failed], %{count: 1}, %{
+      character_id: character_id,
+      error_type: "oauth2_error",
+      time_since_expiry: time_since_expiry
+    })
+
+    {:error, :token_refresh_failed}
   end
 
-  defp handle_refresh_token_result(error, character, character_id, expires_at, scopes) do
-    Logger.warning("Failed to refresh token for #{character_id}: #{inspect(error)}")
-    invalidate_character_tokens(character, character_id, expires_at, scopes)
-    {:error, :failed}
+  defp handle_refresh_token_result(error, _character, character_id, expires_at, _scopes) do
+    time_since_expiry = DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
+
+    Logger.warning("TOKEN_REFRESH_FAILED: Unexpected error during token refresh",
+      character_id: character_id,
+      error: inspect(error),
+      time_since_expiry_seconds: time_since_expiry
+    )
+
+    :telemetry.execute([:wanderer_app, :token, :refresh_failed], %{count: 1}, %{
+      character_id: character_id,
+      error_type: "unexpected_error",
+      time_since_expiry: time_since_expiry
+    })
+
+    {:error, :token_refresh_failed}
   end
 
   defp invalidate_character_tokens(character, character_id, expires_at, scopes) do
@@ -854,7 +878,6 @@ defmodule WandererApp.Esi.ApiClient do
 
     with {:ok, _} <- WandererApp.Api.Character.update(character, attrs) do
       WandererApp.Character.update_character(character_id, attrs)
-      :ok
     else
       error ->
         Logger.error("Failed to clear tokens for #{character_id}: #{inspect(error)}")
@@ -865,5 +888,7 @@ defmodule WandererApp.Esi.ApiClient do
       "character:#{character_id}",
       :character_token_invalid
     )
+
+    :ok
   end
 end
