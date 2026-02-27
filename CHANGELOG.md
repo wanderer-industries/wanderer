@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.96.5](https://github.com/wanderer-industries/wanderer/compare/v1.96.4...v1.96.5) (2026-02-27)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed access token refresh issues
+
 ## [v1.96.4](https://github.com/wanderer-industries/wanderer/compare/v1.96.3...v1.96.4) (2026-02-17)
 
 
