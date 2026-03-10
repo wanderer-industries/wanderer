@@ -5,7 +5,7 @@ import {
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect } from 'react';
@@ -15,6 +15,7 @@ type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   linked_system: string;
   k162Type: string;
   time_status: TimeStatus;
+  mass_status: MassState;
 };
 
 export interface MapSettingsProps {
@@ -59,6 +60,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             custom_info: JSON.stringify({
               k162Type: values.k162Type,
               time_status: values.time_status,
+              mass_status: values.mass_status,
             }),
           };
 
@@ -139,16 +141,19 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
     let k162Type = null;
     let time_status = TimeStatus._24h;
+    let mass_status = MassState.normal;
     if (custom_info) {
       const customInfo = JSON.parse(custom_info);
       k162Type = customInfo.k162Type;
       time_status = customInfo.time_status;
+      mass_status = customInfo.mass_status ?? MassState.normal;
     }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
       k162Type: k162Type,
       time_status: time_status,
+      mass_status: mass_status,
       ...rest,
     });
   }, [signatureForm, signatureData]);

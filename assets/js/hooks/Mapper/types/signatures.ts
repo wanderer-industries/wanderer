@@ -31,6 +31,7 @@ export type SignatureCustomInfo = {
   k162Type?: string;
   time_status?: number;
   isCrit?: boolean;
+  mass_status?: number;
 };
 
 export type SystemSignature = {
