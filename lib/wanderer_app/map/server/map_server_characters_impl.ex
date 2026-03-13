@@ -159,7 +159,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
               if is_same_user_as_owner do
                 # All characters from the map owner's account have full access
-                :ok
+                {:ok, character_id}
               else
                 [character_permissions] =
                   WandererApp.Permissions.check_characters_access([character], acls)
@@ -179,12 +179,12 @@ defmodule WandererApp.Map.Server.CharactersImpl do
                     {:remove_character, character_id, :no_track_permission}
 
                   _ ->
-                    :ok
+                    {:ok, character_id}
                 end
               end
 
             _ ->
-              :ok
+              {:ok, character_id}
           end
         end,
         timeout: :timer.seconds(60),
@@ -193,7 +193,26 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       )
       |> Enum.reduce([], fn
         {:ok, {:remove_character, character_id, reason}}, acc ->
-          [{character_id, reason} | acc]
+          # Track consecutive permission failures - only remove after 3 consecutive hourly failures
+          fail_key = "map_#{map_id}:char_#{character_id}:perm_fail_count"
+          count = WandererApp.Cache.lookup!(fail_key, 0) + 1
+          WandererApp.Cache.put(fail_key, count, ttl: :timer.hours(4))
+
+          if count >= 3 do
+            WandererApp.Cache.delete(fail_key)
+            [{character_id, reason} | acc]
+          else
+            Logger.info(
+              "[CharacterCleanup] Character #{character_id} permission fail #{count}/3 on map #{map_id}, deferring removal"
+            )
+
+            acc
+          end
+
+        {:ok, {:ok, character_id}}, acc ->
+          # Character passed permission check - clear any previous failure counter
+          WandererApp.Cache.delete("map_#{map_id}:char_#{character_id}:perm_fail_count")
+          acc
 
         {:ok, _result}, acc ->
           acc
@@ -966,13 +985,48 @@ defmodule WandererApp.Map.Server.CharactersImpl do
            character_id: character_id
          }) do
       {:ok, %{tracked: false}} ->
-        # Was explicitly untracked (e.g., by permission cleanup) - don't re-enable
-        Logger.debug(fn ->
-          "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
-            "character was explicitly untracked"
-        end)
+        # Was previously untracked (by system cleanup or user).
+        # If character now has valid tokens, check permissions and auto-restore tracking.
+        # This handles the case where re-auth gives fresh tokens but DB still says tracked: false.
+        if not is_nil(character.access_token) do
+          case WandererApp.Character.TrackingUtils.check_character_tracking_permission(
+                 character,
+                 map_id
+               ) do
+            {:ok, :allowed} ->
+              Logger.info(
+                "[CharactersImpl] Auto-restoring tracking for character #{character_id} on map #{map_id} - " <>
+                  "character has valid tokens and permissions after reconnect"
+              )
 
-        add_character(map_id, character, false)
+              add_character(map_id, character, true)
+
+              WandererApp.MapCharacterSettingsRepo.track(%{
+                map_id: map_id,
+                character_id: character_id
+              })
+
+              WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+                map_id: map_id,
+                track: true
+              })
+
+            _ ->
+              Logger.debug(fn ->
+                "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
+                  "character lacks permissions"
+              end)
+
+              add_character(map_id, character, false)
+          end
+        else
+          Logger.debug(fn ->
+            "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
+              "character has no valid access token"
+          end)
+
+          add_character(map_id, character, false)
+        end
 
       _ ->
         # New character or already tracked - enable tracking
