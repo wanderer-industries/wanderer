@@ -754,6 +754,9 @@ defmodule WandererApp.Esi.ApiClient do
       new_expires_at: token.expires_at
     )
 
+    # Clear any previous invalid_grant failure counter on successful refresh
+    WandererApp.Cache.delete("character:#{character_id}:invalid_grant_count")
+
     {:ok, _character} =
       character
       |> WandererApp.Api.Character.update(%{
@@ -786,12 +789,12 @@ defmodule WandererApp.Esi.ApiClient do
     expires_at_datetime = DateTime.from_unix!(expires_at)
     time_since_expiry = DateTime.diff(DateTime.utc_now(), expires_at_datetime, :second)
 
-    Logger.warning("TOKEN_REFRESH_FAILED: Invalid grant error during token refresh",
-      character_id: character_id,
-      error_message: error_message,
-      time_since_expiry_seconds: time_since_expiry,
-      original_expires_at: expires_at
-    )
+    # Track consecutive invalid_grant failures before permanently invalidating tokens.
+    # EVE SSO can return invalid_grant for transient server issues, so we require
+    # 3 consecutive failures before wiping tokens.
+    fail_key = "character:#{character_id}:invalid_grant_count"
+    count = WandererApp.Cache.lookup!(fail_key, 0) + 1
+    WandererApp.Cache.put(fail_key, count, ttl: :timer.hours(2))
 
     # Emit telemetry for token refresh failures
     :telemetry.execute([:wanderer_app, :token, :refresh_failed], %{count: 1}, %{
@@ -800,8 +803,28 @@ defmodule WandererApp.Esi.ApiClient do
       time_since_expiry: time_since_expiry
     })
 
-    invalidate_character_tokens(character, character_id, expires_at, scopes)
-    {:error, :invalid_grant}
+    if count >= 3 do
+      Logger.warning("TOKEN_REFRESH_FAILED: Invalid grant error (#{count}/3, invalidating tokens)",
+        character_id: character_id,
+        error_message: error_message,
+        time_since_expiry_seconds: time_since_expiry,
+        original_expires_at: expires_at
+      )
+
+      WandererApp.Cache.delete(fail_key)
+      invalidate_character_tokens(character, character_id, expires_at, scopes)
+      {:error, :invalid_grant}
+    else
+      Logger.warning(
+        "TOKEN_REFRESH_FAILED: Invalid grant error (#{count}/3, deferring invalidation)",
+        character_id: character_id,
+        error_message: error_message,
+        time_since_expiry_seconds: time_since_expiry,
+        original_expires_at: expires_at
+      )
+
+      {:error, :token_refresh_failed}
+    end
   end
 
   defp handle_refresh_token_result(

@@ -215,8 +215,11 @@ defmodule WandererApp.Character.TrackingUtils do
     end
   end
 
-  # Check if a character has permission to be tracked on a map
-  defp check_character_tracking_permission(character, map_id) do
+  @doc """
+  Checks if a character has permission to be tracked on a map.
+  Returns {:ok, :allowed} or {:error, reason}.
+  """
+  def check_character_tracking_permission(character, map_id) do
     with {:ok, %{acls: acls, owner_id: owner_id}} <-
            WandererApp.MapRepo.get(map_id,
              acls: [
