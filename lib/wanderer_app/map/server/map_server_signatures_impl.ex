@@ -222,6 +222,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       {:ok, updated} ->
         maybe_update_connection_time_status(map_id, existing, updated)
         maybe_update_connection_mass_status(map_id, existing, updated)
+        maybe_sync_custom_mass_status_to_connection(map_id, existing, updated)
         :ok
 
       {:error, reason} ->
@@ -274,6 +275,29 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   end
 
   defp maybe_update_connection_mass_status(_map_id, _old_sig, _updated_sig), do: :ok
+
+  defp maybe_sync_custom_mass_status_to_connection(
+         map_id,
+         %{custom_info: old_custom_info} = _old_sig,
+         %{custom_info: new_custom_info, system_id: system_id, linked_system_id: linked_system_id} =
+           _updated_sig
+       )
+       when not is_nil(linked_system_id) do
+    old_mass_status = get_mass_status(old_custom_info)
+    new_mass_status = get_mass_status(new_custom_info)
+
+    if old_mass_status != new_mass_status and not is_nil(new_mass_status) do
+      {:ok, source_system} = MapSystem.by_id(system_id)
+
+      ConnectionsImpl.update_connection_mass_status(map_id, %{
+        solar_system_source_id: source_system.solar_system_id,
+        solar_system_target_id: linked_system_id,
+        mass_status: new_mass_status
+      })
+    end
+  end
+
+  defp maybe_sync_custom_mass_status_to_connection(_map_id, _old_sig, _updated_sig), do: :ok
 
   @doc """
   Finds the "forward" signature in a target system that links back to the source system.
@@ -366,5 +390,13 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
     custom_info_json
     |> Jason.decode!()
     |> Map.get("time_status")
+  end
+
+  defp get_mass_status(nil), do: nil
+
+  defp get_mass_status(custom_info_json) do
+    custom_info_json
+    |> Jason.decode!()
+    |> Map.get("mass_status")
   end
 end

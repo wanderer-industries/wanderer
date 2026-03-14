@@ -1,5 +1,5 @@
 import { SystemViewStandalone, TooltipPosition, WHClassView } from '@/hooks/Mapper/components/ui-kit';
-import { SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import { MassState, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 
 import { renderK162Type } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
@@ -21,14 +21,24 @@ export const renderInfoColumn = (row: SystemSignature) => {
         {row.temporary_name && <span className={clsx('text-[12px]')}>{row.temporary_name}</span>}
 
         {customInfo.time_status === TimeStatus._1h && (
-          <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as EOL">
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as EOL">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
           </WdTooltipWrapper>
         )}
 
         {customInfo.isCrit && (
-          <WdTooltipWrapper offset={5} position={TooltipPosition.top} content="Signature marked as Crit">
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as Crit">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
+        {customInfo.mass_status === MassState.verge && (
+          <WdTooltipWrapper
+            offset={5}
+            position={TooltipPosition.bottom}
+            content="Signature marked as Verge of collapse"
+          >
+            <div className="pi pi-exclamation-triangle text-red-400 text-[11px] mr-[2px]"></div>
           </WdTooltipWrapper>
         )}
 

@@ -276,7 +276,14 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         map_id,
         connection_update
       ),
-      do: update_connection(map_id, :update_mass_status, [:mass_status], connection_update)
+      do:
+        update_connection(map_id, :update_mass_status, [:mass_status], connection_update, fn
+          %{mass_status: old_mass_status},
+          %{mass_status: mass_status} = updated_connection ->
+            if mass_status != old_mass_status do
+              maybe_update_linked_signature_mass_status(map_id, updated_connection)
+            end
+        end)
 
   def update_connection_ship_size_type(
         map_id,
@@ -519,6 +526,71 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           %{custom_info: updated_custom_info}
         else
           updated_custom_info = Jason.encode!(%{"time_status" => time_status})
+          %{custom_info: updated_custom_info}
+        end
+
+      SignaturesImpl.apply_update_signature(map_id, sig, update_params)
+    end)
+
+    Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
+  end
+
+  defp maybe_update_linked_signature_mass_status(
+         map_id,
+         %{
+           mass_status: mass_status,
+           solar_system_source: solar_system_source,
+           solar_system_target: solar_system_target
+         } = _updated_connection
+       ) do
+    with source_system when not is_nil(source_system) <-
+           WandererApp.Map.find_system_by_location(
+             map_id,
+             %{solar_system_id: solar_system_source}
+           ),
+         target_system when not is_nil(target_system) <-
+           WandererApp.Map.find_system_by_location(
+             map_id,
+             %{solar_system_id: solar_system_target}
+           ),
+         source_linked_signatures <-
+           find_linked_signatures(source_system, target_system),
+         target_linked_signatures <- find_linked_signatures(target_system, source_system) do
+      update_signatures_mass_status(
+        map_id,
+        source_system.solar_system_id,
+        source_linked_signatures,
+        mass_status
+      )
+
+      update_signatures_mass_status(
+        map_id,
+        target_system.solar_system_id,
+        target_linked_signatures,
+        mass_status
+      )
+    else
+      error ->
+        Logger.warning("Failed to update_linked_signature_mass_status: #{inspect(error)}")
+    end
+  end
+
+  defp update_signatures_mass_status(_map_id, _solar_system_id, [], _mass_status), do: :ok
+
+  defp update_signatures_mass_status(map_id, solar_system_id, signatures, mass_status) do
+    signatures
+    |> Enum.each(fn %{custom_info: custom_info_json} = sig ->
+      update_params =
+        if not is_nil(custom_info_json) do
+          updated_custom_info =
+            custom_info_json
+            |> Jason.decode!()
+            |> Map.merge(%{"mass_status" => mass_status})
+            |> Jason.encode!()
+
+          %{custom_info: updated_custom_info}
+        else
+          updated_custom_info = Jason.encode!(%{"mass_status" => mass_status})
           %{custom_info: updated_custom_info}
         end
 

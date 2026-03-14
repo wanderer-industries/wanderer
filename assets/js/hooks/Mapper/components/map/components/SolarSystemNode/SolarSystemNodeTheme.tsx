@@ -11,7 +11,7 @@ import {
   STATUS_CLASSES,
 } from '@/hooks/Mapper/components/map/constants';
 import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/WormholeClassComp';
-import { UnsplashedSignature } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
+import { UnsplashedSignatureColumn } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
@@ -157,17 +157,19 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
         <>
           {nodeVars.unsplashedLeft.length > 0 && (
             <div className={classes.Unsplashed}>
-              {nodeVars.unsplashedLeft.map(sig => (
-                <UnsplashedSignature key={sig.eve_id} signature={sig} />
-              ))}
+              <UnsplashedSignatureColumn
+                signatures={nodeVars.unsplashedLeft}
+                wormholesData={nodeVars.wormholesData}
+              />
             </div>
           )}
 
           {nodeVars.unsplashedRight.length > 0 && (
             <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
-              {nodeVars.unsplashedRight.map(sig => (
-                <UnsplashedSignature key={sig.eve_id} signature={sig} />
-              ))}
+              <UnsplashedSignatureColumn
+                signatures={nodeVars.unsplashedRight}
+                wormholesData={nodeVars.wormholesData}
+              />
             </div>
           )}
         </>

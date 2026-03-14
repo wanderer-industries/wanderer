@@ -296,22 +296,23 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
           })
         end
 
-        signature_time_status =
+        {signature_time_status, signature_mass_status} =
           if not is_nil(signature.custom_info) do
-            signature.custom_info |> Jason.decode!() |> Map.get("time_status")
+            decoded = signature.custom_info |> Jason.decode!()
+            {Map.get(decoded, "time_status"), Map.get(decoded, "mass_status")}
           else
-            nil
+            {nil, nil}
           end
 
         signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
 
         # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
         # look for a forward signature in the target system that links back to our source
-        {signature_time_status, signature_ship_size_type} =
+        {signature_time_status, signature_ship_size_type, signature_mass_status} =
           if is_nil(signature_ship_size_type) do
             case SignaturesImpl.find_forward_signature(target_system.id, solar_system_source) do
               nil ->
-                {signature_time_status, signature_ship_size_type}
+                {signature_time_status, signature_ship_size_type, signature_mass_status}
 
               forward_sig ->
                 Logger.info(
@@ -321,17 +322,29 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
 
                 forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
 
-                forward_time_status =
-                  if is_nil(signature_time_status) and not is_nil(forward_sig.custom_info) do
-                    forward_sig.custom_info |> Jason.decode!() |> Map.get("time_status")
+                {forward_time_status, forward_mass_status} =
+                  if not is_nil(forward_sig.custom_info) do
+                    decoded = forward_sig.custom_info |> Jason.decode!()
+
+                    fwd_time =
+                      if is_nil(signature_time_status),
+                        do: Map.get(decoded, "time_status"),
+                        else: signature_time_status
+
+                    fwd_mass =
+                      if is_nil(signature_mass_status),
+                        do: Map.get(decoded, "mass_status"),
+                        else: signature_mass_status
+
+                    {fwd_time, fwd_mass}
                   else
-                    signature_time_status
+                    {signature_time_status, signature_mass_status}
                   end
 
-                {forward_time_status, forward_ship_size}
+                {forward_time_status, forward_ship_size, forward_mass_status}
             end
           else
-            {signature_time_status, signature_ship_size_type}
+            {signature_time_status, signature_ship_size_type, signature_mass_status}
           end
 
         if not is_nil(signature_time_status) do
@@ -349,6 +362,15 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
             solar_system_source_id: solar_system_source,
             solar_system_target_id: solar_system_target,
             ship_size_type: signature_ship_size_type
+          })
+        end
+
+        if not is_nil(signature_mass_status) do
+          map_id
+          |> WandererApp.Map.Server.update_connection_mass_status(%{
+            solar_system_source_id: solar_system_source,
+            solar_system_target_id: solar_system_target,
+            mass_status: signature_mass_status
           })
         end
       end

@@ -9,7 +9,7 @@ import { Regions, REGIONS_MAP, SPACE_TO_CLASS } from '@/hooks/Mapper/constants';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 import { getSystemClassStyles } from '@/hooks/Mapper/components/map/helpers';
 import { sortWHClasses } from '@/hooks/Mapper/helpers';
-import { CharacterTypeRaw, OutCommand, PingType, SystemSignature } from '@/hooks/Mapper/types';
+import { CharacterTypeRaw, OutCommand, PingType, SystemSignature, WormholeDataRaw } from '@/hooks/Mapper/types';
 import { useUnsplashedSignatures } from './useUnsplashedSignatures';
 import { useSystemName } from './useSystemName';
 import { LabelInfo, useLabelsInfo } from './useLabelsInfo';
@@ -46,6 +46,7 @@ export interface SolarSystemNodeVars {
   userCharacters: string[];
   unsplashedLeft: Array<SystemSignature>;
   unsplashedRight: Array<SystemSignature>;
+  wormholesData: Record<string, WormholeDataRaw>;
   isThickConnections: boolean;
   isRally: boolean;
   classTitle: string | null;
@@ -210,6 +211,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     charactersInSystem,
     unsplashedLeft,
     unsplashedRight,
+    wormholesData,
     isThickConnections,
     classTitle: class_title,
     temporaryName: computedTemporaryName,

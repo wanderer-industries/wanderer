@@ -1,1 +1,1 @@
-export * from './UnsplashedSignature.tsx';
+export * from './UnsplashedSignatureColumn.tsx';

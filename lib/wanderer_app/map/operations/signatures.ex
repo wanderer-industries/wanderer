@@ -515,15 +515,15 @@ defmodule WandererApp.Map.Operations.Signatures do
           })
         end
 
-        # Update connection time_status from signature custom_info
-        signature_time_status =
+        # Update connection time_status and mass_status from signature custom_info
+        {signature_time_status, signature_mass_status} =
           if not is_nil(signature.custom_info) do
             case Jason.decode(signature.custom_info) do
-              {:ok, map} -> Map.get(map, "time_status")
-              {:error, _} -> nil
+              {:ok, decoded} -> {Map.get(decoded, "time_status"), Map.get(decoded, "mass_status")}
+              {:error, _} -> {nil, nil}
             end
           else
-            nil
+            {nil, nil}
           end
 
         # Update connection ship_size_type from signature wormhole type
@@ -531,14 +531,14 @@ defmodule WandererApp.Map.Operations.Signatures do
 
         # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
         # look for a forward signature in the target system that links back to our source
-        {signature_time_status, signature_ship_size_type} =
+        {signature_time_status, signature_ship_size_type, signature_mass_status} =
           if is_nil(signature_ship_size_type) do
             case Server.SignaturesImpl.find_forward_signature(
                    target_system.id,
                    source_system.solar_system_id
                  ) do
               nil ->
-                {signature_time_status, signature_ship_size_type}
+                {signature_time_status, signature_ship_size_type, signature_mass_status}
 
               forward_sig ->
                 Logger.info(
@@ -548,20 +548,33 @@ defmodule WandererApp.Map.Operations.Signatures do
 
                 forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
 
-                forward_time_status =
-                  if is_nil(signature_time_status) and not is_nil(forward_sig.custom_info) do
+                {forward_time_status, forward_mass_status} =
+                  if not is_nil(forward_sig.custom_info) do
                     case Jason.decode(forward_sig.custom_info) do
-                      {:ok, map} -> Map.get(map, "time_status")
-                      {:error, _} -> nil
+                      {:ok, decoded} ->
+                        fwd_time =
+                          if is_nil(signature_time_status),
+                            do: Map.get(decoded, "time_status"),
+                            else: signature_time_status
+
+                        fwd_mass =
+                          if is_nil(signature_mass_status),
+                            do: Map.get(decoded, "mass_status"),
+                            else: signature_mass_status
+
+                        {fwd_time, fwd_mass}
+
+                      {:error, _} ->
+                        {signature_time_status, signature_mass_status}
                     end
                   else
-                    signature_time_status
+                    {signature_time_status, signature_mass_status}
                   end
 
-                {forward_time_status, forward_ship_size}
+                {forward_time_status, forward_ship_size, forward_mass_status}
             end
           else
-            {signature_time_status, signature_ship_size_type}
+            {signature_time_status, signature_ship_size_type, signature_mass_status}
           end
 
         if not is_nil(signature_time_status) do
@@ -577,6 +590,14 @@ defmodule WandererApp.Map.Operations.Signatures do
             solar_system_source_id: source_system.solar_system_id,
             solar_system_target_id: solar_system_target,
             ship_size_type: signature_ship_size_type
+          })
+        end
+
+        if not is_nil(signature_mass_status) do
+          Server.update_connection_mass_status(map_id, %{
+            solar_system_source_id: source_system.solar_system_id,
+            solar_system_target_id: solar_system_target,
+            mass_status: signature_mass_status
           })
         end
       end
