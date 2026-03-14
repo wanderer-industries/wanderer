@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.97.0](https://github.com/wanderer-industries/wanderer/compare/v1.96.6...v1.97.0) (2026-03-14)
+
+
+
+
+### Features:
+
+* signatures: Sync mass status with connection, show it on unsplashed sigs
+
+### Bug Fixes:
+
+* Connection context menu and wormhole. Change UI for select wormhole mass state. Change UI for select ship-size for wormhole. Add ability to set mass for signatures
+
 ## [v1.96.6](https://github.com/wanderer-industries/wanderer/compare/v1.96.5...v1.96.6) (2026-03-13)
 
 
