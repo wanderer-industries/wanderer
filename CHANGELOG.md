@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.97.1](https://github.com/wanderer-industries/wanderer/compare/v1.97.0...v1.97.1) (2026-03-21)
+
+
+
+
+### Bug Fixes:
+
+* Add new Pochven medium wormholes (I078, L687, O546). Change lifetime to 12H from 16H for X450, U372, R081, F216.
+
 ## [v1.97.0](https://github.com/wanderer-industries/wanderer/compare/v1.96.6...v1.97.0) (2026-03-14)
 
 
