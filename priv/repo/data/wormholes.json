@@ -291,7 +291,7 @@
     "src": ["c2", "c3", "c4", "c5", "c6"],
     "static": false,
     "max_mass_per_jump": 375000000,
-    "lifetime": "16",
+    "lifetime": "12",
     "total_mass": 1000000000,
     "name": "F216",
     "respawn": ["wandering", "reverse"]
@@ -698,7 +698,7 @@
     "src": ["pochven"],
     "static": false,
     "max_mass_per_jump": 375000000,
-    "lifetime": "16",
+    "lifetime": "12",
     "total_mass": 1000000000,
     "name": "R081",
     "respawn": ["wandering"]
@@ -830,7 +830,7 @@
     "src": ["ns"],
     "static": false,
     "max_mass_per_jump": 375000000,
-    "lifetime": "16",
+    "lifetime": "12",
     "total_mass": 1000000000,
     "name": "U372",
     "respawn": ["wandering", "reverse"]
@@ -929,7 +929,7 @@
     "src": ["pochven"],
     "static": false,
     "max_mass_per_jump": 62000000,
-    "lifetime": "16",
+    "lifetime": "12",
     "total_mass": 1000000000,
     "name": "X450",
     "respawn": ["wandering"]
@@ -1065,5 +1065,38 @@
     "total_mass": "",
     "name": "K162",
     "respawn": []
+  },
+  {
+    "mass_regen": 0,
+    "dest": "pochven",
+    "src": ["pochven"],
+    "static": false,
+    "max_mass_per_jump": 62000000,
+    "lifetime": "4.5",
+    "total_mass": 100000000,
+    "name": "I078",
+    "respawn": ["wandering"]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "pochven",
+    "src": ["pochven"],
+    "static": false,
+    "max_mass_per_jump": 62000000,
+    "lifetime": "4.5",
+    "total_mass": 100000000,
+    "name": "L687",
+    "respawn": ["wandering"]
+  },
+  {
+    "mass_regen": 0,
+    "dest": "pochven",
+    "src": ["pochven"],
+    "static": false,
+    "max_mass_per_jump": 62000000,
+    "lifetime": "4.5",
+    "total_mass": 100000000,
+    "name": "O546",
+    "respawn": ["wandering"]
   }
 ]
