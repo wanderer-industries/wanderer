@@ -129,6 +129,33 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "manual_add_system",
+        %{"solar_system_id" => solar_system_id} = _event,
+        %{
+          assigns: %{
+            current_user: %{id: current_user_id},
+            has_tracked_characters?: true,
+            map_id: map_id,
+            main_character_id: main_character_id,
+            user_permissions: %{add_system: true}
+          }
+        } =
+          socket
+      )
+      when not is_nil(main_character_id) do
+    WandererApp.Map.Server.add_system(
+      map_id,
+      %{
+        solar_system_id: solar_system_id
+      },
+      current_user_id,
+      main_character_id
+    )
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
         "manual_paste_systems_and_connections",
         %{
           "connections" => connections,

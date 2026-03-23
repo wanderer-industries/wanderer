@@ -115,9 +115,11 @@ defmodule WandererApp.Character.TrackingUtils do
      end)}
   end
 
-  # Filter characters to only include those with actual tracking permission
-  # This prevents showing characters in the tracking dialog that will fail when toggled
-  defp filter_characters_with_tracking_permission(characters, %{id: map_id, owner_id: owner_id}) do
+  @doc """
+  Filters a list of characters to only include those with actual tracking permission on a map.
+  This prevents showing characters in the tracking dialog that will fail when toggled.
+  """
+  def filter_characters_with_tracking_permission(characters, %{id: map_id, owner_id: owner_id}) do
     # Load ACLs with members properly (same approach as get_map_characters)
     acls = load_map_acls_with_members(map_id)
 
