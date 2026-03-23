@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.97.2](https://github.com/wanderer-industries/wanderer/compare/v1.97.1...v1.97.2) (2026-03-23)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed tracking issues & adding systems to map from routes
+
 ## [v1.97.1](https://github.com/wanderer-industries/wanderer/compare/v1.97.0...v1.97.1) (2026-03-21)
 
 
