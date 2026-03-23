@@ -49,9 +49,9 @@ export const useContextMenuSystemInfoHandlers = () => {
     }
 
     outCommand({
-      type: OutCommand.addSystem,
+      type: OutCommand.manualAddSystem,
       data: {
-        system_id: solarSystemId,
+        solar_system_id: parseInt(solarSystemId),
       },
     });
 

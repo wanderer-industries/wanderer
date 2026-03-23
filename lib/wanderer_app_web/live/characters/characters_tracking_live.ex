@@ -54,7 +54,7 @@ defmodule WandererAppWeb.CharactersTrackingLive do
       selected_map_slug: map_slug
     )
     |> assign_async(:characters, fn ->
-      WandererApp.Maps.load_characters(selected_map, current_user.id)
+      load_trackable_characters(selected_map, current_user.id)
     end)
   end
 
@@ -100,37 +100,55 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     selected_map = socket.assigns.selected_map
     %{result: characters} = socket.assigns.characters
 
-    case characters |> Enum.find(&(&1.id == character_id)) do
-      %{tracked: current_tracked, eve_id: eve_id} ->
-        # Use TrackingUtils.update_tracking to properly set/unset the tracking_start_time
-        # cache key, which is required for the character to appear in get_tracked_character_ids
-        case TrackingUtils.update_tracking(
-               selected_map.id,
-               eve_id,
-               current_user.id,
-               not current_tracked,
-               self(),
-               false
-             ) do
-          {:ok, _tracking_data, _event} ->
-            :ok
+    result =
+      case characters |> Enum.find(&(&1.id == character_id)) do
+        %{tracked: current_tracked, eve_id: eve_id} ->
+          # Use TrackingUtils.update_tracking to properly set/unset the tracking_start_time
+          # cache key, which is required for the character to appear in get_tracked_character_ids
+          case TrackingUtils.update_tracking(
+                 selected_map.id,
+                 eve_id,
+                 current_user.id,
+                 not current_tracked,
+                 self(),
+                 false
+               ) do
+            {:ok, _tracking_data, _event} ->
+              :ok
 
-          {:error, reason} ->
-            Logger.error(
-              "Failed to toggle tracking for character #{character_id} on map #{selected_map.id}: #{inspect(reason)}"
-            )
-        end
+            {:error, reason} ->
+              Logger.error(
+                "Failed to toggle tracking for character #{character_id} on map #{selected_map.id}: #{inspect(reason)}"
+              )
 
-      nil ->
-        Logger.warning(
-          "Character #{character_id} not found in available characters for map #{selected_map.id}"
-        )
-    end
+              {:error, reason}
+          end
+
+        nil ->
+          Logger.warning(
+            "Character #{character_id} not found in available characters for map #{selected_map.id}"
+          )
+
+          {:error, "Character not found"}
+      end
+
+    socket =
+      case result do
+        {:error, _reason} ->
+          put_flash(
+            socket,
+            :error,
+            "Failed to toggle tracking. Character may not have sufficient permissions on this map."
+          )
+
+        _ ->
+          socket
+      end
 
     {:noreply,
      socket
      |> assign_async(:characters, fn ->
-       WandererApp.Maps.load_characters(selected_map, current_user.id)
+       load_trackable_characters(selected_map, current_user.id)
      end)}
   end
 
@@ -154,10 +172,21 @@ defmodule WandererAppWeb.CharactersTrackingLive do
     {:noreply,
      socket
      |> assign_async(:characters, fn ->
-       WandererApp.Maps.load_characters(selected_map, current_user.id)
+       load_trackable_characters(selected_map, current_user.id)
      end)}
   end
 
   @impl true
   def handle_info(_event, socket), do: {:noreply, socket}
+
+  defp load_trackable_characters(map, user_id) do
+    case WandererApp.Maps.load_characters(map, user_id) do
+      {:ok, %{characters: characters}} ->
+        filtered = TrackingUtils.filter_characters_with_tracking_permission(characters, map)
+        {:ok, %{characters: filtered}}
+
+      error ->
+        error
+    end
+  end
 end

@@ -789,8 +789,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   defp do_add_system(
          map_id,
          %{
-           solar_system_id: solar_system_id,
-           coordinates: coordinates
+           solar_system_id: solar_system_id
          } = system_info,
          user_id,
          character_id
@@ -803,19 +802,14 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       rtree_name = "rtree_#{map_id}"
 
       %{"x" => x, "y" => y} =
-        coordinates
+        system_info
+        |> Map.get(:coordinates)
         |> case do
           %{"x" => x, "y" => y} ->
             %{"x" => x, "y" => y}
 
           _ ->
-            %{x: x, y: y} =
-              WandererApp.Map.PositionCalculator.get_new_system_position(
-                nil,
-                rtree_name,
-                map_opts
-              )
-
+            {:ok, %{x: x, y: y}} = calc_new_system_position(map_id, nil, rtree_name, map_opts)
             %{"x" => x, "y" => y}
         end
 
