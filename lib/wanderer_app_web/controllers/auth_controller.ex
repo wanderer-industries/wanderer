@@ -42,6 +42,10 @@ defmodule WandererAppWeb.AuthController do
 
           WandererApp.Character.update_character(character.id, character_update)
 
+          # Clear the invalid_grant counter so stale failures don't cause
+          # premature token invalidation after a successful re-auth
+          WandererApp.Cache.delete("character:#{character.id}:invalid_grant_count")
+
           # Update corporation/alliance data from ESI to ensure access control is current
           update_character_affiliation(character)
 
