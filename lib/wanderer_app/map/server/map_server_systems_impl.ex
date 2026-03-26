@@ -650,6 +650,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               }
             )
 
+            maybe_sync_intel_from_source(map_id, updated_system)
+
             :ok
 
           _ ->
@@ -702,6 +704,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                         operation: :upsert
                       }
                     )
+
+                    maybe_sync_intel_from_source(map_id, system)
 
                     :ok
 
@@ -909,6 +913,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           })
 
           track_add_system(map_id, user_id, character_id, system.solar_system_id)
+
+          maybe_sync_intel_from_source(map_id, system)
 
           :ok
 
@@ -1132,5 +1138,26 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     })
 
     :ok
+  end
+
+  defp maybe_sync_intel_from_source(map_id, system) do
+    with true <- WandererApp.Env.intel_sharing_enabled?(),
+         {:ok, %{map: %{intel_source_map_id: source_id}}} when not is_nil(source_id) <-
+           WandererApp.Map.get_map_state(map_id, false) do
+      Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
+        case WandererApp.Map.IntelSync.sync_system(map_id, source_id, system.solar_system_id) do
+          {:ok, updated_system} when is_map(updated_system) ->
+            intel_fields = WandererApp.Map.IntelSync.intel_fields()
+            update = Map.take(updated_system, [:solar_system_id | intel_fields])
+            WandererApp.Map.update_system_by_solar_system_id(map_id, update)
+            update_map_system_last_activity(map_id, updated_system)
+
+          _ ->
+            :ok
+        end
+      end)
+    else
+      _ -> :ok
+    end
   end
 end

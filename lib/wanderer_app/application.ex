@@ -96,6 +96,7 @@ defmodule WandererApp.Application do
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
       WandererAppWeb.PresenceGracePeriodManager,
       WandererAppWeb.Presence,
+      {Task.Supervisor, name: WandererApp.TaskSupervisor},
       WandererAppWeb.Endpoint
     ]
 

@@ -4,6 +4,7 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererApp.Map.Server.Impl
 
   def handle_server_event(%{event: :add_system, payload: system}, socket) do
     # Schedule kill update for the new system after a short delay to allow subscription
@@ -317,6 +318,49 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     )
 
     {:noreply, socket}
+  end
+
+  def handle_ui_event(
+        "sync_intel",
+        %{"solar_system_id" => solar_system_id},
+        %{assigns: %{map_id: map_id, map_loaded?: true, user_permissions: %{update_system: true}}} =
+          socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      case WandererAppWeb.Helpers.APIUtils.parse_int(solar_system_id) do
+        {:error, _} ->
+          {:reply, %{success: false, error: "invalid_system_id"}, socket}
+
+        {:ok, solar_system_id_int} ->
+          case WandererApp.MapRepo.get(map_id) do
+            {:ok, %{intel_source_map_id: source_map_id}} when not is_nil(source_map_id) ->
+              case WandererApp.Map.IntelSync.sync_system(map_id, source_map_id, solar_system_id_int) do
+                {:ok, updated_system} when is_map(updated_system) ->
+                  intel_fields = WandererApp.Map.IntelSync.intel_fields()
+
+                  update =
+                    Map.take(updated_system, [:solar_system_id | intel_fields])
+
+                  WandererApp.Map.update_system_by_solar_system_id(map_id, update)
+                  Impl.broadcast!(map_id, :update_system, updated_system)
+
+                  {:reply, %{success: true}, socket}
+
+                _ ->
+                  {:reply, %{success: false, error: "no_source_data"}, socket}
+              end
+
+            _ ->
+              {:reply, %{success: false, error: "no_intel_source"}, socket}
+          end
+      end
+    else
+      {:reply, %{success: false, error: "feature_disabled"}, socket}
+    end
+  end
+
+  def handle_ui_event("sync_intel", _params, socket) do
+    {:reply, %{success: false, error: "forbidden"}, socket}
   end
 
   def handle_ui_event(event, body, socket),
