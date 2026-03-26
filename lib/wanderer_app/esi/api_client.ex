@@ -897,33 +897,42 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp invalidate_character_tokens(character, character_id, expires_at, scopes) do
-    # Re-load from DB to avoid race with concurrent re-auth
-    case WandererApp.Api.Character.by_id(character_id) do
-      {:ok, current_character} ->
-        # Only invalidate if tokens haven't been refreshed since we started
-        if current_character.access_token == character.access_token do
-          attrs = %{access_token: nil, refresh_token: nil, expires_at: expires_at, scopes: scopes}
+    # Skip invalidation if the character was recently re-authorized via SSO.
+    # This protects fresh tokens from being wiped by transient invalid_grant
+    # errors that can occur shortly after re-auth.
+    if WandererApp.Cache.lookup!("character:#{character_id}:reauth_grace", false) do
+      Logger.info(
+        "[ApiClient] Skipping token invalidation for #{character_id} - within re-auth grace period"
+      )
+    else
+      # Re-load from DB to avoid race with concurrent re-auth
+      case WandererApp.Api.Character.by_id(character_id) do
+        {:ok, current_character} ->
+          # Only invalidate if tokens haven't been refreshed since we started
+          if current_character.access_token == character.access_token do
+            attrs = %{access_token: nil, refresh_token: nil, expires_at: expires_at, scopes: scopes}
 
-          with {:ok, _} <- WandererApp.Api.Character.update(current_character, attrs) do
-            WandererApp.Character.update_character(character_id, attrs)
+            with {:ok, _} <- WandererApp.Api.Character.update(current_character, attrs) do
+              WandererApp.Character.update_character(character_id, attrs)
+            else
+              error ->
+                Logger.error("Failed to clear tokens for #{character_id}: #{inspect(error)}")
+            end
+
+            Phoenix.PubSub.broadcast(
+              WandererApp.PubSub,
+              "character:#{character_id}",
+              :character_token_invalid
+            )
           else
-            error ->
-              Logger.error("Failed to clear tokens for #{character_id}: #{inspect(error)}")
+            Logger.info(
+              "[ApiClient] Skipping token invalidation for #{character_id} - tokens were refreshed concurrently"
+            )
           end
 
-          Phoenix.PubSub.broadcast(
-            WandererApp.PubSub,
-            "character:#{character_id}",
-            :character_token_invalid
-          )
-        else
-          Logger.info(
-            "[ApiClient] Skipping token invalidation for #{character_id} - tokens were refreshed concurrently"
-          )
-        end
-
-      {:error, _} ->
-        Logger.error("Failed to load character #{character_id} for token invalidation")
+        {:error, _} ->
+          Logger.error("Failed to load character #{character_id} for token invalidation")
+      end
     end
 
     :ok

@@ -46,6 +46,14 @@ defmodule WandererAppWeb.AuthController do
           # premature token invalidation after a successful re-auth
           WandererApp.Cache.delete("character:#{character.id}:invalid_grant_count")
 
+          # Set a grace period to protect fresh tokens from being wiped by
+          # in-flight or immediately-subsequent invalid_grant errors
+          WandererApp.Cache.put(
+            "character:#{character.id}:reauth_grace",
+            true,
+            ttl: :timer.minutes(5)
+          )
+
           # Update corporation/alliance data from ESI to ensure access control is current
           update_character_affiliation(character)
 
