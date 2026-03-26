@@ -12,7 +12,13 @@ defmodule WandererAppWeb.Plugs.CheckWebhooksDisabled do
   def call(conn, _opts) do
     if not WandererApp.Env.webhooks_enabled?() do
       conn
-      |> send_resp(403, "Webhooks are disabled. Set WANDERER_WEBHOOKS_ENABLED=true to enable.")
+      |> put_resp_content_type("application/json")
+      |> send_resp(
+        403,
+        Jason.encode!(%{
+          error: "Webhooks are disabled. Set WANDERER_WEBHOOKS_ENABLED=true to enable."
+        })
+      )
       |> halt()
     else
       conn

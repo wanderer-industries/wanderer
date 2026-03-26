@@ -93,6 +93,11 @@ defmodule WandererApp.Env do
     |> Keyword.get(:webhooks_enabled, false)
   end
 
+  def plugins_enabled?() do
+    Application.get_env(@app, :plugins, [])
+    |> Keyword.get(:enabled, false)
+  end
+
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "map-connection-auto-expire-hours"

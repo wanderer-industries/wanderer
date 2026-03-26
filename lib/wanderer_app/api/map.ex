@@ -66,6 +66,8 @@ defmodule WandererApp.Api.Map do
       action: :read
     )
 
+    define(:by_ids, action: :by_ids, args: [:ids])
+
     define(:duplicate, action: :duplicate)
     define(:admin_all, action: :admin_all)
     define(:restore, action: :restore)
@@ -90,6 +92,14 @@ defmodule WandererApp.Api.Map do
 
   actions do
     defaults [:create, :read, :destroy]
+
+    read :by_ids do
+      argument :ids, {:array, :uuid},
+        allow_nil?: false,
+        constraints: [min_length: 1, max_length: 100]
+
+      filter expr(id in ^arg(:ids))
+    end
 
     read :by_slug do
       get? true
