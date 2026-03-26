@@ -88,12 +88,11 @@ defmodule WandererAppWeb.CharactersLive do
       {:ok, _} = WandererApp.MapCharacterSettingsRepo.untrack(settings)
     end)
 
-    {:ok, updated_character} =
-      socket.assigns.characters
-      |> Enum.find(&(&1.id == character_id))
-      |> WandererApp.Api.Character.mark_as_deleted()
+    # Load character from DB instead of using plain map from assigns
+    {:ok, character} = WandererApp.Api.Character.by_id(character_id)
+    {:ok, _updated_character} = WandererApp.Api.Character.mark_as_deleted(character)
 
-    WandererApp.Character.update_character(character_id, updated_character)
+    WandererApp.Character.update_character(character_id, %{deleted: true, user_id: nil})
 
     {:ok, characters} =
       WandererApp.Api.Character.active_by_user(%{user_id: socket.assigns.user_id})

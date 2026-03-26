@@ -46,13 +46,17 @@ defmodule WandererApp.Ueberauth.Strategy.Eve do
           |> with_param(:hl, conn)
           |> with_state_param(conn)
 
+        opts = oauth_client_options_from_conn(conn, with_wallet, is_admin?)
+
         WandererApp.Cache.put(
           "eve_auth_#{params[:state]}",
-          [with_wallet: with_wallet, is_admin?: is_admin?],
+          [
+            with_wallet: with_wallet,
+            is_admin?: is_admin?,
+            tracking_pool: Keyword.get(opts, :tracking_pool)
+          ],
           ttl: :timer.minutes(30)
         )
-
-        opts = oauth_client_options_from_conn(conn, with_wallet, is_admin?)
 
         redirect!(conn, WandererApp.Ueberauth.Strategy.Eve.OAuth.authorize_url!(params, opts))
 
