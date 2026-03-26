@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.97.5](https://github.com/wanderer-industries/wanderer/compare/v1.97.4...v1.97.5) (2026-03-26)
+
+
+
+
+### Bug Fixes:
+
+* core: Fixed character re-auth issues
+
 ## [v1.97.4](https://github.com/wanderer-industries/wanderer/compare/v1.97.3...v1.97.4) (2026-03-26)
 
 
