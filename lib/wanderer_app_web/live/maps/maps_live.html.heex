@@ -395,10 +395,10 @@
                   </a>
                 </li>
                 <li
-                  :if={@map_subscriptions_enabled?}
+                  :if={@plugins_available? || @map_subscriptions_enabled?}
                   class={[
                     "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "bot")
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "plugins")
                   ]}
                   role="presentation"
                   data-pc-name=""
@@ -413,10 +413,10 @@
                     aria-disabled="false"
                     data-pc-section="headeraction"
                     phx-click="change_settings_tab"
-                    phx-value-tab="bot"
+                    phx-value-tab="plugins"
                   >
                     <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-puzzle-piece-solid" class="w-4 h-4" />&nbsp;Bots
+                      <.icon name="hero-puzzle-piece-solid" class="w-4 h-4" />&nbsp;Plugins
                     </span>
                   </a>
                 </li>
@@ -515,37 +515,38 @@
                 </.button>
               </div>
 
-              <div :if={@active_settings_tab == "bot"}>
-                <h3 class="text-lg font-semibold mb-2">Bots Integration</h3>
-                <div class="mb-6 p-4 border rounded-md">
-                  <p class="mb-2">
-                    The bot license allows you to integrate your map with automated tools and bots.
-                    Here's how to use it:
-                  </p>
-                  <ol class="list-decimal pl-5 mb-4 space-y-2">
-                    <li>Create a license key below (requires an active subscription)</li>
-                    <li>Use the license key to authenticate your bot with our API</li>
-                    <%!-- <li>
-                      Make API calls to <code class="bg-gray-800 px-1 py-0.5 rounded">GET /api/license/validate</code>
-                      with the license key as a Bearer token in the Authorization header
-                    </li>
-                    <li>
-                      If valid, you'll receive the map ID which you can use for other API endpoints
-                    </li> --%>
-                  </ol>
-                  <p class="text-sm text-gray-600">
-                    For detailed API documentation, please refer to our <a
-                      href="/license"
-                      class="text-blue-600 hover:underline"
-                    >API documentation</a>.
-                  </p>
-                </div>
+              <div :if={@active_settings_tab == "plugins"}>
+                <%= if @plugins_available? do %>
+                  <.live_component
+                    module={WandererAppWeb.Maps.PluginsComponent}
+                    id="plugins-component"
+                    map_id={@map.id}
+                  />
+                <% else %>
+                  <h3 class="text-lg font-semibold mb-2">Bots Integration</h3>
+                  <div class="mb-6 p-4 border rounded-md">
+                    <p class="mb-2">
+                      The bot license allows you to integrate your map with automated tools and bots.
+                      Here's how to use it:
+                    </p>
+                    <ol class="list-decimal pl-5 mb-4 space-y-2">
+                      <li>Create a license key below (requires an active subscription)</li>
+                      <li>Use the license key to authenticate your bot with our API</li>
+                    </ol>
+                    <p class="text-sm text-gray-600">
+                      For detailed API documentation, please refer to our <a
+                        href="/license"
+                        class="text-blue-600 hover:underline"
+                      >API documentation</a>.
+                    </p>
+                  </div>
 
-                <.live_component
-                  module={WandererAppWeb.Maps.LicenseComponent}
-                  id="license-component"
-                  map_id={@map.id}
-                />
+                  <.live_component
+                    module={WandererAppWeb.Maps.LicenseComponent}
+                    id="license-component"
+                    map_id={@map.id}
+                  />
+                <% end %>
               </div>
 
               <div

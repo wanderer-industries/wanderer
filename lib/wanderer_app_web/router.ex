@@ -206,6 +206,11 @@ defmodule WandererAppWeb.Router do
     plug WandererAppWeb.Plugs.CheckWebhooksDisabled
   end
 
+  pipeline :api_plugins do
+    plug WandererAppWeb.Plugs.RequirePluginsEnabled
+    plug WandererAppWeb.Plugs.CheckPluginApiKey
+  end
+
   pipeline :api_acl do
     plug WandererAppWeb.Plugs.CheckAclApiKey
   end
@@ -318,6 +323,13 @@ defmodule WandererAppWeb.Router do
 
     # Webhook control endpoint
     put "/webhooks/toggle", MapAPIController, :toggle_webhooks
+  end
+
+  # Plugin config endpoint (for external bots to discover configured maps)
+  scope "/api/plugins/:plugin_name", WandererAppWeb do
+    pipe_through [:api, :api_plugins]
+
+    get "/config", PluginConfigApiController, :show
   end
 
   #

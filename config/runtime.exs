@@ -476,3 +476,22 @@ config :wanderer_app, :external_events,
     |> get_var_from_path_or_env("WANDERER_WEBHOOKS_ENABLED", "false")
     |> String.to_existing_atom(),
   webhook_timeout_ms: config_dir |> get_int_from_path_or_env("WANDERER_WEBHOOK_TIMEOUT_MS", 15000)
+
+# Plugin System Configuration
+plugins_enabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_PLUGINS_ENABLED", "false")
+  |> String.to_existing_atom()
+
+notifier_api_key =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_PLUGIN_NOTIFIER_API_KEY", "")
+  |> String.trim()
+
+if plugins_enabled and notifier_api_key == "" do
+  raise "WANDERER_PLUGIN_NOTIFIER_API_KEY must be set when plugins are enabled"
+end
+
+config :wanderer_app, :plugins,
+  enabled: plugins_enabled,
+  api_keys: %{"notifier" => notifier_api_key}

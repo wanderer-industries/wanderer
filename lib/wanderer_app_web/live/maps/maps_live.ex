@@ -178,6 +178,7 @@ defmodule WandererAppWeb.MapsLive do
           active_settings_tab: "general",
           is_adding_subscription?: false,
           selected_subscription: nil,
+          plugins_available?: WandererApp.Env.plugins_enabled?(),
           options_form: options_form_data |> to_form(),
           layout_options: [
             {"Left To Right", "left_to_right"},
