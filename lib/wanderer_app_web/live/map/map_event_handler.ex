@@ -88,7 +88,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_connection_mass_status",
     "update_connection_ship_size_type",
     "update_connection_locked",
-    "update_connection_custom_info"
+    "update_connection_custom_info",
+    "update_passage_mass"
   ]
 
   @map_activity_events [

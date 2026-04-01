@@ -155,7 +155,7 @@ defmodule WandererAppWeb.OpenAPISpecAnalyzer do
     # Categorize schemas based on naming patterns
     request_schemas = Enum.filter(schema_names, &String.contains?(&1, "Request"))
     response_schemas = Enum.filter(schema_names, &String.contains?(&1, "Response"))
-    shared_schemas = schema_names -- request_schemas -- response_schemas
+    shared_schemas = schema_names -- (request_schemas -- response_schemas)
 
     %{
       total: length(schema_names),

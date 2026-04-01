@@ -19,6 +19,7 @@ defmodule WandererAppWeb.RouteBuilderController do
 
       {:error, reason} ->
         Logger.warning("[RouteBuilderController] find_closest failed: #{inspect(reason)}")
+
         conn
         |> put_status(:bad_gateway)
         |> json(%{error: "route_builder_failed"})

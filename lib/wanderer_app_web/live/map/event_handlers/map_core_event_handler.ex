@@ -614,7 +614,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             nil
         end
 
-      expired_characters = tracked_characters |> Enum.filter(&(&1.access_token == nil)) |> Enum.map(& &1.eve_id)
+      expired_characters =
+        tracked_characters |> Enum.filter(&(&1.access_token == nil)) |> Enum.map(& &1.eve_id)
 
       initial_data =
         %{
