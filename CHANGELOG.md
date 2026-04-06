@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.98.0](https://github.com/wanderer-industries/wanderer/compare/v1.97.5...v1.98.0) (2026-04-06)
+
+
+
+
+### Features:
+
+* core: added character profile pages support
+
 ## [v1.97.5](https://github.com/wanderer-industries/wanderer/compare/v1.97.4...v1.97.5) (2026-03-26)
 
 
