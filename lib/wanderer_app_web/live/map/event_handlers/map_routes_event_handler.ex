@@ -176,12 +176,14 @@ defmodule WandererAppWeb.MapRoutesEventHandler do
     routes_type = Map.get(event, "type", "blueLoot")
     security_type = Map.get(event, "securityType", "both")
     is_subscription_active? = Map.get(socket.assigns, :is_subscription_active?, false)
+
     routes_limit =
       if is_subscription_active? == true do
         @paid_routes_limit
       else
         Map.get(@alpha_routes_limit_by_type, routes_type, @default_alpha_routes_limit)
       end
+
     routes_settings =
       routes_settings
       |> get_routes_settings()

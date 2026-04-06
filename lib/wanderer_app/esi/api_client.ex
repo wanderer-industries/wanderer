@@ -804,7 +804,8 @@ defmodule WandererApp.Esi.ApiClient do
     })
 
     if count >= 3 do
-      Logger.warning("TOKEN_REFRESH_FAILED: Invalid grant error (#{count}/3, invalidating tokens)",
+      Logger.warning(
+        "TOKEN_REFRESH_FAILED: Invalid grant error (#{count}/3, invalidating tokens)",
         character_id: character_id,
         error_message: error_message,
         time_since_expiry_seconds: time_since_expiry,
@@ -861,7 +862,8 @@ defmodule WandererApp.Esi.ApiClient do
          expires_at,
          _scopes
        ) do
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
+    time_since_expiry =
+      DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
 
     Logger.warning("TOKEN_REFRESH_FAILED: Transient OAuth2 error during token refresh",
       character_id: character_id,
@@ -879,7 +881,8 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp handle_refresh_token_result(error, _character, character_id, expires_at, _scopes) do
-    time_since_expiry = DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
+    time_since_expiry =
+      DateTime.diff(DateTime.utc_now(), DateTime.from_unix!(expires_at), :second)
 
     Logger.warning("TOKEN_REFRESH_FAILED: Unexpected error during token refresh",
       character_id: character_id,
@@ -910,7 +913,12 @@ defmodule WandererApp.Esi.ApiClient do
         {:ok, current_character} ->
           # Only invalidate if tokens haven't been refreshed since we started
           if current_character.access_token == character.access_token do
-            attrs = %{access_token: nil, refresh_token: nil, expires_at: expires_at, scopes: scopes}
+            attrs = %{
+              access_token: nil,
+              refresh_token: nil,
+              expires_at: expires_at,
+              scopes: scopes
+            }
 
             with {:ok, _} <- WandererApp.Api.Character.update(current_character, attrs) do
               WandererApp.Character.update_character(character_id, attrs)

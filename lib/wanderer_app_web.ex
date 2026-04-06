@@ -68,6 +68,13 @@ defmodule WandererAppWeb do
     end
   end
 
+  def blog_live_view do
+    live_view(
+      layout: {WandererAppWeb.Layouts, :blog},
+      container: {:div, class: ""}
+    )
+  end
+
   def live_component do
     quote do
       use Phoenix.LiveComponent

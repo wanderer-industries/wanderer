@@ -1,0 +1,133 @@
+<main class="w-full h-full p-4 pl-20 pb-20 overflow-auto">
+  <article class="ccp-font w-full max-w-2xl mx-auto">
+    <div class="bg-neutral-900/60 text-stone-200 [text-shadow:0_0px_8px_rgba(0,0,0,0.7)] px-6 py-5 mt-8 rounded-lg">
+      <div class="flex flex-row items-center gap-4">
+        <img
+          src={"https://images.evetech.net/characters/#{@profile.eve_id}/portrait?size=256"}
+          class="w-20 h-20 rounded-lg flex-shrink-0"
+          alt={@profile.name}
+        />
+        <div class="flex flex-col gap-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold text-white m-0 truncate">{@profile.name}</h2>
+            <span
+              :if={@profile.online}
+              class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"
+              title="Online"
+            />
+            <span
+              :if={!@profile.online}
+              class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"
+              title="Offline"
+            />
+          </div>
+          <div :if={@profile.corporation_name} class="flex items-center gap-2 text-sm">
+            <img
+              src={"https://images.evetech.net/corporations/#{@profile.corporation_id}/logo?size=64"}
+              class="w-5 h-5 rounded"
+              alt={@profile.corporation_name}
+            />
+            <span class="text-stone-300 truncate">
+              <span :if={@profile.corporation_ticker} class="text-gray-500">
+                [{@profile.corporation_ticker}]
+              </span>
+              {@profile.corporation_name}
+            </span>
+          </div>
+          <div :if={@profile.alliance_name} class="flex items-center gap-2 text-sm">
+            <img
+              src={"https://images.evetech.net/alliances/#{@profile.alliance_id}/logo?size=64"}
+              class="w-5 h-5 rounded"
+              alt={@profile.alliance_name}
+            />
+            <span class="text-stone-300 truncate">
+              <span :if={@profile.alliance_ticker} class="text-gray-500">
+                [{@profile.alliance_ticker}]
+              </span>
+              {@profile.alliance_name}
+            </span>
+          </div>
+        </div>
+        <div class="flex gap-2 ml-auto flex-shrink-0">
+          <a
+            href={"https://zkillboard.com/character/#{@profile.eve_id}/"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <.button
+              type="button"
+              class="p-button p-component p-button-primary w-full"
+              style="min-width: 0;"
+            >
+              <span class="p-button-label">zKill</span>
+            </.button>
+          </a>
+          <a
+            href={"https://evewho.com/character/#{@profile.eve_id}"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <.button
+              type="button"
+              class="p-button p-component p-button-primary w-full"
+              style="min-width: 0;"
+            >
+              <span class="p-button-label">EVE Who</span>
+            </.button>
+          </a>
+        </div>
+      </div>
+
+      <%!-- About / Description section --%>
+      <div class="mt-4 border-t border-stone-700/50 pt-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-semibold text-stone-400 m-0 uppercase tracking-wide">About</h3>
+          <button
+            :if={@is_owner && !@editing}
+            phx-click="toggle_edit"
+            class="h-8 w-8 hover:text-white"
+            type="button"
+          >
+            <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
+          </button>
+        </div>
+
+        <%!-- View mode --%>
+        <div :if={!@editing}>
+          <%= if @description_html != "" do %>
+            <div class="prose prose-invert prose-sm max-w-none text-stone-300">
+              {raw(@description_html)}
+            </div>
+          <% else %>
+            <p class="text-stone-500 italic text-sm m-0">No description yet.</p>
+          <% end %>
+        </div>
+
+        <%!-- Edit mode --%>
+        <div :if={@editing && @is_owner}>
+          <div id="wysiwyg-editor" phx-hook="WysiwygEditor" phx-update="ignore">
+            <div class="ql-editor-container" data-initial-content={@description_html}></div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <.button
+              type="button"
+              phx-click="save_description"
+              class="p-button p-component p-button-primary w-full"
+              style="min-width: 0;"
+            >
+              <span class="p-button-label">Save</span>
+            </.button>
+            <.button
+              type="button"
+              phx-click="cancel_edit"
+              class="p-button p-component p-button-primary w-full"
+              style="min-width: 0;"
+            >
+              <span class="p-button-label">Cancel</span>
+            </.button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</main>

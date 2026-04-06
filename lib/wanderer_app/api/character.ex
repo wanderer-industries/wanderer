@@ -41,6 +41,7 @@ defmodule WandererApp.Api.Character do
     )
 
     define(:admin_all, action: :admin_all)
+    define(:update_description, action: :update_description)
   end
 
   actions do
@@ -141,6 +142,11 @@ defmodule WandererApp.Api.Character do
 
       accept([:eve_wallet_balance])
     end
+
+    update :update_description do
+      accept([:description])
+      require_atomic? false
+    end
   end
 
   cloak do
@@ -210,6 +216,11 @@ defmodule WandererApp.Api.Character do
     attribute :alliance_ticker, :string
     attribute :eve_wallet_balance, :float
     attribute :tracking_pool, :string
+
+    attribute :description, :string do
+      allow_nil? true
+      constraints max_length: 10_000
+    end
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

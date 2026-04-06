@@ -336,7 +336,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
             "[CharacterCleanup] Map #{map_id} - untracking settings and removing character #{s.character_id}"
           end)
 
-          WandererApp.MapCharacterSettingsRepo.untrack!(%{map_id: s.map_id, character_id: s.character_id})
+          WandererApp.MapCharacterSettingsRepo.untrack!(%{
+            map_id: s.map_id,
+            character_id: s.character_id
+          })
+
           remove_character(map_id, s.character_id)
         end)
 

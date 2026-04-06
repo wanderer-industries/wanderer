@@ -9,6 +9,7 @@ import DownloadJson from './downloadJson';
 import NewVersionUpdate from './newVersionUpdate';
 import MapAction from './maps/mapAction';
 import ShowCharactersAddAlert from './showCharactersAddAlert';
+import WysiwygEditor from './wysiwygEditor';
 
 export default {
   DownloadJson,
@@ -22,4 +23,5 @@ export default {
   CopyToClipboard,
   NewVersionUpdate,
   ShowCharactersAddAlert,
+  WysiwygEditor,
 };

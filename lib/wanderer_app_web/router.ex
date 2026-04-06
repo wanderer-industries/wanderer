@@ -7,7 +7,7 @@ defmodule WandererAppWeb.Router do
 
   import WandererAppWeb.UserAuth,
     warn: false,
-    only: [redirect_if_user_is_authenticated: 2]
+    only: [redirect_if_user_is_authenticated: 2, require_authenticated_user: 2]
 
   import WandererAppWeb.BasicAuth,
     warn: false,
@@ -162,6 +162,10 @@ defmodule WandererAppWeb.Router do
 
   pipeline :blog do
     plug :put_layout, html: {WandererAppWeb.Layouts, :blog}
+  end
+
+  pipeline :require_auth do
+    plug :require_authenticated_user
   end
 
   pipeline :api do
@@ -417,6 +421,8 @@ defmodule WandererAppWeb.Router do
     get "/", BlogController, :license
   end
 
+
+
   scope "/swaggerui" do
     pipe_through [:browser, :api_spec]
 
@@ -549,6 +555,8 @@ defmodule WandererAppWeb.Router do
       live "/tracking", CharactersTrackingLive, :index
       live "/characters", CharactersLive, :index
       live "/characters/authorize", CharactersLive, :authorize
+      live "/characters/:eve_id", CharacterProfileLive, :show
+      live "/sponsors", SponsorsLive, :index
       live "/maps/new", MapsLive, :create
       live "/maps/:slug/edit", MapsLive, :edit
       live "/maps/:slug/settings", MapsLive, :settings

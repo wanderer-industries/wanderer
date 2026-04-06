@@ -198,6 +198,13 @@
           </div>
           <div class="card-actions justify-end">
             <.link
+              navigate={~p"/characters/#{character.eve_id}"}
+              class="tooltip tooltip-bottom"
+              data-tip="View Profile"
+            >
+              <.icon name="hero-user-solid" class="w-4 h-4 hover:text-white" />
+            </.link>
+            <.link
               patch={~p"/characters/authorize"}
               class="tooltip tooltip-bottom"
               data-tip="Refresh Authorization"
@@ -236,7 +243,9 @@
         </figure>
       </:col>
       <:col :let={character} label="Name">
-        {character.name}
+        <.link navigate={~p"/characters/#{character.eve_id}"} class="hover:text-white underline">
+          {character.name}
+        </.link>
       </:col>
       <:col :let={character} label="Corporation">
         {character
