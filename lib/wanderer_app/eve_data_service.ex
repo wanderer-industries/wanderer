@@ -114,6 +114,7 @@ defmodule WandererApp.EveDataService do
       %{
         solar_system_id: row["solarSystemID"],
         solar_system_name: row["solarSystemName"],
+        statics: row["statics"],
         effect_name: row["effectName"],
         effect_power: row["effectPower"],
         invasion_status: row["invasionStatus"]
@@ -403,6 +404,7 @@ defmodule WandererApp.EveDataService do
         %{
           default_data
           | triglavian_invasion_status: triglavian_data.invasion_status,
+            statics: triglavian_data.statics,
             effect_name: triglavian_data.effect_name,
             effect_power: triglavian_data.effect_power
         }

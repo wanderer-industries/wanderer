@@ -2,6 +2,9 @@
    {
       "solarSystemName": "Ignebaener",
       "solarSystemID": 30005005,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -9,6 +12,9 @@
    {
       "solarSystemName": "Kino",
       "solarSystemID": 30001372,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -16,6 +22,9 @@
    {
       "solarSystemName": "Komo",
       "solarSystemID": 30031392,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -23,6 +32,9 @@
    {
       "solarSystemName": "Konola",
       "solarSystemID": 30002737,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -30,6 +42,9 @@
    {
       "solarSystemName": "Krirald",
       "solarSystemID": 30002079,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -37,6 +52,9 @@
    {
       "solarSystemName": "Nalvula",
       "solarSystemID": 30001445,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -44,6 +62,9 @@
    {
       "solarSystemName": "Otanuomi",
       "solarSystemID": 30000192,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -51,6 +72,9 @@
    {
       "solarSystemName": "Otela",
       "solarSystemID": 30000157,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -58,6 +82,9 @@
    {
       "solarSystemName": "Sakenta",
       "solarSystemID": 30010141,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -65,6 +92,9 @@
    {
       "solarSystemName": "Ahtila",
       "solarSystemID": 30045328,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -72,6 +102,9 @@
    {
       "solarSystemName": "Harva",
       "solarSystemID": 30002225,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -79,6 +112,9 @@
    {
       "solarSystemName": "Kuharah",
       "solarSystemID": 30000021,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -86,6 +122,9 @@
    {
       "solarSystemName": "Nani",
       "solarSystemID": 30001413,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -93,6 +132,9 @@
    {
       "solarSystemName": "Niarja",
       "solarSystemID": 30003504,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -100,6 +142,9 @@
    {
       "solarSystemName": "Raravoss",
       "solarSystemID": 30003495,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -107,6 +152,9 @@
    {
       "solarSystemName": "Skarkon",
       "solarSystemID": 30002411,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -114,6 +162,9 @@
    {
       "solarSystemName": "Tunudan",
       "solarSystemID": 30002770,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -121,6 +172,9 @@
    {
       "solarSystemName": "Urhinichi",
       "solarSystemID": 30040141,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -128,6 +182,9 @@
    {
       "solarSystemName": "Ala",
       "solarSystemID": 30002652,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -135,6 +192,9 @@
    {
       "solarSystemName": "Kaunokka",
       "solarSystemID": 30002797,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -142,6 +202,9 @@
    {
       "solarSystemName": "Wirashoda",
       "solarSystemID": 30000206,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -149,6 +212,9 @@
    {
       "solarSystemName": "Archee",
       "solarSystemID": 30002702,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -156,6 +222,9 @@
    {
       "solarSystemName": "Angymonne",
       "solarSystemID": 30003046,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -163,6 +232,9 @@
    {
       "solarSystemName": "Senda",
       "solarSystemID": 30020141,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -170,6 +242,9 @@
    {
       "solarSystemName": "Ichoriya",
       "solarSystemID": 30045329,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"
@@ -177,6 +252,9 @@
    {
       "solarSystemName": "Arvasaras",
       "solarSystemID": 30001381,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"

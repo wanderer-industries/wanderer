@@ -177,14 +177,14 @@
   },
   {
     "mass_regen": 0,
-    "dest": "pochven",
-    "src": ["hs", "ls", "ns", "pochven"],
-    "static": false,
+    "dest": null,
+    "src": ["pochven"],
+    "static": true,
     "max_mass_per_jump": 1000000000,
     "lifetime": "12",
     "total_mass": 1000000000,
     "name": "C729",
-    "respawn": ["wandering", "reverse"]
+    "respawn": ["static"]
   },
   {
     "mass_regen": 0,
