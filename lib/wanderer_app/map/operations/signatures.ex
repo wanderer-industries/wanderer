@@ -552,15 +552,9 @@ defmodule WandererApp.Map.Operations.Signatures do
                   if not is_nil(forward_sig.custom_info) do
                     case Jason.decode(forward_sig.custom_info) do
                       {:ok, decoded} ->
-                        fwd_time =
-                          if is_nil(signature_time_status),
-                            do: Map.get(decoded, "time_status"),
-                            else: signature_time_status
-
-                        fwd_mass =
-                          if is_nil(signature_mass_status),
-                            do: Map.get(decoded, "mass_status"),
-                            else: signature_mass_status
+                        # Always prefer forward sig values over K162 defaults
+                        fwd_time = Map.get(decoded, "time_status") || signature_time_status
+                        fwd_mass = Map.get(decoded, "mass_status") || signature_mass_status
 
                         {fwd_time, fwd_mass}
 
@@ -599,6 +593,29 @@ defmodule WandererApp.Map.Operations.Signatures do
             solar_system_target_id: solar_system_target,
             mass_status: signature_mass_status
           })
+        end
+
+        # Update K162's custom_info to match the resolved connection values
+        if not is_nil(signature_time_status) or not is_nil(signature_mass_status) do
+          updated_custom_info =
+            (signature.custom_info || "{}")
+            |> Jason.decode!()
+            |> then(fn decoded ->
+              decoded
+              |> then(fn d ->
+                if not is_nil(signature_time_status),
+                  do: Map.put(d, "time_status", signature_time_status),
+                  else: d
+              end)
+              |> then(fn d ->
+                if not is_nil(signature_mass_status),
+                  do: Map.put(d, "mass_status", signature_mass_status),
+                  else: d
+              end)
+            end)
+            |> Jason.encode!()
+
+          MapSystemSignature.update(signature, %{custom_info: updated_custom_info})
         end
       end
 
