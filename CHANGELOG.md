@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.98.1](https://github.com/wanderer-industries/wanderer/compare/v1.98.0...v1.98.1) (2026-04-10)
+
+
+
+
+### Bug Fixes:
+
+* signatures: Back linked signatures not cleared old connection statuses
+
 ## [v1.98.0](https://github.com/wanderer-industries/wanderer/compare/v1.97.5...v1.98.0) (2026-04-06)
 
 
