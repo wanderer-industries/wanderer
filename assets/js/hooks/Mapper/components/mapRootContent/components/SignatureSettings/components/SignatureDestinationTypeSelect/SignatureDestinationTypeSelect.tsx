@@ -3,20 +3,25 @@ import clsx from 'clsx';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useMemo } from 'react';
 import { SystemSignature } from '@/hooks/Mapper/types';
-import { K162_TYPES } from '@/hooks/Mapper/constants.ts';
-import { renderK162Type } from '.';
+import { renderDestinationType } from '.';
+import { DEST_TYPES_MAP } from '@/hooks/Mapper/constants';
 
-export interface SignatureK162TypeSelectProps {
+export interface SignatureDestinationTypeSelectProps {
   name: string;
+  type: string;
   defaultValue?: string;
 }
 
-export const SignatureK162TypeSelect = ({ name, defaultValue = '' }: SignatureK162TypeSelectProps) => {
+export const SignatureDestinationTypeSelect = ({
+  name,
+  type: whType,
+  defaultValue = '',
+}: SignatureDestinationTypeSelectProps) => {
   const { control } = useFormContext<SystemSignature>();
 
   const options = useMemo(() => {
-    return [{ value: null }, ...K162_TYPES];
-  }, []);
+    return [{ value: null }, ...DEST_TYPES_MAP[whType]];
+  }, [whType]);
 
   return (
     <Controller
@@ -31,11 +36,11 @@ export const SignatureK162TypeSelect = ({ name, defaultValue = '' }: SignatureK1
             onChange={field.onChange}
             options={options}
             optionValue="value"
-            placeholder="Select K162 type"
+            placeholder="Select destination"
             className={clsx('w-full')}
             scrollHeight="240px"
-            itemTemplate={renderK162Type}
-            valueTemplate={renderK162Type}
+            itemTemplate={renderDestinationType}
+            valueTemplate={renderDestinationType}
           />
         );
       }}

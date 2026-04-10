@@ -13,7 +13,7 @@ import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   linked_system: string;
-  k162Type: string;
+  destType: string;
   time_status: TimeStatus;
   mass_status: MassState;
 };
@@ -47,7 +47,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           out = {
             ...out,
             custom_info: JSON.stringify({
-              k162Type: values.k162Type,
+              destType: values.destType,
               time_status: values.time_status,
               mass_status: values.mass_status,
             }),
@@ -142,19 +142,19 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
     const { linked_system, custom_info, ...rest } = signatureData;
 
-    let k162Type = null;
+    let destType = null;
     let time_status = TimeStatus._24h;
     let mass_status = MassState.normal;
     if (custom_info) {
       const customInfo = JSON.parse(custom_info);
-      k162Type = customInfo.k162Type;
+      destType = customInfo.destType;
       time_status = customInfo.time_status;
       mass_status = customInfo.mass_status ?? MassState.normal;
     }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
-      k162Type: k162Type,
+      destType: destType,
       time_status: time_status,
       mass_status: mass_status,
       ...rest,

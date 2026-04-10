@@ -1,9 +1,9 @@
 import { WHClassView } from '@/hooks/Mapper/components/ui-kit';
-import { K162Type } from '@/hooks/Mapper/constants.ts';
+import { DestinationType } from '@/hooks/Mapper/constants.ts';
 
 const renderNoValue = () => <div className="flex gap-2 items-center">-Unknown-</div>;
 
-export const renderK162Type = (option: K162Type) => {
+export const renderDestinationType = (option: DestinationType) => {
   if (!option) {
     return renderNoValue();
   }

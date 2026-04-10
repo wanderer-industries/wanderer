@@ -66,13 +66,15 @@ export const REGIONS_MAP: Record<number, Spaces> = {
   [Regions.Pochven]: Spaces.Pochven,
 };
 
-export type K162Type = {
+export type DestinationType = {
   label: string;
   value: string;
   whClassName: string;
 };
 
-export const K162_TYPES: K162Type[] = [
+export const MULTI_DEST_WHS: string[] = ['K162', 'C729'];
+
+export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'Hi-Sec',
     value: 'hs',
@@ -145,10 +147,29 @@ export const K162_TYPES: K162Type[] = [
   },
 ];
 
-export const K162_TYPES_MAP: { [key: string]: K162Type } = K162_TYPES.reduce(
+export const ALL_DEST_TYPES_MAP: { [key: string]: DestinationType } = ALL_DEST_TYPES.reduce(
   (acc, x) => ({ ...acc, [x.value]: x }),
   {},
 );
+
+export const C729_DEST_TYPES: DestinationType[] = ALL_DEST_TYPES.filter(destType =>
+  ['hs', 'ls', 'ns', 'pochven'].includes(destType.value),
+);
+
+export const C729_DEST_TYPES_MAP: { [key: string]: DestinationType } = C729_DEST_TYPES.reduce(
+  (acc, x) => ({ ...acc, [x.value]: x }),
+  {},
+);
+
+export const DEST_TYPES_MAP: { [key: string]: DestinationType[] } = {
+  K162: ALL_DEST_TYPES,
+  C729: C729_DEST_TYPES,
+};
+
+export const DEST_TYPES_MAP_MAP: { [key: string]: { [key: string]: DestinationType } } = {
+  K162: ALL_DEST_TYPES_MAP,
+  C729: C729_DEST_TYPES_MAP,
+};
 
 export const MINIMAP_PLACEMENT_MAP = {
   [PingsPlacement.rightTop]: 'top-right',

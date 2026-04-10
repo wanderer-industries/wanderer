@@ -42,8 +42,10 @@ export const WHClassView = ({
   } = useMapRootState();
 
   const whData = useMemo(() => wormholesData[whClassName], [whClassName, wormholesData]);
-  const whClass = useMemo(() => WORMHOLES_ADDITIONAL_INFO[whData.dest], [whData.dest]);
-  const whClassStyle = WORMHOLE_CLASS_STYLES[whClass?.wormholeClassID] ?? '';
+  const whClass = useMemo(() => {
+    return whData?.dest?.length === 1 ? WORMHOLES_ADDITIONAL_INFO[whData.dest[0]] : null;
+  }, [whData.dest]);
+  const whClassStyle = whClass?.wormholeClassID ? WORMHOLE_CLASS_STYLES[whClass.wormholeClassID] : '';
 
   const content = (
     <div

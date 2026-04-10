@@ -1,5 +1,5 @@
 export * from './SignatureGroupSelect';
 export * from './SignatureGroupContent';
-export * from './SignatureK162TypeSelect';
+export * from './SignatureDestinationTypeSelect';
 export * from './SignatureLifetimeSelect';
 export * from './SignatureMassStatusSelect';

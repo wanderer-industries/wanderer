@@ -314,6 +314,13 @@ export const WORMHOLES_ADDITIONAL_INFO_RAW: WormholesAdditionalInfoType[] = [
     title: 'Reverse',
     shortTitle: 'K162',
   },
+  {
+    id: 'c729',
+    shortName: 'C729',
+    wormholeClassID: 10102,
+    title: 'Static',
+    shortTitle: 'C729',
+  },
 ];
 
 export const WORMHOLES_ADDITIONAL_INFO: Record<string, WormholesAdditionalInfoType> =
