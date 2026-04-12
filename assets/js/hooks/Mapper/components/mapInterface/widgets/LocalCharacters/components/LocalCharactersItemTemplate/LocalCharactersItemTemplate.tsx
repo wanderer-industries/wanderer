@@ -12,7 +12,7 @@ export const LocalCharactersItemTemplate = ({ showShipName, ...options }: LocalC
     <div
       className={clsx(
         classes.CharacterRow,
-        'box-border flex items-center w-full whitespace-nowrap overflow-hidden text-ellipsis min-w-[0px]',
+        'box-border flex items-center w-full whitespace-nowrap overflow-hidden text-ellipsis min-w-[0px] ',
         'px-1',
         {
           'surface-hover': options.odd,

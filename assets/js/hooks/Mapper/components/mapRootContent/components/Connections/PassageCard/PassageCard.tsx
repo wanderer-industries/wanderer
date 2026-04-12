@@ -4,30 +4,29 @@ import { PassageWithSourceTarget } from '@/hooks/Mapper/types';
 import { SystemView, TimeAgo, TooltipPosition, WdImgButton, WdTransition } from '@/hooks/Mapper/components/ui-kit';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
-import { useCallback, useMemo, useState } from 'react';
+import { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { ZKB_ICON } from '@/hooks/Mapper/icons';
 import { charEveWhoLink, charZKBLink } from '@/hooks/Mapper/helpers/linkHelpers.ts';
+import { getShipName } from './getShipName.ts';
 
 type PassageCardType = {
   // compact?: boolean;
   showShipName?: boolean;
   // showSystem?: boolean;
   // useSystemsCache?: boolean;
+  onEdit?: () => void;
 } & PassageWithSourceTarget;
 
-const SHIP_NAME_RX = /u'|'/g;
-export const getShipName = (name: string) => {
-  return name
-    .replace(SHIP_NAME_RX, '')
-    .replace(/\\u([\dA-Fa-f]{4})/g, (_, grp) => {
-      return String.fromCharCode(parseInt(grp, 16));
-    })
-    .replace(/\\x([\dA-Fa-f]{2})/g, (_, grp) => {
-      return String.fromCharCode(parseInt(grp, 16));
-    });
-};
-
-export const PassageCard = ({ inserted_at, character: char, ship, source, target, from }: PassageCardType) => {
+export const PassageCard = ({
+  inserted_at,
+  character: char,
+  ship,
+  source,
+  target,
+  from,
+  mass,
+  onEdit,
+}: PassageCardType) => {
   const isOwn = false;
   const [hovered, setHovered] = useState(false);
 
@@ -38,6 +37,13 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
 
   const handleOpenZKB = useCallback(() => window.open(charZKBLink(char.eve_id), '_blank'), [char]);
   const handleOpenEveWho = useCallback(() => window.open(charEveWhoLink(char.eve_id), '_blank'), [char]);
+  const handleEdit = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+      onEdit?.();
+    },
+    [onEdit],
+  );
 
   const handleMouseEnter = useCallback(() => setHovered(true), []);
   const handleMouseLeave = useCallback(() => setHovered(false), []);
@@ -148,7 +154,7 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
                 </WdTooltipWrapper>
               </span>
 
-              <div className="text-stone-400">{kgToTons(parseInt(ship.ship_type_info.mass))}</div>
+              <div className="text-stone-400">{kgToTons(mass ?? parseInt(ship.ship_type_info.mass))}</div>
             </div>
           </div>
 
@@ -166,6 +172,7 @@ export const PassageCard = ({ inserted_at, character: char, ship, source, target
                       'pi text-stone-500 text-[17px] w-[33px] h-[32px] !flex items-center justify-center border rounded-[2px]',
                       'pi-cog text-stone-200/80 hover:!text-orange-400 border-stone-500/70 hover:!border-orange-400 bg-stone-800/70',
                     )}
+                    onClick={handleEdit}
                   />
                 )}
               </div>

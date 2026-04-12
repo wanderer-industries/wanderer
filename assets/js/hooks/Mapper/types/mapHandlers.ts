@@ -272,6 +272,7 @@ export enum OutCommand {
   addSystem = 'add_system',
   openUserSettings = 'open_user_settings',
   getPassages = 'get_passages',
+  updatePassageMass = 'update_passage_mass',
   linkSignatureToSystem = 'link_signature_to_system',
   getCorporationNames = 'get_corporation_names',
   getCorporationTicker = 'get_corporation_ticker',

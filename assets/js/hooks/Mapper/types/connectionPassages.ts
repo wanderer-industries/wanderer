@@ -6,8 +6,10 @@ export type PassageLimitedCharacterType = Pick<
 >;
 
 export type Passage = {
+  id: string;
   from: boolean;
   inserted_at: string; // Date
+  mass: number | null;
   ship: ShipTypeRaw;
   character: PassageLimitedCharacterType;
 };
