@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.97.5"
+  @version "1.98.1"
 
   def project do
     [
@@ -134,6 +134,8 @@ defmodule WandererApp.MixProject do
       {:live_view_events, "~> 0.1.0"},
       {:ash_pagify, "~> 1.4.1"},
       {:timex, "~> 3.0"},
+      {:earmark, "~> 1.4"},
+      {:html_sanitize_ex, "~> 1.4"},
       # Test coverage and quality
       {:excoveralls, "~> 0.18", only: :test}
     ]

@@ -44,17 +44,6 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
       switch (group) {
         case SignatureGroup.Wormhole:
-          if (values.linked_system) {
-            await outCommand({
-              type: OutCommand.linkSignatureToSystem,
-              data: {
-                signature_eve_id: signatureData.eve_id,
-                solar_system_source: systemId,
-                solar_system_target: values.linked_system,
-              },
-            });
-          }
-
           out = {
             ...out,
             custom_info: JSON.stringify({
@@ -124,6 +113,20 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           deleteTimeout: 0,
         },
       });
+
+      // Link after updateSignatures so the K162's linked_system_id is still nil
+      // during signature update, preventing maybe_update_connection_* from
+      // resetting connection properties set by the forward signature.
+      if (group === SignatureGroup.Wormhole && values.linked_system) {
+        await outCommand({
+          type: OutCommand.linkSignatureToSystem,
+          data: {
+            signature_eve_id: signatureData.eve_id,
+            solar_system_source: systemId,
+            solar_system_target: values.linked_system,
+          },
+        });
+      }
 
       signatureForm.reset();
       onHide();

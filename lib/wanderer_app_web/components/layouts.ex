@@ -206,6 +206,7 @@ defmodule WandererAppWeb.Layouts do
           >
             <li><a href="/changelog">Changelog</a></li>
             <li><a href="/news">News</a></li>
+            <li :if={@map_subscriptions_enabled}><a href="/sponsors">Sponsors</a></li>
             <li><a href="/license">License</a></li>
             <li><a href="/contacts">Contact Us</a></li>
           </ul>
@@ -235,6 +236,13 @@ defmodule WandererAppWeb.Layouts do
             active={@active_tab == :characters_tracking}
             icon="hero-signal-solid"
             tip="Characters Tracking"
+          />
+          <.nav_link
+            :if={@map_subscriptions_enabled}
+            href="/sponsors"
+            active={@active_tab == :sponsors}
+            icon="hero-heart-solid"
+            tip="Our Sponsors"
           />
         </div>
       </div>

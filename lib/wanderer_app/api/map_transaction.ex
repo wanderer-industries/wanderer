@@ -22,6 +22,7 @@ defmodule WandererApp.Api.MapTransaction do
     define(:by_user, action: :by_user)
     define(:create, action: :create)
     define(:top_donators, action: :top_donators)
+    define(:server_top_donators, action: :server_top_donators)
   end
 
   actions do
@@ -60,6 +61,31 @@ defmodule WandererApp.Api.MapTransaction do
               t.map_id == ^input.arguments.map_id and
                 t.type == :in and
                 not is_nil(t.user_id),
+            group_by: [t.user_id],
+            select: %{user_id: t.user_id, total_amount: sum(t.amount)},
+            order_by: [desc: sum(t.amount)],
+            limit: 10
+          )
+
+        query =
+          case input.arguments[:after] do
+            nil -> base
+            after_date -> base |> where([t], t.inserted_at >= ^after_date)
+          end
+
+        query
+        |> WandererApp.Repo.all()
+        |> then(&{:ok, &1})
+      end
+    end
+
+    action :server_top_donators, {:array, :struct} do
+      argument(:after, :utc_datetime, allow_nil?: true)
+
+      run fn input, _context ->
+        base =
+          from(t in __MODULE__,
+            where: t.type == :in and not is_nil(t.user_id),
             group_by: [t.user_id],
             select: %{user_id: t.user_id, total_amount: sum(t.amount)},
             order_by: [desc: sum(t.amount)],
