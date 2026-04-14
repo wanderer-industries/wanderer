@@ -265,6 +265,42 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
     {:reply, passages, socket}
   end
 
+  def handle_ui_event(
+        "update_passage_mass",
+        %{"id" => passage_id, "mass" => mass} = _event,
+        %{
+          assigns: %{
+            has_tracked_characters?: true,
+            user_permissions: %{update_system: true}
+          }
+        } = socket
+      ) do
+    mass_value =
+      cond do
+        is_integer(mass) ->
+          mass
+
+        is_binary(mass) ->
+          case Integer.parse(mass) do
+            {int_val, _} -> int_val
+            :error -> nil
+          end
+
+        true ->
+          nil
+      end
+
+    case WandererApp.Api.MapChainPassages.by_id(passage_id) do
+      {:ok, passage} when not is_nil(passage) ->
+        WandererApp.Api.MapChainPassages.update_mass(passage, %{mass: mass_value})
+
+      _ ->
+        Logger.warning("update_passage_mass: passage not found id=#{passage_id}")
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 

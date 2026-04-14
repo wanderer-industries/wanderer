@@ -17,29 +17,35 @@ import classes from './Connections.module.scss';
 import { InfoDrawer, SystemView, TimeAgo } from '@/hooks/Mapper/components/ui-kit';
 import { kgToTons } from '@/hooks/Mapper/utils/kgToTons.ts';
 import { PassageCard } from './PassageCard';
+import { PassageMassDialog } from './PassageMassDialog';
 
 const sortByDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
-
-const itemTemplate = (item: PassageWithSourceTarget, options: VirtualScrollerTemplateOptions) => {
-  return (
-    <div
-      className={clsx(classes.CharacterRow, 'w-full box-border', {
-        'surface-hover': options.odd,
-        ['border-b border-gray-600 border-opacity-20']: !options.last,
-        ['bg-green-500 hover:bg-green-700 transition duration-300 bg-opacity-10 hover:bg-opacity-10']: false,
-      })}
-      style={{ height: options.props.itemSize + 'px' }}
-    >
-      <PassageCard {...item} />
-    </div>
-  );
-};
+const getPassageMass = (passage: Passage) => passage.mass ?? parseInt(passage.ship.ship_type_info.mass);
 
 export interface ConnectionPassagesContentProps {
   passages: PassageWithSourceTarget[];
+  onEditPassage: (passage: PassageWithSourceTarget) => void;
 }
 
-export const ConnectionPassages = ({ passages = [] }: ConnectionPassagesContentProps) => {
+export const ConnectionPassages = ({ passages = [], onEditPassage }: ConnectionPassagesContentProps) => {
+  const itemTemplate = useCallback(
+    (item: PassageWithSourceTarget, options: VirtualScrollerTemplateOptions) => {
+      return (
+        <div
+          className={clsx(classes.CharacterRow, 'w-full box-border', {
+            'surface-hover': options.odd,
+            ['border-b border-gray-600 border-opacity-20']: !options.last,
+            ['bg-green-500 hover:bg-green-700 transition duration-300 bg-opacity-10 hover:bg-opacity-10']: false,
+          })}
+          style={{ height: options.props.itemSize + 'px' }}
+        >
+          <PassageCard {...item} onEdit={() => onEditPassage(item)} />
+        </div>
+      );
+    },
+    [onEditPassage],
+  );
+
   if (passages.length === 0) {
     return <div className="flex justify-center items-center text-stone-400 select-none">Nobody passed here</div>;
   }
@@ -83,6 +89,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
 
   const [passages, setPassages] = useState<Passage[]>([]);
   const [info, setInfo] = useState<ConnectionInfoOutput | null>(null);
+  const [editingPassage, setEditingPassage] = useState<PassageWithSourceTarget | null>(null);
 
   const loadInfo = useCallback(
     async (connection: SolarSystemConnection) => {
@@ -109,7 +116,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
         },
       });
 
-      setPassages(result.passages.sort((a, b) => sortByDate(b.inserted_at, a.inserted_at)));
+      setPassages([...result.passages].sort((a, b) => sortByDate(b.inserted_at, a.inserted_at)));
     },
     [outCommand],
   );
@@ -119,7 +126,7 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
       return [];
     }
 
-    return passages
+    return [...passages]
       .sort((a, b) => sortByDate(b.inserted_at, a.inserted_at))
       .map<PassageWithSourceTarget>(x => ({
         ...x,
@@ -130,15 +137,47 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
 
   useEffect(() => {
     if (!selectedConnection) {
+      setEditingPassage(null);
       return;
     }
+
+    setEditingPassage(null);
     loadInfo(selectedConnection);
     loadPassages(selectedConnection);
-  }, [selectedConnection]);
+  }, [loadInfo, loadPassages, selectedConnection]);
 
   const approximateMass = useMemo(() => {
-    return passages.reduce((acc, x) => acc + parseInt(x.ship.ship_type_info.mass), 0);
+    return passages.reduce((acc, x) => acc + getPassageMass(x), 0);
   }, [passages]);
+
+  const handleEditPassage = useCallback((passage: PassageWithSourceTarget) => {
+    setEditingPassage(passage);
+  }, []);
+
+  const handleHidePassageDialog = useCallback(() => {
+    setEditingPassage(null);
+  }, []);
+
+  const handleSavePassageMass = useCallback(
+    async (mass: number) => {
+      if (!editingPassage) {
+        return;
+      }
+
+      await outCommand({
+        type: OutCommand.updatePassageMass,
+        data: {
+          id: editingPassage.id,
+          mass,
+        },
+      });
+
+      setPassages(prev => prev.map(passage => (passage.id === editingPassage.id ? { ...passage, mass } : passage)));
+      setEditingPassage(prev => (prev ? { ...prev, mass } : prev));
+      handleHidePassageDialog();
+    },
+    [editingPassage, handleHidePassageDialog, outCommand],
+  );
 
   if (!cnInfo) {
     return null;
@@ -201,8 +240,15 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
         {/* separator */}
         <div className="w-full h-px bg-neutral-800 px-0.5"></div>
 
-        <ConnectionPassages passages={preparedPassages} />
+        <ConnectionPassages passages={preparedPassages} onEditPassage={handleEditPassage} />
       </div>
+
+      <PassageMassDialog
+        passage={editingPassage}
+        visible={editingPassage != null}
+        onHide={handleHidePassageDialog}
+        onSave={handleSavePassageMass}
+      />
     </Sidebar>
   );
 };

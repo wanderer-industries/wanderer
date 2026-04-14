@@ -17,12 +17,15 @@ defmodule WandererApp.Api.MapChainPassages do
     define(:read, action: :read)
     define(:by_map_id, action: :by_map_id)
     define(:by_connection, action: :by_connection)
+    define(:update_mass, action: :update_mass)
+    define(:by_id, get_by: [:id], action: :read)
   end
 
   actions do
     default_accept [
       :ship_type_id,
       :ship_name,
+      :mass,
       :solar_system_source_id,
       :solar_system_target_id
     ]
@@ -30,6 +33,12 @@ defmodule WandererApp.Api.MapChainPassages do
     defaults [:create, :read, :destroy]
 
     update :update do
+      accept [:mass]
+      require_atomic? false
+    end
+
+    update :update_mass do
+      accept [:mass]
       require_atomic? false
     end
 
@@ -37,6 +46,7 @@ defmodule WandererApp.Api.MapChainPassages do
       accept [
         :ship_type_id,
         :ship_name,
+        :mass,
         :solar_system_source_id,
         :solar_system_target_id,
         :map_id,
@@ -85,8 +95,10 @@ defmodule WandererApp.Api.MapChainPassages do
         |> WandererApp.Repo.all()
         |> Enum.map(fn [passage, character] ->
           %{
+            id: passage.id,
             ship_type_id: passage.ship_type_id,
             ship_name: passage.ship_name,
+            mass: passage.mass,
             inserted_at: passage.inserted_at,
             character: character
           }
@@ -108,6 +120,7 @@ defmodule WandererApp.Api.MapChainPassages do
 
     attribute :ship_type_id, :integer
     attribute :ship_name, :string
+    attribute :mass, :integer
     attribute :solar_system_source_id, :integer
     attribute :solar_system_target_id, :integer
 
