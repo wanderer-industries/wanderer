@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.99.0](https://github.com/wanderer-industries/wanderer/compare/v1.98.1...v1.99.0) (2026-04-14)
+
+
+
+
+### Features:
+
+* core: Add support for editing passages mass
+
+### Bug Fixes:
+
+* Add update mass button for ship
+
 ## [v1.98.1](https://github.com/wanderer-industries/wanderer/compare/v1.98.0...v1.98.1) (2026-04-10)
 
 
