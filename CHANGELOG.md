@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.99.1](https://github.com/wanderer-industries/wanderer/compare/v1.99.0...v1.99.1) (2026-04-15)
+
+
+
+
+### Bug Fixes:
+
+* add lost passage mass files
+
 ## [v1.99.0](https://github.com/wanderer-industries/wanderer/compare/v1.98.1...v1.99.0) (2026-04-14)
 
 
