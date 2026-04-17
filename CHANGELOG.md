@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.100.0](https://github.com/wanderer-industries/wanderer/compare/v1.99.1...v1.100.0) (2026-04-17)
+
+
+
+
+### Features:
+
+* core: allow wormholes to have multiple destinations
+
+* make C729 wormholes static to Pochven systems
+
 ## [v1.99.1](https://github.com/wanderer-industries/wanderer/compare/v1.99.0...v1.99.1) (2026-04-15)
 
 
