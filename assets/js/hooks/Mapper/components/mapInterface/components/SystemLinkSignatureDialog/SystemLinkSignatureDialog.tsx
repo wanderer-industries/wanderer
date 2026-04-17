@@ -8,7 +8,7 @@ import {
     WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
-import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
@@ -16,7 +16,7 @@ import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useSystemSignaturesData } from '../../widgets/SystemSignatures/hooks/useSystemSignaturesData';
 
-const K162_SIGNATURE_TYPE = WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME['K162'].shortName;
+const MULTI_DEST_TYPES = MULTI_DEST_WHS.map((type: string) => WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME[type].shortName);
 
 interface SystemLinkSignatureDialogProps {
   data: CommandLinkSignatureToSystem;
@@ -29,9 +29,9 @@ export const LINK_SIGNTATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
 };
 
-// Extend the SignatureCustomInfo type to include k162Type
+// Extend the SignatureCustomInfo type to include destType
 interface ExtendedSignatureCustomInfo {
-  k162Type?: string;
+  destType?: string;
   isEOL?: boolean;
   [key: string]: unknown;
 }
@@ -80,23 +80,22 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         return true;
       }
 
-      if (signature.type === K162_SIGNATURE_TYPE) {
-        // Parse the custom info to see if the user has specified what class this K162 leads to
+      if (MULTI_DEST_TYPES.includes(signature.type)) {
+        // Parse the custom info to see if the user has specified what class
+        // this wormhole leads to
         const customInfo = parseSignatureCustomInfo(signature.custom_info) as ExtendedSignatureCustomInfo;
 
-        // If the user has specified a k162Type for this K162
-        if (customInfo.k162Type) {
-          // Get the K162 type information
-          const k162TypeInfo = K162_TYPES_MAP[customInfo.k162Type];
+        // If the user has specified a destType for this wormhole
+        if (customInfo.destType) {
+          // Get the destination type information
+          const destinationInfo = DEST_TYPES_MAP_MAP[signature.type][customInfo.destType];
 
-          if (k162TypeInfo) {
-            // Check if the k162Type matches our target system class
-            return k162TypeInfo.value.includes(targetSystemClassGroup);
+          if (destinationInfo) {
+            // Check if the destType matches our target system class
+            const isDestMatch = destinationInfo.value.includes(targetSystemClassGroup);
+            return isDestMatch;
           }
         }
-
-        // If no k162Type is specified or we couldn't find type info, allow it
-        return true;
       }
 
       // Find the wormhole data for this signature type
@@ -105,11 +104,12 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         return true; // If we don't know the destination, don't filter it out
       }
 
-      // Get the destination system class from the wormhole data
+      // Get the destination system classes from the wormhole data
       const destinationClass = wormholeData.dest;
 
-      // Check if the destination class matches the target system class
-      const isMatch = destinationClass === targetSystemClassGroup;
+      // If destinationClass is null, then it's K162 and allow, else
+      // check if any of the destination classes matches the target system class
+      const isMatch = destinationClass == null || destinationClass.includes(targetSystemClassGroup);
       return isMatch;
     },
     [targetSystemClassGroup, wormholes],

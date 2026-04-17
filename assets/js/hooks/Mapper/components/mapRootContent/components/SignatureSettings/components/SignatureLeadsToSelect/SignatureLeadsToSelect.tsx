@@ -77,7 +77,7 @@ export const SignatureLeadsToSelect = ({ name, defaultValue = '' }: SignatureLea
           }
 
           const { id: whType } = WORMHOLES_ADDITIONAL_INFO_BY_CLASS_ID[systemStatic.system_class];
-          return whInfo.dest === whType;
+          return whInfo.dest.includes(whType);
         })
         .map(x => ({ value: x })),
     ];

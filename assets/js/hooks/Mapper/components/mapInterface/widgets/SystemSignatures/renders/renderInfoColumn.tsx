@@ -2,10 +2,10 @@ import { SystemViewStandalone, TooltipPosition, WHClassView } from '@/hooks/Mapp
 import { MassState, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 
-import { renderK162Type } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureK162TypeSelect';
+import { renderDestinationType } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureDestinationTypeSelect';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 
-import { K162_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
+import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP } from '@/hooks/Mapper/constants.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo.ts';
 import clsx from 'clsx';
 import { renderName } from './renderName.tsx';
@@ -14,7 +14,7 @@ export const renderInfoColumn = (row: SystemSignature) => {
   if (!row.group || row.group === SignatureGroup.Wormhole) {
     const customInfo = parseSignatureCustomInfo(row.custom_info);
 
-    const k162TypeOption = customInfo.k162Type ? K162_TYPES_MAP[customInfo.k162Type] : null;
+    const destTypeOption = customInfo.destType ? ALL_DEST_TYPES_MAP[customInfo.destType] : null;
 
     return (
       <div className="flex justify-start items-center gap-[4px]">
@@ -46,14 +46,17 @@ export const renderInfoColumn = (row: SystemSignature) => {
           <WHClassView
             className="text-[11px]"
             classNameWh="!text-[11px] !font-bold"
-            hideWhClass={!!row.linked_system}
+            hideWhClass={!!destTypeOption || !!row.linked_system}
             whClassName={row.type}
             noOffset
             useShortTitle
           />
         )}
 
-        {!row.linked_system && row.type === 'K162' && k162TypeOption && renderK162Type(k162TypeOption)}
+        {!row.linked_system &&
+          MULTI_DEST_WHS.includes(row.type) &&
+          destTypeOption &&
+          renderDestinationType(destTypeOption)}
 
         {row.linked_system && (
           <>

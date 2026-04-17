@@ -1,5 +1,5 @@
 import { WORMHOLE_CLASS_STYLES, WORMHOLES_ADDITIONAL_INFO } from '@/hooks/Mapper/components/map/constants';
-import { K162_TYPES_MAP } from '@/hooks/Mapper/constants';
+import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP } from '@/hooks/Mapper/constants';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes';
 import { SystemSignature } from '@/hooks/Mapper/types/signatures';
@@ -33,14 +33,14 @@ export function resolveSignatureFillVar(
 ): string {
   const customInfo = parseSignatureCustomInfo(signature.custom_info);
 
-  // K162 override: use the k162Type to look up the real destination class
-  if (signature.type === 'K162' && customInfo.k162Type) {
-    const k162Option = K162_TYPES_MAP[customInfo.k162Type];
-    if (k162Option) {
-      const k162Data = wormholesData[k162Option.whClassName];
-      const k162Class = k162Data ? WORMHOLES_ADDITIONAL_INFO[k162Data.dest] : null;
-      if (k162Class) {
-        const className = WORMHOLE_CLASS_STYLES[k162Class.wormholeClassID];
+  // Wormholes with multiple exit classes (K162, C729, ...) override: use the destType to look up the real destination class
+  if (MULTI_DEST_WHS.includes(signature.type) && customInfo.destType) {
+    const destTypeOption = ALL_DEST_TYPES_MAP[customInfo.destType];
+    if (destTypeOption) {
+      const whData = wormholesData[destTypeOption.whClassName];
+      const whClass = whData?.dest?.length === 1 ? WORMHOLES_ADDITIONAL_INFO[whData.dest[0]] : null;
+      if (whClass) {
+        const className = WORMHOLE_CLASS_STYLES[whClass.wormholeClassID];
         if (className && CLASS_NAME_TO_CSS_VAR[className]) {
           return CLASS_NAME_TO_CSS_VAR[className];
         }
@@ -53,7 +53,7 @@ export function resolveSignatureFillVar(
   const whData = wormholesData[signature.type];
   if (!whData) return DEFAULT_FILL;
 
-  const whClass = WORMHOLES_ADDITIONAL_INFO[whData.dest];
+  const whClass = whData?.dest?.length == 1 ? WORMHOLES_ADDITIONAL_INFO[whData.dest[0]] : null;
   if (!whClass) return DEFAULT_FILL;
 
   const className = WORMHOLE_CLASS_STYLES[whClass.wormholeClassID];

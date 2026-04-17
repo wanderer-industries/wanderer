@@ -5,7 +5,7 @@ export enum Respawn {
 }
 
 export type WormholeDataRaw = {
-  dest: string;
+  dest: string[];
   id: number;
   lifetime: string;
   mass_regen: number;
