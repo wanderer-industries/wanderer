@@ -79,7 +79,7 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
           group: "Wormhole",
           linked_system_id: 30_000_143,
           custom_info:
-            Jason.encode!(%{"time_status" => 1, "mass_status" => 1, "k162Type" => nil})
+            Jason.encode!(%{"time_status" => 1, "mass_status" => 1, "destType" => nil})
         })
 
       # find_forward_signature looks in the target system (system_b.id)
@@ -223,7 +223,7 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
           type: "K162",
           group: "Wormhole",
           custom_info:
-            Jason.encode!(%{"time_status" => 0, "mass_status" => 0, "k162Type" => "C2"})
+            Jason.encode!(%{"time_status" => 0, "mass_status" => 0, "destType" => "C2"})
         })
 
       # Simulate what the linking code does: update K162's custom_info
@@ -256,8 +256,8 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
       decoded = Jason.decode!(updated_sig.custom_info)
       assert decoded["time_status"] == 1
       assert decoded["mass_status"] == 1
-      # k162Type should be preserved
-      assert decoded["k162Type"] == "C2"
+      # destType should be preserved
+      assert decoded["destType"] == "C2"
     end
 
     test "K162 custom_info update preserves existing fields", %{map: map} do
@@ -274,7 +274,7 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
             Jason.encode!(%{
               "time_status" => 0,
               "mass_status" => 0,
-              "k162Type" => "C5",
+              "destType" => "C5",
               "extra_field" => "preserved"
             })
         })
@@ -310,7 +310,7 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
       # mass_status should remain unchanged (nil signature_mass_status)
       assert decoded["mass_status"] == 0
       # Other fields should be preserved
-      assert decoded["k162Type"] == "C5"
+      assert decoded["destType"] == "C5"
       assert decoded["extra_field"] == "preserved"
     end
 
