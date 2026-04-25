@@ -213,9 +213,34 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       solar_system_target_id
     )
     |> case do
-      {:ok, %{id: connection_id}} ->
+      {:ok, %{id: connection_id} = connection} ->
         connection_mark_eol_time = get_connection_mark_eol_time(map_id, connection_id, nil)
-        {:ok, %{marl_eol_time: connection_mark_eol_time}}
+        locked_info = get_connection_locked_info(map_id, connection_id)
+
+        locked_by_name =
+          case locked_info do
+            nil ->
+              nil
+
+            %{locked_by_id: locked_by_id} ->
+              case WandererApp.Api.Character.by_id(locked_by_id) do
+                {:ok, character} -> character.name
+                _ -> nil
+              end
+          end
+
+        locked_at =
+          case locked_info do
+            nil -> nil
+            %{locked_at: locked_at} -> locked_at
+          end
+
+        {:ok,
+         %{
+           marl_eol_time: connection_mark_eol_time,
+           locked_at: locked_at,
+           locked_by_name: locked_by_name
+         }}
 
       _ ->
         {:error, :not_found}
@@ -293,8 +318,27 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   def update_connection_locked(
         map_id,
         connection_update
-      ),
-      do: update_connection(map_id, :update_locked, [:locked], connection_update)
+      ) do
+    update_connection(map_id, :update_locked, [:locked], connection_update, fn
+      %{locked: old_locked}, %{id: connection_id, locked: new_locked} = _ ->
+        case new_locked do
+          true ->
+            if not old_locked do
+              character_id = Map.get(connection_update, :character_id)
+
+              WandererApp.Cache.put(
+                "map_#{map_id}:conn_#{connection_id}:locked_info",
+                %{locked_by_id: character_id, locked_at: DateTime.utc_now()}
+              )
+            end
+
+          _ ->
+            if old_locked do
+              WandererApp.Cache.delete("map_#{map_id}:conn_#{connection_id}:locked_info")
+            end
+        end
+    end)
+  end
 
   def update_connection_custom_info(
         map_id,
@@ -954,6 +998,16 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     end
   end
 
+  def get_connection_locked_info(map_id, connection_id) do
+    case WandererApp.Cache.get("map_#{map_id}:conn_#{connection_id}:locked_info") do
+      nil ->
+        nil
+
+      value ->
+        value
+    end
+  end
+
   defp find_solar_system_jump(from_solar_system_id, to_solar_system_id) do
     case WandererApp.CachedInfo.get_solar_system_jump(from_solar_system_id, to_solar_system_id) do
       {:ok, jump} when not is_nil(jump) -> {:ok, [jump]}
@@ -1033,6 +1087,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         })
 
         WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:start_time")
+        WandererApp.Cache.delete("map_#{map_id}:conn_#{connection.id}:locked_info")
 
         # Clear linked_sig_eve_id on target system when connection is deleted
         # This ensures old signatures become orphaned and won't affect future connections
