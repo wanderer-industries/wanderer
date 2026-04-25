@@ -240,6 +240,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         solar_system_target_id: solar_system_target_id_int
       }
       |> Map.put_new(key_atom, value)
+      |> Map.put(:character_id, main_character_id)
     ])
 
     {:noreply, socket}
