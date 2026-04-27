@@ -5,5 +5,10 @@ export const parseSignatureCustomInfo = (str: string | undefined): SignatureCust
     return {};
   }
 
-  return JSON.parse(str);
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.warn('Failed to parse signature custom_info', e);
+    return {};
+  }
 };

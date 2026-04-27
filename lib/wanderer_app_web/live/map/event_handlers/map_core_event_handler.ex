@@ -232,7 +232,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       ) do
     settings =
       user_settings_form
-      |> Map.take(["select_on_spash", "link_signature_on_splash", "delete_connection_with_sigs"])
+      |> Map.take([
+        "select_on_spash",
+        "link_signature_on_splash",
+        "delete_connection_with_sigs",
+        "bookmark_name_format"
+      ])
       |> Jason.encode!()
 
     {:ok, user_settings} =

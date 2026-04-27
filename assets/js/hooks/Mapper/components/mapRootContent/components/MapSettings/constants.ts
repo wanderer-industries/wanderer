@@ -6,12 +6,14 @@ export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
   [UserSettingsRemoteProps.select_on_spash]: false,
   [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
+  [UserSettingsRemoteProps.bookmark_name_format]: '',
 };
 
 export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.link_signature_on_splash,
   UserSettingsRemoteProps.select_on_spash,
   UserSettingsRemoteProps.delete_connection_with_sigs,
+  UserSettingsRemoteProps.bookmark_name_format,
 ];
 
 // export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
@@ -45,6 +47,13 @@ export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
     prop: InterfaceStoredSettingsProps.isShowUnsplashedSignatures,
     label: 'Show unsplashed signatures',
     type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.bookmark_name_format,
+    label: 'Bookmark Name Format',
+    type: 'text',
+    placeholder: 'e.g. {i} {sig_letters} {dest_type} {size} {time_status} {mass_status}',
+    helperText: 'Variables: {i}, {sig_letters}, {sig}, {dest_type}, {type}, {size}, {mass}, {time_status}, {mass_status}, {temporary_name}, {description}',
   },
 ];
 

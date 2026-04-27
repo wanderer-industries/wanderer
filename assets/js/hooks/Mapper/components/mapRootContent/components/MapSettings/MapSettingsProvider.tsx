@@ -21,6 +21,7 @@ import {
 import { OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
@@ -99,6 +100,21 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
               onChange={e => handleSettingChange(item.prop, e.value)}
               placeholder="Select a theme"
             />
+          </div>
+        );
+      }
+
+      if (item.type === 'text') {
+        return (
+          <div key={item.prop.toString()} className="flex flex-col gap-1 w-full mt-2 mb-2">
+            {item.label && <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}</label>}
+            <InputText
+              className="text-sm w-full"
+              defaultValue={(currentValue as string) || ''}
+              onBlur={e => handleSettingChange(item.prop, e.target.value)}
+              placeholder={item.placeholder}
+            />
+            {item.helperText && <small className="text-gray-400 text-xs mt-1">{item.helperText}</small>}
           </div>
         );
       }

@@ -10,6 +10,8 @@ import {
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
+import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
@@ -23,7 +25,7 @@ interface SystemLinkSignatureDialogProps {
   setVisible: (visible: boolean) => void;
 }
 
-export const LINK_SIGNTATURE_SETTINGS: SignatureSettingsType = {
+export const LINK_SIGNATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.COSMIC_SIGNATURE]: true,
   [SETTINGS_KEYS.WORMHOLE]: true,
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
@@ -39,7 +41,7 @@ interface ExtendedSignatureCustomInfo {
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const {
     outCommand,
-    data: { wormholes },
+    data: { wormholes, systemSignatures, systems, wormholesData },
   } = useMapRootState();
 
   const ref = useRef({ outCommand });
@@ -53,17 +55,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
   // Get the system class group for the target system
   const targetSystemClassGroup = useMemo(() => {
     if (!targetSystemInfo) return null;
-    const systemClassId = targetSystemInfo.system_class;
-
-    const systemClassKey = Object.keys(SOLAR_SYSTEM_CLASS_IDS).find(
-      key => SOLAR_SYSTEM_CLASS_IDS[key as keyof typeof SOLAR_SYSTEM_CLASS_IDS] === systemClassId,
-    );
-
-    if (!systemClassKey) return null;
-
-    return (
-      SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS[systemClassKey as keyof typeof SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS] || null
-    );
+    return getSystemClassGroup(targetSystemInfo.system_class);
   }, [targetSystemInfo]);
 
   const handleHide = useCallback(() => {
@@ -115,13 +107,62 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     [targetSystemClassGroup, wormholes],
   );
 
+  const { signatures } = useSystemSignaturesData({
+    systemId: `${data.solar_system_source}`,
+    settings: LINK_SIGNATURE_SETTINGS,
+  });
+
   const handleSelect = useCallback(
-    (signature: SystemSignature) => {
+    async (signature: SystemSignature) => {
       if (!signature) {
         return;
       }
 
       const { outCommand } = ref.current;
+
+      let currentSettings = null;
+      try {
+        const res = (await outCommand({
+          type: OutCommand.getUserSettings,
+          data: null,
+        })) as any;
+        currentSettings = res?.user_settings;
+      } catch (e) {
+        console.warn('Failed to fetch user settings', e);
+      }
+
+      if (signature.group === SignatureGroup.Wormhole && currentSettings?.bookmark_name_format) {
+        const info = parseSignatureCustomInfo(signature.custom_info);
+        let bookmarkIndex = info.bookmark_index;
+
+        if (!bookmarkIndex) {
+          const sysSigs = systemSignatures[data.solar_system_source] || [];
+          bookmarkIndex = calculateBookmarkIndex(sysSigs, signature.eve_id);
+          info.bookmark_index = bookmarkIndex;
+        }
+
+        const formattedStr = formatBookmarkName(
+          currentSettings.bookmark_name_format,
+          signature,
+          targetSystemClassGroup,
+          bookmarkIndex,
+          wormholesData,
+        );
+        
+        await copyToClipboard(formattedStr);
+
+        if (!parseSignatureCustomInfo(signature.custom_info).bookmark_index) {
+          await outCommand({
+            type: OutCommand.updateSignatures,
+            data: {
+              system_id: `${data.solar_system_source}`,
+              updated: [{ ...signature, custom_info: JSON.stringify(info) }],
+              removed: [],
+              deleteTimeout: 0,
+            },
+          });
+        }
+      }
 
       outCommand({
         type: OutCommand.linkSignatureToSystem,
@@ -133,13 +174,9 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
       setVisible(false);
     },
-    [data, setVisible],
+    [data, setVisible, signatures, targetSystemClassGroup, systemSignatures, systems, wormholesData],
   );
 
-  const { signatures } = useSystemSignaturesData({
-    systemId: `${data.solar_system_source}`,
-    settings: LINK_SIGNTATURE_SETTINGS,
-  });
 
   useEffect(() => {
     if (!targetSystemDynamicInfo) {
@@ -160,7 +197,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         systemId={`${data.solar_system_source}`}
         signatures={signatures}
         hasUnsupportedLanguage={false}
-        settings={LINK_SIGNTATURE_SETTINGS}
+        settings={LINK_SIGNATURE_SETTINGS}
         hideLinkedSignatures
         selectable
         onSelect={handleSelect}

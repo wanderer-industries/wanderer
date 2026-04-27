@@ -29,9 +29,11 @@ export type GroupType = {
 
 export type SignatureCustomInfo = {
   destType?: string;
+  k162Type?: string;
   time_status?: number;
   isCrit?: boolean;
   mass_status?: number;
+  bookmark_index?: number;
 };
 
 export type SystemSignature = {
