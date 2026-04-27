@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     net-tools \
     procps \
+    netcat-traditional \
     # Optionally add any other tools you need, e.g. vim, wget...
     && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y --no-install-recommends nodejs inotify-tools \
