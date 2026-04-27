@@ -131,19 +131,23 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         console.warn('Failed to fetch user settings', e);
       }
 
+      let updatedSignature = signature;
+
       if (signature.group === SignatureGroup.Wormhole && currentSettings?.bookmark_name_format) {
         const info = parseSignatureCustomInfo(signature.custom_info);
         let bookmarkIndex = info.bookmark_index;
 
         if (!bookmarkIndex) {
-          const sysSigs = systemSignatures[data.solar_system_source] || [];
-          bookmarkIndex = calculateBookmarkIndex(sysSigs, signature.eve_id);
-          info.bookmark_index = bookmarkIndex;
+          const calculated = calculateBookmarkIndex(systemSignatures, data.solar_system_source.toString(), signature.eve_id);
+          bookmarkIndex = calculated.index;
+          info.bookmark_index = calculated.index;
+          info.bookmark_index_chained = calculated.chained;
+          updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
         }
 
         const formattedStr = formatBookmarkName(
           currentSettings.bookmark_name_format,
-          signature,
+          updatedSignature,
           targetSystemClassGroup,
           bookmarkIndex,
           wormholesData,
@@ -151,12 +155,12 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         
         await copyToClipboard(formattedStr);
 
-        if (!parseSignatureCustomInfo(signature.custom_info).bookmark_index) {
+        if (updatedSignature !== signature) {
           await outCommand({
             type: OutCommand.updateSignatures,
             data: {
               system_id: `${data.solar_system_source}`,
-              updated: [{ ...signature, custom_info: JSON.stringify(info) }],
+              updated: [updatedSignature],
               removed: [],
               deleteTimeout: 0,
             },
@@ -164,7 +168,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         }
       }
 
-      outCommand({
+      await outCommand({
         type: OutCommand.linkSignatureToSystem,
         data: {
           ...data,

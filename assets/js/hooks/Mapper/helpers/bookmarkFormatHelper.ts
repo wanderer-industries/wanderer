@@ -4,7 +4,7 @@ import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes';
 import { WORMHOLES_ADDITIONAL_INFO, SHIP_MASSES_SIZE, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants';
-import { ALL_DEST_TYPES_MAP } from '@/hooks/Mapper/constants';
+import { ALL_DEST_TYPES_MAP, MULTI_DEST_WHS } from '@/hooks/Mapper/constants';
 import { ShipSizeStatus } from '@/hooks/Mapper/types/connection';
 
 const getTimeStatusString = (status?: TimeStatus): string => {
@@ -41,11 +41,22 @@ const getMassStatusString = (status?: MassState): string => {
 
 const DEST_CLASS_OVERRIDES: Record<string, string> = {
   h: 'HS',
+  hs: 'HS',
+  'hi-sec': 'HS',
   l: 'LS',
+  ls: 'LS',
+  'low-sec': 'LS',
   n: 'NS',
+  ns: 'NS',
+  'null-sec': 'NS',
   t: 'Thera',
+  thera: 'Thera',
   d: 'Drifter',
-  p: 'Pochven'
+  drifter: 'Drifter',
+  p: 'Pochven',
+  pochven: 'Pochven',
+  'c1/c2/c3': 'C1/C2/C3',
+  'c4/c5': 'C4/C5'
 };
 
 const formatDestString = (dest: string | null | undefined): string => {
@@ -58,20 +69,46 @@ const formatDestString = (dest: string | null | undefined): string => {
   return dest.charAt(0).toUpperCase() + dest.slice(1);
 };
 
-export const calculateBookmarkIndex = (signatures: SystemSignature[], currentEveId: string): number => {
-  const indices = signatures
+export const calculateBookmarkIndex = (
+  systemSignatures: Record<string, SystemSignature[]>,
+  currentSystemId: string,
+  currentEveId: string,
+): { index: number; chained: string } => {
+  let parentBookmarkIndex: string | undefined;
+
+  for (const [sysId, sigs] of Object.entries(systemSignatures)) {
+    if (sysId === currentSystemId.toString()) continue;
+
+    const parentSigs = sigs.filter(sig => sig.linked_system?.solar_system_id?.toString() === currentSystemId.toString());
+    for (const parentSig of parentSigs) {
+      const parentInfo = parseSignatureCustomInfo(parentSig.custom_info);
+      if (parentInfo.bookmark_index_chained != null) {
+        if (!parentBookmarkIndex || String(parentInfo.bookmark_index_chained).length < parentBookmarkIndex.length) {
+          parentBookmarkIndex = String(parentInfo.bookmark_index_chained);
+        }
+      } else if (parentInfo.bookmark_index != null) {
+        if (!parentBookmarkIndex || String(parentInfo.bookmark_index).length < parentBookmarkIndex.length) {
+          parentBookmarkIndex = String(parentInfo.bookmark_index);
+        }
+      }
+    }
+  }
+
+  const currentSigs = systemSignatures[currentSystemId.toString()] || [];
+
+  const existingIndices = currentSigs
     .filter(sig => sig.eve_id !== currentEveId)
-    .map(sig => {
-      const info = parseSignatureCustomInfo(sig.custom_info);
-      return info.bookmark_index;
-    })
+    .map(sig => parseSignatureCustomInfo(sig.custom_info).bookmark_index)
     .filter((i): i is number => typeof i === 'number' && i > 0);
 
   let i = 1;
-  while (indices.includes(i)) {
+  while (existingIndices.includes(i)) {
     i++;
   }
-  return i;
+
+  const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${i}` : `${i}`;
+
+  return { index: i, chained };
 };
 
 export const formatBookmarkName = (
@@ -87,6 +124,9 @@ export const formatBookmarkName = (
   // Replace {i}
   result = result.replace(/\{i\}/g, () => bookmarkIndex.toString());
 
+  // Replace {I}
+  result = result.replace(/\{I\}/g, () => info.bookmark_index_chained || bookmarkIndex.toString());
+
   // Replace {sig_letters} (first 3 chars of eve_id)
   const sigLetters = signature.eve_id.substring(0, 3).toUpperCase();
   result = result.replace(/\{sig_letters\}/g, () => sigLetters);
@@ -99,6 +139,11 @@ export const formatBookmarkName = (
   let destTypeStr = '';
   if (destSystemClass) {
     destTypeStr = destSystemClass;
+  } else if (signature.type && MULTI_DEST_WHS.includes(signature.type) && info.destType) {
+    const destOption = ALL_DEST_TYPES_MAP[info.destType];
+    if (destOption) {
+      destTypeStr = destOption.label;
+    }
   } else if (signature.type === 'K162' && info.k162Type) {
     const k162Option = ALL_DEST_TYPES_MAP[info.k162Type];
     if (k162Option) {
@@ -121,7 +166,14 @@ export const formatBookmarkName = (
   let sizeStr = '';
   let massStr = '';
   let whDataForSize: WormholeDataRaw | null = null;
-  if (signature.type === 'K162' && info.k162Type) {
+  
+  if (signature.type && MULTI_DEST_WHS.includes(signature.type) && info.destType) {
+    const destOption = ALL_DEST_TYPES_MAP[info.destType];
+    if (destOption && destOption.whClassName) {
+      const whName = destOption.whClassName.split('_')[0];
+      whDataForSize = wormholesData[whName];
+    }
+  } else if (signature.type === 'K162' && info.k162Type) {
     const k162Option = ALL_DEST_TYPES_MAP[info.k162Type];
     if (k162Option && k162Option.whClassName) {
       const whName = k162Option.whClassName.split('_')[0];

@@ -34,6 +34,7 @@ export type SignatureCustomInfo = {
   isCrit?: boolean;
   mass_status?: number;
   bookmark_index?: number;
+  bookmark_index_chained?: string;
 };
 
 export type SystemSignature = {

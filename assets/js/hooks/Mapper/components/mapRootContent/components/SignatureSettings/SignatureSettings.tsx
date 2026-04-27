@@ -127,13 +127,14 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
         }
 
         if (currentSettings?.bookmark_name_format) {
-          const sysSigs = systemSignatures[systemId] || [];
           const info = parseSignatureCustomInfo(out.custom_info);
 
           let bookmarkIndex = info.bookmark_index;
           if (!bookmarkIndex) {
-            bookmarkIndex = calculateBookmarkIndex(sysSigs, out.eve_id);
-            info.bookmark_index = bookmarkIndex;
+            const calculated = calculateBookmarkIndex(systemSignatures, systemId, out.eve_id);
+            bookmarkIndex = calculated.index;
+            info.bookmark_index = calculated.index;
+            info.bookmark_index_chained = calculated.chained;
             out.custom_info = JSON.stringify(info);
           }
 

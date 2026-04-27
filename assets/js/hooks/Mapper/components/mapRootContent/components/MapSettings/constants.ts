@@ -53,7 +53,7 @@ export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
     label: 'Bookmark Name Format',
     type: 'text',
     placeholder: 'e.g. {i} {sig_letters} {dest_type} {size} {time_status} {mass_status}',
-    helperText: 'Variables: {i}, {sig_letters}, {sig}, {dest_type}, {type}, {size}, {mass}, {time_status}, {mass_status}, {temporary_name}, {description}',
+    helperText: 'Variables: {i}, {I}, {sig_letters}, {sig}, {dest_type}, {type}, {size}, {mass}, {time_status}, {mass_status}, {temporary_name}, {description}',
   },
 ];
 
