@@ -239,7 +239,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         "bookmark_name_format",
         "bookmark_wormholes_start_at_zero",
         "bookmark_auto_copy",
-        "bookmark_auto_temp_name"
+        "bookmark_auto_temp_name",
+        "system_auto_tag",
+        "system_custom_label_name"
       ])
       |> Jason.encode!()
 

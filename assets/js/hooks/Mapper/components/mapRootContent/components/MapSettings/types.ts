@@ -8,6 +8,8 @@ export enum UserSettingsRemoteProps {
   bookmark_wormholes_start_at_zero = 'bookmark_wormholes_start_at_zero',
   bookmark_auto_copy = 'bookmark_auto_copy',
   bookmark_auto_temp_name = 'bookmark_auto_temp_name',
+  system_auto_tag = 'system_auto_tag',
+  system_custom_label_name = 'system_custom_label_name',
 }
 
 export type UserSettingsRemote = {
@@ -18,6 +20,8 @@ export type UserSettingsRemote = {
   bookmark_wormholes_start_at_zero: boolean;
   bookmark_auto_copy: boolean;
   bookmark_auto_temp_name: string;
+  system_auto_tag: string;
+  system_custom_label_name: string;
 };
 
 export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;

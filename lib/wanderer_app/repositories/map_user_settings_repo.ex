@@ -6,7 +6,9 @@ defmodule WandererApp.MapUserSettingsRepo do
     "link_signature_on_splash" => false,
     "delete_connection_with_sigs" => false,
     "primary_character_id" => nil,
-    "bookmark_name_format" => ""
+    "bookmark_name_format" => "",
+    "system_auto_tag" => "",
+    "system_custom_label_name" => ""
   }
 
   def get(map_id, user_id) do

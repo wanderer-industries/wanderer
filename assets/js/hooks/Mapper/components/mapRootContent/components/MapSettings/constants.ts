@@ -10,7 +10,17 @@ export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.bookmark_wormholes_start_at_zero]: false,
   [UserSettingsRemoteProps.bookmark_auto_copy]: true,
   [UserSettingsRemoteProps.bookmark_auto_temp_name]: '',
+  [UserSettingsRemoteProps.system_auto_tag]: '',
+  [UserSettingsRemoteProps.system_custom_label_name]: '',
 };
+
+export const AUTO_FORMAT_OPTIONS = [
+  { label: 'Disabled', value: '' },
+  { label: 'Numeric index (1, 2, 3)', value: 'index' },
+  { label: 'Letter index (A, B, C)', value: 'index_letter' },
+  { label: 'Numeric chain (11, 12, 121)', value: 'chain_index' },
+  { label: 'Letter chain (A, A1, A21)', value: 'chain_index_letters' },
+];
 
 export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.link_signature_on_splash,
@@ -20,6 +30,8 @@ export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
   UserSettingsRemoteProps.bookmark_auto_copy,
   UserSettingsRemoteProps.bookmark_auto_temp_name,
+  UserSettingsRemoteProps.system_auto_tag,
+  UserSettingsRemoteProps.system_custom_label_name,
 ];
 
 // export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
@@ -71,13 +83,19 @@ export const BOOKMARKS_SETTINGS_PROPS: SettingsListItem[] = [
     prop: UserSettingsRemoteProps.bookmark_auto_temp_name,
     label: 'Auto-fill wormhole temporary name',
     type: 'dropdown',
-    options: [
-      { label: 'Disabled', value: '' },
-      { label: 'Numeric index (1, 2, 3)', value: 'index' },
-      { label: 'Letter index (A, B, C)', value: 'index_letter' },
-      { label: 'Numeric chain (11, 12, 121)', value: 'chain_index' },
-      { label: 'Letter chain (A, A1, A21)', value: 'chain_index_letters' },
-    ],
+    options: AUTO_FORMAT_OPTIONS,
+  },
+  {
+    prop: UserSettingsRemoteProps.system_auto_tag,
+    label: 'Auto-tag jumped system',
+    type: 'dropdown',
+    options: AUTO_FORMAT_OPTIONS,
+  },
+  {
+    prop: UserSettingsRemoteProps.system_custom_label_name,
+    label: 'Auto-label jumped system',
+    type: 'dropdown',
+    options: AUTO_FORMAT_OPTIONS,
   },
 ];
 
