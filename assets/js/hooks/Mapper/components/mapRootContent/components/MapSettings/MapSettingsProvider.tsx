@@ -27,7 +27,9 @@ import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
+  updateSetting: (prop: keyof UserSettings, value: boolean | string) => Promise<void>;
   setUserRemoteSettings: Dispatch<SetStateAction<UserSettingsRemote>>;
+  settings: UserSettings;
 };
 
 const MapSettingsContext = createContext<MapSettingsContextType | undefined>(undefined);
@@ -125,7 +127,7 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   );
 
   return (
-    <MapSettingsContext.Provider value={{ renderSettingItem, setUserRemoteSettings }}>
+    <MapSettingsContext.Provider value={{ renderSettingItem, updateSetting: handleSettingChange, setUserRemoteSettings, settings: mergedSettings }}>
       {children}
     </MapSettingsContext.Provider>
   );

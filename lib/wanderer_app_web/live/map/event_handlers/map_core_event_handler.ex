@@ -236,7 +236,10 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         "select_on_spash",
         "link_signature_on_splash",
         "delete_connection_with_sigs",
-        "bookmark_name_format"
+        "bookmark_name_format",
+        "bookmark_wormholes_start_at_zero",
+        "bookmark_auto_copy",
+        "bookmark_auto_temp_name"
       ])
       |> Jason.encode!()
 

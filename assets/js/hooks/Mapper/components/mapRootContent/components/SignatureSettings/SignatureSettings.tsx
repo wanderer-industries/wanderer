@@ -5,7 +5,7 @@ import {
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
-import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
@@ -126,14 +126,20 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           console.warn('Failed to fetch user settings', e);
         }
 
-        if (currentSettings?.bookmark_name_format) {
+        if (currentSettings?.bookmark_name_format || currentSettings?.bookmark_auto_temp_name) {
           const info = parseSignatureCustomInfo(out.custom_info);
 
           let bookmarkIndex = info.bookmark_index;
-          if (!bookmarkIndex) {
+          if (bookmarkIndex == null) {
             const currentSystem = systems.find((s: any) => s.id === systemId);
             const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
-            const calculated = calculateBookmarkIndex(systemSignatures, systemId, solarSystemIdStr, out.eve_id);
+            const calculated = calculateBookmarkIndex(
+              systemSignatures,
+              systemId,
+              solarSystemIdStr,
+              out.eve_id,
+              currentSettings?.bookmark_wormholes_start_at_zero,
+            );
             bookmarkIndex = calculated.index;
             info.bookmark_index = calculated.index;
             info.bookmark_index_chained = calculated.chained;
@@ -141,18 +147,42 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
             out.custom_info = JSON.stringify(info);
           }
 
-          const targetSystem = values.linked_system ? systems.find((s: any) => s.id === values.linked_system) : null;
-          const targetSystemClassGroup = targetSystem?.system_static_info ? getSystemClassGroup(targetSystem.system_static_info.system_class) : null;
+          if (currentSettings?.bookmark_auto_temp_name && !out.temporary_name) {
+            let autoName = '';
+            switch (currentSettings.bookmark_auto_temp_name) {
+              case 'index':
+                autoName = bookmarkIndex.toString();
+                break;
+              case 'index_letter':
+                autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
+                break;
+              case 'chain_index':
+                autoName = info.bookmark_index_chained || bookmarkIndex.toString();
+                break;
+              case 'chain_index_letters':
+                autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
+                break;
+            }
+            if (autoName) {
+              out.temporary_name = autoName;
+            }
+          }
 
-          const formattedStr = formatBookmarkName(
-            currentSettings.bookmark_name_format,
-            out,
-            targetSystemClassGroup,
-            bookmarkIndex,
-            wormholesData,
-          );
-          
-          await copyToClipboard(formattedStr);
+          if (currentSettings?.bookmark_name_format && currentSettings?.bookmark_auto_copy !== false) {
+            const targetSystem = values.linked_system ? systems.find((s: any) => s.id === values.linked_system) : null;
+            const targetSystemClassGroup = targetSystem?.system_static_info ? getSystemClassGroup(targetSystem.system_static_info.system_class) : null;
+
+            const formattedStr = formatBookmarkName(
+              currentSettings.bookmark_name_format,
+              out,
+              targetSystemClassGroup,
+              bookmarkIndex,
+              wormholesData,
+              currentSettings.bookmark_wormholes_start_at_zero
+            );
+            
+            await copyToClipboard(formattedStr);
+          }
         }
       }
 

@@ -69,7 +69,10 @@ const formatDestString = (dest: string | null | undefined): string => {
   return dest.charAt(0).toUpperCase() + dest.slice(1);
 };
 
-const numberToLetters = (num: number): string => {
+export const numberToLetters = (num: number, startAtZero: boolean = false): string => {
+  if (startAtZero) {
+    num += 1;
+  }
   let letters = '';
   while (num > 0) {
     const mod = (num - 1) % 26;
@@ -84,6 +87,7 @@ export const calculateBookmarkIndex = (
   currentSystemUuid: string,
   currentSolarSystemId: string,
   currentEveId: string,
+  startAtZero: boolean = false,
 ): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
   let parentBookmarkIndexLetters: string | undefined;
@@ -123,15 +127,15 @@ export const calculateBookmarkIndex = (
   const existingIndices = uniqueCurrentSigs
     .filter(sig => sig.eve_id !== currentEveId)
     .map(sig => parseSignatureCustomInfo(sig.custom_info).bookmark_index)
-    .filter((i): i is number => typeof i === 'number' && i > 0);
+    .filter((i): i is number => typeof i === 'number' && i >= 0);
 
-  let i = 1;
+  let i = startAtZero ? 0 : 1;
   while (existingIndices.includes(i)) {
     i++;
   }
 
   const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${i}` : `${i}`;
-  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${i}` : numberToLetters(i);
+  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${i}` : numberToLetters(i, startAtZero);
 
   return { index: i, chained, chainedLetters };
 };
@@ -142,6 +146,7 @@ export const formatBookmarkName = (
   destSystemClass: string | null,
   bookmarkIndex: number,
   wormholesData: Record<string, WormholeDataRaw> = {},
+  startAtZero: boolean = false,
 ): string => {
   let result = formatStr;
   const info = parseSignatureCustomInfo(signature.custom_info);
@@ -153,7 +158,7 @@ export const formatBookmarkName = (
   result = result.replace(/\{chain_index\}/g, () => info.bookmark_index_chained || bookmarkIndex.toString());
 
   // Replace {index_letter}
-  result = result.replace(/\{index_letter\}/g, () => numberToLetters(bookmarkIndex));
+  result = result.replace(/\{index_letter\}/g, () => numberToLetters(bookmarkIndex, startAtZero));
 
   // Replace {chain_index_letters}
   result = result.replace(/\{chain_index_letters\}/g, () => info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString());

@@ -11,7 +11,7 @@ import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
-import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
@@ -133,14 +133,20 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
       let updatedSignature = signature;
 
-      if (signature.group === SignatureGroup.Wormhole && currentSettings?.bookmark_name_format) {
+      if (signature.group === SignatureGroup.Wormhole && (currentSettings?.bookmark_name_format || currentSettings?.bookmark_auto_temp_name)) {
         const info = parseSignatureCustomInfo(signature.custom_info);
         let bookmarkIndex = info.bookmark_index;
 
-        if (!bookmarkIndex) {
+        if (bookmarkIndex == null) {
           const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
           const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
-          const calculated = calculateBookmarkIndex(systemSignatures, systemUuid, data.solar_system_source.toString(), signature.eve_id);
+          const calculated = calculateBookmarkIndex(
+            systemSignatures,
+            systemUuid,
+            data.solar_system_source.toString(),
+            signature.eve_id,
+            currentSettings?.bookmark_wormholes_start_at_zero,
+          );
           bookmarkIndex = calculated.index;
           info.bookmark_index = calculated.index;
           info.bookmark_index_chained = calculated.chained;
@@ -148,15 +154,39 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
           updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
         }
 
-        const formattedStr = formatBookmarkName(
-          currentSettings.bookmark_name_format,
-          updatedSignature,
-          targetSystemClassGroup,
-          bookmarkIndex,
-          wormholesData,
-        );
-        
-        await copyToClipboard(formattedStr);
+        if (currentSettings?.bookmark_auto_temp_name && !updatedSignature.temporary_name) {
+          let autoName = '';
+          switch (currentSettings.bookmark_auto_temp_name) {
+            case 'index':
+              autoName = bookmarkIndex.toString();
+              break;
+            case 'index_letter':
+              autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
+              break;
+            case 'chain_index':
+              autoName = info.bookmark_index_chained || bookmarkIndex.toString();
+              break;
+            case 'chain_index_letters':
+              autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
+              break;
+          }
+          if (autoName) {
+            updatedSignature = { ...updatedSignature, temporary_name: autoName };
+          }
+        }
+
+        if (currentSettings?.bookmark_name_format && currentSettings?.bookmark_auto_copy !== false) {
+          const formattedStr = formatBookmarkName(
+            currentSettings.bookmark_name_format,
+            updatedSignature,
+            targetSystemClassGroup,
+            bookmarkIndex,
+            wormholesData,
+            currentSettings.bookmark_wormholes_start_at_zero
+          );
+          
+          await copyToClipboard(formattedStr);
+        }
 
         if (updatedSignature !== signature) {
           await outCommand({
