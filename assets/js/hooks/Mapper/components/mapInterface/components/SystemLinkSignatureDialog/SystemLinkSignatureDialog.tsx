@@ -1,5 +1,5 @@
 import { Dialog } from 'primereact/dialog';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
@@ -11,7 +11,7 @@ import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
-import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { handleAutoBookmark } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
@@ -112,6 +112,14 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     settings: LINK_SIGNATURE_SETTINGS,
   });
 
+  const [userSettings, setUserSettings] = useState<any>(null);
+
+  useEffect(() => {
+    outCommand({ type: OutCommand.getUserSettings, data: null })
+      .then((res: any) => setUserSettings(res?.user_settings))
+      .catch((e: any) => console.warn('Failed to fetch user settings', e));
+  }, [outCommand]);
+
   const handleSelect = useCallback(
     async (signature: SystemSignature) => {
       if (!signature) {
@@ -120,85 +128,29 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
       const { outCommand } = ref.current;
 
-      let currentSettings = null;
-      try {
-        const res = (await outCommand({
-          type: OutCommand.getUserSettings,
-          data: null,
-        })) as any;
-        currentSettings = res?.user_settings;
-      } catch (e) {
-        console.warn('Failed to fetch user settings', e);
-      }
+      const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
+      const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
 
-      let updatedSignature = signature;
+      const { updatedSignature, shouldUpdate } = await handleAutoBookmark(
+        signature,
+        userSettings,
+        systemSignatures,
+        systemUuid,
+        data.solar_system_source.toString(),
+        wormholesData,
+        targetSystemClassGroup
+      );
 
-      if (signature.group === SignatureGroup.Wormhole && (currentSettings?.bookmark_name_format || currentSettings?.bookmark_auto_temp_name)) {
-        const info = parseSignatureCustomInfo(signature.custom_info);
-        let bookmarkIndex = info.bookmark_index;
-
-        if (bookmarkIndex == null) {
-          const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
-          const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
-          const calculated = calculateBookmarkIndex(
-            systemSignatures,
-            systemUuid,
-            data.solar_system_source.toString(),
-            signature.eve_id,
-            currentSettings?.bookmark_wormholes_start_at_zero,
-          );
-          bookmarkIndex = calculated.index;
-          info.bookmark_index = calculated.index;
-          info.bookmark_index_chained = calculated.chained;
-          info.bookmark_index_chained_letters = calculated.chainedLetters;
-          updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
-        }
-
-        if (currentSettings?.bookmark_auto_temp_name && !updatedSignature.temporary_name) {
-          let autoName = '';
-          switch (currentSettings.bookmark_auto_temp_name) {
-            case 'index':
-              autoName = bookmarkIndex.toString();
-              break;
-            case 'index_letter':
-              autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
-              break;
-            case 'chain_index':
-              autoName = info.bookmark_index_chained || bookmarkIndex.toString();
-              break;
-            case 'chain_index_letters':
-              autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
-              break;
-          }
-          if (autoName) {
-            updatedSignature = { ...updatedSignature, temporary_name: autoName };
-          }
-        }
-
-        if (currentSettings?.bookmark_name_format && currentSettings?.bookmark_auto_copy !== false) {
-          const formattedStr = formatBookmarkName(
-            currentSettings.bookmark_name_format,
-            updatedSignature,
-            targetSystemClassGroup,
-            bookmarkIndex,
-            wormholesData,
-            currentSettings.bookmark_wormholes_start_at_zero
-          );
-          
-          await copyToClipboard(formattedStr);
-        }
-
-        if (updatedSignature !== signature) {
-          await outCommand({
-            type: OutCommand.updateSignatures,
-            data: {
-              system_id: `${data.solar_system_source}`,
-              updated: [updatedSignature],
-              removed: [],
-              deleteTimeout: 0,
-            },
-          });
-        }
+      if (shouldUpdate) {
+        await outCommand({
+          type: OutCommand.updateSignatures,
+          data: {
+            system_id: `${data.solar_system_source}`,
+            updated: [updatedSignature],
+            removed: [],
+            deleteTimeout: 0,
+          },
+        });
       }
 
       await outCommand({
@@ -211,7 +163,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
 
       setVisible(false);
     },
-    [data, setVisible, signatures, targetSystemClassGroup, systemSignatures, systems, wormholesData],
+    [data, setVisible, userSettings, targetSystemClassGroup, systemSignatures, systems, wormholesData],
   );
 
 

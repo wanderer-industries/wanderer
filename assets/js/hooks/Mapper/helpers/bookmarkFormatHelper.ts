@@ -259,3 +259,77 @@ export const copyToClipboard = async (text: string) => {
     console.warn('Failed to copy to clipboard', err);
   }
 };
+
+export const handleAutoBookmark = async (
+  signature: SystemSignature,
+  currentSettings: any,
+  systemSignatures: Record<string, SystemSignature[]>,
+  currentSystemId: string,
+  currentSolarSystemId: string,
+  wormholesData: Record<string, WormholeDataRaw>,
+  targetSystemClassGroup: string | null
+): Promise<{ updatedSignature: SystemSignature; shouldUpdate: boolean }> => {
+  let updatedSignature = signature;
+  let shouldUpdate = false;
+
+  if (signature.group !== SignatureGroup.Wormhole || (!currentSettings?.bookmark_name_format && !currentSettings?.bookmark_auto_temp_name)) {
+    return { updatedSignature, shouldUpdate };
+  }
+
+  const info = parseSignatureCustomInfo(signature.custom_info);
+  let bookmarkIndex = info.bookmark_index;
+
+  if (bookmarkIndex == null) {
+    const calculated = calculateBookmarkIndex(
+      systemSignatures,
+      currentSystemId,
+      currentSolarSystemId,
+      signature.eve_id,
+      currentSettings?.bookmark_wormholes_start_at_zero,
+    );
+    bookmarkIndex = calculated.index;
+    info.bookmark_index = calculated.index;
+    info.bookmark_index_chained = calculated.chained;
+    info.bookmark_index_chained_letters = calculated.chainedLetters;
+    updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
+    shouldUpdate = true;
+  }
+
+  if (currentSettings?.bookmark_auto_temp_name && !updatedSignature.temporary_name) {
+    let autoName = '';
+    switch (currentSettings.bookmark_auto_temp_name) {
+      case 'index':
+        autoName = bookmarkIndex.toString();
+        break;
+      case 'index_letter':
+        autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
+        break;
+      case 'chain_index':
+        autoName = info.bookmark_index_chained || bookmarkIndex.toString();
+        break;
+      case 'chain_index_letters':
+        autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
+        break;
+    }
+    if (autoName) {
+      updatedSignature = { ...updatedSignature, temporary_name: autoName };
+      shouldUpdate = true;
+    }
+  }
+
+  if (currentSettings?.bookmark_name_format && currentSettings?.bookmark_auto_copy !== false) {
+    const formattedStr = formatBookmarkName(
+      currentSettings.bookmark_name_format,
+      updatedSignature,
+      targetSystemClassGroup,
+      bookmarkIndex,
+      wormholesData,
+      currentSettings.bookmark_wormholes_start_at_zero
+    );
+
+    // Run this synchronously to avoid clipboard issues if possible
+    await copyToClipboard(formattedStr);
+  }
+
+  return { updatedSignature, shouldUpdate };
+};

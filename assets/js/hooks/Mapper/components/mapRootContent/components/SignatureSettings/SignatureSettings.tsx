@@ -5,13 +5,13 @@ import {
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
-import { calculateBookmarkIndex, copyToClipboard, formatBookmarkName, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { handleAutoBookmark } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
@@ -38,6 +38,14 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
   const handleShow = async () => {};
 
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
+
+  const [userSettings, setUserSettings] = useState<any>(null);
+
+  useEffect(() => {
+    outCommand({ type: OutCommand.getUserSettings, data: null })
+      .then((res: any) => setUserSettings(res?.user_settings))
+      .catch((e: any) => console.warn('Failed to fetch user settings', e));
+  }, [outCommand]);
 
   const handleSave = useCallback(
     // TODO: need fix
@@ -115,75 +123,22 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       out = { ...out, group: group! };
 
       if (group === SignatureGroup.Wormhole) {
-        let currentSettings = null;
-        try {
-          const res = (await outCommand({
-            type: OutCommand.getUserSettings,
-            data: null,
-          })) as any;
-          currentSettings = res?.user_settings;
-        } catch (e) {
-          console.warn('Failed to fetch user settings', e);
-        }
+        const targetSystem = values.linked_system ? systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system) : null;
+        const targetSystemClassGroup = targetSystem?.system_static_info ? getSystemClassGroup(targetSystem.system_static_info.system_class) : null;
 
-        if (currentSettings?.bookmark_name_format || currentSettings?.bookmark_auto_temp_name) {
-          const info = parseSignatureCustomInfo(out.custom_info);
+        const currentSystem = systems.find((s: any) => s.id === systemId);
+        const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
 
-          let bookmarkIndex = info.bookmark_index;
-          if (bookmarkIndex == null) {
-            const currentSystem = systems.find((s: any) => s.id === systemId);
-            const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
-            const calculated = calculateBookmarkIndex(
-              systemSignatures,
-              systemId,
-              solarSystemIdStr,
-              out.eve_id,
-              currentSettings?.bookmark_wormholes_start_at_zero,
-            );
-            bookmarkIndex = calculated.index;
-            info.bookmark_index = calculated.index;
-            info.bookmark_index_chained = calculated.chained;
-            info.bookmark_index_chained_letters = calculated.chainedLetters;
-            out.custom_info = JSON.stringify(info);
-          }
-
-          if (currentSettings?.bookmark_auto_temp_name && !out.temporary_name) {
-            let autoName = '';
-            switch (currentSettings.bookmark_auto_temp_name) {
-              case 'index':
-                autoName = bookmarkIndex.toString();
-                break;
-              case 'index_letter':
-                autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
-                break;
-              case 'chain_index':
-                autoName = info.bookmark_index_chained || bookmarkIndex.toString();
-                break;
-              case 'chain_index_letters':
-                autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
-                break;
-            }
-            if (autoName) {
-              out.temporary_name = autoName;
-            }
-          }
-
-          if (currentSettings?.bookmark_name_format && currentSettings?.bookmark_auto_copy !== false) {
-            const targetSystem = values.linked_system ? systems.find((s: any) => s.id === values.linked_system) : null;
-            const targetSystemClassGroup = targetSystem?.system_static_info ? getSystemClassGroup(targetSystem.system_static_info.system_class) : null;
-
-            const formattedStr = formatBookmarkName(
-              currentSettings.bookmark_name_format,
-              out,
-              targetSystemClassGroup,
-              bookmarkIndex,
-              wormholesData,
-              currentSettings.bookmark_wormholes_start_at_zero
-            );
-            
-            await copyToClipboard(formattedStr);
-          }
-        }
+        const { updatedSignature } = await handleAutoBookmark(
+          out,
+          userSettings,
+          systemSignatures,
+          systemId,
+          solarSystemIdStr,
+          wormholesData,
+          targetSystemClassGroup
+        );
+        out = updatedSignature;
       }
 
       await outCommand({
@@ -214,7 +169,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureData, signatureForm, outCommand, systemId, onHide, systemSignatures, systems, wormholesData],
+    [signatureData, signatureForm, outCommand, systemId, onHide, systemSignatures, systems, wormholesData, userSettings],
   );
 
   useEffect(() => {
