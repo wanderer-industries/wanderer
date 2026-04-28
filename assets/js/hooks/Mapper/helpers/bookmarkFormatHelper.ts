@@ -69,17 +69,29 @@ const formatDestString = (dest: string | null | undefined): string => {
   return dest.charAt(0).toUpperCase() + dest.slice(1);
 };
 
+const numberToLetters = (num: number): string => {
+  let letters = '';
+  while (num > 0) {
+    const mod = (num - 1) % 26;
+    letters = String.fromCharCode(65 + mod) + letters;
+    num = Math.floor((num - mod) / 26);
+  }
+  return letters;
+};
+
 export const calculateBookmarkIndex = (
   systemSignatures: Record<string, SystemSignature[]>,
-  currentSystemId: string,
+  currentSystemUuid: string,
+  currentSolarSystemId: string,
   currentEveId: string,
-): { index: number; chained: string } => {
+): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
+  let parentBookmarkIndexLetters: string | undefined;
 
   for (const [sysId, sigs] of Object.entries(systemSignatures)) {
-    if (sysId === currentSystemId.toString()) continue;
+    if (sysId === currentSystemUuid || sysId === currentSolarSystemId) continue;
 
-    const parentSigs = sigs.filter(sig => sig.linked_system?.solar_system_id?.toString() === currentSystemId.toString());
+    const parentSigs = sigs.filter(sig => sig.linked_system?.solar_system_id?.toString() === currentSolarSystemId);
     for (const parentSig of parentSigs) {
       const parentInfo = parseSignatureCustomInfo(parentSig.custom_info);
       if (parentInfo.bookmark_index_chained != null) {
@@ -91,12 +103,24 @@ export const calculateBookmarkIndex = (
           parentBookmarkIndex = String(parentInfo.bookmark_index);
         }
       }
+
+      if (parentInfo.bookmark_index_chained_letters != null) {
+        if (!parentBookmarkIndexLetters || String(parentInfo.bookmark_index_chained_letters).length < parentBookmarkIndexLetters.length) {
+          parentBookmarkIndexLetters = String(parentInfo.bookmark_index_chained_letters);
+        }
+      }
     }
   }
 
-  const currentSigs = systemSignatures[currentSystemId.toString()] || [];
+  const currentSigsRaw = [
+    ...(systemSignatures[currentSystemUuid] || []),
+    ...(systemSignatures[currentSolarSystemId] || [])
+  ];
 
-  const existingIndices = currentSigs
+  // Deduplicate in case both keys map to the same or overlapping arrays
+  const uniqueCurrentSigs = Array.from(new Map(currentSigsRaw.map(sig => [sig.eve_id, sig])).values());
+
+  const existingIndices = uniqueCurrentSigs
     .filter(sig => sig.eve_id !== currentEveId)
     .map(sig => parseSignatureCustomInfo(sig.custom_info).bookmark_index)
     .filter((i): i is number => typeof i === 'number' && i > 0);
@@ -107,8 +131,9 @@ export const calculateBookmarkIndex = (
   }
 
   const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${i}` : `${i}`;
+  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${i}` : numberToLetters(i);
 
-  return { index: i, chained };
+  return { index: i, chained, chainedLetters };
 };
 
 export const formatBookmarkName = (
@@ -121,11 +146,17 @@ export const formatBookmarkName = (
   let result = formatStr;
   const info = parseSignatureCustomInfo(signature.custom_info);
 
-  // Replace {i}
-  result = result.replace(/\{i\}/g, () => bookmarkIndex.toString());
+  // Replace {index}
+  result = result.replace(/\{index\}/g, () => bookmarkIndex.toString());
 
-  // Replace {I}
-  result = result.replace(/\{I\}/g, () => info.bookmark_index_chained || bookmarkIndex.toString());
+  // Replace {chain_index}
+  result = result.replace(/\{chain_index\}/g, () => info.bookmark_index_chained || bookmarkIndex.toString());
+
+  // Replace {index_letter}
+  result = result.replace(/\{index_letter\}/g, () => numberToLetters(bookmarkIndex));
+
+  // Replace {chain_index_letters}
+  result = result.replace(/\{chain_index_letters\}/g, () => info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString());
 
   // Replace {sig_letters} (first 3 chars of eve_id)
   const sigLetters = signature.eve_id.substring(0, 3).toUpperCase();

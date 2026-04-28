@@ -131,10 +131,13 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
           let bookmarkIndex = info.bookmark_index;
           if (!bookmarkIndex) {
-            const calculated = calculateBookmarkIndex(systemSignatures, systemId, out.eve_id);
+            const currentSystem = systems.find((s: any) => s.id === systemId);
+            const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
+            const calculated = calculateBookmarkIndex(systemSignatures, systemId, solarSystemIdStr, out.eve_id);
             bookmarkIndex = calculated.index;
             info.bookmark_index = calculated.index;
             info.bookmark_index_chained = calculated.chained;
+            info.bookmark_index_chained_letters = calculated.chainedLetters;
             out.custom_info = JSON.stringify(info);
           }
 

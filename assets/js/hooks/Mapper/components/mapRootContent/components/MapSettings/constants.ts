@@ -52,8 +52,8 @@ export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
     prop: UserSettingsRemoteProps.bookmark_name_format,
     label: 'Bookmark Name Format',
     type: 'text',
-    placeholder: 'e.g. {i} {sig_letters} {dest_type} {size} {time_status} {mass_status}',
-    helperText: 'Variables: {i}, {I}, {sig_letters}, {sig}, {dest_type}, {type}, {size}, {mass}, {time_status}, {mass_status}, {temporary_name}, {description}',
+    placeholder: 'e.g. {chain_index_letters} {sig_letters} {dest_type} {size} {time_status} {mass_status}',
+    helperText: 'Variables: {index}, {chain_index}, {index_letter}, {chain_index_letters}, {sig_letters}, {sig}, {dest_type}, {type}, {size}, {mass}, {time_status}, {mass_status}, {temporary_name}, {description}',
   },
 ];
 

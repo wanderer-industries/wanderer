@@ -138,10 +138,13 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         let bookmarkIndex = info.bookmark_index;
 
         if (!bookmarkIndex) {
-          const calculated = calculateBookmarkIndex(systemSignatures, data.solar_system_source.toString(), signature.eve_id);
+          const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
+          const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
+          const calculated = calculateBookmarkIndex(systemSignatures, systemUuid, data.solar_system_source.toString(), signature.eve_id);
           bookmarkIndex = calculated.index;
           info.bookmark_index = calculated.index;
           info.bookmark_index_chained = calculated.chained;
+          info.bookmark_index_chained_letters = calculated.chainedLetters;
           updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
         }
 

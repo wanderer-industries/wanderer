@@ -35,6 +35,7 @@ export type SignatureCustomInfo = {
   mass_status?: number;
   bookmark_index?: number;
   bookmark_index_chained?: string;
+  bookmark_index_chained_letters?: string;
 };
 
 export type SystemSignature = {
