@@ -4,14 +4,14 @@ import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
-import { BOOKMARKS_SETTINGS_PROPS, CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
+import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
 import {
   MapSettingsProvider,
   useMapSettings,
 } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/MapSettingsProvider.tsx';
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
-import { BookmarkNameFormatSetting } from './components/BookmarkNameFormatSetting';
+import { BookmarksSettings } from './components/BookmarksSettings';
 import { SettingsListItem } from './types.ts';
 import { ImportExport } from './components/ImportExport.tsx';
 import { ServerSettings } from './components/ServerSettings.tsx';
@@ -63,15 +63,16 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
       header="Map user settings"
       visible
       draggable={false}
-      className="w-[600px] h-[400px]"
+      className="w-[600px] h-[460px]"
+      contentClassName="custom-scrollbar"
       onShow={handleShow}
       onHide={handleHide}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3 h-full">
+        <div className="flex flex-col gap-2 h-full">
           <TabView
             activeIndex={activeIndex}
-            className="vertical-tabs-container"
+            className="vertical-tabs-container h-full"
             onTabChange={e => setActiveIndex(e.index)}
           >
             <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
@@ -90,20 +91,8 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
               {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
             </TabPanel>
 
-            <TabPanel header="Bookmarks" headerClassName={styles.verticalTabHeader}>
-              <div className="w-full h-full flex flex-col gap-3">
-                {!settings.link_signature_on_splash && (
-                  <div className="p-2 bg-yellow-900/30 border border-yellow-700/50 rounded text-yellow-500/90 text-sm">
-                    ⚠️ It is highly recommended to enable 'Link signature on splash' (in the Signatures tab) to fully utilize automatic bookmark naming.
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-1 mt-2">
-                  {renderSettingsList(BOOKMARKS_SETTINGS_PROPS)}
-                </div>
-
-                <BookmarkNameFormatSetting />
-              </div>
+            <TabPanel header="Bookmarks" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <BookmarksSettings />
             </TabPanel>
 
             <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>

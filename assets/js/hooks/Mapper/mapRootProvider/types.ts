@@ -31,6 +31,7 @@ export type InterfaceStoredSettings = {
   theme: AvailableThemes;
   minimapPlacement: MiniMapPlacement;
   pingsPlacement: PingsPlacement;
+  hideBookmarkWarning: boolean;
 };
 
 export type RoutesType = {

@@ -126,7 +126,7 @@ export const BookmarkNameFormatSetting = () => {
         <span className="text-stone-200 font-mono">{preview || <span className="italic text-stone-500">Empty</span>}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto text-xs text-stone-400 p-2 bg-stone-800/50 rounded border border-stone-800 mt-2 max-h-[160px]">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 text-xs text-stone-400 p-2 bg-stone-800/50 rounded border border-stone-800 mt-2 max-h-[160px]">
         <h4 className="text-stone-300 font-semibold mb-2">Available Variables (Click to insert)</h4>
         <ul className="space-y-1">
           {VARIABLES.map(v => (

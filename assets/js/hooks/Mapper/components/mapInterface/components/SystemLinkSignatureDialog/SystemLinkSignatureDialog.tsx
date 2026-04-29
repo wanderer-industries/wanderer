@@ -1,5 +1,5 @@
 import { Dialog } from 'primereact/dialog';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
@@ -11,13 +11,11 @@ import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
-import { handleAutoBookmark, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
-import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useSystemSignaturesData } from '../../widgets/SystemSignatures/hooks/useSystemSignaturesData';
+import { useLinkSignature } from './hooks/useLinkSignature';
 
 const MULTI_DEST_TYPES = MULTI_DEST_WHS.map((type: string) => WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME[type].shortName);
 
@@ -41,12 +39,8 @@ interface ExtendedSignatureCustomInfo {
 
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const {
-    outCommand,
-    data: { wormholes, systemSignatures, systems, wormholesData },
+    data: { wormholes },
   } = useMapRootState();
-
-  const ref = useRef({ outCommand });
-  ref.current = { outCommand };
 
   // Get system info for the target system
   const { staticInfo: targetSystemInfo, dynamicInfo: targetSystemDynamicInfo } = useSystemInfo({
@@ -113,13 +107,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     settings: LINK_SIGNATURE_SETTINGS,
   });
 
-  const [userSettings, setUserSettings] = useState<any>(null);
-
-  useEffect(() => {
-    outCommand({ type: OutCommand.getUserSettings, data: null })
-      .then((res: any) => setUserSettings(res?.user_settings))
-      .catch((e: any) => console.warn('Failed to fetch user settings', e));
-  }, [outCommand]);
+  const { handleLinkSignature } = useLinkSignature({ data, targetSystemClassGroup });
 
   const handleSelect = useCallback(
     async (signature: SystemSignature) => {
@@ -127,117 +115,12 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         return;
       }
 
-      const { outCommand } = ref.current;
-
-      const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
-      const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
-
-      const { updatedSignature, shouldUpdate } = await handleAutoBookmark(
-        signature,
-        userSettings,
-        systemSignatures,
-        systemUuid,
-        data.solar_system_source.toString(),
-        wormholesData,
-        targetSystemClassGroup
-      );
-
-      if (shouldUpdate) {
-        await outCommand({
-          type: OutCommand.updateSignatures,
-          data: {
-            system_id: `${data.solar_system_source}`,
-            updated: [updatedSignature],
-            removed: [],
-            deleteTimeout: 0,
-          },
-        });
-      }
-
-      await outCommand({
-        type: OutCommand.linkSignatureToSystem,
-        data: {
-          ...data,
-          signature_eve_id: signature.eve_id,
-        },
-      });
-
-      const systemAutoTag = userSettings?.system_auto_tag;
-      const systemCustomLabelName = userSettings?.system_custom_label_name;
-
-      if (systemAutoTag || systemCustomLabelName) {
-        const info = parseSignatureCustomInfo(updatedSignature.custom_info);
-        const bIndex = info.bookmark_index ?? 0;
-        const startAtZero = userSettings?.bookmark_wormholes_start_at_zero;
-        const letter = numberToLetters(bIndex, startAtZero);
-
-        const targetSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_target);
-
-        if (targetSystem) {
-          if (systemAutoTag) {
-            let tagValue = '';
-            switch (systemAutoTag) {
-              case 'index':
-              case 'chain_index':
-                tagValue = bIndex.toString();
-                break;
-              case 'index_letter':
-                tagValue = letter;
-                break;
-              case 'chain_index_letters':
-                tagValue = info.bookmark_index_chained_letters === letter ? letter : bIndex.toString();
-                break;
-            }
-
-            if (tagValue) {
-              await outCommand({
-                type: OutCommand.updateSystemTag,
-                data: {
-                  system_id: targetSystem.id,
-                  value: tagValue,
-                },
-              });
-            }
-          }
-
-          if (systemCustomLabelName) {
-            let labelValue = '';
-            switch (systemCustomLabelName) {
-              case 'index':
-                labelValue = bIndex.toString();
-                break;
-              case 'index_letter':
-                labelValue = letter;
-                break;
-              case 'chain_index':
-                labelValue = info.bookmark_index_chained as string || bIndex.toString();
-                break;
-              case 'chain_index_letters':
-                labelValue = info.bookmark_index_chained_letters as string || letter;
-                break;
-            }
-
-            if (labelValue) {
-              const outLabel = new LabelsManager(targetSystem.labels ?? '');
-              outLabel.updateCustomLabel(labelValue);
-
-              await outCommand({
-                type: OutCommand.updateSystemLabels,
-                data: {
-                  system_id: targetSystem.id,
-                  value: outLabel.toString(),
-                },
-              });
-            }
-          }
-        }
-      }
+      await handleLinkSignature(signature);
 
       setVisible(false);
     },
-    [data, setVisible, userSettings, targetSystemClassGroup, systemSignatures, systems, wormholesData],
+    [handleLinkSignature, setVisible],
   );
-
 
   useEffect(() => {
     if (!targetSystemDynamicInfo) {
