@@ -5,6 +5,7 @@ export enum UserSettingsRemoteProps {
   select_on_spash = 'select_on_spash',
   delete_connection_with_sigs = 'delete_connection_with_sigs',
   bookmark_name_format = 'bookmark_name_format',
+  bookmark_custom_mapping = 'bookmark_custom_mapping',
   bookmark_wormholes_start_at_zero = 'bookmark_wormholes_start_at_zero',
   bookmark_auto_copy = 'bookmark_auto_copy',
   bookmark_auto_temp_name = 'bookmark_auto_temp_name',
@@ -17,6 +18,7 @@ export type UserSettingsRemote = {
   select_on_spash: boolean;
   delete_connection_with_sigs: boolean;
   bookmark_name_format: string;
+  bookmark_custom_mapping?: Record<string, string>;
   bookmark_wormholes_start_at_zero: boolean;
   bookmark_auto_copy: boolean;
   bookmark_auto_temp_name: string;

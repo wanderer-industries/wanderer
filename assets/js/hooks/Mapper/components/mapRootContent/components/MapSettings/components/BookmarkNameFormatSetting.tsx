@@ -26,10 +26,11 @@ const VARIABLES = [
   { id: '{sig_letters}', desc: 'First 3 chars of signature (e.g., ABC)' },
   { id: '{sig}', desc: 'Full signature ID (e.g., ABC-123)' },
   { id: '{dest_type}', desc: 'Destination class (e.g., C5, HS, Thera)' },
+  { id: '{dest_class_index}', desc: 'Letter index for multiple holes to same class (empty if only 1, otherwise a, b, c...)' },
   { id: '{type}', desc: 'Wormhole type (e.g., K162, H900)' },
   { id: '{size}', desc: 'Hole size (e.g., S, M, XL)' },
   { id: '{mass}', desc: 'Total mass in bil (e.g., 3.3)' },
-  { id: '{time_status}', desc: 'Time remaining (e.g., EoL, 4H, 16H)' },
+  { id: '{time_status}', desc: 'Time remaining (e.g., 1H, 4H, 16H)' },
   { id: '{mass_status}', desc: 'Mass remaining (e.g., Destab, Crit)' },
   { id: '{temporary_name}', desc: 'Temporary name if set' },
   { id: '{description}', desc: 'Custom description' },
@@ -38,29 +39,57 @@ const VARIABLES = [
 export const BookmarkNameFormatSetting = () => {
   const { settings, updateSetting } = useMapSettings();
   const formatStr = settings.bookmark_name_format || '';
+  const customMapping = settings.bookmark_custom_mapping || {};
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [localFormat, setLocalFormat] = useState(formatStr);
+  const [localMapping, setLocalMapping] = useState(customMapping);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     setLocalFormat(formatStr);
   }, [formatStr]);
 
+  useEffect(() => {
+    setLocalMapping(customMapping);
+  }, [customMapping]);
+
   const preview = useMemo(() => {
     const isZero = settings.bookmark_wormholes_start_at_zero;
+    const sep = localMapping?.chain_separator || '';
     
-    const chainNum = isZero ? `001` : `112`;
-    const chainLet = isZero ? `A01` : `A12`;
+    const chainNum = isZero ? `0${sep}0${sep}1` : `1${sep}1${sep}2`;
+    const chainLet = isZero ? `A${sep}0${sep}1` : `A${sep}1${sep}2`;
     const currentIndex = isZero ? 1 : 2;
 
     const dummySig: SystemSignature = {
       ...DUMMY_SIG_BASE,
+      type: 'V283',
       custom_info: JSON.stringify({
         time_status: TimeStatus._1h,
-        mass_status: MassState.half,
+        mass_status: MassState.verge,
         bookmark_index_chained: chainNum,
         bookmark_index_chained_letters: chainLet,
       }),
+    };
+
+    const otherDummySig: SystemSignature = {
+      ...DUMMY_SIG_BASE,
+      type: 'V283',
+      eve_id: 'DEF-456',
+      name: 'DEF-456',
+      custom_info: JSON.stringify({
+        time_status: TimeStatus._1h,
+        mass_status: MassState.verge,
+      })
+    };
+
+    const dummyWormholesData = {
+      'V283': {
+        total_mass: 3300000000,
+        max_mass_per_jump: 62000000,
+        dest: ['hs']
+      } as any
     };
 
     return formatBookmarkName(
@@ -68,10 +97,13 @@ export const BookmarkNameFormatSetting = () => {
       dummySig,
       'HS',
       currentIndex,
-      {},
-      isZero
+      dummyWormholesData,
+      isZero,
+      localMapping,
+      { 'preview_sys': [otherDummySig] },
+      'preview_sys'
     );
-  }, [localFormat, settings.bookmark_wormholes_start_at_zero]);
+  }, [localFormat, settings.bookmark_wormholes_start_at_zero, localMapping]);
 
   const handleBlur = () => {
     if (localFormat !== formatStr) {
@@ -103,6 +135,43 @@ export const BookmarkNameFormatSetting = () => {
     const defaultFormat = '{chain_index} {sig_letters} {dest_type} {size} {mass_status} {time_status}';
     setLocalFormat(defaultFormat);
     updateSetting(UserSettingsRemoteProps.bookmark_name_format, defaultFormat);
+  };
+
+  const renderMappingInput = (key: string, label: string, defaultVal: string) => {
+    const value = localMapping[key] !== undefined ? localMapping[key] : defaultVal;
+    return (
+      <div className="flex flex-col gap-1 w-[120px]" key={key}>
+        <label className="text-stone-400 text-[10px]">{label}</label>
+        <InputText
+          className="text-xs w-full py-1 px-2"
+          value={value}
+          onChange={e => {
+            setLocalMapping(prev => {
+              const newMapping = { ...prev };
+              newMapping[key] = e.target.value;
+              return newMapping;
+            });
+          }}
+          onBlur={(e) => {
+            const val = e.target.value;
+            setLocalMapping(prev => {
+              const currentVal = prev[key] !== undefined ? prev[key] : defaultVal;
+              if (val === currentVal) return prev;
+
+              const newMapping = { ...prev };
+              if (val === defaultVal) {
+                delete newMapping[key];
+              } else {
+                newMapping[key] = val;
+              }
+              updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
+              return newMapping;
+            });
+          }}
+          placeholder="(empty)"
+        />
+      </div>
+    );
   };
 
   return (
@@ -141,6 +210,96 @@ export const BookmarkNameFormatSetting = () => {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="mt-2">
+        <WdButton
+          className="text-xs w-full justify-center bg-stone-800 hover:bg-stone-700 border-stone-700 text-stone-300 py-1"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          {showAdvanced ? 'Hide Advanced String Customization' : 'Show Advanced String Customization'}
+        </WdButton>
+        
+        {showAdvanced && (
+          <div className="p-3 bg-stone-900 rounded border border-stone-800 mt-2 flex flex-col gap-4">
+            <div className="flex justify-between items-start">
+              <p className="text-stone-400 text-xs italic">
+                Override the default output of specific format variables.
+              </p>
+              <WdButton
+                size="small"
+                outlined
+                className="text-xs py-1 px-2 h-auto min-h-[24px]"
+                onClick={() => {
+                  setLocalMapping({});
+                  updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, {});
+                }}
+              >
+                Reset Mappings
+              </WdButton>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Time</h5>
+              <div className="flex flex-wrap gap-2">
+                {renderMappingInput('time_1h', '1 Hour', '1H')}
+                {renderMappingInput('time_4h', '4 Hours', '4H')}
+                {renderMappingInput('time_4h30m', '4.5 Hours', '4.5H')}
+                {renderMappingInput('time_16h', '16 Hours', '16H')}
+                {renderMappingInput('time_24h', '24 Hours', '')}
+                {renderMappingInput('time_48h', '48 Hours', '')}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Mass</h5>
+              <div className="flex flex-wrap gap-2">
+                {renderMappingInput('mass_normal', 'Normal Mass', '')}
+                {renderMappingInput('mass_half', 'Destab', 'Destab')}
+                {renderMappingInput('mass_verge', 'Critical', 'Crit')}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Other / Formatting</h5>
+              <div className="flex flex-wrap gap-2">
+                {renderMappingInput('chain_separator', 'Chain Separator', '')}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Hole Sizes</h5>
+              <div className="flex flex-wrap gap-2">
+                {renderMappingInput('size_small', 'Small (Frigate)', 'S')}
+                {renderMappingInput('size_medium', 'Medium', 'M')}
+                {renderMappingInput('size_large', 'Large', '')}
+                {renderMappingInput('size_freight', 'Huge / Freight', 'XL')}
+                {renderMappingInput('size_capital', 'Capital', 'C')}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Destination Classes</h5>
+              <div className="flex flex-wrap gap-2">
+                {renderMappingInput('class_c1', 'Class 1', 'C1')}
+                {renderMappingInput('class_c2', 'Class 2', 'C2')}
+                {renderMappingInput('class_c3', 'Class 3', 'C3')}
+                {renderMappingInput('class_c4', 'Class 4', 'C4')}
+                {renderMappingInput('class_c5', 'Class 5', 'C5')}
+                {renderMappingInput('class_c6', 'Class 6', 'C6')}
+                {renderMappingInput('class_c13', 'Class 13', 'C13')}
+                {renderMappingInput('class_c1c2c3', 'Class 1/2/3', 'C1/C2/C3')}
+                {renderMappingInput('class_c4c5', 'Class 4/5', 'C4/C5')}
+                {renderMappingInput('class_hs', 'High-Sec', 'HS')}
+                {renderMappingInput('class_ls', 'Low-Sec', 'LS')}
+                {renderMappingInput('class_ns', 'Null-Sec', 'NS')}
+                {renderMappingInput('class_thera', 'Thera', 'Thera')}
+                {renderMappingInput('class_pochven', 'Pochven', 'Pochven')}
+                {renderMappingInput('class_drifter', 'Drifter', 'Drifter')}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

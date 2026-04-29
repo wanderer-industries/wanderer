@@ -27,7 +27,7 @@ import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
-  updateSetting: (prop: keyof UserSettings, value: boolean | string) => Promise<void>;
+  updateSetting: (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => Promise<void>;
   setUserRemoteSettings: Dispatch<SetStateAction<UserSettingsRemote>>;
   settings: UserSettings;
 };
@@ -54,7 +54,7 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   const refVars = useRef({ mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings });
   refVars.current = { mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings };
 
-  const handleSettingChange = useCallback(async (prop: keyof UserSettings, value: boolean | string) => {
+  const handleSettingChange = useCallback(async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
     const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
 
     if (UserSettingsRemoteList.includes(prop as any)) {

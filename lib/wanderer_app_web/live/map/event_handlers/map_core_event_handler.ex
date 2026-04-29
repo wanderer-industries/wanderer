@@ -237,6 +237,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         "link_signature_on_splash",
         "delete_connection_with_sigs",
         "bookmark_name_format",
+        "bookmark_custom_mapping",
         "bookmark_wormholes_start_at_zero",
         "bookmark_auto_copy",
         "bookmark_auto_temp_name",

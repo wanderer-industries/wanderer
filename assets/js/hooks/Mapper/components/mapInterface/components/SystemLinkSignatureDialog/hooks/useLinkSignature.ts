@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { handleAutoBookmark, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { CommandLinkSignatureToSystem, SystemSignature } from '@/hooks/Mapper/types';
+import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 
@@ -36,8 +36,10 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
       const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
       const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
 
+      const signatureToLink = { ...signature, group: SignatureGroup.Wormhole };
+
       const { updatedSignature, shouldUpdate } = await handleAutoBookmark(
-        signature,
+        signatureToLink,
         userSettings,
         systemSignatures,
         systemUuid,

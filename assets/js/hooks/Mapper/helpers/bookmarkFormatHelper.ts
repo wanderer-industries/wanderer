@@ -7,33 +7,33 @@ import { WORMHOLES_ADDITIONAL_INFO, SHIP_MASSES_SIZE, SHIP_SIZES_NAMES_SHORT } f
 import { ALL_DEST_TYPES_MAP, MULTI_DEST_WHS } from '@/hooks/Mapper/constants';
 import { ShipSizeStatus } from '@/hooks/Mapper/types/connection';
 
-const getTimeStatusString = (status?: TimeStatus): string => {
+const getTimeStatusString = (status?: TimeStatus, mapping?: Record<string, string>): string => {
   switch (status) {
     case TimeStatus._1h:
-      return 'EoL'; // Or '1H', standard EVE mapping tends to use EoL for 1H
+      return mapping?.time_1h !== undefined ? mapping.time_1h : '1H';
     case TimeStatus._4h:
-      return '4H';
+      return mapping?.time_4h !== undefined ? mapping.time_4h : '4H';
     case TimeStatus._4h30m:
-      return '4.5H';
+      return mapping?.time_4h30m !== undefined ? mapping.time_4h30m : '4.5H';
     case TimeStatus._16h:
-      return '16H';
+      return mapping?.time_16h !== undefined ? mapping.time_16h : '16H';
     case TimeStatus._24h:
-      return '';
+      return mapping?.time_24h !== undefined ? mapping.time_24h : '';
     case TimeStatus._48h:
-      return '';
+      return mapping?.time_48h !== undefined ? mapping.time_48h : '';
     default:
       return '';
   }
 };
 
-const getMassStatusString = (status?: MassState): string => {
+const getMassStatusString = (status?: MassState, mapping?: Record<string, string>): string => {
   switch (status) {
     case MassState.normal:
-      return ''; // Typically not specified if normal
+      return mapping?.mass_normal !== undefined ? mapping.mass_normal : '';
     case MassState.half:
-      return 'Destab';
+      return mapping?.mass_half !== undefined ? mapping.mass_half : 'Destab';
     case MassState.verge:
-      return 'Crit';
+      return mapping?.mass_verge !== undefined ? mapping.mass_verge : 'Crit';
     default:
       return '';
   }
@@ -59,9 +59,16 @@ const DEST_CLASS_OVERRIDES: Record<string, string> = {
   'c4/c5': 'C4/C5'
 };
 
-const formatDestString = (dest: string | null | undefined): string => {
+const formatDestString = (dest: string | null | undefined, mapping?: Record<string, string>): string => {
   if (!dest) return '?';
   const lowerDest = dest.toLowerCase();
+  
+  const normalizedDest = DEST_CLASS_OVERRIDES[lowerDest] ? DEST_CLASS_OVERRIDES[lowerDest].toLowerCase() : lowerDest;
+  const mappingKey = `class_${normalizedDest.replace(/[^a-z0-9]/g, '')}`;
+  if (mapping && mapping[mappingKey] !== undefined) {
+    return mapping[mappingKey];
+  }
+
   if (DEST_CLASS_OVERRIDES[lowerDest]) {
     return DEST_CLASS_OVERRIDES[lowerDest];
   }
@@ -88,6 +95,7 @@ export const calculateBookmarkIndex = (
   currentSolarSystemId: string,
   currentEveId: string,
   startAtZero: boolean = false,
+  separator: string = ''
 ): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
   let parentBookmarkIndexLetters: string | undefined;
@@ -134,8 +142,8 @@ export const calculateBookmarkIndex = (
     i++;
   }
 
-  const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${i}` : `${i}`;
-  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${i}` : numberToLetters(i, startAtZero);
+  const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${separator}${i}` : `${i}`;
+  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${separator}${i}` : numberToLetters(i, startAtZero);
 
   return { index: i, chained, chainedLetters };
 };
@@ -147,6 +155,10 @@ export const formatBookmarkName = (
   bookmarkIndex: number,
   wormholesData: Record<string, WormholeDataRaw> = {},
   startAtZero: boolean = false,
+  mapping?: Record<string, string>,
+  systemSignatures?: Record<string, SystemSignature[]>,
+  currentSystemId?: string,
+  currentSolarSystemId?: string
 ): string => {
   let result = formatStr;
   const info = parseSignatureCustomInfo(signature.custom_info);
@@ -195,8 +207,58 @@ export const formatBookmarkName = (
     const destOption = ALL_DEST_TYPES_MAP[info.destType];
     destTypeStr = destOption ? destOption.label : info.destType;
   }
-  const finalDestTypeStr = formatDestString(destTypeStr);
+  const finalDestTypeStr = formatDestString(destTypeStr, mapping);
   result = result.replace(/\{dest_type\}/g, () => (finalDestTypeStr !== '?' ? finalDestTypeStr : ''));
+
+  // Calculate {dest_class_index}
+  let destClassIndexStr = '';
+  if (result.includes('{dest_class_index}') && systemSignatures && (currentSystemId || currentSolarSystemId) && destTypeStr) {
+    const currentSigsRaw = [
+      ...(systemSignatures[currentSystemId || ''] || []),
+      ...(systemSignatures[currentSolarSystemId || ''] || [])
+    ];
+    // Deduplicate and ensure current signature is included
+    const sigsMap = new Map(currentSigsRaw.map(sig => [sig.eve_id, sig]));
+    sigsMap.set(signature.eve_id, signature);
+    const sigsInSystem = Array.from(sigsMap.values());
+    
+    // Helper to get a simplified comparable class for a signature
+    const getSigDestClass = (sig: SystemSignature) => {
+      if (sig.eve_id === signature.eve_id) return finalDestTypeStr;
+
+      const sigInfo = parseSignatureCustomInfo(sig.custom_info);
+      let sDestTypeStr = '';
+      if (sig.type && MULTI_DEST_WHS.includes(sig.type) && sigInfo.destType) {
+        const destOption = ALL_DEST_TYPES_MAP[sigInfo.destType];
+        if (destOption) sDestTypeStr = destOption.label;
+      } else if (sig.type === 'K162' && sigInfo.k162Type) {
+        const k162Option = ALL_DEST_TYPES_MAP[sigInfo.k162Type];
+        if (k162Option) sDestTypeStr = k162Option.label;
+      } else if (sig.type && wormholesData[sig.type]) {
+        const whData = wormholesData[sig.type];
+        const whClass = whData?.dest?.length === 1 ? WORMHOLES_ADDITIONAL_INFO[whData.dest[0]] : null;
+        if (whClass) sDestTypeStr = whClass.shortName || whClass.shortTitle;
+      } else if (sigInfo.destType) {
+        const destOption = ALL_DEST_TYPES_MAP[sigInfo.destType];
+        sDestTypeStr = destOption ? destOption.label : sigInfo.destType;
+      }
+      return formatDestString(sDestTypeStr, mapping);
+    };
+
+    const sameClassSigs = sigsInSystem.filter(s => {
+      if (s.group !== SignatureGroup.Wormhole) return false;
+      return getSigDestClass(s) === finalDestTypeStr;
+    });
+
+    // Sort by eve_id to ensure consistent ordering across clients
+    sameClassSigs.sort((a, b) => a.eve_id.localeCompare(b.eve_id));
+
+    const indexInClass = sameClassSigs.findIndex(s => s.eve_id === signature.eve_id);
+    if (indexInClass > 0 || (indexInClass === 0 && sameClassSigs.length > 1)) {
+      destClassIndexStr = String.fromCharCode(97 + indexInClass); // 0->a, 1->b, 2->c...
+    }
+  }
+  result = result.replace(/\{dest_class_index\}/g, () => destClassIndexStr);
 
   // Replace {size} and {mass}
   let sizeStr = '';
@@ -222,8 +284,25 @@ export const formatBookmarkName = (
   if (whDataForSize) {
     if (whDataForSize.max_mass_per_jump) {
       const sizeStatus = SHIP_MASSES_SIZE[whDataForSize.max_mass_per_jump] ?? ShipSizeStatus.large;
-      if (sizeStatus !== ShipSizeStatus.large) {
-        sizeStr = SHIP_SIZES_NAMES_SHORT[sizeStatus] || '';
+      const defaultSizeNames: Record<ShipSizeStatus, string> = {
+        [ShipSizeStatus.small]: 'S',
+        [ShipSizeStatus.medium]: 'M',
+        [ShipSizeStatus.large]: '',
+        [ShipSizeStatus.freight]: 'XL',
+        [ShipSizeStatus.capital]: 'C'
+      };
+      const sizeMappingKeys: Record<ShipSizeStatus, string> = {
+        [ShipSizeStatus.small]: 'size_small',
+        [ShipSizeStatus.medium]: 'size_medium',
+        [ShipSizeStatus.large]: 'size_large',
+        [ShipSizeStatus.freight]: 'size_freight',
+        [ShipSizeStatus.capital]: 'size_capital'
+      };
+      const mappingKey = sizeMappingKeys[sizeStatus];
+      if (mapping && mapping[mappingKey] !== undefined) {
+        sizeStr = mapping[mappingKey];
+      } else {
+        sizeStr = defaultSizeNames[sizeStatus] ?? SHIP_SIZES_NAMES_SHORT[sizeStatus] ?? '';
       }
     }
     if (whDataForSize.total_mass) {
@@ -237,10 +316,10 @@ export const formatBookmarkName = (
   result = result.replace(/\{type\}/g, () => signature.type || '');
 
   // Replace {time_status} -> Parsed from custom_info.time_status
-  result = result.replace(/\{time_status\}/g, () => getTimeStatusString(info.time_status));
+  result = result.replace(/\{time_status\}/g, () => getTimeStatusString(info.time_status, mapping));
 
   // Replace {mass_status} -> Parsed from custom_info.mass_status
-  result = result.replace(/\{mass_status\}/g, () => getMassStatusString(info.mass_status));
+  result = result.replace(/\{mass_status\}/g, () => getMassStatusString(info.mass_status, mapping));
 
   // Replace {temporary_name} -> signature.temporary_name
   result = result.replace(/\{temporary_name\}/g, () => signature.temporary_name || '');
@@ -280,12 +359,14 @@ export const handleAutoBookmark = async (
   let bookmarkIndex = info.bookmark_index;
 
   if (bookmarkIndex == null) {
+    const separator = currentSettings?.bookmark_custom_mapping?.chain_separator || '';
     const calculated = calculateBookmarkIndex(
       systemSignatures,
       currentSystemId,
       currentSolarSystemId,
       signature.eve_id,
       currentSettings?.bookmark_wormholes_start_at_zero,
+      separator
     );
     bookmarkIndex = calculated.index;
     info.bookmark_index = calculated.index;
@@ -324,7 +405,11 @@ export const handleAutoBookmark = async (
       targetSystemClassGroup,
       bookmarkIndex,
       wormholesData,
-      currentSettings.bookmark_wormholes_start_at_zero
+      currentSettings.bookmark_wormholes_start_at_zero,
+      currentSettings.bookmark_custom_mapping,
+      systemSignatures,
+      currentSystemId,
+      currentSolarSystemId
     );
 
     // Run this synchronously to avoid clipboard issues if possible
