@@ -11,6 +11,7 @@ import {
 } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/MapSettingsProvider.tsx';
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
+import { BookmarksSettings } from './components/BookmarksSettings';
 import { SettingsListItem } from './types.ts';
 import { ImportExport } from './components/ImportExport.tsx';
 import { ServerSettings } from './components/ServerSettings.tsx';
@@ -26,7 +27,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { outCommand } = useMapRootState();
 
-  const { renderSettingItem, setUserRemoteSettings } = useMapSettings();
+  const { renderSettingItem, setUserRemoteSettings, settings } = useMapSettings();
   const isAdmin = useMapCheckPermissions([UserPermission.ADMIN_MAP]);
 
   const refVars = useRef({ outCommand, onHide, visible });
@@ -62,15 +63,16 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
       header="Map user settings"
       visible
       draggable={false}
-      className="w-[600px] h-[400px]"
+      className="w-[600px] h-[460px]"
+      contentClassName="custom-scrollbar"
       onShow={handleShow}
       onHide={handleHide}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3 h-full">
+        <div className="flex flex-col gap-2 h-full">
           <TabView
             activeIndex={activeIndex}
-            className="vertical-tabs-container"
+            className="vertical-tabs-container h-full"
             onTabChange={e => setActiveIndex(e.index)}
           >
             <TabPanel header="Common" headerClassName={styles.verticalTabHeader}>
@@ -87,6 +89,10 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
 
             <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>
               {renderSettingsList(SIGNATURES_CHECKBOXES_PROPS)}
+            </TabPanel>
+
+            <TabPanel header="Bookmarks" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <BookmarksSettings />
             </TabPanel>
 
             <TabPanel header="Widgets" className="h-full" headerClassName={styles.verticalTabHeader}>

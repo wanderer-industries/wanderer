@@ -6,12 +6,34 @@ export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
   [UserSettingsRemoteProps.select_on_spash]: false,
   [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
+  [UserSettingsRemoteProps.bookmark_name_format]: '',
+  [UserSettingsRemoteProps.bookmark_custom_mapping]: {},
+  [UserSettingsRemoteProps.bookmark_wormholes_start_at_zero]: false,
+  [UserSettingsRemoteProps.bookmark_auto_copy]: true,
+  [UserSettingsRemoteProps.bookmark_auto_temp_name]: '',
+  [UserSettingsRemoteProps.system_auto_tag]: '',
+  [UserSettingsRemoteProps.system_custom_label_name]: '',
 };
+
+export const AUTO_FORMAT_OPTIONS = [
+  { label: 'Disabled', value: '' },
+  { label: 'Numeric index (1, 2, 3)', value: 'index' },
+  { label: 'Letter index (A, B, C)', value: 'index_letter' },
+  { label: 'Numeric chain (11, 12, 121)', value: 'chain_index' },
+  { label: 'Letter chain (A, A1, A21)', value: 'chain_index_letters' },
+];
 
 export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.link_signature_on_splash,
   UserSettingsRemoteProps.select_on_spash,
   UserSettingsRemoteProps.delete_connection_with_sigs,
+  UserSettingsRemoteProps.bookmark_name_format,
+  UserSettingsRemoteProps.bookmark_custom_mapping,
+  UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
+  UserSettingsRemoteProps.bookmark_auto_copy,
+  UserSettingsRemoteProps.bookmark_auto_temp_name,
+  UserSettingsRemoteProps.system_auto_tag,
+  UserSettingsRemoteProps.system_custom_label_name,
 ];
 
 // export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
@@ -45,6 +67,37 @@ export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
     prop: InterfaceStoredSettingsProps.isShowUnsplashedSignatures,
     label: 'Show unsplashed signatures',
     type: 'checkbox',
+  },
+];
+
+export const BOOKMARKS_SETTINGS_PROPS: SettingsListItem[] = [
+  {
+    prop: UserSettingsRemoteProps.bookmark_auto_copy,
+    label: 'Automatically copy bookmarks to clipboard',
+    type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
+    label: 'Start wormhole indices at 0',
+    type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.bookmark_auto_temp_name,
+    label: 'Auto-fill wormhole temporary name',
+    type: 'dropdown',
+    options: AUTO_FORMAT_OPTIONS,
+  },
+  {
+    prop: UserSettingsRemoteProps.system_auto_tag,
+    label: 'Auto-tag jumped system',
+    type: 'dropdown',
+    options: AUTO_FORMAT_OPTIONS,
+  },
+  {
+    prop: UserSettingsRemoteProps.system_custom_label_name,
+    label: 'Auto-label jumped system',
+    type: 'dropdown',
+    options: AUTO_FORMAT_OPTIONS,
   },
 ];
 

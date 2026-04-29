@@ -1,20 +1,21 @@
 import { Dialog } from 'primereact/dialog';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
-    SOLAR_SYSTEM_CLASS_IDS,
-    SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
-    WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
+  SOLAR_SYSTEM_CLASS_IDS,
+  SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
+  WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
 import { SETTINGS_KEYS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useSystemSignaturesData } from '../../widgets/SystemSignatures/hooks/useSystemSignaturesData';
+import { useLinkSignature } from './hooks/useLinkSignature';
 
 const MULTI_DEST_TYPES = MULTI_DEST_WHS.map((type: string) => WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME[type].shortName);
 
@@ -23,7 +24,7 @@ interface SystemLinkSignatureDialogProps {
   setVisible: (visible: boolean) => void;
 }
 
-export const LINK_SIGNTATURE_SETTINGS: SignatureSettingsType = {
+export const LINK_SIGNATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.COSMIC_SIGNATURE]: true,
   [SETTINGS_KEYS.WORMHOLE]: true,
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
@@ -38,12 +39,8 @@ interface ExtendedSignatureCustomInfo {
 
 export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignatureDialogProps) => {
   const {
-    outCommand,
     data: { wormholes },
   } = useMapRootState();
-
-  const ref = useRef({ outCommand });
-  ref.current = { outCommand };
 
   // Get system info for the target system
   const { staticInfo: targetSystemInfo, dynamicInfo: targetSystemDynamicInfo } = useSystemInfo({
@@ -53,17 +50,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
   // Get the system class group for the target system
   const targetSystemClassGroup = useMemo(() => {
     if (!targetSystemInfo) return null;
-    const systemClassId = targetSystemInfo.system_class;
-
-    const systemClassKey = Object.keys(SOLAR_SYSTEM_CLASS_IDS).find(
-      key => SOLAR_SYSTEM_CLASS_IDS[key as keyof typeof SOLAR_SYSTEM_CLASS_IDS] === systemClassId,
-    );
-
-    if (!systemClassKey) return null;
-
-    return (
-      SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS[systemClassKey as keyof typeof SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS] || null
-    );
+    return getSystemClassGroup(targetSystemInfo.system_class);
   }, [targetSystemInfo]);
 
   const handleHide = useCallback(() => {
@@ -115,31 +102,25 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
     [targetSystemClassGroup, wormholes],
   );
 
+  const { signatures } = useSystemSignaturesData({
+    systemId: `${data.solar_system_source}`,
+    settings: LINK_SIGNATURE_SETTINGS,
+  });
+
+  const { handleLinkSignature } = useLinkSignature({ data, targetSystemClassGroup });
+
   const handleSelect = useCallback(
-    (signature: SystemSignature) => {
+    async (signature: SystemSignature) => {
       if (!signature) {
         return;
       }
 
-      const { outCommand } = ref.current;
-
-      outCommand({
-        type: OutCommand.linkSignatureToSystem,
-        data: {
-          ...data,
-          signature_eve_id: signature.eve_id,
-        },
-      });
+      await handleLinkSignature(signature);
 
       setVisible(false);
     },
-    [data, setVisible],
+    [handleLinkSignature, setVisible],
   );
-
-  const { signatures } = useSystemSignaturesData({
-    systemId: `${data.solar_system_source}`,
-    settings: LINK_SIGNTATURE_SETTINGS,
-  });
 
   useEffect(() => {
     if (!targetSystemDynamicInfo) {
@@ -160,7 +141,7 @@ export const SystemLinkSignatureDialog = ({ data, setVisible }: SystemLinkSignat
         systemId={`${data.solar_system_source}`}
         signatures={signatures}
         hasUnsupportedLanguage={false}
-        settings={LINK_SIGNTATURE_SETTINGS}
+        settings={LINK_SIGNATURE_SETTINGS}
         hideLinkedSignatures
         selectable
         onSelect={handleSelect}
