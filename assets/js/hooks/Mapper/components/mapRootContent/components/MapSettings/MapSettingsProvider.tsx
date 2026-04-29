@@ -54,26 +54,29 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   const refVars = useRef({ mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings });
   refVars.current = { mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings };
 
-  const handleSettingChange = useCallback(async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
-    const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
+  const handleSettingChange = useCallback(
+    async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
+      const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
 
-    if (UserSettingsRemoteList.includes(prop as any)) {
-      const newRemoteSettings = {
-        ...userRemoteSettings,
-        [prop]: value,
-      };
-      await outCommand({
-        type: OutCommand.updateUserSettings,
-        data: newRemoteSettings,
-      });
-      setUserRemoteSettings(newRemoteSettings);
-    } else {
-      setInterfaceSettings({
-        ...interfaceSettings,
-        [prop]: value,
-      });
-    }
-  }, []);
+      if (UserSettingsRemoteList.includes(prop as any)) {
+        const newRemoteSettings = {
+          ...userRemoteSettings,
+          [prop]: value,
+        };
+        await outCommand({
+          type: OutCommand.updateUserSettings,
+          data: newRemoteSettings,
+        });
+        setUserRemoteSettings(newRemoteSettings);
+      } else {
+        setInterfaceSettings({
+          ...interfaceSettings,
+          [prop]: value,
+        });
+      }
+    },
+    [],
+  );
 
   const renderSettingItem = useCallback(
     (item: SettingsListItem) => {
@@ -127,7 +130,9 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   );
 
   return (
-    <MapSettingsContext.Provider value={{ renderSettingItem, updateSetting: handleSettingChange, setUserRemoteSettings, settings: mergedSettings }}>
+    <MapSettingsContext.Provider
+      value={{ renderSettingItem, updateSetting: handleSettingChange, setUserRemoteSettings, settings: mergedSettings }}
+    >
       {children}
     </MapSettingsContext.Provider>
   );

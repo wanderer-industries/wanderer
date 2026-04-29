@@ -26,7 +26,10 @@ const VARIABLES = [
   { id: '{sig_letters}', desc: 'First 3 chars of signature (e.g., ABC)' },
   { id: '{sig}', desc: 'Full signature ID (e.g., ABC-123)' },
   { id: '{dest_type}', desc: 'Destination class (e.g., C5, HS, Thera)' },
-  { id: '{dest_class_index}', desc: 'Letter index for multiple holes to same class (empty if only 1, otherwise a, b, c...)' },
+  {
+    id: '{dest_class_index}',
+    desc: 'Letter index for multiple holes to same class (empty if only 1, otherwise a, b, c...)',
+  },
   { id: '{type}', desc: 'Wormhole type (e.g., K162, H900)' },
   { id: '{size}', desc: 'Hole size (e.g., S, M, XL)' },
   { id: '{mass}', desc: 'Total mass in bil (e.g., 3.3)' },
@@ -57,7 +60,7 @@ export const BookmarkNameFormatSetting = () => {
   const preview = useMemo(() => {
     const isZero = settings.bookmark_wormholes_start_at_zero;
     const sep = localMapping?.chain_separator || '';
-    
+
     const chainNum = isZero ? `0${sep}0${sep}1` : `1${sep}1${sep}2`;
     const chainLet = isZero ? `A${sep}0${sep}1` : `A${sep}1${sep}2`;
     const currentIndex = isZero ? 1 : 2;
@@ -81,15 +84,15 @@ export const BookmarkNameFormatSetting = () => {
       custom_info: JSON.stringify({
         time_status: TimeStatus._1h,
         mass_status: MassState.verge,
-      })
+      }),
     };
 
     const dummyWormholesData = {
-      'V283': {
+      V283: {
         total_mass: 3300000000,
         max_mass_per_jump: 62000000,
-        dest: ['hs']
-      } as any
+        dest: ['hs'],
+      } as any,
     };
 
     return formatBookmarkName(
@@ -100,8 +103,8 @@ export const BookmarkNameFormatSetting = () => {
       dummyWormholesData,
       isZero,
       localMapping,
-      { 'preview_sys': [otherDummySig] },
-      'preview_sys'
+      { preview_sys: [otherDummySig] },
+      'preview_sys',
     );
   }, [localFormat, settings.bookmark_wormholes_start_at_zero, localMapping]);
 
@@ -152,7 +155,7 @@ export const BookmarkNameFormatSetting = () => {
               return newMapping;
             });
           }}
-          onBlur={(e) => {
+          onBlur={e => {
             const val = e.target.value;
             setLocalMapping(prev => {
               const currentVal = prev[key] !== undefined ? prev[key] : defaultVal;
@@ -192,7 +195,9 @@ export const BookmarkNameFormatSetting = () => {
       />
       <div className="text-sm p-2 bg-stone-800 rounded border border-stone-700 flex flex-col gap-1">
         <span className="text-stone-400 text-xs">Live Preview:</span>
-        <span className="text-stone-200 font-mono">{preview || <span className="italic text-stone-500">Empty</span>}</span>
+        <span className="text-stone-200 font-mono">
+          {preview || <span className="italic text-stone-500">Empty</span>}
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 text-xs text-stone-400 p-2 bg-stone-800/50 rounded border border-stone-800 mt-2 max-h-[160px]">
@@ -219,13 +224,11 @@ export const BookmarkNameFormatSetting = () => {
         >
           {showAdvanced ? 'Hide Advanced String Customization' : 'Show Advanced String Customization'}
         </WdButton>
-        
+
         {showAdvanced && (
           <div className="p-3 bg-stone-900 rounded border border-stone-800 mt-2 flex flex-col gap-4">
             <div className="flex justify-between items-start">
-              <p className="text-stone-400 text-xs italic">
-                Override the default output of specific format variables.
-              </p>
+              <p className="text-stone-400 text-xs italic">Override the default output of specific format variables.</p>
               <WdButton
                 size="small"
                 outlined
@@ -238,7 +241,7 @@ export const BookmarkNameFormatSetting = () => {
                 Reset Mappings
               </WdButton>
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Time</h5>
               <div className="flex flex-wrap gap-2">
@@ -262,9 +265,7 @@ export const BookmarkNameFormatSetting = () => {
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Other / Formatting</h5>
-              <div className="flex flex-wrap gap-2">
-                {renderMappingInput('chain_separator', 'Chain Separator', '')}
-              </div>
+              <div className="flex flex-wrap gap-2">{renderMappingInput('chain_separator', 'Chain Separator', '')}</div>
             </div>
 
             <div className="flex flex-col gap-2">

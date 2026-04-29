@@ -3,7 +3,11 @@ import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureC
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
 import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes';
-import { WORMHOLES_ADDITIONAL_INFO, SHIP_MASSES_SIZE, SHIP_SIZES_NAMES_SHORT } from '@/hooks/Mapper/components/map/constants';
+import {
+  WORMHOLES_ADDITIONAL_INFO,
+  SHIP_MASSES_SIZE,
+  SHIP_SIZES_NAMES_SHORT,
+} from '@/hooks/Mapper/components/map/constants';
 import { ALL_DEST_TYPES_MAP, MULTI_DEST_WHS } from '@/hooks/Mapper/constants';
 import { ShipSizeStatus } from '@/hooks/Mapper/types/connection';
 
@@ -56,13 +60,13 @@ const DEST_CLASS_OVERRIDES: Record<string, string> = {
   p: 'Pochven',
   pochven: 'Pochven',
   'c1/c2/c3': 'C1/C2/C3',
-  'c4/c5': 'C4/C5'
+  'c4/c5': 'C4/C5',
 };
 
 const formatDestString = (dest: string | null | undefined, mapping?: Record<string, string>): string => {
   if (!dest) return '?';
   const lowerDest = dest.toLowerCase();
-  
+
   const normalizedDest = DEST_CLASS_OVERRIDES[lowerDest] ? DEST_CLASS_OVERRIDES[lowerDest].toLowerCase() : lowerDest;
   const mappingKey = `class_${normalizedDest.replace(/[^a-z0-9]/g, '')}`;
   if (mapping && mapping[mappingKey] !== undefined) {
@@ -95,7 +99,7 @@ export const calculateBookmarkIndex = (
   currentSolarSystemId: string,
   currentEveId: string,
   startAtZero: boolean = false,
-  separator: string = ''
+  separator: string = '',
 ): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
   let parentBookmarkIndexLetters: string | undefined;
@@ -117,7 +121,10 @@ export const calculateBookmarkIndex = (
       }
 
       if (parentInfo.bookmark_index_chained_letters != null) {
-        if (!parentBookmarkIndexLetters || String(parentInfo.bookmark_index_chained_letters).length < parentBookmarkIndexLetters.length) {
+        if (
+          !parentBookmarkIndexLetters ||
+          String(parentInfo.bookmark_index_chained_letters).length < parentBookmarkIndexLetters.length
+        ) {
           parentBookmarkIndexLetters = String(parentInfo.bookmark_index_chained_letters);
         }
       }
@@ -126,7 +133,7 @@ export const calculateBookmarkIndex = (
 
   const currentSigsRaw = [
     ...(systemSignatures[currentSystemUuid] || []),
-    ...(systemSignatures[currentSolarSystemId] || [])
+    ...(systemSignatures[currentSolarSystemId] || []),
   ];
 
   // Deduplicate in case both keys map to the same or overlapping arrays
@@ -143,7 +150,10 @@ export const calculateBookmarkIndex = (
   }
 
   const chained = parentBookmarkIndex !== undefined ? `${parentBookmarkIndex}${separator}${i}` : `${i}`;
-  const chainedLetters = parentBookmarkIndexLetters !== undefined ? `${parentBookmarkIndexLetters}${separator}${i}` : numberToLetters(i, startAtZero);
+  const chainedLetters =
+    parentBookmarkIndexLetters !== undefined
+      ? `${parentBookmarkIndexLetters}${separator}${i}`
+      : numberToLetters(i, startAtZero);
 
   return { index: i, chained, chainedLetters };
 };
@@ -158,7 +168,7 @@ export const formatBookmarkName = (
   mapping?: Record<string, string>,
   systemSignatures?: Record<string, SystemSignature[]>,
   currentSystemId?: string,
-  currentSolarSystemId?: string
+  currentSolarSystemId?: string,
 ): string => {
   let result = formatStr;
   const info = parseSignatureCustomInfo(signature.custom_info);
@@ -173,7 +183,10 @@ export const formatBookmarkName = (
   result = result.replace(/\{index_letter\}/g, () => numberToLetters(bookmarkIndex, startAtZero));
 
   // Replace {chain_index_letters}
-  result = result.replace(/\{chain_index_letters\}/g, () => info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString());
+  result = result.replace(
+    /\{chain_index_letters\}/g,
+    () => info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString(),
+  );
 
   // Replace {sig_letters} (first 3 chars of eve_id)
   const sigLetters = signature.eve_id.substring(0, 3).toUpperCase();
@@ -212,16 +225,21 @@ export const formatBookmarkName = (
 
   // Calculate {dest_class_index}
   let destClassIndexStr = '';
-  if (result.includes('{dest_class_index}') && systemSignatures && (currentSystemId || currentSolarSystemId) && destTypeStr) {
+  if (
+    result.includes('{dest_class_index}') &&
+    systemSignatures &&
+    (currentSystemId || currentSolarSystemId) &&
+    destTypeStr
+  ) {
     const currentSigsRaw = [
       ...(systemSignatures[currentSystemId || ''] || []),
-      ...(systemSignatures[currentSolarSystemId || ''] || [])
+      ...(systemSignatures[currentSolarSystemId || ''] || []),
     ];
     // Deduplicate and ensure current signature is included
     const sigsMap = new Map(currentSigsRaw.map(sig => [sig.eve_id, sig]));
     sigsMap.set(signature.eve_id, signature);
     const sigsInSystem = Array.from(sigsMap.values());
-    
+
     // Helper to get a simplified comparable class for a signature
     const getSigDestClass = (sig: SystemSignature) => {
       if (sig.eve_id === signature.eve_id) return finalDestTypeStr;
@@ -264,7 +282,7 @@ export const formatBookmarkName = (
   let sizeStr = '';
   let massStr = '';
   let whDataForSize: WormholeDataRaw | null = null;
-  
+
   if (signature.type && MULTI_DEST_WHS.includes(signature.type) && info.destType) {
     const destOption = ALL_DEST_TYPES_MAP[info.destType];
     if (destOption && destOption.whClassName) {
@@ -289,14 +307,14 @@ export const formatBookmarkName = (
         [ShipSizeStatus.medium]: 'M',
         [ShipSizeStatus.large]: '',
         [ShipSizeStatus.freight]: 'XL',
-        [ShipSizeStatus.capital]: 'C'
+        [ShipSizeStatus.capital]: 'C',
       };
       const sizeMappingKeys: Record<ShipSizeStatus, string> = {
         [ShipSizeStatus.small]: 'size_small',
         [ShipSizeStatus.medium]: 'size_medium',
         [ShipSizeStatus.large]: 'size_large',
         [ShipSizeStatus.freight]: 'size_freight',
-        [ShipSizeStatus.capital]: 'size_capital'
+        [ShipSizeStatus.capital]: 'size_capital',
       };
       const mappingKey = sizeMappingKeys[sizeStatus];
       if (mapping && mapping[mappingKey] !== undefined) {
@@ -346,12 +364,15 @@ export const handleAutoBookmark = async (
   currentSystemId: string,
   currentSolarSystemId: string,
   wormholesData: Record<string, WormholeDataRaw>,
-  targetSystemClassGroup: string | null
+  targetSystemClassGroup: string | null,
 ): Promise<{ updatedSignature: SystemSignature; shouldUpdate: boolean }> => {
   let updatedSignature = signature;
   let shouldUpdate = false;
 
-  if (signature.group !== SignatureGroup.Wormhole || (!currentSettings?.bookmark_name_format && !currentSettings?.bookmark_auto_temp_name)) {
+  if (
+    signature.group !== SignatureGroup.Wormhole ||
+    (!currentSettings?.bookmark_name_format && !currentSettings?.bookmark_auto_temp_name)
+  ) {
     return { updatedSignature, shouldUpdate };
   }
 
@@ -366,7 +387,7 @@ export const handleAutoBookmark = async (
       currentSolarSystemId,
       signature.eve_id,
       currentSettings?.bookmark_wormholes_start_at_zero,
-      separator
+      separator,
     );
     bookmarkIndex = calculated.index;
     info.bookmark_index = calculated.index;
@@ -409,7 +430,7 @@ export const handleAutoBookmark = async (
       currentSettings.bookmark_custom_mapping,
       systemSignatures,
       currentSystemId,
-      currentSolarSystemId
+      currentSolarSystemId,
     );
 
     // Run this synchronously to avoid clipboard issues if possible

@@ -123,8 +123,12 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       out = { ...out, group: group! };
 
       if (group === SignatureGroup.Wormhole) {
-        const targetSystem = values.linked_system ? systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system) : null;
-        const targetSystemClassGroup = targetSystem?.system_static_info ? getSystemClassGroup(targetSystem.system_static_info.system_class) : null;
+        const targetSystem = values.linked_system
+          ? systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system)
+          : null;
+        const targetSystemClassGroup = targetSystem?.system_static_info
+          ? getSystemClassGroup(targetSystem.system_static_info.system_class)
+          : null;
 
         const currentSystem = systems.find((s: any) => s.id === systemId);
         const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
@@ -136,7 +140,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           systemId,
           solarSystemIdStr,
           wormholesData,
-          targetSystemClassGroup
+          targetSystemClassGroup,
         );
         out = updatedSignature;
       }
@@ -169,7 +173,17 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureData, signatureForm, outCommand, systemId, onHide, systemSignatures, systems, wormholesData, userSettings],
+    [
+      signatureData,
+      signatureForm,
+      outCommand,
+      systemId,
+      onHide,
+      systemSignatures,
+      systems,
+      wormholesData,
+      userSettings,
+    ],
   );
 
   useEffect(() => {

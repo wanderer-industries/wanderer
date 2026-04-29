@@ -45,7 +45,7 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
         systemUuid,
         data.solar_system_source.toString(),
         wormholesData,
-        targetSystemClassGroup
+        targetSystemClassGroup,
       );
 
       if (shouldUpdate) {
@@ -77,7 +77,9 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
         const startAtZero = userSettings?.bookmark_wormholes_start_at_zero;
         const letter = numberToLetters(bIndex, startAtZero);
 
-        const targetSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_target);
+        const targetSystem = systems.find(
+          (s: any) => s.system_static_info?.solar_system_id === data.solar_system_target,
+        );
 
         if (targetSystem) {
           if (systemAutoTag) {

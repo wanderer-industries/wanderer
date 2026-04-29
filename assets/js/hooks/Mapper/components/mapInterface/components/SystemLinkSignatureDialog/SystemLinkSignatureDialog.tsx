@@ -3,9 +3,9 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { useSystemInfo } from '@/hooks/Mapper/components/hooks';
 import {
-    SOLAR_SYSTEM_CLASS_IDS,
-    SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
-    WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
+  SOLAR_SYSTEM_CLASS_IDS,
+  SOLAR_SYSTEM_CLASSES_TO_CLASS_GROUPS,
+  WORMHOLES_ADDITIONAL_INFO_BY_SHORT_NAME,
 } from '@/hooks/Mapper/components/map/constants.ts';
 import { SystemSignaturesContent } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SystemSignaturesContent';
 import { MULTI_DEST_WHS, ALL_DEST_TYPES_MAP, DEST_TYPES_MAP_MAP } from '@/hooks/Mapper/constants.ts';
