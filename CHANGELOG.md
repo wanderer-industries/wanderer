@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.100.1](https://github.com/wanderer-industries/wanderer/compare/v1.100.0...v1.100.1) (2026-05-01)
+
+
+
+
+### Bug Fixes:
+
+* core: potential memory leak fixes
+
 ## [v1.100.0](https://github.com/wanderer-industries/wanderer/compare/v1.99.1...v1.100.0) (2026-04-17)
 
 
