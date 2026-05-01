@@ -362,5 +362,6 @@ defmodule WandererApp.CachedInfo do
 
   defp cache_items([], _list_name), do: :ok
 
-  defp cache_items(items, list_name), do: WandererApp.Cache.put(list_name, items)
+  defp cache_items(items, list_name),
+    do: WandererApp.Cache.put(list_name, items, ttl: :timer.hours(4))
 end

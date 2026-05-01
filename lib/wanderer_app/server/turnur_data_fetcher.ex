@@ -17,7 +17,8 @@ defmodule WandererApp.Server.TurnurDataFetcher do
 
   @initial_state %{
     retries_count: 5,
-    restart_timeout: @refresh_timeout
+    restart_timeout: @refresh_timeout,
+    task_ref: nil
   }
 
   def get_chain_pairs(params) do
@@ -84,37 +85,57 @@ defmodule WandererApp.Server.TurnurDataFetcher do
     {:noreply, state}
   end
 
+  # Only spawn a new task if no task is currently running
   @impl true
-  def handle_info(
-        :refresh_data,
-        state
-      ) do
-    Task.async(fn -> load_data() end)
+  def handle_info(:refresh_data, %{task_ref: nil} = state) do
+    task = Task.async(fn -> load_data() end)
+    Process.send_after(self(), :refresh_data, @refresh_timeout)
+
+    {:noreply, %{state | task_ref: task.ref}}
+  end
+
+  # Skip if a task is still running — prevents task accumulation
+  @impl true
+  def handle_info(:refresh_data, state) do
+    Logger.debug("#{__MODULE__} skipping refresh, previous task still running")
     Process.send_after(self(), :refresh_data, @refresh_timeout)
 
     {:noreply, state}
   end
 
+  # Handle task completion
   @impl true
-  def handle_info({ref, result}, state) do
+  def handle_info({ref, result}, %{task_ref: ref} = state) do
     Process.demonitor(ref, [:flush])
 
     case result do
       {:ok, data} ->
         _cache_items(data)
-        {:noreply, state}
 
       _ ->
         Logger.error("#{__MODULE__} failed to load data")
-        {:noreply, state}
     end
+
+    {:noreply, %{state | task_ref: nil}}
+  end
+
+  # Handle task crash
+  @impl true
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{task_ref: ref} = state) do
+    Logger.error("#{__MODULE__} task crashed")
+    {:noreply, %{state | task_ref: nil}}
   end
 
   def handle_info(_action, state),
     do: {:noreply, state}
 
   defp load_data() do
-    case Req.get("#{@eve_scout_base_url}/signatures", params: [system_name: @system_name]) do
+    case Req.get("#{@eve_scout_base_url}/signatures",
+           params: [system_name: @system_name],
+           retry: false,
+           connect_options: [timeout: 10_000],
+           receive_timeout: 10_000
+         ) do
       {:ok, %{status: 200, body: body}} ->
         {:ok, body |> _get_infos()}
 

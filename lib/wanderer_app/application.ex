@@ -65,25 +65,48 @@ defmodule WandererApp.Application do
       Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)},
         id: :api_cache_worker
       ),
-      Supervisor.child_spec({Cachex, name: :esi_auth_cache}, id: :esi_auth_cache_worker),
-      Supervisor.child_spec({Cachex, name: :system_static_info_cache},
+      Supervisor.child_spec(
+        {Cachex, name: :esi_auth_cache, default_ttl: :timer.minutes(30)},
+        id: :esi_auth_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :system_static_info_cache, default_ttl: :timer.hours(4)},
         id: :system_static_info_cache_worker
       ),
-      Supervisor.child_spec({Cachex, name: :ship_types_cache}, id: :ship_types_cache_worker),
-      Supervisor.child_spec({Cachex, name: :character_cache}, id: :character_cache_worker),
-      Supervisor.child_spec({Cachex, name: :acl_cache}, id: :acl_cache_worker),
-      Supervisor.child_spec({Cachex, name: :map_cache}, id: :map_cache_worker),
-      Supervisor.child_spec({Cachex, name: :map_pool_cache},
+      Supervisor.child_spec(
+        {Cachex, name: :ship_types_cache, default_ttl: :timer.hours(4)},
+        id: :ship_types_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :character_cache, default_ttl: :timer.hours(1)},
+        id: :character_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :acl_cache, default_ttl: :timer.hours(1)},
+        id: :acl_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :map_cache, default_ttl: :timer.hours(2)},
+        id: :map_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :map_pool_cache, default_ttl: :timer.hours(2)},
         id: :map_pool_cache_worker
       ),
-      Supervisor.child_spec({Cachex, name: :map_state_cache}, id: :map_state_cache_worker),
-      Supervisor.child_spec({Cachex, name: :character_state_cache},
+      Supervisor.child_spec(
+        {Cachex, name: :map_state_cache, default_ttl: :timer.hours(2)},
+        id: :map_state_cache_worker
+      ),
+      Supervisor.child_spec(
+        {Cachex, name: :character_state_cache, default_ttl: :timer.hours(1)},
         id: :character_state_cache_worker
       ),
-      Supervisor.child_spec({Cachex, name: :tracked_characters},
+      Supervisor.child_spec(
+        {Cachex, name: :tracked_characters, default_ttl: :timer.hours(1)},
         id: :tracked_characters_cache_worker
       ),
-      Supervisor.child_spec({Cachex, name: :wanderer_app_cache},
+      Supervisor.child_spec(
+        {Cachex, name: :wanderer_app_cache, default_ttl: :timer.hours(1)},
         id: :wanderer_app_cache_worker
       ),
       # Cache for webhook subscriptions - 5 minute TTL to reduce DB load
