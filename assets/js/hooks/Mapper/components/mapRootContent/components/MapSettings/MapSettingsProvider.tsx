@@ -80,6 +80,13 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
 
   const renderSettingItem = useCallback(
     (item: SettingsListItem) => {
+      if (item.dependsOn) {
+        const dependsOnValue = refVars.current.mergedSettings[item.dependsOn];
+        if (!dependsOnValue) {
+          return null;
+        }
+      }
+
       const currentValue = refVars.current.mergedSettings[item.prop];
 
       if (item.type === 'checkbox') {

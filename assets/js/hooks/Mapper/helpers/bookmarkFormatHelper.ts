@@ -110,6 +110,10 @@ export const calculateBookmarkIndex = (
     const parentSigs = sigs.filter(sig => sig.linked_system?.solar_system_id?.toString() === currentSolarSystemId);
     for (const parentSig of parentSigs) {
       const parentInfo = parseSignatureCustomInfo(parentSig.custom_info);
+
+      // Return holes have their bookmark_index deleted, so we skip them to avoid hijacking the chain
+      if (parentInfo.bookmark_index === undefined) continue;
+
       if (parentInfo.bookmark_index_chained != null) {
         if (!parentBookmarkIndex || String(parentInfo.bookmark_index_chained).length < parentBookmarkIndex.length) {
           parentBookmarkIndex = String(parentInfo.bookmark_index_chained);
@@ -162,7 +166,7 @@ export const formatBookmarkName = (
   formatStr: string,
   signature: SystemSignature,
   destSystemClass: string | null,
-  bookmarkIndex: number,
+  bookmarkIndex: number | string,
   wormholesData: Record<string, WormholeDataRaw> = {},
   startAtZero: boolean = false,
   mapping?: Record<string, string>,
@@ -180,12 +184,17 @@ export const formatBookmarkName = (
   result = result.replace(/\{chain_index\}/g, () => info.bookmark_index_chained || bookmarkIndex.toString());
 
   // Replace {index_letter}
-  result = result.replace(/\{index_letter\}/g, () => numberToLetters(bookmarkIndex, startAtZero));
+  result = result.replace(/\{index_letter\}/g, () =>
+    typeof bookmarkIndex === 'number' ? numberToLetters(bookmarkIndex, startAtZero) : bookmarkIndex.toString(),
+  );
 
   // Replace {chain_index_letters}
   result = result.replace(
     /\{chain_index_letters\}/g,
-    () => info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString(),
+    () =>
+      info.bookmark_index_chained_letters ||
+      info.bookmark_index_chained ||
+      (typeof bookmarkIndex === 'number' ? numberToLetters(bookmarkIndex, startAtZero) : bookmarkIndex.toString()),
   );
 
   // Replace {sig_letters} (first 3 chars of eve_id)
@@ -365,6 +374,8 @@ export const handleAutoBookmark = async (
   currentSolarSystemId: string,
   wormholesData: Record<string, WormholeDataRaw>,
   targetSystemClassGroup: string | null,
+  targetSystemUuid?: string,
+  targetSolarSystemId?: string,
 ): Promise<{ updatedSignature: SystemSignature; shouldUpdate: boolean }> => {
   let updatedSignature = signature;
   let shouldUpdate = false;
@@ -378,8 +389,39 @@ export const handleAutoBookmark = async (
 
   const info = parseSignatureCustomInfo(signature.custom_info);
   let bookmarkIndex = info.bookmark_index;
+  let bookmarkIndexToUse: number | string = bookmarkIndex != null ? bookmarkIndex : '';
 
-  if (bookmarkIndex == null) {
+  let isReturnHole = false;
+  let symbol = '';
+
+  if (currentSettings?.bookmark_return_hole_ignore && (targetSystemUuid || targetSolarSystemId)) {
+    const targetSigsRaw = [
+      ...(targetSystemUuid ? systemSignatures[targetSystemUuid] || [] : []),
+      ...(targetSolarSystemId ? systemSignatures[targetSolarSystemId] || [] : []),
+    ];
+
+    const uniqueTargetSigs = Array.from(new Map(targetSigsRaw.map(sig => [sig.eve_id, sig])).values());
+
+    isReturnHole = uniqueTargetSigs.some(
+      sig => sig.linked_system?.solar_system_id?.toString() === currentSolarSystemId.toString(),
+    );
+
+    if (isReturnHole) {
+      symbol = currentSettings.bookmark_return_hole_symbol || '';
+      if (symbol === ' ') symbol = '';
+    }
+  }
+
+  if (isReturnHole) {
+    if (info.bookmark_index !== undefined) {
+      delete info.bookmark_index;
+    }
+    info.bookmark_index_chained = symbol;
+    info.bookmark_index_chained_letters = symbol;
+    bookmarkIndexToUse = symbol;
+    updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
+    shouldUpdate = true;
+  } else if (bookmarkIndex == null) {
     const separator = currentSettings?.bookmark_custom_mapping?.chain_separator || '';
     const calculated = calculateBookmarkIndex(
       systemSignatures,
@@ -393,27 +435,35 @@ export const handleAutoBookmark = async (
     info.bookmark_index = calculated.index;
     info.bookmark_index_chained = calculated.chained;
     info.bookmark_index_chained_letters = calculated.chainedLetters;
+    bookmarkIndexToUse = calculated.index;
     updatedSignature = { ...signature, custom_info: JSON.stringify(info) };
     shouldUpdate = true;
   }
 
-  if (currentSettings?.bookmark_auto_temp_name && !updatedSignature.temporary_name) {
+  const needsTempNameUpdate =
+    !updatedSignature.temporary_name ||
+    (isReturnHole && updatedSignature.temporary_name !== symbol && currentSettings?.bookmark_auto_temp_name);
+
+  if (currentSettings?.bookmark_auto_temp_name && needsTempNameUpdate) {
     let autoName = '';
     switch (currentSettings.bookmark_auto_temp_name) {
       case 'index':
-        autoName = bookmarkIndex.toString();
+        autoName = bookmarkIndexToUse.toString();
         break;
       case 'index_letter':
-        autoName = numberToLetters(bookmarkIndex, currentSettings.bookmark_wormholes_start_at_zero);
+        autoName =
+          typeof bookmarkIndexToUse === 'number'
+            ? numberToLetters(bookmarkIndexToUse, currentSettings.bookmark_wormholes_start_at_zero)
+            : bookmarkIndexToUse.toString();
         break;
       case 'chain_index':
-        autoName = info.bookmark_index_chained || bookmarkIndex.toString();
+        autoName = info.bookmark_index_chained || bookmarkIndexToUse.toString();
         break;
       case 'chain_index_letters':
-        autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndex.toString();
+        autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndexToUse.toString();
         break;
     }
-    if (autoName) {
+    if (autoName !== '' || isReturnHole) {
       updatedSignature = { ...updatedSignature, temporary_name: autoName };
       shouldUpdate = true;
     }
@@ -424,7 +474,7 @@ export const handleAutoBookmark = async (
       currentSettings.bookmark_name_format,
       updatedSignature,
       targetSystemClassGroup,
-      bookmarkIndex,
+      bookmarkIndexToUse,
       wormholesData,
       currentSettings.bookmark_wormholes_start_at_zero,
       currentSettings.bookmark_custom_mapping,

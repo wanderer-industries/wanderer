@@ -129,6 +129,9 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
         const targetSystemClassGroup = targetSystem?.system_static_info
           ? getSystemClassGroup(targetSystem.system_static_info.system_class)
           : null;
+        const targetSystemUuid = targetSystem?.id;
+        const targetSolarSystemIdStr =
+          targetSystem?.system_static_info?.solar_system_id?.toString() || values.linked_system;
 
         const currentSystem = systems.find((s: any) => s.id === systemId);
         const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
@@ -141,6 +144,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           solarSystemIdStr,
           wormholesData,
           targetSystemClassGroup,
+          targetSystemUuid,
+          targetSolarSystemIdStr,
         );
         out = updatedSignature;
       }

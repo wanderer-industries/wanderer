@@ -36,6 +36,10 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
       const sourceSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_source);
       const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
 
+      const targetSystem = systems.find((s: any) => s.system_static_info?.solar_system_id === data.solar_system_target);
+      const targetSystemUuid = targetSystem?.id;
+      const targetSolarSystemIdStr = data.solar_system_target?.toString();
+
       const signatureToLink = { ...signature, group: SignatureGroup.Wormhole };
 
       const { updatedSignature, shouldUpdate } = await handleAutoBookmark(
@@ -46,6 +50,8 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
         data.solar_system_source.toString(),
         wormholesData,
         targetSystemClassGroup,
+        targetSystemUuid,
+        targetSolarSystemIdStr,
       );
 
       if (shouldUpdate) {
@@ -73,69 +79,70 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
 
       if (systemAutoTag || systemCustomLabelName) {
         const info = parseSignatureCustomInfo(updatedSignature.custom_info);
-        const bIndex = info.bookmark_index ?? 0;
-        const startAtZero = userSettings?.bookmark_wormholes_start_at_zero;
-        const letter = numberToLetters(bIndex, startAtZero);
 
-        const targetSystem = systems.find(
-          (s: any) => s.system_static_info?.solar_system_id === data.solar_system_target,
-        );
+        if (info.bookmark_index !== undefined) {
+          const bIndex = info.bookmark_index;
+          const startAtZero = userSettings?.bookmark_wormholes_start_at_zero;
+          const letter = numberToLetters(bIndex, startAtZero);
 
-        if (targetSystem) {
-          if (systemAutoTag) {
-            let tagValue = '';
-            switch (systemAutoTag) {
-              case 'index':
-              case 'chain_index':
-                tagValue = bIndex.toString();
-                break;
-              case 'index_letter':
-                tagValue = letter;
-                break;
-              case 'chain_index_letters':
-                tagValue = info.bookmark_index_chained_letters === letter ? letter : bIndex.toString();
-                break;
+          if (targetSystem) {
+            if (systemAutoTag) {
+              let tagValue = '';
+              switch (systemAutoTag) {
+                case 'index':
+                  tagValue = bIndex.toString();
+                  break;
+                case 'chain_index':
+                  tagValue = (info.bookmark_index_chained as string) || bIndex.toString();
+                  break;
+                case 'index_letter':
+                  tagValue = letter;
+                  break;
+                case 'chain_index_letters':
+                  tagValue = (info.bookmark_index_chained_letters as string) || letter;
+                  break;
+              }
+
+              if (tagValue) {
+                await outCommand({
+                  type: OutCommand.updateSystemTag,
+                  data: {
+                    system_id: targetSystem.id,
+                    value: tagValue,
+                  },
+                });
+              }
             }
 
-            if (tagValue) {
-              await outCommand({
-                type: OutCommand.updateSystemTag,
-                data: {
-                  system_id: targetSystem.id,
-                  value: tagValue,
-                },
-              });
-            }
-          }
+            if (systemCustomLabelName) {
+              let labelValue = '';
+              switch (systemCustomLabelName) {
+                case 'index':
+                  labelValue = bIndex.toString();
+                  break;
+                case 'index_letter':
+                  labelValue = letter;
+                  break;
+                case 'chain_index':
+                  labelValue = (info.bookmark_index_chained as string) || bIndex.toString();
+                  break;
+                case 'chain_index_letters':
+                  labelValue = (info.bookmark_index_chained_letters as string) || letter;
+                  break;
+              }
 
-          if (systemCustomLabelName) {
-            let labelValue = '';
-            switch (systemCustomLabelName) {
-              case 'index':
-                labelValue = bIndex.toString();
-                break;
-              case 'index_letter':
-                labelValue = letter;
-                break;
-              case 'chain_index':
-                labelValue = (info.bookmark_index_chained as string) || bIndex.toString();
-                break;
-              case 'chain_index_letters':
-                labelValue = (info.bookmark_index_chained_letters as string) || letter;
-                break;
-            }
+              if (labelValue) {
+                const outLabel = new LabelsManager(targetSystem.labels ?? '');
+                outLabel.updateCustomLabel(labelValue);
 
-            if (labelValue) {
-              const outLabel = new LabelsManager(targetSystem.labels ?? '');
-              outLabel.updateCustomLabel(labelValue);
-
-              await outCommand({
-                type: OutCommand.updateSystemLabels,
-                data: {
-                  system_id: targetSystem.id,
-                  value: outLabel.toString(),
-                },
-              });
+                await outCommand({
+                  type: OutCommand.updateSystemLabels,
+                  data: {
+                    system_id: targetSystem.id,
+                    value: outLabel.toString(),
+                  },
+                });
+              }
             }
           }
         }

@@ -11,6 +11,8 @@ export enum UserSettingsRemoteProps {
   bookmark_auto_temp_name = 'bookmark_auto_temp_name',
   system_auto_tag = 'system_auto_tag',
   system_custom_label_name = 'system_custom_label_name',
+  bookmark_return_hole_ignore = 'bookmark_return_hole_ignore',
+  bookmark_return_hole_symbol = 'bookmark_return_hole_symbol',
 }
 
 export type UserSettingsRemote = {
@@ -24,6 +26,8 @@ export type UserSettingsRemote = {
   bookmark_auto_temp_name: string;
   system_auto_tag: string;
   system_custom_label_name: string;
+  bookmark_return_hole_ignore: boolean;
+  bookmark_return_hole_symbol: string;
 };
 
 export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
@@ -35,4 +39,5 @@ export type SettingsListItem = {
   options?: { label: string; value: string }[];
   placeholder?: string;
   helperText?: string;
+  dependsOn?: keyof UserSettings;
 };

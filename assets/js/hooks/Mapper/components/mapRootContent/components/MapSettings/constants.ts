@@ -13,6 +13,8 @@ export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.bookmark_auto_temp_name]: '',
   [UserSettingsRemoteProps.system_auto_tag]: '',
   [UserSettingsRemoteProps.system_custom_label_name]: '',
+  [UserSettingsRemoteProps.bookmark_return_hole_ignore]: false,
+  [UserSettingsRemoteProps.bookmark_return_hole_symbol]: '',
 };
 
 export const AUTO_FORMAT_OPTIONS = [
@@ -34,6 +36,8 @@ export const UserSettingsRemoteList = [
   UserSettingsRemoteProps.bookmark_auto_temp_name,
   UserSettingsRemoteProps.system_auto_tag,
   UserSettingsRemoteProps.system_custom_label_name,
+  UserSettingsRemoteProps.bookmark_return_hole_ignore,
+  UserSettingsRemoteProps.bookmark_return_hole_symbol,
 ];
 
 // export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
@@ -80,6 +84,17 @@ export const BOOKMARKS_SETTINGS_PROPS: SettingsListItem[] = [
     prop: UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
     label: 'Start wormhole indices at 0',
     type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.bookmark_return_hole_ignore,
+    label: 'Ignore return hole when creating indexes',
+    type: 'checkbox',
+  },
+  {
+    prop: UserSettingsRemoteProps.bookmark_return_hole_symbol,
+    label: 'Return hole symbol (use space for empty)',
+    type: 'text',
+    dependsOn: UserSettingsRemoteProps.bookmark_return_hole_ignore,
   },
   {
     prop: UserSettingsRemoteProps.bookmark_auto_temp_name,

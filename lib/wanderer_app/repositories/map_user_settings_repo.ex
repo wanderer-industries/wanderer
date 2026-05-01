@@ -9,7 +9,9 @@ defmodule WandererApp.MapUserSettingsRepo do
     "bookmark_name_format" => "",
     "bookmark_custom_mapping" => %{},
     "system_auto_tag" => "",
-    "system_custom_label_name" => ""
+    "system_custom_label_name" => "",
+    "bookmark_return_hole_ignore" => false,
+    "bookmark_return_hole_symbol" => ""
   }
 
   def get(map_id, user_id) do
