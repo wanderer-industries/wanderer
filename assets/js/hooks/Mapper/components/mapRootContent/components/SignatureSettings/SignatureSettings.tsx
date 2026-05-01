@@ -2,18 +2,22 @@ import {
   SignatureGroupContent,
   SignatureGroupSelect,
 } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components';
+import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { handleAutoBookmark } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   linked_system: string;
   destType: string;
+  k162Type?: string;
   time_status: TimeStatus;
   mass_status: MassState;
 };
@@ -26,10 +30,22 @@ export interface MapSettingsProps {
 }
 
 export const SignatureSettings = ({ systemId, show, onHide, signatureData }: MapSettingsProps) => {
-  const { outCommand } = useMapRootState();
+  const {
+    outCommand,
+    data: { systemSignatures, systems, wormholesData },
+  } = useMapRootState();
 
   const handleShow = async () => {};
+
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
+
+  const [userSettings, setUserSettings] = useState<any>(null);
+
+  useEffect(() => {
+    outCommand({ type: OutCommand.getUserSettings, data: null })
+      .then((res: any) => setUserSettings(res?.user_settings))
+      .catch((e: any) => console.warn('Failed to fetch user settings', e));
+  }, [outCommand]);
 
   const handleSave = useCallback(
     // TODO: need fix
@@ -44,10 +60,13 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
       switch (group) {
         case SignatureGroup.Wormhole:
+          const existingInfo = parseSignatureCustomInfo(signatureData.custom_info);
           out = {
             ...out,
             custom_info: JSON.stringify({
+              ...existingInfo,
               destType: values.destType,
+              k162Type: values.k162Type,
               time_status: values.time_status,
               mass_status: values.mass_status,
             }),
@@ -103,6 +122,34 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       // Note: despite groups have optional type - this will always set
       out = { ...out, group: group! };
 
+      if (group === SignatureGroup.Wormhole) {
+        const targetSystem = values.linked_system
+          ? systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system)
+          : null;
+        const targetSystemClassGroup = targetSystem?.system_static_info
+          ? getSystemClassGroup(targetSystem.system_static_info.system_class)
+          : null;
+        const targetSystemUuid = targetSystem?.id;
+        const targetSolarSystemIdStr =
+          targetSystem?.system_static_info?.solar_system_id?.toString() || values.linked_system;
+
+        const currentSystem = systems.find((s: any) => s.id === systemId);
+        const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
+
+        const { updatedSignature } = await handleAutoBookmark(
+          out,
+          userSettings,
+          systemSignatures,
+          systemId,
+          solarSystemIdStr,
+          wormholesData,
+          targetSystemClassGroup,
+          targetSystemUuid,
+          targetSolarSystemIdStr,
+        );
+        out = updatedSignature;
+      }
+
       await outCommand({
         type: OutCommand.updateSignatures,
         data: {
@@ -131,7 +178,17 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       signatureForm.reset();
       onHide();
     },
-    [signatureData, signatureForm, outCommand, systemId, onHide],
+    [
+      signatureData,
+      signatureForm,
+      outCommand,
+      systemId,
+      onHide,
+      systemSignatures,
+      systems,
+      wormholesData,
+      userSettings,
+    ],
   );
 
   useEffect(() => {
@@ -142,19 +199,22 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
     const { linked_system, custom_info, ...rest } = signatureData;
 
-    let destType = null;
+    let destType: string | undefined = undefined;
+    let k162Type: string | undefined = undefined;
     let time_status = TimeStatus._24h;
     let mass_status = MassState.normal;
     if (custom_info) {
-      const customInfo = JSON.parse(custom_info);
+      const customInfo = parseSignatureCustomInfo(custom_info);
       destType = customInfo.destType;
-      time_status = customInfo.time_status;
+      k162Type = customInfo.k162Type;
+      time_status = customInfo.time_status ?? TimeStatus._24h;
       mass_status = customInfo.mass_status ?? MassState.normal;
     }
 
     signatureForm.reset({
       linked_system: linked_system?.solar_system_id.toString() ?? undefined,
       destType: destType,
+      k162Type: k162Type,
       time_status: time_status,
       mass_status: mass_status,
       ...rest,

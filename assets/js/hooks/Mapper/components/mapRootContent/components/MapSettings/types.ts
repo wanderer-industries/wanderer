@@ -4,12 +4,30 @@ export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
   select_on_spash = 'select_on_spash',
   delete_connection_with_sigs = 'delete_connection_with_sigs',
+  bookmark_name_format = 'bookmark_name_format',
+  bookmark_custom_mapping = 'bookmark_custom_mapping',
+  bookmark_wormholes_start_at_zero = 'bookmark_wormholes_start_at_zero',
+  bookmark_auto_copy = 'bookmark_auto_copy',
+  bookmark_auto_temp_name = 'bookmark_auto_temp_name',
+  system_auto_tag = 'system_auto_tag',
+  system_custom_label_name = 'system_custom_label_name',
+  bookmark_return_hole_ignore = 'bookmark_return_hole_ignore',
+  bookmark_return_hole_symbol = 'bookmark_return_hole_symbol',
 }
 
 export type UserSettingsRemote = {
   link_signature_on_splash: boolean;
   select_on_spash: boolean;
   delete_connection_with_sigs: boolean;
+  bookmark_name_format: string;
+  bookmark_custom_mapping?: Record<string, string>;
+  bookmark_wormholes_start_at_zero: boolean;
+  bookmark_auto_copy: boolean;
+  bookmark_auto_temp_name: string;
+  system_auto_tag: string;
+  system_custom_label_name: string;
+  bookmark_return_hole_ignore: boolean;
+  bookmark_return_hole_symbol: string;
 };
 
 export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
@@ -17,6 +35,9 @@ export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
 export type SettingsListItem = {
   prop: keyof UserSettings;
   label: string;
-  type: 'checkbox' | 'dropdown';
+  type: 'checkbox' | 'dropdown' | 'text';
   options?: { label: string; value: string }[];
+  placeholder?: string;
+  helperText?: string;
+  dependsOn?: keyof UserSettings;
 };
