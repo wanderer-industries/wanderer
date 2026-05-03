@@ -262,6 +262,9 @@
    {
       "solarSystemName": "Vale",
       "solarSystemID": 30005029,
+      "statics": [
+        "C729"
+      ],
       "effectName": "Dazh Liminality Locus",
       "effectPower": 1,
       "invasionStatus": "Final"

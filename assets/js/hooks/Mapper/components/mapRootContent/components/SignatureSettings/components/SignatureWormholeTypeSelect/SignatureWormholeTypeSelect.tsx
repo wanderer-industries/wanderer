@@ -32,7 +32,7 @@ const getPossibleWormholes = (systemStatic: SolarSystemStaticInfoRaw, wormholes:
   return {
     statics: possibleWHTypes
       .filter(x => x.respawn.some(y => y === Respawn.static))
-      .filter(x => systemStatic.statics.includes(x.name)),
+      .filter(x => systemStatic.statics?.includes(x.name)),
     k162: wormholes.find(x => x.name === 'K162')!,
     wanderings: possibleWHTypes.filter(x => x.respawn.some(y => y === Respawn.wandering)),
   };
