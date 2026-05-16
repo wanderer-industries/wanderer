@@ -24,9 +24,11 @@ defmodule WandererAppWeb.Presence do
         %{character_id: character_id, tracked: any_tracked, from: from}
       end)
 
-    # Delegate all cache operations to the PresenceGracePeriodManager (synchronous to avoid
-    # race conditions with the 5-second update_presence cycle reading stale cache data)
-    WandererAppWeb.PresenceGracePeriodManager.process_presence_change_sync(map_id, presence_data)
+    # Delegate all cache operations to the PresenceGracePeriodManager
+    # NOTE: Must use async cast here — handle_metas runs inside the Presence GenServer.
+    # A synchronous GenServer.call would block ALL presence operations (track/untrack/diffs)
+    # across all maps, and can cause GenServer.call timeouts that crash the Presence process.
+    WandererAppWeb.PresenceGracePeriodManager.process_presence_change(map_id, presence_data)
 
     {:ok, state}
   end

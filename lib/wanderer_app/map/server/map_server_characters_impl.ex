@@ -359,9 +359,14 @@ defmodule WandererApp.Map.Server.CharactersImpl do
   @doc """
   Reconciles tracking state between the database and cache.
 
-  Finds characters where the DB has `tracked: true` but the
-  `tracking_start_time` cache key is missing (e.g. due to cache eviction
-  or server restart), and restores the cache key so tracking resumes.
+  Finds characters where the DB has `tracked: true` AND the character is
+  currently present on the map, but the `tracking_start_time` cache key
+  is missing (e.g. due to cache eviction or server restart), and restores
+  the cache key so tracking resumes.
+
+  Only restores tracking for characters that are currently in the presence
+  list to avoid re-tracking stale/ghost characters that were untracked
+  before the DB was properly updated.
   """
   def reconcile_tracking(map_id) do
     with {:ok, tracked_settings} <-
@@ -370,8 +375,19 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         tracked_settings
         |> Enum.map(fn s -> s.character_id end)
 
-      restored =
+      # Only consider characters that are currently present on the map
+      {:ok, presence_character_ids} =
+        WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
+
+      presence_set = MapSet.new(presence_character_ids)
+
+      # Filter to characters that are present AND missing the tracking cache key
+      present_tracked_ids =
         db_tracked_ids
+        |> Enum.filter(fn character_id -> MapSet.member?(presence_set, character_id) end)
+
+      restored =
+        present_tracked_ids
         |> Enum.filter(fn character_id ->
           cache_key = "character:#{character_id}:map:#{map_id}:tracking_start_time"
           {:ok, val} = WandererApp.Cache.lookup(cache_key, nil)
@@ -381,7 +397,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
       if length(restored) > 0 do
         Logger.info(fn ->
           "[TrackingReconciliation] Map #{map_id} - restoring #{length(restored)} characters " <>
-            "with tracked=true in DB but missing cache key: #{inspect(restored)}"
+            "with tracked=true in DB, present in map, but missing cache key: #{inspect(restored)}"
         end)
 
         Enum.each(restored, fn character_id ->
