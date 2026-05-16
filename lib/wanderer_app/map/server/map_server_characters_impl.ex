@@ -356,6 +356,54 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     end
   end
 
+  @doc """
+  Reconciles tracking state between the database and cache.
+
+  Finds characters where the DB has `tracked: true` but the
+  `tracking_start_time` cache key is missing (e.g. due to cache eviction
+  or server restart), and restores the cache key so tracking resumes.
+  """
+  def reconcile_tracking(map_id) do
+    with {:ok, tracked_settings} <-
+           WandererApp.MapCharacterSettingsRepo.get_tracked_by_map_all(map_id) do
+      db_tracked_ids =
+        tracked_settings
+        |> Enum.map(fn s -> s.character_id end)
+
+      restored =
+        db_tracked_ids
+        |> Enum.filter(fn character_id ->
+          cache_key = "character:#{character_id}:map:#{map_id}:tracking_start_time"
+          {:ok, val} = WandererApp.Cache.lookup(cache_key, nil)
+          is_nil(val)
+        end)
+
+      if length(restored) > 0 do
+        Logger.info(fn ->
+          "[TrackingReconciliation] Map #{map_id} - restoring #{length(restored)} characters " <>
+            "with tracked=true in DB but missing cache key: #{inspect(restored)}"
+        end)
+
+        Enum.each(restored, fn character_id ->
+          WandererApp.Cache.put(
+            "character:#{character_id}:map:#{map_id}:tracking_start_time",
+            DateTime.utc_now()
+          )
+        end)
+
+        :telemetry.execute(
+          [:wanderer_app, :map, :tracking_reconciliation, :restored],
+          %{restored_count: length(restored), system_time: System.system_time()},
+          %{map_id: map_id, character_ids: restored}
+        )
+      end
+
+      :ok
+    else
+      _ -> :ok
+    end
+  end
+
   # Calculate optimal concurrency based on character count
   # Scales from base concurrency (32 on 8-core) up to 128 for 300+ characters
   defp calculate_max_concurrency(character_count) do

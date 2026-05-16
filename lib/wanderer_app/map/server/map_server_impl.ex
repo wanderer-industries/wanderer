@@ -31,6 +31,7 @@ defmodule WandererApp.Map.Server.Impl do
   @update_presence_timeout :timer.seconds(5)
   @update_characters_timeout :timer.seconds(1)
   @invalidate_characters_timeout :timer.hours(1)
+  @reconcile_tracking_timeout :timer.seconds(60)
 
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
@@ -172,6 +173,7 @@ defmodule WandererApp.Map.Server.Impl do
           )
 
           Process.send_after(self(), {:update_presence, map_id}, @update_presence_timeout)
+          Process.send_after(self(), {:reconcile_tracking, map_id}, @reconcile_tracking_timeout)
 
           WandererApp.Cache.insert("map_#{map_id}:started", true)
 
@@ -336,6 +338,12 @@ defmodule WandererApp.Map.Server.Impl do
     Process.send_after(self(), event, @update_presence_timeout)
 
     update_presence(map_id)
+  end
+
+  def handle_event({:reconcile_tracking, map_id} = event) do
+    Process.send_after(self(), event, @reconcile_tracking_timeout)
+
+    CharactersImpl.reconcile_tracking(map_id)
   end
 
   def handle_event({:map_acl_updated, map_id, added_acls, removed_acls}) do
