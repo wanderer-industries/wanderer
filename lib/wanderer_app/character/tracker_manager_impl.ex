@@ -377,7 +377,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
         {:ok, _updated} =
           WandererApp.MapCharacterSettingsRepo.update(map_id, character_id, %{
-            tracked: false,
             ship: character.ship,
             ship_name: character.ship_name,
             ship_item_id: character.ship_item_id,
