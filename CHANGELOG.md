@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.100.4](https://github.com/wanderer-industries/wanderer/compare/v1.100.3...v1.100.4) (2026-05-18)
+
+
+
+
+### Bug Fixes:
+
+* core: tracking issues fixed
+
 ## [v1.100.3](https://github.com/wanderer-industries/wanderer/compare/v1.100.2...v1.100.3) (2026-05-16)
 
 
