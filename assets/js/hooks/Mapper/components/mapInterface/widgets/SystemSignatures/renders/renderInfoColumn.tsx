@@ -22,13 +22,31 @@ export const renderInfoColumn = (row: SystemSignature) => {
 
         {customInfo.time_status === TimeStatus._1h && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as EOL">
+            <div className="pi pi-clock text-red-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
+        {customInfo.time_status === TimeStatus._4h && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as 4H EOL">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
+        {customInfo.time_status === TimeStatus._4h30m && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as 4.5H EOL">
+            <div className="pi pi-clock text-indigo-300 text-[11px] mr-[2px]"></div>
           </WdTooltipWrapper>
         )}
 
         {customInfo.isCrit && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as Crit">
             <div className="pi pi-clock text-fuchsia-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
+        {customInfo.mass_status === MassState.half && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as Half mass">
+            <div className="pi pi-exclamation-triangle text-orange-300 text-[11px] mr-[2px]"></div>
           </WdTooltipWrapper>
         )}
 
