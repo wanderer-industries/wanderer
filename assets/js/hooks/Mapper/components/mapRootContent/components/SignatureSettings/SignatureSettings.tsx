@@ -123,18 +123,29 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       out = { ...out, group: group! };
 
       if (group === SignatureGroup.Wormhole) {
-        const targetSystem = values.linked_system
-          ? systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system)
-          : null;
-        const targetSystemClassGroup = targetSystem?.system_static_info
-          ? getSystemClassGroup(targetSystem.system_static_info.system_class)
-          : null;
+        let targetSystem = null;
+        if (values.linked_system) {
+          targetSystem = systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system);
+        }
+
+        let targetSystemClassGroup = null;
+        if (targetSystem?.system_static_info) {
+          targetSystemClassGroup = getSystemClassGroup(targetSystem.system_static_info.system_class);
+        }
+
         const targetSystemUuid = targetSystem?.id;
-        const targetSolarSystemIdStr =
-          targetSystem?.system_static_info?.solar_system_id?.toString() || values.linked_system;
+
+        let targetSolarSystemIdStr = values.linked_system;
+        if (targetSystem?.system_static_info?.solar_system_id) {
+          targetSolarSystemIdStr = targetSystem.system_static_info.solar_system_id.toString();
+        }
 
         const currentSystem = systems.find((s: any) => s.id === systemId);
-        const solarSystemIdStr = currentSystem?.system_static_info?.solar_system_id?.toString() || systemId;
+
+        let solarSystemIdStr = systemId;
+        if (currentSystem?.system_static_info?.solar_system_id) {
+          solarSystemIdStr = currentSystem.system_static_info.solar_system_id.toString();
+        }
 
         const { updatedSignature } = await handleAutoBookmark(
           out,

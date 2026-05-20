@@ -2,7 +2,7 @@ import { useMapSettings } from '../MapSettingsProvider';
 import { UserSettingsRemoteProps } from '../types';
 import { InputText } from 'primereact/inputtext';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper';
 import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
@@ -37,6 +37,107 @@ const VARIABLES = [
   { id: '{mass_status}', desc: 'Mass remaining (e.g., Destab, Crit)' },
   { id: '{temporary_name}', desc: 'Temporary name if set' },
   { id: '{description}', desc: 'Custom description' },
+];
+
+interface CustomMappingInputProps {
+  mappingKey: string;
+  label: string;
+  defaultVal: string;
+  localMapping: Record<string, string>;
+  setLocalMapping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  updateSetting: (prop: any, value: any) => void;
+}
+
+const CustomMappingInput = ({
+  mappingKey,
+  label,
+  defaultVal,
+  localMapping,
+  setLocalMapping,
+  updateSetting,
+}: CustomMappingInputProps) => {
+  const value = localMapping[mappingKey] !== undefined ? localMapping[mappingKey] : defaultVal;
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalMapping(prev => {
+      const newMapping = { ...prev };
+      newMapping[mappingKey] = e.target.value;
+      return newMapping;
+    });
+  }, [mappingKey, setLocalMapping]);
+
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalMapping(prev => {
+      const currentVal = prev[mappingKey] !== undefined ? prev[mappingKey] : defaultVal;
+      if (val === currentVal) return prev;
+
+      const newMapping = { ...prev };
+      if (val === defaultVal) {
+        delete newMapping[mappingKey];
+      } else {
+        newMapping[mappingKey] = val;
+      }
+      updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
+      return newMapping;
+    });
+  }, [mappingKey, defaultVal, setLocalMapping, updateSetting]);
+
+  return (
+    <div className="flex flex-col gap-1 w-[120px]">
+      <label className="text-stone-400 text-[10px]">{label}</label>
+      <InputText
+        className="text-xs w-full py-1 px-2"
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="(empty)"
+      />
+    </div>
+  );
+};
+
+const TIME_OPTIONS = [
+  { key: 'time_1h', label: '1 Hour', defaultVal: '1H' },
+  { key: 'time_4h', label: '4 Hours', defaultVal: '4H' },
+  { key: 'time_4h30m', label: '4.5 Hours', defaultVal: '4.5H' },
+  { key: 'time_16h', label: '16 Hours', defaultVal: '16H' },
+  { key: 'time_24h', label: '24 Hours', defaultVal: '' },
+  { key: 'time_48h', label: '48 Hours', defaultVal: '' },
+];
+
+const MASS_OPTIONS = [
+  { key: 'mass_normal', label: 'Normal Mass', defaultVal: '' },
+  { key: 'mass_half', label: 'Destab', defaultVal: 'Destab' },
+  { key: 'mass_verge', label: 'Critical', defaultVal: 'Crit' },
+];
+
+const OTHER_OPTIONS = [{ key: 'chain_separator', label: 'Chain Separator', defaultVal: '' }];
+
+const SIZE_OPTIONS = [
+  { key: 'size_small', label: 'Small (Frigate)', defaultVal: 'S' },
+  { key: 'size_medium', label: 'Medium', defaultVal: 'M' },
+  { key: 'size_large', label: 'Large', defaultVal: '' },
+  { key: 'size_freight', label: 'Huge / Freight', defaultVal: 'XL' },
+  { key: 'size_capital', label: 'Capital', defaultVal: 'C' },
+];
+
+const CLASS_OPTIONS = [
+  { key: 'class_c1', label: 'Class 1', defaultVal: 'C1' },
+  { key: 'class_c2', label: 'Class 2', defaultVal: 'C2' },
+  { key: 'class_c3', label: 'Class 3', defaultVal: 'C3' },
+  { key: 'class_c4', label: 'Class 4', defaultVal: 'C4' },
+  { key: 'class_c5', label: 'Class 5', defaultVal: 'C5' },
+  { key: 'class_c6', label: 'Class 6', defaultVal: 'C6' },
+  { key: 'class_c13', label: 'Class 13', defaultVal: 'C13' },
+  { key: 'class_c1c2c3', label: 'Class 1/2/3', defaultVal: 'C1/C2/C3' },
+  { key: 'class_c4c5', label: 'Class 4/5', defaultVal: 'C4/C5' },
+  { key: 'class_hs', label: 'High-Sec', defaultVal: 'HS' },
+  { key: 'class_ls', label: 'Low-Sec', defaultVal: 'LS' },
+  { key: 'class_ns', label: 'Null-Sec', defaultVal: 'NS' },
+  { key: 'class_thera', label: 'Thera', defaultVal: 'Thera' },
+  { key: 'class_pochven', label: 'Pochven', defaultVal: 'Pochven' },
+  { key: 'class_drifter', label: 'Drifter', defaultVal: 'Drifter' },
 ];
 
 export const BookmarkNameFormatSetting = () => {
@@ -108,13 +209,13 @@ export const BookmarkNameFormatSetting = () => {
     );
   }, [localFormat, settings.bookmark_wormholes_start_at_zero, localMapping]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     if (localFormat !== formatStr) {
       updateSetting(UserSettingsRemoteProps.bookmark_name_format, localFormat);
     }
-  };
+  }, [localFormat, formatStr, updateSetting]);
 
-  const insertVariable = (variable: string) => {
+  const insertVariable = useCallback((variable: string) => {
     const input = inputRef.current;
     if (input) {
       const start = input.selectionStart || 0;
@@ -132,49 +233,26 @@ export const BookmarkNameFormatSetting = () => {
       setLocalFormat(newFormat);
       updateSetting(UserSettingsRemoteProps.bookmark_name_format, newFormat);
     }
-  };
+  }, [localFormat, updateSetting]);
 
-  const resetToDefault = () => {
+  const resetToDefault = useCallback(() => {
     const defaultFormat = '{chain_index} {sig_letters} {dest_type} {size} {mass_status} {time_status}';
     setLocalFormat(defaultFormat);
     updateSetting(UserSettingsRemoteProps.bookmark_name_format, defaultFormat);
-  };
+  }, [updateSetting]);
 
-  const renderMappingInput = (key: string, label: string, defaultVal: string) => {
-    const value = localMapping[key] !== undefined ? localMapping[key] : defaultVal;
-    return (
-      <div className="flex flex-col gap-1 w-[120px]" key={key}>
-        <label className="text-stone-400 text-[10px]">{label}</label>
-        <InputText
-          className="text-xs w-full py-1 px-2"
-          value={value}
-          onChange={e => {
-            setLocalMapping(prev => {
-              const newMapping = { ...prev };
-              newMapping[key] = e.target.value;
-              return newMapping;
-            });
-          }}
-          onBlur={e => {
-            const val = e.target.value;
-            setLocalMapping(prev => {
-              const currentVal = prev[key] !== undefined ? prev[key] : defaultVal;
-              if (val === currentVal) return prev;
-
-              const newMapping = { ...prev };
-              if (val === defaultVal) {
-                delete newMapping[key];
-              } else {
-                newMapping[key] = val;
-              }
-              updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
-              return newMapping;
-            });
-          }}
-          placeholder="(empty)"
-        />
-      </div>
-    );
+  const renderCustomMappingInputs = (options: { key: string; label: string; defaultVal: string }[]) => {
+    return options.map(opt => (
+      <CustomMappingInput
+        key={opt.key}
+        mappingKey={opt.key}
+        label={opt.label}
+        defaultVal={opt.defaultVal}
+        localMapping={localMapping}
+        setLocalMapping={setLocalMapping}
+        updateSetting={updateSetting}
+      />
+    ));
   };
 
   return (
@@ -244,60 +322,27 @@ export const BookmarkNameFormatSetting = () => {
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Time</h5>
-              <div className="flex flex-wrap gap-2">
-                {renderMappingInput('time_1h', '1 Hour', '1H')}
-                {renderMappingInput('time_4h', '4 Hours', '4H')}
-                {renderMappingInput('time_4h30m', '4.5 Hours', '4.5H')}
-                {renderMappingInput('time_16h', '16 Hours', '16H')}
-                {renderMappingInput('time_24h', '24 Hours', '')}
-                {renderMappingInput('time_48h', '48 Hours', '')}
-              </div>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(TIME_OPTIONS)}</div>
             </div>
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Mass</h5>
-              <div className="flex flex-wrap gap-2">
-                {renderMappingInput('mass_normal', 'Normal Mass', '')}
-                {renderMappingInput('mass_half', 'Destab', 'Destab')}
-                {renderMappingInput('mass_verge', 'Critical', 'Crit')}
-              </div>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(MASS_OPTIONS)}</div>
             </div>
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Other / Formatting</h5>
-              <div className="flex flex-wrap gap-2">{renderMappingInput('chain_separator', 'Chain Separator', '')}</div>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(OTHER_OPTIONS)}</div>
             </div>
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Hole Sizes</h5>
-              <div className="flex flex-wrap gap-2">
-                {renderMappingInput('size_small', 'Small (Frigate)', 'S')}
-                {renderMappingInput('size_medium', 'Medium', 'M')}
-                {renderMappingInput('size_large', 'Large', '')}
-                {renderMappingInput('size_freight', 'Huge / Freight', 'XL')}
-                {renderMappingInput('size_capital', 'Capital', 'C')}
-              </div>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(SIZE_OPTIONS)}</div>
             </div>
 
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Destination Classes</h5>
-              <div className="flex flex-wrap gap-2">
-                {renderMappingInput('class_c1', 'Class 1', 'C1')}
-                {renderMappingInput('class_c2', 'Class 2', 'C2')}
-                {renderMappingInput('class_c3', 'Class 3', 'C3')}
-                {renderMappingInput('class_c4', 'Class 4', 'C4')}
-                {renderMappingInput('class_c5', 'Class 5', 'C5')}
-                {renderMappingInput('class_c6', 'Class 6', 'C6')}
-                {renderMappingInput('class_c13', 'Class 13', 'C13')}
-                {renderMappingInput('class_c1c2c3', 'Class 1/2/3', 'C1/C2/C3')}
-                {renderMappingInput('class_c4c5', 'Class 4/5', 'C4/C5')}
-                {renderMappingInput('class_hs', 'High-Sec', 'HS')}
-                {renderMappingInput('class_ls', 'Low-Sec', 'LS')}
-                {renderMappingInput('class_ns', 'Null-Sec', 'NS')}
-                {renderMappingInput('class_thera', 'Thera', 'Thera')}
-                {renderMappingInput('class_pochven', 'Pochven', 'Pochven')}
-                {renderMappingInput('class_drifter', 'Drifter', 'Drifter')}
-              </div>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(CLASS_OPTIONS)}</div>
             </div>
           </div>
         )}
