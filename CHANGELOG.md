@@ -2,6 +2,47 @@
 
 <!-- changelog -->
 
+## [v1.100.5](https://github.com/wanderer-industries/wanderer/compare/v1.100.4...v1.100.5) (2026-05-20)
+
+
+
+
+## [v1.100.4](https://github.com/wanderer-industries/wanderer/compare/v1.100.3...v1.100.4) (2026-05-18)
+
+
+
+
+### Bug Fixes:
+
+* core: tracking issues fixed
+
+## [v1.100.3](https://github.com/wanderer-industries/wanderer/compare/v1.100.2...v1.100.3) (2026-05-16)
+
+
+
+
+### Bug Fixes:
+
+* core: tracking issues fixed
+
+## [v1.100.2](https://github.com/wanderer-industries/wanderer/compare/v1.100.1...v1.100.2) (2026-05-16)
+
+
+
+
+### Bug Fixes:
+
+* core: tracking issues fixed
+
+## [v1.100.1](https://github.com/wanderer-industries/wanderer/compare/v1.100.0...v1.100.1) (2026-05-01)
+
+
+
+
+### Bug Fixes:
+
+* core: potential memory leak fixes
+
 ## [v1.100.0](https://github.com/wanderer-industries/wanderer/compare/v1.99.1...v1.100.0) (2026-04-17)
 
 

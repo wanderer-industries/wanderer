@@ -153,19 +153,34 @@ defmodule WandererApp.Map do
     do: {:ok, map_id |> get_map!() |> Map.get(:options, Map.new())}
 
   def get_tracked_character_ids(map_id) do
-    {:ok,
-     map_id
-     |> get_map!()
-     |> Map.get(:characters, [])
-     |> Enum.filter(fn character_id ->
-       {:ok, tracking_start_time} =
-         WandererApp.Cache.lookup(
-           "character:#{character_id}:map:#{map_id}:tracking_start_time",
-           nil
-         )
+    all_characters =
+      map_id
+      |> get_map!()
+      |> Map.get(:characters, [])
 
-       not is_nil(tracking_start_time)
-     end)}
+    tracked =
+      all_characters
+      |> Enum.filter(fn character_id ->
+        {:ok, tracking_start_time} =
+          WandererApp.Cache.lookup(
+            "character:#{character_id}:map:#{map_id}:tracking_start_time",
+            nil
+          )
+
+        not is_nil(tracking_start_time)
+      end)
+
+    :telemetry.execute(
+      [:wanderer_app, :map, :tracked_characters, :count],
+      %{
+        tracked_count: length(tracked),
+        total_count: length(all_characters),
+        system_time: System.system_time()
+      },
+      %{map_id: map_id}
+    )
+
+    {:ok, tracked}
   end
 
   @doc """

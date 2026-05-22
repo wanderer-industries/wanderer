@@ -178,16 +178,19 @@ defmodule WandererAppWeb.CommonAPIController do
   end
 
   defp create_wormhole_details(wh_type, classes_by_id) do
-    # Get destination class info
-    dest_class = Map.get(classes_by_id, wh_type.dest)
+    # dest is a list since v1.100.0 — use the first element for backward compatibility
+    dest_list = List.wrap(wh_type.dest)
+    first_dest = List.first(dest_list)
+    dest_class = Map.get(classes_by_id, first_dest)
 
     # Create enhanced static info
     %{
       name: wh_type.name,
       destination: %{
-        id: to_string(wh_type.dest),
-        name: if(dest_class, do: dest_class.title, else: wh_type.dest),
-        short_name: if(dest_class, do: dest_class.short_name, else: wh_type.dest)
+        id: to_string(first_dest),
+        name: if(dest_class, do: dest_class.title, else: to_string(first_dest)),
+        short_name: if(dest_class, do: dest_class.short_name, else: to_string(first_dest)),
+        destinations: dest_list
       },
       properties: %{
         lifetime: wh_type.lifetime,
