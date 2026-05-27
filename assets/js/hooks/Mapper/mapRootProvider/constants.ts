@@ -22,6 +22,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   theme: AvailableThemes.default,
   pingsPlacement: PingsPlacement.rightTop,
   minimapPlacement: MiniMapPlacement.rightBottom,
+  hideBookmarkWarning: false,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {

@@ -31,6 +31,7 @@ export type InterfaceStoredSettings = {
   theme: AvailableThemes;
   minimapPlacement: MiniMapPlacement;
   pingsPlacement: PingsPlacement;
+  hideBookmarkWarning: boolean;
 };
 
 export type RoutesType = {
@@ -47,13 +48,7 @@ export type RoutesType = {
   avoid: number[];
 };
 
-export type RoutesByCategoryType =
-  | 'blueLoot'
-  | 'redLoot'
-  | 'thera'
-  | 'turnur'
-  | 'so_cleaning'
-  | 'trade_hubs';
+export type RoutesByCategoryType = 'blueLoot' | 'redLoot' | 'thera' | 'turnur' | 'so_cleaning' | 'trade_hubs';
 
 export type RoutesByScopeType = 'ALL' | 'HIGH';
 
