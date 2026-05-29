@@ -71,9 +71,6 @@ const CustomMappingInput = ({
   const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setLocalMapping(prev => {
-      const currentVal = prev[mappingKey] !== undefined ? prev[mappingKey] : defaultVal;
-      if (val === currentVal) return prev;
-
       const newMapping = { ...prev };
       if (val === defaultVal) {
         delete newMapping[mappingKey];
@@ -82,11 +79,9 @@ const CustomMappingInput = ({
       }
 
       const savedVal = savedMapping[mappingKey] !== undefined ? savedMapping[mappingKey] : defaultVal;
-      const newVal = newMapping[mappingKey] !== undefined ? newMapping[mappingKey] : defaultVal;
+      if (val === savedVal) return newMapping;
 
-      if (newVal !== savedVal) {
-        updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
-      }
+      updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
       return newMapping;
     });
   }, [mappingKey, defaultVal, savedMapping, setLocalMapping, updateSetting]);
