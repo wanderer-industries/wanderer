@@ -43,6 +43,7 @@ interface CustomMappingInputProps {
   mappingKey: string;
   label: string;
   defaultVal: string;
+  savedMapping: Record<string, string>;
   localMapping: Record<string, string>;
   setLocalMapping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   updateSetting: (prop: any, value: any) => void;
@@ -52,6 +53,7 @@ const CustomMappingInput = ({
   mappingKey,
   label,
   defaultVal,
+  savedMapping,
   localMapping,
   setLocalMapping,
   updateSetting,
@@ -78,10 +80,16 @@ const CustomMappingInput = ({
       } else {
         newMapping[mappingKey] = val;
       }
-      updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
+
+      const savedVal = savedMapping[mappingKey] !== undefined ? savedMapping[mappingKey] : defaultVal;
+      const newVal = newMapping[mappingKey] !== undefined ? newMapping[mappingKey] : defaultVal;
+
+      if (newVal !== savedVal) {
+        updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
+      }
       return newMapping;
     });
-  }, [mappingKey, defaultVal, setLocalMapping, updateSetting]);
+  }, [mappingKey, defaultVal, savedMapping, setLocalMapping, updateSetting]);
 
   return (
     <div className="flex flex-col gap-1 w-[120px]">
@@ -120,6 +128,7 @@ const SIZE_OPTIONS = [
   { key: 'size_large', label: 'Large', defaultVal: '' },
   { key: 'size_freight', label: 'Huge / Freight', defaultVal: 'XL' },
   { key: 'size_capital', label: 'Capital', defaultVal: 'C' },
+  { key: 'size_k162_unknown', label: 'Unknown (K162)', defaultVal: '' },
 ];
 
 const CLASS_OPTIONS = [
@@ -248,6 +257,7 @@ export const BookmarkNameFormatSetting = () => {
         mappingKey={opt.key}
         label={opt.label}
         defaultVal={opt.defaultVal}
+        savedMapping={customMapping}
         localMapping={localMapping}
         setLocalMapping={setLocalMapping}
         updateSetting={updateSetting}
