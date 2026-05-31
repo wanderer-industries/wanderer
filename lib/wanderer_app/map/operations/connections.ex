@@ -149,9 +149,6 @@ defmodule WandererApp.Map.Operations.Connections do
       c13_system?(src, tgt) ->
         @small_ship_size
 
-      c4_to_ns?(src, tgt) ->
-        @small_ship_size
-
       true ->
         @large_ship_size
     end
@@ -173,19 +170,6 @@ defmodule WandererApp.Map.Operations.Connections do
   defp c13_system?(%{system_class: @c13_system_class}, _), do: true
   defp c13_system?(_, %{system_class: @c13_system_class}), do: true
   defp c13_system?(_, _), do: false
-
-  defp c4_to_ns?(%{system_class: @c4_system_class, is_shattered: false}, %{
-         system_class: @ns_system_class
-       }),
-       do: true
-
-  defp c4_to_ns?(%{system_class: @ns_system_class}, %{
-         system_class: @c4_system_class,
-         is_shattered: false
-       }),
-       do: true
-
-  defp c4_to_ns?(_, _), do: false
 
   defp parse_ship_size(nil, default), do: default
   defp parse_ship_size(val, _default) when is_integer(val), do: val

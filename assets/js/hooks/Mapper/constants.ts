@@ -93,7 +93,7 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'C1',
     value: 'c1',
-    whClassName: 'E004',
+    whClassName: 'Z971',
   },
   {
     label: 'C2',
@@ -108,7 +108,7 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'C4',
     value: 'c4',
-    whClassName: 'M001',
+    whClassName: 'Z457',
   },
   {
     label: 'C5',
@@ -138,12 +138,12 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'C1/C2/C3',
     value: 'c1_c2_c3',
-    whClassName: 'E004_D382_L477',
+    whClassName: 'Z971_D382_L477',
   },
   {
     label: 'C4/C5',
     value: 'c4_c5',
-    whClassName: 'M001_L614',
+    whClassName: 'Z457_L614',
   },
 ];
 
