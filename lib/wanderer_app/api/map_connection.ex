@@ -20,7 +20,7 @@ defmodule WandererApp.Api.MapConnection do
   json_api do
     type "map_connections"
 
-    includes([:map])
+    includes([:map, :locked_by])
 
     default_fields([
       :solar_system_source,
@@ -32,6 +32,7 @@ defmodule WandererApp.Api.MapConnection do
       :wormhole_type,
       :count_of_passage,
       :locked,
+      :locked_at,
       :custom_info
     ])
 
@@ -274,6 +275,11 @@ defmodule WandererApp.Api.MapConnection do
       public? true
     end
 
+    attribute :locked_at, :utc_datetime_usec do
+      public? true
+      allow_nil? true
+    end
+
     attribute :custom_info, :string do
       public? true
       allow_nil? true
@@ -286,6 +292,10 @@ defmodule WandererApp.Api.MapConnection do
   relationships do
     belongs_to :map, WandererApp.Api.Map do
       attribute_writable? true
+      public? true
+    end
+
+    belongs_to :locked_by, WandererApp.Api.Character do
       public? true
     end
   end

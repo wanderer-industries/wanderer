@@ -21,6 +21,8 @@ export type PassageWithSourceTarget = {
 
 export type ConnectionInfoOutput = {
   marl_eol_time: string;
+  locked_at: string | null;
+  locked_by_name: string | null;
 };
 
 export type ConnectionOutput = {

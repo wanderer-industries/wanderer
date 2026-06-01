@@ -196,23 +196,35 @@ export const Connections = ({ selectedConnection, onHide }: OnTheMapProps) => {
         {/* Connection Info */}
         <div className="px-2 flex flex-col gap-2">
           {/* Connection Info Row */}
-          <InfoDrawer title="Connection" rightSide>
-            <div className="flex justify-end gap-2 items-center">
-              <SystemView
-                showCustomName
-                systemId={cnInfo.source}
-                className={clsx(classes.InfoTextSize, 'select-none text-center')}
-                hideRegion
-              />
-              <span className="pi pi-angle-double-right text-stone-500 text-[15px]"></span>
-              <SystemView
-                showCustomName
-                systemId={cnInfo.target}
-                className={clsx(classes.InfoTextSize, 'select-none text-center')}
-                hideRegion
-              />
+          <div className="flex justify-between gap-2">
+            {/*Left column*/}
+            <div>
+              {isWormhole && info?.locked_at && (
+                <InfoDrawer title="Save Mass">
+                  <TimeAgo timestamp={info.locked_at} />
+                  {info.locked_by_name && <span className="text-neutral-400"> by {info.locked_by_name}</span>}
+                </InfoDrawer>
+              )}
             </div>
-          </InfoDrawer>
+            {/*Right column*/}
+            <InfoDrawer title="Connection" rightSide>
+              <div className="flex justify-end gap-2 items-center">
+                <SystemView
+                  showCustomName
+                  systemId={cnInfo.source}
+                  className={clsx(classes.InfoTextSize, 'select-none text-center')}
+                  hideRegion
+                />
+                <span className="pi pi-angle-double-right text-stone-500 text-[15px]"></span>
+                <SystemView
+                  showCustomName
+                  systemId={cnInfo.target}
+                  className={clsx(classes.InfoTextSize, 'select-none text-center')}
+                  hideRegion
+                />
+              </div>
+            </InfoDrawer>
+          </div>
 
           <div className="flex justify-between gap-2">
             {/*Left column*/}
