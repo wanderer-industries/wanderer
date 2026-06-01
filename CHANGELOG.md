@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.0](https://github.com/wanderer-industries/wanderer/compare/v1.100.8...v1.101.0) (2026-06-01)
+
+
+
+
+### Features:
+
+* track Save Mass (locked) status on connections
+
 ## [v1.100.8](https://github.com/wanderer-industries/wanderer/compare/v1.100.7...v1.100.8) (2026-06-01)
 
 
