@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.100.8](https://github.com/wanderer-industries/wanderer/compare/v1.100.7...v1.100.8) (2026-06-01)
+
+
+
+
+### Bug Fixes:
+
+* core: fix error when statics is null
+
 ## [v1.100.7](https://github.com/wanderer-industries/wanderer/compare/v1.100.6...v1.100.7) (2026-06-01)
 
 
