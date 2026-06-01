@@ -292,19 +292,17 @@ export const formatBookmarkName = (
   let massStr = '';
   let whDataForSize: WormholeDataRaw | null = null;
 
-  if (signature.type && MULTI_DEST_WHS.includes(signature.type) && info.destType) {
-    const destOption = ALL_DEST_TYPES_MAP[info.destType];
-    if (destOption && destOption.whClassName) {
+  const isK162 = signature.type === 'K162';
+  const isMultiDest = !!signature.type && MULTI_DEST_WHS.includes(signature.type);
+  const destType = isK162 ? info.k162Type : info.destType;
+
+  if ((isK162 || isMultiDest) && destType) {
+    const destOption = ALL_DEST_TYPES_MAP[destType];
+    if (destOption?.whClassName) {
       const whName = destOption.whClassName.split('_')[0];
       whDataForSize = wormholesData[whName];
     }
-  } else if (signature.type === 'K162' && info.k162Type) {
-    const k162Option = ALL_DEST_TYPES_MAP[info.k162Type];
-    if (k162Option && k162Option.whClassName) {
-      const whName = k162Option.whClassName.split('_')[0];
-      whDataForSize = wormholesData[whName];
-    }
-  } else if (signature.type && wormholesData[signature.type]) {
+  } else if (signature.type && !MULTI_DEST_WHS.includes(signature.type) && wormholesData[signature.type]) {
     whDataForSize = wormholesData[signature.type];
   }
 
@@ -334,6 +332,10 @@ export const formatBookmarkName = (
     }
     if (whDataForSize.total_mass) {
       massStr = Number((whDataForSize.total_mass / 1_000_000_000).toFixed(2)).toString();
+    }
+  } else if (signature.type === 'K162') {
+    if (mapping && mapping['size_k162_unknown'] !== undefined) {
+      sizeStr = mapping['size_k162_unknown'];
     }
   }
   result = result.replace(/\{size\}/g, () => sizeStr);

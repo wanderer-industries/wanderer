@@ -43,6 +43,7 @@ interface CustomMappingInputProps {
   mappingKey: string;
   label: string;
   defaultVal: string;
+  savedMapping: Record<string, string>;
   localMapping: Record<string, string>;
   setLocalMapping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   updateSetting: (prop: any, value: any) => void;
@@ -52,6 +53,7 @@ const CustomMappingInput = ({
   mappingKey,
   label,
   defaultVal,
+  savedMapping,
   localMapping,
   setLocalMapping,
   updateSetting,
@@ -68,20 +70,21 @@ const CustomMappingInput = ({
 
   const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setLocalMapping(prev => {
-      const currentVal = prev[mappingKey] !== undefined ? prev[mappingKey] : defaultVal;
-      if (val === currentVal) return prev;
+    
+    const newMapping = { ...localMapping };
+    if (val === defaultVal) {
+      delete newMapping[mappingKey];
+    } else {
+      newMapping[mappingKey] = val;
+    }
 
-      const newMapping = { ...prev };
-      if (val === defaultVal) {
-        delete newMapping[mappingKey];
-      } else {
-        newMapping[mappingKey] = val;
-      }
+    setLocalMapping(newMapping);
+
+    const savedVal = savedMapping[mappingKey] !== undefined ? savedMapping[mappingKey] : defaultVal;
+    if (val !== savedVal) {
       updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
-      return newMapping;
-    });
-  }, [mappingKey, defaultVal, setLocalMapping, updateSetting]);
+    }
+  }, [mappingKey, defaultVal, savedMapping, localMapping, setLocalMapping, updateSetting]);
 
   return (
     <div className="flex flex-col gap-1 w-[120px]">
@@ -120,6 +123,7 @@ const SIZE_OPTIONS = [
   { key: 'size_large', label: 'Large', defaultVal: '' },
   { key: 'size_freight', label: 'Huge / Freight', defaultVal: 'XL' },
   { key: 'size_capital', label: 'Capital', defaultVal: 'C' },
+  { key: 'size_k162_unknown', label: 'Unknown (K162)', defaultVal: '' },
 ];
 
 const CLASS_OPTIONS = [
@@ -248,6 +252,7 @@ export const BookmarkNameFormatSetting = () => {
         mappingKey={opt.key}
         label={opt.label}
         defaultVal={opt.defaultVal}
+        savedMapping={customMapping}
         localMapping={localMapping}
         setLocalMapping={setLocalMapping}
         updateSetting={updateSetting}
