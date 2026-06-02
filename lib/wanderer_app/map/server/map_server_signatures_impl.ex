@@ -195,6 +195,71 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
       })
     end
 
+    # Handle back-link signature removal
+    # If there is exactly one signature in the target system pointing back, remove it
+    if sig.linked_system_id do
+      case MapSystem.read_by_map_and_solar_system(%{
+             map_id: map_id,
+             solar_system_id: sig.linked_system_id
+           }) do
+        {:ok, target_system} ->
+          back_link_sigs =
+            target_system.id
+            |> MapSystemSignature.by_system_id!()
+            |> Enum.filter(fn s -> s.linked_system_id == system.solar_system_id end)
+
+          other_source_sigs =
+            system.id
+            |> MapSystemSignature.by_system_id!()
+            |> Enum.filter(fn s ->
+              s.eve_id != sig.eve_id and s.linked_system_id == sig.linked_system_id
+            end)
+
+          if length(back_link_sigs) == 1 and length(other_source_sigs) == 0 do
+            back_sig = hd(back_link_sigs)
+
+            # Check if back_sig is active for our system before we destroy it
+            back_sig_is_active = is_active_signature_for_target?(map_id, back_sig)
+
+            # Ensure the connection is deleted since we're removing the only linked signatures.
+            # (If `is_active` was true, the connection was already deleted above)
+            if delete_conn? and not is_active do
+              ConnectionsImpl.delete_connection(map_id, %{
+                solar_system_source_id: system.solar_system_id,
+                solar_system_target_id: sig.linked_system_id
+              })
+            end
+
+            if back_sig_is_active do
+              SystemsImpl.update_system_linked_sig_eve_id(map_id, %{
+                solar_system_id: system.solar_system_id,
+                linked_sig_eve_id: nil
+              })
+            end
+
+            back_sig |> MapSystemSignature.destroy!()
+
+            # Broadcast removal
+            Impl.broadcast!(map_id, :signatures_updated, target_system.solar_system_id)
+
+            WandererApp.ExternalEvents.broadcast(map_id, :signature_removed, %{
+              solar_system_id: target_system.solar_system_id,
+              signature_id: back_sig.eve_id
+            })
+
+            WandererApp.ExternalEvents.broadcast(map_id, :signatures_updated, %{
+              solar_system_id: target_system.solar_system_id,
+              added_count: 0,
+              updated_count: 0,
+              removed_count: 1
+            })
+          end
+
+        _ ->
+          :ok
+      end
+    end
+
     sig
     |> MapSystemSignature.destroy!()
   end
