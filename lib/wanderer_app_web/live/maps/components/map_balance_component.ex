@@ -112,7 +112,7 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         amount |> Decimal.new() |> Decimal.to_float()
       end
 
-    case amount <= map_balance do
+    case amount > 0 and amount <= map_balance do
       true ->
         {:ok, _t} =
           WandererApp.Api.MapTransaction.create(%{
@@ -179,7 +179,7 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         amount |> Decimal.new() |> Decimal.to_float()
       end
 
-    case amount <= user_balance do
+    case amount > 0 and amount <= user_balance do
       true ->
         {:ok, _t} =
           WandererApp.Api.MapTransaction.create(%{
