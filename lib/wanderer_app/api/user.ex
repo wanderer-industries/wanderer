@@ -66,6 +66,9 @@ defmodule WandererApp.Api.User do
       require_atomic? false
 
       accept([:balance])
+
+      validate compare(:balance, greater_than_or_equal_to: 0),
+        message: "balance cannot be negative"
     end
   end
 

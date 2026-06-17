@@ -127,6 +127,8 @@ defmodule WandererApp.Api.MapTransaction do
 
     attribute :amount, :float do
       allow_nil? false
+
+      constraints(greater_than: 0)
     end
 
     create_timestamp(:inserted_at)
