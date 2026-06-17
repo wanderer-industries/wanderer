@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.2](https://github.com/wanderer-industries/wanderer/compare/v1.101.1...v1.101.2) (2026-06-17)
+
+
+
+
+### Bug Fixes:
+
+* update to subscription balance handling
+
 ## [v1.101.1](https://github.com/wanderer-industries/wanderer/compare/v1.101.0...v1.101.1) (2026-06-02)
 
 
