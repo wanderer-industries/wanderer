@@ -13,22 +13,22 @@
 
 .RootCustomNode {
   display: flex;
-  width: 130px;
-  height: 34px;
+  width: var(--rf-node-width, 130px);
+  height: var(--rf-node-height, 34px);
 
   font-family: var(--rf-node-font-family, inherit) !important;
   font-weight: var(--rf-node-font-weight, inherit) !important;
 
   flex-direction: column;
-  padding: 2px 6px;
-  font-size: 10px;
+  padding: var(--rf-node-padding, 2px 6px);
+  font-size: var(--rf-node-font-size, 10px);
 
   background-color: var(--rf-node-bg-color, #202020) !important;
   color: var(--rf-text-color, #ffffff);
 
   box-shadow: 0 0 5px rgba(v.$dark-bg, 0.5);
   border: 1px solid color.adjust(v.$pastel-blue, $lightness: -10%);
-  border-radius: 5px;
+  border-radius: var(--rf-node-border-radius, 5px);
   position: relative;
   z-index: 3;
   overflow: hidden;
@@ -172,21 +172,21 @@
   width: 100%;
   z-index: 1;
   display: flex;
-  left: 4px;
+  left: var(--rf-node-bookmarks-left, 4px);
 
   & > .Bookmark {
-    min-width: 13px;
-    height: 22px;
+    min-width: var(--rf-node-bookmark-min-width, 13px);
+    height: var(--rf-node-bookmark-height, 22px);
     position: relative;
-    top: -13px;
-    border-radius: 5px;
+    top: var(--rf-node-bookmark-top, -13px);
+    border-radius: var(--rf-node-bookmark-border-radius, 5px);
     color: #ffffff;
-    font-size: 8px;
+    font-size: var(--rf-node-bookmark-font-size, 8px);
     text-align: center;
-    padding-top: 2px;
+    padding-top: var(--rf-node-bookmark-padding-top, 2px);
     font-weight: bolder;
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: var(--rf-node-bookmark-padding-x, 3px);
+    padding-right: var(--rf-node-bookmark-padding-x, 3px);
 
     &:not(:first-child) {
       box-shadow: inset 4px -3px 4px rgba(0, 0, 0, 0.3);
@@ -197,49 +197,49 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: -2px;
+    margin-top: var(--rf-node-bookmark-icon-margin-top, -2px);
     text-shadow: 0 0 3px rgba(0, 0, 0, 1);
-    padding-right: 2px;
+    padding-right: var(--rf-node-bookmark-icon-padding-right, 2px);
 
     & > .icon {
-      width: 8px;
-      height: 8px;
-      font-size: 8px;
+      width: var(--rf-node-bookmark-icon-size, 8px);
+      height: var(--rf-node-bookmark-icon-size, 8px);
+      font-size: var(--rf-node-bookmark-icon-font-size, 8px);
     }
 
     & > .text {
-      margin-top: 1px;
-      font-size: 9px;
+      margin-top: var(--rf-node-bookmark-text-margin-top, 1px);
+      font-size: var(--rf-node-bookmark-text-font-size, 9px);
     }
   }
 }
 
 .Unsplashed {
   position: absolute;
-  width: calc(50% - 4px);
+  width: var(--rf-node-unsplashed-width, calc(50% - 4px));
   z-index: -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  left: 2px;
+  gap: var(--rf-node-unsplashed-gap, 2px);
+  left: var(--rf-node-unsplashed-left, 2px);
 
   &--right {
-    left: calc(50% + 6px);
+    left: var(--rf-node-unsplashed-right-left, calc(50% + 6px));
   }
 
   & > .Signature {
-    width: 13px;
-    height: 4px;
+    width: var(--rf-node-unsplashed-signature-width, 13px);
+    height: var(--rf-node-unsplashed-signature-height, 4px);
     position: relative;
-    top: 3px;
-    border-radius: 5px;
+    top: var(--rf-node-unsplashed-signature-top, 3px);
+    border-radius: var(--rf-node-bookmark-border-radius, 5px);
     color: #ffffff;
-    font-size: 8px;
+    font-size: var(--rf-node-bookmark-font-size, 8px);
     text-align: center;
-    padding-top: 2px;
+    padding-top: var(--rf-node-bookmark-padding-top, 2px);
     font-weight: bolder;
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: var(--rf-node-bookmark-padding-x, 3px);
+    padding-right: var(--rf-node-bookmark-padding-x, 3px);
     display: block;
 
     background-color: #833ca4;
@@ -251,29 +251,34 @@
 }
 
 .icon {
-  width: 8px;
-  height: 8px;
-  font-size: 8px;
+  width: var(--rf-node-icon-size, 8px);
+  height: var(--rf-node-icon-size, 8px);
+  font-size: var(--rf-node-icon-font-size, 8px);
 }
 
 .HeadRow {
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  line-height: 14px;
+  gap: var(--rf-node-head-gap, 3px);
+  font-size: var(--rf-node-head-font-size, 11px);
+  line-height: var(--rf-node-head-line-height, 14px);
   font-weight: 500;
   position: relative;
-  top: 1px;
+  top: var(--rf-node-head-top, 1px);
 
   .classTitle {
-    font-size: 11px;
+    font-size: var(--rf-node-class-title-font-size, 11px);
     font-weight: bold;
     text-shadow: 0 0 2px rgb(0 0 0 / 73%);
   }
 
+  .classSystemName {
+    min-width: 0;
+    line-height: var(--rf-node-head-line-height, 14px);
+  }
+
   .TagTitle {
-    font-size: 11px;
+    font-size: var(--rf-node-tag-title-font-size, 11px);
     font-weight: 500;
     text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
     color: var(--rf-tag-color, #38bdf8);
@@ -291,7 +296,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 19px;
+  height: var(--rf-node-bottom-height, 19px);
 
   .hasLocalCounter {
     margin-right: 2px;
@@ -301,34 +306,59 @@
   }
 
   .lockIcon {
-    font-size: 0.45rem;
+    font-size: var(--rf-node-status-icon-font-size, 0.45rem);
     font-weight: bold;
     position: relative;
+    line-height: 1;
   }
 
   .mapMarker {
-    font-size: 0.45rem;
+    font-size: var(--rf-node-status-icon-font-size, 0.45rem);
     font-weight: bold;
     position: relative;
+    line-height: 1;
   }
 }
 
+.StatusIcons {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-node-status-icons-gap, 2px);
+  line-height: 0;
+}
+
+.descriptionIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rf-node-description-icon-wrapper-size, 12px);
+  height: var(--rf-node-description-icon-wrapper-size, 12px);
+  transform: translateY(var(--rf-node-description-icon-offset-y, 0));
+}
+
+.descriptionIcon {
+  width: var(--rf-node-description-icon-size, 10px);
+  height: var(--rf-node-description-icon-size, 10px);
+  font-size: var(--rf-node-description-icon-font-size, 8px);
+  line-height: 1;
+}
+
 .effect {
-  width: 8px;
-  height: 8px;
-  margin-top: -2px;
+  width: var(--rf-node-effect-size, 8px);
+  height: var(--rf-node-effect-size, 8px);
+  margin-top: var(--rf-node-effect-margin-top, -2px);
   box-sizing: border-box;
-  border-radius: 2px;
-  margin-left: 1px;
+  border-radius: var(--rf-node-effect-border-radius, 2px);
+  margin-left: var(--rf-node-effect-margin-left, 1px);
 }
 
 .statics {
   display: flex;
-  gap: 2px;
-  font-size: 8px;
+  gap: var(--rf-node-statics-gap, 2px);
+  font-size: var(--rf-node-statics-font-size, 8px);
 
   & > * {
-    line-height: 10px;
+    line-height: var(--rf-node-statics-line-height, 10px);
   }
 
   /* Firefox kostyl */
@@ -352,8 +382,8 @@
   min-width: initial;
   min-height: initial;
   border: 1px solid v.$pastel-blue;
-  width: 5px;
-  height: 5px;
+  width: var(--rf-node-handle-size, 5px);
+  height: var(--rf-node-handle-size, 5px);
   pointer-events: auto;
 
   &.selected {
@@ -361,39 +391,39 @@
   }
 
   &.HandleTop {
-    top: -2px;
+    top: var(--rf-node-handle-offset, -2px);
   }
 
   &.HandleRight {
-    right: -2px;
+    right: var(--rf-node-handle-offset, -2px);
   }
 
   &.HandleBottom {
-    bottom: -2px;
+    bottom: var(--rf-node-handle-offset, -2px);
   }
 
   &.HandleLeft {
-    left: -2px;
+    left: var(--rf-node-handle-offset, -2px);
   }
 
   &.Tick {
-    width: 7px;
-    height: 7px;
+    width: var(--rf-node-handle-thick-size, 7px);
+    height: var(--rf-node-handle-thick-size, 7px);
 
     &.HandleTop {
-      top: -3px;
+      top: var(--rf-node-handle-thick-offset, -3px);
     }
 
     &.HandleRight {
-      right: -3px;
+      right: var(--rf-node-handle-thick-offset, -3px);
     }
 
     &.HandleBottom {
-      bottom: -3px;
+      bottom: var(--rf-node-handle-thick-offset, -3px);
     }
 
     &.HandleLeft {
-      left: -3px;
+      left: var(--rf-node-handle-thick-offset, -3px);
     }
   }
 }

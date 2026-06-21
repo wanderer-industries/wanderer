@@ -131,13 +131,13 @@
 
 .Handle {
   border: 1px solid var(--pastel-blue);
-  width: 5px;
-  height: 5px;
+  width: var(--rf-edge-handle-size, 5px);
+  height: var(--rf-edge-handle-size, 5px);
   z-index: 1001;
 
   &.Tick {
-    width: 7px;
-    height: 7px;
+    width: var(--rf-edge-handle-thick-size, 7px);
+    height: var(--rf-edge-handle-thick-size, 7px);
   }
 
   &.Right {
@@ -146,9 +146,9 @@
 }
 
 .LinkLabel {
-  font-size: 9px;
-  line-height: 10px;
-  padding: 2px 4px;
+  font-size: var(--rf-edge-label-font-size, 9px);
+  line-height: var(--rf-edge-label-line-height, 10px);
+  padding: var(--rf-edge-label-padding, 2px 4px);
   opacity: 1;
 
   & > span {
@@ -157,7 +157,7 @@
 }
 
 .icon {
-  width: 8px;
-  height: 8px;
-  font-size: 8px;
+  width: var(--rf-edge-label-icon-size, 8px);
+  height: var(--rf-edge-label-icon-size, 8px);
+  font-size: var(--rf-edge-label-icon-font-size, 8px);
 }

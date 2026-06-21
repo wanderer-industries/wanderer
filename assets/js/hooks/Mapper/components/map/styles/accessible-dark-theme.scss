@@ -1,7 +1,7 @@
 @use './eve-common-variables';
 @use './eve-common';
 
-.accessible-dark-theme {
+@mixin accessible-dark-palette {
   --rf-bg-color: #050708;
   --rf-soft-bg-color: #101418;
 
@@ -14,10 +14,10 @@
   --rf-node-font-family: 'Shentox', 'Rogan', sans-serif !important;
   --rf-node-font-weight: 600;
 
-  --rf-bg-variant: "lines";
-  --rf-bg-gap: 24;
+  --rf-bg-variant: "dots";
+  --rf-bg-gap: 15;
   --rf-bg-size: 1;
-  --rf-bg-pattern-color: #475569;
+  --rf-bg-pattern-color: rgba(129, 129, 138, 0.35);
 
   --pastel-blue: #8bd3f7;
   --pastel-pink: #cc79a7;
@@ -146,4 +146,8 @@
   --rf-edge-gate-inner: #0b1512;
   --rf-edge-bridge-dasharray: 12 5;
   --rf-edge-bridge-linecap: round;
+}
+
+.accessible-dark-theme {
+  @include accessible-dark-palette;
 }

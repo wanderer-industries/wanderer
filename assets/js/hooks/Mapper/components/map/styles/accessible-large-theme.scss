@@ -1,0 +1,199 @@
+@use './eve-common-variables';
+@use './eve-common';
+
+@mixin accessible-large-default-palette {
+  --rf-bg-color: #0C0A09;
+  --rf-soft-bg-color: #171717;
+
+  --rf-node-bg-color: #202020;
+  --rf-node-soft-bg-color: #202020;
+  --rf-text-color: #ffffff;
+  --rf-tag-color: #38BDF8;
+  --rf-region-name: #D6D3D1;
+  --rf-custom-name: #93C5FD;
+  --rf-node-font-family: 'Shentox', 'Rogan', sans-serif !important;
+  --rf-node-font-weight: 600;
+
+  --rf-bg-variant: "dots";
+  --rf-bg-gap: 15;
+  --rf-bg-size: 1;
+  --rf-bg-pattern-color: #81818a;
+
+  --pastel-blue: #5a7d9a;
+  --pastel-pink: #d291bc;
+  --pastel-green: #88b04b;
+  --pastel-yellow: #ffdd59;
+
+  --dark-bg: #2d2d2d;
+  --text-color: #ffffff;
+  --tooltip-bg: #202020;
+  --window-corner: #72716f;
+}
+
+@mixin accessible-large-layout {
+  --rf-node-width: 142px;
+  --rf-node-height: 37px;
+  --rf-node-padding: 2px 6px;
+  --rf-node-font-size: 11px;
+  --rf-node-border-radius: 6px;
+  --rf-node-head-gap: 3px;
+  --rf-node-head-font-size: 12px;
+  --rf-node-head-line-height: 15px;
+  --rf-node-head-top: 1px;
+  --rf-node-class-title-font-size: 12px;
+  --rf-node-tag-title-font-size: 11px;
+  --rf-node-bottom-height: 18px;
+  --rf-node-status-icon-font-size: 0.52rem;
+  --rf-node-status-icons-gap: 3px;
+  --rf-node-description-icon-wrapper-size: 12px;
+  --rf-node-description-icon-size: 11px;
+  --rf-node-description-icon-font-size: 10px;
+  --rf-node-icon-size: 9px;
+  --rf-node-icon-font-size: 9px;
+  --rf-node-effect-size: 9px;
+  --rf-node-effect-margin-top: -2px;
+  --rf-node-effect-margin-left: 1px;
+  --rf-node-effect-border-radius: 3px;
+  --rf-node-statics-gap: 2px;
+  --rf-node-statics-font-size: 9px;
+  --rf-node-statics-line-height: 11px;
+  --rf-node-handle-size: 6px;
+  --rf-node-handle-offset: -3px;
+  --rf-node-handle-thick-size: 8px;
+  --rf-node-handle-thick-offset: -4px;
+
+  --rf-node-bookmarks-left: 5px;
+  --rf-node-bookmark-min-width: 15px;
+  --rf-node-bookmark-height: 24px;
+  --rf-node-bookmark-top: -14px;
+  --rf-node-bookmark-border-radius: 6px;
+  --rf-node-bookmark-font-size: 9px;
+  --rf-node-bookmark-padding-top: 3px;
+  --rf-node-bookmark-padding-x: 4px;
+  --rf-node-bookmark-icon-margin-top: -1px;
+  --rf-node-bookmark-icon-padding-right: 2px;
+  --rf-node-bookmark-icon-size: 9px;
+  --rf-node-bookmark-icon-font-size: 9px;
+  --rf-node-bookmark-text-margin-top: 1px;
+  --rf-node-bookmark-text-font-size: 10px;
+  --rf-kills-bookmark-padding: 4px 4px;
+  --rf-kills-bookmark-icon-height: 9px;
+  --rf-kills-bookmark-line-height: 12px;
+
+  --rf-node-unsplashed-width: calc(50% - 4px);
+  --rf-node-unsplashed-gap: 2px;
+  --rf-node-unsplashed-left: 3px;
+  --rf-node-unsplashed-right-left: calc(50% + 6px);
+  --rf-node-unsplashed-signature-width: 15px;
+  --rf-node-unsplashed-signature-height: 5px;
+  --rf-node-unsplashed-signature-top: 4px;
+
+  --rf-local-counter-gap: 2px;
+  --rf-local-counter-top: 0;
+  --rf-local-counter-icon-font-size: 10px;
+  --rf-local-counter-font-size: 10px;
+  --rf-local-counter-line-height: 10px;
+
+  --rf-edge-time-normal-width: 4px;
+  --rf-edge-time-eol-width: 5px;
+  --rf-edge-time-critical-width: 5px;
+  --rf-edge-time-normal-thick-width: 6px;
+  --rf-edge-time-eol-thick-width: 7px;
+  --rf-edge-time-critical-thick-width: 7px;
+  --rf-edge-mass-normal-width: 2px;
+  --rf-edge-mass-normal-thick-width: 4px;
+  --rf-edge-handle-size: 6px;
+  --rf-edge-handle-thick-size: 8px;
+  --rf-edge-label-font-size: 10px;
+  --rf-edge-label-line-height: 12px;
+  --rf-edge-label-padding: 2px 5px;
+  --rf-edge-label-icon-size: 9px;
+  --rf-edge-label-icon-font-size: 9px;
+
+  --rf-tooltip-font-size: 13px;
+  --rf-tooltip-size-xs-font-size: 0.76rem;
+  --rf-tooltip-size-sm-font-size: 0.84rem;
+  --rf-tooltip-size-md-font-size: 0.94rem;
+  --rf-tooltip-size-lg-font-size: 1.02rem;
+  --rf-tooltip-size-xs-max-width: 170px;
+  --rf-tooltip-size-sm-max-width: 220px;
+  --rf-tooltip-size-md-max-width: 280px;
+  --rf-tooltip-size-lg-min-width: 370px;
+
+  --rf-system-view-font-size: 12px;
+  --rf-system-view-compact-name-max-width: 90px;
+  --rf-wh-class-view-gap: 3px;
+  --rf-wh-class-view-no-offset-gap: 5px;
+  --rf-wh-class-view-font-size: 11px;
+  --rf-wh-class-view-no-offset-font-size: 13px;
+  --rf-wh-class-view-top: -1px;
+  --rf-routes-widget-font-size: 13px;
+  --rf-routes-widget-remove-font-size: 10px;
+  --rf-search-item-font-size: 14px;
+  --rf-img-button-normal-font-size: 13px;
+  --rf-img-button-large-font-size: 17px;
+  --rf-system-info-small-font-size: 11px;
+  --rf-info-drawer-label-font-size: 12px;
+  --rf-info-drawer-label-line-height: 13px;
+  --rf-dialog-control-font-size: 13px;
+  --rf-table-font-size: 13px;
+  --rf-table-row-line-height: 1.35;
+  --rf-table-row-compact-height: 10px;
+  --rf-table-row-compact-line-height: 10px;
+  --rf-kill-row-count-font-size: 11px;
+  --rf-kill-row-count-compact-font-size: 0.68rem;
+  --rf-info-text-font-size: 13px;
+  --rf-settings-label-font-size: 14px;
+  --rf-signature-leads-system-view-font-size: 15px;
+  --rf-markdown-font-size: 13px;
+  --rf-markdown-line-height: 1.28;
+
+  font-size: 14px;
+
+  [class*='text-[8px]'],
+  [class*='text-[9px]'],
+  [class*='text-[10px]'] {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  [class*='text-[11px]'] {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  [class*='text-[12px]'] {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
+
+  [class*='text-[13px]'] {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+  }
+
+  [class*='text-[14px]'],
+  [class*='text-[0.6rem]'] {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+  }
+
+  .p-component,
+  .p-inputtext,
+  .p-dropdown-label,
+  .p-menuitem-text,
+  .p-button-label {
+    font-size: 13px !important;
+  }
+
+  .p-tag {
+    padding: 1px 5px;
+    font-size: 12px !important;
+    line-height: 1.15;
+  }
+}
+
+.accessible-large-theme {
+  @include accessible-large-default-palette;
+  @include accessible-large-layout;
+}

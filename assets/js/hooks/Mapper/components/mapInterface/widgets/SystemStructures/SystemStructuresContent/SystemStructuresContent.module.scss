@@ -1,12 +1,12 @@
 .TableRowCompact {
-  height: 8px;
-  max-height: 8px;
-  font-size: 12px !important;
-  line-height: 8px;
+  height: var(--rf-table-row-compact-height, 8px);
+  max-height: var(--rf-table-row-compact-height, 8px);
+  font-size: var(--rf-table-font-size, 12px) !important;
+  line-height: var(--rf-table-row-compact-line-height, 8px);
 }
 
 .Table {
-  font-size: 12px;
+  font-size: var(--rf-table-font-size, 12px);
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;

@@ -5,6 +5,8 @@ export enum AvailableThemes {
   default = 'default',
   pathfinder = 'pathfinder',
   accessibleDark = 'accessible-dark',
+  accessibleLarge = 'accessible-large',
+  accessibleLargeColorblind = 'accessible-large-colorblind',
 }
 
 export enum MiniMapPlacement {
