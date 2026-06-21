@@ -3,25 +3,25 @@
 
 .WHClassViewContent {
   display: flex;
-  gap: 2px;
+  gap: var(--rf-wh-class-view-gap, 2px);
 
   &.NoOffset {
-    gap: 4px;
+    gap: var(--rf-wh-class-view-no-offset-gap, 4px);
     align-items: center;
   }
 }
 
 .WHClassName {
   position: relative;
-  font-size: 10px;
+  font-size: var(--rf-wh-class-view-font-size, 10px);
   font-weight: bold;
-  top: -2px;
+  top: var(--rf-wh-class-view-top, -2px);
 }
 
 .NoOffset {
   *.WHClassName {
     position: relative;
-    font-size: 12px;
+    font-size: var(--rf-wh-class-view-no-offset-font-size, 12px);
     font-weight: initial !important;
     top: initial !important;
   }

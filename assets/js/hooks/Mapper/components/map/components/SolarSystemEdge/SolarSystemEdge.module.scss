@@ -2,95 +2,123 @@
 
 .EdgePathBack {
   fill: none;
-  stroke: #80a5c5;
-  stroke-width: 3px;
+  stroke: var(--rf-edge-time-normal, #80a5c5);
+  stroke-width: var(--rf-edge-time-normal-width, 3px);
 
   &.time1 {
-    stroke: #f11ab2;
-    stroke-width: 4px;
+    stroke: var(--rf-edge-time-critical, #f11ab2);
+    stroke-width: var(--rf-edge-time-critical-width, 4px);
+    stroke-dasharray: var(--rf-edge-time-critical-dasharray, none);
+    stroke-linecap: var(--rf-edge-time-critical-linecap, butt);
   }
 
   &.time4 {
-    stroke: #a654e3;
-    stroke-width: 4px;
+    stroke: var(--rf-edge-time-eol, #a654e3);
+    stroke-width: var(--rf-edge-time-eol-width, 4px);
+    stroke-dasharray: var(--rf-edge-time-eol-dasharray, none);
+    stroke-linecap: var(--rf-edge-time-eol-linecap, butt);
   }
 
   &.TimeCrit {
-    stroke: #f11ab2;
-    stroke-width: 4px;
+    stroke: var(--rf-edge-time-critical, #f11ab2);
+    stroke-width: var(--rf-edge-time-critical-width, 4px);
+    stroke-dasharray: var(--rf-edge-time-critical-dasharray, none);
+    stroke-linecap: var(--rf-edge-time-critical-linecap, butt);
   }
 
   &.Hovered {
-    stroke: #b5c8d9;
+    stroke: var(--rf-edge-time-hover, #b5c8d9);
+
+    &.time1 {
+      stroke: var(--rf-edge-time-critical-hover, var(--rf-edge-time-hover, #b5c8d9));
+    }
+
+    &.time4 {
+      stroke: var(--rf-edge-time-eol-hover, var(--rf-edge-time-hover, #b5c8d9));
+    }
 
     &.TimeCrit {
-      stroke: #ef7dce;
+      stroke: var(--rf-edge-time-critical-hover, #ef7dce);
     }
   }
 
   &.Tick {
-    stroke-width: 5px;
+    stroke-width: var(--rf-edge-time-normal-thick-width, 5px);
+
+    &.time1 {
+      stroke-width: var(--rf-edge-time-critical-thick-width, 5px);
+    }
+
+    &.time4 {
+      stroke-width: var(--rf-edge-time-eol-thick-width, 5px);
+    }
 
     &.TimeCrit {
-      stroke-width: 6px;
+      stroke-width: var(--rf-edge-time-critical-thick-width, 6px);
     }
   }
 
   &.Gate {
-    stroke: #9aff40;
+    stroke: var(--rf-edge-gate, #9aff40);
   }
 
   &.Bridge {
-    stroke: #9aff40;
+    stroke: var(--rf-edge-bridge, var(--rf-edge-gate, #9aff40));
 
-    stroke-dasharray: 10 5;
-    stroke-linecap: round;
+    stroke-dasharray: var(--rf-edge-bridge-dasharray, 10 5);
+    stroke-linecap: var(--rf-edge-bridge-linecap, round);
   }
 }
 
 .EdgePathFront {
   fill: none;
-  stroke: #2c3844;
-  stroke-width: 2px;
+  stroke: var(--rf-edge-mass-normal, #2c3844);
+  stroke-width: var(--rf-edge-mass-normal-width, 2px);
 
   &.MassVerge:not(&.Frigate) {
-    stroke: #af0000;
+    stroke: var(--rf-edge-mass-verge, #af0000);
+    stroke-dasharray: var(--rf-edge-mass-verge-dasharray, none);
+    stroke-linecap: var(--rf-edge-mass-verge-linecap, butt);
   }
 
   &.MassHalf:not(&.Frigate) {
-    stroke: #ffd700;
+    stroke: var(--rf-edge-mass-half, #ffd700);
+    stroke-dasharray: var(--rf-edge-mass-half-dasharray, none);
+    stroke-linecap: var(--rf-edge-mass-half-linecap, butt);
   }
 
   &.Frigate {
-    stroke: #d4f0ff;
+    stroke: var(--rf-edge-frigate, #d4f0ff);
+    stroke-dasharray: var(--rf-edge-frigate-dasharray, none);
+    stroke-linecap: var(--rf-edge-frigate-linecap, butt);
   }
 
   &.Gate {
-    stroke: #1c1e15;
+    stroke: var(--rf-edge-gate-inner, #1c1e15);
   }
 
   &.Hovered {
-    stroke: #4e5d6c;
-    stroke-width: 2px;
+    stroke: var(--rf-edge-mass-hover, #4e5d6c);
+    stroke-width: var(--rf-edge-mass-normal-width, 2px);
 
     &.MassVerge:not(&.Frigate) {
-      stroke: #9d4c34;
+      stroke: var(--rf-edge-mass-verge-hover, #9d4c34);
     }
 
     &.MassHalf:not(&.Frigate) {
-      stroke: #ec992c;
+      stroke: var(--rf-edge-mass-half-hover, #ec992c);
     }
 
     &.Frigate {
-      stroke: #d4f0ff;
+      stroke: var(--rf-edge-frigate-hover, var(--rf-edge-frigate, #d4f0ff));
     }
   }
 
   &.Tick {
-    stroke-width: 3px;
+    stroke-width: var(--rf-edge-mass-normal-thick-width, 3px);
 
     &.Hovered {
-      stroke-width: 3px;
+      stroke-width: var(--rf-edge-mass-normal-thick-width, 3px);
     }
   }
 }
@@ -103,13 +131,13 @@
 
 .Handle {
   border: 1px solid var(--pastel-blue);
-  width: 5px;
-  height: 5px;
+  width: var(--rf-edge-handle-size, 5px);
+  height: var(--rf-edge-handle-size, 5px);
   z-index: 1001;
 
   &.Tick {
-    width: 7px;
-    height: 7px;
+    width: var(--rf-edge-handle-thick-size, 7px);
+    height: var(--rf-edge-handle-thick-size, 7px);
   }
 
   &.Right {
@@ -118,9 +146,9 @@
 }
 
 .LinkLabel {
-  font-size: 9px;
-  line-height: 10px;
-  padding: 2px 4px;
+  font-size: var(--rf-edge-label-font-size, 9px);
+  line-height: var(--rf-edge-label-line-height, 10px);
+  padding: var(--rf-edge-label-padding, 2px 4px);
   opacity: 1;
 
   & > span {
@@ -129,7 +157,7 @@
 }
 
 .icon {
-  width: 8px;
-  height: 8px;
-  font-size: 8px;
+  width: var(--rf-edge-label-icon-size, 8px);
+  height: var(--rf-edge-label-icon-size, 8px);
+  font-size: var(--rf-edge-label-icon-font-size, 8px);
 }

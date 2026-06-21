@@ -4,6 +4,9 @@ import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 export enum AvailableThemes {
   default = 'default',
   pathfinder = 'pathfinder',
+  accessibleDark = 'accessible-dark',
+  accessibleLarge = 'accessible-large',
+  accessibleLargeColorblind = 'accessible-large-colorblind',
 }
 
 export enum MiniMapPlacement {
