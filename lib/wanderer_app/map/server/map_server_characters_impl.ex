@@ -934,8 +934,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     Logger.debug(
       "[CharacterTracking] update_location: map=#{map_id}, " <>
         "from=#{old_location.solar_system_id}, to=#{location.solar_system_id}, " <>
-        "scopes=#{inspect(scopes)}, map.scopes=#{inspect(map[:scopes])}, " <>
-        "map.scope=#{inspect(map[:scope])}, is_valid=#{is_valid}"
+        "scopes=#{inspect(scopes)}, map.scopes=#{inspect(map.scopes)}, " <>
+        "map.scope=#{inspect(map.scope)}, is_valid=#{is_valid}"
     )
 
     case is_valid do
