@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.3](https://github.com/wanderer-industries/wanderer/compare/v1.101.2...v1.101.3) (2026-06-21)
+
+
+
+
+### Bug Fixes:
+
+* core: Shattered J015092 has the wrong statics: - changed from J244 (LS) static - to N110 (HS)
+
 ## [v1.101.2](https://github.com/wanderer-industries/wanderer/compare/v1.101.1...v1.101.2) (2026-06-17)
 
 
