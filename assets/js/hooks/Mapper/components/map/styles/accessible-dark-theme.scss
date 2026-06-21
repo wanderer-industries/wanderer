@@ -1,0 +1,149 @@
+@use './eve-common-variables';
+@use './eve-common';
+
+.accessible-dark-theme {
+  --rf-bg-color: #050708;
+  --rf-soft-bg-color: #101418;
+
+  --rf-node-bg-color: #171b20;
+  --rf-node-soft-bg-color: #202630;
+  --rf-text-color: #f4f7fb;
+  --rf-tag-color: #f0e442;
+  --rf-region-name: #d7dee8;
+  --rf-custom-name: #56b4e9;
+  --rf-node-font-family: 'Shentox', 'Rogan', sans-serif !important;
+  --rf-node-font-weight: 600;
+
+  --rf-bg-variant: "lines";
+  --rf-bg-gap: 24;
+  --rf-bg-size: 1;
+  --rf-bg-pattern-color: #475569;
+
+  --pastel-blue: #8bd3f7;
+  --pastel-pink: #cc79a7;
+  --pastel-green: #009e73;
+  --pastel-yellow: #f0e442;
+
+  --dark-bg: #171b20;
+  --text-color: #f4f7fb;
+  --tooltip-bg: #101418;
+  --window-corner: #94a3b8;
+
+  --rf-local-counter-font-weight: 700;
+  --rf-node-local-counter: #f4f7fb;
+  --rf-has-user-characters: #f0e442;
+
+  --eve-effect-pulsar: #56b4e9;
+  --eve-effect-magnetar: #cc79a7;
+  --eve-effect-wolfRayet: #e69f00;
+  --eve-effect-blackHole: #000000;
+  --eve-effect-cataclysmicVariable: #f0e442;
+  --eve-effect-redGiant: #d55e00;
+  --eve-effect-dazhLiminalityLocus: #d55e00;
+  --eve-effect-imperialStellarObservatory: #56b4e9;
+  --eve-effect-stateStellarObservatory: #56b4e9;
+  --eve-effect-republicStellarObservatory: #56b4e9;
+  --eve-effect-federalStellarObservatory: #56b4e9;
+
+  --eve-wh-type-color-high: #56b4e9;
+  --eve-wh-type-color-low: #e69f00;
+  --eve-wh-type-color-null: #d55e00;
+  --eve-wh-type-color-c1: #56b4e9;
+  --eve-wh-type-color-c2: #009e73;
+  --eve-wh-type-color-c3: #e69f00;
+  --eve-wh-type-color-c4: #f0e442;
+  --eve-wh-type-color-c5: #cc79a7;
+  --eve-wh-type-color-c6: #d55e00;
+  --eve-wh-type-color-c13: #a78bfa;
+  --eve-wh-type-color-drifter: #00c2a8;
+  --eve-wh-type-color-thera: #ffffff;
+  --eve-wh-type-color-zarzakh: #cbd5e1;
+
+  --eve-security-color-10: #56b4e9;
+  --eve-security-color-09: #74c7ec;
+  --eve-security-color-08: #8bd3f7;
+  --eve-security-color-07: #009e73;
+  --eve-security-color-06: #22c55e;
+  --eve-security-color-05: #f0e442;
+  --eve-security-color-04: #e69f00;
+  --eve-security-color-03: #d55e00;
+  --eve-security-color-02: #ef4444;
+  --eve-security-color-01: #cc79a7;
+  --eve-security-color-00: #a78bfa;
+  --eve-security-color-m-01: #a78bfa;
+  --eve-security-color-m-02: #a78bfa;
+  --eve-security-color-m-03: #a78bfa;
+  --eve-security-color-m-04: #a78bfa;
+  --eve-security-color-m-05: #a78bfa;
+  --eve-security-color-m-06: #a78bfa;
+  --eve-security-color-m-07: #a78bfa;
+  --eve-security-color-m-08: #a78bfa;
+  --eve-security-color-m-09: #a78bfa;
+  --eve-security-color-m-10: #a78bfa;
+
+  --eve-solar-system-status-home: rgba(86, 180, 233, 0.24);
+  --eve-solar-system-status-color-home: #56b4e9;
+  --eve-solar-system-status-color-background: rgba(86, 180, 233, 0.18);
+  --eve-solar-system-status-color-home-dark30: #1f6f99;
+
+  --eve-solar-system-status-friendly: rgba(0, 158, 115, 0.26);
+  --eve-solar-system-status-color-friendly: #009e73;
+  --eve-solar-system-status-friendly-dark30: #005f46;
+  --eve-solar-system-status-color-friendly-dark20: #007a5a;
+  --eve-solar-system-status-color-friendly-dark5: #00b887;
+
+  --eve-solar-system-status-lookingFor: rgba(230, 159, 0, 0.28);
+  --eve-solar-system-status-color-lookingFor: #e69f00;
+  --eve-solar-system-status-color-lookingFor-dark15: #a86f00;
+  --eve-solar-system-status-lookingFor-gradient-from: rgba(230, 159, 0, 0.26);
+  --eve-solar-system-status-lookingFor-gradient-to: rgba(86, 180, 233, 0.2);
+
+  --eve-solar-system-status-warning: rgba(240, 228, 66, 0.28);
+  --eve-solar-system-status-color-warning: #f0e442;
+  --eve-solar-system-status-target: rgba(204, 121, 167, 0.32);
+  --eve-solar-system-status-color-target: #cc79a7;
+  --eve-solar-system-status-dangerous: rgba(213, 94, 0, 0.34);
+  --eve-solar-system-status-color-dangerous: #d55e00;
+
+  --conn-time-eol: rgba(230, 159, 0, 0.85);
+  --conn-frigate: rgba(86, 180, 233, 0.85);
+  --conn-bridge: rgba(0, 158, 115, 0.85);
+  --conn-save: rgba(240, 228, 66, 0.82);
+  --selected-item-bg: rgba(148, 163, 184, 0.28);
+
+  --rf-edge-time-normal: #b8c0cc;
+  --rf-edge-time-hover: #f4f7fb;
+  --rf-edge-time-eol: #e69f00;
+  --rf-edge-time-eol-hover: #f5c55f;
+  --rf-edge-time-critical: #cc79a7;
+  --rf-edge-time-critical-hover: #f0a9d1;
+  --rf-edge-time-normal-width: 4px;
+  --rf-edge-time-eol-width: 5px;
+  --rf-edge-time-critical-width: 5px;
+  --rf-edge-time-normal-thick-width: 6px;
+  --rf-edge-time-eol-thick-width: 7px;
+  --rf-edge-time-critical-thick-width: 7px;
+  --rf-edge-time-eol-dasharray: 12 5;
+  --rf-edge-time-eol-linecap: round;
+  --rf-edge-time-critical-dasharray: 2 5;
+  --rf-edge-time-critical-linecap: round;
+
+  --rf-edge-mass-normal: #26313d;
+  --rf-edge-mass-hover: #526070;
+  --rf-edge-mass-half: #f0e442;
+  --rf-edge-mass-half-hover: #fff176;
+  --rf-edge-mass-verge: #d55e00;
+  --rf-edge-mass-verge-hover: #ff8a3d;
+  --rf-edge-frigate: #56b4e9;
+  --rf-edge-frigate-hover: #8ad1ff;
+  --rf-edge-mass-half-dasharray: 14 4;
+  --rf-edge-mass-half-linecap: round;
+  --rf-edge-mass-verge-dasharray: 3 3;
+  --rf-edge-mass-verge-linecap: round;
+
+  --rf-edge-gate: #009e73;
+  --rf-edge-bridge: #009e73;
+  --rf-edge-gate-inner: #0b1512;
+  --rf-edge-bridge-dasharray: 12 5;
+  --rf-edge-bridge-linecap: round;
+}

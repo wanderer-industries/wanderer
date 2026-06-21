@@ -150,6 +150,7 @@ export const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
 export const THEME_OPTIONS = [
   { label: 'Default', value: AvailableThemes.default },
   { label: 'Pathfinder', value: AvailableThemes.pathfinder },
+  { label: 'Accessible Dark', value: AvailableThemes.accessibleDark },
 ];
 
 export const THEME_SETTING: SettingsListItem = {
