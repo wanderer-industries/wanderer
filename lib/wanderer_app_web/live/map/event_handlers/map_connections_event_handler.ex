@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCharacterIntelSanitizer, MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(%{event: :update_connection, payload: connection}, socket),
     do:
@@ -259,9 +259,20 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   def handle_ui_event(
         "get_passages",
         %{"from" => from, "to" => to} = _event,
-        %{assigns: %{map_id: map_id}} = socket
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: current_user,
+            user_permissions: user_permissions
+          }
+        } = socket
       ) do
-    {:ok, passages} = map_id |> get_connection_passages(from, to)
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
+    {:ok, passages} =
+      map_id
+      |> get_connection_passages(from, to, options, user_permissions, own_character_eve_ids)
 
     {:reply, passages, socket}
   end
@@ -305,11 +316,16 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
-  defp get_connection_passages(map_id, from, to) do
+  defp get_connection_passages(map_id, from, to, options, user_permissions, own_character_eve_ids) do
     {:ok, passages} = WandererApp.MapChainPassagesRepo.by_connection(map_id, from, to)
 
     passages =
       passages
+      |> MapCharacterIntelSanitizer.filter_passages(
+        options,
+        user_permissions,
+        own_character_eve_ids
+      )
       |> Enum.map(fn p ->
         %{
           p

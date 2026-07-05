@@ -89,6 +89,7 @@ const INITIAL_DATA: MapRootData = {
   options: {
     allowed_copy_for: UserPermission.VIEW_SYSTEM,
     allowed_paste_for: UserPermission.VIEW_SYSTEM,
+    hide_character_intel: 'false',
     layout: '',
     restrict_offline_showing: 'false',
     show_linked_signature_id: 'false',

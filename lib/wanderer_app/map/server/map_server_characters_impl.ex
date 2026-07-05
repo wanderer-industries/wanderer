@@ -298,7 +298,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         Impl.broadcast!(map_id, :character_removed, character)
 
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-        WandererApp.ExternalEvents.broadcast(map_id, :character_removed, character)
+        broadcast_character_external_event(map_id, :character_removed, character)
 
         :telemetry.execute([:wanderer_app, :map, :character, :removed], %{count: 1})
 
@@ -482,7 +482,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         })
 
         # Broadcast to external event system (webhooks/WebSocket)
-        WandererApp.ExternalEvents.broadcast(map_id, :characters_updated, %{
+        broadcast_character_external_event(map_id, :characters_updated, %{
           characters: updated_characters,
           timestamp: DateTime.utc_now()
         })
@@ -1027,7 +1027,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         Impl.broadcast!(map_id, :character_added, map_character)
 
         # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-        WandererApp.ExternalEvents.broadcast(map_id, :character_added, map_character)
+        broadcast_character_external_event(map_id, :character_added, map_character)
         :telemetry.execute([:wanderer_app, :map, :character, :added], %{count: 1})
         :ok
       else
@@ -1038,7 +1038,7 @@ defmodule WandererApp.Map.Server.CharactersImpl do
           Impl.broadcast!(map_id, :character_added, map_character)
 
           # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-          WandererApp.ExternalEvents.broadcast(map_id, :character_added, map_character)
+          broadcast_character_external_event(map_id, :character_added, map_character)
           :ok
       end
     end)
@@ -1106,6 +1106,30 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         })
     end
   end
+
+  defp broadcast_character_external_event(map_id, event_type, payload) do
+    if hide_character_intel_from_external_events?(map_id) do
+      :ok
+    else
+      WandererApp.ExternalEvents.broadcast(map_id, event_type, payload)
+    end
+  end
+
+  defp hide_character_intel_from_external_events?(map_id) do
+    case WandererApp.Map.get_options(map_id) do
+      {:ok, options} when is_map(options) ->
+        options
+        |> Map.get("hide_character_intel", Map.get(options, :hide_character_intel))
+        |> option_truthy?()
+
+      _ ->
+        false
+    end
+  end
+
+  defp option_truthy?(true), do: true
+  defp option_truthy?("true"), do: true
+  defp option_truthy?(_value), do: false
 
   # Broadcasts permission update to trigger LiveView refresh for the character's user.
   # This is called when a character's corporation or alliance changes, ensuring

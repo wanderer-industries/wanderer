@@ -3,7 +3,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCharactersEventHandler, MapSystemsEventHandler}
+  alias WandererAppWeb.{
+    MapCharacterIntelSanitizer,
+    MapEventHandler,
+    MapCharactersEventHandler,
+    MapSystemsEventHandler
+  }
 
   def handle_server_event(:update_permissions, socket) do
     DebounceAndThrottle.Debounce.apply(
@@ -627,15 +632,25 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             nil
         end
 
+      options = MapCharacterIntelSanitizer.map_options(map_id)
+      own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
+      present_character_eve_ids =
+        map_character_ids
+        |> WandererApp.Character.get_character_eve_ids!()
+        |> MapCharacterIntelSanitizer.sanitize_present_character_eve_ids(
+          options,
+          user_permissions,
+          own_character_eve_ids
+        )
+
       expired_characters =
         tracked_characters |> Enum.filter(&(&1.access_token == nil)) |> Enum.map(& &1.eve_id)
 
       initial_data =
         %{
           kills: kills_data,
-          present_characters:
-            map_character_ids
-            |> WandererApp.Character.get_character_eve_ids!(),
+          present_characters: present_character_eve_ids,
           user_characters: tracked_characters |> Enum.map(& &1.eve_id),
           expired_characters: expired_characters,
           system_static_infos: nil,
@@ -694,11 +709,18 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       map_id
       |> WandererApp.Map.get_options()
 
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
-      |> filter_map_characters(initial_data.user_characters, user_permissions, options)
+      |> filter_map_characters(own_character_eve_ids, user_permissions, options)
       |> Enum.map(&MapCharactersEventHandler.map_ui_character/1)
+      |> MapCharacterIntelSanitizer.sanitize_characters(
+        options,
+        user_permissions,
+        own_character_eve_ids
+      )
 
     {:ok, is_subscription_active} = map_id |> WandererApp.Map.is_subscription_active?()
 

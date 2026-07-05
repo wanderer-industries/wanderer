@@ -6,13 +6,13 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCharacterIntelSanitizer, MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(%{event: :character_added, payload: character}, socket) do
     socket
     |> MapEventHandler.push_map_event(
       "character_added",
-      character |> map_ui_character()
+      map_ui_character_for_socket(character, socket)
     )
   end
 
@@ -20,7 +20,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     socket
     |> MapEventHandler.push_map_event(
       "character_removed",
-      character |> map_ui_character()
+      map_ui_character_for_socket(character, socket)
     )
   end
 
@@ -28,7 +28,7 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
     socket
     |> MapEventHandler.push_map_event(
       "character_updated",
-      character |> map_ui_character()
+      map_ui_character_for_socket(character, socket)
     )
   end
 
@@ -47,14 +47,27 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
   # Uses the characters from the payload instead of fetching all from database
   def handle_server_event(
         %{event: :characters_updated, payload: %{characters: characters}},
-        socket
-      ),
-      do:
-        socket
-        |> MapEventHandler.push_map_event(
-          "characters_updated",
-          characters |> Enum.map(&map_ui_character/1)
-        )
+        %{assigns: %{map_id: map_id, current_user: current_user, user_permissions: user_permissions}} =
+          socket
+      ) do
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
+    characters =
+      characters
+      |> Enum.map(&map_ui_character/1)
+      |> MapCharacterIntelSanitizer.sanitize_characters(
+        options,
+        user_permissions,
+        own_character_eve_ids
+      )
+
+    socket
+    |> MapEventHandler.push_map_event(
+      "characters_updated",
+      characters
+    )
+  end
 
   # Legacy handler for :characters_updated without payload (backwards compatibility)
   # This can be removed once all callers use the new batch format
@@ -66,10 +79,18 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
           }
         } = socket
       ) do
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(socket.assigns.current_user)
+
     characters =
       map_id
       |> WandererApp.Map.list_characters()
       |> Enum.map(&map_ui_character/1)
+      |> MapCharacterIntelSanitizer.sanitize_characters(
+        options,
+        socket.assigns.user_permissions,
+        own_character_eve_ids
+      )
 
     socket
     |> MapEventHandler.push_map_event(
@@ -80,14 +101,26 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
   def handle_server_event(
         %{event: :present_characters_updated, payload: present_character_eve_ids},
-        socket
-      ),
-      do:
-        socket
-        |> MapEventHandler.push_map_event(
-          "present_characters",
-          present_character_eve_ids
-        )
+        %{assigns: %{map_id: map_id, current_user: current_user, user_permissions: user_permissions}} =
+          socket
+      ) do
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
+    present_character_eve_ids =
+      present_character_eve_ids
+      |> MapCharacterIntelSanitizer.sanitize_present_character_eve_ids(
+        options,
+        user_permissions,
+        own_character_eve_ids
+      )
+
+    socket
+    |> MapEventHandler.push_map_event(
+      "present_characters",
+      present_character_eve_ids
+    )
+  end
 
   def handle_server_event(
         %{event: :refresh_user_characters},
@@ -330,6 +363,21 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
       |> Map.put(:alliance_ticker, Map.get(character, :alliance_ticker, ""))
       |> Map.put_new(:ship, WandererApp.Character.get_ship(character))
       |> Map.put_new(:location, get_location(character))
+
+  defp map_ui_character_for_socket(character, %{
+         assigns: %{map_id: map_id, current_user: current_user, user_permissions: user_permissions}
+       }) do
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
+    character
+    |> map_ui_character()
+    |> MapCharacterIntelSanitizer.sanitize_character(
+      options,
+      user_permissions,
+      own_character_eve_ids
+    )
+  end
 
   defp get_location(character),
     do: %{

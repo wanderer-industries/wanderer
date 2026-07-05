@@ -6,7 +6,7 @@ defmodule WandererAppWeb.MapActivityEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCharacterIntelSanitizer, MapEventHandler, MapCoreEventHandler}
 
   def handle_server_event(
         %{
@@ -31,8 +31,12 @@ defmodule WandererAppWeb.MapActivityEventHandler do
   def handle_ui_event(
         "show_activity",
         params,
-        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+        %{assigns: %{map_id: map_id, current_user: current_user, user_permissions: user_permissions}} =
+          socket
       ) do
+    options = MapCharacterIntelSanitizer.map_options(map_id)
+    own_character_eve_ids = MapCharacterIntelSanitizer.own_character_eve_ids(current_user)
+
     Task.async(fn ->
       try do
         # Extract days parameter (nil if not provided)
@@ -41,6 +45,11 @@ defmodule WandererAppWeb.MapActivityEventHandler do
         # Get raw activity data from the domain logic
         result =
           WandererApp.Character.Activity.process_character_activity(map_id, current_user, days)
+          |> MapCharacterIntelSanitizer.filter_activity(
+            options,
+            user_permissions,
+            own_character_eve_ids
+          )
 
         # Group activities by user_id and summarize
         summarized_result =
