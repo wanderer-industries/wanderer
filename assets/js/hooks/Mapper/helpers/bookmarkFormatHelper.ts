@@ -357,7 +357,18 @@ export const formatBookmarkName = (
   result = result.replace(/\{description\}/g, () => signature.description || '');
 
   // Cleanup whitespace
-  return result.trim().replace(/\s+/g, ' ');
+  if (/^\s*$/.test(formatStr)) {
+    return formatStr;
+  }
+
+  const leadingSpaces = formatStr.match(/^\s+/)?.[0] || '';
+  const cleaned = result.trim().replace(/\s+/g, ' ');
+
+  if (cleaned === '') {
+    return leadingSpaces;
+  }
+
+  return `${leadingSpaces}${cleaned}`;
 };
 
 export const copyToClipboard = async (text: string) => {
