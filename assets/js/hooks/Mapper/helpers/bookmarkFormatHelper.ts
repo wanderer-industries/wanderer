@@ -1,7 +1,6 @@
 import { SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
-import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup';
 import { WormholeDataRaw } from '@/hooks/Mapper/types/wormholes';
 import {
   WORMHOLES_ADDITIONAL_INFO,
@@ -103,6 +102,7 @@ export const calculateBookmarkIndex = (
 ): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
   let parentBookmarkIndexLetters: string | undefined;
+  let oldestParentTime = Infinity;
 
   for (const [sysId, sigs] of Object.entries(systemSignatures)) {
     if (sysId === currentSystemUuid || sysId === currentSolarSystemId) continue;
@@ -114,22 +114,27 @@ export const calculateBookmarkIndex = (
       // Return holes have their bookmark_index deleted, so we skip them to avoid hijacking the chain
       if (parentInfo.bookmark_index === undefined) continue;
 
-      if (parentInfo.bookmark_index_chained != null) {
-        if (!parentBookmarkIndex || String(parentInfo.bookmark_index_chained).length < parentBookmarkIndex.length) {
-          parentBookmarkIndex = String(parentInfo.bookmark_index_chained);
-        }
-      } else if (parentInfo.bookmark_index != null) {
-        if (!parentBookmarkIndex || String(parentInfo.bookmark_index).length < parentBookmarkIndex.length) {
-          parentBookmarkIndex = String(parentInfo.bookmark_index);
-        }
-      }
+      const sigTime = parentSig.inserted_at ? new Date(parentSig.inserted_at).getTime() : Infinity;
+      const currentChained = parentInfo.bookmark_index_chained ?? parentInfo.bookmark_index?.toString();
 
-      if (parentInfo.bookmark_index_chained_letters != null) {
+      if (sigTime < oldestParentTime) {
+        oldestParentTime = sigTime;
+        parentBookmarkIndex = currentChained != null ? String(currentChained) : undefined;
+        parentBookmarkIndexLetters =
+          parentInfo.bookmark_index_chained_letters != null
+            ? String(parentInfo.bookmark_index_chained_letters)
+            : undefined;
+      } else if (sigTime === oldestParentTime) {
+        // Fallback to shortest length if times are identical
         if (
-          !parentBookmarkIndexLetters ||
-          String(parentInfo.bookmark_index_chained_letters).length < parentBookmarkIndexLetters.length
+          !parentBookmarkIndex ||
+          (currentChained != null && String(currentChained).length < parentBookmarkIndex.length)
         ) {
-          parentBookmarkIndexLetters = String(parentInfo.bookmark_index_chained_letters);
+          parentBookmarkIndex = currentChained != null ? String(currentChained) : undefined;
+          parentBookmarkIndexLetters =
+            parentInfo.bookmark_index_chained_letters != null
+              ? String(parentInfo.bookmark_index_chained_letters)
+              : undefined;
         }
       }
     }
