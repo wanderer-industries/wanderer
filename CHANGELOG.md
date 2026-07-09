@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.4](https://github.com/wanderer-industries/wanderer/compare/v1.101.3...v1.101.4) (2026-07-09)
+
+
+
+
+### Bug Fixes:
+
+* server: prevent Access error debugging update_location
+
 ## [v1.101.3](https://github.com/wanderer-industries/wanderer/compare/v1.101.2...v1.101.3) (2026-06-21)
 
 
