@@ -23,6 +23,8 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   pingsPlacement: PingsPlacement.rightTop,
   minimapPlacement: MiniMapPlacement.rightBottom,
   hideBookmarkWarning: false,
+  killActivityNotifications: false,
+  killActivitySounds: false,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {
