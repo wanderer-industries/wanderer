@@ -85,6 +85,7 @@ defmodule WandererAppWeb.Plugs.ResponseSanitizer do
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: https: blob:",
       "connect-src 'self' wss: ws:",
+      "media-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"
