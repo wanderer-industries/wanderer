@@ -54,7 +54,20 @@ export const MapKillsNotifications = () => {
       if (!systemOnMap) continue;
 
       // Find new kills we haven't seen before
-      const newKills = kills.filter(k => k.killmail_id && !seenKillmailIdsRef.current.has(k.killmail_id));
+      const newKills = kills.filter(k => {
+        if (!k.killmail_id || seenKillmailIdsRef.current.has(k.killmail_id)) {
+          return false;
+        }
+        if (k.kill_time) {
+          const killTime = new Date(k.kill_time).getTime();
+          const now = Date.now();
+          if (now - killTime > 15 * 60 * 1000) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
       
       // Record all IDs as seen
       for (const kill of kills) {
@@ -73,15 +86,6 @@ export const MapKillsNotifications = () => {
         const systemName = tempName && tempName !== staticName ? `${tempName} (${staticName})` : staticName;
         
         for (const kill of newKills) {
-          // Skip historical kills (older than 5 minutes) - happens when adding a new system
-          if (kill.kill_time) {
-            const killTime = new Date(kill.kill_time).getTime();
-            const now = Date.now();
-            if (now - killTime > 5 * 60 * 1000) {
-              continue; // Too old, don't notify
-            }
-          }
-
           const victimName = kill.victim_char_name || 'Unknown Pilot';
           const shipName = kill.victim_ship_name || 'Unknown Ship';
           
