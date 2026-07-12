@@ -93,7 +93,8 @@ export const MapKillsNotifications = () => {
             severity: 'warn',
             summary: `Kill in ${systemName}`,
             detail: `${victimName} lost a ${shipName}`,
-            life: 5000,
+            life: 30000,
+            closable: true,
           });
         }
       }
@@ -105,18 +106,19 @@ export const MapKillsNotifications = () => {
 
     if (shouldPlaySound && audioRef.current) {
       audioRef.current.currentTime = 0;
+      audioRef.current.volume = (interfaceSettings.killActivitySoundVolume ?? 50) / 100;
       audioRef.current.play().catch(e => console.warn('Could not play kill sound:', e));
     }
 
     return true;
-  }, [systems, interfaceSettings.killActivityNotifications, interfaceSettings.killActivitySounds]);
+  }, [systems, interfaceSettings.killActivityNotifications, interfaceSettings.killActivitySounds, interfaceSettings.killActivitySoundVolume, interfaceSettings.killActivitySoundFile]);
 
   useMapEventListener(handleEvent);
 
   return (
     <>
       <Toast ref={toastRef} position="bottom-right" />
-      <audio ref={audioRef} src="/sounds/xbox.mp3" preload="auto" />
+      <audio ref={audioRef} src={`/sounds/${interfaceSettings.killActivitySoundFile || 'xbox.mp3'}`} preload="auto" />
     </>
   );
 };

@@ -302,6 +302,7 @@ export enum OutCommand {
   unlinkSignature = 'unlink_signature',
   searchSystems = 'search_systems',
   undoDeleteSignatures = 'undo_delete_signatures',
+  getAvailableSounds = 'get_available_sounds',
 }
 
 export type OutCommandHandler = <T = unknown>(event: { type: OutCommand; data: unknown }) => Promise<T>;

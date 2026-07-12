@@ -34,6 +34,8 @@ export type InterfaceStoredSettings = {
   hideBookmarkWarning: boolean;
   killActivityNotifications: boolean;
   killActivitySounds: boolean;
+  killActivitySoundVolume: number;
+  killActivitySoundFile: string;
 };
 
 export type RoutesType = {
