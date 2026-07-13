@@ -68,6 +68,23 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               {x.shortName}
             </div>
           ))}
+
+          {localCounterCharacters.length > 0 && (
+            <LocalCounter
+              hasUserCharacters={nodeVars.hasUserCharacters}
+              localCounterCharacters={localCounterCharacters}
+              className={clsx(
+                classes.Bookmark,
+                'ml-auto mr-[8px]',
+                nodeVars.hasUserCharacters ? MARKER_BOOKMARK_BG_STYLES.pilotsUser : MARKER_BOOKMARK_BG_STYLES.pilots,
+              )}
+            >
+              <div className={clsx(classes.BookmarkWithIcon, 'gap-[2px]')}>
+                <i className="pi pi-users text-[8px]" />
+                <span className={clsx(classes.text)}>{localCounterCharacters.length}</span>
+              </div>
+            </LocalCounter>
+          )}
         </div>
       )}
 
@@ -162,11 +179,6 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
                     </WdTooltipWrapper>
                   )}
                 </div>
-
-                <LocalCounter
-                  hasUserCharacters={nodeVars.hasUserCharacters}
-                  localCounterCharacters={localCounterCharacters}
-                />
               </div>
             </div>
           </>

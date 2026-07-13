@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import clsx from 'clsx';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit/WdTooltip';
@@ -16,6 +16,7 @@ interface LocalCounterProps {
   disableInteractive?: boolean;
   className?: string;
   contentClassName?: string;
+  children?: ReactNode;
 }
 
 export const LocalCounter = ({
@@ -25,6 +26,7 @@ export const LocalCounter = ({
   hasUserCharacters,
   showIcon = true,
   disableInteractive,
+  children,
 }: LocalCounterProps) => {
   const {
     data: { localShowShipName },
@@ -67,20 +69,24 @@ export const LocalCounter = ({
         interactive={!disableInteractive}
         smallPaddings
       >
-        <div className={clsx(classes.hoverTarget)}>
-          <div
-            className={clsx(
-              classes.localCounter,
-              {
-                [classes.hasUserCharacters]: hasUserCharacters,
-              },
-              contentClassName,
-            )}
-          >
-            {showIcon && <i className="pi pi-users" />}
-            <span>{localCounterCharacters.length}</span>
+        {children ? (
+          children
+        ) : (
+          <div className={clsx(classes.hoverTarget)}>
+            <div
+              className={clsx(
+                classes.localCounter,
+                {
+                  [classes.hasUserCharacters]: hasUserCharacters,
+                },
+                contentClassName,
+              )}
+            >
+              {showIcon && <i className="pi pi-users" />}
+              <span>{localCounterCharacters.length}</span>
+            </div>
           </div>
-        </div>
+        )}
       </WdTooltipWrapper>
     </div>
   );
