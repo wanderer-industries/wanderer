@@ -642,6 +642,7 @@ export const MARKER_BOOKMARK_BG_STYLES: Record<string, string> = {
   activityWarn: 'wd-marker-bookmark-color-warn',
   activityDanger: 'wd-marker-bookmark-color-danger',
   pilots: 'wd-marker-bookmark-color-pilots',
+  pilotsUser: 'wd-marker-bookmark-color-pilots-user',
 
   la: 'wd-marker-bookmark-color-average',
   lb: 'wd-marker-bookmark-color-ytirium',

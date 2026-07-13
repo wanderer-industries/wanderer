@@ -73,7 +73,11 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
             <LocalCounter
               hasUserCharacters={nodeVars.hasUserCharacters}
               localCounterCharacters={localCounterCharacters}
-              className={clsx(classes.Bookmark, 'ml-auto mr-[8px]', MARKER_BOOKMARK_BG_STYLES.pilots)}
+              className={clsx(
+                classes.Bookmark,
+                'ml-auto mr-[8px]',
+                nodeVars.hasUserCharacters ? MARKER_BOOKMARK_BG_STYLES.pilotsUser : MARKER_BOOKMARK_BG_STYLES.pilots,
+              )}
             >
               <div className={clsx(classes.BookmarkWithIcon, 'gap-[2px]')}>
                 <i className="pi pi-users text-[8px]" />
