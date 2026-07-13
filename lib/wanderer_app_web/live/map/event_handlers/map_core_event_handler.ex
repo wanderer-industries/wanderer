@@ -338,6 +338,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         {:ok, files} -> 
           files
           |> Enum.filter(&String.ends_with?(&1, ".mp3"))
+          |> Enum.reject(&String.match?(&1, ~r/-[a-f0-9]{32}\.mp3$/))
           |> Enum.sort()
         _ -> 
           ["xbox.mp3"]
