@@ -155,6 +155,18 @@ export const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
     label: 'Play sound for map kill activity',
     type: 'checkbox',
   },
+  {
+    prop: 'killActivitySoundVolume',
+    label: 'Notification Sound Volume',
+    type: 'slider',
+    dependsOn: InterfaceStoredSettingsProps.killActivitySounds,
+  },
+  {
+    prop: 'killActivitySoundFile',
+    label: 'Notification Sound File',
+    type: 'sound_selector',
+    dependsOn: InterfaceStoredSettingsProps.killActivitySounds,
+  },
 ];
 
 export const THEME_OPTIONS = [

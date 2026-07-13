@@ -25,6 +25,8 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   hideBookmarkWarning: false,
   killActivityNotifications: false,
   killActivitySounds: false,
+  killActivitySoundVolume: 100,
+  killActivitySoundFile: 'xbox.mp3',
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {

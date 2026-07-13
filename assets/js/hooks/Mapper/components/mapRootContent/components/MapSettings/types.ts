@@ -35,7 +35,7 @@ export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
 export type SettingsListItem = {
   prop: keyof UserSettings;
   label: string;
-  type: 'checkbox' | 'dropdown' | 'text';
+  type: 'checkbox' | 'dropdown' | 'text' | 'slider' | 'sound_selector';
   options?: { label: string; value: string }[];
   placeholder?: string;
   helperText?: string;

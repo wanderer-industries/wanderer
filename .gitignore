@@ -15,6 +15,7 @@ repomix*
 /priv/static/assets/
 /priv/static/icons/
 /priv/static/images/
+/priv/static/sounds/
 /priv/static/*.js
 /priv/static/*.css
 /priv/static/*-*.png

@@ -326,6 +326,27 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
+  def handle_ui_event(
+        "get_available_sounds",
+        _,
+        socket
+      ) do
+    sounds_dir = Path.join(:code.priv_dir(:wanderer_app), "static/sounds")
+    
+    sounds = 
+      case File.ls(sounds_dir) do
+        {:ok, files} -> 
+          files
+          |> Enum.filter(&String.ends_with?(&1, ".mp3"))
+          |> Enum.reject(&String.match?(&1, ~r/-[a-f0-9]{32}\.mp3$/))
+          |> Enum.sort()
+        _ -> 
+          ["xbox.mp3"]
+      end
+
+    {:reply, %{sounds: sounds}, socket}
+  end
+
   def handle_ui_event("noop", _, socket), do: {:noreply, socket}
 
   def handle_ui_event(
