@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.6](https://github.com/wanderer-industries/wanderer/compare/v1.101.5...v1.101.6) (2026-07-17)
+
+
+
+
+### Bug Fixes:
+
+* authorize client-supplied IDs in LiveView handlers (IDOR audit)
+
 ## [v1.101.5](https://github.com/wanderer-industries/wanderer/compare/v1.101.4...v1.101.5) (2026-07-17)
 
 
