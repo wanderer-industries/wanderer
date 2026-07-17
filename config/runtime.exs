@@ -5,6 +5,12 @@ if System.get_env("PHX_SERVER") do
   config :wanderer_app, WandererAppWeb.Endpoint, server: true
 end
 
+if config_env() in [:dev, :test] do
+  if db_host = System.get_env("DB_HOST") do
+    config :wanderer_app, WandererApp.Repo, hostname: db_host
+  end
+end
+
 config_dir = System.get_env("CONFIG_DIR", "/run/secrets")
 
 app_name = System.get_env("FLY_APP_NAME", "NOT_FLY_APP")
