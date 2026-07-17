@@ -130,7 +130,7 @@ defmodule WandererAppWeb.Router do
         img_src: @img_src_values,
         font_src: @font_src_values,
         connect_src: @connect_src_values ++ [ws_url],
-        media_src: ~w('none'),
+        media_src: ~w('self'),
         object_src: ~w('none'),
         child_src: ~w('none'),
         frame_src: @frame_src_values,
