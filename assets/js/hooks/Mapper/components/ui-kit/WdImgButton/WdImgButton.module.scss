@@ -14,9 +14,9 @@
 }
 
 .Normal {
-  font-size: 12px;
+  font-size: var(--rf-img-button-normal-font-size, 12px);
 }
 
 .Large {
-  font-size: 16px;
+  font-size: var(--rf-img-button-large-font-size, 16px);
 }

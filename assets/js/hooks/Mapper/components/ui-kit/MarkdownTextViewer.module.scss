@@ -1,28 +1,36 @@
 .MarkdownTextViewer {
   @apply text-[12px] leading-[1.2] text-stone-300 break-words;
+  font-size: var(--rf-markdown-font-size, 12px);
+  line-height: var(--rf-markdown-line-height, 1.2);
 
   .h1 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   .h2 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   .h3 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   .h4 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   .h5 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   .h6 {
     @apply text-[12px] font-normal m-0 p-0 border-none break-words whitespace-normal;
+    font-size: inherit;
   }
 
   p {

@@ -8,7 +8,7 @@
 }
 
 .InfoDrawerLabel {
-  font-size: 11px;
-  line-height: 12px;
+  font-size: var(--rf-info-drawer-label-font-size, 11px);
+  line-height: var(--rf-info-drawer-label-line-height, 12px);
   margin-bottom: 1px;
 }
