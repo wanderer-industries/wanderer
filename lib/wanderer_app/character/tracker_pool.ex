@@ -175,8 +175,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_online, @update_online_interval)
-
     try do
       characters
       |> Task.async_stream(
@@ -198,6 +196,7 @@ defmodule WandererApp.Character.TrackerPool do
         ErrorTracker.report(e, __STACKTRACE__)
     end
 
+    Process.send_after(self(), :update_online, @update_online_interval)
     {:noreply, state}
   end
 
@@ -208,8 +207,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_online, @update_online_interval)
-
     try do
       characters
       |> Enum.each(fn character_id ->
@@ -227,6 +224,7 @@ defmodule WandererApp.Character.TrackerPool do
         """)
     end
 
+    Process.send_after(self(), :update_online, @update_online_interval)
     {:noreply, state}
   end
 
@@ -237,8 +235,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
-
     try do
       characters
       |> Task.async_stream(
@@ -261,6 +257,7 @@ defmodule WandererApp.Character.TrackerPool do
         """)
     end
 
+    Process.send_after(self(), :check_offline_characters, @check_offline_characters_interval)
     {:noreply, state}
   end
 
@@ -272,8 +269,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_location, @update_location_interval)
-
     start_time = System.monotonic_time(:millisecond)
 
     try do
@@ -310,6 +305,7 @@ defmodule WandererApp.Character.TrackerPool do
         )
       end
 
+      Process.send_after(self(), :update_location, @update_location_interval)
       {:noreply, %{state | last_location_duration: duration}}
     rescue
       e ->
@@ -318,6 +314,7 @@ defmodule WandererApp.Character.TrackerPool do
         #{Exception.format_stacktrace(__STACKTRACE__)}
         """)
 
+        Process.send_after(self(), :update_location, @update_location_interval)
         {:noreply, state}
     end
   end
@@ -327,7 +324,6 @@ defmodule WandererApp.Character.TrackerPool do
         state
       ) do
     Process.send_after(self(), :update_location, @update_location_interval)
-
     {:noreply, state}
   end
 
@@ -340,8 +336,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_ship, @update_ship_interval)
-
     # Backpressure: Skip ship updates if location updates are falling behind
     if location_duration > 1000 do
       Logger.debug(
@@ -354,6 +348,7 @@ defmodule WandererApp.Character.TrackerPool do
         %{pool_uuid: state.uuid, reason: :location_lag}
       )
 
+      Process.send_after(self(), :update_ship, @update_ship_interval)
       {:noreply, state}
     else
       try do
@@ -375,6 +370,7 @@ defmodule WandererApp.Character.TrackerPool do
           """)
       end
 
+      Process.send_after(self(), :update_ship, @update_ship_interval)
       {:noreply, state}
     end
   end
@@ -384,7 +380,6 @@ defmodule WandererApp.Character.TrackerPool do
         state
       ) do
     Process.send_after(self(), :update_ship, @update_ship_interval)
-
     {:noreply, state}
   end
 
@@ -397,8 +392,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_info, @update_info_interval)
-
     # Backpressure: Skip info updates if location updates are severely falling behind
     if location_duration > 1500 do
       Logger.debug(
@@ -411,6 +404,7 @@ defmodule WandererApp.Character.TrackerPool do
         %{pool_uuid: state.uuid, reason: :location_lag}
       )
 
+      Process.send_after(self(), :update_info, @update_info_interval)
       {:noreply, state}
     else
       try do
@@ -435,6 +429,7 @@ defmodule WandererApp.Character.TrackerPool do
           """)
       end
 
+      Process.send_after(self(), :update_info, @update_info_interval)
       {:noreply, state}
     end
   end
@@ -444,7 +439,6 @@ defmodule WandererApp.Character.TrackerPool do
         state
       ) do
     Process.send_after(self(), :update_info, @update_info_interval)
-
     {:noreply, state}
   end
 
@@ -456,8 +450,6 @@ defmodule WandererApp.Character.TrackerPool do
         } =
           state
       ) do
-    Process.send_after(self(), :update_wallet, @update_wallet_interval)
-
     try do
       characters
       |> Task.async_stream(
@@ -480,6 +472,7 @@ defmodule WandererApp.Character.TrackerPool do
         """)
     end
 
+    Process.send_after(self(), :update_wallet, @update_wallet_interval)
     {:noreply, state}
   end
 
@@ -488,7 +481,6 @@ defmodule WandererApp.Character.TrackerPool do
         state
       ) do
     Process.send_after(self(), :update_wallet, @update_wallet_interval)
-
     {:noreply, state}
   end
 
