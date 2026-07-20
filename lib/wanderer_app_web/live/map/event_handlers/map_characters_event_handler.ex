@@ -162,36 +162,47 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
         %{
           assigns: %{
             map_id: map_id,
-            current_user: %{id: current_user_id},
+            current_user: %{id: current_user_id, characters: current_user_characters},
             only_tracked_characters: only_tracked_characters
           }
         } = socket
       ) do
-    case WandererApp.Character.TrackingUtils.update_tracking(
-           map_id,
-           character_eve_id,
-           current_user_id,
-           track,
-           self(),
-           only_tracked_characters
-         ) do
-      {:ok, tracking_data, event} when not is_nil(tracking_data) ->
-        # Send the appropriate event based on the result
-        Process.send_after(self(), event, 50)
+    if WandererAppWeb.HandlerAuth.user_owns_character_eve_id?(
+         current_user_characters,
+         character_eve_id
+       ) do
+      case WandererApp.Character.TrackingUtils.update_tracking(
+             map_id,
+             character_eve_id,
+             current_user_id,
+             track,
+             self(),
+             only_tracked_characters
+           ) do
+        {:ok, tracking_data, event} when not is_nil(tracking_data) ->
+          # Send the appropriate event based on the result
+          Process.send_after(self(), event, 50)
 
-        # Send the updated tracking data to the client
-        {:reply, %{data: tracking_data}, socket}
+          # Send the updated tracking data to the client
+          {:reply, %{data: tracking_data}, socket}
 
-      {:ok, nil, event} ->
-        # Send the appropriate event based on the result
-        Process.send_after(self(), event, 50)
+        {:ok, nil, event} ->
+          # Send the appropriate event based on the result
+          Process.send_after(self(), event, 50)
 
-        # Send the updated tracking data to the client
-        {:reply, %{characters: []}, socket}
+          # Send the updated tracking data to the client
+          {:reply, %{characters: []}, socket}
 
-      {:error, reason} ->
-        Logger.error("Failed to toggle track: #{inspect(reason)}")
-        {:noreply, socket |> put_flash(:error, "Failed to toggle character tracking")}
+        {:error, reason} ->
+          Logger.error("Failed to toggle track: #{inspect(reason)}")
+          {:noreply, socket |> put_flash(:error, "Failed to toggle character tracking")}
+      end
+    else
+      Logger.warning(
+        "updateCharacterTracking rejected: user #{current_user_id} does not own character #{character_eve_id}"
+      )
+
+      {:noreply, socket}
     end
   end
 

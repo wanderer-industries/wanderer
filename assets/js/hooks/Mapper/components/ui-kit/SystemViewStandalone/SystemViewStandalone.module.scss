@@ -1,7 +1,7 @@
 .SystemViewRoot {
-  font-size: 11px;
+  font-size: var(--rf-system-view-font-size, 11px);
 }
 
 .CompactName {
-  max-width: 80px;
+  max-width: var(--rf-system-view-compact-name-max-width, 80px);
 }

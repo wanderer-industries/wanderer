@@ -2,6 +2,31 @@
 
 <!-- changelog -->
 
+## [v1.101.7](https://github.com/wanderer-industries/wanderer/compare/v1.101.6...v1.101.7) (2026-07-17)
+
+
+
+
+## [v1.101.6](https://github.com/wanderer-industries/wanderer/compare/v1.101.5...v1.101.6) (2026-07-17)
+
+
+
+
+### Bug Fixes:
+
+* authorize client-supplied IDs in LiveView handlers (IDOR audit)
+
+## [v1.101.5](https://github.com/wanderer-industries/wanderer/compare/v1.101.4...v1.101.5) (2026-07-17)
+
+
+
+
+### Bug Fixes:
+
+* core: Added Large theme and High-contrast large theme
+
+* core: Added prototype theme for colorblind person
+
 ## [v1.101.4](https://github.com/wanderer-industries/wanderer/compare/v1.101.3...v1.101.4) (2026-07-09)
 
 
