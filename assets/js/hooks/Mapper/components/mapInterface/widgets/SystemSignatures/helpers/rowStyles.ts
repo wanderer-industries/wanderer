@@ -7,6 +7,7 @@ export function getSignatureRowClass(
   row: ExtendedSystemSignature,
   selectedSignatures: ExtendedSystemSignature[],
   colorByType?: boolean,
+  glowingRows?: Map<string, { isNew: boolean }>,
 ): string {
   const isSelected = selectedSignatures.some(s => s.eve_id === row.eve_id);
 
@@ -22,6 +23,15 @@ export function getSignatureRowClass(
 
   if (row.deleted) {
     return clsx([...baseCls, 'bg-red-400/40 hover:bg-red-400/50']);
+  }
+
+  const glowInfo = glowingRows.get(row.eve_id);
+  if (glowInfo) {
+    if (glowInfo.isNew) {
+      return clsx([...baseCls, 'transition duration-500 bg-lime-900/50 hover:bg-lime-900/60']);
+    } else {
+      return clsx([...baseCls, 'transition duration-500 bg-orange-300/20 hover:bg-orange-300/60']);
+    }
   }
 
   // Apply color by type styling if enabled
