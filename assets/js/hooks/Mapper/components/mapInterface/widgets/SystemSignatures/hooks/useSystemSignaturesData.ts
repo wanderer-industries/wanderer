@@ -19,6 +19,8 @@ export const useSystemSignaturesData = ({
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
   const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
+  const [glowingRows, setGlowingRows] = useState<Map<string, { isNew: boolean }>>(new Map());
+
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({
     systemId,
     settings,
@@ -39,6 +41,30 @@ export const useSystemSignaturesData = ({
       if (incomingSignatures.length === 0) {
         return;
       }
+
+      setGlowingRows(current => {
+        const newGlowing = new Map(current);
+        incomingSignatures.forEach(sig => {
+          const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
+          const isBrandNew = !existing || !existing.updated_at ||
+            Math.abs(new Date(existing.inserted_at).getTime() - new Date(existing.updated_at).getTime()) < 50;
+
+          newGlowing.set(sig.eve_id, { isNew: isBrandNew });
+        });
+        return newGlowing;
+      });
+
+      const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
+
+      setTimeout(() => {
+        setGlowingRows(current => {
+          if (!current) return new Map();
+          const updated = new Map(current);
+          idsToRemove.forEach(id => updated.delete(id));
+          return updated;
+        });
+      }, 3000);
+
 
       // Check if any signatures might be using unsupported languages
       // This is a basic heuristic: if we have signatures where the original group wasn't mapped
@@ -100,5 +126,6 @@ export const useSystemSignaturesData = ({
     handleSelectAll,
     handlePaste,
     hasUnsupportedLanguage,
+    glowingRows,
   };
 };
