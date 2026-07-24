@@ -46,7 +46,7 @@ defmodule WandererAppWeb do
 
       import Phoenix.LiveView.Controller
       import Plug.Conn
-      import WandererAppWeb.Gettext
+      use Gettext, backend: WandererAppWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -102,7 +102,7 @@ defmodule WandererAppWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import WandererAppWeb.CoreComponents
-      import WandererAppWeb.Gettext
+      use Gettext, backend: WandererAppWeb.Gettext
       import WandererAppWeb.Helpers.CSP
 
       # Shortcut for generating JS commands

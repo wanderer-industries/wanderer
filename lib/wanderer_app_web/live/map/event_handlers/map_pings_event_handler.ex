@@ -242,8 +242,8 @@ defmodule WandererAppWeb.MapPingsEventHandler do
   # Catch-all for cancel_ping to debug why it doesn't match
   def handle_ui_event(
         "cancel_ping",
-        event,
-        %{assigns: assigns} = socket
+        _event,
+        socket
       ) do
     {:noreply, socket}
   end

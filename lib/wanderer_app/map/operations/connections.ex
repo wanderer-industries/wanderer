@@ -22,9 +22,7 @@ defmodule WandererApp.Map.Operations.Connections do
 
   # System class constants
   @c1_system_class 1
-  @c4_system_class 4
   @c13_system_class 13
-  @ns_system_class 9
 
   @doc """
   Creates a connection between two systems, applying special rules for C1, C13, and C4 wormholes.

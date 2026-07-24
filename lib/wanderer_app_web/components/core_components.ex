@@ -17,7 +17,7 @@ defmodule WandererAppWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import WandererAppWeb.Gettext
+  use Gettext, backend: WandererAppWeb.Gettext
 
   @image_base_url "https://images.evetech.net"
 
