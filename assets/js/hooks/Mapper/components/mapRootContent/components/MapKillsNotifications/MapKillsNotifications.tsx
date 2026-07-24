@@ -5,6 +5,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { Toast } from 'primereact/toast';
 import { DetailedKill } from '@/hooks/Mapper/types/kills';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace';
 
 interface DetailedKillsEvent {
   name: Commands;
@@ -13,7 +14,7 @@ interface DetailedKillsEvent {
 
 export const MapKillsNotifications = () => {
   const { storedSettings, data: rootData } = useMapRootState();
-  const { interfaceSettings } = storedSettings;
+  const { interfaceSettings, settingsKills } = storedSettings;
   const { systems } = rootData;
   
   const toastRef = useRef<Toast>(null);
@@ -52,6 +53,18 @@ export const MapKillsNotifications = () => {
         s => s.id === systemId || s.system_static_info?.solar_system_id?.toString() === systemId
       );
       if (!systemOnMap) continue;
+
+      // Respect the Kills widget's Excluded Systems ignore-list
+      const excludedSystems = settingsKills.excludedSystems ?? [];
+      const solarSystemId = Number(systemOnMap.system_static_info?.solar_system_id ?? systemOnMap.id);
+      if (excludedSystems.includes(solarSystemId)) continue;
+
+      // Respect the widget's "Only wormhole kills" toggle
+      if (settingsKills.whOnly) {
+        const info = systemOnMap.system_static_info ?? getSystemStaticInfo(systemId);
+        const isWH = info?.system_class != null ? isWormholeSpace(Number(info.system_class)) : false;
+        if (!isWH) continue;
+      }
 
       // Find new kills we haven't seen before
       const newKills = kills.filter(k => {
@@ -111,7 +124,7 @@ export const MapKillsNotifications = () => {
     }
 
     return true;
-  }, [systems, interfaceSettings.killActivityNotifications, interfaceSettings.killActivitySounds, interfaceSettings.killActivitySoundVolume, interfaceSettings.killActivitySoundFile]);
+  }, [systems, interfaceSettings.killActivityNotifications, interfaceSettings.killActivitySounds, interfaceSettings.killActivitySoundVolume, interfaceSettings.killActivitySoundFile, settingsKills.excludedSystems, settingsKills.whOnly]);
 
   useMapEventListener(handleEvent);
 
