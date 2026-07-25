@@ -134,9 +134,8 @@
 
     :global(body.animated-outline-active) & {
       --outline-puls: color-mix(in srgb, var(--selected-system-outline-puls-100) calc(var(--outline-puls-progress) * 100%), var(--selected-system-outline-puls-0));
-      outline: var(--selected-system-outline-width) dashed var(--outline-puls) !important;
-      outline-offset: var(--selected-system-outline-offset) !important;
-      box-shadow: var(--selected-system-shadow) !important;
+      outline: var(--selected-system-outline-width, 2px) var(--selected-system-outline-style, dashed) var(--outline-puls) !important;
+      outline-offset: var(--selected-system-outline-offset, 2px) !important;
       animation: animated-color-puls 1s ease-in-out infinite alternate !important;
     }
 
