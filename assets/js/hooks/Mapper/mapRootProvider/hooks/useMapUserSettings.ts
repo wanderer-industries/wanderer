@@ -198,7 +198,7 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
       document.body.classList.toggle('animated-outline-active', !!hasAnimOutline);
       document.body.classList.toggle('animated-outbor-active', !!hasAnimOutBor);
     }
-  }, [map_slug, mapUserSettings, interfaceSettings]);
+  }, [map_slug, mapUserSettings]);
 
   return {
     isReady,
