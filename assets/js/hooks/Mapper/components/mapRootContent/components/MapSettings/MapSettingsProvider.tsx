@@ -58,7 +58,7 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
     async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
       const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
 
-      if (UserSettingsRemoteList.includes(prop as any)) {
+      if (UserSettingsRemoteList.includes(prop as any) && prop !== 'disable_animated_outlineborder') {
         const newRemoteSettings = {
           ...userRemoteSettings,
           [prop]: value,
@@ -73,6 +73,15 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
           ...interfaceSettings,
           [prop]: value,
         });
+        if (prop === 'show_animated_border') {
+          document.body.classList.toggle('animated-border-active', !!value);
+        }
+        if (prop === 'show_animated_outline') {
+          document.body.classList.toggle('animated-outline-active', !!value);
+        }
+        if (prop === 'disable_animated_outlineborder') {
+          document.body.classList.toggle('animated-outbor-active', !!value);
+        }
       }
     },
     [],

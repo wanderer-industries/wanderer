@@ -109,6 +109,9 @@ const INITIAL_DATA: MapRootData = {
 export enum InterfaceStoredSettingsProps {
   isShowMenu = 'isShowMenu',
   isShowKSpace = 'isShowKSpace',
+  show_animated_border = 'show_animated_border',
+  show_animated_outline = 'show_animated_outline',
+  disable_animated_outlineborder = 'disable_animated_outlineborder',
   isThickConnections = 'isThickConnections',
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
   isShowBackgroundPattern = 'isShowBackgroundPattern',

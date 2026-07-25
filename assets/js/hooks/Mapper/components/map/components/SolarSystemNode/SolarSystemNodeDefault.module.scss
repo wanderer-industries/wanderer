@@ -11,6 +11,26 @@
   }
 }
 
+@property --animated-border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes animated-border-rotate {
+  0% {--animated-border-angle: 0deg;}
+  100% {--animated-border-angle: 360deg;}
+}
+
+  @property --outline-puls-progress {
+  syntax: "<number>";
+  initial-value:  0;
+  inherits: false;
+}
+  @keyframes animated-color-puls {
+  0% {--outline-puls-progress: 0;}
+  100% {--outline-puls-progress: 1;}
+}
+
 .RootCustomNode {
   display: flex;
   width: var(--rf-node-width, 130px);
@@ -99,8 +119,36 @@
   }
 
   &.selected {
-    border-color: v.$pastel-pink;
-    box-shadow: 0 0 10px #9a1af1c2;
+  border-color: v.$pastel-pink;
+  border-image-width: 1px;
+  position: relative;
+  box-shadow: var(--selected-system-shadow);
+
+    :global(body.animated-border-active) & {
+      --color-primary: var(--selected-system-border-puls-0);
+      --color-secondary: var(--selected-system-border-puls-100);
+      --step: 90deg;
+      border-image: repeating-conic-gradient(from var(--animated-border-angle), var(--color-primary) 0deg var(--step), var(--color-secondary) var(--step) calc(var(--step) * 2)) 1 stretch;
+      animation: animated-border-rotate 2s linear infinite !important;
+    }
+
+    :global(body.animated-outline-active) & {
+      --outline-puls: color-mix(in srgb, var(--selected-system-outline-puls-100) calc(var(--outline-puls-progress) * 100%), var(--selected-system-outline-puls-0));
+      outline: var(--selected-system-outline-width) dashed var(--outline-puls) !important;
+      outline-offset: var(--selected-system-outline-offset) !important;
+      box-shadow: var(--selected-system-shadow) !important;
+      animation: animated-color-puls 1s ease-in-out infinite alternate !important;
+    }
+
+    :global(body.animated-border-active.animated-outline-active) & {
+      animation: animated-color-puls 1s ease-in-out infinite alternate, animated-border-rotate 2s linear infinite !important;
+    }
+    :global(body.animated-outbor-active) & {
+       animation-duration: 0s !important;
+    }
+    :global(body.animated-border-active.animated-outline-active.animated-outbor-active) & {
+       animation-duration: 0s, 0s !important;
+    }
   }
 
   &.rally {
@@ -178,7 +226,7 @@
     min-width: var(--rf-node-bookmark-min-width, 13px);
     height: var(--rf-node-bookmark-height, 22px);
     position: relative;
-    top: var(--rf-node-bookmark-top, -13px);
+    top: var(--rf-node-bookmark-top, -17px);
     border-radius: var(--rf-node-bookmark-border-radius, 5px);
     color: #ffffff;
     font-size: var(--rf-node-bookmark-font-size, 8px);
@@ -220,6 +268,7 @@
   z-index: -1;
   display: flex;
   flex-wrap: wrap;
+  margin-top: 2px;
   gap: var(--rf-node-unsplashed-gap, 2px);
   left: var(--rf-node-unsplashed-left, 2px);
 
@@ -427,7 +476,6 @@
     }
   }
 }
-
 .ShatteredIcon {
   position: relative;
   //top: -1px;

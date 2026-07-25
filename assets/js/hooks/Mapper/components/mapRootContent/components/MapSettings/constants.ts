@@ -59,6 +59,21 @@ export const SYSTEMS_CHECKBOXES_PROPS: SettingsListItem[] = [
     label: 'Auto-select splashed',
     type: 'checkbox',
   },
+  {
+    prop: InterfaceStoredSettingsProps.show_animated_border,
+    label: 'Animated selected-system border',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.show_animated_outline,
+    label: 'Animated selected-system outline',
+    type: 'checkbox',
+  },
+   {
+    prop: InterfaceStoredSettingsProps.disable_animated_outlineborder,
+    label: 'Disable selected-system animation',
+    type: 'checkbox',
+  },
 ];
 
 export const SIGNATURES_CHECKBOXES_PROPS: SettingsListItem[] = [
