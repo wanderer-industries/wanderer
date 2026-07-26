@@ -97,28 +97,51 @@ $homeDark30: color.adjust($homeBase, $lightness: -30%);
 
   --eve-solar-system-status-unknown: transparent;
   --eve-solar-system-status-color-unknown: transparent;
-  --eve-solar-system-status-home:                #{$homeAlpha};
+
+
+
+  //refan //--eve-solar-system-status-home:                #{$homeAlpha};
+  --eve-solar-system-status-home: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
   --eve-solar-system-status-color-home:          #{$homeBase};
   --eve-solar-system-status-color-background:    #{$homeBackground};
   --eve-solar-system-status-color-home-dark30:   #{$homeDark30};
-  --eve-solar-system-status-friendly:            #{$friendlyAlpha};
+  //refan //--eve-solar-system-status-friendly:            #{$friendlyAlpha};
+  --eve-solar-system-status-friendly: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
   --eve-solar-system-status-color-friendly:      #{$friendlyBase};
   --eve-solar-system-status-friendly-dark30:     #{$friendlyDark30};
   --eve-solar-system-status-color-friendly-dark20: #{$friendlyDark20};
   --eve-solar-system-status-color-friendly-dark5:  #{$friendlyDark5};
-  --eve-solar-system-status-lookingFor:              #{$lookingForAlpha};
+  //refan //--eve-solar-system-status-lookingFor:   #{$lookingForAlpha};
+  --eve-solar-system-status-lookingFor: linear-gradient(275deg, #{$lookingForAlpha}, transparent);
   --eve-solar-system-status-color-lookingFor:        #{$lookingForBase};
   --eve-solar-system-status-color-lookingFor-dark15: #{$lookingForDark15};
-  --eve-solar-system-status-warning: #906518a6;
+
+  //refan //--eve-solar-system-status-warning: #906518a6;
+  --eve-solar-system-status-warning: linear-gradient(275deg, #906518a6, transparent);
   --eve-solar-system-status-color-warning: #ffb93b;
-  --eve-solar-system-status-target: #b439ff6b;
+  //refan //--eve-solar-system-status-target: #b439ff6b;
+  --eve-solar-system-status-target: linear-gradient(275deg, #b439ff6b, transparent);
   --eve-solar-system-status-color-target: #b439ff;
-  --eve-solar-system-status-dangerous: #d54040;
+  //refan //--eve-solar-system-status-dangerous: #d54040;
+  --eve-solar-system-status-dangerous: linear-gradient(275deg, #d54040, transparent);
   --eve-solar-system-status-color-dangerous: #d54040;
+  //refan //--eve-solar-system-status-rally: repeating-linear-gradient(45deg, v.$neon-color-3 0px, v.$neon-color-3 8px, transparent 8px, transparent 21px);
+  --eve-solar-system-status-color-rally: #1b84ec66;
+
+
 
   --conn-time-eol: #7452c3e3;
   --conn-frigate: #325d88;
   --conn-bridge: rgba(135, 185, 93, 0.85);
   --conn-save: rgba(155, 102, 45, 0.85);
   --selected-item-bg: rgba(98, 98, 98, 0.33);
+  --selected-system-shadow: 0 0 10px #9a1af1c2;
+
+
+
+
+
+
+
+
 }

@@ -100,7 +100,8 @@
 
   &.selected {
     border-color: v.$pastel-pink;
-    box-shadow: 0 0 10px #9a1af1c2;
+    //refan //box-shadow: 0 0 10px #9a1af1c2;
+    box-shadow: var(--selected-system-shadow);
   }
 
   &.rally {
@@ -114,6 +115,7 @@
       z-index: -1;
 
       border-color: v.$neon-color-1;
+    /* //refan
       background: repeating-linear-gradient(
           45deg,
           v.$neon-color-3 0px,
@@ -121,6 +123,13 @@
           transparent 8px,
           transparent 21px
       );
+      */
+      background: var(--eve-solar-system-status-rally, repeating-linear-gradient(
+          45deg,
+          v.$neon-color-3 0px,
+          v.$neon-color-3 8px,
+          transparent 8px,
+          transparent 21px));
       background-size: 30px 30px;
       animation: move-stripes 3s linear infinite;
     }
@@ -128,7 +137,8 @@
 
   &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);
-    background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
+    //refan //background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
+    background-image: var(--eve-solar-system-status-home);
     &.selected {
       border-color: var(--eve-solar-system-status-color-home);
     }
@@ -136,7 +146,8 @@
 
   &.eve-system-status-friendly {
     border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
+    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
+    background-image: var(--eve-solar-system-status-friendly);
     &.selected {
       border-color: var(--eve-solar-system-status-color-friendly-dark5);
     }
@@ -144,26 +155,32 @@
 
   &.eve-system-status-lookingFor {
     border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
+    /* //refan
     background-image: linear-gradient(
         275deg,
         var(--eve-solar-system-status-lookingFor-gradient-from, #45ff8f2f),
         var(--eve-solar-system-status-lookingFor-gradient-to, #457fff2f)
-    );
+    );*/
+    background-image: var(--eve-solar-system-status-lookingFor);
+
     &.selected {
       border-color: v.$pastel-pink;
     }
   }
 
   &.eve-system-status-warning {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
+    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
+    background-image: var(--eve-solar-system-status-warning);
   }
 
   &.eve-system-status-dangerous {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
+    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
+    background-image: var(--eve-solar-system-status-dangerous);
   }
 
   &.eve-system-status-target {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
+    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
+    background-image: var(--eve-solar-system-status-target);
   }
 }
 
@@ -198,7 +215,8 @@
     justify-content: center;
     align-items: center;
     margin-top: var(--rf-node-bookmark-icon-margin-top, -2px);
-    text-shadow: 0 0 3px rgba(0, 0, 0, 1);
+    //refan //text-shadow: 0 0 3px rgba(0, 0, 0, 1);
+    text-shadow: var(--rf-none-bookmark-icon-text-shadow, 0 0 3px rgba(0, 0, 0, 1));
     padding-right: var(--rf-node-bookmark-icon-padding-right, 2px);
 
     & > .icon {
@@ -262,26 +280,33 @@
   gap: var(--rf-node-head-gap, 3px);
   font-size: var(--rf-node-head-font-size, 11px);
   line-height: var(--rf-node-head-line-height, 14px);
-  font-weight: 500;
+  //refan //font-weight: 500;
   position: relative;
   top: var(--rf-node-head-top, 1px);
 
   .classTitle {
     font-size: var(--rf-node-class-title-font-size, 11px);
     font-weight: bold;
-    text-shadow: 0 0 2px rgb(0 0 0 / 73%);
+    //refan //text-shadow: 0 0 10px rgb(0 0 0 / 73%);
+    text-shadow: var(--rf-node-class-title-text-shadow, 0 0 10px rgb(0 0 0 / 73%));
   }
 
   .classSystemName {
     min-width: 0;
     line-height: var(--rf-node-head-line-height, 14px);
+    text-shadow: var(--rf-node-head-text-shadow);
   }
 
   .TagTitle {
     font-size: var(--rf-node-tag-title-font-size, 11px);
-    font-weight: 500;
-    text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
+    //refan font-weight: 500;
+    font-weight: var(--rf-node-tag-title-font-weight, 500);
+    background-color: var(--rf-node-tag-background-color);
+    //refan //text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
+    text-shadow: var(--rf-node-tag-title-text-shadow, 0 0 2px rgba(231, 146, 52, 0.73));
     color: var(--rf-tag-color, #38bdf8);
+    padding: var(--rf-node-tag-background-padding, 0px 1px);
+    border-radius: var(--rf-node-tag-background-border-radius, 2px);
   }
 
   /* Firefox kostyl */
@@ -292,11 +317,13 @@
   }
 }
 
+
 .BottomRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: var(--rf-node-bottom-height, 19px);
+  text-shadow: var(--rf-node-bottom-text-shadow);
 
   .hasLocalCounter {
     margin-right: 2px;
@@ -350,12 +377,14 @@
   box-sizing: border-box;
   border-radius: var(--rf-node-effect-border-radius, 2px);
   margin-left: var(--rf-node-effect-margin-left, 1px);
+  box-shadow: var(--rf-node-effect-box-shadow);
 }
 
 .statics {
   display: flex;
   gap: var(--rf-node-statics-gap, 2px);
   font-size: var(--rf-node-statics-font-size, 8px);
+  //text-shadow: var(--rf-node-statics-text-shadow); //for this to work went into eve-common.scss
 
   & > * {
     line-height: var(--rf-node-statics-line-height, 10px);

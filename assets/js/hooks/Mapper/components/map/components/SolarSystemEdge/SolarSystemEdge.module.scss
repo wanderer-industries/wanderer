@@ -20,10 +20,10 @@
   }
 
   &.TimeCrit {
-    stroke: var(--rf-edge-time-critical, #f11ab2);
-    stroke-width: var(--rf-edge-time-critical-width, 4px);
-    stroke-dasharray: var(--rf-edge-time-critical-dasharray, none);
-    stroke-linecap: var(--rf-edge-time-critical-linecap, butt);
+    stroke: var(--rf-edge-time-supercritical, #f11ab2);
+    stroke-width: var(--rf-edge-time-supercritical-width, 4px);
+    stroke-dasharray: var(--rf-edge-time-supercritical-dasharray, none);
+    stroke-linecap: var(--rf-edge-time-supercritical-linecap, butt);
   }
 
   &.Hovered {
@@ -38,7 +38,7 @@
     }
 
     &.TimeCrit {
-      stroke: var(--rf-edge-time-critical-hover, #ef7dce);
+      stroke: var(--rf-edge-time-supercritical-hover, #ef7dce);
     }
   }
 
@@ -54,7 +54,7 @@
     }
 
     &.TimeCrit {
-      stroke-width: var(--rf-edge-time-critical-thick-width, 6px);
+      stroke-width: var(--rf-edge-time-supercritical-thick-width, 6px);
     }
   }
 

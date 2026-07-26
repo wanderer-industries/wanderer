@@ -153,6 +153,7 @@ export const THEME_OPTIONS = [
   { label: 'Pathfinder', value: AvailableThemes.pathfinder },
   { label: 'High-contrast', value: AvailableThemes.accessibleDark },
   { label: 'High-contrast Large', value: AvailableThemes.accessibleLargeColorblind },
+  { label: 'Fanaberia', value: AvailableThemes.fanaberia },
 ];
 
 export const THEME_SETTING: SettingsListItem = {
