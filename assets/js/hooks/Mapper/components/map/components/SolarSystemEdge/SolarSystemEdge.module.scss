@@ -70,6 +70,12 @@
   }
 }
 
+.EdgePathMiddle {
+  fill: none;
+  stroke: var(--rf-edge-mass-normal, #2c3844);
+  stroke-width: var(--rf-edge-mass-normal-width, 2px);
+}
+
 .EdgePathFront {
   fill: none;
   stroke: var(--rf-edge-mass-normal, #2c3844);
@@ -78,12 +84,14 @@
   &.MassVerge:not(&.Frigate) {
     stroke: var(--rf-edge-mass-verge, #af0000);
     stroke-dasharray: var(--rf-edge-mass-verge-dasharray, none);
+    stroke-dashoffset: var(--rf-edge-mass-verge-dasshofset, 0);
     stroke-linecap: var(--rf-edge-mass-verge-linecap, butt);
   }
 
   &.MassHalf:not(&.Frigate) {
     stroke: var(--rf-edge-mass-half, #ffd700);
     stroke-dasharray: var(--rf-edge-mass-half-dasharray, none);
+    stroke-dashoffset: var(--rf-edge-mass-half-dasshofset, 0);
     stroke-linecap: var(--rf-edge-mass-half-linecap, butt);
   }
 

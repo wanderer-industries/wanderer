@@ -26,6 +26,7 @@
   background-color: var(--rf-node-bg-color, #202020) !important;
   color: var(--rf-text-color, #ffffff);
 
+
   box-shadow: 0 0 5px rgba(v.$dark-bg, 0.5);
   border: 1px solid color.adjust(v.$pastel-blue, $lightness: -10%);
   border-radius: var(--rf-node-border-radius, 5px);
@@ -197,8 +198,10 @@
     position: relative;
     top: var(--rf-node-bookmark-top, -13px);
     border-radius: var(--rf-node-bookmark-border-radius, 5px);
-    color: #ffffff;
+    //refan //color: #ffffff;
+    color: var(--rf-node-bookmark-font-color, #ffffff);
     font-size: var(--rf-node-bookmark-font-size, 8px);
+    text-shadow: var(--rf-node-bookmark-text-shadow);
     text-align: center;
     padding-top: var(--rf-node-bookmark-padding-top, 2px);
     font-weight: bolder;
