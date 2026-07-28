@@ -100,32 +100,26 @@ $homeDark30: color.adjust($homeBase, $lightness: -30%);
 
 
 
-  //refan //--eve-solar-system-status-home:                #{$homeAlpha};
   --eve-solar-system-status-home: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
   --eve-solar-system-status-color-home:          #{$homeBase};
   --eve-solar-system-status-color-background:    #{$homeBackground};
   --eve-solar-system-status-color-home-dark30:   #{$homeDark30};
-  //refan //--eve-solar-system-status-friendly:            #{$friendlyAlpha};
   --eve-solar-system-status-friendly: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
   --eve-solar-system-status-color-friendly:      #{$friendlyBase};
   --eve-solar-system-status-friendly-dark30:     #{$friendlyDark30};
   --eve-solar-system-status-color-friendly-dark20: #{$friendlyDark20};
   --eve-solar-system-status-color-friendly-dark5:  #{$friendlyDark5};
-  //refan //--eve-solar-system-status-lookingFor:   #{$lookingForAlpha};
   --eve-solar-system-status-lookingFor: linear-gradient(275deg, #{$lookingForAlpha}, transparent);
   --eve-solar-system-status-color-lookingFor:        #{$lookingForBase};
   --eve-solar-system-status-color-lookingFor-dark15: #{$lookingForDark15};
 
-  //refan //--eve-solar-system-status-warning: #906518a6;
+
   --eve-solar-system-status-warning: linear-gradient(275deg, #906518a6, transparent);
   --eve-solar-system-status-color-warning: #ffb93b;
-  //refan //--eve-solar-system-status-target: #b439ff6b;
   --eve-solar-system-status-target: linear-gradient(275deg, #b439ff6b, transparent);
   --eve-solar-system-status-color-target: #b439ff;
-  //refan //--eve-solar-system-status-dangerous: #d54040;
   --eve-solar-system-status-dangerous: linear-gradient(275deg, #d54040, transparent);
   --eve-solar-system-status-color-dangerous: #d54040;
-  //refan //--eve-solar-system-status-rally: repeating-linear-gradient(45deg, v.$neon-color-3 0px, v.$neon-color-3 8px, transparent 8px, transparent 21px);
   --eve-solar-system-status-color-rally: #1b84ec66;
 
 

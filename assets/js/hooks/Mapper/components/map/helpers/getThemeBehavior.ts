@@ -30,6 +30,11 @@ const THEME_BEHAVIORS: {
     nodeComponent: SolarSystemNodeTheme,
     connectionMode: ConnectionMode.Loose,
   },
+  fanaberiadashed: {
+    isPanAndDrag: true,
+    nodeComponent: SolarSystemNodeTheme,
+    connectionMode: ConnectionMode.Loose,
+  },
 };
 
 export function getBehaviorForTheme(themeName: string) {

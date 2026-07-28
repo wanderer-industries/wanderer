@@ -6,7 +6,7 @@
 @use "sass:color";
 
 
-.fanaberia-theme {
+.fanaberiadashed-theme {
   --rf-bg-color: #0C0A09;
   --rf-soft-bg-color: #171717;
 
@@ -20,6 +20,7 @@
   --rf-custom-name-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
   --rf-node-font-family: 'Shentox', 'Rogan', sans-serif !important;
   --rf-node-font-weight: 500;
+
 
 
   --selected-system-shadow: 0 0 30px #1e68ffae;
@@ -52,9 +53,11 @@
   --rf-edge-time-eol-width: 7px;
   --rf-edge-time-eol-thick-width: 12px;
   --rf-edge-time-eol-linecap: butt;
+  --rf-edge-time-eol-dasharray: 30, 5;
   --rf-edge-time-critical-width: 7px;
   --rf-edge-time-critical-thick-width: 12px;
   --rf-edge-time-critical-linecap: butt;
+  --rf-edge-time-critical-dasharray: 15, 5;
   --rf-edge-time-supercritical-width: 7px;
   --rf-edge-time-supercritical-thick-width: 4px;
   --rf-edge-time-supercritical-dasharray: 5, 5;
@@ -64,9 +67,11 @@
   --rf-edge-mass-normal-thick-width: 5px;
   --rf-edge-mass-normal: #182028;
   --rf-edge-mass-normal-linecap: butt;
+  --rf-edge-mass-half-dasharray: 25 6;
   --rf-edge-mass-half-dasshofset: 5;
   --rf-edge-mass-half-linecap: butt;
   --rf-edge-mass-verge: #e15200;
+  --rf-edge-mass-verge-dasharray: 15 6;
   --rf-edge-mass-verge-dasshofset: 15;
   --rf-edge-mass-verge-linecap: butt;
   --rf-edge-bridge-dasharray: 15, 15;

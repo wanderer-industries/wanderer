@@ -23,8 +23,10 @@
   padding: var(--rf-node-padding, 2px 6px);
   font-size: var(--rf-node-font-size, 10px);
 
+
   background-color: var(--rf-node-bg-color, #202020) !important;
   color: var(--rf-text-color, #ffffff);
+
 
 
   box-shadow: 0 0 5px rgba(v.$dark-bg, 0.5);
@@ -101,7 +103,6 @@
 
   &.selected {
     border-color: v.$pastel-pink;
-    //refan //box-shadow: 0 0 10px #9a1af1c2;
     box-shadow: var(--selected-system-shadow);
   }
 
@@ -116,15 +117,6 @@
       z-index: -1;
 
       border-color: v.$neon-color-1;
-    /* //refan
-      background: repeating-linear-gradient(
-          45deg,
-          v.$neon-color-3 0px,
-          v.$neon-color-3 8px,
-          transparent 8px,
-          transparent 21px
-      );
-      */
       background: var(--eve-solar-system-status-rally, repeating-linear-gradient(
           45deg,
           v.$neon-color-3 0px,
@@ -138,7 +130,6 @@
 
   &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);
-    //refan //background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
     background-image: var(--eve-solar-system-status-home);
     &.selected {
       border-color: var(--eve-solar-system-status-color-home);
@@ -147,7 +138,6 @@
 
   &.eve-system-status-friendly {
     border: 1px solid var(--eve-solar-system-status-color-friendly-dark20);
-    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
     background-image: var(--eve-solar-system-status-friendly);
     &.selected {
       border-color: var(--eve-solar-system-status-color-friendly-dark5);
@@ -156,12 +146,6 @@
 
   &.eve-system-status-lookingFor {
     border: 1px solid var(--eve-solar-system-status-color-lookingFor-dark15);
-    /* //refan
-    background-image: linear-gradient(
-        275deg,
-        var(--eve-solar-system-status-lookingFor-gradient-from, #45ff8f2f),
-        var(--eve-solar-system-status-lookingFor-gradient-to, #457fff2f)
-    );*/
     background-image: var(--eve-solar-system-status-lookingFor);
 
     &.selected {
@@ -170,19 +154,23 @@
   }
 
   &.eve-system-status-warning {
-    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
     background-image: var(--eve-solar-system-status-warning);
   }
 
   &.eve-system-status-dangerous {
-    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
     background-image: var(--eve-solar-system-status-dangerous);
   }
 
   &.eve-system-status-target {
-    //refan //background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
     background-image: var(--eve-solar-system-status-target);
   }
+}
+
+.RootCustomNode .BottomRow * { //node custom name override
+  font-size: var(--rf-custm-name-font-size);
+  font-weight: var(--rf-custom-name-font-weight, thin);
+  text-shadow: var( --rf-custom-name-text-shadow);
+  color: var(--rf-custom-name, #d6d3d1);
 }
 
 .Bookmarks {
@@ -198,7 +186,6 @@
     position: relative;
     top: var(--rf-node-bookmark-top, -13px);
     border-radius: var(--rf-node-bookmark-border-radius, 5px);
-    //refan //color: #ffffff;
     color: var(--rf-node-bookmark-font-color, #ffffff);
     font-size: var(--rf-node-bookmark-font-size, 8px);
     text-shadow: var(--rf-node-bookmark-text-shadow);
@@ -218,7 +205,6 @@
     justify-content: center;
     align-items: center;
     margin-top: var(--rf-node-bookmark-icon-margin-top, -2px);
-    //refan //text-shadow: 0 0 3px rgba(0, 0, 0, 1);
     text-shadow: var(--rf-none-bookmark-icon-text-shadow, 0 0 3px rgba(0, 0, 0, 1));
     padding-right: var(--rf-node-bookmark-icon-padding-right, 2px);
 
@@ -283,14 +269,12 @@
   gap: var(--rf-node-head-gap, 3px);
   font-size: var(--rf-node-head-font-size, 11px);
   line-height: var(--rf-node-head-line-height, 14px);
-  //refan //font-weight: 500;
   position: relative;
   top: var(--rf-node-head-top, 1px);
 
   .classTitle {
     font-size: var(--rf-node-class-title-font-size, 11px);
     font-weight: bold;
-    //refan //text-shadow: 0 0 10px rgb(0 0 0 / 73%);
     text-shadow: var(--rf-node-class-title-text-shadow, 0 0 10px rgb(0 0 0 / 73%));
   }
 
@@ -302,10 +286,8 @@
 
   .TagTitle {
     font-size: var(--rf-node-tag-title-font-size, 11px);
-    //refan font-weight: 500;
     font-weight: var(--rf-node-tag-title-font-weight, 500);
     background-color: var(--rf-node-tag-background-color);
-    //refan //text-shadow: 0 0 2px rgba(231, 146, 52, 0.73);
     text-shadow: var(--rf-node-tag-title-text-shadow, 0 0 2px rgba(231, 146, 52, 0.73));
     color: var(--rf-tag-color, #38bdf8);
     padding: var(--rf-node-tag-background-padding, 0px 1px);
@@ -320,13 +302,15 @@
   }
 }
 
-
 .BottomRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: var(--rf-node-bottom-height, 19px);
+  color: var(--rf-node-bottom-color, #ffffff);
   text-shadow: var(--rf-node-bottom-text-shadow);
+
+
 
   .hasLocalCounter {
     margin-right: 2px;
