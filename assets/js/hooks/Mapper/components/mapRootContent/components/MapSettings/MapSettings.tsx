@@ -12,6 +12,7 @@ import {
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
 import { BookmarksSettings } from './components/BookmarksSettings';
+import { LabelsSettings } from './components/LabelsSettings';
 import { SettingsListItem } from './types.ts';
 import { ImportExport } from './components/ImportExport.tsx';
 import { ServerSettings } from './components/ServerSettings.tsx';
@@ -81,6 +82,10 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
 
             <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
               <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
+            </TabPanel>
+
+            <TabPanel header="Labels" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <LabelsSettings />
             </TabPanel>
 
             <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>

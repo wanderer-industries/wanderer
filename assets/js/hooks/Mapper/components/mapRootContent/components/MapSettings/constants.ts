@@ -2,43 +2,8 @@ import { InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
 import { AvailableThemes, MiniMapPlacement, PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
 
-export const DEFAULT_REMOTE_SETTINGS = {
-  [UserSettingsRemoteProps.link_signature_on_splash]: false,
-  [UserSettingsRemoteProps.select_on_spash]: false,
-  [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
-  [UserSettingsRemoteProps.bookmark_name_format]: '',
-  [UserSettingsRemoteProps.bookmark_custom_mapping]: {},
-  [UserSettingsRemoteProps.bookmark_wormholes_start_at_zero]: false,
-  [UserSettingsRemoteProps.bookmark_auto_copy]: true,
-  [UserSettingsRemoteProps.bookmark_auto_temp_name]: '',
-  [UserSettingsRemoteProps.system_auto_tag]: '',
-  [UserSettingsRemoteProps.system_custom_label_name]: '',
-  [UserSettingsRemoteProps.bookmark_return_hole_ignore]: false,
-  [UserSettingsRemoteProps.bookmark_return_hole_symbol]: '',
-};
+export { DEFAULT_REMOTE_SETTINGS, UserSettingsRemoteList } from '@/hooks/Mapper/constants/userSettings.ts';
 
-export const AUTO_FORMAT_OPTIONS = [
-  { label: 'Disabled', value: '' },
-  { label: 'Numeric index (1, 2, 3)', value: 'index' },
-  { label: 'Letter index (A, B, C)', value: 'index_letter' },
-  { label: 'Numeric chain (11, 12, 121)', value: 'chain_index' },
-  { label: 'Letter chain (A, A1, A21)', value: 'chain_index_letters' },
-];
-
-export const UserSettingsRemoteList = [
-  UserSettingsRemoteProps.link_signature_on_splash,
-  UserSettingsRemoteProps.select_on_spash,
-  UserSettingsRemoteProps.delete_connection_with_sigs,
-  UserSettingsRemoteProps.bookmark_name_format,
-  UserSettingsRemoteProps.bookmark_custom_mapping,
-  UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
-  UserSettingsRemoteProps.bookmark_auto_copy,
-  UserSettingsRemoteProps.bookmark_auto_temp_name,
-  UserSettingsRemoteProps.system_auto_tag,
-  UserSettingsRemoteProps.system_custom_label_name,
-  UserSettingsRemoteProps.bookmark_return_hole_ignore,
-  UserSettingsRemoteProps.bookmark_return_hole_symbol,
-];
 
 // export const COMMON_CHECKBOXES_PROPS: SettingsListItem[] = [
 //   // {
@@ -99,20 +64,26 @@ export const BOOKMARKS_SETTINGS_PROPS: SettingsListItem[] = [
   {
     prop: UserSettingsRemoteProps.bookmark_auto_temp_name,
     label: 'Auto-fill wormhole temporary name',
-    type: 'dropdown',
-    options: AUTO_FORMAT_OPTIONS,
+    type: 'template',
+    placeholder: 'e.g. {chain_index}',
+    helperText: 'Leave empty to disable.',
+  },
+];
+
+export const SYSTEM_LABELS_SETTINGS_PROPS: SettingsListItem[] = [
+  {
+    prop: UserSettingsRemoteProps.system_custom_label_name,
+    label: 'Auto-label jumped system',
+    type: 'template',
+    placeholder: 'e.g. WH-{chain_index}',
+    helperText: 'Custom label written on the jumped system. Leave empty to disable.',
   },
   {
     prop: UserSettingsRemoteProps.system_auto_tag,
     label: 'Auto-tag jumped system',
-    type: 'dropdown',
-    options: AUTO_FORMAT_OPTIONS,
-  },
-  {
-    prop: UserSettingsRemoteProps.system_custom_label_name,
-    label: 'Auto-label jumped system',
-    type: 'dropdown',
-    options: AUTO_FORMAT_OPTIONS,
+    type: 'template',
+    placeholder: 'e.g. {index}',
+    helperText: 'Leave empty to disable.',
   },
 ];
 

@@ -167,6 +167,26 @@ export const calculateBookmarkIndex = (
   return { index: i, chained, chainedLetters };
 };
 
+/**
+ * Auto tag/label/temp name used to be a fixed scheme picked from a dropdown.
+ * Those values are still stored for existing users, so they are mapped onto the
+ * equivalent template and everything else is treated as a free form template.
+ */
+const AUTO_FORMAT_LEGACY_TEMPLATES: Record<string, string> = {
+  index: '{index}',
+  index_letter: '{index_letter}',
+  chain_index: '{chain_index}',
+  chain_index_letters: '{chain_index_letters}',
+};
+
+export const resolveAutoFormatTemplate = (value?: string | null): string => {
+  if (!value) {
+    return '';
+  }
+
+  return AUTO_FORMAT_LEGACY_TEMPLATES[value] ?? value;
+};
+
 export const formatBookmarkName = (
   formatStr: string,
   signature: SystemSignature,
@@ -376,6 +396,42 @@ export const formatBookmarkName = (
   return `${leadingSpaces}${cleaned}`;
 };
 
+/**
+ * Same formatting as bookmark names, but for the short values written onto a system
+ * (auto tag, auto label, signature temporary name).
+ */
+export const formatAutoValue = (
+  template: string | null | undefined,
+  signature: SystemSignature,
+  destSystemClass: string | null,
+  bookmarkIndex: number | string,
+  wormholesData: Record<string, WormholeDataRaw> = {},
+  startAtZero: boolean = false,
+  mapping?: Record<string, string>,
+  systemSignatures?: Record<string, SystemSignature[]>,
+  currentSystemId?: string,
+  currentSolarSystemId?: string,
+): string => {
+  const resolved = resolveAutoFormatTemplate(template);
+
+  if (!resolved) {
+    return '';
+  }
+
+  return formatBookmarkName(
+    resolved,
+    signature,
+    destSystemClass,
+    bookmarkIndex,
+    wormholesData,
+    startAtZero,
+    mapping,
+    systemSignatures,
+    currentSystemId,
+    currentSolarSystemId,
+  );
+};
+
 export const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
@@ -463,24 +519,19 @@ export const handleAutoBookmark = async (
     (isReturnHole && updatedSignature.temporary_name !== symbol && currentSettings?.bookmark_auto_temp_name);
 
   if (currentSettings?.bookmark_auto_temp_name && needsTempNameUpdate) {
-    let autoName = '';
-    switch (currentSettings.bookmark_auto_temp_name) {
-      case 'index':
-        autoName = bookmarkIndexToUse.toString();
-        break;
-      case 'index_letter':
-        autoName =
-          typeof bookmarkIndexToUse === 'number'
-            ? numberToLetters(bookmarkIndexToUse, currentSettings.bookmark_wormholes_start_at_zero)
-            : bookmarkIndexToUse.toString();
-        break;
-      case 'chain_index':
-        autoName = info.bookmark_index_chained || bookmarkIndexToUse.toString();
-        break;
-      case 'chain_index_letters':
-        autoName = info.bookmark_index_chained_letters || info.bookmark_index_chained || bookmarkIndexToUse.toString();
-        break;
-    }
+    const autoName = formatAutoValue(
+      currentSettings.bookmark_auto_temp_name,
+      updatedSignature,
+      targetSystemClassGroup,
+      bookmarkIndexToUse,
+      wormholesData,
+      currentSettings.bookmark_wormholes_start_at_zero,
+      currentSettings.bookmark_custom_mapping,
+      systemSignatures,
+      currentSystemId,
+      currentSolarSystemId,
+    );
+
     if (autoName !== '' || isReturnHole) {
       updatedSignature = { ...updatedSignature, temporary_name: autoName };
       shouldUpdate = true;

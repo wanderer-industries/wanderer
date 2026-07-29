@@ -1,34 +1,25 @@
-import {
-  createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react';
 import {
   SettingsListItem,
   UserSettings,
   UserSettingsRemote,
 } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/types.ts';
-import {
-  DEFAULT_REMOTE_SETTINGS,
-  UserSettingsRemoteList,
-} from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/constants.ts';
+import { UserSettingsRemoteList } from '@/hooks/Mapper/constants/userSettings.ts';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
+import { FormatTemplateInput } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/FormatTemplateInput.tsx';
+import { SystemLabelDefinition } from '@/hooks/Mapper/constants/labels.ts';
+
+export type SettingValue = boolean | string | Record<string, string> | SystemLabelDefinition[];
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
-  updateSetting: (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => Promise<void>;
-  setUserRemoteSettings: Dispatch<SetStateAction<UserSettingsRemote>>;
+  updateSetting: (prop: keyof UserSettings, value: SettingValue) => Promise<void>;
+  setUserRemoteSettings: (settings: UserSettingsRemote) => void;
   settings: UserSettings;
 };
 
@@ -38,11 +29,8 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   const {
     outCommand,
     storedSettings: { interfaceSettings, setInterfaceSettings },
+    userRemoteSettings: { userRemoteSettings, setUserRemoteSettings },
   } = useMapRootState();
-
-  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
-    ...DEFAULT_REMOTE_SETTINGS,
-  });
 
   const mergedSettings: UserSettings = useMemo(() => {
     return {
@@ -51,12 +39,27 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
     };
   }, [userRemoteSettings, interfaceSettings]);
 
-  const refVars = useRef({ mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings });
-  refVars.current = { mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings };
+  const refVars = useRef({
+    mergedSettings,
+    userRemoteSettings,
+    interfaceSettings,
+    outCommand,
+    setInterfaceSettings,
+    setUserRemoteSettings,
+  });
+  refVars.current = {
+    mergedSettings,
+    userRemoteSettings,
+    interfaceSettings,
+    outCommand,
+    setInterfaceSettings,
+    setUserRemoteSettings,
+  };
 
   const handleSettingChange = useCallback(
-    async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
-      const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
+    async (prop: keyof UserSettings, value: SettingValue) => {
+      const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings, setUserRemoteSettings } =
+        refVars.current;
 
       if (UserSettingsRemoteList.includes(prop as any)) {
         const newRemoteSettings = {
@@ -113,6 +116,19 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
               placeholder="Select a theme"
             />
           </div>
+        );
+      }
+
+      if (item.type === 'template') {
+        return (
+          <FormatTemplateInput
+            key={item.prop.toString()}
+            label={item.label}
+            value={(currentValue as string) || ''}
+            placeholder={item.placeholder}
+            helperText={item.helperText}
+            onChange={value => handleSettingChange(item.prop, value)}
+          />
         );
       }
 

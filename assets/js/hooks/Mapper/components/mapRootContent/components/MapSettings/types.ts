@@ -1,19 +1,7 @@
 import { InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { SystemLabelDefinition } from '@/hooks/Mapper/constants/labels.ts';
 
-export enum UserSettingsRemoteProps {
-  link_signature_on_splash = 'link_signature_on_splash',
-  select_on_spash = 'select_on_spash',
-  delete_connection_with_sigs = 'delete_connection_with_sigs',
-  bookmark_name_format = 'bookmark_name_format',
-  bookmark_custom_mapping = 'bookmark_custom_mapping',
-  bookmark_wormholes_start_at_zero = 'bookmark_wormholes_start_at_zero',
-  bookmark_auto_copy = 'bookmark_auto_copy',
-  bookmark_auto_temp_name = 'bookmark_auto_temp_name',
-  system_auto_tag = 'system_auto_tag',
-  system_custom_label_name = 'system_custom_label_name',
-  bookmark_return_hole_ignore = 'bookmark_return_hole_ignore',
-  bookmark_return_hole_symbol = 'bookmark_return_hole_symbol',
-}
+export { UserSettingsRemoteProps } from '@/hooks/Mapper/constants/userSettings.ts';
 
 export type UserSettingsRemote = {
   link_signature_on_splash: boolean;
@@ -26,6 +14,7 @@ export type UserSettingsRemote = {
   bookmark_auto_temp_name: string;
   system_auto_tag: string;
   system_custom_label_name: string;
+  system_labels: SystemLabelDefinition[];
   bookmark_return_hole_ignore: boolean;
   bookmark_return_hole_symbol: string;
 };
@@ -35,7 +24,7 @@ export type UserSettings = UserSettingsRemote & InterfaceStoredSettings;
 export type SettingsListItem = {
   prop: keyof UserSettings;
   label: string;
-  type: 'checkbox' | 'dropdown' | 'text';
+  type: 'checkbox' | 'dropdown' | 'text' | 'template';
   options?: { label: string; value: string }[];
   placeholder?: string;
   helperText?: string;

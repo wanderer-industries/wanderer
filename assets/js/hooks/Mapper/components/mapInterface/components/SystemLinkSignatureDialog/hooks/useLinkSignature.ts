@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { handleAutoBookmark, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { formatAutoValue, handleAutoBookmark } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
@@ -77,73 +77,52 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
       const systemAutoTag = userSettings?.system_auto_tag;
       const systemCustomLabelName = userSettings?.system_custom_label_name;
 
-      if (systemAutoTag || systemCustomLabelName) {
+      if ((systemAutoTag || systemCustomLabelName) && targetSystem) {
         const info = parseSignatureCustomInfo(updatedSignature.custom_info);
+        const bookmarkIndex = info.bookmark_index ?? '';
 
-        if (info.bookmark_index !== undefined) {
-          const bIndex = info.bookmark_index;
-          const startAtZero = userSettings?.bookmark_wormholes_start_at_zero;
-          const letter = numberToLetters(bIndex, startAtZero);
+        const format = (template: string) =>
+          formatAutoValue(
+            template,
+            updatedSignature,
+            targetSystemClassGroup,
+            bookmarkIndex,
+            wormholesData,
+            userSettings?.bookmark_wormholes_start_at_zero,
+            userSettings?.bookmark_custom_mapping,
+            systemSignatures,
+            systemUuid,
+            data.solar_system_source.toString(),
+          );
 
-          if (targetSystem) {
-            if (systemAutoTag) {
-              let tagValue = '';
-              switch (systemAutoTag) {
-                case 'index':
-                  tagValue = bIndex.toString();
-                  break;
-                case 'chain_index':
-                  tagValue = (info.bookmark_index_chained as string) || bIndex.toString();
-                  break;
-                case 'index_letter':
-                  tagValue = letter;
-                  break;
-                case 'chain_index_letters':
-                  tagValue = (info.bookmark_index_chained_letters as string) || letter;
-                  break;
-              }
+        if (systemAutoTag) {
+          const tagValue = format(systemAutoTag);
 
-              if (tagValue) {
-                await outCommand({
-                  type: OutCommand.updateSystemTag,
-                  data: {
-                    system_id: targetSystem.id,
-                    value: tagValue,
-                  },
-                });
-              }
-            }
+          if (tagValue) {
+            await outCommand({
+              type: OutCommand.updateSystemTag,
+              data: {
+                system_id: targetSystem.id,
+                value: tagValue,
+              },
+            });
+          }
+        }
 
-            if (systemCustomLabelName) {
-              let labelValue = '';
-              switch (systemCustomLabelName) {
-                case 'index':
-                  labelValue = bIndex.toString();
-                  break;
-                case 'index_letter':
-                  labelValue = letter;
-                  break;
-                case 'chain_index':
-                  labelValue = (info.bookmark_index_chained as string) || bIndex.toString();
-                  break;
-                case 'chain_index_letters':
-                  labelValue = (info.bookmark_index_chained_letters as string) || letter;
-                  break;
-              }
+        if (systemCustomLabelName) {
+          const labelValue = format(systemCustomLabelName);
 
-              if (labelValue) {
-                const outLabel = new LabelsManager(targetSystem.labels ?? '');
-                outLabel.updateCustomLabel(labelValue);
+          if (labelValue) {
+            const outLabel = new LabelsManager(targetSystem.labels ?? '');
+            outLabel.updateCustomLabel(labelValue);
 
-                await outCommand({
-                  type: OutCommand.updateSystemLabels,
-                  data: {
-                    system_id: targetSystem.id,
-                    value: outLabel.toString(),
-                  },
-                });
-              }
-            }
+            await outCommand({
+              type: OutCommand.updateSystemLabels,
+              data: {
+                system_id: targetSystem.id,
+                value: outLabel.toString(),
+              },
+            });
           }
         }
       }

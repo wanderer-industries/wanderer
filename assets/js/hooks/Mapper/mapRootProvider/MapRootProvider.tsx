@@ -40,6 +40,12 @@ import {
   STORED_INTERFACE_DEFAULT_VALUES,
 } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { useMapUserSettings } from '@/hooks/Mapper/mapRootProvider/hooks/useMapUserSettings.ts';
+import {
+  UseUserRemoteSettingsData,
+  useUserRemoteSettings,
+} from '@/hooks/Mapper/mapRootProvider/hooks/useUserRemoteSettings.ts';
+import { DEFAULT_REMOTE_SETTINGS } from '@/hooks/Mapper/constants/userSettings.ts';
+import { getDefaultSystemLabels } from '@/hooks/Mapper/constants/labels.ts';
 import { useGlobalHooks } from '@/hooks/Mapper/mapRootProvider/hooks/useGlobalHooks.ts';
 import { DEFAULT_SIGNATURE_SETTINGS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 
@@ -126,6 +132,7 @@ export interface MapRootContextProps {
   resetWidgets: () => void;
   comments: UseCommentsData;
   charactersCache: UseCharactersCacheData;
+  userRemoteSettings: UseUserRemoteSettingsData;
 
   /**
    * !!!
@@ -181,6 +188,12 @@ const MapRootContext = createContext<MapRootContextProps>({
     characters: new Map(),
     lastUpdateKey: 0,
   },
+  userRemoteSettings: {
+    userRemoteSettings: { ...DEFAULT_REMOTE_SETTINGS },
+    setUserRemoteSettings: () => null,
+    systemLabels: getDefaultSystemLabels(),
+    refreshUserRemoteSettings: async () => void 0,
+  },
   storedSettings: {
     interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
     setInterfaceSettings: () => null,
@@ -231,6 +244,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
 
   const comments = useComments({ outCommand });
   const charactersCache = useCharactersCache({ outCommand });
+  const userRemoteSettings = useUserRemoteSettings(outCommand);
 
   return (
     <MapRootContext.Provider
@@ -244,6 +258,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         resetWidgets,
         comments,
         charactersCache,
+        userRemoteSettings,
         storedSettings,
       }}
     >

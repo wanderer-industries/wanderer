@@ -243,6 +243,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         "bookmark_auto_temp_name",
         "system_auto_tag",
         "system_custom_label_name",
+        "system_labels",
         "bookmark_return_hole_ignore",
         "bookmark_return_hole_symbol"
       ])
