@@ -26,7 +26,7 @@ const LabelRow = ({ label, isFirst, isLast, onChange, onMove, onRemove }: LabelR
   useEffect(() => setName(label.name), [label.name]);
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2">
+    <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 shrink-0">
       <input
         type="color"
         className="w-[26px] h-[26px] bg-transparent border border-stone-700 rounded cursor-pointer p-0"
@@ -120,8 +120,8 @@ export const LabelsSettings = () => {
   const handleReset = useCallback(() => saveLabels(getDefaultSystemLabels()), [saveLabels]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-3">
-      <div className="flex justify-between items-center">
+    <div className="w-full h-full min-h-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1">
+      <div className="flex justify-between items-center gap-2 shrink-0">
         <span className="text-stone-400 text-[12px]">
           Name is shown both in the right-click menu and on the system.
         </span>
@@ -130,14 +130,14 @@ export const LabelsSettings = () => {
         </WdButton>
       </div>
 
-      <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 text-stone-500 text-[10px] uppercase tracking-wider">
+      <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 text-stone-500 text-[10px] uppercase tracking-wider shrink-0">
         <span>Color</span>
         <span>Name</span>
         <span>Order</span>
         <span />
       </div>
 
-      <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1 max-h-[190px]">
+      <div className="flex flex-col gap-2 shrink-0">
         {labels.map((label, index) => (
           <LabelRow
             key={label.id}
@@ -151,7 +151,7 @@ export const LabelsSettings = () => {
         ))}
       </div>
 
-      <div>
+      <div className="shrink-0">
         <WdButton
           size="small"
           outlined
@@ -162,7 +162,7 @@ export const LabelsSettings = () => {
         />
       </div>
 
-      <div className="border-b-2 border-dotted border-stone-700/50 h-px my-1" />
+      <div className="border-b-2 border-dotted border-stone-700/50 h-px my-1 shrink-0" />
 
       {SYSTEM_LABELS_SETTINGS_PROPS.map(renderSettingItem)}
     </div>
