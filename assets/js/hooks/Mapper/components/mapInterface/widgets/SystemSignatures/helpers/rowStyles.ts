@@ -28,9 +28,9 @@ export function getSignatureRowClass(
   const glowInfo = glowingRows.get(row.eve_id);
   if (glowInfo) {
     if (glowInfo.isNew) {
-      return clsx([...baseCls, 'transition duration-500 bg-lime-900/50 hover:bg-lime-900/60']);
+      return clsx([...baseCls, 'transition duration-500 bg-lime-500/30 hover:bg-lime-500/50']);
     } else {
-      return clsx([...baseCls, 'transition duration-500 bg-orange-300/20 hover:bg-orange-300/60']);
+      return clsx([...baseCls, 'transition duration-500 bg-orange-200/10 hover:bg-orange-200/50']);
     }
   }
 

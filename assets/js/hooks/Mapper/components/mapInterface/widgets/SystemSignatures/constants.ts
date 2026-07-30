@@ -1,4 +1,4 @@
-import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SIGNATURES_GLOWINGROWS_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -113,6 +113,8 @@ export type Setting = {
 // Now use a stricter type: every timing key maps to a number
 export type SignatureDeletionTimingType = Record<SIGNATURES_DELETION_TIMING, number>;
 
+export type SignatureGlowingRowsTimingType = Record<SIGNATURES_GLOWINGROWS_TIMING, number>;
+
 export const SIGNATURE_SETTINGS = {
   filterFlags: [
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COSMIC_ANOMALY, name: 'Show Anomalies' },
@@ -155,6 +157,18 @@ export const SIGNATURE_SETTINGS = {
         { value: SIGNATURES_DELETION_TIMING.EXTENDED, label: '30s' },
       ],
     },
+    {
+      type: SettingsTypes.dropdown,
+      key: SETTINGS_KEYS.GLOWINGROWS_TIMING,
+      name: 'Paste-Flash Timing',
+      options: [
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWIMMEDIATE, label: '0s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT, label: '2s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWLONG, label: '5s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTRA, label: '10s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED, label: '30s' },
+      ],
+    },
   ],
 };
 
@@ -165,6 +179,13 @@ export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
   [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
 
+export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWIMMEDIATE]: 0,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]: 2_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWLONG]: 5_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTRA]: 10_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED]: 30_000,
+};
 /**
  * Helper function to extract the deletion timeout in milliseconds from settings
  */
@@ -178,6 +199,18 @@ export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
   const validTiming = typeof timing === 'number' ? timing : SIGNATURES_DELETION_TIMING.DEFAULT;
 
   return SIGNATURE_DELETION_TIMEOUTS[validTiming];
+}
+
+export function getGlowingrowsTimeoutMs(settings: SignatureSettingsType): number {
+  const raw = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+  const timing =
+    raw && typeof raw === 'object' && 'value' in raw
+      ? (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value
+      : (raw as SIGNATURES_GLOWINGROWS_TIMING | undefined);
+
+  const glowingrowsTiming = typeof timing === 'number' ? timing : SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT;
+
+  return SIGNATURE_GLOWINGROWS_TIMEOUTS[glowingrowsTiming];
 }
 
 // Replace the flat structure with a nested structure by language
