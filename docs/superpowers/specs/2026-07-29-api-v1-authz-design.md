@@ -62,7 +62,9 @@ except to document the boundary.
    `map: nil` actor is **denied**, never trusted.
 7. **ACLs:** read-only for token actors on `/api/v1`; mutation stays on legacy
    `/api/acls/*`. `map_access_list` writes also token-forbidden.
-8. **`user_activity`:** token actors denied (no single-map link).
+8. **`user_activity` and zero-op resources:** hard-forbid for token actors
+   (`forbid_if always()` → **403** on every action, including list/GET — not
+   filter-to-empty).
 9. **Custom endpoint** `.../systems_and_connections`: guard path-map vs token-map
    **and** pass the actor into the reads; tests assert real IDs.
 10. **Cross-map create:** rejected via a **create policy** (→ `Ash.Error.Forbidden`
@@ -115,6 +117,24 @@ introduced or left open:
 - **#6:** Task 0 also updates the plug moduledoc (drops the session claim); the
   `User` alias remains used by the token path (line 149), so no unused-alias warning.
 - **#7:** all six audited internal call sites get direct regression tests.
+
+**Round 4 review** fixed:
+
+- **#1:** resolved the `user_activity` policy/test contradiction — decision is
+  **hard 403** (`forbid_if always()`); tests assert 403 on list and GET, not
+  200/404.
+- **#2:** `map` PATCH/DELETE use the **primary-key route `/maps/:id`** (only GET is
+  slug-based); tests target `foreign.id`, with foreign/own slug GET as separate
+  cases.
+- **#3:** `user_activity` fixture uses a valid `event_type: :map_added` (not the
+  nonexistent `:map_created`), `entity_type: :map`.
+- **#4:** defense-in-depth requires **`%Ash.Error.Forbidden{}` exclusively** and
+  seeds a row per resource — no `{:ok, []}` acceptance.
+- **#5:** every matrix row is a mandatory executable assertion (explicit instruction
+  added); snippets are starting points, not the full set.
+- **#6:** removed `inject_map_from_actor.ex` from Task 2's file list (it is left
+  unchanged).
+- **#7:** includes test asserts the exact `{id, type}` pair.
 
 ## Authorization mechanism
 
@@ -243,7 +263,7 @@ Extracted from each resource's `routes do` block. Policies and tests must cover
 | `map_system_comment` | ✓ | — | — | — | `[:system, :map_id]` | **read-only route set** |
 | `access_list` | ✓ | new | ✓ | ✓ | `exists(map_access_lists, map_id == ^tok)` | **token writes forbidden** (#5) |
 | `access_list_member` | ✓ | ✓ | update_role | ✓ | via `access_list.map_access_lists` | **token writes forbidden** (#5) |
-| `user_activity` | ✓ | — | — | — | **token denied** | read denied for tokens |
+| `user_activity` | ✓ | — | — | — | **403 all token actions** | 403 |
 
 Notes:
 - Only `map`, `map_system`, `map_connection`, `map_default_settings`,
@@ -365,8 +385,13 @@ action, so **policies do not apply**. Two problems:
   in-scope subset; `GET /:id` for an out-of-map row returns **404**.
 - **Writes** (create/update/destroy) on an out-of-scope row / parent → **403**.
 - Cross-map create on `map_system`/`map_connection` → **403** (reject, not coerce).
-- Token actor on a token-forbidden resource (ACLs write, `user_activity`) → 404 on
-  read-forbidden, 403 on write-forbidden.
+- **Hard-forbidden resources** (`user_activity` and the zero-op resources
+  `map_solar_system`/`map_state`/`ship_type_info`/`user`) use `forbid_if always()`
+  for token actors: **every** token action — list, GET, write — returns **403**
+  (not 404/empty). This is a deliberate "you may not touch this" signal, distinct
+  from the map-scoped resources' filter-to-empty behavior.
+- ACL/`map_access_list` **writes** by token → **403** (reads are filter-scoped →
+  404/empty).
 - Unknown/nil actor with `authorize?: true` → **403** (deny-by-default).
 
 ## Edge cases
@@ -438,7 +463,7 @@ map → 404.
 
 | Resource | Tests |
 |---|---|
-| `map` | GET `/maps/:foreign_slug` → 404; own `/:slug` → 200; POST `/maps` (token) → 403; PATCH foreign → 403; DELETE foreign → 403 (+ `Ash.get` still present); own PATCH → 200 |
+| `map` | GET `/maps/:foreign_slug` → 404; own `/:slug` → 200; POST `/maps` (token) → 403; **PATCH/DELETE use the primary-key route `/maps/:id`** (not slug): PATCH `foreign.id` → 403, DELETE `foreign.id` → 403 (+ `Ash.get` still present), own PATCH `map.id` → 200 |
 | `map_system` | list excludes foreign; GET foreign → 404; own create → 201; create with foreign `map_id` → 403 (+count 0); foreign PATCH/DELETE → 403; own DELETE → 200 (row gone) |
 | `map_connection` | same matrix as `map_system` |
 | `map_default_settings` | list excl; GET foreign → 404; own C/U/D succeed; foreign create → 403 (+count 0); foreign U/D → 403 |
@@ -449,20 +474,30 @@ map → 404.
 | `map_system_comment` | seed foreign comment; list excludes it; GET foreign → 404 (read-only) |
 | `access_list` | linked read ✓ / unlinked → 404; token new/PATCH/DELETE → 403; internal `User` mutate succeeds |
 | `access_list_member` | seed member under foreign ACL; list excl; token create/update_role/DELETE → 403; internal succeeds |
-| `user_activity` | seed foreign activity; token list excludes it; GET foreign → 404 |
-| zero-op (`map_solar_system`,`map_state`,`ship_type_info`,`user`) | seed a row; token cannot read via any exposed path (include or route) |
+| `user_activity` | **hard-forbid**: token list → **403**, token GET → **403** (not 404/empty). Use a valid seed (`event_type: :map_added`, `entity_type: :map`) so the row is real |
+| zero-op (`map_solar_system`,`map_state`,`ship_type_info`,`user`) | **seed one row per resource**; token authorized read → **`%Ash.Error.Forbidden{}` exclusively** (do NOT accept `{:ok, []}`) |
 
 **Correct DB assertions.** Never `Repo.aggregate/2` on an `Ash.Query`. Use
 `Ash.count/2`, and for presence `Ash.get(Resource, id, authorize?: false)` matched
 to `{:ok, %Resource{}}` / `{:ok, nil}`.
 
+**Every matrix row is mandatory (fixes review round 4 #5).** The table above is not
+illustrative — the implementer must write a distinct test case (or a clearly-named
+assertion) for **every cell**: each resource's list, GET-by-id, and each *existing*
+write action, for both foreign (deny) and own (positive control) paths. A task is
+not complete while any listed row lacks an executable assertion. The plan's code
+snippets are starting points to be expanded to the full matrix, not the full set.
+
 ### Non-vacuous includes test
 
-For `?include=owner` on the token's own map: assert `included` **contains** the
-expected owner entry (`id` + `type`), and that **no** included entry carries a
-Character-sensitive attribute. Enumerate the real sensitive fields from
-`character.ex` (token/refresh fields; some are `AshCloak`-encrypted) — verify names
-before finalizing. An empty `included` must **fail** the test.
+For `?include=owner` on the token's own map: assert `included` **contains** an entry
+whose **`id` equals the expected owner id AND `type` equals the expected JSON:API
+resource type** (assert both fields explicitly, e.g. `%{"id" => owner_id, "type" =>
+"characters"}` — verify the actual type string from the resource's `json_api do type
+...`), and that **no** included entry carries a Character-sensitive attribute.
+Enumerate the real sensitive fields from `character.ex` (token/refresh fields; some
+are `AshCloak`-encrypted) — verify names before finalizing. An empty `included` must
+**fail** the test.
 
 ### Regression / non-breakage (fixes review round 3 #7)
 
