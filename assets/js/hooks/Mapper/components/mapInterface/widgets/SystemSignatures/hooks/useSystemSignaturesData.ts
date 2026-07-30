@@ -61,8 +61,8 @@ export const useSystemSignaturesData = ({
         ? (glowingRowsValue as any).value
         : glowingRowsValue;
 
-      const glowingRowsTimeout = [0, 3000, 5000, 10000, 30000];
-      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 2000;
+      const glowingRowsTimeout = [0, 1000, 5000, 10000, 30000];
+      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 1000;
 
       setTimeout(() => {
         setGlowingRows(current => {
