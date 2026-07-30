@@ -65,9 +65,15 @@ except to document the boundary.
 8. **`user_activity`:** token actors denied (no single-map link).
 9. **Custom endpoint** `.../systems_and_connections`: guard path-map vs token-map
    **and** pass the actor into the reads; tests assert real IDs.
-10. **Cross-map create:** reject with 403 (augment `InjectMapFromActor`), not coerce.
-11. **Policies follow each resource's real route/action matrix** (see the matrix
-    table); tests exercise only routes that exist.
+10. **Cross-map create:** rejected via a **create policy** (→ `Ash.Error.Forbidden`
+    → 403), NOT a changeset `add_error` (that is `:invalid` → 400/422).
+    `InjectMapFromActor` is left unchanged.
+11. **Map create is token-forbidden** (`:new` mints a new id; `write_direct(:id)`
+    can't apply). Map create policy is `forbid_if always()`; create is not grouped
+    with update/destroy.
+12. **Policies follow each resource's real route/action matrix** (see the matrix
+    table); tests exercise only routes that exist and are written to fail if
+    authorization were removed.
 
 ## Revision note
 
@@ -93,6 +99,22 @@ introduced or left open:
 - **#7:** `Repo.aggregate/2` can't take an `Ash.Query`; use `Ash.count!`/`Ash.read`.
 - **#8:** includes test now asserts the expected owner is present and enumerates
   real Character-sensitive fields as forbidden.
+
+**Round 3 review** fixed:
+
+- **#1:** `map` has no index route (uses `/:slug`); dropped the nonexistent
+  `GET /api/v1/maps` list test, assert read-scoping via `GET /:slug` → 404.
+- **#2:** anti-vacuous-test rules — seed out-of-scope rows, forbid "has-id"
+  acceptance, `Ash.get` matched to `{:ok, %Resource{}}` not `{:ok, _}`, real
+  defense-in-depth assertions.
+- **#3:** map creation is **token-forbidden** (`:new` mints a new id, so
+  `write_direct(:id)` is unsatisfiable); create is not grouped with update/destroy.
+- **#4:** cross-map create rejection is **policy-based** (403), not a changeset
+  `add_error` (which is `:invalid` → 400/422); `InjectMapFromActor` left unchanged.
+- **#5:** concrete per-resource test matrix replaces representative prose.
+- **#6:** Task 0 also updates the plug moduledoc (drops the session claim); the
+  `User` alias remains used by the token path (line 149), so no unused-alias warning.
+- **#7:** all six audited internal call sites get direct regression tests.
 
 ## Authorization mechanism
 
@@ -208,7 +230,7 @@ Extracted from each resource's `routes do` block. Policies and tests must cover
 
 | Resource | Read | C | U | D | Read scope | Write handling |
 |---|---|---|---|---|---|---|
-| `map` | ✓ | new | ✓ | ✓ | `[:id]` | `write_direct(:id)` |
+| `map` | GET `/:slug` only (no index) | new | ✓ | ✓ | `[:id]` | **create token-forbidden** (#3); scoped U/D |
 | `map_system` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | InjectMapFromActor→**reject 403** on mismatch (#5); `write_direct` for U/D |
 | `map_connection` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | same as map_system |
 | `map_subscription` | ✓ | — | — | — | `[:map_id]` | read-only route set |
@@ -273,20 +295,49 @@ Correct approach for the `[:system, :map_id]` resources:
 
 This avoids relying on loaded relationship data entirely.
 
-### Cross-map create contract: reject, not coerce (fixes review round 2 #5)
+### Cross-map create contract: policy-based 403, not a changeset error (fixes review round 2 #5, round 3 #4)
 
-`map_system` and `map_connection` currently use the `InjectMapFromActor` change,
-which **force-overwrites** `map_id` to the actor's map. So a create naming another
-map would be silently coerced into the caller's own map — not the promised 403, and
-an inconsistent contract.
+`map_system` and `map_connection` use the `InjectMapFromActor` change, which
+force-overwrites `map_id` to the actor's map — so a create naming another map is
+silently coerced. We want an explicit **403**.
 
-**Decision: reject with 403 on mismatch.** Augment `InjectMapFromActor` (or add a
-paired validation) so that when the request supplies a `map_id` that differs from
-the token map, the create is **rejected** rather than coerced. When no `map_id` is
-supplied, injecting the token map is still fine. The policy layer
-(`write_direct(:map_id)`) is the backstop; the change-level rejection produces the
-explicit 403 and a clear error field. Tests assert 403 AND that no row was created
-in either map.
+**Mechanism decision (corrected round 3):** do this with a **policy**, not a
+changeset `add_error`. `Ash.Changeset.add_error` produces an `:invalid`-class error,
+which AshJsonApi maps to **400/422, not 403** (verified: `InvalidAttribute` has
+`class: :invalid`). Only an authorization failure yields `Ash.Error.Forbidden` →
+**403**. Therefore:
+
+- Add a **create policy** on `map_system`/`map_connection`:
+  `MapScoped.CreateMapMatchesToken` — a `SimpleCheck` that reads the **supplied**
+  `map_id` from the changeset params/attributes and authorizes only if it is absent
+  (will be injected) **or** equals the token map. A supplied foreign `map_id` →
+  policy fails → 403.
+- **Do not modify `InjectMapFromActor`.** It still injects the token map when none is
+  supplied; the policy handles the mismatch-rejection. This keeps the shared change
+  untouched (it's used by internal callers too).
+
+Tests assert 403 AND that no row was created in either map (via `Ash.count/2`).
+
+### Map creation is token-forbidden (fixes review round 3 #3)
+
+`POST /maps` runs the `:new` action, which mints a **new** map with a new `id`.
+`write_direct(:id)` (which requires the row's `id` to equal the token map's existing
+`id`) can therefore never pass on create — map creation would be permanently broken.
+
+**Decision: map creation is token-forbidden.** Map lifecycle-create is an
+account-level operation performed via the web app (a trusted `User`/`Character`
+actor, allowed by the `Trusted` bypass). So `map`'s policies are:
+
+```elixir
+policies do
+  bypass MapScoped.Trusted do authorize_if always() end
+  policy action_type(:read)    do authorize_if MapScoped.in_token_map([:id]) end
+  policy action_type(:create)  do forbid_if always() end          # token-forbidden
+  policy action_type([:update, :destroy]) do authorize_if MapScoped.write_direct(:id) end
+end
+```
+
+Do **not** group create with update/destroy for `map`.
 
 ## Custom endpoint outside the Ash router (fixes review round 1 #7, round 2 #4)
 
@@ -323,7 +374,8 @@ action, so **policies do not apply**. Two problems:
 1. Session auth is removed from `/api/v1` (token-only), so `%ActorWithMap{map: nil}`
    never reaches HTTP. If it appears defensively → **denied** (not trusted).
 2. Create omitting `map_id` → token map injected (fine). Create naming another map →
-   **403** (reject).
+   **403** via create policy (not a changeset error). `POST /maps` → 403 (map create
+   token-forbidden).
 3. Relationship-path create with `system_id` pointing at another map's system →
    parent authorization query fails → 403.
 4. Relationship-path resource with a null/absent parent `system` → 403.
@@ -355,53 +407,77 @@ Sites passing `authorize?: false` (explicit bypass, unaffected): `map_pings_repo
 ## Testing strategy
 
 Tests `use WandererAppWeb.ApiCase`, `import WandererAppWeb.Factory`, and
-authenticate with `create_authenticated_conn(conn, map)` (sets the Bearer header to
+authenticate with `create_authenticated_conn(conn, map)` (Bearer =
 `map.public_api_key`). Harness: two maps, two owners, one token. Missing factories
-(`map_subscription`, `map_default_settings`, `map_user_settings`, `user_activity`)
-are created via `Ash.create/2` (as `api_case.ex` already does for subscriptions).
+(`map_subscription`, `map_default_settings`, `map_user_settings`,
+`map_character_settings`, `user_activity`) are created via `Ash.create/2`.
 
-**Test only routes that exist** (review round 2 #2). Per the route/action matrix:
+### Anti-vacuous-test rules (fixes review round 3 #2)
 
-- **All 14 resources — read scoping:** list excludes the other map's rows; `GET
-  /:id` of an out-of-scope row → 404.
-- **Write-capable resources only** (`map`, `map_system`, `map_connection`,
-  `map_default_settings`, `map_system_structure`) — for each **existing** write
-  action: cross-map → **403**, and a **positive control** on the token's own map
-  succeeds.
-- **`map_system_signature`** — delete only: cross-map delete → 403; own delete
-  succeeds. No POST/PATCH tests (routes don't exist).
-- **Token-write-forbidden resources** (`map_access_list`, `access_list`,
-  `access_list_member`) — every existing write action via token → 403; a positive
-  control that an internal `User`/`Character` actor still mutates.
-- **Read-only resources** (`map_subscription`, `map_user_settings`,
-  `map_character_settings`, `map_system_comment`) — read scoping only.
+Every negative test must be constructed so it would **fail if authorization were
+removed**:
 
-**Correct DB assertions (fixes review round 2 #7).** Do **not** use
-`WandererApp.Repo.aggregate/2` on an `Ash.Query`. Use `Ash.count!/2` with an Ash
-query, `Ash.read!/2`, or an Ecto query against the schema. Example row-absence
-check:
+1. **Seed the out-of-scope data first.** A "returns `[]`" test must create a row in
+   the other map/account, then assert that specific row's id is absent — never
+   assert `== []` against an empty table (`user_activity`, comments included).
+2. **No "has an id" acceptance.** Do not assert `Enum.all?(data, & &1["id"])`.
+   Assert the specific foreign row id is **not** in the returned ids.
+3. **Destroy checks use `Ash.get` pattern-matched to a row, not `{:ok, _}`.**
+   `Ash.get(Resource, id, authorize?: false)` returns `{:ok, nil}` for a missing
+   row, so `{:ok, _}` passes vacuously. Assert `{:ok, %Resource{}}` (record present)
+   after a forbidden delete, and `{:ok, nil}` (or `:error`) after a permitted one.
+4. **Defense-in-depth is a real assertion, not a placeholder.** Seed a row in each
+   zero-op resource and assert a token cannot read it (direct route → 404/403, or
+   via include → absent), and that the include of `owner` omits sensitive fields.
 
-```elixir
-{:ok, count} = Ash.count(Ash.Query.filter(WandererApp.Api.MapDefaultSettings, map_id == ^other_map.id))
-assert count == 0
-```
+### Concrete per-resource matrix (fixes review round 3 #5)
 
-Mutation-unchanged and destroy-preserved checks read the row back via `Ash.get/2`
-(or `Ash.read_one`) and assert attributes / presence.
+Each row is an explicit test; `map` has **no index route** (uses `/:slug`) so its
+"list" test is omitted and read scoping is asserted via `GET /:slug` of a foreign
+map → 404.
 
-**Non-vacuous includes test (fixes review round 2 #8).** For `?include=owner` on the
-token's own map, assert **positively** that `included` contains an entry with the
-expected owner `id` and `type`, and assert **negatively** that no entry carries a
-Character-sensitive field (enumerate the actual sensitive attributes of the
-Character resource, e.g. token/refresh fields — not `hash`, which is a User field).
-An empty `included` array must **fail** the test.
+| Resource | Tests |
+|---|---|
+| `map` | GET `/maps/:foreign_slug` → 404; own `/:slug` → 200; POST `/maps` (token) → 403; PATCH foreign → 403; DELETE foreign → 403 (+ `Ash.get` still present); own PATCH → 200 |
+| `map_system` | list excludes foreign; GET foreign → 404; own create → 201; create with foreign `map_id` → 403 (+count 0); foreign PATCH/DELETE → 403; own DELETE → 200 (row gone) |
+| `map_connection` | same matrix as `map_system` |
+| `map_default_settings` | list excl; GET foreign → 404; own C/U/D succeed; foreign create → 403 (+count 0); foreign U/D → 403 |
+| `map_subscription`, `map_user_settings`, `map_character_settings` | seed foreign row; list excludes it; GET foreign → 404 (read-only routes only) |
+| `map_access_list` | list excl; GET foreign → 404; token C/U/D → 403; internal `User` C succeeds (positive) |
+| `map_system_signature` | seed foreign sig; list excl; GET foreign → 404; DELETE foreign → 403 (+ present); own DELETE → 200 (gone) |
+| `map_system_structure` | list excl; GET foreign → 404; own create (valid `system_id`) → 201; create with foreign system → 403; foreign U/D → 403; own U/D → 200 |
+| `map_system_comment` | seed foreign comment; list excludes it; GET foreign → 404 (read-only) |
+| `access_list` | linked read ✓ / unlinked → 404; token new/PATCH/DELETE → 403; internal `User` mutate succeeds |
+| `access_list_member` | seed member under foreign ACL; list excl; token create/update_role/DELETE → 403; internal succeeds |
+| `user_activity` | seed foreign activity; token list excludes it; GET foreign → 404 |
+| zero-op (`map_solar_system`,`map_state`,`ship_type_info`,`user`) | seed a row; token cannot read via any exposed path (include or route) |
 
-Regression / non-breakage:
+**Correct DB assertions.** Never `Repo.aggregate/2` on an `Ash.Query`. Use
+`Ash.count/2`, and for presence `Ash.get(Resource, id, authorize?: false)` matched
+to `{:ok, %Resource{}}` / `{:ok, nil}`.
 
-- One test per audited `actor:` site (User and Character) asserting success.
-- Token-only auth: a request with **no** Authorization header (previously would try
-  session) → 401.
-- Full suite green.
+### Non-vacuous includes test
+
+For `?include=owner` on the token's own map: assert `included` **contains** the
+expected owner entry (`id` + `type`), and that **no** included entry carries a
+Character-sensitive attribute. Enumerate the real sensitive fields from
+`character.ex` (token/refresh fields; some are `AshCloak`-encrypted) — verify names
+before finalizing. An empty `included` must **fail** the test.
+
+### Regression / non-breakage (fixes review round 3 #7)
+
+One direct test per audited internal `actor:` site — all six:
+
+- `Map.available(actor: user)` (User)
+- `AccessList.available(actor: user)` (User)
+- `map_repo.ex:39` `Ash.load(:user_permissions, actor: user)` (User)
+- `maps_live.ex:734` `Ash.load!(:user_permissions, actor: user)` (User) — exercise
+  via the load call directly with a User actor
+- `map_core_event_handler` `MapDefaultSettings.update` **and** `create` (Character)
+- `map_api_controller.ex:1373` `Map.duplicate(actor: user)` (User)
+
+Plus: token-only auth — a request with **no** Authorization header → 401. Full suite
+green.
 
 ## Verification gate
 
