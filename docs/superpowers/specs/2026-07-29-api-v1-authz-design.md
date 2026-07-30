@@ -43,7 +43,8 @@ except to document the boundary.
 ## Non-goals
 
 - Changing ACL-key auth on legacy `/api/acls/*` routes.
-- Introducing session-based auth (none exists in practice today).
+- Preserving session authentication on `/api/v1` — it is intentionally removed
+  (token-only); no client depends on it.
 - Reworking the `/api/*` legacy surface (already map-scoped via `CheckMapApiKey`).
 - Exposing account-level resources (users, transactions) via the API.
 
@@ -54,24 +55,44 @@ except to document the boundary.
 3. **Token scope:** strictly single-map.
 4. **Rollout:** all route-exposed resources at once, via a shared policy helper.
 5. **Composition:** a `bypass` for trusted actors, then action policies (NOT
-   stacked `policy` blocks — that denies everyone; see review #1).
-6. **Actor shapes (three):** API token `ActorWithMap{map: %{}}` → scoped; session
-   `ActorWithMap{map: nil}` → trusted; internal `User` **or** `Character` →
-   trusted.
+   stacked `policy` blocks — that denies everyone).
+6. **`/api/v1` is token-only:** the session branch is removed from
+   `CheckJsonApiAuth`. The only HTTP actor is a scoped `ActorWithMap{map: %{}}`.
+   Internal in-process `User`/`Character` actors are trusted via bypass. A
+   `map: nil` actor is **denied**, never trusted.
 7. **ACLs:** read-only for token actors on `/api/v1`; mutation stays on legacy
-   `/api/acls/*`.
+   `/api/acls/*`. `map_access_list` writes also token-forbidden.
 8. **`user_activity`:** token actors denied (no single-map link).
-9. **Custom endpoint** `.../systems_and_connections`: direct controller guard
-   (path map vs token map), since it bypasses Ash.
+9. **Custom endpoint** `.../systems_and_connections`: guard path-map vs token-map
+   **and** pass the actor into the reads; tests assert real IDs.
+10. **Cross-map create:** reject with 403 (augment `InjectMapFromActor`), not coerce.
+11. **Policies follow each resource's real route/action matrix** (see the matrix
+    table); tests exercise only routes that exist.
 
 ## Revision note
 
-This design was revised after a code review that identified: broken policy
-composition (#1), a missed exposed resource `map_default_settings` (#2), unsound
-relationship-path write checks (#3), an overlooked session actor shape (#4),
-undefined ACL write semantics (#5), non-proving tests (#6), an unguarded custom
-endpoint (#7), a wrong factory module name (#8), and a third (Character) actor
-shape. All are incorporated above.
+**Round 1 review** fixed: broken policy composition, missed `map_default_settings`,
+unsound relationship-path write checks, ACL write semantics, non-proving tests, an
+unguarded custom endpoint, a wrong factory module, and the Character actor shape.
+
+**Round 2 review** fixed the more serious issues that the round-1 revision
+introduced or left open:
+
+- **#1 (critical):** treating the session `map: nil` actor as trusted made any
+  logged-in user a cross-tenant superuser. Resolved by making `/api/v1`
+  **token-only** (remove the session branch); `map: nil` is never trusted.
+- **#2/#3:** policies/tests must follow each resource's **real route/action
+  matrix** — signatures are delete-only, comments read-only, only structures have
+  full child CRUD. Added the authoritative matrix table.
+- **#4:** the custom endpoint's reads run without an actor and would return empty;
+  now pass the actor and assert real IDs.
+- **#5:** `InjectMapFromActor` coerces rather than rejects cross-map creates;
+  contract is now **reject with 403**.
+- **#6:** zero-operation resources' defense-in-depth policies are now a scheduled
+  task, not just prose.
+- **#7:** `Repo.aggregate/2` can't take an `Ash.Query`; use `Ash.count!`/`Ash.read`.
+- **#8:** includes test now asserts the expected owner is present and enumerates
+  real Character-sensitive fields as forbidden.
 
 ## Authorization mechanism
 
@@ -103,23 +124,34 @@ Internal `code_interface` calls that pass neither `actor:` nor `authorize?:` rem
 unenforced. Internal calls that **do** pass `actor:` (a plain `User`) become
 enforced and are handled by the `trusted_user` policy branch (below).
 
-### Three actor shapes (revised after review)
+### Actor shapes and the token-only HTTP boundary (revised — review round 2)
 
-There are **three** actor shapes reaching these resources, not two:
+**Critical correction.** A previous revision treated the session actor
+(`%ActorWithMap{map: nil}`) as trusted/full-access. That is a **cross-tenant
+superuser hole**: `CheckJsonApiAuth` checks the session *before* the bearer token
+(`authenticate_request/1`), so any logged-in user hitting `/api/v1` would be wrapped
+as `map: nil` and — under a trusted bypass — could read/mutate **every** map. That
+is worse than the original bug. Reversed.
 
-1. **API token** — `%ActorWithMap{user: user, map: %{id: _}}` from `CheckJsonApiAuth`
-   token auth. Scope to `actor.map.id`.
-2. **Session** — `%ActorWithMap{user: user, map: nil}` from `CheckJsonApiAuth`
-   session auth (line 76). **Decision: treat `map == nil` as trusted/full-access**,
-   preserving current session behavior (the actor is the logged-in owner via the
-   web app).
-3. **Internal** — a plain `%User{}` (`Map.available(actor: current_user)`) **or** a
-   plain `%Character{}` (`MapDefaultSettings.update(actor: character)` at
-   `map_core_event_handler.ex:366`). Both are trusted/full-access.
+**Decision: `/api/v1` is token-only.** Remove the session branch from
+`CheckJsonApiAuth` so the HTTP surface accepts *only* a map bearer token. This
+eliminates the `%ActorWithMap{map: nil}` shape from the HTTP path entirely. We
+verified no test or client depends on session-authenticated `/api/v1` traffic.
 
-Anything else (nil actor with `authorize?: true`, unexpected structs) → deny.
+After this change, the actor shapes are:
 
-### Policy composition — bypass, not stacked policies (fixes review #1)
+1. **API token** — `%ActorWithMap{user: user, map: %{id: _}}`. The *only* HTTP
+   actor. Scope to `actor.map.id`.
+2. **Internal (in-process only)** — a plain `%User{}` or `%Character{}` passed by
+   internal callers (`Map.available(actor: current_user)`,
+   `MapDefaultSettings.update(actor: character)`). Trusted via bypass. These never
+   arrive over HTTP.
+
+A `%ActorWithMap{map: nil}` must **not** be treated as trusted. If one ever appears
+(defensive), it is denied. Anything else (nil actor with `authorize?: true`,
+unexpected structs) → deny.
+
+### Policy composition — bypass, not stacked policies (fixes review round 1 #1)
 
 **The original design was wrong.** Ash requires *every applicable policy* to pass.
 Two separate `policy` blocks (an unconditional trusted-user policy + an
@@ -131,7 +163,7 @@ policies are skipped), followed by the action policies:
 
 ```elixir
 policies do
-  # Trusted actors (internal User/Character, or session ActorWithMap{map: nil})
+  # Trusted actors (internal User/Character only — NOT session/map:nil)
   # short-circuit the whole request.
   bypass WandererApp.Api.Policies.MapScoped.Trusted do
     authorize_if always()
@@ -151,8 +183,10 @@ end
 
 New module `WandererApp.Api.Policies.MapScoped` provides:
 
-- `MapScoped.Trusted` — a `SimpleCheck` that matches a plain `User`, a plain
-  `Character`, or an `ActorWithMap` whose `map` is `nil`. Used only inside `bypass`.
+- `MapScoped.Trusted` — a `SimpleCheck` that matches a plain `User` or a plain
+  `Character` **only**. It does **not** match `%ActorWithMap{map: nil}` (that shape
+  no longer reaches HTTP after the token-only change, and must never be trusted).
+  Used only inside `bypass`.
 - `in_token_map/1` — builds a **filter check** scoping rows to the token map along
   a declared path (filter, not simple, so reads return the in-scope subset and
   `GET /:id` yields 404 rather than 403).
@@ -167,27 +201,46 @@ User/Character actors — so the filter/write checks naturally match nothing for
 non-token actors, but those actors never reach the action policies because the
 `bypass` already authorized them.
 
-### Per-resource map path (complete route-exposed inventory)
+### Per-resource route/action matrix (authoritative — review round 2 #2/#3)
 
-Every resource with active `/api/v1` routes (operations > 0). The `(0 routes)`
-resources (`map_solar_system`, `map_state`, `ship_type_info`, `user`) declare a
-routes block but expose no operations, so no policy is required; they get a
-deny-by-default `Trusted`-only policy as defense-in-depth.
+Extracted from each resource's `routes do` block. Policies and tests must cover
+**only the operations that actually exist**. `C=create, U=update, D=destroy`.
 
-| Resource | Read scope path | Write policy |
-|---|---|---|
-| `map` | `[:id]` | `write_in_token_map([:id])` |
-| `map_system`, `map_connection` | `[:map_id]` | `write_in_token_map([:map_id])` |
-| `map_subscription`, `map_user_settings`, `map_character_settings`, `map_access_list`, `map_default_settings` | `[:map_id]` | `write_in_token_map([:map_id])` |
-| `map_system_signature`, `map_system_structure`, `map_system_comment` | via `[:system, :map_id]` | parent-query write check (review #3) |
-| `access_list` | `exists(map_access_lists, map_id == ^token_map)` | **read-only for tokens** (review #5) |
-| `access_list_member` | via `exists(access_list.map_access_lists, map_id == ^token_map)` | **read-only for tokens** |
-| `user_activity` | **token actors denied** — no clean single-map link | denied |
+| Resource | Read | C | U | D | Read scope | Write handling |
+|---|---|---|---|---|---|---|
+| `map` | ✓ | new | ✓ | ✓ | `[:id]` | `write_direct(:id)` |
+| `map_system` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | InjectMapFromActor→**reject 403** on mismatch (#5); `write_direct` for U/D |
+| `map_connection` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | same as map_system |
+| `map_subscription` | ✓ | — | — | — | `[:map_id]` | read-only route set |
+| `map_user_settings` | ✓ | — | — | — | `[:map_id]` | read-only route set |
+| `map_character_settings` | ✓ | — | — | — | `[:map_id]` | read-only route set |
+| `map_default_settings` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | `write_direct(:map_id)` |
+| `map_access_list` | ✓ | ✓ | ✓ | ✓ | `[:map_id]` | **token writes forbidden** (ownership op) |
+| `map_system_signature` | ✓ | — | — | ✓ | `[:system, :map_id]` | D only: `parent_in_token_map` |
+| `map_system_structure` | ✓ | ✓ | ✓ | ✓ | `[:system, :map_id]` | C: parent-query; U/D: `parent_in_token_map` |
+| `map_system_comment` | ✓ | — | — | — | `[:system, :map_id]` | **read-only route set** |
+| `access_list` | ✓ | new | ✓ | ✓ | `exists(map_access_lists, map_id == ^tok)` | **token writes forbidden** (#5) |
+| `access_list_member` | ✓ | ✓ | update_role | ✓ | via `access_list.map_access_lists` | **token writes forbidden** (#5) |
+| `user_activity` | ✓ | — | — | — | **token denied** | read denied for tokens |
 
-**`map_default_settings` (fixes review #2).** Full CRUD routes, previously missed.
-It has a direct `map_id`, so it joins the direct-path group. Its `use` block must
-gain `authorizers: [Ash.Policy.Authorizer]` — domain config alone does not attach
-the authorizer.
+Notes:
+- Only `map`, `map_system`, `map_connection`, `map_default_settings`,
+  `map_system_structure` expose token-permitted writes. Signatures expose **delete
+  only**; subscriptions/settings/comments are **read-only**; ACLs and
+  `map_access_list` are token-write-forbidden.
+- A `policy action_type([...])` only fires for actions that exist, so listing
+  create/update/destroy on a read-only resource is harmless — but tests must not
+  POST/PATCH to routes that don't exist (they 404 at the router, not 403).
+
+**`map_default_settings` (fixes round 1 #2).** Full CRUD, previously missed. Direct
+`map_id`. Its `use` block must gain `authorizers: [Ash.Policy.Authorizer]`.
+
+**Zero-operation resources (fixes round 2 #6).** `map_solar_system`, `map_state`,
+`ship_type_info`, `user` declare a routes block but expose no operations. They still
+get `authorizers: [Ash.Policy.Authorizer]` + a `policies` block:
+`bypass Trusted` then `policy always() do forbid_if always() end`. This is
+**scheduled as its own task**, not just described — it also governs these resources
+when reached as relationship `includes` from a permitted resource.
 
 **ACLs are read-only for token actors (fixes review #5).** An ACL may link to
 several maps, so allowing a token to mutate a shared ACL would affect other maps,
@@ -220,33 +273,57 @@ Correct approach for the `[:system, :map_id]` resources:
 
 This avoids relying on loaded relationship data entirely.
 
-## Custom endpoint outside the Ash router (fixes review #7)
+### Cross-map create contract: reject, not coerce (fixes review round 2 #5)
+
+`map_system` and `map_connection` currently use the `InjectMapFromActor` change,
+which **force-overwrites** `map_id` to the actor's map. So a create naming another
+map would be silently coerced into the caller's own map — not the promised 403, and
+an inconsistent contract.
+
+**Decision: reject with 403 on mismatch.** Augment `InjectMapFromActor` (or add a
+paired validation) so that when the request supplies a `map_id` that differs from
+the token map, the create is **rejected** rather than coerced. When no `map_id` is
+supplied, injecting the token map is still fine. The policy layer
+(`write_direct(:map_id)`) is the backstop; the change-level rejection produces the
+explicit 403 and a clear error field. Tests assert 403 AND that no row was created
+in either map.
+
+## Custom endpoint outside the Ash router (fixes review round 1 #7, round 2 #4)
 
 `GET /api/v1/maps/:map_id/systems_and_connections`
 (`MapSystemsConnectionsController.show/2`) is a hand-written controller, not an Ash
-action, so **policies do not apply**. Today it never compares the path `map_id` to
-the authenticated token map and calls `load_map_data/1` without an actor.
+action, so **policies do not apply**. Two problems:
 
-**Decision: add a direct guard in the controller** — compare the path `map_id`
-against `conn.assigns.map.id` (set by `CheckJsonApiAuth`). On mismatch, return the
-same 404 shape the action path returns for out-of-scope reads. This closes the hole
-without an Ash rewrite; the endpoint keeps its current data-loading path.
+1. It never compares the path `map_id` to the authenticated token map.
+2. `load_map_data/1` calls `Ash.read!` with **no actor** — once policies are live,
+   an actor-less read hits deny-by-default (the existing `FilterSystemsByActorMap`
+   prep already filters to `false` without map context), so the endpoint would
+   return **empty arrays** and silently break.
+
+**Decision:**
+- Guard: compare path `map_id` to `conn.assigns.map.id`; mismatch → 404.
+- **Pass the actor** (`conn.assigns` actor / the `ActorWithMap`) into both
+  `Ash.read` calls so the reads succeed for the token's own map.
+- Tests assert the response contains the **expected system and connection IDs**
+  (not just HTTP 200 with possibly-empty arrays — a positive control that catches
+  the actor-less-read breakage).
 
 ## Error behavior
 
 - **Reads** — filter checks silently exclude out-of-scope rows. List returns the
   in-scope subset; `GET /:id` for an out-of-map row returns **404**.
 - **Writes** (create/update/destroy) on an out-of-scope row / parent → **403**.
+- Cross-map create on `map_system`/`map_connection` → **403** (reject, not coerce).
 - Token actor on a token-forbidden resource (ACLs write, `user_activity`) → 404 on
   read-forbidden, 403 on write-forbidden.
 - Unknown/nil actor with `authorize?: true` → **403** (deny-by-default).
 
 ## Edge cases
 
-1. `ActorWithMap{map: nil}` (session) → **trusted** via `bypass` (decision above).
-2. Create where body omits `map_id` → `write_in_token_map` must default/derive it
-   from the token map, or forbid on mismatch. Never allow a create to land in
-   another map.
+1. Session auth is removed from `/api/v1` (token-only), so `%ActorWithMap{map: nil}`
+   never reaches HTTP. If it appears defensively → **denied** (not trusted).
+2. Create omitting `map_id` → token map injected (fine). Create naming another map →
+   **403** (reject).
 3. Relationship-path create with `system_id` pointing at another map's system →
    parent authorization query fails → 403.
 4. Relationship-path resource with a null/absent parent `system` → 403.
@@ -277,42 +354,53 @@ Sites passing `authorize?: false` (explicit bypass, unaffected): `map_pings_repo
 
 ## Testing strategy
 
-Test module uses `import WandererAppWeb.Factory` (the actual module name — the
-original plan's `WandererApp.Factory` was wrong, review #8). Harness: two maps, two
-owners, one token (`test/integration/api/v1/map_system_api_v1_test.exs`).
+Tests `use WandererAppWeb.ApiCase`, `import WandererAppWeb.Factory`, and
+authenticate with `create_authenticated_conn(conn, map)` (sets the Bearer header to
+`map.public_api_key`). Harness: two maps, two owners, one token. Missing factories
+(`map_subscription`, `map_default_settings`, `map_user_settings`, `user_activity`)
+are created via `Ash.create/2` (as `api_case.ex` already does for subscriptions).
 
-Per exposed **writable** resource, the full operation matrix with **real
-assertions** (review #6 — list/get alone is insufficient):
+**Test only routes that exist** (review round 2 #2). Per the route/action matrix:
 
-1. **Read list** — asserts the other map's row id is absent from `data`.
-2. **Read by id** — `GET /:id` of a map-B row → asserts **404**.
-3. **Create** — POST with `map_id`/parent in map B → asserts **403** AND that no
-   row was created in map B (`Repo` count unchanged).
-4. **Update** — PATCH a map-B row → asserts **403** AND the row's attributes are
-   unchanged in the DB.
-5. **Destroy** — DELETE a map-B row → asserts **403** AND `Repo.get/2` still
-   returns the row.
-6. **Positive control** — the same operations on the token's *own* map succeed
-   (proves the policy doesn't over-deny valid writes; directly guards review #3).
+- **All 14 resources — read scoping:** list excludes the other map's rows; `GET
+  /:id` of an out-of-scope row → 404.
+- **Write-capable resources only** (`map`, `map_system`, `map_connection`,
+  `map_default_settings`, `map_system_structure`) — for each **existing** write
+  action: cross-map → **403**, and a **positive control** on the token's own map
+  succeeds.
+- **`map_system_signature`** — delete only: cross-map delete → 403; own delete
+  succeeds. No POST/PATCH tests (routes don't exist).
+- **Token-write-forbidden resources** (`map_access_list`, `access_list`,
+  `access_list_member`) — every existing write action via token → 403; a positive
+  control that an internal `User`/`Character` actor still mutates.
+- **Read-only resources** (`map_subscription`, `map_user_settings`,
+  `map_character_settings`, `map_system_comment`) — read scoping only.
 
-Special cases:
+**Correct DB assertions (fixes review round 2 #7).** Do **not** use
+`WandererApp.Repo.aggregate/2` on an `Ash.Query`. Use `Ash.count!/2` with an Ash
+query, `Ash.read!/2`, or an Ecto query against the schema. Example row-absence
+check:
 
-- `access_list` / `access_list_member` — token reads only ACLs linked to its map;
-  create/update/destroy via token → **403** (read-only decision), and a positive
-  test that an internal (User) actor can still mutate.
-- `map_default_settings` — full matrix (previously unprotected).
-- `user_activity` — token read returns `[]`; token write → 403.
-- Custom endpoint — `GET /api/v1/maps/:other_map_id/systems_and_connections` with
-  token for map A → **404**; own map → 200.
-- **Includes leak (non-vacuous, review #6)** — request `?include=owner` for the
-  token's own map, then assert the `included` set contains **only** the token map's
-  owner id and does **not** contain the other account's owner id or any
-  account-sensitive field (e.g. `hash`, email). Asserting "ids are strings" is not
-  acceptable.
+```elixir
+{:ok, count} = Ash.count(Ash.Query.filter(WandererApp.Api.MapDefaultSettings, map_id == ^other_map.id))
+assert count == 0
+```
+
+Mutation-unchanged and destroy-preserved checks read the row back via `Ash.get/2`
+(or `Ash.read_one`) and assert attributes / presence.
+
+**Non-vacuous includes test (fixes review round 2 #8).** For `?include=owner` on the
+token's own map, assert **positively** that `included` contains an entry with the
+expected owner `id` and `type`, and assert **negatively** that no entry carries a
+Character-sensitive field (enumerate the actual sensitive attributes of the
+Character resource, e.g. token/refresh fields — not `hash`, which is a User field).
+An empty `included` array must **fail** the test.
 
 Regression / non-breakage:
 
 - One test per audited `actor:` site (User and Character) asserting success.
+- Token-only auth: a request with **no** Authorization header (previously would try
+  session) → 401.
 - Full suite green.
 
 ## Verification gate
