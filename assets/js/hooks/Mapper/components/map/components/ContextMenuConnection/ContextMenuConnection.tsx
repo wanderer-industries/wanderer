@@ -1,4 +1,11 @@
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import {
+  BubbleState,
+  ConnectionType,
+  MassState,
+  ShipSizeStatus,
+  SolarSystemConnection,
+  TimeStatus,
+} from '@/hooks/Mapper/types';
 import clsx from 'clsx';
 import { PrimeIcons } from 'primereact/api';
 import { ContextMenu } from 'primereact/contextmenu';
@@ -20,6 +27,8 @@ export interface ContextMenuConnectionProps {
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onChangeType(type: ConnectionType): void;
   onToggleMassSave(isLocked: boolean): void;
+  onToggleDangerous(dangerous: boolean): void;
+  onChangeBubbled(bubbled: BubbleState): void;
   onHide(): void;
   edge?: Edge<SolarSystemConnection>;
 }
@@ -32,6 +41,8 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
   onChangeShipSizeStatus,
   onChangeType,
   onToggleMassSave,
+  onToggleDangerous,
+  onChangeBubbled,
   onHide,
   edge,
 }) => {
@@ -48,6 +59,33 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
 
     const isFrigateSize = edge.data?.ship_size_type === ShipSizeStatus.small;
 
+    const isDangerous = edge.data?.dangerous === true;
+    const bubbled = edge.data?.bubbled ?? BubbleState.none;
+
+    const safetyItems: MenuItem[] = [
+      {
+        label: 'Dangerous',
+        icon: clsx(PrimeIcons.EXCLAMATION_TRIANGLE, { 'text-red-400': isDangerous }),
+        className: clsx({ [classes.ConnectionSave]: isDangerous }),
+        command: () => onToggleDangerous(!isDangerous),
+      },
+      {
+        label: 'Bubbled',
+        icon: PrimeIcons.CIRCLE,
+        className: clsx({ [classes.ConnectionSave]: bubbled !== BubbleState.none }),
+        items: [
+          { state: BubbleState.none, label: 'None' },
+          { state: BubbleState.source, label: 'Source side' },
+          { state: BubbleState.target, label: 'Target side' },
+          { state: BubbleState.both, label: 'Both sides' },
+        ].map(({ state, label }) => ({
+          label,
+          icon: state === bubbled ? PrimeIcons.CHECK : PrimeIcons.CIRCLE,
+          command: () => onChangeBubbled(state),
+        })),
+      },
+    ];
+
     if (edge.data?.type === ConnectionType.bridge) {
       return [
         {
@@ -55,6 +93,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
           icon: 'pi hero-arrow-uturn-left',
           command: () => onChangeType(ConnectionType.wormhole),
         },
+        ...safetyItems,
         {
           label: 'Disconnect',
           icon: PrimeIcons.TRASH,
@@ -65,6 +104,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
 
     if (edge.data?.type === ConnectionType.gate) {
       return [
+        ...safetyItems,
         {
           label: 'Disconnect',
           icon: PrimeIcons.TRASH,
@@ -111,6 +151,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
         icon: PrimeIcons.LOCK,
         command: () => onToggleMassSave(!edge.data?.locked),
       },
+      ...safetyItems,
       ...(bothNullsec
         ? [
             {
@@ -127,6 +168,8 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       },
     ];
   }, [
+    onToggleDangerous,
+    onChangeBubbled,
     edge,
     onChangeTimeState,
     onDeleteConnection,

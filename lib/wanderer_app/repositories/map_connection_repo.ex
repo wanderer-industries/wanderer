@@ -91,6 +91,16 @@ defmodule WandererApp.MapConnectionRepo do
       connection
       |> WandererApp.Api.MapConnection.update_locked(update)
 
+  def update_dangerous(connection, update),
+    do:
+      connection
+      |> WandererApp.Api.MapConnection.update_dangerous(update)
+
+  def update_bubbled(connection, update),
+    do:
+      connection
+      |> WandererApp.Api.MapConnection.update_bubbled(update)
+
   def update_custom_info(connection, update),
     do:
       connection

@@ -68,6 +68,10 @@
     stroke-dasharray: var(--rf-edge-bridge-dasharray, 10 5);
     stroke-linecap: var(--rf-edge-bridge-linecap, round);
   }
+
+  &.Dangerous {
+    stroke: var(--rf-edge-dangerous, var(--eve-solar-system-status-color-dangerous, #af0000));
+  }
 }
 
 .EdgePathFront {
@@ -160,4 +164,14 @@
   width: var(--rf-edge-label-icon-size, 8px);
   height: var(--rf-edge-label-icon-size, 8px);
   font-size: var(--rf-edge-label-icon-font-size, 8px);
+}
+
+// a bubble is drawn around the end of the connection it covers, in the edge layer so the system
+// card sits on top of it
+.Bubble {
+  fill: rgba(255, 176, 58, 0.18);
+  stroke: var(--rf-edge-bubble, #ffb03a);
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
 }

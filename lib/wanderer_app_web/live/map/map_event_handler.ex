@@ -88,6 +88,8 @@ defmodule WandererAppWeb.MapEventHandler do
     "update_connection_mass_status",
     "update_connection_ship_size_type",
     "update_connection_locked",
+    "update_connection_dangerous",
+    "update_connection_bubbled",
     "update_connection_custom_info",
     "update_passage_mass"
   ]
@@ -343,7 +345,7 @@ defmodule WandererAppWeb.MapEventHandler do
           type: type,
           ship_size_type: ship_size_type,
           locked: locked
-        } = _connection
+        } = connection
       ),
       do: %{
         id: "#{solar_system_source}_#{solar_system_target}",
@@ -352,6 +354,8 @@ defmodule WandererAppWeb.MapEventHandler do
         type: type,
         ship_size_type: ship_size_type,
         locked: locked,
+        dangerous: Map.get(connection, :dangerous, false),
+        bubbled: Map.get(connection, :bubbled, 0),
         source: "#{solar_system_source}",
         target: "#{solar_system_target}"
       }

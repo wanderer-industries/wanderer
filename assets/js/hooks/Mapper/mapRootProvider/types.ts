@@ -48,6 +48,8 @@ export type RoutesType = {
   avoid_pochven: boolean;
   avoid_edencom: boolean;
   avoid_triglavian: boolean;
+  avoid_dangerous_bridges: boolean;
+  avoid_bubbled_connections: boolean;
   avoid: number[];
 };
 

@@ -4,7 +4,14 @@ import classes from './SolarSystemEdge.module.scss';
 import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
 import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
 import clsx from 'clsx';
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import {
+  BubbleState,
+  ConnectionType,
+  MassState,
+  ShipSizeStatus,
+  SolarSystemConnection,
+  TimeStatus,
+} from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { useMapState } from '@/hooks/Mapper/components/map/MapProvider.tsx';
@@ -32,6 +39,9 @@ const MAP_OFFSETS: Record<string, { x: number; y: number }> = {
   [Position.Right]: { x: 0, y: 0 },
 };
 
+// a bubble covers the system it sits on, so it reads better a little wider than the system card
+const BUBBLE_RADIUS = 24;
+
 export const SHIP_SIZES_COLORS = {
   [ShipSizeStatus.small]: 'bg-indigo-400',
   [ShipSizeStatus.medium]: 'bg-cyan-500',
@@ -46,6 +56,12 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
   const isWormhole = data?.type === ConnectionType.wormhole;
   const isGate = data?.type === ConnectionType.gate;
   const isBridge = data?.type === ConnectionType.bridge;
+
+  // set by hand on the connection itself, not inherited from the systems it links
+  const isDangerous = data?.dangerous === true;
+  const bubbled = data?.bubbled ?? BubbleState.none;
+  const isSourceBubbled = bubbled === BubbleState.source || bubbled === BubbleState.both;
+  const isTargetBubbled = bubbled === BubbleState.target || bubbled === BubbleState.both;
 
   const {
     data: { isThickConnections },
@@ -70,6 +86,27 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
   }, [isThickConnections, sourceNode, targetNode]);
 
+  // The visible connection dot is the handle div, which is placed by percentage translates, so its
+  // centre sits half a handle away from the raw edge endpoint - the bubble has to use that centre
+  // or it looks off to one side.
+  const handleSize = isThickConnections ? 7 : 5;
+
+  const dotCenter = (x: number, y: number, position: Position) => {
+    switch (position) {
+      case Position.Top:
+        return { x, y: y + handleSize / 2 };
+      case Position.Bottom:
+        return { x, y: y - handleSize / 2 };
+      case Position.Left:
+        return { x: x + handleSize / 2, y };
+      default:
+        return { x: x - handleSize / 2, y };
+    }
+  };
+
+  const sourceDot = dotCenter(sx, sy, sourcePos);
+  const targetDot = dotCenter(tx, ty, targetPos);
+
   if (!sourceNode || !targetNode || !data) {
     return null;
   }
@@ -85,6 +122,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
           [classes.Hovered]: hovered,
           [classes.Gate]: isGate,
           [classes.Bridge]: isBridge,
+          [classes.Dangerous]: isDangerous,
         })}
         d={path}
         markerEnd={markerEnd}
@@ -105,6 +143,17 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         markerEnd={markerEnd}
         style={style}
       />
+      {isSourceBubbled && (
+        <circle className={classes.Bubble} cx={sourceDot.x} cy={sourceDot.y} r={BUBBLE_RADIUS}>
+          <title>Bubbled end</title>
+        </circle>
+      )}
+      {isTargetBubbled && (
+        <circle className={classes.Bubble} cx={targetDot.x} cy={targetDot.y} r={BUBBLE_RADIUS}>
+          <title>Bubbled end</title>
+        </circle>
+      )}
+
       <path
         id={id}
         className={classes.ClickPath}
@@ -139,6 +188,19 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}
         >
+          {isDangerous && !isBridge && (
+            <WdTooltipWrapper
+              content="Marked dangerous"
+              position={TooltipPosition.top}
+              className={clsx(
+                classes.LinkLabel,
+                'pointer-events-auto bg-red-400 rounded opacity-100 cursor-auto text-neutral-900',
+              )}
+            >
+              <span className={clsx(PrimeIcons.EXCLAMATION_TRIANGLE, classes.icon)} />
+            </WdTooltipWrapper>
+          )}
+
           {isWormhole && data.locked && (
             <WdTooltipWrapper
               content="Save mass"
@@ -153,11 +215,12 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
 
           {isBridge && (
             <WdTooltipWrapper
-              content="Ansiblex Jump Bridge"
+              content={isDangerous ? 'Ansiblex Jump Bridge - marked dangerous' : 'Ansiblex Jump Bridge'}
               position={TooltipPosition.top}
               className={clsx(
                 classes.LinkLabel,
-                'pointer-events-auto bg-lime-300 rounded opacity-100 cursor-auto text-neutral-900',
+                'pointer-events-auto rounded opacity-100 cursor-auto text-neutral-900',
+                isDangerous ? 'bg-red-400' : 'bg-lime-300',
               )}
             >
               B

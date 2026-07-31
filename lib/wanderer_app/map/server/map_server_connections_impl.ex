@@ -315,6 +315,18 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       ),
       do: update_connection(map_id, :update_ship_size_type, [:ship_size_type], connection_update)
 
+  def update_connection_dangerous(
+        map_id,
+        connection_update
+      ),
+      do: update_connection(map_id, :update_dangerous, [:dangerous], connection_update)
+
+  def update_connection_bubbled(
+        map_id,
+        connection_update
+      ),
+      do: update_connection(map_id, :update_bubbled, [:bubbled], connection_update)
+
   def update_connection_locked(
         map_id,
         connection_update
