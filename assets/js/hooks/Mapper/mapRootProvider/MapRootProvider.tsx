@@ -44,6 +44,7 @@ import {
   UseUserRemoteSettingsData,
   useUserRemoteSettings,
 } from '@/hooks/Mapper/mapRootProvider/hooks/useUserRemoteSettings.ts';
+import { UseUndoStackData, useUndoStack } from '@/hooks/Mapper/mapRootProvider/hooks/useUndoStack.ts';
 import { DEFAULT_REMOTE_SETTINGS } from '@/hooks/Mapper/constants/userSettings.ts';
 import { getDefaultSystemLabels } from '@/hooks/Mapper/constants/labels.ts';
 import { useGlobalHooks } from '@/hooks/Mapper/mapRootProvider/hooks/useGlobalHooks.ts';
@@ -133,6 +134,7 @@ export interface MapRootContextProps {
   comments: UseCommentsData;
   charactersCache: UseCharactersCacheData;
   userRemoteSettings: UseUserRemoteSettingsData;
+  undoStack: UseUndoStackData;
 
   /**
    * !!!
@@ -194,6 +196,11 @@ const MapRootContext = createContext<MapRootContextProps>({
     systemLabels: getDefaultSystemLabels(),
     refreshUserRemoteSettings: async () => void 0,
   },
+  undoStack: {
+    pushUndoEntry: () => null,
+    popUndoEntry: () => undefined,
+    canUndo: false,
+  },
   storedSettings: {
     interfaceSettings: STORED_INTERFACE_DEFAULT_VALUES,
     setInterfaceSettings: () => null,
@@ -245,6 +252,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
   const comments = useComments({ outCommand });
   const charactersCache = useCharactersCache({ outCommand });
   const userRemoteSettings = useUserRemoteSettings(outCommand);
+  const undoStack = useUndoStack();
 
   return (
     <MapRootContext.Provider
@@ -259,6 +267,7 @@ export const MapRootProvider = ({ children, fwdRef, outCommand }: MapRootProvide
         comments,
         charactersCache,
         userRemoteSettings,
+        undoStack,
         storedSettings,
       }}
     >

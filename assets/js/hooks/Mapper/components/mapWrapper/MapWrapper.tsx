@@ -32,6 +32,7 @@ import { PingType } from '@/hooks/Mapper/types/ping.ts';
 import type { PanelPosition } from '@reactflow/core';
 import { useHotkey } from '../../hooks/useHotkey';
 import { MINI_MAP_PLACEMENT_OFFSETS } from './constants.ts';
+import { useToast } from '@/hooks/Mapper/ToastProvider.tsx';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
@@ -49,7 +50,10 @@ export const MapWrapper = () => {
       systemSignatures,
     },
     storedSettings: { interfaceSettings, settingsLocal, mapSettings, mapSettingsUpdate },
+    undoStack: { popUndoEntry },
   } = useMapRootState();
+
+  const { show } = useToast();
 
   const {
     isShowMenu,
@@ -225,6 +229,44 @@ export const MapWrapper = () => {
     const { systemContextProps } = ref.current;
     systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
   }, []);
+
+  const handleUndo = useCallback(async () => {
+    const entry = popUndoEntry();
+
+    if (!entry) {
+      return;
+    }
+
+    await outCommand({
+      type: OutCommand.manualPasteSystemsAndConnections,
+      data: {
+        systems: entry.systems.map(({ position, ...rest }) => ({
+          ...rest,
+          position: { x: Math.round(position.x), y: Math.round(position.y) },
+        })),
+        connections: entry.connections,
+      },
+    });
+
+    show({
+      severity: 'success',
+      summary: 'Undo',
+      detail: `Restored ${entry.systems.length} system(s) and ${entry.connections.length} connection(s).`,
+      life: 3000,
+    });
+  }, [outCommand, popUndoEntry, show]);
+
+  useHotkey(true, ['z', 'Z'], (event: KeyboardEvent) => {
+    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
+
+    if (!targetWindow) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleUndo();
+  });
 
   useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);

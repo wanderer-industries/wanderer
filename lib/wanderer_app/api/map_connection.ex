@@ -100,6 +100,8 @@ defmodule WandererApp.Api.MapConnection do
         :solar_system_source,
         :solar_system_target,
         :type,
+        :dangerous,
+        :bubbled,
         :ship_size_type,
         :mass_status,
         :time_status,
