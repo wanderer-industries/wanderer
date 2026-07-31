@@ -61,3 +61,6 @@ erl_crash.dump
 *.njsproj
 *.sln
 *.sw?
+
+# SDD scratch workspace
+/.superpowers
