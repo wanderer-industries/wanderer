@@ -389,6 +389,8 @@ defmodule WandererAppWeb.MapEventHandler do
           0
       end
 
+    has_bubbled_signature = WandererApp.Maps.system_has_bubbled_signature?(system_id)
+
     system_info =
       %{
         id: "#{solar_system_id}",
@@ -402,6 +404,7 @@ defmodule WandererAppWeb.MapEventHandler do
         tag: tag,
         temporary_name: temporary_name,
         comments_count: comments_count,
+        has_bubbled_signature: has_bubbled_signature,
         visible: visible
       }
 

@@ -46,6 +46,7 @@ export interface SolarSystemNodeVars {
   userCharacters: string[];
   unsplashedLeft: Array<SystemSignature>;
   unsplashedRight: Array<SystemSignature>;
+  hasBubbledSignature: boolean;
   wormholesData: Record<string, WormholeDataRaw>;
   isThickConnections: boolean;
   isRally: boolean;
@@ -69,6 +70,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     linked_sig_eve_id: linkedSigEveId = '',
     description,
     comments_count,
+    has_bubbled_signature: hasBubbledSignature = false,
   } = data;
 
   const {
@@ -211,6 +213,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     charactersInSystem,
     unsplashedLeft,
     unsplashedRight,
+    hasBubbledSignature,
     wormholesData,
     isThickConnections,
     classTitle: class_title,
