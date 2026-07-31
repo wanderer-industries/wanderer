@@ -1,5 +1,6 @@
 defmodule WandererApp.Api.Policies.MapScopedTest do
   use WandererApp.DataCase, async: true
+  require Ash.Query
   alias WandererApp.Api.Policies.MapScoped
   alias WandererApp.Api.ActorWithMap
 
@@ -120,6 +121,150 @@ defmodule WandererApp.Api.Policies.MapScopedTest do
       no_map_actor = ActorWithMap.new(%{id: "u"}, nil)
       cs = Ash.Changeset.new(WandererApp.Api.MapSystem)
       refute MapScoped.CreateMapMatchesToken.match?(no_map_actor, %{changeset: cs}, [])
+    end
+  end
+
+  describe "InTokenMap filter/3 (direct path, exercised against a real query)" do
+    setup do
+      map = insert(:map, %{})
+      other_map = insert(:map, %{})
+      system_in_map = insert(:map_system, %{map_id: map.id})
+      system_in_other_map = insert(:map_system, %{map_id: other_map.id})
+      actor = ActorWithMap.new(%{id: "u"}, %{id: map.id})
+
+      %{
+        map: map,
+        actor: actor,
+        system_in_map: system_in_map,
+        system_in_other_map: system_in_other_map
+      }
+    end
+
+    test "returned filter admits only rows in the token map", %{
+      actor: actor,
+      system_in_map: system_in_map,
+      system_in_other_map: system_in_other_map
+    } do
+      filter = MapScoped.InTokenMap.filter(actor, %{}, path: [:map_id])
+
+      {:ok, results} =
+        WandererApp.Api.MapSystem
+        |> Ash.Query.filter(^filter)
+        |> Ash.read(actor: actor, authorize?: false)
+
+      ids = Enum.map(results, & &1.id)
+      assert system_in_map.id in ids
+      refute system_in_other_map.id in ids
+    end
+
+    test "returns expr(false) when actor has no token map" do
+      no_map_actor = ActorWithMap.new(%{id: "u"}, nil)
+      filter = MapScoped.InTokenMap.filter(no_map_actor, %{}, path: [:map_id])
+
+      {:ok, results} =
+        WandererApp.Api.MapSystem
+        |> Ash.Query.filter(^filter)
+        |> Ash.read(actor: no_map_actor, authorize?: false)
+
+      assert results == []
+    end
+  end
+
+  describe "ParentInTokenMap filter/3 (relationship path, exercised against a real query)" do
+    setup do
+      map = insert(:map, %{})
+      other_map = insert(:map, %{})
+      system_in_map = insert(:map_system, %{map_id: map.id})
+      system_in_other_map = insert(:map_system, %{map_id: other_map.id})
+
+      sig_in_map =
+        insert(:map_system_signature, %{system_id: system_in_map.id})
+
+      sig_in_other_map =
+        insert(:map_system_signature, %{system_id: system_in_other_map.id})
+
+      actor = ActorWithMap.new(%{id: "u"}, %{id: map.id})
+
+      %{actor: actor, sig_in_map: sig_in_map, sig_in_other_map: sig_in_other_map}
+    end
+
+    test "returned filter admits only rows whose parent belongs to the token map", %{
+      actor: actor,
+      sig_in_map: sig_in_map,
+      sig_in_other_map: sig_in_other_map
+    } do
+      filter = MapScoped.ParentInTokenMap.filter(actor, %{}, path: [:system, :map_id])
+
+      {:ok, results} =
+        WandererApp.Api.MapSystemSignature
+        |> Ash.Query.filter(^filter)
+        |> Ash.read(actor: actor, authorize?: false)
+
+      ids = Enum.map(results, & &1.id)
+      assert sig_in_map.id in ids
+      refute sig_in_other_map.id in ids
+    end
+
+    test "returns expr(false) when actor has no token map" do
+      no_map_actor = ActorWithMap.new(%{id: "u"}, nil)
+      filter = MapScoped.ParentInTokenMap.filter(no_map_actor, %{}, path: [:system, :map_id])
+
+      {:ok, results} =
+        WandererApp.Api.MapSystemSignature
+        |> Ash.Query.filter(^filter)
+        |> Ash.read(actor: no_map_actor, authorize?: false)
+
+      assert results == []
+    end
+  end
+
+  describe "CreateParentInTokenMap" do
+    setup do
+      map = insert(:map, %{})
+      other_map = insert(:map, %{})
+      system_in_map = insert(:map_system, %{map_id: map.id})
+      system_in_other_map = insert(:map_system, %{map_id: other_map.id})
+      actor = ActorWithMap.new(%{id: "u"}, %{id: map.id})
+
+      %{
+        actor: actor,
+        system_in_map: system_in_map,
+        system_in_other_map: system_in_other_map
+      }
+    end
+
+    test "authorizes when the parent (looked up by fk) belongs to the token map", %{
+      actor: actor,
+      system_in_map: system_in_map
+    } do
+      cs =
+        WandererApp.Api.MapSystemSignature
+        |> Ash.Changeset.new()
+        |> Ash.Changeset.force_change_attribute(:system_id, system_in_map.id)
+
+      assert MapScoped.CreateParentInTokenMap.match?(
+               actor,
+               %{changeset: cs},
+               parent_resource: WandererApp.Api.MapSystem,
+               fk: :system_id
+             )
+    end
+
+    test "denies when the parent belongs to a foreign map", %{
+      actor: actor,
+      system_in_other_map: system_in_other_map
+    } do
+      cs =
+        WandererApp.Api.MapSystemSignature
+        |> Ash.Changeset.new()
+        |> Ash.Changeset.force_change_attribute(:system_id, system_in_other_map.id)
+
+      refute MapScoped.CreateParentInTokenMap.match?(
+               actor,
+               %{changeset: cs},
+               parent_resource: WandererApp.Api.MapSystem,
+               fk: :system_id
+             )
     end
   end
 end

@@ -35,7 +35,19 @@ defmodule WandererApp.Api.Policies.MapScoped do
   end
 
   defmodule InTokenMap do
-    @moduledoc "Filters rows down to those belonging to the token's map."
+    @moduledoc """
+    Filters rows down to those belonging to the token's map.
+
+    `Ash.Expr.ref/2` takes `(relationship_path, name)`. A dynamically built
+    relationship-path ref (e.g. `Ash.Expr.ref([:system], :map_id)`) does not
+    resolve through filter hydration the same way a literal
+    `expr(system.map_id == ...)` does — it raises
+    `Ash.Error.Unknown: "Invalid reference ..."` (see task-1-report.md,
+    fix-round-1 notes). We therefore build the filter as a nested keyword
+    list, which `FilterCheck.filter/3` accepts directly
+    (`@callback filter(...) :: Keyword.t() | Ash.Expr.t()`) and which Ash
+    resolves through relationships without needing a dynamic `ref/2` call.
+    """
     use Ash.Policy.FilterCheck
     alias WandererApp.Api.ActorHelpers
 
@@ -47,19 +59,24 @@ defmodule WandererApp.Api.Policies.MapScoped do
       path = Keyword.fetch!(opts, :path)
 
       case ActorHelpers.get_map(%{actor: actor}) do
-        %{id: map_id} -> ref_eq(path, map_id)
+        %{id: map_id} -> build_filter(path, map_id)
         _ -> expr(false)
       end
     end
 
-    defp ref_eq(path, v) do
-      {rel, [attr]} = Enum.split(path, -1)
-      expr(^Ash.Expr.ref(attr, rel) == ^v)
+    defp build_filter(path, map_id) do
+      path
+      |> Enum.reverse()
+      |> Enum.reduce(map_id, fn segment, acc -> [{segment, acc}] end)
     end
   end
 
   defmodule ParentInTokenMap do
-    @moduledoc "Filters rows down to those whose parent (via relationship path) belongs to the token's map."
+    @moduledoc """
+    Filters rows down to those whose parent (via relationship path) belongs
+    to the token's map. See `InTokenMap` moduledoc for why the filter is
+    built as a nested keyword list rather than via a dynamic `ref/2` call.
+    """
     use Ash.Policy.FilterCheck
     alias WandererApp.Api.ActorHelpers
 
@@ -71,13 +88,15 @@ defmodule WandererApp.Api.Policies.MapScoped do
       path = Keyword.fetch!(opts, :path)
 
       case ActorHelpers.get_map(%{actor: actor}) do
-        %{id: map_id} ->
-          {rel, [attr]} = Enum.split(path, -1)
-          expr(^Ash.Expr.ref(attr, rel) == ^map_id)
-
-        _ ->
-          expr(false)
+        %{id: map_id} -> build_filter(path, map_id)
+        _ -> expr(false)
       end
+    end
+
+    defp build_filter(path, map_id) do
+      path
+      |> Enum.reverse()
+      |> Enum.reduce(map_id, fn segment, acc -> [{segment, acc}] end)
     end
   end
 
@@ -126,6 +145,7 @@ defmodule WandererApp.Api.Policies.MapScoped do
            parent_id when not is_nil(parent_id) <- Ash.Changeset.get_attribute(cs, fk) do
         case Ash.read_one(
                Ash.Query.filter(parent, id == ^parent_id and map_id == ^map_id),
+               actor: actor,
                authorize?: false
              ) do
           {:ok, nil} -> false
