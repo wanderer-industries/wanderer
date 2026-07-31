@@ -142,10 +142,19 @@ defmodule WandererApp.Api.Policies.MapScopedTest do
 
     test "returned filter admits only rows in the token map", %{
       actor: actor,
+      map: map,
       system_in_map: system_in_map,
       system_in_other_map: system_in_other_map
     } do
       filter = MapScoped.InTokenMap.filter(actor, %{}, path: [:map_id])
+
+      # Assert directly on the raw filter value. MapSystem's primary :read
+      # action has its own independent map-scoping preparation
+      # (FilterSystemsByActorMap), which would make a query round-trip
+      # pass even if this check's filter were stubbed to `expr(true)` — so
+      # the round-trip below is a secondary sanity check, not proof this
+      # check does the scoping.
+      assert filter == [map_id: map.id]
 
       {:ok, results} =
         WandererApp.Api.MapSystem
@@ -160,6 +169,8 @@ defmodule WandererApp.Api.Policies.MapScopedTest do
     test "returns expr(false) when actor has no token map" do
       no_map_actor = ActorWithMap.new(%{id: "u"}, nil)
       filter = MapScoped.InTokenMap.filter(no_map_actor, %{}, path: [:map_id])
+
+      assert filter == false
 
       {:ok, results} =
         WandererApp.Api.MapSystem
