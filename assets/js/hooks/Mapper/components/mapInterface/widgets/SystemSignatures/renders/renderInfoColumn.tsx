@@ -44,6 +44,12 @@ export const renderInfoColumn = (row: SystemSignature) => {
           </WdTooltipWrapper>
         )}
 
+        {customInfo.isBubbled && (
+          <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Hole is inside a bubble">
+            <div className="pi pi-circle-fill text-orange-400 text-[11px] mr-[2px]"></div>
+          </WdTooltipWrapper>
+        )}
+
         {customInfo.mass_status === MassState.half && (
           <WdTooltipWrapper offset={5} position={TooltipPosition.bottom} content="Signature marked as Half mass">
             <div className="pi pi-exclamation-triangle text-orange-300 text-[11px] mr-[2px]"></div>
