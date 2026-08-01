@@ -4,11 +4,32 @@ defmodule WandererApp.Api.MapSolarSystem do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_solar_system_v2")
+  end
+
+  # Defense in depth. This resource exposes no /api/v1 routes, but it remains
+  # reachable as a relationship `include` and via any future route, so the
+  # guarantee is enforced at the Ash layer rather than relying on the route
+  # list staying empty. Token actors are forbidden outright; trusted internal
+  # User/Character actors pass via the bypass.
+  #
+  # Safe for internal callers: the domain gate is `authorize :when_requested`,
+  # which only authorizes when an `actor:` key is present
+  # (ash/lib/ash/actions/helpers.ex:390). No internal caller of this resource
+  # passes an actor, so actor-less reads/writes are unaffected.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy always() do
+      forbid_if always()
+    end
   end
 
   json_api do
