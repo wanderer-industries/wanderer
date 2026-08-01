@@ -240,9 +240,11 @@ defmodule WandererApp.Api.MapDiscordNotification do
 
     @impl true
     def validate(changeset, _opts, _context) do
-      # AshCloak rewrites the encrypted field into a changeset *argument*
-      # (the stored attribute is `encrypted_webhook_url`), so reading only the
-      # attribute would see nil and let anything through.
+      # AshCloak rewrites the encrypted field into a changeset *argument* (the
+      # stored attribute is `encrypted_webhook_url`, and `webhook_url` becomes a
+      # calculation). Reading only the attribute yields `%Ash.NotLoaded{}` — not
+      # nil — which fails every validity check and rejects even valid URLs.
+      # Read the argument first so the value being written is what gets checked.
       case Ash.Changeset.get_argument_or_attribute(changeset, :webhook_url) do
         nil ->
           :ok

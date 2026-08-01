@@ -33,7 +33,18 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
 
   test "rejects non-discord host", %{map: map} do
     url = "https://evil.example.com/api/webhooks/123/tok"
-    assert {:error, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+
+    # Assert on the specific validation message, not a bare {:error, _}. A
+    # blanket-reject regression (e.g. reading the AshCloak attribute instead of
+    # the argument, which yields %Ash.NotLoaded{}) would satisfy {:error, _}
+    # while rejecting valid URLs too.
+    assert {:error, %Ash.Error.Invalid{errors: errors}} =
+             MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+
+    assert Enum.any?(errors, fn e ->
+             Map.get(e, :field) == :webhook_url and
+               to_string(Map.get(e, :message, "")) =~ "Discord webhook URL"
+           end)
   end
 
   test "rejects host that merely contains discord.com", %{map: map} do
@@ -49,8 +60,27 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
   test "rejects invalid url on UPDATE as well as create", %{map: map} do
     {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
 
-    assert {:error, _} =
+    assert {:error, %Ash.Error.Invalid{errors: errors}} =
              MapDiscordNotification.update(rec, %{webhook_url: "https://evil.example.com/x"})
+
+    assert Enum.any?(errors, fn e ->
+             Map.get(e, :field) == :webhook_url and
+               to_string(Map.get(e, :message, "")) =~ "Discord webhook URL"
+           end)
+
+    # The rejected value must not have been persisted.
+    {:ok, reloaded} = MapDiscordNotification.by_map(map.id)
+    assert reloaded.webhook_url == valid_url()
+  end
+
+  test "accepts a valid replacement url on UPDATE" do
+    # Guards against a blanket-reject regression: replacement must still work.
+    map = WandererAppWeb.Factory.insert(:map, %{})
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+    replacement = "https://canary.discord.com/api/v10/webhooks/999/newtok"
+
+    assert {:ok, updated} = MapDiscordNotification.update(rec, %{webhook_url: replacement})
+    assert updated.webhook_url == replacement
   end
 
   test "enforces one notification per map", %{map: map} do
