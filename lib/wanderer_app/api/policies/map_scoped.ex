@@ -101,12 +101,26 @@ defmodule WandererApp.Api.Policies.MapScoped do
   end
 
   defmodule WriteDirect do
-    @moduledoc "Authorizes a write when the changeset's map_id attribute matches the token's map."
+    @moduledoc """
+    Authorizes a write when the changeset's map_id attribute matches the token's map.
+
+    Reads `changeset.data` (via `Ash.Changeset.get_attribute/2`'s fallback to
+    `get_data/2`) to cover update/destroy actions where the scoped attribute
+    isn't part of the change itself (e.g. `map.ex`'s `write_direct(:id)`, or
+    an update that doesn't touch `map_id`). Ash's atomic-query update/destroy
+    path skips fetching original data as an optimization unless a check
+    declares `requires_original_data?/2` — without this override,
+    `changeset.data` becomes `%Ash.Changeset.OriginalDataNotAvailable{}` and
+    every atomically-eligible update is wrongly denied.
+    """
     use Ash.Policy.SimpleCheck
     alias WandererApp.Api.ActorHelpers
 
     @impl true
     def describe(_), do: "changeset target belongs to the token's map"
+
+    @impl true
+    def requires_original_data?(_authorizer, _opts), do: true
 
     @impl true
     def match?(actor, %{changeset: %Ash.Changeset{} = cs}, opts) do
