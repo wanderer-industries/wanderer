@@ -436,6 +436,14 @@ defmodule WandererApp.MapTestHelpers do
       DateTime.utc_now()
     )
 
+    # Production clears stale per-map location caches when tracking starts
+    # (TrackingUtils.track_character/4). Mirror it, so a character tracked after
+    # a previous location was cached does not appear to have "already been" at
+    # that system.
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+
     :ok
   end
 
