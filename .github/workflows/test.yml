@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Elixir/OTP
         uses: erlef/setup-beam@v1
@@ -47,7 +47,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Cache Elixir dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             deps
@@ -256,7 +256,7 @@ jobs:
       - name: Find existing PR comment
         if: github.event_name == 'pull_request'
         id: find_comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
@@ -264,7 +264,7 @@ jobs:
 
       - name: Create or update PR comment
         if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find_comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
