@@ -94,28 +94,11 @@ defmodule WandererApp.Map.Operations.Duplication do
 
   # Copy a single system
   defp copy_single_system(source_system, new_map_id) do
-    # Get all attributes from the source system, excluding system-managed fields and metadata
-    excluded_fields = [
-      # System managed fields
-      :id,
-      :inserted_at,
-      :updated_at,
-      :map_id,
-      :map,
-      # Ash/Ecto metadata fields
-      :__meta__,
-      :__lateral_join_source__,
-      :__metadata__,
-      :__order__,
-      :aggregates,
-      :calculations
-    ]
-
-    # Convert the source system struct to a map and filter out excluded fields
+    # Same allowlist approach as connections -- see acceptable_attrs/3 below for
+    # why a denylist was the wrong shape here.
     system_attrs =
       source_system
-      |> Map.from_struct()
-      |> Map.drop(excluded_fields)
+      |> acceptable_attrs(MapSystem, :create)
       |> Map.put(:map_id, new_map_id)
 
     MapSystem.create(system_attrs)
@@ -145,32 +128,39 @@ defmodule WandererApp.Map.Operations.Duplication do
 
   # Copy a single connection with updated system references
   defp copy_single_connection(source_connection, new_map_id, system_mapping) do
-    # Get all attributes from the source connection, excluding system-managed fields and metadata
-    excluded_fields = [
-      # System managed fields
-      :id,
-      :inserted_at,
-      :updated_at,
-      :map_id,
-      :map,
-      # Ash/Ecto metadata fields
-      :__meta__,
-      :__lateral_join_source__,
-      :__metadata__,
-      :__order__,
-      :aggregates,
-      :calculations
-    ]
-
-    # Convert the source connection struct to a map and filter out excluded fields
     connection_attrs =
       source_connection
-      |> Map.from_struct()
-      |> Map.drop(excluded_fields)
+      |> acceptable_attrs(MapConnection, :create)
       |> Map.put(:map_id, new_map_id)
       |> update_system_references(system_mapping)
 
     MapConnection.create(connection_attrs)
+  end
+
+  # Build the attribute map from what the target action actually ACCEPTS,
+  # rather than by dropping a hand-maintained list of fields to exclude.
+  #
+  # This previously used `Map.from_struct() |> Map.drop(excluded_fields)`, a
+  # denylist: every attribute not explicitly named was forwarded to `create`.
+  # When commit 2f86fc9f added `locked_at` / `locked_by` / `locked_by_id` to
+  # MapConnection without adding them to the `:create` accept list, duplication
+  # started failing with Ash.Error.Invalid.NoSuchInput and every map
+  # duplication returned 500.
+  #
+  # An allowlist derived from the action cannot drift: a new attribute is
+  # copied only if the action accepts it, and is silently skipped otherwise.
+  defp acceptable_attrs(source, resource, action_name) do
+    accepted =
+      resource
+      |> Ash.Resource.Info.action(action_name)
+      |> Map.get(:accept, [])
+      |> MapSet.new()
+
+    source
+    |> Map.from_struct()
+    |> Map.filter(fn {key, value} ->
+      MapSet.member?(accepted, key) and not match?(%Ash.NotLoaded{}, value)
+    end)
   end
 
   # Update system references in connection attributes using the system mapping
