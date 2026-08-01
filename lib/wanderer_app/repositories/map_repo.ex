@@ -21,8 +21,15 @@ defmodule WandererApp.MapRepo do
       {:ok, map} ->
         map |> load_relationships(relationships)
 
-      _ ->
+      {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :not_found}
+
+      {:error, reason} = error ->
+        # Previously every error was flattened into {:error, :not_found}, which
+        # masked infrastructure faults (e.g. DBConnection ownership errors) as
+        # "map does not exist" and made them very hard to diagnose.
+        Logger.error("MapRepo.get failed for map #{inspect(map_id)}: #{inspect(reason)}")
+        error
     end
   end
 
