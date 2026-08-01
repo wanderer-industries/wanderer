@@ -10,7 +10,11 @@ defmodule WandererApp.Api.Policies.MapScopedTest do
     end
 
     test "matches Character" do
-      assert MapScoped.Trusted.match?(%WandererApp.Api.Character{id: Ecto.UUID.generate()}, %{}, [])
+      assert MapScoped.Trusted.match?(
+               %WandererApp.Api.Character{id: Ecto.UUID.generate()},
+               %{},
+               []
+             )
     end
 
     test "does NOT match session ActorWithMap{map: nil}" do
@@ -32,7 +36,8 @@ defmodule WandererApp.Api.Policies.MapScopedTest do
     end
 
     test "create_parent_in_token_map/2" do
-      assert {MapScoped.CreateParentInTokenMap, parent_resource: WandererApp.Api.MapSystem, fk: :system_id} =
+      assert {MapScoped.CreateParentInTokenMap,
+              parent_resource: WandererApp.Api.MapSystem, fk: :system_id} =
                MapScoped.create_parent_in_token_map(WandererApp.Api.MapSystem, :system_id)
     end
 
