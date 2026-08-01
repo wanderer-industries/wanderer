@@ -18,6 +18,17 @@ defmodule WandererApp.Api.Policies.MapScoped do
 
   def create_map_matches_token, do: {__MODULE__.CreateMapMatchesToken, []}
 
+  @doc false
+  # Build a nested keyword-list filter that walks `path` down to a final
+  # `map_id` comparison, e.g. `[system: [map_id: map_id]]`. Shared by the
+  # InTokenMap and ParentInTokenMap FilterChecks. See InTokenMap's moduledoc for
+  # why the filter is a nested keyword list rather than a dynamic `ref/2` call.
+  def build_map_filter(path, map_id) do
+    path
+    |> Enum.reverse()
+    |> Enum.reduce(map_id, fn segment, acc -> [{segment, acc}] end)
+  end
+
   defmodule Trusted do
     @moduledoc """
     Bypass check: matches only plain internal `User`/`Character` actors.
@@ -70,15 +81,9 @@ defmodule WandererApp.Api.Policies.MapScoped do
       path = Keyword.fetch!(opts, :path)
 
       case ActorHelpers.get_map(%{actor: actor}) do
-        %{id: map_id} -> build_filter(path, map_id)
+        %{id: map_id} -> WandererApp.Api.Policies.MapScoped.build_map_filter(path, map_id)
         _ -> expr(false)
       end
-    end
-
-    defp build_filter(path, map_id) do
-      path
-      |> Enum.reverse()
-      |> Enum.reduce(map_id, fn segment, acc -> [{segment, acc}] end)
     end
   end
 
@@ -99,15 +104,9 @@ defmodule WandererApp.Api.Policies.MapScoped do
       path = Keyword.fetch!(opts, :path)
 
       case ActorHelpers.get_map(%{actor: actor}) do
-        %{id: map_id} -> build_filter(path, map_id)
+        %{id: map_id} -> WandererApp.Api.Policies.MapScoped.build_map_filter(path, map_id)
         _ -> expr(false)
       end
-    end
-
-    defp build_filter(path, map_id) do
-      path
-      |> Enum.reverse()
-      |> Enum.reduce(map_id, fn segment, acc -> [{segment, acc}] end)
     end
   end
 
