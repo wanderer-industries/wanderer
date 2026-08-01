@@ -90,6 +90,19 @@ defmodule WandererAppWeb.Api.V1.AuthzCustomEndpointTest do
     |> json_response(404)
   end
 
+  test "own map id compared case-insensitively is still guarded, not bypassed", ctx do
+    # The guard normalizes both sides with to_string/1. UUIDs are canonically
+    # lower-case, so an upper-cased path id is simply a different string and must
+    # NOT match the token's map -- i.e. normalization must not be mistaken for
+    # case-folding that would loosen the guard. Expect 404, never the own map's
+    # data.
+    upper = String.upcase(ctx.map.id)
+
+    ctx.conn
+    |> get("/api/v1/maps/#{upper}/systems_and_connections")
+    |> json_response(404)
+  end
+
   test "the endpoint propagates an actor into its Ash reads", ctx do
     # The guard alone would make the 404 test pass even with actor-less reads,
     # so assert propagation directly. A token actor scoped to `map` must not be

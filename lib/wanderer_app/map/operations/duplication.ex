@@ -214,7 +214,7 @@ defmodule WandererApp.Map.Operations.Duplication do
     source_system_ids = Map.keys(system_mapping)
 
     Enum.reduce_while(source_system_ids, {:ok, []}, fn system_id, {:ok, acc} ->
-      case MapSystemSignature.by_system_id_all(%{system_id: system_id}) do
+      case MapSystemSignature.by_system_id_all(system_id) do
         {:ok, signatures} -> {:cont, {:ok, acc ++ signatures}}
         {:error, reason} -> {:halt, {:error, {:signature_read_failed, reason}}}
       end
