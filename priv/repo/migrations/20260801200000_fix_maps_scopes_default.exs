@@ -18,9 +18,11 @@ defmodule WandererApp.Repo.Migrations.FixMapsScopesDefault do
 
   use Ecto.Migration
 
-  # Character codes of the literal string "{wormholes}", which is what the
-  # charlist default expanded to.
-  @bad_default ~w(123 119 111 114 109 104 111 108 101 115 125)
+  # Derived from the offending literal rather than transcribed by hand: a typo
+  # in a hardcoded list would make the WHERE clause match nothing and silently
+  # repair no rows. Both 20260331192521 and 20260406213852 used exactly this
+  # literal, so this single value catches rows written by either.
+  @bad_default Enum.map(~c"{wormholes}", &Integer.to_string/1)
 
   def up do
     alter table(:maps_v1) do
@@ -32,6 +34,10 @@ defmodule WandererApp.Repo.Migrations.FixMapsScopesDefault do
     )
   end
 
+  # Deliberately not a mirror image of up/0. Restoring the original charlist
+  # default would reintroduce the bug, so this drops the default instead, and
+  # rows already repaired stay repaired. Rolling back therefore leaves the
+  # schema in a different -- but correct -- state rather than the prior one.
   def down do
     alter table(:maps_v1) do
       modify :scopes, {:array, :text}, default: nil

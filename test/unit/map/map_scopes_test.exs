@@ -78,7 +78,7 @@ defmodule WandererApp.Map.Server.MapScopesTest do
     # record missing solar_system_name and friends. Whether that surfaced
     # depended on suite order, which is why these failures moved with --seed.
     on_exit(fn ->
-      Enum.each(Elixir.Map.keys(test_systems), fn solar_system_id ->
+      Enum.each(Map.keys(test_systems), fn solar_system_id ->
         Cachex.del(:system_static_info_cache, solar_system_id)
       end)
     end)
