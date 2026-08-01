@@ -192,28 +192,31 @@ defmodule WandererApp.Map.Operations.Duplication do
     Logger.debug("Copying signatures for map #{source_map.id}")
 
     # Get signatures by iterating through systems
-    source_signatures = get_all_map_signatures(source_map.id, system_mapping)
+    with {:ok, source_signatures} <- get_all_map_signatures(source_map.id, system_mapping) do
+      Enum.reduce_while(source_signatures, {:ok, []}, fn source_signature,
+                                                         {:ok, acc_signatures} ->
+        case copy_single_signature(source_signature, new_map.id, system_mapping) do
+          {:ok, new_signature} ->
+            {:cont, {:ok, [new_signature | acc_signatures]}}
 
-    Enum.reduce_while(source_signatures, {:ok, []}, fn source_signature, {:ok, acc_signatures} ->
-      case copy_single_signature(source_signature, new_map.id, system_mapping) do
-        {:ok, new_signature} ->
-          {:cont, {:ok, [new_signature | acc_signatures]}}
-
-        {:error, reason} ->
-          {:halt, {:error, {:signature_copy_failed, reason}}}
-      end
-    end)
+          {:error, reason} ->
+            {:halt, {:error, {:signature_copy_failed, reason}}}
+        end
+      end)
+    end
   end
 
-  # Get all signatures for a map by querying each system
+  # Get all signatures for a map by querying each system. A read failure for any
+  # system aborts the copy with an error rather than silently omitting those
+  # signatures, which would return an incomplete duplicate reported as success.
   defp get_all_map_signatures(_source_map_id, system_mapping) do
     # Get source system IDs and query signatures for each
     source_system_ids = Map.keys(system_mapping)
 
-    Enum.flat_map(source_system_ids, fn system_id ->
+    Enum.reduce_while(source_system_ids, {:ok, []}, fn system_id, {:ok, acc} ->
       case MapSystemSignature.by_system_id_all(%{system_id: system_id}) do
-        {:ok, signatures} -> signatures
-        {:error, _} -> []
+        {:ok, signatures} -> {:cont, {:ok, acc ++ signatures}}
+        {:error, reason} -> {:halt, {:error, {:signature_read_failed, reason}}}
       end
     end)
   end

@@ -111,7 +111,7 @@ defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
       assert system.map_id == map.id
     end
 
-    # BREAKING API CHANGE (api-v1-authz task 2): a client-supplied foreign
+    # BREAKING API CHANGE: a client-supplied foreign
     # map_id used to be silently overridden by InjectMapFromActor and the
     # create succeeded (201). It is now rejected by the
     # `create_map_matches_token` policy with 403. Omitting map_id entirely

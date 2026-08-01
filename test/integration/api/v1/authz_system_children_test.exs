@@ -8,12 +8,12 @@ defmodule WandererAppWeb.Api.V1.AuthzSystemChildrenTest do
   with an own-map positive control — a policy that forbade everything would
   pass the deny half on its own.
 
-  Status codes follow the contract established in Task 2:
+  Status codes follow the contract used across the `/api/v1` authz suite:
 
     * Read/update/destroy are FILTER checks, so an out-of-scope row is
       *excluded* rather than rejected: list omits it, and `GET`/`PATCH`/
-      `DELETE` on a foreign id return **404**, not 403. (The Task 3 brief
-      predated this decision and said 403; the binding decision is 404.)
+      `DELETE` on a foreign id return **404**, not 403. Returning 404 also
+      avoids confirming that another map's row exists.
     * Create has no existing row to filter and is guarded by a SimpleCheck
       that looks up the parent system, so a foreign parent returns **403**.
 

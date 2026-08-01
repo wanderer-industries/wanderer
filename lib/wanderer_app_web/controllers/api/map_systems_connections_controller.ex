@@ -9,6 +9,7 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
   use OpenApiSpex.ControllerSpecs
 
   require Ash.Query
+  require Logger
   import Ash.Expr
 
   alias WandererApp.Api.MapSystem
@@ -94,7 +95,10 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
     token_map_id = conn.assigns[:map] && conn.assigns.map.id
     actor = Ash.PlugHelpers.get_actor(conn)
 
-    if not is_nil(token_map_id) and token_map_id == map_id do
+    # Compare as strings: token_map_id is a UUID attribute and map_id is the raw
+    # path param. Normalizing both sides (as CreateMapMatchesToken does) keeps
+    # this IDOR guard robust against any future change to the id representation.
+    if not is_nil(token_map_id) and to_string(token_map_id) == to_string(map_id) do
       case load_map_data(map_id, actor) do
         {:ok, systems, connections} ->
           conn
@@ -111,6 +115,11 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
           conn
           |> put_status(:unauthorized)
           |> json(%{error: "Unauthorized"})
+
+        {:error, :internal} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: "Internal server error"})
       end
     else
       not_found(conn)
@@ -139,9 +148,21 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
 
       {:ok, systems, connections}
     rescue
-      Ash.Error.Query.NotFound -> {:error, :not_found}
-      Ash.Error.Forbidden -> {:error, :unauthorized}
-      _ -> {:error, :not_found}
+      Ash.Error.Query.NotFound ->
+        {:error, :not_found}
+
+      Ash.Error.Forbidden ->
+        {:error, :unauthorized}
+
+      error ->
+        # Do not mask unexpected failures (DB outage, real bugs) as a benign
+        # 404 -- log with context and surface a 500 so monitoring can see it.
+        Logger.error(
+          "[MapSystemsConnections] unexpected error loading map #{map_id}: " <>
+            Exception.format(:error, error, __STACKTRACE__)
+        )
+
+        {:error, :internal}
     end
   end
 

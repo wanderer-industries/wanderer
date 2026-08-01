@@ -25,9 +25,9 @@ defmodule WandererApp.Api.Policies.MapScoped do
 
     Uses `is_struct/2` rather than `%WandererApp.Api.User{}` pattern matching
     on purpose. A struct pattern is expanded at COMPILE time, which makes this
-    module depend on `WandererApp.Api.User`; once `User` itself gained a policy
-    referencing this module (Task 5), that closed a compile-time cycle and
-    `mix compile --force` failed with "deadlocked waiting on struct
+    module depend on `WandererApp.Api.User`. Since `User` itself carries a
+    policy referencing this module, that closes a compile-time cycle and
+    `mix compile --force` fails with "deadlocked waiting on struct
     WandererApp.Api.User". `is_struct/2` checks the module name at RUNTIME and
     is otherwise exactly equivalent here.
     """
@@ -53,8 +53,8 @@ defmodule WandererApp.Api.Policies.MapScoped do
     relationship-path ref (e.g. `Ash.Expr.ref([:system], :map_id)`) does not
     resolve through filter hydration the same way a literal
     `expr(system.map_id == ...)` does — it raises
-    `Ash.Error.Unknown: "Invalid reference ..."` (see task-1-report.md,
-    fix-round-1 notes). We therefore build the filter as a nested keyword
+    `Ash.Error.Unknown: "Invalid reference ..."`. We therefore build the
+    filter as a nested keyword
     list, which `FilterCheck.filter/3` accepts directly
     (`@callback filter(...) :: Keyword.t() | Ash.Expr.t()`) and which Ash
     resolves through relationships without needing a dynamic `ref/2` call.
