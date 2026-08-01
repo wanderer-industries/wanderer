@@ -223,6 +223,7 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_DEV }}
           COMMIT_SHA: ${{ github.sha }}
+        shell: bash
         run: |
           content=$(cat <<EOF
           📣 New develop release available 🚀
