@@ -114,6 +114,11 @@ defmodule WandererApp.Application do
         {Cachex, name: :webhook_subscriptions_cache, default_ttl: :timer.minutes(5)},
         id: :webhook_subscriptions_cache_worker
       ),
+      # Cache for per-map Discord notification config - 5 minute TTL
+      Supervisor.child_spec(
+        {Cachex, name: :discord_notification_cache, default_ttl: :timer.minutes(5)},
+        id: :discord_notification_cache_worker
+      ),
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
       {PartitionSupervisor,
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
