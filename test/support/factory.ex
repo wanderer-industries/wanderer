@@ -879,4 +879,86 @@ defmodule WandererAppWeb.Factory do
       {:error, reason} -> raise "Failed to create solar system: #{inspect(reason)}"
     end
   end
+
+  @doc """
+  Builds killmail-shaped test payloads.
+
+  * `:killmail` — a flattened killmail map matching the output of
+    `WandererApp.Kills.MessageHandler.adapt_nested_format_kill/1`
+  * `:kill_event` — the `:killmail_update` batch wrapper
+  * `:kill_count_event` — the `:kill_count` wrapper, which carries no killmails
+
+  All keys are strings, mirroring the real payload.
+  """
+  def build(type, attrs \\ %{})
+
+  def build(:killmail, attrs) do
+    defaults = %{
+      "killmail_id" => System.unique_integer([:positive]),
+      "kill_time" => "2026-08-01T12:00:00Z",
+      "solar_system_id" => 31_000_005,
+      "zkb" => %{},
+      "victim_char_id" => 90_000_001,
+      "victim_char_name" => "Test Victim",
+      "victim_corp_id" => 98_000_001,
+      "victim_corp_ticker" => "TSTC",
+      "victim_corp_name" => "Test Corp",
+      "victim_alliance_id" => nil,
+      "victim_alliance_ticker" => nil,
+      "victim_alliance_name" => nil,
+      "victim_ship_type_id" => 626,
+      "victim_ship_name" => "Vexor",
+      "final_blow_char_id" => 90_000_002,
+      "final_blow_char_name" => "Test Attacker",
+      "final_blow_corp_id" => 98_000_002,
+      "final_blow_corp_ticker" => "ATKC",
+      "final_blow_corp_name" => "Attacker Corp",
+      "final_blow_alliance_id" => nil,
+      "final_blow_alliance_ticker" => nil,
+      "final_blow_alliance_name" => nil,
+      "final_blow_ship_type_id" => 621,
+      "final_blow_ship_name" => "Caracal",
+      "attacker_count" => 3,
+      "total_value" => 84_000_000,
+      "npc" => false
+    }
+
+    Map.merge(defaults, stringify_keys(attrs))
+  end
+
+  # `:killmail_update` — the batch wrapper that
+  # `ExternalEvents.broadcast(map_id, :map_kill, payload)` actually receives.
+  def build(:kill_event, attrs) do
+    attrs = stringify_keys(attrs)
+    system_id = Map.get(attrs, "solar_system_id", 31_000_005)
+
+    killmails =
+      Map.get(attrs, "killmails", [build(:killmail, %{"solar_system_id" => system_id})])
+
+    %{
+      "solar_system_id" => system_id,
+      "killmails" => killmails,
+      "timestamp" => "2026-08-01T12:00:00Z",
+      "type" => :killmail_update
+    }
+  end
+
+  # `:kill_count` — the second `:map_kill` shape, which carries no killmails
+  # and must be ignored by Discord delivery.
+  def build(:kill_count_event, attrs) do
+    attrs = stringify_keys(attrs)
+
+    %{
+      "solar_system_id" => Map.get(attrs, "solar_system_id", 31_000_005),
+      "count" => Map.get(attrs, "count", 5),
+      "type" => :kill_count
+    }
+  end
+
+  defp stringify_keys(map) do
+    Map.new(map, fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
+      {k, v} -> {k, v}
+    end)
+  end
 end
