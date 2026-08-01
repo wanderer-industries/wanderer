@@ -220,15 +220,22 @@ jobs:
     needs: [docker, merge]
     steps:
       - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL_DEV }}
-          content: |
-            📣 New develop release available 🚀
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_DEV }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          content=$(cat <<EOF
+          📣 New develop release available 🚀
 
-            **Commit**: `${{ github.sha }}`
-            **Status**: Development/Testing Release
+          **Commit**: \`${COMMIT_SHA}\`
+          **Status**: Development/Testing Release
 
-            Docker image: `wandererltd/community-edition:develop`
+          Docker image: \`wandererltd/community-edition:develop\`
 
-            ⚠️ This is an unstable development release for testing purposes.
+          ⚠️ This is an unstable development release for testing purposes.
+          EOF
+          )
+          jq -n --arg content "$content" '{content: ($content + "\n")}' \
+            | curl --fail-with-body -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d @- "$DISCORD_WEBHOOK_URL"
