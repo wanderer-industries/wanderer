@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.get-latest-tag.outputs.tag }}
-      release-notes: ${{ steps.get-content.outputs.string }}
+      release-notes: ${{ steps.release-notes.outputs.content }}
     permissions:
       checks: write
       contents: write
@@ -195,23 +195,34 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - uses: markpatterson27/markdown-to-output@v1
-        id: extract-changelog
-        with:
-          filepath: CHANGELOG.md
-
-      - name: Get content
-        uses: 2428392/gh-truncate-string-action@v1.3.0
-        id: get-content
-        with:
-          stringToTruncate: |
-            📣 Wanderer new release available 🎉
-
-            **Version**: ${{ steps.get-latest-tag.outputs.tag }}
-
-            ${{ steps.extract-changelog.outputs.body }}
-          maxLength: 500
-          truncationSymbol: "…"
+      - name: Build release notes
+        id: release-notes
+        env:
+          RELEASE_TAG: ${{ steps.get-latest-tag.outputs.tag }}
+        run: |
+          python3 <<'PY' > /tmp/release-notes.txt
+          import os
+          MAX_LENGTH = 500
+          TRUNCATION_SYMBOL = '…'
+          header = (
+              '\U0001F4E3 Wanderer new release available \U0001F389\n\n'
+              '**Version**: ' + os.environ['RELEASE_TAG'] + '\n\n'
+          )
+          with open('CHANGELOG.md', encoding='utf-8') as fh:
+              content = (header + fh.read() + '\n').strip()
+          units = content.encode('utf-16-le')
+          if len(units) // 2 > MAX_LENGTH:
+              cut = (MAX_LENGTH - len(TRUNCATION_SYMBOL)) * 2
+              content = units[:cut].decode('utf-16-le', 'replace') + TRUNCATION_SYMBOL
+          print(content, end='')
+          PY
+          delimiter="EOF_$(openssl rand -hex 16)"
+          {
+            echo "content<<${delimiter}"
+            cat /tmp/release-notes.txt
+            echo ""
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
 
   merge:
     runs-on: ubuntu-latest
@@ -295,7 +306,11 @@ jobs:
     needs: [docker, merge]
     steps:
       - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          content: ${{ needs.docker.outputs.release-notes }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_NOTES: ${{ needs.docker.outputs.release-notes }}
+        run: |
+          jq -n --arg content "$RELEASE_NOTES" '{content: $content}' \
+            | curl --fail-with-body -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d @- "$DISCORD_WEBHOOK_URL"
