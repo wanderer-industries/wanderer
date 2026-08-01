@@ -22,6 +22,14 @@ defmodule WandererApp.Api.Policies.MapScoped do
     @moduledoc """
     Bypass check: matches only plain internal `User`/`Character` actors.
     A session `ActorWithMap{map: nil}` must NEVER match this check.
+
+    Uses `is_struct/2` rather than `%WandererApp.Api.User{}` pattern matching
+    on purpose. A struct pattern is expanded at COMPILE time, which makes this
+    module depend on `WandererApp.Api.User`; once `User` itself gained a policy
+    referencing this module (Task 5), that closed a compile-time cycle and
+    `mix compile --force` failed with "deadlocked waiting on struct
+    WandererApp.Api.User". `is_struct/2` checks the module name at RUNTIME and
+    is otherwise exactly equivalent here.
     """
     use Ash.Policy.SimpleCheck
 
@@ -29,8 +37,11 @@ defmodule WandererApp.Api.Policies.MapScoped do
     def describe(_), do: "actor is a trusted internal User or Character"
 
     @impl true
-    def match?(%WandererApp.Api.User{}, _ctx, _opts), do: true
-    def match?(%WandererApp.Api.Character{}, _ctx, _opts), do: true
+    def match?(actor, _ctx, _opts)
+        when is_struct(actor, WandererApp.Api.User)
+        when is_struct(actor, WandererApp.Api.Character),
+        do: true
+
     def match?(_actor, _ctx, _opts), do: false
   end
 
