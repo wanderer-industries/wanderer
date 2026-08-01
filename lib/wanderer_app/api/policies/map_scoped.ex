@@ -10,7 +10,6 @@ defmodule WandererApp.Api.Policies.MapScoped do
 
   def trusted, do: {__MODULE__.Trusted, []}
   def in_token_map(path) when is_list(path), do: {__MODULE__.InTokenMap, path: path}
-  def write_direct(attr \\ :map_id), do: {__MODULE__.WriteDirect, attr: attr}
   def parent_in_token_map(path) when is_list(path), do: {__MODULE__.ParentInTokenMap, path: path}
 
   def create_parent_in_token_map(parent_resource, fk),
@@ -110,44 +109,6 @@ defmodule WandererApp.Api.Policies.MapScoped do
     end
   end
 
-  defmodule WriteDirect do
-    @moduledoc """
-    Authorizes a write when the changeset's map_id attribute matches the token's map.
-
-    Reads `changeset.data` (via `Ash.Changeset.get_attribute/2`'s fallback to
-    `get_data/2`) to cover update/destroy actions where the scoped attribute
-    isn't part of the change itself (e.g. `map.ex`'s `write_direct(:id)`, or
-    an update that doesn't touch `map_id`). Ash's atomic-query update/destroy
-    path skips fetching original data as an optimization unless a check
-    declares `requires_original_data?/2` — without this override,
-    `changeset.data` becomes `%Ash.Changeset.OriginalDataNotAvailable{}` and
-    every atomically-eligible update is wrongly denied.
-    """
-    use Ash.Policy.SimpleCheck
-    alias WandererApp.Api.ActorHelpers
-
-    @impl true
-    def describe(_), do: "changeset target belongs to the token's map"
-
-    @impl true
-    def requires_original_data?(_authorizer, _opts), do: true
-
-    @impl true
-    def match?(actor, %{changeset: %Ash.Changeset{} = cs}, opts) do
-      attr = Keyword.get(opts, :attr, :map_id)
-
-      with %{id: map_id} <- ActorHelpers.get_map(%{actor: actor}),
-           row_map_id when not is_nil(row_map_id) <-
-             Ash.Changeset.get_attribute(cs, attr) do
-        row_map_id == map_id
-      else
-        _ -> false
-      end
-    end
-
-    def match?(_actor, _ctx, _opts), do: false
-  end
-
   defmodule CreateParentInTokenMap do
     @moduledoc """
     Authorizes a create when the row's parent (looked up by foreign key)
@@ -200,6 +161,24 @@ defmodule WandererApp.Api.Policies.MapScoped do
     def match?(actor, %{changeset: %Ash.Changeset{} = cs}, _opts) do
       case ActorHelpers.get_map(%{actor: actor}) do
         %{id: map_id} ->
+          # Check the raw params BEFORE the attribute, and check both key
+          # types, because each source answers a different question:
+          #
+          #   * `params["map_id"]` -- what a JSON:API client actually sent. This
+          #     is the value being authorized, and it must be read from params
+          #     because `InjectMapFromActor` overwrites the *attribute* with the
+          #     token's map before policies run. Reading only the attribute
+          #     would therefore compare the token map against itself and
+          #     authorize every foreign map_id.
+          #   * `params[:map_id]` -- the same value when the changeset was built
+          #     internally with atom keys (Ash does not normalize params).
+          #   * the attribute -- the fallback for resources with no
+          #     `InjectMapFromActor` change, where map_id is set directly and
+          #     never appears in params.
+          #
+          # `nil` means the client supplied nothing, so the token's map is
+          # injected (or `allow_nil? false` rejects it) -- either way there is
+          # no foreign id to forbid.
           supplied =
             Map.get(cs.params || %{}, "map_id") || Map.get(cs.params || %{}, :map_id) ||
               Ash.Changeset.get_attribute(cs, :map_id)

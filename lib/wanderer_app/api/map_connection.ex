@@ -9,7 +9,7 @@ defmodule WandererApp.Api.MapConnection do
     primary_read_warning?: false
 
   policies do
-    bypass WandererApp.Api.Policies.MapScoped.Trusted do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
       authorize_if always()
     end
 
@@ -21,7 +21,7 @@ defmodule WandererApp.Api.MapConnection do
       authorize_if WandererApp.Api.Policies.MapScoped.create_map_matches_token()
     end
 
-    # Update/destroy use the FILTER check, not the SimpleCheck `write_direct/1`.
+    # Update/destroy use a FILTER check rather than a SimpleCheck.
     # A SimpleCheck requiring original data disqualifies Ash's `:atomic` bulk
     # strategy, which both breaks atomic updates (NoMatchingBulkStrategy) and
     # forces the `:stream` destroy path, whose `Ash.Query.select([])` re-read

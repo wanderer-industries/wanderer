@@ -8,7 +8,7 @@ defmodule WandererApp.Api.MapAccessList do
     authorizers: [Ash.Policy.Authorizer]
 
   policies do
-    bypass WandererApp.Api.Policies.MapScoped.Trusted do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
       authorize_if always()
     end
 

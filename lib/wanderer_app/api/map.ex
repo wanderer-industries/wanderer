@@ -12,7 +12,7 @@ defmodule WandererApp.Api.Map do
   require Logger
 
   policies do
-    bypass WandererApp.Api.Policies.MapScoped.Trusted do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
       authorize_if always()
     end
 
@@ -24,7 +24,7 @@ defmodule WandererApp.Api.Map do
       forbid_if always()
     end
 
-    # Filter check rather than `write_direct/1`; see map_connection.ex for why.
+    # Filter check rather than a SimpleCheck; see map_connection.ex for why.
     policy action_type([:update, :destroy]) do
       authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:id])
     end

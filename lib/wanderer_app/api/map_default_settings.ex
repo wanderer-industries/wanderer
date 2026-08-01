@@ -11,7 +11,7 @@ defmodule WandererApp.Api.MapDefaultSettings do
     authorizers: [Ash.Policy.Authorizer]
 
   policies do
-    bypass WandererApp.Api.Policies.MapScoped.Trusted do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
       authorize_if always()
     end
 
@@ -19,9 +19,12 @@ defmodule WandererApp.Api.MapDefaultSettings do
       authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
     end
 
-    # Create has no existing row to filter, so it keeps the SimpleCheck.
+    # Create has no existing row to filter, so it uses a simple check rather
+    # than a filter check. `map_id` is `allow_nil? false` here and there is no
+    # `InjectMapFromActor` change, so the "absent map_id" branch of this check
+    # is unreachable -- an omitted map_id fails validation before persisting.
     policy action_type(:create) do
-      authorize_if WandererApp.Api.Policies.MapScoped.write_direct(:map_id)
+      authorize_if WandererApp.Api.Policies.MapScoped.create_map_matches_token()
     end
 
     # Update/destroy use the filter check; see map_connection.ex for why.

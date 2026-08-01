@@ -63,8 +63,9 @@ defmodule WandererApp.Api.InternalAuthzRegressionTest do
   end
 
   describe "write actions with internal actors" do
-    # map_default_settings is the resource that still uses the WriteDirect
-    # SimpleCheck, so it is the most sensitive to changes in that check.
+    # map_default_settings is the only resource whose create is guarded by
+    # CreateMapMatchesToken while map_id is `allow_nil? false` with no
+    # InjectMapFromActor, so it is the most sensitive to changes in that check.
     test "MapDefaultSettings.create works with a Character actor", %{char: char, map: map} do
       assert {:ok, _} =
                WandererApp.Api.MapDefaultSettings.create(
