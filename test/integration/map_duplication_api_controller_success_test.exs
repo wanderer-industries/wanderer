@@ -237,6 +237,60 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
       assert stargate_connection.solar_system_source == 30_000_142
       assert stargate_connection.solar_system_target == 30_000_144
     end
+
+    test "duplicated map contains copied signatures when copy_signatures is true", %{
+      conn: conn,
+      source_map: source_map
+    } do
+      duplication_params = %{
+        "name" => "Signature Copy Test",
+        "copy_signatures" => true
+      }
+
+      conn = post(conn, ~p"/api/maps/#{source_map.slug}/duplicate", duplication_params)
+
+      assert %{"data" => %{"id" => new_map_id}} = json_response(conn, 201)
+
+      # The signature belongs to a system, not the map, so resolve the copied
+      # Jita system first and then read its signatures.
+      {:ok, new_systems} = WandererApp.Api.MapSystem.read_all_by_map(%{map_id: new_map_id})
+      new_jita = Enum.find(new_systems, &(&1.name == "Jita"))
+      assert new_jita != nil
+
+      {:ok, new_signatures} = WandererApp.Api.MapSystemSignature.by_system_id_all(new_jita.id)
+
+      # Previously `get_all_map_signatures/2` called `by_system_id_all/1` with a
+      # map instead of a bare id and swallowed the resulting error into `[]`, so
+      # duplication reported success with zero signatures copied.
+      assert length(new_signatures) == 1
+
+      copied = hd(new_signatures)
+      assert copied.eve_id == "ABC-123"
+      assert copied.name == "Test Wormhole"
+      assert copied.type == "wormhole"
+      assert copied.system_id == new_jita.id
+    end
+
+    test "duplicated map has no signatures when copy_signatures is false", %{
+      conn: conn,
+      source_map: source_map
+    } do
+      duplication_params = %{
+        "name" => "Signature Skip Test",
+        "copy_signatures" => false
+      }
+
+      conn = post(conn, ~p"/api/maps/#{source_map.slug}/duplicate", duplication_params)
+
+      assert %{"data" => %{"id" => new_map_id}} = json_response(conn, 201)
+
+      {:ok, new_systems} = WandererApp.Api.MapSystem.read_all_by_map(%{map_id: new_map_id})
+      new_jita = Enum.find(new_systems, &(&1.name == "Jita"))
+      assert new_jita != nil
+
+      {:ok, new_signatures} = WandererApp.Api.MapSystemSignature.by_system_id_all(new_jita.id)
+      assert new_signatures == []
+    end
   end
 
   describe "error handling for map duplication" do
