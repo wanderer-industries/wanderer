@@ -199,9 +199,12 @@ jobs:
         id: release-notes
         env:
           RELEASE_TAG: ${{ steps.get-latest-tag.outputs.tag }}
+        shell: bash
         run: |
           python3 <<'PY' > /tmp/release-notes.txt
           import os
+          # Carried over unchanged from the gh-truncate-string-action inputs this replaced;
+          # don't raise toward Discord's 2000-char message cap without checking that action's intent.
           MAX_LENGTH = 500
           TRUNCATION_SYMBOL = '…'
           header = (
@@ -309,6 +312,7 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           RELEASE_NOTES: ${{ needs.docker.outputs.release-notes }}
+        shell: bash
         run: |
           jq -n --arg content "$RELEASE_NOTES" '{content: $content}' \
             | curl --fail-with-body -sS -X POST \
