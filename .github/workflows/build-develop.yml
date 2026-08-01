@@ -236,6 +236,9 @@ jobs:
           ⚠️ This is an unstable development release for testing purposes.
           EOF
           )
+          # $(...) strips the trailing newline the YAML block scalar used to emit,
+          # so it is restored here; build.yml needs no equivalent because its value
+          # arrives through $GITHUB_OUTPUT with the newline intact.
           jq -n --arg content "$content" '{content: ($content + "\n")}' \
             | curl --fail-with-body -sS -X POST \
                 -H "Content-Type: application/json" \
