@@ -99,6 +99,23 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
                "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
       end)
     end
+
+    test "clamps at trillion unit (does not underreport above 1 quadrillion)" do
+      # Above the largest unit, clamping prevents silent magnitude loss.
+      # 1 quadrillion must render >= "1000.0T ISK", never "1.0T ISK".
+      test_cases = [
+        {100_000_000_000_000, "100.0T ISK"},        # 100 trillion, correct
+        {999_000_000_000_000, "999.0T ISK"},        # 999 trillion, correct
+        {1_000_000_000_000_000, "1000.0T ISK"},     # 1 quadrillion, clamped at T (not "1.0T")
+        {999_999_999_999_999, "1000.0T ISK"}        # Just under 1 quadrillion, rounds to 1000T
+      ]
+
+      Enum.each(test_cases, fn {value, expected} ->
+        actual = EmbedFormatter.format_isk(value)
+        assert actual == expected,
+               "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
+      end)
+    end
   end
 
   describe "format_batch/2" do

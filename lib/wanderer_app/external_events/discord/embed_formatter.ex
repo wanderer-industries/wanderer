@@ -98,9 +98,10 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
     # Walk through units from largest to smallest, finding the first one the value fits in.
     # Units table: {threshold, divisor, unit_suffix, next_unit_suffix}
     # The next_unit_suffix is what we promote to if rounding produces >= 1000.0 within this unit.
-    # At the top (T), there's no unit above it, so promotion caps at the same unit.
+    # At the top (T), next_unit is nil, signaling CLAMP instead of promote.
+    # This makes self-promotion impossible by design (nil != "T").
     units = [
-      {1_000_000_000_000, 1_000_000_000_000, "T", "T"},  # Trillion: no unit above T
+      {1_000_000_000_000, 1_000_000_000_000, "T", nil},  # Trillion: clamp at T (no promotion)
       {1_000_000_000, 1_000_000_000, "B", "T"},          # Billion: promote to T if needed
       {1_000_000, 1_000_000, "M", "B"},                  # Million: promote to B if needed
       {1_000, 1_000, "K", "M"}                           # Thousand: promote to M if needed
@@ -116,15 +117,32 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
       if value >= threshold do
         rounded = round_to(value / divisor)
 
-        if rounded >= 1000.0 do
-          # Promotion: use next_unit and scale the value
-          new_value = round_to(rounded / 1000)
-          "#{new_value}#{next_unit} ISK"
-        else
-          "#{rounded}#{unit} ISK"
+        cond do
+          # If next_unit is nil, clamp: render as-is without dividing or promoting
+          is_nil(next_unit) ->
+            formatted = format_float(rounded)
+            "#{formatted}#{unit} ISK"
+
+          # Otherwise, promote if rounded >= 1000.0
+          rounded >= 1000.0 ->
+            new_value = round_to(rounded / 1000)
+            formatted = format_float(new_value)
+            "#{formatted}#{next_unit} ISK"
+
+          # Normal case: render at current unit
+          true ->
+            formatted = format_float(rounded)
+            "#{formatted}#{unit} ISK"
         end
       end
     end)
+  end
+
+  # Format a float to avoid scientific notation (e.g., 1.0e3 -> "1000.0")
+  defp format_float(float) when is_float(float) do
+    # Use format/2 to avoid scientific notation, keeping 1 decimal place
+    :erlang.float_to_list(float, [{:decimals, 1}])
+    |> List.to_string()
   end
 
   defp round_to(float), do: Float.round(float, 1)
