@@ -81,6 +81,7 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
 
       Enum.each(test_cases, fn {value, expected} ->
         actual = EmbedFormatter.format_isk(value)
+
         assert actual == expected,
                "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
       end)
@@ -88,13 +89,17 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
 
     test "handles trillion-ISK values correctly (supercapital/structure kills)" do
       test_cases = [
-        {999_999_999_999, "1.0T ISK"},        # Just under 1 trillion, rounds up to 1T
-        {1_000_000_000_000, "1.0T ISK"},      # Exactly 1 trillion
-        {5_000_000_000_000, "5.0T ISK"}       # 5 trillion (clearly absurd but reachable)
+        # Just under 1 trillion, rounds up to 1T
+        {999_999_999_999, "1.0T ISK"},
+        # Exactly 1 trillion
+        {1_000_000_000_000, "1.0T ISK"},
+        # 5 trillion (clearly absurd but reachable)
+        {5_000_000_000_000, "5.0T ISK"}
       ]
 
       Enum.each(test_cases, fn {value, expected} ->
         actual = EmbedFormatter.format_isk(value)
+
         assert actual == expected,
                "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
       end)
@@ -104,14 +109,19 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
       # Above the largest unit, clamping prevents silent magnitude loss.
       # 1 quadrillion must render >= "1000.0T ISK", never "1.0T ISK".
       test_cases = [
-        {100_000_000_000_000, "100.0T ISK"},        # 100 trillion, correct
-        {999_000_000_000_000, "999.0T ISK"},        # 999 trillion, correct
-        {1_000_000_000_000_000, "1000.0T ISK"},     # 1 quadrillion, clamped at T (not "1.0T")
-        {999_999_999_999_999, "1000.0T ISK"}        # Just under 1 quadrillion, rounds to 1000T
+        # 100 trillion, correct
+        {100_000_000_000_000, "100.0T ISK"},
+        # 999 trillion, correct
+        {999_000_000_000_000, "999.0T ISK"},
+        # 1 quadrillion, clamped at T (not "1.0T")
+        {1_000_000_000_000_000, "1000.0T ISK"},
+        # Just under 1 quadrillion, rounds to 1000T
+        {999_999_999_999_999, "1000.0T ISK"}
       ]
 
       Enum.each(test_cases, fn {value, expected} ->
         actual = EmbedFormatter.format_isk(value)
+
         assert actual == expected,
                "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
       end)

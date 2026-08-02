@@ -13,6 +13,13 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   @ks_system 30_000_142
 
   setup do
+    # `wh_only` filtering resolves the system class through
+    # `CachedInfo.get_system_static_info/1`, which falls back to the
+    # `map_solar_systems` table. That table is static import data and is NOT
+    # populated by `mix test` on a clean database, so seed the cache directly —
+    # the same approach `WandererApp.MapTestHelpers` uses.
+    seed_static_info()
+
     # `config/test.exs:35` sets `external_events: [webhooks_enabled: false]`, and
     # the dispatcher checks `Env.webhooks_enabled?/0` at call time. Without this
     # override EVERY delivery assertion below would pass while sending nothing.
@@ -44,6 +51,34 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     %{map: map, notification: notification}
   end
 
+  # C3 for the J-space id, high-sec (class 0) for Jita, matching the shape
+  # `MapTestHelpers.default_test_systems/0` stores.
+  #
+  # `:system_static_info_cache` is a GLOBAL Cachex table, not sandboxed per test,
+  # so these entries must be removed again: `CommonAPIControllerTest` inserts its
+  # own Jita row and reads it back through this same cache, and a partial entry
+  # left behind here makes it fail on a missing `region_id`.
+  defp seed_static_info do
+    Cachex.put(:system_static_info_cache, @wh_system, %{
+      solar_system_id: @wh_system,
+      solar_system_name: "J115405",
+      system_class: 3
+    })
+
+    Cachex.put(:system_static_info_cache, @ks_system, %{
+      solar_system_id: @ks_system,
+      solar_system_name: "Jita",
+      system_class: 0
+    })
+
+    on_exit(fn ->
+      Cachex.del(:system_static_info_cache, @wh_system)
+      Cachex.del(:system_static_info_cache, @ks_system)
+    end)
+
+    :ok
+  end
+
   defp disable_gate do
     original = Application.get_env(:wanderer_app, :external_events, [])
 
@@ -66,6 +101,35 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     case Registry.lookup(WorkerSupervisor.registry(), map_id) do
       [{pid, _}] -> :sys.get_state(pid)
       [] -> :no_worker
+    end
+  end
+
+  # Asserting "nothing was delivered" needs more than `settle/1`: the HTTP call
+  # itself runs in a `Task.Supervisor.async_nolink` task, so a request can still
+  # be in flight when the worker's mailbox is drained. Wait until the worker is
+  # genuinely idle (no queued event, none in progress) before asserting, or the
+  # assertion passes for the wrong reason. Mutating the seeded system class
+  # confirms this: without the wait, marking Jita as wormhole space still leaves
+  # "skips non-wormhole systems" green.
+  defp refute_delivery(map_id, timeout \\ 2_000) do
+    settle(map_id)
+    await_worker_idle(map_id, System.monotonic_time(:millisecond) + timeout)
+    assert HttpStub.requests() == []
+  end
+
+  defp await_worker_idle(map_id, deadline) do
+    case Registry.lookup(WorkerSupervisor.registry(), map_id) do
+      [] ->
+        :no_worker
+
+      [{pid, _}] ->
+        state = :sys.get_state(pid)
+
+        cond do
+          state.current == nil and state.queue_len == 0 -> :idle
+          System.monotonic_time(:millisecond) >= deadline -> :timeout
+          true -> await_worker_idle(map_id, deadline)
+        end
     end
   end
 
@@ -96,9 +160,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   test "delivers a wormhole kill", %{map: map} do
@@ -114,18 +177,16 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = kill_event(Factory.build(:kill_count_event, %{solar_system_id: @wh_system}))
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   test "skips non-wormhole systems when wh_only is set", %{map: map} do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   test "delivers known-space kills when wh_only is off", %{map: map, notification: n} do
@@ -147,9 +208,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   test "skips when disabled", %{map: map, notification: n} do
@@ -159,9 +219,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   test "no-ops for a map with no configuration" do
@@ -169,9 +228,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
 
     DiscordDispatcher.dispatch_event(other_map.id, event)
-    settle(other_map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(other_map.id)
   end
 
   test "deduplicates a replayed killmail", %{map: map} do
@@ -217,9 +275,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     event = %Event{map_id: map.id, type: :add_system, payload: %{}}
 
     DiscordDispatcher.dispatch_event(map.id, event)
-    settle(map.id)
 
-    assert HttpStub.requests() == []
+    refute_delivery(map.id)
   end
 
   # Guards the carry-forward constraint: WorkerSupervisor.deliver/3 answers
