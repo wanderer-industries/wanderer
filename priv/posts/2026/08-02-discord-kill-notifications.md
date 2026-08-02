@@ -46,6 +46,8 @@ button.
 
 ## What a notification looks like
 
+![Two kill embeds in a Discord channel](/images/news/08-02-discord-kill-notifications/notification.jpg "A kill notification in Discord")
+
 Each kill arrives as a Discord embed:
 
 - **Title** — who lost what ("Some Pilot lost a Loki"), linking straight to the
