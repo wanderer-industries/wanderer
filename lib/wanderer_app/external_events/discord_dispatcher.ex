@@ -33,6 +33,10 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   The one exception is `{:error, :not_running}` from the worker supervisor,
   which means nothing was enqueued at all: those marks are released, since no
   request can possibly have gone out and therefore no duplicate is possible.
+
+  The rationale covers losses to *delivery failure* only. Kills past the
+  formatter's per-event cap are never rendered into a message, so they are not
+  marked at all and stay eligible if they arrive again.
   """
 
   use GenServer
@@ -68,7 +72,16 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   Posts a fixed sample message so a user can confirm their webhook works.
   Routed through the same worker so it cannot jump the queue.
 
-  Synchronous, because the UI needs the outcome to show the user.
+  Reports *configuration* errors synchronously: the global kill-switch being
+  off (`:notifications_disabled`) and the map having no Discord config
+  (`:not_configured`) are both resolved before returning.
+
+  Delivery success is **not** awaited. The final hop is `Worker.enqueue/3`, a
+  cast, so `:ok` means "accepted for delivery", not "Discord accepted it" — a
+  dead or revoked webhook URL still returns `:ok` here and surfaces later as a
+  failure recorded on the notification record (`last_error`,
+  `consecutive_failures`). UI built on this must not promise the user that the
+  message arrived.
   """
   @spec send_test_message(map_id :: String.t()) ::
           :ok | {:error, :notifications_disabled | :not_configured | term()}
@@ -141,14 +154,24 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
          [_ | _] = fresh <- reject_duplicates(map_id, killmails) do
       system_name = system_name(system_id)
 
+      # Only the kills the formatter will actually render are marked. Kills past
+      # its per-event cap are never turned into a message, so marking them would
+      # burn them for the full dedup TTL without ever sending them — a loss to a
+      # formatting cap, which the at-most-once rationale does not cover. Derived
+      # from the formatter's own constant so the two cannot drift apart.
+      #
+      # `fresh` (not `formatted`) is still handed to format_batch/2 so it can
+      # count the overflow and append its "…and N more kills not shown." line.
+      formatted = Enum.take(fresh, EmbedFormatter.max_kills_per_event())
+
       # Marked before delivery: see the moduledoc — this is at-most-once by
       # choice, not an oversight.
-      mark_attempted(map_id, fresh)
+      mark_attempted(map_id, formatted)
 
       fresh
       |> EmbedFormatter.format_batch(system_name)
       |> then(&WorkerSupervisor.deliver(map_id, notification.id, &1))
-      |> handle_delivery_result(map_id, fresh)
+      |> handle_delivery_result(map_id, formatted)
 
       :ok
     else

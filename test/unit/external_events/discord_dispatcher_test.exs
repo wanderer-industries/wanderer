@@ -5,7 +5,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
 
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.ExternalEvents.{DiscordDispatcher, Event}
-  alias WandererApp.ExternalEvents.Discord.{HttpStub, WorkerSupervisor}
+  alias WandererApp.ExternalEvents.Discord.{EmbedFormatter, HttpStub, WorkerSupervisor}
   alias WandererAppWeb.Factory
 
   # A real wormhole system id (J-space) and a real known-space id (Jita).
@@ -244,6 +244,70 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     settle(map.id)
 
     assert length(wait_for_requests(1)) == 1
+  end
+
+  # Pins the dedup key as PER-MAP. Deleting `map_id` from `dedup_key/2` makes
+  # every other test still pass, while the second map would silently stop
+  # receiving any kill the first one already reported.
+  test "dedup is per-map: two maps both receive the same killmail", %{map: map_a} do
+    map_b = Factory.insert(:map, %{})
+    url_b = "https://discord.com/api/webhooks/456/tok-b"
+
+    {:ok, _} = MapDiscordNotification.create(%{map_id: map_b.id, webhook_url: url_b})
+    DiscordDispatcher.invalidate_cache(map_b.id)
+
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 555_555})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    DiscordDispatcher.dispatch_event(map_a.id, kill_event(payload))
+    settle(map_a.id)
+    wait_for_requests(1)
+
+    DiscordDispatcher.dispatch_event(map_b.id, kill_event(payload))
+    settle(map_b.id)
+
+    requests = wait_for_requests(2)
+    assert length(requests) == 2
+
+    # Distinct webhook URLs prove both maps were served, not one map twice.
+    urls = requests |> Enum.map(&elem(&1, 0)) |> Enum.sort()
+    assert urls == Enum.sort(["https://discord.com/api/webhooks/123/tok", url_b])
+  end
+
+  # Kills past the formatter's per-event cap are never rendered into a message,
+  # so they must not be marked attempted — otherwise they are burned for the
+  # full dedup TTL without ever being sent.
+  test "does not burn kills dropped by the formatter's per-event cap", %{map: map} do
+    cap = EmbedFormatter.max_kills_per_event()
+
+    kills =
+      for i <- 1..(cap + 5) do
+        Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 600_000 + i})
+      end
+
+    overflow = Enum.drop(kills, cap)
+    assert length(overflow) == 5
+
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: kills}))
+    )
+
+    settle(map.id)
+    first_batch = wait_for_requests(1)
+
+    # The overflow kills arrive again on their own: they were never formatted,
+    # so they are still eligible and must be delivered now.
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: overflow}))
+    )
+
+    settle(map.id)
+
+    later = wait_for_requests(length(first_batch) + 1)
+    [{_url, body} | _] = Enum.drop(later, length(first_batch))
+    assert length(body["embeds"]) == 5
   end
 
   test "send_test_message reports the global gate being off", %{map: map} do

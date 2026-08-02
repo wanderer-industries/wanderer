@@ -14,6 +14,14 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   @zkill_base "https://zkillboard.com/kill/"
   @image_base "https://images.evetech.net"
 
+  @doc """
+  The per-event kill cap. Exposed so callers can tell which kills were actually
+  formatted — the dispatcher must not mark kills past this cap as attempted,
+  since they are never rendered into a message.
+  """
+  @spec max_kills_per_event() :: pos_integer()
+  def max_kills_per_event, do: @max_kills_per_event
+
   @spec format_batch([map()], String.t() | nil) :: [map()]
   def format_batch([], _system_name), do: []
 
@@ -101,10 +109,14 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
     # At the top (T), next_unit is nil, signaling CLAMP instead of promote.
     # This makes self-promotion impossible by design (nil != "T").
     units = [
-      {1_000_000_000_000, 1_000_000_000_000, "T", nil},  # Trillion: clamp at T (no promotion)
-      {1_000_000_000, 1_000_000_000, "B", "T"},          # Billion: promote to T if needed
-      {1_000_000, 1_000_000, "M", "B"},                  # Million: promote to B if needed
-      {1_000, 1_000, "K", "M"}                           # Thousand: promote to M if needed
+      # Trillion: clamp at T (no promotion)
+      {1_000_000_000_000, 1_000_000_000_000, "T", nil},
+      # Billion: promote to T if needed
+      {1_000_000_000, 1_000_000_000, "B", "T"},
+      # Million: promote to B if needed
+      {1_000_000, 1_000_000, "M", "B"},
+      # Thousand: promote to M if needed
+      {1_000, 1_000, "K", "M"}
     ]
 
     format_isk_with_units(value, units)
