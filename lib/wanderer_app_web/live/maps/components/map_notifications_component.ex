@@ -301,13 +301,19 @@ defmodule WandererAppWeb.MapNotificationsComponent do
         <.input field={f[:wh_only]} type="checkbox" label="Only wormhole kills" />
         <.input field={f[:enabled]} type="checkbox" label="Enabled" />
 
-        <.button type="submit">Save</.button>
+        <div class="modal-action">
+          <.button type="submit">Save</.button>
+        </div>
       </.form>
 
       <div :if={@notification} class="flex flex-col gap-2">
         <h4 class="text-sm font-semibold">Excluded systems</h4>
 
-        <ul class="flex flex-col gap-1">
+        <p :if={@excluded_systems == []} class="text-sm opacity-70">
+          No systems excluded — every system on the map is reported.
+        </p>
+
+        <ul :if={@excluded_systems != []} class="flex flex-col gap-1">
           <li :for={{system_id, label} <- @excluded_systems} class="flex items-center gap-2 text-sm">
             <span>{label}</span>
             <.button
@@ -321,13 +327,17 @@ defmodule WandererAppWeb.MapNotificationsComponent do
           </li>
         </ul>
 
+        <%!-- Grid, not flex, so the search box stretches and the button keeps its
+        natural width. Centered because the live_select wrapper adds a label row
+        above its input and an error row below: aligning to the end would hang
+        the button below the box it sits next to. --%>
         <.form
           :let={ef}
           for={@excluded_form}
           id="excluded-system-form"
           phx-submit="add-excluded"
           phx-target={@myself}
-          class="grid items-end gap-2"
+          class="grid items-center gap-2"
           style="grid-template-columns: 1fr auto"
         >
           <.live_select
@@ -345,13 +355,20 @@ defmodule WandererAppWeb.MapNotificationsComponent do
         </.form>
       </div>
 
-      <div :if={@notification} class="flex items-center gap-2">
+      <%!-- Remove destroys the whole configuration, so it sits opposite the
+      harmless test button rather than beside it, and carries the theme's danger
+      styling. `btn-error` does nothing here: .button is built on the PrimeReact
+      button classes, not daisyUI's. --%>
+      <div
+        :if={@notification}
+        class="flex items-center justify-between border-t border-stone-700 pt-3 mt-2"
+      >
         <.button type="button" phx-click="send-test" phx-target={@myself}>
           Send test message
         </.button>
         <.button
           type="button"
-          class="btn-error"
+          class="p-button-danger"
           phx-click="delete"
           phx-target={@myself}
           data-confirm="Remove Discord notifications for this map?"
