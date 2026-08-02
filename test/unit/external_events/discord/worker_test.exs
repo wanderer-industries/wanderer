@@ -2,7 +2,7 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
   use WandererApp.DataCase, async: false
 
   alias WandererApp.Api.MapDiscordNotification
-  alias WandererApp.ExternalEvents.Discord.{HttpStub, WorkerSupervisor}
+  alias WandererApp.ExternalEvents.Discord.{HttpStub, Worker, WorkerSupervisor}
   alias WandererAppWeb.Factory
 
   setup do
@@ -309,5 +309,58 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
 
   test "stop_worker is a no-op when no worker is running", %{map: map} do
     assert :ok = WorkerSupervisor.stop_worker(map.id)
+  end
+
+  test "deliver returns an error instead of raising when the supervisor is down", %{
+    map: map,
+    notification: n
+  } do
+    # The kill-switch case: application.ex only starts WorkerSupervisor when
+    # webhooks are enabled, so the registry may not exist at all. deliver/3 and
+    # stop_worker/1 must be equally tolerant — a dispatcher call must not crash
+    # just because the feature is off.
+    stop_supervised!(WorkerSupervisor)
+    refute Process.whereis(WorkerSupervisor.registry())
+
+    assert {:error, :not_running} = WorkerSupervisor.deliver(map.id, n.id, [message()])
+    assert :ok = WorkerSupervisor.stop_worker(map.id)
+    assert HttpStub.requests() == []
+  end
+
+  test "shuts down when idle", %{map: map} do
+    # Tiny idle timeout so this exercises the real shutdown path in ms.
+    pid =
+      start_supervised!(
+        {Worker, map_id: map.id, registry: WorkerSupervisor.registry(), idle_timeout: 50},
+        restart: :temporary
+      )
+
+    ref = Process.monitor(pid)
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 2_000
+  end
+
+  test "gives up on an event whose deadline has passed, without sending", %{
+    map: map,
+    notification: n
+  } do
+    # A negative deadline is already expired when the first attempt runs, so
+    # the event is abandoned before any request goes out.
+    pid =
+      start_supervised!(
+        {Worker, map_id: map.id, registry: WorkerSupervisor.registry(), event_deadline_ms: -1},
+        restart: :temporary
+      )
+
+    Worker.enqueue(pid, n.id, [message()])
+
+    reloaded =
+      await_condition(fn ->
+        rec = reload(map.id)
+        if rec.consecutive_failures == 1, do: {:ok, rec}, else: :retry
+      end)
+
+    assert HttpStub.requests() == []
+    assert reloaded.last_error =~ "deadline"
+    assert reloaded.last_delivery_at == nil
   end
 end
