@@ -50,6 +50,17 @@ defmodule WandererApp.Application do
           ]
         }
       },
+      # Discord pool - isolated so a slow Discord cannot exhaust shared pools
+      {
+        Finch,
+        name: WandererApp.Finch.Discord,
+        pools: %{
+          default: [
+            size: discord_pool_size(),
+            count: 1
+          ]
+        }
+      },
       # Default pool - everything else (email, license manager, etc.)
       {
         Finch,
@@ -259,5 +270,11 @@ defmodule WandererApp.Application do
 
       Enum.reverse(services)
     end
+  end
+
+  defp discord_pool_size do
+    :wanderer_app
+    |> Application.get_env(:discord_finch, [])
+    |> Keyword.get(:pool_size, 10)
   end
 end
