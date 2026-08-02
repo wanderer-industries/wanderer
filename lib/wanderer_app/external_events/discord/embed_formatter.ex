@@ -95,25 +95,37 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   def format_isk(0), do: "0 ISK"
 
   def format_isk(value) when is_number(value) do
-    cond do
-      value >= 1_000_000_000 ->
-        rounded = round_to(value / 1_000_000_000)
-        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}B ISK", else: "#{rounded}B ISK"
+    # Walk through units from largest to smallest, finding the first one the value fits in.
+    # Units table: {threshold, divisor, unit_suffix, next_unit_suffix}
+    # The next_unit_suffix is what we promote to if rounding produces >= 1000.0 within this unit.
+    # At the top (T), there's no unit above it, so promotion caps at the same unit.
+    units = [
+      {1_000_000_000_000, 1_000_000_000_000, "T", "T"},  # Trillion: no unit above T
+      {1_000_000_000, 1_000_000_000, "B", "T"},          # Billion: promote to T if needed
+      {1_000_000, 1_000_000, "M", "B"},                  # Million: promote to B if needed
+      {1_000, 1_000, "K", "M"}                           # Thousand: promote to M if needed
+    ]
 
-      value >= 1_000_000 ->
-        rounded = round_to(value / 1_000_000)
-        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}B ISK", else: "#{rounded}M ISK"
-
-      value >= 1_000 ->
-        rounded = round_to(value / 1_000)
-        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}M ISK", else: "#{rounded}K ISK"
-
-      true ->
-        "#{round(value)} ISK"
-    end
+    format_isk_with_units(value, units)
   end
 
   def format_isk(_), do: nil
+
+  defp format_isk_with_units(value, units) do
+    Enum.find_value(units, "#{round(value)} ISK", fn {threshold, divisor, unit, next_unit} ->
+      if value >= threshold do
+        rounded = round_to(value / divisor)
+
+        if rounded >= 1000.0 do
+          # Promotion: use next_unit and scale the value
+          new_value = round_to(rounded / 1000)
+          "#{new_value}#{next_unit} ISK"
+        else
+          "#{rounded}#{unit} ISK"
+        end
+      end
+    end)
+  end
 
   defp round_to(float), do: Float.round(float, 1)
 

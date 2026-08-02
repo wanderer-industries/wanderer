@@ -85,6 +85,20 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
                "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
       end)
     end
+
+    test "handles trillion-ISK values correctly (supercapital/structure kills)" do
+      test_cases = [
+        {999_999_999_999, "1.0T ISK"},        # Just under 1 trillion, rounds up to 1T
+        {1_000_000_000_000, "1.0T ISK"},      # Exactly 1 trillion
+        {5_000_000_000_000, "5.0T ISK"}       # 5 trillion (clearly absurd but reachable)
+      ]
+
+      Enum.each(test_cases, fn {value, expected} ->
+        actual = EmbedFormatter.format_isk(value)
+        assert actual == expected,
+               "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
+      end)
+    end
   end
 
   describe "format_batch/2" do
