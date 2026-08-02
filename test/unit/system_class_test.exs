@@ -1,7 +1,7 @@
-defmodule WandererApp.Kills.SystemClassTest do
+defmodule WandererApp.SystemClassTest do
   use ExUnit.Case, async: true
 
-  alias WandererApp.Kills.SystemClass
+  alias WandererApp.SystemClass
 
   describe "wormhole?/1" do
     test "returns true for c1-c6" do

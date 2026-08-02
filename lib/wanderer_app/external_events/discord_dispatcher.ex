@@ -45,7 +45,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
 
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.ExternalEvents.Discord.{EmbedFormatter, WorkerSupervisor}
-  alias WandererApp.Kills.SystemClass
+  alias WandererApp.SystemClass
 
   @cache :discord_notification_cache
   @dedup_cache :discord_dedup_cache
