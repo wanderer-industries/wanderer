@@ -267,8 +267,6 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     <div id={@id} class="flex flex-col gap-4">
       <p class="text-sm opacity-70">
         Posts kills for systems on this map to a Discord channel.
-        These filters are separate from the Kills widget's own filters,
-        which are per-user and only affect what you see in the map UI.
       </p>
 
       <p :if={@error} class="text-sm text-red-400">{@error}</p>
