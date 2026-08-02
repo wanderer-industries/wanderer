@@ -96,10 +96,20 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
 
   def format_isk(value) when is_number(value) do
     cond do
-      value >= 1_000_000_000 -> "#{round_to(value / 1_000_000_000)}B ISK"
-      value >= 1_000_000 -> "#{round_to(value / 1_000_000)}M ISK"
-      value >= 1_000 -> "#{round_to(value / 1_000)}K ISK"
-      true -> "#{round(value)} ISK"
+      value >= 1_000_000_000 ->
+        rounded = round_to(value / 1_000_000_000)
+        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}B ISK", else: "#{rounded}B ISK"
+
+      value >= 1_000_000 ->
+        rounded = round_to(value / 1_000_000)
+        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}B ISK", else: "#{rounded}M ISK"
+
+      value >= 1_000 ->
+        rounded = round_to(value / 1_000)
+        if rounded >= 1000.0, do: "#{round_to(rounded / 1000)}M ISK", else: "#{rounded}K ISK"
+
+      true ->
+        "#{round(value)} ISK"
     end
   end
 

@@ -66,6 +66,25 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
       kill = Factory.build(:killmail)
       assert {:ok, _} = Jason.encode(EmbedFormatter.format_kill(kill, "J123456"))
     end
+
+    test "handles ISK formatting boundary values correctly" do
+      test_cases = [
+        {0, "0 ISK"},
+        {999, "999 ISK"},
+        {1_000, "1.0K ISK"},
+        {999_999, "1.0M ISK"},
+        {1_000_000, "1.0M ISK"},
+        {999_999_999, "1.0B ISK"},
+        {1_500_000_000, "1.5B ISK"},
+        {nil, nil}
+      ]
+
+      Enum.each(test_cases, fn {value, expected} ->
+        actual = EmbedFormatter.format_isk(value)
+        assert actual == expected,
+               "format_isk(#{inspect(value)}) returned #{inspect(actual)}, expected #{inspect(expected)}"
+      end)
+    end
   end
 
   describe "format_batch/2" do
@@ -93,6 +112,17 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
 
       last = List.last(messages)
       assert last["content"] =~ "12 more"
+    end
+
+    test "exactly 30 kills has no overflow notation" do
+      kills = for _ <- 1..30, do: Factory.build(:killmail)
+      messages = EmbedFormatter.format_batch(kills, "J123456")
+
+      total = messages |> Enum.map(&length(&1["embeds"])) |> Enum.sum()
+      assert total == 30
+
+      last = List.last(messages)
+      refute Map.has_key?(last, "content")
     end
 
     test "returns empty list for no kills" do
