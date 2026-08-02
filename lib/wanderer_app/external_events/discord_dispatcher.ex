@@ -146,11 +146,14 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   end
 
   defp do_dispatch(map_id, %{type: :map_kill, payload: payload}) do
-    with true <- enabled_globally?(),
+    # Each gate carries its own reason so the `else` below can say which one
+    # dropped the event. A bare `false` from three different checks is what
+    # made "no notification appeared" undiagnosable without a console session.
+    with true <- enabled_globally?() || {:drop, :globally_disabled},
          {:ok, notification} <- fetch_config(map_id),
-         true <- notification.enabled?,
+         true <- notification.enabled? || {:drop, :config_disabled},
          {:ok, system_id, killmails} <- extract_kills(payload),
-         true <- system_allowed?(notification, system_id),
+         :ok <- system_allowed(notification, system_id),
          [_ | _] = fresh <- reject_duplicates(map_id, killmails) do
       system_name = system_name(system_id)
 
@@ -175,11 +178,38 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
 
       :ok
     else
-      _ -> :ok
+      reason -> log_drop(map_id, reason)
     end
   end
 
   defp do_dispatch(_map_id, _event), do: :ok
+
+  # Every path that declines to send says so. Debug level: on a busy instance
+  # most events are legitimately filtered, so this is opt-in noise, not a
+  # warning. Returns :ok to preserve the caller's contract.
+  defp log_drop(map_id, reason) do
+    Logger.debug(fn ->
+      "[Discord] map #{map_id}: no notification sent, #{explain_drop(reason)}"
+    end)
+
+    :ok
+  end
+
+  defp explain_drop({:drop, :globally_disabled}),
+    do: "webhooks are disabled on this server (WANDERER_WEBHOOKS_ENABLED)"
+
+  defp explain_drop({:error, :not_configured}), do: "the map has no Discord configuration"
+  defp explain_drop({:drop, :config_disabled}), do: "the configuration is disabled"
+  defp explain_drop(:skip), do: "the event carries no killmails"
+
+  defp explain_drop({:drop, {:system_excluded, system_id}}),
+    do: "system #{system_id} is on the excluded list"
+
+  defp explain_drop({:drop, {:not_wormhole, system_id}}),
+    do: "system #{system_id} is not wormhole space and wh_only is on"
+
+  defp explain_drop([]), do: "every killmail in the batch was already attempted"
+  defp explain_drop(other), do: "unrecognised reason: #{inspect(other)}"
 
   defp handle_delivery_result(:ok, map_id, fresh) do
     :telemetry.execute(
@@ -259,11 +289,19 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
 
   defp extract_kills(_), do: :skip
 
-  defp system_allowed?(notification, system_id) do
+  # Returns the specific reason rather than a boolean: "excluded by the user"
+  # and "filtered by wh_only" are the two most likely explanations for a
+  # missing notification and must be distinguishable in the log.
+  defp system_allowed(notification, system_id) do
     cond do
-      system_id in (notification.excluded_systems || []) -> false
-      notification.wh_only -> SystemClass.wormhole_system?(system_id)
-      true -> true
+      system_id in (notification.excluded_systems || []) ->
+        {:drop, {:system_excluded, system_id}}
+
+      notification.wh_only and not SystemClass.wormhole_system?(system_id) ->
+        {:drop, {:not_wormhole, system_id}}
+
+      true ->
+        :ok
     end
   end
 

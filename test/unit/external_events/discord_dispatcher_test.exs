@@ -195,6 +195,29 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     refute_delivery(map.id)
   end
 
+  # Diagnosing "kills happened but nothing posted" once took a console session,
+  # because every one of the eight gates returned a bare `:ok`. Each drop must
+  # name itself and the system, or the next person pays that cost again.
+  test "a filtered system logs which gate dropped it", %{map: map} do
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))
+
+    # `config/test.exs:52` pins the Logger at :warning, which drops debug
+    # messages at the source — before capture_log's handler can see them.
+    previous = Logger.level()
+    Logger.configure(level: :debug)
+    on_exit(fn -> Logger.configure(level: previous) end)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        DiscordDispatcher.dispatch_event(map.id, event)
+        refute_delivery(map.id)
+      end)
+
+    assert log =~ "no notification sent"
+    assert log =~ "not wormhole space"
+    assert log =~ to_string(@ks_system)
+  end
+
   test "delivers known-space kills when wh_only is off", %{map: map, notification: n} do
     {:ok, _} = MapDiscordNotification.update(n, %{wh_only: false})
     DiscordDispatcher.invalidate_cache(map.id)
