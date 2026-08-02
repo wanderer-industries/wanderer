@@ -19,15 +19,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
   @ns 9
   # @ccp2 10
   # @ccp3 11
-  # Wormhole classes live in WandererApp.SystemClass; kept here commented as
-  # part of the class-id reference table.
-  # @thera 12
+  # Classes 12 and 14-18 (Thera and the drifter systems) are not named here:
+  # WandererApp.SystemClass owns the canonical wormhole class list.
   @c13 13
-  # @sentinel 14
-  # @barbican 15
-  # @vidette 16
-  # @conflux 17
-  # @redoubt 18
   @a1 19
   @a2 20
   @a3 21

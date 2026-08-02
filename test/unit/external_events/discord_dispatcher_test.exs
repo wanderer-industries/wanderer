@@ -196,7 +196,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   end
 
   # Diagnosing "kills happened but nothing posted" once took a console session,
-  # because every one of the eight gates returned a bare `:ok`. Each drop must
+  # because every gate in do_dispatch/2 returned a bare `:ok`. Each drop must
   # name itself and the system, or the next person pays that cost again.
   test "a filtered system logs which gate dropped it", %{map: map} do
     event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))

@@ -170,7 +170,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   def handle_info(:timeout, state), do: {:noreply, state, state.idle_timeout}
 
   def handle_info(msg, state) do
-    Logger.debug("[Discord.Worker] unexpected message: #{inspect(msg)}")
+    Logger.debug(fn -> "[Discord.Worker] unexpected message: #{inspect(msg)}" end)
     {:noreply, state, state.idle_timeout}
   end
 
@@ -241,7 +241,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
             end
 
           _ ->
-            Logger.debug("[Discord.Worker] notification gone, dropping queued event")
+            Logger.debug(fn -> "[Discord.Worker] notification gone, dropping queued event" end)
             drop_current(state)
         end
     end
