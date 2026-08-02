@@ -420,6 +420,33 @@
                     </span>
                   </a>
                 </li>
+                <li
+                  class={[
+                    "p-unselectable-text",
+                    classes(
+                      "p-tabview-selected p-highlight": @active_settings_tab == "notifications"
+                    )
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="pr_id_335_content"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="notifications"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-bell-alert-solid" class="w-4 h-4" />&nbsp;Notifications
+                    </span>
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -633,6 +660,13 @@
                 event_name="subscriptions_event"
                 current_user={@current_user}
                 readonly={false}
+              />
+
+              <.live_component
+                :if={@active_settings_tab == "notifications"}
+                module={WandererAppWeb.MapNotificationsComponent}
+                id="map-notifications"
+                map_id={@map.id}
               />
             </div>
           </div>
