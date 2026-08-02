@@ -115,15 +115,23 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     end
   end
 
+  # Guarded the same way as `add-excluded`: only reachable from a rendered
+  # button today, but the two handlers should not disagree about whether a
+  # missing record or a non-numeric id is survivable.
   def handle_event("remove-excluded", %{"system_id" => raw}, socket) do
-    rec = socket.assigns.notification
-    id = String.to_integer(raw)
+    with %{} = rec <- socket.assigns.notification,
+         {id, ""} <- Integer.parse(to_string(raw)) do
+      case MapDiscordNotification.update(rec, %{
+             excluded_systems: Enum.reject(rec.excluded_systems, &(&1 == id))
+           }) do
+        {:ok, updated} ->
+          {:noreply, socket |> assign(:notification, updated) |> assign(:error, nil)}
 
-    case MapDiscordNotification.update(rec, %{
-           excluded_systems: Enum.reject(rec.excluded_systems, &(&1 == id))
-         }) do
-      {:ok, updated} -> {:noreply, assign(socket, :notification, updated)}
-      {:error, error} -> {:noreply, assign(socket, :error, humanize_error(error))}
+        {:error, error} ->
+          {:noreply, assign(socket, :error, humanize_error(error))}
+      end
+    else
+      _ -> {:noreply, assign(socket, :error, "Could not remove that system.")}
     end
   end
 
@@ -191,10 +199,31 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   defp search_systems(_), do: []
 
-  defp system_label(solar_system_id) do
-    case MapSolarSystem.by_solar_system_id(solar_system_id) do
-      {:ok, %{solar_system_name: name}} -> "#{name} (#{solar_system_id})"
-      _ -> to_string(solar_system_id)
+  # Resolves every excluded system's name in a single query and returns
+  # `[{id, label}]` in the stored order, falling back to the bare id for any
+  # system the lookup did not return.
+  defp excluded_system_labels(ids) do
+    labels = system_labels(ids)
+    Enum.map(ids, &{&1, Map.get(labels, &1, to_string(&1))})
+  end
+
+  # One query for every excluded system, not one per system. Called once per
+  # render and passed into the `:for`, replacing an N+1 that fired a query per
+  # list item on every re-render.
+  defp system_labels([]), do: %{}
+
+  defp system_labels(ids) do
+    require Ash.Query
+
+    MapSolarSystem
+    |> Ash.Query.filter(solar_system_id in ^ids)
+    |> Ash.read()
+    |> case do
+      {:ok, systems} ->
+        Map.new(systems, &{&1.solar_system_id, "#{&1.solar_system_name} (#{&1.solar_system_id})"})
+
+      _ ->
+        %{}
     end
   end
 
@@ -307,10 +336,10 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
         <ul class="flex flex-col gap-1">
           <li
-            :for={system_id <- @notification.excluded_systems}
+            :for={{system_id, label} <- excluded_system_labels(@notification.excluded_systems)}
             class="flex items-center gap-2 text-sm"
           >
-            <span>{system_label(system_id)}</span>
+            <span>{label}</span>
             <button
               type="button"
               class="btn btn-xs"

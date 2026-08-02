@@ -90,7 +90,11 @@ defmodule WandererAppWeb.MapNotificationsTest do
       })
       |> render_submit()
 
-    assert html =~ "Discord webhook URL"
+    # Assert the resource's actual validation message, NOT the string
+    # "Discord webhook URL" — that is the create form's own <label>, which
+    # renders whenever @replacing_url? is true, i.e. in this scenario always.
+    # Asserting on it would pass even if the error were discarded entirely.
+    assert html =~ "must be a Discord webhook URL"
     assert {:error, _} = MapDiscordNotification.by_map(map.id)
   end
 
@@ -222,6 +226,45 @@ defmodule WandererAppWeb.MapNotificationsTest do
     assert render(view) =~ "Jita (The Forge)"
     # And assert we did NOT get the parent's ACL options instead.
     refute render(view) =~ "access list"
+  end
+
+  test "excluded systems can be added and removed", %{conn: conn, map: map} do
+    Factory.insert(:solar_system, %{
+      solar_system_id: 30_000_142,
+      solar_system_name: "Jita",
+      region_name: "The Forge"
+    })
+
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    # NOTE: `form("#excluded-system-form", ...)` cannot drive this form.
+    # LiveSelect renders `excluded[excluded_system]` as a hidden input, and
+    # LiveViewTest refuses to set any value other than "" on a hidden input.
+    # Push the event at the component instead.
+    view
+    |> with_target("#map-notifications")
+    |> render_submit("add-excluded", %{"excluded" => %{"excluded_system" => "30000142"}})
+
+    assert {:ok, rec} = MapDiscordNotification.by_map(map.id)
+    assert rec.excluded_systems == [30_000_142]
+    # And it is rendered back with a resolved name, not a bare id.
+    assert render(view) =~ "Jita (30000142)"
+
+    view
+    |> element("button[phx-click='remove-excluded'][phx-value-system_id='30000142']")
+    |> render_click()
+
+    assert {:ok, after_remove} = MapDiscordNotification.by_map(map.id)
+    assert after_remove.excluded_systems == []
+    refute render(view) =~ "Jita (30000142)"
   end
 
   test "send test message reports the global kill-switch", %{conn: conn, map: map} do
