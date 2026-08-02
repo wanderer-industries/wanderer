@@ -130,6 +130,11 @@ defmodule WandererApp.Application do
         {Cachex, name: :discord_notification_cache, default_ttl: :timer.minutes(5)},
         id: :discord_notification_cache_worker
       ),
+      # Dedup marks for {map_id, killmail_id} - 24h, matching kill cache TTLs
+      Supervisor.child_spec(
+        {Cachex, name: :discord_dedup_cache, default_ttl: :timer.hours(24)},
+        id: :discord_dedup_cache_worker
+      ),
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
       {PartitionSupervisor,
        child_spec: DynamicSupervisor, name: WandererApp.Character.DynamicSupervisors},
@@ -257,7 +262,8 @@ defmodule WandererApp.Application do
 
           [
             WandererApp.ExternalEvents.WebhookDispatcher,
-            WandererApp.ExternalEvents.Discord.WorkerSupervisor | services
+            WandererApp.ExternalEvents.Discord.WorkerSupervisor,
+            WandererApp.ExternalEvents.DiscordDispatcher | services
           ]
         else
           services
