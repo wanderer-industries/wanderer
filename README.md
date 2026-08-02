@@ -36,6 +36,24 @@ Our only source of funding is your donations.
 
 Wanderer is a standard Elixir/Phoenix application backed by a PostgreSQL database for general data. On the frontend we use [TailwindCSS](https://tailwindcss.com/) for styling and React to make the map interactive.
 
+## Features
+
+### Discord kill notifications
+
+Map owners and admins can configure a Discord webhook under **Map settings →
+Notifications** to receive kill notifications for systems on that map,
+optionally filtered to wormhole space and excluding chosen systems. The filter
+is server-side and per-map — it is separate from the per-user filters of the
+in-app kills widget.
+
+Requires `WANDERER_WEBHOOKS_ENABLED=true`. When it is false the delivery workers
+are not running and "Send test message" reports that notifications are disabled
+on this server. `WANDERER_DISCORD_POOL_SIZE` (default `10`) sizes the isolated
+Finch connection pool used for Discord delivery.
+
+The webhook URL is stored encrypted and is only ever shown again as a masked
+hint; replacing it requires entering the full URL again.
+
 ## Development
 
 ### Setup

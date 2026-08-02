@@ -238,6 +238,10 @@ config :wanderer_app,
     System.get_env("WANDERER_LOCATION_CONCURRENCY", "#{System.schedulers_online() * 12}")
     |> String.to_integer()
 
+# Discord kill notification delivery pool - read by discord_pool_size/0 in application.ex
+config :wanderer_app, :discord_finch,
+  pool_size: System.get_env("WANDERER_DISCORD_POOL_SIZE", "10") |> String.to_integer()
+
 config :ueberauth, Ueberauth,
   providers: [
     eve:
