@@ -286,6 +286,47 @@ defmodule WandererAppWeb.MapNotificationsTest do
     assert html =~ "disabled on this server"
   end
 
+  test "removing the configuration deletes the record", %{conn: conn, map: map} do
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    html = view |> element("button[phx-click='delete']") |> render_click()
+
+    assert html =~ "Removed."
+    assert {:error, _} = MapDiscordNotification.by_map(map.id)
+    # Back to the create form, so the tab is usable again without a reload.
+    assert has_element?(view, "#discord-notification-form")
+  end
+
+  test "a failed removal is reported instead of raising", %{conn: conn, map: map} do
+    {:ok, rec} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    # Delete the row out from under the mounted view. The destroy then fails on
+    # a stale record — with `Ash.destroy!` this raised and took the LiveView
+    # down; it must surface as a message instead.
+    :ok = Ash.destroy(rec)
+
+    html = view |> element("button[phx-click='delete']") |> render_click()
+
+    refute html =~ "Removed."
+    assert render(view) =~ "class=\"text-sm text-red-400\""
+  end
+
   test "a non-owner cannot reach map settings", %{conn: conn} do
     other_user = Factory.insert(:user, %{})
     other_character = Factory.insert(:character, %{user_id: other_user.id})

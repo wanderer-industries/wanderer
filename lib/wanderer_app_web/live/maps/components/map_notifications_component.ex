@@ -12,6 +12,8 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   alias WandererApp.Api.MapSolarSystem
 
   @live_select_id "excluded_system_live_select_component"
+  @min_search_length 2
+  @max_search_results 20
 
   @impl true
   def update(%{map_id: map_id} = assigns, socket) do
@@ -24,28 +26,22 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:notification, notification)
      |> assign(:live_select_id, @live_select_id)
+     |> assign(:min_search_length, @min_search_length)
      |> assign_new(:system_options, fn -> [] end)
      |> assign_new(:error, fn -> nil end)
      |> assign_new(:flash_message, fn -> nil end)
-     |> assign(:excluded_form, to_form(%{"excluded_system" => nil}, as: :excluded))
-     |> assign_new(:replacing_url?, fn -> is_nil(notification) end)}
+     |> assign_new(:replacing_url?, fn -> is_nil(notification) end)
+     |> assign_notification(notification)}
   end
 
   @impl true
   def handle_event("save", %{"notification" => params}, socket) do
-    # Each boolean is rendered as a hidden "false" immediately followed by the
-    # checkbox's "true", so the browser always submits the key and Phoenix keeps
-    # the last value. Both fields render in create and edit alike.
-    #
-    # An absent key therefore means the form did not include the field at all
-    # (a programmatic submit in a test, say) rather than "unchecked". Fall back
-    # to the resource's own default instead of silently coercing to false —
-    # coercing is what made every newly created config land disabled.
+    # `.input type="checkbox"` renders a hidden "false" before the box, so a
+    # rendered field always submits a value and Phoenix keeps the last one.
     attrs = %{
-      wh_only: checkbox(params, "wh_only", default: true),
-      enabled?: checkbox(params, "enabled", default: true)
+      wh_only: checked?(params["wh_only"]),
+      enabled?: checked?(params["enabled"])
     }
 
     result =
@@ -66,7 +62,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
       {:ok, rec} ->
         {:noreply,
          socket
-         |> assign(:notification, rec)
+         |> assign_notification(rec)
          |> assign(:replacing_url?, false)
          |> assign(:error, nil)
          |> assign(:flash_message, "Saved.")}
@@ -97,19 +93,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   def handle_event("add-excluded", %{"excluded" => %{"excluded_system" => raw}}, socket) do
     with %{} = rec <- socket.assigns.notification,
          {id, ""} <- Integer.parse(to_string(raw)) do
-      excluded = Enum.uniq([id | rec.excluded_systems])
-
-      case MapDiscordNotification.update(rec, %{excluded_systems: excluded}) do
-        {:ok, updated} ->
-          {:noreply,
-           socket
-           |> assign(:notification, updated)
-           |> assign(:error, nil)
-           |> assign(:excluded_form, to_form(%{"excluded_system" => nil}, as: :excluded))}
-
-        {:error, error} ->
-          {:noreply, assign(socket, :error, humanize_error(error))}
-      end
+      update_excluded(socket, rec, Enum.uniq([id | rec.excluded_systems]))
     else
       _ -> {:noreply, assign(socket, :error, "Pick a system from the list.")}
     end
@@ -121,15 +105,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   def handle_event("remove-excluded", %{"system_id" => raw}, socket) do
     with %{} = rec <- socket.assigns.notification,
          {id, ""} <- Integer.parse(to_string(raw)) do
-      case MapDiscordNotification.update(rec, %{
-             excluded_systems: Enum.reject(rec.excluded_systems, &(&1 == id))
-           }) do
-        {:ok, updated} ->
-          {:noreply, socket |> assign(:notification, updated) |> assign(:error, nil)}
-
-        {:error, error} ->
-          {:noreply, assign(socket, :error, humanize_error(error))}
-      end
+      update_excluded(socket, rec, Enum.reject(rec.excluded_systems, &(&1 == id)))
     else
       _ -> {:noreply, assign(socket, :error, "Could not remove that system.")}
     end
@@ -172,24 +148,61 @@ defmodule WandererAppWeb.MapNotificationsComponent do
       rec ->
         # The resource's custom destroy invalidates the config cache and stops
         # the map's delivery worker; nothing extra to do here.
-        Ash.destroy!(rec)
+        case Ash.destroy(rec) do
+          :ok ->
+            {:noreply,
+             socket
+             |> assign_notification(nil)
+             |> assign(:replacing_url?, true)
+             |> assign(:error, nil)
+             |> assign(:flash_message, "Removed.")}
 
-        {:noreply,
-         socket
-         |> assign(:notification, nil)
-         |> assign(:replacing_url?, true)
-         |> assign(:error, nil)
-         |> assign(:flash_message, "Removed.")}
+          {:error, error} ->
+            {:noreply,
+             socket |> assign(:error, humanize_error(error)) |> assign(:flash_message, nil)}
+        end
     end
+  end
+
+  defp update_excluded(socket, rec, excluded) do
+    case MapDiscordNotification.update(rec, %{excluded_systems: excluded}) do
+      {:ok, updated} ->
+        {:noreply, socket |> assign_notification(updated) |> assign(:error, nil)}
+
+      {:error, error} ->
+        {:noreply, assign(socket, :error, humanize_error(error))}
+    end
+  end
+
+  # Resolves the excluded systems' names once per change, not once per render:
+  # this runs a query, and the template re-renders on every live_select
+  # keystroke. Also rebuilds the forms so their values follow the record.
+  defp assign_notification(socket, notification) do
+    socket
+    |> assign(:notification, notification)
+    |> assign(:excluded_systems, excluded_system_labels(notification))
+    |> assign(:form, notification_form(notification))
+    |> assign(:excluded_form, to_form(%{"excluded_system" => nil}, as: :excluded))
+  end
+
+  defp notification_form(notification) do
+    to_form(
+      %{
+        "webhook_url" => "",
+        "wh_only" => is_nil(notification) or notification.wh_only,
+        "enabled" => is_nil(notification) or notification.enabled?
+      },
+      as: :notification
+    )
   end
 
   # Mirrors the ACL live_select pattern in maps_live: search server-side, feed
   # `{label, value}` options back into the component.
-  defp search_systems(text) when is_binary(text) and byte_size(text) >= 2 do
+  defp search_systems(text) when is_binary(text) and byte_size(text) >= @min_search_length do
     case MapSolarSystem.find_by_name(%{name: text}) do
       {:ok, systems} ->
         systems
-        |> Enum.take(20)
+        |> Enum.take(@max_search_results)
         |> Enum.map(&{"#{&1.solar_system_name} (#{&1.region_name})", &1.solar_system_id})
 
       _ ->
@@ -199,53 +212,36 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   defp search_systems(_), do: []
 
-  # Resolves every excluded system's name in a single query and returns
-  # `[{id, label}]` in the stored order, falling back to the bare id for any
-  # system the lookup did not return.
-  defp excluded_system_labels(ids) do
-    labels = system_labels(ids)
+  # One query for every excluded system, not one per system. Falls back to the
+  # bare id for anything the lookup did not return, and keeps the stored order.
+  defp excluded_system_labels(nil), do: []
+  defp excluded_system_labels(%{excluded_systems: []}), do: []
+
+  defp excluded_system_labels(%{excluded_systems: ids}) do
+    labels =
+      case MapSolarSystem.by_solar_system_ids(ids) do
+        {:ok, systems} ->
+          Map.new(
+            systems,
+            &{&1.solar_system_id, "#{&1.solar_system_name} (#{&1.solar_system_id})"}
+          )
+
+        _ ->
+          %{}
+      end
+
     Enum.map(ids, &{&1, Map.get(labels, &1, to_string(&1))})
   end
 
-  # One query for every excluded system, not one per system. Called once per
-  # render and passed into the `:for`, replacing an N+1 that fired a query per
-  # list item on every re-render.
-  defp system_labels([]), do: %{}
-
-  defp system_labels(ids) do
-    require Ash.Query
-
-    MapSolarSystem
-    |> Ash.Query.filter(solar_system_id in ^ids)
-    |> Ash.read()
-    |> case do
-      {:ok, systems} ->
-        Map.new(systems, &{&1.solar_system_id, "#{&1.solar_system_name} (#{&1.solar_system_id})"})
-
-      _ ->
-        %{}
-    end
-  end
-
-  # Checkboxes are rendered with a preceding hidden "false", so a rendered
-  # field always submits a value. A missing key means the field was not
-  # rendered at all; fall back to the caller's default rather than treating
-  # absence as "unchecked".
-  defp checkbox(params, key, default: default) do
-    case Map.fetch(params, key) do
-      {:ok, "true"} -> true
-      {:ok, _} -> false
-      :error -> default
-    end
-  end
+  defp checked?("true"), do: true
+  defp checked?(true), do: true
+  defp checked?(_), do: false
 
   defp humanize_error(%Ash.Error.Invalid{errors: errors}) do
-    errors
-    |> Enum.map(fn
+    Enum.map_join(errors, ", ", fn
       %{message: message} when is_binary(message) -> message
       other -> inspect(other)
     end)
-    |> Enum.join(", ")
   end
 
   defp humanize_error(other), do: inspect(other)
@@ -279,76 +275,49 @@ defmodule WandererAppWeb.MapNotificationsComponent do
       <p :if={@flash_message} class="text-sm text-green-400">{@flash_message}</p>
 
       <.form
-        :let={_f}
-        for={%{}}
-        as={:notification}
+        :let={f}
+        for={@form}
         id="discord-notification-form"
         phx-submit="save"
         phx-target={@myself}
         class="flex flex-col gap-3"
       >
-        <div :if={@replacing_url?} class="flex flex-col gap-1">
-          <label class="text-sm">Discord webhook URL</label>
-          <input
-            type="text"
-            name="notification[webhook_url]"
-            class="input input-sm input-bordered w-full"
-            placeholder="https://discord.com/api/webhooks/..."
-            autocomplete="off"
-          />
-        </div>
+        <.input
+          :if={@replacing_url?}
+          field={f[:webhook_url]}
+          type="password"
+          label="Discord webhook URL"
+          placeholder="https://discord.com/api/webhooks/..."
+          autocomplete="off"
+        />
 
         <div :if={!@replacing_url? && @notification} class="flex items-center gap-2">
           <span class="text-sm opacity-70">URL: {masked_url(@notification.webhook_url)}</span>
-          <button type="button" class="btn btn-xs" phx-click="replace-url" phx-target={@myself}>
+          <.button type="button" phx-click="replace-url" phx-target={@myself}>
             Replace
-          </button>
+          </.button>
         </div>
-        
-    <!-- An unchecked checkbox submits nothing at all, so each boolean gets a
-             hidden "false" companion immediately before it. The browser sends
-             both when checked and Phoenix keeps the last value. -->
-        <label class="flex items-center gap-2 text-sm">
-          <input type="hidden" name="notification[wh_only]" value="false" />
-          <input
-            type="checkbox"
-            name="notification[wh_only]"
-            value="true"
-            checked={@notification == nil or @notification.wh_only}
-          /> Only wormhole kills
-        </label>
 
-        <label class="flex items-center gap-2 text-sm">
-          <input type="hidden" name="notification[enabled]" value="false" />
-          <input
-            type="checkbox"
-            name="notification[enabled]"
-            value="true"
-            checked={@notification == nil or @notification.enabled?}
-          /> Enabled
-        </label>
+        <.input field={f[:wh_only]} type="checkbox" label="Only wormhole kills" />
+        <.input field={f[:enabled]} type="checkbox" label="Enabled" />
 
-        <button type="submit" class="btn btn-sm btn-primary w-fit">Save</button>
+        <.button type="submit">Save</.button>
       </.form>
 
       <div :if={@notification} class="flex flex-col gap-2">
         <h4 class="text-sm font-semibold">Excluded systems</h4>
 
         <ul class="flex flex-col gap-1">
-          <li
-            :for={{system_id, label} <- excluded_system_labels(@notification.excluded_systems)}
-            class="flex items-center gap-2 text-sm"
-          >
+          <li :for={{system_id, label} <- @excluded_systems} class="flex items-center gap-2 text-sm">
             <span>{label}</span>
-            <button
+            <.button
               type="button"
-              class="btn btn-xs"
               phx-click="remove-excluded"
               phx-value-system_id={system_id}
               phx-target={@myself}
             >
               Remove
-            </button>
+            </.button>
           </li>
         </ul>
 
@@ -358,7 +327,8 @@ defmodule WandererAppWeb.MapNotificationsComponent do
           id="excluded-system-form"
           phx-submit="add-excluded"
           phx-target={@myself}
-          class="flex items-end gap-2"
+          class="grid items-end gap-2"
+          style="grid-template-columns: 1fr auto"
         >
           <.live_select
             field={ef[:excluded_system]}
@@ -366,28 +336,28 @@ defmodule WandererAppWeb.MapNotificationsComponent do
             phx-target={@myself}
             dropdown_extra_class="!h-24"
             debounce={250}
-            update_min_len={2}
+            update_min_len={@min_search_length}
             mode={:single}
             options={@system_options}
             placeholder="Search a system by name"
           />
-          <button type="submit" class="btn btn-xs">Add</button>
+          <.button type="submit">Add</.button>
         </.form>
       </div>
 
       <div :if={@notification} class="flex items-center gap-2">
-        <button type="button" class="btn btn-sm" phx-click="send-test" phx-target={@myself}>
+        <.button type="button" phx-click="send-test" phx-target={@myself}>
           Send test message
-        </button>
-        <button
+        </.button>
+        <.button
           type="button"
-          class="btn btn-sm btn-error"
+          class="btn-error"
           phx-click="delete"
           phx-target={@myself}
           data-confirm="Remove Discord notifications for this map?"
         >
           Remove
-        </button>
+        </.button>
       </div>
 
       <div :if={@notification} class="flex flex-col gap-1 text-sm">

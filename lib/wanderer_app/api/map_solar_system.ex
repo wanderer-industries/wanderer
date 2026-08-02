@@ -39,6 +39,7 @@ defmodule WandererApp.Api.MapSolarSystem do
     )
 
     define(:find_by_name, action: :find_by_name)
+    define(:by_solar_system_ids, action: :by_solar_system_ids, args: [:solar_system_ids])
     define(:get_wh_class_a, action: :get_wh_class_a)
     define(:get_trig_systems, action: :get_trig_systems)
   end
@@ -101,6 +102,14 @@ defmodule WandererApp.Api.MapSolarSystem do
       argument(:name, :string, allow_nil?: false)
 
       filter(expr(contains(solar_system_name_lc, string_downcase(^arg(:name)))))
+    end
+
+    # Batch lookup, so callers rendering a list of system ids resolve every name
+    # in one query instead of one per id.
+    read :by_solar_system_ids do
+      argument(:solar_system_ids, {:array, :integer}, allow_nil?: false)
+
+      filter(expr(solar_system_id in ^arg(:solar_system_ids)))
     end
 
     read :get_wh_class_a do
