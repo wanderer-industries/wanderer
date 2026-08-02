@@ -308,7 +308,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
         <h4 class="text-sm font-semibold">Excluded systems</h4>
 
         <p :if={@excluded_systems == []} class="text-sm opacity-70">
-          No systems excluded — every system on the map is reported.
+          No systems are excluded.
         </p>
 
         <ul :if={@excluded_systems != []} class="flex flex-col gap-1">

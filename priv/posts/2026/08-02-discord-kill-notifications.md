@@ -1,7 +1,7 @@
 %{
 title: "New Feature: Discord Kill Notifications",
 author: "Wanderer Team",
-cover_image_uri: "/images/news/08-02-discord-kill-notifications/cover.png",
+cover_image_uri: "/images/news/08-02-discord-kill-notifications/cover.jpg",
 tags: ~w(discord notifications kills map settings guide),
 description: "Post kills from your map straight into a Discord channel. Set a webhook once, filter to wormhole space, exclude the systems you don't care about."
 }
@@ -21,6 +21,8 @@ corp is already sitting in.
 
 ## Setting it up
 
+![Notifications tab, unconfigured](/images/news/08-02-discord-kill-notifications/setup.jpg "Notifications tab before setup")
+
 Open **Map settings → Notifications**. The tab lives inside the map's settings
 page, so it is available to whoever can administer the map — in practice the map
 owner and anyone granted admin rights over it.
@@ -35,6 +37,12 @@ owner and anyone granted admin rights over it.
 
 That is the whole setup. From that point on, kills detected in systems on the
 map are formatted and pushed to the channel.
+
+![Notifications tab, configured](/images/news/08-02-discord-kill-notifications/cover.jpg "Notifications tab after saving a webhook")
+
+Once saved, the URL is replaced by a masked hint and the rest of the controls
+appear: the filters, the excluded-systems list, and a **Send test message**
+button.
 
 ## What a notification looks like
 
