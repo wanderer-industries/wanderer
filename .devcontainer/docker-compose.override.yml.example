@@ -1,0 +1,22 @@
+# docker-compose.override.yml.example
+#
+# Copy this file to docker-compose.override.yml for host-specific settings.
+# The override file is gitignored and will be auto-created (empty) by
+# devcontainer.json's initializeCommand if missing, so the devcontainer works
+# without it.
+#
+# Uncomment what you need.
+services:
+  wanderer:
+    # volumes:
+    #   # Host SSH keys (Git over SSH, commit signing)
+    #   - ~/.ssh:/home/developer/.ssh:ro
+    #
+    #   # GitHub CLI auth
+    #   - ~/.config/gh:/home/developer/.config/gh:ro
+
+    # Publish Postgres on a different host port if 5432 is already taken.
+    # (Set on the db service instead — shown here for reference.)
+    #
+    # environment:
+    #   SOME_LOCAL_OVERRIDE: "value"

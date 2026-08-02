@@ -1,30 +1,57 @@
 {
   "name": "wanderer-dev",
-  "dockerComposeFile": ["./docker-compose.yml"],
+  "dockerComposeFile": [
+    "./docker-compose.yml",
+    "./docker-compose.override.yml"
+  ],
+  "service": "wanderer",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "developer",
+  "containerUser": "developer",
+
+  "initializeCommand": "test -f .devcontainer/docker-compose.override.yml || echo 'services: {}' > .devcontainer/docker-compose.override.yml",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  "remoteEnv": {
+    "PATH": "${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
-        "jakebecker.elixir-ls",
         "JakeBecker.elixir-ls",
+        "phoenixframework.phoenix",
+        "pantajoe.vscode-elixir-credo",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "mikestead.dotenv",
+        "ms-azuretools.vscode-docker"
       ],
       "settings": {
         "editor.formatOnSave": true,
         "search.exclude": {
-          "**/doc": true
+          "**/doc": true,
+          "**/_build": true,
+          "**/deps": true
         },
-        "elixirLS.dialyzerEnabled": false
+        "elixirLS.dialyzerEnabled": false,
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        }
       }
     }
   },
-  "service": "wanderer",
-  "workspaceFolder": "/app",
-  "shutdownAction": "stopCompose",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "networkArgs": ["--add-host=host.docker.internal:host-gateway"]
+
+  "forwardPorts": [4444],
+  "portsAttributes": {
+    "4444": {
+      "label": "Wanderer (Phoenix)",
+      "onAutoForward": "notify"
     }
-  },
-  "forwardPorts": [4444]
+  }
 }
