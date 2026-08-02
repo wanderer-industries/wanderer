@@ -14,6 +14,17 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   @zkill_base "https://zkillboard.com/kill/"
   @image_base "https://images.evetech.net"
 
+  # ISK magnitude table, largest first: {threshold, divisor, unit, next_unit}.
+  # `next_unit` is what a value promotes to when rounding pushes it to >= 1000
+  # within its own unit. It is nil at the top so T clamps instead of promoting,
+  # which makes self-promotion impossible by construction.
+  @isk_units [
+    {1_000_000_000_000, 1_000_000_000_000, "T", nil},
+    {1_000_000_000, 1_000_000_000, "B", "T"},
+    {1_000_000, 1_000_000, "M", "B"},
+    {1_000, 1_000, "K", "M"}
+  ]
+
   @doc """
   The per-event kill cap. Exposed so callers can tell which kills were actually
   formatted — the dispatcher must not mark kills past this cap as attempted,
@@ -103,51 +114,25 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   def format_isk(0), do: "0 ISK"
 
   def format_isk(value) when is_number(value) do
-    # Walk through units from largest to smallest, finding the first one the value fits in.
-    # Units table: {threshold, divisor, unit_suffix, next_unit_suffix}
-    # The next_unit_suffix is what we promote to if rounding produces >= 1000.0 within this unit.
-    # At the top (T), next_unit is nil, signaling CLAMP instead of promote.
-    # This makes self-promotion impossible by design (nil != "T").
-    units = [
-      # Trillion: clamp at T (no promotion)
-      {1_000_000_000_000, 1_000_000_000_000, "T", nil},
-      # Billion: promote to T if needed
-      {1_000_000_000, 1_000_000_000, "B", "T"},
-      # Million: promote to B if needed
-      {1_000_000, 1_000_000, "M", "B"},
-      # Thousand: promote to M if needed
-      {1_000, 1_000, "K", "M"}
-    ]
-
-    format_isk_with_units(value, units)
+    Enum.find_value(@isk_units, "#{round(value)} ISK", &format_at_unit(value, &1))
   end
 
   def format_isk(_), do: nil
 
-  defp format_isk_with_units(value, units) do
-    Enum.find_value(units, "#{round(value)} ISK", fn {threshold, divisor, unit, next_unit} ->
-      if value >= threshold do
-        rounded = round_to(value / divisor)
+  defp format_at_unit(value, {threshold, _divisor, _unit, _next}) when value < threshold, do: nil
 
-        cond do
-          # If next_unit is nil, clamp: render as-is without dividing or promoting
-          is_nil(next_unit) ->
-            formatted = format_float(rounded)
-            "#{formatted}#{unit} ISK"
+  defp format_at_unit(value, {_threshold, divisor, unit, next_unit}) do
+    case {round_to(value / divisor), next_unit} do
+      # Top of the table: clamp rather than promote.
+      {rounded, nil} ->
+        "#{format_float(rounded)}#{unit} ISK"
 
-          # Otherwise, promote if rounded >= 1000.0
-          rounded >= 1000.0 ->
-            new_value = round_to(rounded / 1000)
-            formatted = format_float(new_value)
-            "#{formatted}#{next_unit} ISK"
+      {rounded, next} when rounded >= 1000.0 ->
+        "#{format_float(round_to(rounded / 1000))}#{next} ISK"
 
-          # Normal case: render at current unit
-          true ->
-            formatted = format_float(rounded)
-            "#{formatted}#{unit} ISK"
-        end
-      end
-    end)
+      {rounded, _} ->
+        "#{format_float(rounded)}#{unit} ISK"
+    end
   end
 
   # Format a float to avoid scientific notation (e.g., 1.0e3 -> "1000.0")

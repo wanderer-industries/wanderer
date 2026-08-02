@@ -15,6 +15,9 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
 
   @registry WandererApp.ExternalEvents.Discord.Registry
   @dyn_sup WandererApp.ExternalEvents.Discord.DynamicSupervisor
+  # Bounded so a worker wedged on a slow DB call cannot block the destroy that
+  # is stopping it. The exit is caught either way; the worker is brought down.
+  @stop_timeout_ms 5_000
 
   def start_link(opts \\ []), do: Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -26,7 +29,11 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
       {DynamicSupervisor, name: @dyn_sup, strategy: :one_for_one}
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    # :rest_for_one, not :one_for_one — workers register in the Registry, so a
+    # Registry crash would leave them running but unreachable, and the next
+    # deliver/3 would start a *second* worker for the same map and double-post.
+    # Restarting everything after the Registry clears those orphans.
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 
   @doc """
@@ -85,8 +92,10 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
   end
 
   defp try_stop(pid) do
-    GenServer.stop(pid, :normal)
+    GenServer.stop(pid, :normal, @stop_timeout_ms)
   catch
+    # Already gone, or did not terminate within the timeout — in the latter case
+    # GenServer.stop/3 has already killed it. Either way there is no worker left.
     :exit, _ -> :ok
   end
 

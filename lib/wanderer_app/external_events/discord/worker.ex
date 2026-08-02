@@ -69,6 +69,13 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   @event_deadline_ms 60_000
   @max_retry_after_ms 10_000
   @min_retry_after_ms 50
+  @default_retry_after_ms 1_000
+  @backoff_base_ms 1_000
+  @max_backoff_ms 8_000
+  # Discord allows a webhook roughly 5 requests/second. A multi-chunk event
+  # posted back-to-back would burst straight into a 429 and burn attempts, so
+  # chunks are spaced just over that budget.
+  @inter_chunk_delay_ms 250
 
   def start_link(opts) do
     map_id = Keyword.fetch!(opts, :map_id)
@@ -269,7 +276,9 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         if rest == [] do
           finish(state, :ok)
         else
-          send(self(), :attempt)
+          # Spaced, not immediate: back-to-back chunks would trip the webhook's
+          # own rate limit and turn a successful event into a run of 429s.
+          Process.send_after(self(), :attempt, @inter_chunk_delay_ms)
           state
         end
 
@@ -372,7 +381,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     |> parse_retry_after()
   end
 
-  defp parse_retry_after(nil), do: 1_000
+  defp parse_retry_after(nil), do: @default_retry_after_ms
 
   defp parse_retry_after(value) do
     # Clamped to @max_retry_after_ms. Tradeoff, stated explicitly: if Discord
@@ -391,9 +400,11 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         |> max(@min_retry_after_ms)
 
       :error ->
-        1_000
+        @default_retry_after_ms
     end
   end
 
-  defp backoff_ms(attempt), do: min(1_000 * :math.pow(2, attempt - 1), 8_000) |> round()
+  defp backoff_ms(attempt) do
+    (@backoff_base_ms * :math.pow(2, attempt - 1)) |> min(@max_backoff_ms) |> round()
+  end
 end

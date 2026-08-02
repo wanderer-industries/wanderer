@@ -117,7 +117,11 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
     Ash.destroy!(n)
 
     WorkerSupervisor.deliver(map.id, n.id, [message()])
-    Process.sleep(300)
+    # Two syncs, not a sleep: the first flushes the deliver cast, the second the
+    # `:attempt` message that cast sends to itself. After both, the worker has
+    # decided whether to post.
+    sync(map.id)
+    sync(map.id)
 
     assert HttpStub.requests() == []
   end
@@ -129,7 +133,8 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
     {:ok, _} = MapDiscordNotification.update(n, %{enabled?: false})
 
     WorkerSupervisor.deliver(map.id, n.id, [message()])
-    Process.sleep(300)
+    sync(map.id)
+    sync(map.id)
 
     assert HttpStub.requests() == []
   end

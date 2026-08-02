@@ -5,6 +5,9 @@ defmodule WandererApp.Application do
 
   require Logger
 
+  # Mirrors the WANDERER_DISCORD_POOL_SIZE default in config/runtime.exs.
+  @default_discord_pool_size 10
+
   @impl true
   def start(_type, _args) do
     # Skip test mocks setup - handled in test helper if needed
@@ -244,47 +247,47 @@ defmodule WandererApp.Application do
       sse_enabled = WandererApp.Env.sse_enabled?()
       webhooks_enabled = external_events_config[:webhooks_enabled] || false
 
-      services = []
-
-      # Always include MapEventRelay if any external events are enabled
-      services =
-        if sse_enabled || webhooks_enabled do
-          Logger.info("Starting external events system...")
-          [WandererApp.ExternalEvents.MapEventRelay | services]
-        else
-          services
-        end
-
-      # Add WebhookDispatcher if webhooks are enabled
-      services =
+      webhook_services =
         if webhooks_enabled do
           Logger.info("Starting webhook dispatcher...")
 
           [
             WandererApp.ExternalEvents.WebhookDispatcher,
+            # Supervisor before the dispatcher that routes work into it, so the
+            # first event does not find the worker tree missing.
             WandererApp.ExternalEvents.Discord.WorkerSupervisor,
-            WandererApp.ExternalEvents.DiscordDispatcher | services
+            WandererApp.ExternalEvents.DiscordDispatcher
           ]
         else
-          services
+          []
         end
 
-      # Add SseStreamManager if SSE is enabled
-      services =
+      sse_services =
         if sse_enabled do
           Logger.info("Starting SSE stream manager...")
-          [WandererApp.ExternalEvents.SseStreamManager | services]
+          [WandererApp.ExternalEvents.SseStreamManager]
         else
-          services
+          []
         end
 
-      Enum.reverse(services)
+      relay =
+        if sse_enabled || webhooks_enabled do
+          Logger.info("Starting external events system...")
+          # Started last: it produces the events every service above consumes,
+          # and dispatch is a cast, so anything emitted before its consumers are
+          # registered is silently dropped.
+          [WandererApp.ExternalEvents.MapEventRelay]
+        else
+          []
+        end
+
+      webhook_services ++ sse_services ++ relay
     end
   end
 
   defp discord_pool_size do
     :wanderer_app
     |> Application.get_env(:discord_finch, [])
-    |> Keyword.get(:pool_size, 10)
+    |> Keyword.get(:pool_size, @default_discord_pool_size)
   end
 end

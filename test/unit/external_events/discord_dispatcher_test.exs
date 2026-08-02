@@ -126,9 +126,15 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
         state = :sys.get_state(pid)
 
         cond do
-          state.current == nil and state.queue_len == 0 -> :idle
-          System.monotonic_time(:millisecond) >= deadline -> :timeout
-          true -> await_worker_idle(map_id, deadline)
+          state.current == nil and state.queue_len == 0 ->
+            :idle
+
+          System.monotonic_time(:millisecond) >= deadline ->
+            :timeout
+
+          true ->
+            Process.sleep(25)
+            await_worker_idle(map_id, deadline)
         end
     end
   end
@@ -345,13 +351,20 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     overflow = Enum.drop(kills, cap)
     assert length(overflow) == 5
 
+    # The capped event spans several chunks, and the worker deliberately spaces
+    # them. Derive how many messages to expect from the formatter itself rather
+    # than assuming the first `wait_for_requests/1` catches all of them.
+    first_batch_size = length(EmbedFormatter.format_batch(kills, "X"))
+    assert first_batch_size > 1
+
     DiscordDispatcher.dispatch_event(
       map.id,
       kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: kills}))
     )
 
     settle(map.id)
-    first_batch = wait_for_requests(1)
+    first_batch = wait_for_requests(first_batch_size)
+    assert length(first_batch) == first_batch_size
 
     # The overflow kills arrive again on their own: they were never formatted,
     # so they are still eligible and must be delivered now.
@@ -362,8 +375,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
 
     settle(map.id)
 
-    later = wait_for_requests(length(first_batch) + 1)
-    [{_url, body} | _] = Enum.drop(later, length(first_batch))
+    later = wait_for_requests(first_batch_size + 1)
+    [{_url, body} | _] = Enum.drop(later, first_batch_size)
     assert length(body["embeds"]) == 5
   end
 

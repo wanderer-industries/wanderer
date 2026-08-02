@@ -12,15 +12,20 @@ defmodule WandererApp.ExternalEvents.Discord.HttpClient do
     Application.get_env(
       :wanderer_app,
       :discord_http_client,
-      WandererApp.ExternalEvents.Discord.HttpClient.Finch
+      WandererApp.ExternalEvents.Discord.HttpClient.Live
     )
   end
 
   @doc "Posts a Discord message body, delegating to the configured implementation."
   def post(url, body), do: impl().post(url, body)
 
-  defmodule Finch do
-    @moduledoc "Real HTTP delivery via the isolated Discord Finch pool."
+  defmodule Live do
+    @moduledoc """
+    Real HTTP delivery via the isolated Discord Finch pool.
+
+    Named `Live` rather than `Finch` so the nested module does not shadow the
+    Finch library inside its own body.
+    """
     @behaviour WandererApp.ExternalEvents.Discord.HttpClient
 
     @timeout 15_000
@@ -32,10 +37,10 @@ defmodule WandererApp.ExternalEvents.Discord.HttpClient do
       case Jason.encode(body) do
         {:ok, json} ->
           :post
-          |> Elixir.Finch.build(url, headers, json)
-          |> Elixir.Finch.request(WandererApp.Finch.Discord, receive_timeout: @timeout)
+          |> Finch.build(url, headers, json)
+          |> Finch.request(WandererApp.Finch.Discord, receive_timeout: @timeout)
           |> case do
-            {:ok, %Elixir.Finch.Response{status: status, headers: resp_headers}} ->
+            {:ok, %Finch.Response{status: status, headers: resp_headers}} ->
               {:ok, status, resp_headers}
 
             {:error, reason} ->

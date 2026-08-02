@@ -2,9 +2,10 @@ defmodule WandererApp.ExternalEvents.Discord.HttpStub do
   @moduledoc """
   Test double for Discord HTTP delivery.
 
-  Responses are queued per-process via the test's own Agent, so async tests do
-  not interfere. Call `start/0` in setup, `set_responses/1` to script replies,
-  and `requests/0` to assert on what was sent.
+  State lives in ONE named Agent shared by every test, so any test using this
+  stub must be `async: false`. Call `start/0` in setup (it resets the state if
+  the Agent is already up), `set_responses/1` to script replies, and
+  `requests/0` to assert on what was sent.
   """
   @behaviour WandererApp.ExternalEvents.Discord.HttpClient
 

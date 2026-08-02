@@ -18,6 +18,10 @@ defmodule WandererApp.Api.MapDiscordNotification do
   # 10 consecutive failures disables the config. Only a 404 bypasses this.
   @max_consecutive_failures 10
 
+  # Matches the :last_error attribute's max_length constraint, so an
+  # unexpectedly long error message is truncated rather than rejected.
+  @max_error_length 500
+
   postgres do
     repo(WandererApp.Repo)
     table("map_discord_notifications_v1")
@@ -117,7 +121,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
           |> Ash.Changeset.change_attribute(:consecutive_failures, next)
           |> Ash.Changeset.change_attribute(
             :last_error,
-            changeset |> Ash.Changeset.get_argument(:error) |> String.slice(0, 500)
+            changeset |> Ash.Changeset.get_argument(:error) |> String.slice(0, @max_error_length)
           )
           |> Ash.Changeset.change_attribute(:last_error_at, DateTime.utc_now())
 
@@ -145,7 +149,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
         Ash.Changeset.change_attribute(
           changeset,
           :last_error,
-          Ash.Changeset.get_argument(changeset, :error)
+          changeset |> Ash.Changeset.get_argument(:error) |> String.slice(0, @max_error_length)
         )
       end
 
