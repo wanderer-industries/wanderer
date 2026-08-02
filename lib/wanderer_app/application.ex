@@ -254,7 +254,11 @@ defmodule WandererApp.Application do
       services =
         if webhooks_enabled do
           Logger.info("Starting webhook dispatcher...")
-          [WandererApp.ExternalEvents.WebhookDispatcher | services]
+
+          [
+            WandererApp.ExternalEvents.WebhookDispatcher,
+            WandererApp.ExternalEvents.Discord.WorkerSupervisor | services
+          ]
         else
           services
         end
