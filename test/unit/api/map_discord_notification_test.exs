@@ -130,6 +130,34 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert updated.webhook_url == replacement
   end
 
+  test "replacing the url clears the previous endpoint's failure state", %{map: map} do
+    # A fresh webhook must not inherit a failure run: at 9 consecutive failures
+    # the very next hiccup would disable a URL that has never actually failed.
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+    {:ok, rec} = MapDiscordNotification.record_failure(rec, "boom")
+    assert rec.consecutive_failures == 1
+    assert rec.last_error == "boom"
+
+    replacement = "https://canary.discord.com/api/v10/webhooks/999/newtok"
+    assert {:ok, updated} = MapDiscordNotification.update(rec, %{webhook_url: replacement})
+
+    assert updated.consecutive_failures == 0
+    assert updated.last_error == nil
+    assert updated.last_error_at == nil
+  end
+
+  test "a status-only update leaves the failure state alone", %{map: map} do
+    # The reset is keyed to a URL change; toggling wh_only must not silently
+    # forgive a run of failures against the URL that is still stored.
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+    {:ok, rec} = MapDiscordNotification.record_failure(rec, "boom")
+
+    assert {:ok, updated} = MapDiscordNotification.update(rec, %{wh_only: false})
+
+    assert updated.consecutive_failures == 1
+    assert updated.last_error == "boom"
+  end
+
   test "enforces one notification per map", %{map: map} do
     {:ok, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
 

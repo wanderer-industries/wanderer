@@ -7,6 +7,20 @@ defmodule WandererAppWeb.MapNotificationsTest do
   alias WandererAppWeb.Factory
 
   setup %{conn: conn} do
+    # `config/test.exs:35` sets `external_events: [webhooks_enabled: false]`, but
+    # the Notifications tab is only rendered when the server-wide feature flag is
+    # on, so without this every test here would be asserting against a tab that
+    # does not exist. Same shape as discord_dispatcher_test.exs:25-36.
+    original = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(original, :webhooks_enabled, true)
+    )
+
+    on_exit(fn -> Application.put_env(:wanderer_app, :external_events, original) end)
+
     # `Api.Map.owner_id` points at a CHARACTER, not a user, and
     # `Factory.create_map/1` passes `owner_id` straight through. Passing a user
     # id here would fail the foreign key.
@@ -15,6 +29,16 @@ defmodule WandererAppWeb.MapNotificationsTest do
     map = Factory.insert(:map, %{owner_id: character.id})
 
     %{conn: log_in_user(conn, user), map: map, user: user, character: character}
+  end
+
+  defp disable_webhooks do
+    external_events = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(external_events, :webhooks_enabled, false)
+    )
   end
 
   # The app has no `log_in_user/2` test helper: `UserAuth.on_mount/4` reads
@@ -274,12 +298,16 @@ defmodule WandererAppWeb.MapNotificationsTest do
         webhook_url: "https://discord.com/api/webhooks/123/tok"
       })
 
-    # `config/test.exs` leaves webhooks disabled, which is exactly the
-    # production kill-switch case: the worker Registry does not exist, so this
-    # must return an error rather than crash the LiveView.
+    # The kill-switch is read at call time by the dispatcher but at mount time by
+    # the tab guard, so flip it *after* mounting: that is exactly the case an
+    # administrator turning the feature off mid-session produces. The worker
+    # Registry does not exist, so this must return an error rather than crash the
+    # LiveView.
     {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
 
     view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    disable_webhooks()
 
     html = view |> element("button[phx-click='send-test']") |> render_click()
 

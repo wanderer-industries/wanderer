@@ -68,13 +68,13 @@ defmodule WandererApp.Api.MapDiscordNotification do
       primary? true
       require_atomic? false
 
-      change after_action(&__MODULE__.after_destroy/3)
+      change after_transaction(&__MODULE__.after_destroy/3)
     end
 
     create :create do
       primary? true
       validate {__MODULE__.ValidateWebhookUrl, []}
-      change after_action(&__MODULE__.invalidate_cache/3)
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
 
     update :update do
@@ -86,7 +86,27 @@ defmodule WandererApp.Api.MapDiscordNotification do
       # per-map scoping the LiveView authorizes against. :create still needs it.
       accept [:webhook_url, :enabled?, :wh_only, :excluded_systems]
       validate {__MODULE__.ValidateWebhookUrl, []}
-      change after_action(&__MODULE__.invalidate_cache/3)
+
+      # A replaced URL is a different endpoint, so the previous one's failure run
+      # must not follow it: a config sitting at 9 consecutive failures would
+      # otherwise be disabled by the very first hiccup against the new webhook,
+      # and would keep displaying the old endpoint's error in the settings tab.
+      # AshCloak rewrites the encrypted field into an argument, so this reads the
+      # argument — status-only updates leave it nil and are untouched.
+      change fn changeset, _ctx ->
+        case Ash.Changeset.get_argument(changeset, :webhook_url) do
+          url when is_binary(url) ->
+            changeset
+            |> Ash.Changeset.change_attribute(:consecutive_failures, 0)
+            |> Ash.Changeset.change_attribute(:last_error, nil)
+            |> Ash.Changeset.change_attribute(:last_error_at, nil)
+
+          _ ->
+            changeset
+        end
+      end
+
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
 
     read :by_map do
@@ -146,7 +166,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
         |> Ash.Changeset.change_attribute(:last_error_at, DateTime.utc_now())
       end
 
-      change after_action(&__MODULE__.invalidate_cache/3)
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
 
     # Immediate disable, used only for a 404 (webhook deleted upstream, will
@@ -167,7 +187,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
         )
       end
 
-      change after_action(&__MODULE__.invalidate_cache/3)
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
   end
 
@@ -208,19 +228,36 @@ defmodule WandererApp.Api.MapDiscordNotification do
     identity :unique_map_id, [:map_id]
   end
 
+  # after_transaction, not after_action: an after_action hook runs *inside* the
+  # transaction, so a concurrent reader can re-populate the cache from the
+  # pre-commit row in the window between the invalidation and the commit.
+  # DiscordDispatcher caches with no TTL (discord_dispatcher.ex:270), so that
+  # stale entry would survive until the next config change — kills would keep
+  # being posted to a webhook the user had already replaced or disabled. The
+  # sibling resource map_webhook_subscription.ex still uses after_action for the
+  # same purpose; this deviates from it deliberately.
   @doc false
-  def invalidate_cache(_changeset, record, _context) do
+  def invalidate_cache(_changeset, {:ok, record} = result, _context) do
     WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.map_id)
-    {:ok, record}
+    result
   end
 
+  def invalidate_cache(_changeset, result, _context), do: result
+
   @doc false
-  def after_destroy(_changeset, record, _context) do
-    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.map_id)
+  def after_destroy(_changeset, {:error, _} = result, _context), do: result
+
+  # A destroy yields `:ok` or `{:ok, record}` depending on `return_destroyed?`,
+  # so the map id is taken from the changeset's own data, which is the record
+  # being destroyed in either case.
+  def after_destroy(changeset, result, _context) do
+    map_id = changeset.data.map_id
+
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
     # Stop the map's delivery worker too: without this, anything already queued
     # keeps posting to a webhook the user has just removed.
-    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(record.map_id)
-    {:ok, record}
+    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    result
   end
 
   @doc """

@@ -34,18 +34,40 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     if initialized_for?(socket, map_id) do
       {:ok, socket}
     else
-      notification = load_notification(map_id)
+      # Transient feedback belongs to the map that produced it: a "Saved." or an
+      # error raised against the previous map must not greet the next one.
+      # `system_options` is deliberately left alone — it holds live_select
+      # results for the global EVE system list, which is not map-scoped.
+      socket = socket |> assign(:error, nil) |> assign(:flash_message, nil)
 
-      {:ok,
-       socket
-       |> assign(:loaded_map_id, map_id)
-       # Recomputed, not assign_new: this branch runs on first mount *and*
-       # whenever the map changes, and the flag belongs to the map being shown.
-       # Retaining a previous `false` across a map switch would hide the webhook
-       # input on an unconfigured map, leaving no way to configure it. The
-       # in-session toggle survives because a same-map re-render returns early.
-       |> assign(:replacing_url?, is_nil(notification))
-       |> assign_notification(notification)}
+      case load_notification(map_id) do
+        {:ok, notification} ->
+          {:ok,
+           socket
+           |> assign(:loaded_map_id, map_id)
+           # Recomputed, not assign_new: this branch runs on first mount *and*
+           # whenever the map changes, and the flag belongs to the map being
+           # shown. Retaining a previous `false` across a map switch would hide
+           # the webhook input on an unconfigured map, leaving no way to
+           # configure it. The in-session toggle survives because a same-map
+           # re-render returns early.
+           |> assign(:replacing_url?, is_nil(notification))
+           |> assign_notification(notification)}
+
+        :error ->
+          # Deliberately does not set :loaded_map_id, so the next render retries
+          # rather than memoizing a failed read as "this map has no config" —
+          # which would show the create form and invite the user to re-enter a
+          # URL that is in fact already stored.
+          {:ok,
+           socket
+           |> assign_new(:replacing_url?, fn -> false end)
+           |> assign_notification(nil)
+           |> assign(
+             :error,
+             "Could not load the Discord configuration for this map. Try reopening this tab."
+           )}
+      end
     end
   end
 
@@ -56,12 +78,23 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   # Loads the masked-hint dependency explicitly: the resource does not decrypt
   # `webhook_url` by default, and masked_url/1 needs the plaintext to derive the
   # hint. Nothing else in this component reads the full URL back.
+  #
+  # `{:ok, nil}` means the map has no configuration; `:error` means the read
+  # itself failed. Collapsing the two would render a transient database failure
+  # as "not configured yet" — indistinguishable, to the user, from their
+  # settings having been lost.
   defp load_notification(map_id) do
     case MapDiscordNotification.by_map(map_id, load: [:webhook_url]) do
-      {:ok, rec} -> rec
-      _ -> nil
+      # `by_map` is `get? true`; depending on Ash's not-found configuration a
+      # missing row surfaces either as {:ok, nil} or as a NotFound error.
+      {:ok, rec} -> {:ok, rec}
+      {:error, error} -> if not_found?(error), do: {:ok, nil}, else: :error
     end
   end
+
+  defp not_found?(%Ash.Error.Query.NotFound{}), do: true
+  defp not_found?(%{errors: errors}) when is_list(errors), do: Enum.any?(errors, &not_found?/1)
+  defp not_found?(_), do: false
 
   @impl true
   def handle_event("save", %{"notification" => params}, socket) do
@@ -124,9 +157,13 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     {:noreply, assign(socket, :system_options, options)}
   end
 
+  # `raw` is client-supplied. `to_string/1` raises Protocol.UndefinedError on a
+  # map or a keyword-shaped param, and a raise inside `with` is not caught by
+  # `else` — a crafted payload would take down the LiveView. Checking for a
+  # binary first routes those to the same error response as a non-numeric id.
   def handle_event("add-excluded", %{"excluded" => %{"excluded_system" => raw}}, socket) do
     with %{} = rec <- socket.assigns.notification,
-         {id, ""} <- Integer.parse(to_string(raw)) do
+         id when is_integer(id) <- parse_system_id(raw) do
       update_excluded(socket, rec, Enum.uniq([id | rec.excluded_systems]))
     else
       _ -> {:noreply, assign(socket, :error, "Pick a system from the list.")}
@@ -138,7 +175,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   # missing record or a non-numeric id is survivable.
   def handle_event("remove-excluded", %{"system_id" => raw}, socket) do
     with %{} = rec <- socket.assigns.notification,
-         {id, ""} <- Integer.parse(to_string(raw)) do
+         id when is_integer(id) <- parse_system_id(raw) do
       update_excluded(socket, rec, Enum.reject(rec.excluded_systems, &(&1 == id)))
     else
       _ -> {:noreply, assign(socket, :error, "Could not remove that system.")}
@@ -197,6 +234,19 @@ defmodule WandererAppWeb.MapNotificationsComponent do
         end
     end
   end
+
+  # Form params always arrive as strings; live_select can hand back the integer
+  # option value directly. Anything else is malformed.
+  defp parse_system_id(id) when is_integer(id), do: id
+
+  defp parse_system_id(raw) when is_binary(raw) do
+    case Integer.parse(raw) do
+      {id, ""} -> id
+      _ -> :error
+    end
+  end
+
+  defp parse_system_id(_), do: :error
 
   defp update_excluded(socket, rec, excluded) do
     # load: as in handle_event("save", ...) — the updated record is assigned
