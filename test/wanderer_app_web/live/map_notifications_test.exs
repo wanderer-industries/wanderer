@@ -291,6 +291,74 @@ defmodule WandererAppWeb.MapNotificationsTest do
     refute render(view) =~ "Jita (30000142)"
   end
 
+  describe "delivery status refresh" do
+    setup %{conn: conn, map: map} do
+      {:ok, rec} =
+        MapDiscordNotification.create(%{
+          map_id: map.id,
+          webhook_url: "https://discord.com/api/webhooks/123/tok"
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+      view |> element("[phx-value-tab='notifications']") |> render_click()
+
+      %{view: view, rec: rec}
+    end
+
+    # The status broadcast reaches the LiveView, which then send_update/2s the
+    # component — and that is a second message to the same process. One render/1
+    # flushes the broadcast, the next flushes the component update, so the
+    # assertion has to read the second one.
+    defp settled(view) do
+      render(view)
+      render(view)
+    end
+
+    test "record_success surfaces the new delivery time without remounting", %{
+      view: view,
+      rec: rec
+    } do
+      assert render(view) =~ "No kills delivered yet."
+
+      {:ok, _} = MapDiscordNotification.record_success(rec)
+
+      html = settled(view)
+      assert html =~ "Last delivered:"
+      refute html =~ "No kills delivered yet."
+    end
+
+    test "record_failure surfaces the error and the failure count", %{view: view, rec: rec} do
+      refute render(view) =~ "Last error:"
+
+      {:ok, _} = MapDiscordNotification.record_failure(rec, "502 Bad Gateway")
+
+      html = settled(view)
+      assert html =~ "Last error: 502 Bad Gateway"
+      assert html =~ "(1 consecutive failures)"
+    end
+
+    test "disable surfaces the error that turned the config off", %{view: view, rec: rec} do
+      {:ok, _} = MapDiscordNotification.disable(rec, "404 Not Found")
+
+      assert settled(view) =~ "Last error: 404 Not Found"
+    end
+
+    test "a status broadcast for another map is ignored", %{view: view, rec: rec} do
+      # The component must not adopt a record it was not showing. Broadcasting
+      # on this map's topic with a different map_id is the shape a message still
+      # in flight across a map switch would have.
+      other = Factory.insert(:map, %{})
+
+      Phoenix.PubSub.broadcast(
+        WandererApp.PubSub,
+        MapDiscordNotification.status_topic(rec.map_id),
+        %{event: :discord_notification_status, map_id: other.id}
+      )
+
+      assert settled(view) =~ "No kills delivered yet."
+    end
+  end
+
   test "send test message reports the global kill-switch", %{conn: conn, map: map} do
     {:ok, _} =
       MapDiscordNotification.create(%{

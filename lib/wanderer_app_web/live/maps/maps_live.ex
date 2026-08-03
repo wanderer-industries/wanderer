@@ -202,11 +202,39 @@ defmodule WandererAppWeb.MapsLive do
           auto_upload: true,
           progress: &handle_progress/3
         )
+        |> subscribe_to_discord_status(map.id)
 
       _ ->
         socket
         |> put_flash(:error, "You don't have an access.")
         |> push_navigate(to: ~p"/maps")
+    end
+  end
+
+  # Subscribed here rather than inside MapNotificationsComponent: a
+  # live_component runs in this process, so it cannot receive messages itself,
+  # and it is unmounted every time the user leaves the Notifications tab — which
+  # would leak a fresh subscription on each visit. Doing it once per settings
+  # page keeps the subscription tied to the page's own lifetime.
+  defp subscribe_to_discord_status(socket, map_id) do
+    topic = WandererApp.Api.MapDiscordNotification.status_topic(map_id)
+
+    cond do
+      not socket.assigns.webhooks_enabled? ->
+        socket
+
+      socket.assigns[:discord_status_topic] == topic ->
+        socket
+
+      true ->
+        # handle_params can re-run for the same LiveView (push_patch back to
+        # settings), so drop the previous subscription before taking a new one.
+        if previous = socket.assigns[:discord_status_topic] do
+          Phoenix.PubSub.unsubscribe(WandererApp.PubSub, previous)
+        end
+
+        Phoenix.PubSub.subscribe(WandererApp.PubSub, topic)
+        assign(socket, :discord_status_topic, topic)
     end
   end
 
@@ -601,6 +629,19 @@ defmodule WandererAppWeb.MapsLive do
 
   @impl true
   def handle_event(_event, _, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  # A map, not a tuple: the {ref, result} clause below matches any two-element
+  # tuple and would call Process.demonitor/2 on whatever it found there.
+  def handle_info(%{event: :discord_notification_status, map_id: map_id}, socket) do
+    send_update(WandererAppWeb.MapNotificationsComponent,
+      id: "map-notifications",
+      map_id: map_id,
+      refresh_status: true
+    )
+
     {:noreply, socket}
   end
 

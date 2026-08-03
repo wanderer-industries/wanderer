@@ -123,6 +123,8 @@ defmodule WandererApp.Api.MapDiscordNotification do
       change set_attribute(:consecutive_failures, 0)
       change set_attribute(:last_error, nil)
       change set_attribute(:last_error_at, nil)
+
+      change after_transaction(&__MODULE__.broadcast_status/3)
     end
 
     # Increments the counter and disables the config once the run reaches
@@ -167,6 +169,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
       end
 
       change after_transaction(&__MODULE__.invalidate_cache/3)
+      change after_transaction(&__MODULE__.broadcast_status/3)
     end
 
     # Immediate disable, used only for a 404 (webhook deleted upstream, will
@@ -188,6 +191,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
       end
 
       change after_transaction(&__MODULE__.invalidate_cache/3)
+      change after_transaction(&__MODULE__.broadcast_status/3)
     end
   end
 
@@ -236,6 +240,29 @@ defmodule WandererApp.Api.MapDiscordNotification do
   # being posted to a webhook the user had already replaced or disabled. The
   # sibling resource map_webhook_subscription.ex still uses after_action for the
   # same purpose; this deviates from it deliberately.
+  @doc """
+  PubSub topic carrying delivery-status changes for a map's Discord config.
+
+  Delivery outcomes are written by the map's Discord worker, out of band from
+  whoever is looking at the settings tab, so the tab has no other way to learn
+  that a webhook has started failing — or has been auto-disabled after
+  #{@max_consecutive_failures} consecutive failures.
+  """
+  def status_topic(map_id), do: "discord_notification_status:#{map_id}"
+
+  @doc false
+  def broadcast_status(_changeset, {:ok, record} = result, _context) do
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      status_topic(record.map_id),
+      %{event: :discord_notification_status, map_id: record.map_id}
+    )
+
+    result
+  end
+
+  def broadcast_status(_changeset, result, _context), do: result
+
   @doc false
   def invalidate_cache(_changeset, {:ok, record} = result, _context) do
     WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.map_id)

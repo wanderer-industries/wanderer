@@ -16,6 +16,31 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   @max_search_results 20
 
   @impl true
+  # Delivery outcomes are written by the map's Discord worker, asynchronously.
+  # Without this path the tab keeps showing whatever it read when it opened: a
+  # webhook that has since been auto-disabled after a run of failures would
+  # still look healthy. The parent LiveView subscribes to the resource's status
+  # topic and forwards here via send_update/2.
+  #
+  # Only the record is refreshed — :replacing_url?, :error and :flash_message
+  # belong to what the user is doing right now and must survive a background
+  # refresh.
+  def update(%{refresh_status: true, map_id: map_id}, socket) do
+    # A broadcast still in flight when the component switched maps must not
+    # overwrite the map now on screen.
+    if socket.assigns[:loaded_map_id] == map_id do
+      case load_notification(map_id) do
+        {:ok, %{} = notification} -> {:ok, assign_notification(socket, notification)}
+        # Nothing to show, or a transient read failure: leave the tab as it is
+        # rather than blanking it from a background event the user did not ask
+        # for. The next explicit interaction goes through the normal load path.
+        _ -> {:ok, socket}
+      end
+    else
+      {:ok, socket}
+    end
+  end
+
   def update(%{map_id: map_id} = assigns, socket) do
     socket =
       socket
@@ -66,7 +91,11 @@ defmodule WandererAppWeb.MapNotificationsComponent do
           {:ok,
            socket
            |> assign(:loaded_map_id, nil)
-           |> assign_new(:replacing_url?, fn -> false end)
+           # Reset, not assign_new: a "Replace" toggle left over from the
+           # previous map would otherwise render the create form over a map
+           # whose configuration we just failed to read, inviting the user to
+           # re-enter a URL that may already be stored.
+           |> assign(:replacing_url?, false)
            |> assign_notification(nil)
            |> assign(
              :error,
