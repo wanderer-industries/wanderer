@@ -17,22 +17,45 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   @impl true
   def update(%{map_id: map_id} = assigns, socket) do
-    notification =
-      case MapDiscordNotification.by_map(map_id) do
-        {:ok, rec} -> rec
-        _ -> nil
-      end
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:live_select_id, @live_select_id)
+      |> assign(:min_search_length, @min_search_length)
+      |> assign_new(:system_options, fn -> [] end)
+      |> assign_new(:error, fn -> nil end)
+      |> assign_new(:flash_message, fn -> nil end)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:live_select_id, @live_select_id)
-     |> assign(:min_search_length, @min_search_length)
-     |> assign_new(:system_options, fn -> [] end)
-     |> assign_new(:error, fn -> nil end)
-     |> assign_new(:flash_message, fn -> nil end)
-     |> assign_new(:replacing_url?, fn -> is_nil(notification) end)
-     |> assign_notification(notification)}
+    # The parent re-renders this component whenever any of its own assigns
+    # change, and each pass here costs a by_map/1 read plus an excluded-systems
+    # lookup. Reload only on first mount or when the map actually changes; every
+    # write path calls assign_notification/2 directly, so mutations still
+    # refresh immediately.
+    if initialized_for?(socket, map_id) do
+      {:ok, socket}
+    else
+      notification = load_notification(map_id)
+
+      {:ok,
+       socket
+       |> assign(:loaded_map_id, map_id)
+       |> assign_new(:replacing_url?, fn -> is_nil(notification) end)
+       |> assign_notification(notification)}
+    end
+  end
+
+  defp initialized_for?(socket, map_id) do
+    Map.has_key?(socket.assigns, :notification) and socket.assigns[:loaded_map_id] == map_id
+  end
+
+  # Loads the masked-hint dependency explicitly: the resource does not decrypt
+  # `webhook_url` by default, and masked_url/1 needs the plaintext to derive the
+  # hint. Nothing else in this component reads the full URL back.
+  defp load_notification(map_id) do
+    case MapDiscordNotification.by_map(map_id, load: [:webhook_url]) do
+      {:ok, rec} -> rec
+      _ -> nil
+    end
   end
 
   @impl true
@@ -44,18 +67,24 @@ defmodule WandererAppWeb.MapNotificationsComponent do
       enabled?: checked?(params["enabled"])
     }
 
+    # Each write loads :webhook_url back explicitly. Without it the returned
+    # record carries %Ash.NotLoaded{} and the masked hint would silently
+    # degrade to "••••" until the next full reload.
     result =
       case {socket.assigns.notification, params["webhook_url"]} do
         {nil, url} ->
           MapDiscordNotification.create(
-            Map.merge(attrs, %{map_id: socket.assigns.map_id, webhook_url: url})
+            Map.merge(attrs, %{map_id: socket.assigns.map_id, webhook_url: url}),
+            load: [:webhook_url]
           )
 
         {rec, url} when is_binary(url) and url != "" ->
-          MapDiscordNotification.update(rec, Map.put(attrs, :webhook_url, url))
+          MapDiscordNotification.update(rec, Map.put(attrs, :webhook_url, url),
+            load: [:webhook_url]
+          )
 
         {rec, _} ->
-          MapDiscordNotification.update(rec, attrs)
+          MapDiscordNotification.update(rec, attrs, load: [:webhook_url])
       end
 
     case result do
@@ -165,7 +194,9 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   end
 
   defp update_excluded(socket, rec, excluded) do
-    case MapDiscordNotification.update(rec, %{excluded_systems: excluded}) do
+    # load: as in handle_event("save", ...) — the updated record is assigned
+    # straight into the template, which renders the masked webhook hint.
+    case MapDiscordNotification.update(rec, %{excluded_systems: excluded}, load: [:webhook_url]) do
       {:ok, updated} ->
         {:noreply, socket |> assign_notification(updated) |> assign(:error, nil)}
 

@@ -89,7 +89,16 @@ defmodule WandererApp.Api.Map do
   end
 
   actions do
-    defaults [:create, :read, :destroy]
+    defaults [:create, :read]
+
+    # Promoted out of `defaults` only to hang an after_action hook on it; the
+    # action is otherwise the stock primary destroy.
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      change after_action(&__MODULE__.after_destroy/3)
+    end
 
     read :by_slug do
       get? true
@@ -303,6 +312,18 @@ defmodule WandererApp.Api.Map do
                end
              end)
     end
+  end
+
+  @doc false
+  def after_destroy(_changeset, record, _context) do
+    # map_discord_notifications_v1 has `reference :map, on_delete: :delete`, so
+    # its rows are removed by the database cascade — MapDiscordNotification's
+    # own after_destroy/3 never runs for this path, and its cache entry and
+    # delivery worker would survive the map. Both helpers tolerate a cache or
+    # registry that was never started.
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.id)
+    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(record.id)
+    {:ok, record}
   end
 
   # Generate a unique slug from map name

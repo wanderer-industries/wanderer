@@ -66,7 +66,7 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
       "title" => "#{victim} lost a #{ship}",
       "url" => zkill_url(kill["killmail_id"]),
       "color" => @color,
-      "timestamp" => present(kill["kill_time"]),
+      "timestamp" => iso8601(kill["kill_time"]),
       "fields" => fields(kill, system_name)
     }
     |> maybe_put("thumbnail", thumbnail(kill["victim_ship_type_id"]))
@@ -148,6 +148,28 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   defp present(""), do: nil
   defp present(value) when is_binary(value), do: value
   defp present(value), do: to_string(value)
+
+  # Discord rejects the *entire* message with HTTP 400 on a malformed embed
+  # timestamp, so one bad kill_time would drop a batch of up to 10 kills.
+  # Nothing upstream enforces a format: MessageHandler forwards the field
+  # verbatim and ExternalEvents.broadcast/3 accepts arbitrary payload maps, so
+  # this arrives as a DateTime, a NaiveDateTime, or a string of unknown shape.
+  # An unparseable value yields nil, which drop_nils/1 strips — the embed still
+  # renders, just without a timestamp.
+  defp iso8601(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+
+  # Naive values carry no offset; Discord requires one. Kill times are UTC
+  # everywhere in this codebase, so stamping "Z" is the faithful reading.
+  defp iso8601(%NaiveDateTime{} = ndt), do: NaiveDateTime.to_iso8601(ndt) <> "Z"
+
+  defp iso8601(value) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, dt, _offset} -> DateTime.to_iso8601(dt)
+      _ -> nil
+    end
+  end
+
+  defp iso8601(_), do: nil
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

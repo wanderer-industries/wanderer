@@ -13,8 +13,37 @@ defmodule WandererApp.ExternalEvents.Discord.HttpStub do
 
   def start do
     case Agent.start_link(fn -> %{responses: [], requests: []} end, name: @agent) do
-      {:ok, pid} -> {:ok, pid}
-      {:error, {:already_started, pid}} -> reset() && {:ok, pid}
+      {:ok, pid} ->
+        {:ok, pid}
+
+      {:error, {:already_started, pid}} ->
+        # The Agent is linked to the test process that started it, so it exits
+        # when that test ends — but the registered name is released
+        # asynchronously. In that window start/0 sees {:already_started, pid}
+        # for a process that is already dying, and updating it exits the
+        # *caller* with an opaque :noproc. A Process.alive?/1 guard does not
+        # close the race (the pid can die right after the check), so monitor
+        # first, attempt the reset, and fall back to waiting for :DOWN.
+        ref = Process.monitor(pid)
+
+        try do
+          :ok = Agent.update(@agent, fn _ -> %{responses: [], requests: []} end)
+          Process.demonitor(ref, [:flush])
+          {:ok, pid}
+        catch
+          :exit, _ ->
+            receive do
+              {:DOWN, ^ref, :process, ^pid, _} -> start()
+            after
+              1_000 ->
+                raise "Discord HttpStub agent #{inspect(pid)} would not release its name"
+            end
+        end
+
+      # Without this the case raises CaseClauseError, which says nothing about
+      # what actually went wrong.
+      {:error, reason} ->
+        raise "Discord HttpStub agent failed to start: #{inspect(reason)}"
     end
   end
 

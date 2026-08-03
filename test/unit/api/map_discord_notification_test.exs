@@ -26,6 +26,51 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert {:ok, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
   end
 
+  test "accepts a mixed-case host", %{map: map} do
+    # URI.parse/1 downcases the scheme but leaves the host as typed, so a URL
+    # copied from a browser address bar can arrive capitalized.
+    url = "https://Discord.COM/api/webhooks/123/tok"
+    assert {:ok, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+  end
+
+  test "still rejects a mixed-case non-discord host", %{map: map} do
+    url = "https://Evil.Example.COM/api/webhooks/123/tok"
+    assert {:error, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+  end
+
+  test "does not decrypt webhook_url unless explicitly loaded", %{map: map} do
+    # The resource deliberately omits decrypt_by_default so that reads which do
+    # not need the credential — notably the copy DiscordDispatcher caches in
+    # ETS — never hold it in plaintext. Guard that here: a regression that
+    # re-adds decrypt_by_default would silently reintroduce the exposure.
+    {:ok, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    {:ok, plain} = MapDiscordNotification.by_map(map.id)
+    assert %Ash.NotLoaded{} = plain.webhook_url
+
+    {:ok, loaded} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+    assert loaded.webhook_url == valid_url()
+  end
+
+  test "an update cannot move the config to a different map", %{map: map} do
+    # :map_id is attribute_writable? for create, but reassigning it on update
+    # would move an existing webhook config out from under the per-map
+    # authorization the LiveView performs. The :update action's explicit
+    # accept list is what prevents it.
+    other = Factory.insert(:map, %{})
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    # Ash rejects the input outright rather than silently dropping it, so a
+    # caller attempting the move gets an error instead of a no-op.
+    assert {:error, %Ash.Error.Invalid{errors: errors}} =
+             MapDiscordNotification.update(rec, %{map_id: other.id})
+
+    assert Enum.any?(errors, &match?(%Ash.Error.Invalid.NoSuchInput{input: :map_id}, &1))
+
+    assert {:ok, reloaded} = MapDiscordNotification.by_map(map.id)
+    assert reloaded.id == rec.id
+  end
+
   test "rejects non-https scheme", %{map: map} do
     url = "http://discord.com/api/webhooks/123/tok"
     assert {:error, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
@@ -69,7 +114,7 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
            end)
 
     # The rejected value must not have been persisted.
-    {:ok, reloaded} = MapDiscordNotification.by_map(map.id)
+    {:ok, reloaded} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
     assert reloaded.webhook_url == valid_url()
   end
 
@@ -79,7 +124,9 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
     replacement = "https://canary.discord.com/api/v10/webhooks/999/newtok"
 
-    assert {:ok, updated} = MapDiscordNotification.update(rec, %{webhook_url: replacement})
+    assert {:ok, updated} =
+             MapDiscordNotification.update(rec, %{webhook_url: replacement}, load: [:webhook_url])
+
     assert updated.webhook_url == replacement
   end
 
@@ -132,15 +179,67 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert rec.enabled? == false
   end
 
-  test "record_failure re-reads the counter rather than trusting a stale copy", %{map: map} do
+  test "record_failure increments from the committed row, not a stale copy", %{map: map} do
     {:ok, stale} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
 
-    # Advance the stored counter behind the back of the `stale` struct.
+    # Advance the stored counter behind the back of the `stale` struct. The
+    # increment is an atomic SQL expression (`consecutive_failures + 1`), so the
+    # second call must still land on 2 even though `stale` still reads 0.
     {:ok, _} = MapDiscordNotification.record_failure(stale, "first")
 
     {:ok, updated} = MapDiscordNotification.record_failure(stale, "second")
 
     assert updated.consecutive_failures == 2
+  end
+
+  test "record_failure disables against the committed counter, not the stale one", %{map: map} do
+    {:ok, stale} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    # Drive the row to 9 without refreshing `stale`, which still reads 0.
+    Enum.reduce(1..9, stale, fn _, acc ->
+      {:ok, updated} = MapDiscordNotification.record_failure(acc, "boom")
+      updated
+    end)
+
+    # The threshold is evaluated in SQL over the row's own pre-update value, so
+    # this 10th failure disables even though the caller's copy says otherwise.
+    {:ok, updated} = MapDiscordNotification.record_failure(stale, "tenth")
+
+    assert updated.consecutive_failures == 10
+    assert updated.enabled? == false
+  end
+
+  test "record_failure truncates an over-long error", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    # :last_error has a max_length of 500; without truncation the write would be
+    # rejected outright, losing the failure record entirely.
+    {:ok, updated} = MapDiscordNotification.record_failure(rec, String.duplicate("x", 900))
+
+    assert String.length(updated.last_error) == 500
+  end
+
+  test "disable turns the config off immediately and stores the error", %{map: map} do
+    # The 404 path: the webhook is gone upstream and will never recover, so this
+    # bypasses record_failure's 10-failure threshold entirely.
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    {:ok, disabled} = MapDiscordNotification.disable(rec, "404 webhook not found")
+
+    assert disabled.enabled? == false
+    assert disabled.last_error == "404 webhook not found"
+    assert disabled.last_error_at != nil
+    # Not a failure *run* — the counter is untouched.
+    assert disabled.consecutive_failures == 0
+  end
+
+  test "disable truncates an over-long error", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    {:ok, disabled} = MapDiscordNotification.disable(rec, String.duplicate("y", 900))
+
+    assert disabled.enabled? == false
+    assert String.length(disabled.last_error) == 500
   end
 
   test "record_success clears the failure state", %{map: map} do

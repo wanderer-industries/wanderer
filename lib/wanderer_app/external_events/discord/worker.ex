@@ -229,7 +229,11 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         # Reload every time: the URL may have been replaced or the config
         # deleted since this event was queued. This reload is the one that
         # matters — nothing is sent against a stale record.
-        case MapDiscordNotification.by_id(current.notification_id) do
+        #
+        # The explicit load is required: the resource does not decrypt
+        # `webhook_url` by default, so without it do_post/2 would read
+        # %Ash.NotLoaded{}. This is the only send-path decrypt in the app.
+        case MapDiscordNotification.by_id(current.notification_id, load: [:webhook_url]) do
           {:ok, notification} ->
             state = put_current(state, %{current | notification: notification})
 

@@ -34,7 +34,14 @@ defmodule WandererApp.Api.MapDiscordNotification do
   cloak do
     vault(WandererApp.Vault)
     attributes([:webhook_url])
-    decrypt_by_default([:webhook_url])
+    # Deliberately NOT decrypt_by_default: AshCloak applies that as a
+    # resource-wide read preparation and update change, so every read and every
+    # status write would decrypt the credential — including the notification
+    # struct DiscordDispatcher caches in ETS, which would then hold the webhook
+    # in plaintext for the cache TTL. Only two call sites need the plaintext
+    # (Discord.Worker's POST and the settings tab's masked hint) and both load
+    # `:webhook_url` explicitly. Everywhere else `webhook_url` is
+    # %Ash.NotLoaded{}; read it via the argument, as ValidateWebhookUrl does.
   end
 
   code_interface do
@@ -72,6 +79,11 @@ defmodule WandererApp.Api.MapDiscordNotification do
     update :update do
       primary? true
       require_atomic? false
+      # Explicit accept, narrower than default_accept: :map_id is writable
+      # (belongs_to sets attribute_writable?), so without this an :update could
+      # move an existing webhook config to a different map, bypassing the
+      # per-map scoping the LiveView authorizes against. :create still needs it.
+      accept [:webhook_url, :enabled?, :wh_only, :excluded_systems]
       validate {__MODULE__.ValidateWebhookUrl, []}
       change after_action(&__MODULE__.invalidate_cache/3)
     end
@@ -92,44 +104,45 @@ defmodule WandererApp.Api.MapDiscordNotification do
       change set_attribute(:last_error_at, nil)
     end
 
-    # Increments the counter from the value re-read inside the change rather
-    # than from a possibly-stale in-memory copy, and disables the config once
-    # the run reaches @max_consecutive_failures.
+    # Increments the counter and disables the config once the run reaches
+    # @max_consecutive_failures.
     #
-    # This read-then-write is NOT atomic across nodes: two concurrent deliveries
-    # on separate nodes could each read N and write N+1, losing an increment.
-    # That is safe under the single-delivery-node assumption documented in the
-    # spec (one worker per map, one node), and the failure mode is benign — a
-    # config disables slightly later than it should. If the app is ever
-    # clustered, replace this with an atomic SQL increment.
+    # Both writes are atomic SQL expressions, so the increment is a single
+    # UPDATE with no preceding read: concurrent deliveries cannot lose an
+    # increment, and the threshold is evaluated against the row's committed
+    # value rather than a possibly-stale in-memory copy. This holds under
+    # clustering, not just the single-delivery-node assumption in the spec.
+    #
+    # `require_atomic? false` remains because :last_error is set from an
+    # argument in a regular change; the two counter writes are atomic
+    # regardless.
     update :record_failure do
       require_atomic? false
       accept []
       argument :error, :string, allow_nil?: false
 
+      change atomic_update(:consecutive_failures, expr(consecutive_failures + 1))
+
+      # Evaluated in SQL as a CASE over the pre-update value, so it agrees with
+      # the increment above even if another delivery commits in between.
+      change atomic_update(
+               :enabled?,
+               expr(
+                 if consecutive_failures + 1 >= ^@max_consecutive_failures do
+                   false
+                 else
+                   enabled?
+                 end
+               )
+             )
+
       change fn changeset, _ctx ->
-        current =
-          case Ash.get(__MODULE__, changeset.data.id) do
-            {:ok, fresh} -> fresh.consecutive_failures || 0
-            _ -> Ash.Changeset.get_data(changeset, :consecutive_failures) || 0
-          end
-
-        next = current + 1
-
-        changeset =
-          changeset
-          |> Ash.Changeset.change_attribute(:consecutive_failures, next)
-          |> Ash.Changeset.change_attribute(
-            :last_error,
-            changeset |> Ash.Changeset.get_argument(:error) |> String.slice(0, @max_error_length)
-          )
-          |> Ash.Changeset.change_attribute(:last_error_at, DateTime.utc_now())
-
-        if next >= @max_consecutive_failures do
-          Ash.Changeset.change_attribute(changeset, :enabled?, false)
-        else
-          changeset
-        end
+        changeset
+        |> Ash.Changeset.change_attribute(
+          :last_error,
+          changeset |> Ash.Changeset.get_argument(:error) |> String.slice(0, @max_error_length)
+        )
+        |> Ash.Changeset.change_attribute(:last_error_at, DateTime.utc_now())
       end
 
       change after_action(&__MODULE__.invalidate_cache/3)
@@ -216,7 +229,9 @@ defmodule WandererApp.Api.MapDiscordNotification do
   def valid_webhook_url?(url) when is_binary(url) do
     case URI.parse(url) do
       %URI{scheme: "https", host: host, path: path} when is_binary(host) and is_binary(path) ->
-        host in @discord_hosts and valid_webhook_path?(path)
+        # URI.parse/1 normalizes the scheme but not the host, so a pasted
+        # "https://Discord.com/..." would otherwise fail the allowlist.
+        String.downcase(host) in @discord_hosts and valid_webhook_path?(path)
 
       _ ->
         false
@@ -250,6 +265,14 @@ defmodule WandererApp.Api.MapDiscordNotification do
       # nil — which fails every validity check and rejects even valid URLs.
       # Read the argument first so the value being written is what gets checked.
       case Ash.Changeset.get_argument_or_attribute(changeset, :webhook_url) do
+        # The action is not writing a URL. Because the resource does not
+        # decrypt by default, the attribute falls back to the unloaded
+        # calculation, so every status-only update (enabled?, wh_only,
+        # excluded_systems) lands here. There is nothing to validate — the
+        # stored ciphertext is untouched.
+        %Ash.NotLoaded{} ->
+          :ok
+
         nil ->
           :ok
 

@@ -5,6 +5,42 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
   alias WandererAppWeb.Factory
 
   describe "format_kill/2" do
+    test "passes a valid iso8601 kill_time through as the timestamp" do
+      kill = Factory.build(:killmail, %{kill_time: "2026-08-01T12:00:00Z"})
+      embed = EmbedFormatter.format_kill(kill, "J123456")
+
+      assert embed["timestamp"] == "2026-08-01T12:00:00Z"
+    end
+
+    test "normalizes a DateTime kill_time" do
+      # to_string/1 on a DateTime yields "2026-08-01 12:00:00Z" — a space
+      # instead of "T" — which Discord rejects with a 400 for the whole message.
+      kill = Factory.build(:killmail, %{kill_time: ~U[2026-08-01 12:00:00Z]})
+      embed = EmbedFormatter.format_kill(kill, "J123456")
+
+      assert embed["timestamp"] == "2026-08-01T12:00:00Z"
+    end
+
+    test "stamps a naive kill_time as UTC" do
+      kill = Factory.build(:killmail, %{kill_time: ~N[2026-08-01 12:00:00]})
+      embed = EmbedFormatter.format_kill(kill, "J123456")
+
+      assert embed["timestamp"] == "2026-08-01T12:00:00Z"
+    end
+
+    test "omits the timestamp entirely when kill_time is unparseable" do
+      # Dropping the key is what keeps the rest of the batch deliverable.
+      for bad <- ["not-a-date", "", nil, 1_754_049_600] do
+        kill = Factory.build(:killmail, %{kill_time: bad})
+        embed = EmbedFormatter.format_kill(kill, "J123456")
+
+        refute Map.has_key?(embed, "timestamp"),
+               "expected no timestamp for #{inspect(bad)}"
+
+        assert is_binary(embed["title"])
+      end
+    end
+
     test "includes victim, ship, system and zkill url" do
       kill = Factory.build(:killmail, %{killmail_id: 12_345})
       embed = EmbedFormatter.format_kill(kill, "J123456")

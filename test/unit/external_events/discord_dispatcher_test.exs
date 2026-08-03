@@ -3,6 +3,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   # Agent, and this file also mutates application env.
   use WandererApp.DataCase, async: false
 
+  import WandererApp.ExternalEvents.Discord.TestHelpers
+
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.ExternalEvents.{DiscordDispatcher, Event}
   alias WandererApp.ExternalEvents.Discord.{EmbedFormatter, HttpStub, WorkerSupervisor}
@@ -97,11 +99,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   # rather than guess: drain the dispatcher's mailbox, then the worker's.
   defp settle(map_id) do
     :sys.get_state(DiscordDispatcher)
-
-    case Registry.lookup(WorkerSupervisor.registry(), map_id) do
-      [{pid, _}] -> :sys.get_state(pid)
-      [] -> :no_worker
-    end
+    sync(map_id)
   end
 
   # Asserting "nothing was delivered" needs more than `settle/1`: the HTTP call
@@ -136,25 +134,6 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
             Process.sleep(25)
             await_worker_idle(map_id, deadline)
         end
-    end
-  end
-
-  defp wait_for_requests(count, timeout \\ 2_000) do
-    deadline = System.monotonic_time(:millisecond) + timeout
-    do_wait(count, deadline)
-  end
-
-  defp do_wait(count, deadline) do
-    cond do
-      length(HttpStub.requests()) >= count ->
-        HttpStub.requests()
-
-      System.monotonic_time(:millisecond) > deadline ->
-        flunk("expected #{count} requests, got #{length(HttpStub.requests())}")
-
-      true ->
-        Process.sleep(25)
-        do_wait(count, deadline)
     end
   end
 
@@ -358,6 +337,27 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
     # Distinct webhook URLs prove both maps were served, not one map twice.
     urls = requests |> Enum.map(&elem(&1, 0)) |> Enum.sort()
     assert urls == Enum.sort(["https://discord.com/api/webhooks/123/tok", url_b])
+  end
+
+  # The DB cascade (`reference :map, on_delete: :delete`) removes the
+  # notification row without running MapDiscordNotification.after_destroy/3, so
+  # the Map resource's own destroy hook is the only thing clearing the cache.
+  # Without it a warmed entry outlives the map for the full cache TTL.
+  test "destroying a map clears its warmed notification cache entry", %{map: map} do
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 777_777})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    settle(map.id)
+    wait_for_requests(1)
+
+    # Warmed by the dispatch above.
+    assert {:ok, cached} = Cachex.get(:discord_notification_cache, map.id)
+    refute is_nil(cached)
+
+    :ok = Ash.destroy!(map)
+
+    assert {:ok, nil} = Cachex.get(:discord_notification_cache, map.id)
   end
 
   # Kills past the formatter's per-event cap are never rendered into a message,

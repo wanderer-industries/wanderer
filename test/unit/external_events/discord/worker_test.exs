@@ -1,6 +1,8 @@
 defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
   use WandererApp.DataCase, async: false
 
+  import WandererApp.ExternalEvents.Discord.TestHelpers
+
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.ExternalEvents.Discord.{HttpStub, Worker, WorkerSupervisor}
   alias WandererAppWeb.Factory
@@ -23,33 +25,6 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
   end
 
   defp message, do: %{"embeds" => [%{"title" => "test"}]}
-
-  defp wait_for_requests(count, timeout \\ 2_000) do
-    deadline = System.monotonic_time(:millisecond) + timeout
-    do_wait(count, deadline)
-  end
-
-  defp do_wait(count, deadline) do
-    if length(HttpStub.requests()) >= count do
-      HttpStub.requests()
-    else
-      if System.monotonic_time(:millisecond) > deadline do
-        flunk("expected #{count} requests, got #{length(HttpStub.requests())}")
-      else
-        Process.sleep(25)
-        do_wait(count, deadline)
-      end
-    end
-  end
-
-  # Blocks until the worker has drained its mailbox up to this point. Cheaper
-  # and far less flaky than sleeping, now that every attempt is scheduled.
-  defp sync(map_id) do
-    case Registry.lookup(WorkerSupervisor.registry(), map_id) do
-      [{pid, _}] -> :sys.get_state(pid)
-      [] -> :no_worker
-    end
-  end
 
   defp await_condition(fun, timeout \\ 2_000) do
     deadline = System.monotonic_time(:millisecond) + timeout
