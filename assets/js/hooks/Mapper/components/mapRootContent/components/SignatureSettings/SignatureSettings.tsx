@@ -157,6 +157,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           targetSystemClassGroup,
           targetSystemUuid,
           targetSolarSystemIdStr,
+          currentSystem?.system_static_info?.statics,
         );
         out = updatedSignature;
       }

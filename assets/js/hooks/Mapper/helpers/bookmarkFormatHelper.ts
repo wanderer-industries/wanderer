@@ -30,6 +30,28 @@ const getTimeStatusString = (status?: TimeStatus, mapping?: Record<string, strin
   }
 };
 
+const getDirectionString = (isIncoming: boolean, mapping?: Record<string, string>): string => {
+  if (isIncoming) {
+    return mapping?.direction_incoming !== undefined ? mapping.direction_incoming : 'In';
+  }
+  return mapping?.direction_outgoing !== undefined ? mapping.direction_outgoing : 'Out';
+};
+
+const getSpawnTypeString = (
+  signatureType: string | undefined,
+  currentSystemStatics: string[] | undefined,
+  mapping?: Record<string, string>,
+): string => {
+  if (!signatureType) return '';
+  if (signatureType === 'K162') {
+    return mapping?.spawn_k162 !== undefined ? mapping.spawn_k162 : 'K162';
+  }
+  if (currentSystemStatics?.includes(signatureType)) {
+    return mapping?.spawn_static !== undefined ? mapping.spawn_static : 'Static';
+  }
+  return mapping?.spawn_wandering !== undefined ? mapping.spawn_wandering : 'Wandering';
+};
+
 const getMassStatusString = (status?: MassState, mapping?: Record<string, string>): string => {
   switch (status) {
     case MassState.normal:
@@ -173,6 +195,7 @@ export const formatBookmarkName = (
   systemSignatures?: Record<string, SystemSignature[]>,
   currentSystemId?: string,
   currentSolarSystemId?: string,
+  currentSystemStatics?: string[],
 ): string => {
   let result = formatStr;
   const info = parseSignatureCustomInfo(signature.custom_info);
@@ -356,6 +379,12 @@ export const formatBookmarkName = (
   // Replace {description} -> signature.description
   result = result.replace(/\{description\}/g, () => signature.description || '');
 
+  // Replace {direction} -> incoming (K162) or outgoing (all other types)
+  result = result.replace(/\{direction\}/g, () => getDirectionString(signature.type === 'K162', mapping));
+
+  // Replace {spawn} -> Static or Wandering for outgoing wormholes (empty for K162)
+  result = result.replace(/\{spawn\}/g, () => getSpawnTypeString(signature.type, currentSystemStatics, mapping));
+
   // Cleanup whitespace
   return result.trim().replace(/\s+/g, ' ');
 };
@@ -378,6 +407,7 @@ export const handleAutoBookmark = async (
   targetSystemClassGroup: string | null,
   targetSystemUuid?: string,
   targetSolarSystemId?: string,
+  currentSystemStatics?: string[],
 ): Promise<{ updatedSignature: SystemSignature; shouldUpdate: boolean }> => {
   let updatedSignature = signature;
   let shouldUpdate = false;
@@ -483,6 +513,7 @@ export const handleAutoBookmark = async (
       systemSignatures,
       currentSystemId,
       currentSolarSystemId,
+      currentSystemStatics,
     );
 
     // Run this synchronously to avoid clipboard issues if possible
