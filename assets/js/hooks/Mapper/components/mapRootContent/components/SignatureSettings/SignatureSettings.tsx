@@ -8,6 +8,7 @@ import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { handleAutoBookmark } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
@@ -157,7 +158,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
           targetSystemClassGroup,
           targetSystemUuid,
           targetSolarSystemIdStr,
-          currentSystem?.system_static_info?.statics,
+          getSystemStaticInfo(solarSystemIdStr)?.statics,
         );
         out = updatedSignature;
       }
