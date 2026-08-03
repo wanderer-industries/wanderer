@@ -40,7 +40,7 @@ const VARIABLES = [
   { id: '{temporary_name}', desc: 'Temporary name if set' },
   { id: '{description}', desc: 'Custom description' },
   { id: '{direction}', desc: 'Wormhole direction (e.g., In, Out)' },
-  { id: '{spawn}', desc: 'Spawn type for outgoing wormholes (e.g., Static, Wandering)' },
+  { id: '{spawn_type}', desc: 'Spawn type for outgoing wormholes (e.g., Static, Wandering)' },
 ];
 
 interface CustomMappingInputProps {

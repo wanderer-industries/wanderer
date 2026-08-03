@@ -382,8 +382,8 @@ export const formatBookmarkName = (
   // Replace {direction} -> incoming (K162) or outgoing (all other types)
   result = result.replace(/\{direction\}/g, () => getDirectionString(signature.type === 'K162', mapping));
 
-  // Replace {spawn} -> Static or Wandering for outgoing wormholes (empty for K162)
-  result = result.replace(/\{spawn\}/g, () => getSpawnTypeString(signature.type, currentSystemStatics, mapping));
+  // Replace {spawn_type} -> Static or Wandering for outgoing wormholes, or K162 for incoming
+  result = result.replace(/\{spawn_type\}/g, () => getSpawnTypeString(signature.type, currentSystemStatics, mapping));
 
   // Cleanup whitespace
   return result.trim().replace(/\s+/g, ' ');
