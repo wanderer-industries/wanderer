@@ -11,4 +11,5 @@ export type MapOptions = {
   show_linked_signature_id_temp_name: StringBoolean;
   show_temp_system_name: StringBoolean;
   store_custom_labels: StringBoolean;
+  intel_source_map_id?: string | null;
 };

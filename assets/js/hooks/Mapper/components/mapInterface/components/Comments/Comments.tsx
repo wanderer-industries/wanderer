@@ -39,15 +39,15 @@ export const Comments = ({}: CommentsProps) => {
   if (commentsList.length === 0) {
     return (
       <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">
-        Not comments found here
+        No comments found here
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-1 whitespace-nowrap overflow-auto text-ellipsis custom-scrollbar">
-      {commentsList.map(({ id, text, updated_at, characterEveId }) => (
-        <MarkdownComment key={id} text={text} time={updated_at} characterEveId={characterEveId} id={id} />
+      {commentsList.map(({ id, text, updated_at, characterEveId, inherited_from_map_id }) => (
+        <MarkdownComment key={id} text={text} time={updated_at} characterEveId={characterEveId} id={id} inherited={!!inherited_from_map_id} />
       ))}
     </div>
   );
