@@ -314,6 +314,10 @@ defmodule WandererAppWeb.MapNotificationsTest do
       render(view)
     end
 
+    defp subscribers(topic) do
+      WandererApp.PubSub |> Registry.lookup(topic) |> Enum.map(&elem(&1, 0))
+    end
+
     test "record_success surfaces the new delivery time without remounting", %{
       view: view,
       rec: rec
@@ -356,6 +360,47 @@ defmodule WandererAppWeb.MapNotificationsTest do
       )
 
       assert settled(view) =~ "No kills delivered yet."
+    end
+
+    test "patching to another map's settings drops the previous subscription", %{
+      view: view,
+      character: character,
+      rec: rec_a
+    } do
+      map_b = Factory.insert(:map, %{owner_id: character.id})
+
+      {:ok, rec_b} =
+        MapDiscordNotification.create(%{
+          map_id: map_b.id,
+          webhook_url: "https://discord.com/api/webhooks/456/tok"
+        })
+
+      # Same LiveView process throughout: render_patch/2 re-runs handle_params
+      # without remounting, which is exactly the path
+      # subscribe_to_discord_status/2 guards against.
+      render_patch(view, ~p"/maps/#{map_b.slug}/settings")
+      view |> element("[phx-value-tab='notifications']") |> render_click()
+
+      assert :sys.get_state(view.pid).socket.assigns.discord_status_topic ==
+               MapDiscordNotification.status_topic(map_b.id)
+
+      # Phoenix.PubSub registers subscribers in a Registry named after the
+      # pubsub (pubsub.ex:121), so this reads the actual subscription list. It
+      # is checked directly because the behavioural assertions below cannot
+      # distinguish: the component's own loaded_map_id guard drops map A's
+      # update even when the LiveView is still subscribed, so they pass with
+      # the unsubscribe deleted. This is what catches a leaked subscription.
+      refute view.pid in subscribers(MapDiscordNotification.status_topic(rec_a.map_id))
+      assert view.pid in subscribers(MapDiscordNotification.status_topic(map_b.id))
+
+      # Map A's worker is still delivering. Neither the LiveView (unsubscribed)
+      # nor the component (loaded for B) may act on it.
+      {:ok, _} = MapDiscordNotification.record_success(rec_a)
+      assert settled(view) =~ "No kills delivered yet."
+
+      # ...while map B's own updates still arrive.
+      {:ok, _} = MapDiscordNotification.record_success(rec_b)
+      assert settled(view) =~ "Last delivered:"
     end
   end
 
