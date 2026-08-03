@@ -465,7 +465,7 @@ defmodule WandererAppWeb.MapNotificationsTest do
     html = view |> element("button[phx-click='delete']") |> render_click()
 
     refute html =~ "Removed."
-    assert render(view) =~ "class=\"text-sm text-red-400\""
+    assert render(view) =~ "Could not save the Discord configuration."
   end
 
   test "a non-owner cannot reach map settings", %{conn: conn} do

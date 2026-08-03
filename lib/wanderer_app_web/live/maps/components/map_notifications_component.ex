@@ -8,6 +8,8 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   use WandererAppWeb, :live_component
 
+  require Logger
+
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.Api.MapSolarSystem
 
@@ -238,9 +240,13 @@ defmodule WandererAppWeb.MapNotificationsComponent do
          socket |> assign(:error, "Save a webhook URL first.") |> assign(:flash_message, nil)}
 
       {:error, other} ->
+        # The delivery path can hand back any term; none of them are meant for
+        # a user, and this tab's terms are ones the webhook URL travels with.
+        Logger.warning("Discord test message failed: #{inspect(other)}")
+
         {:noreply,
          socket
-         |> assign(:error, "Could not send a test message: #{inspect(other)}")
+         |> assign(:error, "Could not send a test message. Try again later.")
          |> assign(:flash_message, nil)}
     end
   end
@@ -357,14 +363,26 @@ defmodule WandererAppWeb.MapNotificationsComponent do
   defp checked?(true), do: true
   defp checked?(_), do: false
 
-  defp humanize_error(%Ash.Error.Invalid{errors: errors}) do
-    Enum.map_join(errors, ", ", fn
-      %{message: message} when is_binary(message) -> message
-      other -> inspect(other)
-    end)
+  defp humanize_error(%Ash.Error.Invalid{errors: errors} = error) do
+    case Enum.filter(errors, &is_binary(Map.get(&1, :message))) do
+      [] -> log_error(error)
+      messages -> Enum.map_join(messages, ", ", & &1.message)
+    end
   end
 
-  defp humanize_error(other), do: inspect(other)
+  defp humanize_error(other), do: log_error(other)
+
+  # Only authored validation messages are rendered. Everything else is logged
+  # and replaced with a fixed string: the terms reaching here are attached to a
+  # changeset whose arguments hold the plaintext webhook URL (AshCloak rewrites
+  # the encrypted attribute into an argument). Ash currently redacts the
+  # changeset to "#Changeset<>" when it builds an error class, so this closes
+  # the path rather than a demonstrated leak — but the raw struct is not
+  # something to render to a user either way.
+  defp log_error(error) do
+    Logger.warning("Discord notification settings error: #{inspect(error)}")
+    "Could not save the Discord configuration. Try again later."
+  end
 
   defp masked_url(nil), do: ""
 

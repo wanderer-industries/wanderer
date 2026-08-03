@@ -118,7 +118,12 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   # "skips non-wormhole systems" green.
   defp refute_delivery(map_id, timeout \\ 2_000) do
     settle(map_id)
-    await_worker_idle(map_id, System.monotonic_time(:millisecond) + timeout)
+
+    case await_worker_idle(map_id, System.monotonic_time(:millisecond) + timeout) do
+      :timeout -> flunk("worker for #{map_id} did not become idle within #{timeout}ms")
+      _ -> :ok
+    end
+
     assert HttpStub.requests() == []
   end
 

@@ -91,13 +91,13 @@ defmodule WandererApp.Api.Map do
   actions do
     defaults [:create, :read]
 
-    # Promoted out of `defaults` only to hang an after_action hook on it; the
-    # action is otherwise the stock primary destroy.
+    # Promoted out of `defaults` only to hang an after_transaction hook on it;
+    # the action is otherwise the stock primary destroy.
     destroy :destroy do
       primary? true
       require_atomic? false
 
-      change after_action(&__MODULE__.after_destroy/3)
+      change after_transaction(&__MODULE__.after_destroy/3)
     end
 
     read :by_slug do
@@ -315,15 +315,25 @@ defmodule WandererApp.Api.Map do
   end
 
   @doc false
-  def after_destroy(_changeset, record, _context) do
+  def after_destroy(_changeset, {:error, _} = result, _context), do: result
+
+  def after_destroy(changeset, result, _context) do
     # map_discord_notifications_v1 has `reference :map, on_delete: :delete`, so
     # its rows are removed by the database cascade — MapDiscordNotification's
     # own after_destroy/3 never runs for this path, and its cache entry and
     # delivery worker would survive the map. Both helpers tolerate a cache or
     # registry that was never started.
-    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.id)
-    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(record.id)
-    {:ok, record}
+    #
+    # after_transaction, not after_action, for the reason spelled out in
+    # map_discord_notification.ex: an after_action hook runs inside the
+    # transaction, so a concurrent dispatcher can re-cache the pre-commit row.
+    # A destroy yields `:ok` or `{:ok, record}` depending on `return_destroyed?`,
+    # so the id comes from the changeset's own data either way.
+    map_id = changeset.data.id
+
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
+    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    result
   end
 
   # Generate a unique slug from map name

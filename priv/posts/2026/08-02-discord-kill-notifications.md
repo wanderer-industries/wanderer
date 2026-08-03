@@ -112,8 +112,9 @@ system:
 export WANDERER_WEBHOOKS_ENABLED="true"
 ```
 
-With it off, the Notifications tab still renders but "Send test message" will
-tell you notifications are disabled on this server.
+With it off, the Notifications tab is not shown at all. If an administrator
+turns the switch off while the tab is already open, "Send test message" reports
+that notifications are disabled on this server.
 
 Delivery uses its own isolated connection pool, so a slow Discord cannot back up
 the rest of the application. If you run a large instance with many maps sending
