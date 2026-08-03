@@ -175,6 +175,16 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     end
   end
 
+  # Same reasoning as the add-excluded fallback below: a submit without the
+  # "notification" key is not something the rendered form produces, so answer it
+  # rather than taking the LiveView down with a FunctionClauseError.
+  def handle_event("save", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:error, "Could not read the submitted settings.")
+     |> assign(:flash_message, nil)}
+  end
+
   def handle_event("replace-url", _params, socket) do
     {:noreply, assign(socket, :replacing_url?, true)}
   end
@@ -435,8 +445,8 @@ defmodule WandererAppWeb.MapNotificationsComponent do
         Posts kills for systems on this map to a Discord channel.
       </p>
 
-      <p :if={@error} class="text-sm text-red-400">{@error}</p>
-      <p :if={@flash_message} class="text-sm text-green-400">{@flash_message}</p>
+      <p :if={@error} role="alert" class="text-sm text-red-400">{@error}</p>
+      <p :if={@flash_message} role="alert" class="text-sm text-green-400">{@flash_message}</p>
 
       <.form
         :let={f}
