@@ -55,12 +55,17 @@ defmodule WandererAppWeb.MapNotificationsComponent do
            |> assign_notification(notification)}
 
         :error ->
-          # Deliberately does not set :loaded_map_id, so the next render retries
-          # rather than memoizing a failed read as "this map has no config" —
-          # which would show the create form and invite the user to re-enter a
-          # URL that is in fact already stored.
+          # Clears :loaded_map_id rather than leaving it alone. Leaving it would
+          # keep the *previous* map's id, and assign_notification(nil) below has
+          # already wiped that map's record — so switching back to it would
+          # satisfy initialized_for?/2, short-circuit, and render a configured
+          # map as unconfigured. nil matches no map id, so every subsequent
+          # render retries the read instead of memoizing a failed one as "this
+          # map has no config", which would invite the user to re-enter a URL
+          # that is in fact already stored.
           {:ok,
            socket
+           |> assign(:loaded_map_id, nil)
            |> assign_new(:replacing_url?, fn -> false end)
            |> assign_notification(nil)
            |> assign(
