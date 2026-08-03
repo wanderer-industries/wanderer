@@ -421,6 +421,7 @@
                   </a>
                 </li>
                 <li
+                  :if={@webhooks_enabled?}
                   class={[
                     "p-unselectable-text",
                     classes(
@@ -663,7 +664,7 @@
               />
 
               <.live_component
-                :if={@active_settings_tab == "notifications"}
+                :if={@webhooks_enabled? && @active_settings_tab == "notifications"}
                 module={WandererAppWeb.MapNotificationsComponent}
                 id="map-notifications"
                 map_id={@map.id}

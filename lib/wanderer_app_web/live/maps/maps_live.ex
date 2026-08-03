@@ -28,6 +28,7 @@ defmodule WandererAppWeb.MapsLive do
        characters: user_characters,
        importing: false,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
+       webhooks_enabled?: WandererApp.Env.webhooks_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
        acls: [],
        location: nil,
