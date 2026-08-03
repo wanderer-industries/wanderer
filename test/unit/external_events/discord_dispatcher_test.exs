@@ -57,26 +57,33 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   # `MapTestHelpers.default_test_systems/0` stores.
   #
   # `:system_static_info_cache` is a GLOBAL Cachex table, not sandboxed per test,
-  # so these entries must be removed again: `CommonAPIControllerTest` inserts its
-  # own Jita row and reads it back through this same cache, and a partial entry
-  # left behind here makes it fail on a missing `region_id`.
+  # so whatever was there before has to come back afterwards. Deleting the keys
+  # instead is not enough: several suites seed the full Jita row via
+  # `setup_system_static_info_cache/0` and never clean it up, and later tests
+  # (`CommonAPIControllerTest`, `OpenAPIValidationTest`) read it back through
+  # this same cache. Overwriting it with the partial row below and then deleting
+  # it leaves those tests with no entry at all, which made them fail at some
+  # seeds. Restore the previous value, or remove the key only if there was none.
   defp seed_static_info do
-    Cachex.put(:system_static_info_cache, @wh_system, %{
-      solar_system_id: @wh_system,
-      solar_system_name: "J115405",
-      system_class: 3
-    })
+    Enum.each(
+      [
+        {@wh_system,
+         %{solar_system_id: @wh_system, solar_system_name: "J115405", system_class: 3}},
+        {@ks_system, %{solar_system_id: @ks_system, solar_system_name: "Jita", system_class: 0}}
+      ],
+      fn {id, info} ->
+        previous = Cachex.get(:system_static_info_cache, id)
+        Cachex.put(:system_static_info_cache, id, info)
 
-    Cachex.put(:system_static_info_cache, @ks_system, %{
-      solar_system_id: @ks_system,
-      solar_system_name: "Jita",
-      system_class: 0
-    })
-
-    on_exit(fn ->
-      Cachex.del(:system_static_info_cache, @wh_system)
-      Cachex.del(:system_static_info_cache, @ks_system)
-    end)
+        on_exit(fn ->
+          case previous do
+            {:ok, nil} -> Cachex.del(:system_static_info_cache, id)
+            {:ok, value} -> Cachex.put(:system_static_info_cache, id, value)
+            _ -> Cachex.del(:system_static_info_cache, id)
+          end
+        end)
+      end
+    )
 
     :ok
   end
