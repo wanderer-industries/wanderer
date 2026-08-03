@@ -18,8 +18,9 @@ defmodule WandererApp.Api.MapDiscordNotification do
   # 10 consecutive failures disables the config. Only a 404 bypasses this.
   @max_consecutive_failures 10
 
-  # Matches the :last_error attribute's max_length constraint, so an
-  # unexpectedly long error message is truncated rather than rejected.
+  # The truncation length for :last_error, and the attribute's own max_length
+  # constraint, so the two cannot drift apart. record_failure/disable slice to
+  # this rather than letting an unexpectedly long error be rejected outright.
   @max_error_length 500
 
   postgres do
@@ -188,7 +189,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     end
 
     attribute :last_delivery_at, :utc_datetime
-    attribute :last_error, :string, constraints: [max_length: 500]
+    attribute :last_error, :string, constraints: [max_length: @max_error_length]
     attribute :last_error_at, :utc_datetime
     attribute :consecutive_failures, :integer, default: 0, allow_nil?: false
 

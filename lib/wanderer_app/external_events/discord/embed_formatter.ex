@@ -164,8 +164,20 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
 
   defp iso8601(value) when is_binary(value) do
     case DateTime.from_iso8601(value) do
-      {:ok, dt, _offset} -> DateTime.to_iso8601(dt)
-      _ -> nil
+      {:ok, dt, _offset} ->
+        DateTime.to_iso8601(dt)
+
+      # An offsetless string is the serialized form of the %NaiveDateTime{}
+      # clause above and gets the same treatment, rather than losing the
+      # timestamp over a detail of how the value happened to be encoded.
+      {:error, :missing_offset} ->
+        case NaiveDateTime.from_iso8601(value) do
+          {:ok, ndt} -> NaiveDateTime.to_iso8601(ndt) <> "Z"
+          _ -> nil
+        end
+
+      _ ->
+        nil
     end
   end
 

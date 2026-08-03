@@ -39,7 +39,12 @@ defmodule WandererAppWeb.MapNotificationsComponent do
       {:ok,
        socket
        |> assign(:loaded_map_id, map_id)
-       |> assign_new(:replacing_url?, fn -> is_nil(notification) end)
+       # Recomputed, not assign_new: this branch runs on first mount *and*
+       # whenever the map changes, and the flag belongs to the map being shown.
+       # Retaining a previous `false` across a map switch would hide the webhook
+       # input on an unconfigured map, leaving no way to configure it. The
+       # in-session toggle survives because a same-map re-render returns early.
+       |> assign(:replacing_url?, is_nil(notification))
        |> assign_notification(notification)}
     end
   end

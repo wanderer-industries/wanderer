@@ -28,6 +28,15 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
       assert embed["timestamp"] == "2026-08-01T12:00:00Z"
     end
 
+    test "stamps an offsetless kill_time string as UTC" do
+      # Same value as the %NaiveDateTime{} case, just already serialized. It
+      # must not lose its timestamp over that encoding difference.
+      kill = Factory.build(:killmail, %{kill_time: "2026-08-01T12:00:00"})
+      embed = EmbedFormatter.format_kill(kill, "J123456")
+
+      assert embed["timestamp"] == "2026-08-01T12:00:00Z"
+    end
+
     test "omits the timestamp entirely when kill_time is unparseable" do
       # Dropping the key is what keeps the rest of the batch deliverable.
       for bad <- ["not-a-date", "", nil, 1_754_049_600] do
