@@ -32,7 +32,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     # overwrite the map now on screen.
     if socket.assigns[:loaded_map_id] == map_id do
       case load_notification(map_id) do
-        {:ok, %{} = notification} -> {:ok, assign_notification(socket, notification)}
+        {:ok, %{} = notification} -> {:ok, refresh_notification(socket, notification)}
         # Nothing to show, or a transient read failure: leave the tab as it is
         # rather than blanking it from a background event the user did not ask
         # for. The next explicit interaction goes through the normal load path.
@@ -206,6 +206,12 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     end
   end
 
+  # Any other shape is a payload the rendered form cannot produce; answer it
+  # like a bad id rather than letting FunctionClauseError take the LiveView down.
+  def handle_event("add-excluded", _params, socket) do
+    {:noreply, assign(socket, :error, "Pick a system from the list.")}
+  end
+
   # Guarded the same way as `add-excluded`: only reachable from a rendered
   # button today, but the two handlers should not disagree about whether a
   # missing record or a non-numeric id is survivable.
@@ -216,6 +222,10 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     else
       _ -> {:noreply, assign(socket, :error, "Could not remove that system.")}
     end
+  end
+
+  def handle_event("remove-excluded", _params, socket) do
+    {:noreply, assign(socket, :error, "Could not remove that system.")}
   end
 
   def handle_event("send-test", _params, socket) do
@@ -307,8 +317,31 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     |> assign(:notification, notification)
     |> assign(:excluded_systems, excluded_system_labels(notification))
     |> assign(:form, notification_form(notification))
+    |> assign(:form_flags, form_flags(notification))
     |> assign(:excluded_form, to_form(%{"excluded_system" => nil}, as: :excluded))
   end
+
+  # The background refresh path. The form holds checkbox state the user may have
+  # toggled without saving, so it is rebuilt only when the stored flags moved —
+  # an auto-disable has to reach the Enabled checkbox, since that is the only
+  # place the tab shows it. The excluded-system search box is never rebuilt.
+  defp refresh_notification(socket, notification) do
+    socket =
+      socket
+      |> assign(:notification, notification)
+      |> assign(:excluded_systems, excluded_system_labels(notification))
+
+    if socket.assigns[:form_flags] == form_flags(notification) do
+      socket
+    else
+      socket
+      |> assign(:form, notification_form(notification))
+      |> assign(:form_flags, form_flags(notification))
+    end
+  end
+
+  defp form_flags(nil), do: nil
+  defp form_flags(notification), do: {notification.wh_only, notification.enabled?}
 
   defp notification_form(notification) do
     to_form(

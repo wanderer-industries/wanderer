@@ -291,6 +291,32 @@ defmodule WandererAppWeb.MapNotificationsTest do
     refute render(view) =~ "Jita (30000142)"
   end
 
+  # The rendered forms cannot produce these payloads, but the socket accepts
+  # whatever a client sends. Without a fallback clause each of these is a
+  # FunctionClauseError that takes the whole LiveView down.
+  test "a malformed excluded-system payload does not crash the view", %{conn: conn, map: map} do
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    assert view
+           |> with_target("#map-notifications")
+           |> render_submit("add-excluded", %{"excluded" => %{}}) =~
+             "Pick a system from the list."
+
+    assert view
+           |> with_target("#map-notifications")
+           |> render_click("remove-excluded", %{}) =~ "Could not remove that system."
+
+    assert Process.alive?(view.pid)
+  end
+
   describe "delivery status refresh" do
     setup %{conn: conn, map: map} do
       {:ok, rec} =
@@ -345,6 +371,19 @@ defmodule WandererAppWeb.MapNotificationsTest do
       {:ok, _} = MapDiscordNotification.disable(rec, "404 Not Found")
 
       assert settled(view) =~ "Last error: 404 Not Found"
+    end
+
+    # The refresh path leaves the form alone so it cannot clobber checkbox state
+    # the user has toggled but not saved. The Enabled checkbox is the only place
+    # the tab shows that a webhook was auto-disabled, so a flag that actually
+    # moved server-side still has to rebuild it.
+    test "an auto-disable unchecks the Enabled box", %{view: view, rec: rec} do
+      assert has_element?(view, "input[name='notification[enabled]'][checked]")
+
+      {:ok, _} = MapDiscordNotification.disable(rec, "404 Not Found")
+      settled(view)
+
+      refute has_element?(view, "input[name='notification[enabled]'][checked]")
     end
 
     test "a status broadcast for another map is ignored", %{view: view, rec: rec} do

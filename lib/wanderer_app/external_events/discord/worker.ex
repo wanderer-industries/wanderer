@@ -143,11 +143,13 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
       when is_reference(ref) do
     state = put_current(state, %{state.current | task_ref: nil})
 
+    Logger.warning("[Discord] request task crashed: #{inspect(reason)}")
+
     state =
       schedule_retry(
         state,
         backoff_ms(state.current.attempt),
-        "request crashed: #{inspect(reason)}"
+        "request crashed"
       )
 
     {:noreply, state, state.idle_timeout}
@@ -306,10 +308,21 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         schedule_retry(state, backoff_ms(current.attempt), "Discord returned #{status}")
 
       {:error, reason} ->
+        Logger.warning("[Discord] request failed: #{inspect(reason)}")
         state = put_current(state, %{current | task_ref: nil})
-        schedule_retry(state, backoff_ms(current.attempt), "request failed: #{inspect(reason)}")
+
+        schedule_retry(
+          state,
+          backoff_ms(current.attempt),
+          "request failed: #{http_error_message(reason)}"
+        )
     end
   end
+
+  # last_error is persisted and rendered in the settings tab, so it carries a
+  # bounded, readable message; the raw term stays in the log.
+  defp http_error_message(%{__exception__: true} = exception), do: Exception.message(exception)
+  defp http_error_message(_reason), do: "connection error"
 
   # Schedules the next attempt instead of sleeping, so the mailbox keeps moving.
   defp schedule_retry(%{current: current} = state, delay_ms, reason) do
