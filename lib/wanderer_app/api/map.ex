@@ -324,11 +324,9 @@ defmodule WandererApp.Api.Map do
     # delivery worker would survive the map. Both helpers tolerate a cache or
     # registry that was never started.
     #
-    # after_transaction, not after_action, for the reason spelled out in
-    # map_discord_notification.ex: an after_action hook runs inside the
-    # transaction, so a concurrent dispatcher can re-cache the pre-commit row.
-    # A destroy yields `:ok` or `{:ok, record}` depending on `return_destroyed?`,
-    # so the id comes from the changeset's own data either way.
+    # after_transaction, for the commit-window race documented in
+    # map_discord_notification.ex. It yields `:ok` or `{:ok, record}` depending
+    # on `return_destroyed?`, so the id comes from the changeset either way.
     map_id = changeset.data.id
 
     WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)

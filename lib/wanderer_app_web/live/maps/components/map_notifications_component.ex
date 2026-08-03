@@ -240,8 +240,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
          socket |> assign(:error, "Save a webhook URL first.") |> assign(:flash_message, nil)}
 
       {:error, other} ->
-        # The delivery path can hand back any term; none of them are meant for
-        # a user, and this tab's terms are ones the webhook URL travels with.
+        # Log rather than render: see log_error/1.
         Logger.warning("Discord test message failed: #{inspect(other)}")
 
         {:noreply,
@@ -372,13 +371,9 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   defp humanize_error(other), do: log_error(other)
 
-  # Only authored validation messages are rendered. Everything else is logged
-  # and replaced with a fixed string: the terms reaching here are attached to a
-  # changeset whose arguments hold the plaintext webhook URL (AshCloak rewrites
-  # the encrypted attribute into an argument). Ash currently redacts the
-  # changeset to "#Changeset<>" when it builds an error class, so this closes
-  # the path rather than a demonstrated leak — but the raw struct is not
-  # something to render to a user either way.
+  # Only authored validation messages are rendered. An error term here hangs off
+  # a changeset whose arguments hold the plaintext webhook URL — Ash redacts the
+  # changeset today, so this closes the path rather than a known leak.
   defp log_error(error) do
     Logger.warning("Discord notification settings error: #{inspect(error)}")
     "Could not save the Discord configuration. Try again later."

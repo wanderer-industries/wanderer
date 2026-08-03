@@ -955,9 +955,8 @@ defmodule WandererAppWeb.Factory do
     }
   end
 
-  # Recursive: the killmails an override supplies are nested maps, and the
-  # events production emits are string-keyed all the way down. Structs
-  # (DateTime and friends) are values, not payload maps, so they pass through.
+  # Recursive: nested killmail overrides have to come out string-keyed too.
+  # Structs are values, not payload maps, so they pass through.
   defp stringify_keys(%_{} = struct), do: struct
 
   defp stringify_keys(map) when is_map(map) do
