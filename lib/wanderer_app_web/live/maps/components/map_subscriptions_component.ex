@@ -71,37 +71,49 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
     do: {:noreply, socket |> assign(is_adding_subscription?: true)}
 
   @impl true
-  def handle_event("edit-subscription", %{"id" => subscription_id} = _event, socket) do
-    {:ok, selected_subscription} =
-      subscription_id
-      |> WandererApp.Api.MapSubscription.by_id()
+  def handle_event(
+        "edit-subscription",
+        %{"id" => subscription_id} = _event,
+        %{assigns: %{map_id: map_id}} = socket
+      ) do
+    case WandererAppWeb.HandlerAuth.authorize_subscription(subscription_id, map_id) do
+      {:ok, selected_subscription} ->
+        subscription_form = %{
+          "plan" => "omega",
+          "characters_limit" => "#{selected_subscription.characters_limit}",
+          "hubs_limit" => "#{selected_subscription.hubs_limit}",
+          "auto_renew?" => selected_subscription.auto_renew?,
+          "promo_code" => ""
+        }
 
-    subscription_form = %{
-      "plan" => "omega",
-      "characters_limit" => "#{selected_subscription.characters_limit}",
-      "hubs_limit" => "#{selected_subscription.hubs_limit}",
-      "auto_renew?" => selected_subscription.auto_renew?,
-      "promo_code" => ""
-    }
+        {:ok, additional_price, discount, _promo_valid?} =
+          SubscriptionManager.calc_additional_price(
+            subscription_form,
+            selected_subscription
+          )
 
-    {:ok, additional_price, discount, _promo_valid?} =
-      SubscriptionManager.calc_additional_price(
-        subscription_form,
-        selected_subscription
-      )
+        {:noreply,
+         socket
+         |> assign(
+           is_adding_subscription?: true,
+           selected_subscription: selected_subscription,
+           additional_price: additional_price,
+           discount: discount,
+           promo_code: "",
+           promo_code_valid?: false,
+           promo_code_error: nil,
+           subscription_form: subscription_form |> to_form()
+         )}
 
-    {:noreply,
-     socket
-     |> assign(
-       is_adding_subscription?: true,
-       selected_subscription: selected_subscription,
-       additional_price: additional_price,
-       discount: discount,
-       promo_code: "",
-       promo_code_valid?: false,
-       promo_code_error: nil,
-       subscription_form: subscription_form |> to_form()
-     )}
+      {:error, :not_found} ->
+        notify_to(
+          socket.assigns.notify_to,
+          socket.assigns.event_name,
+          {:flash, :error, "Subscription not found."}
+        )
+
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -110,41 +122,49 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         %{"id" => subscription_id} = _event,
         %{assigns: %{map_id: map_id}} = socket
       ) do
-    {:ok, _subscription} =
-      subscription_id
-      |> WandererApp.Api.MapSubscription.by_id!()
-      |> WandererApp.Api.MapSubscription.cancel()
+    with {:ok, subscription} <-
+           WandererAppWeb.HandlerAuth.authorize_subscription(subscription_id, map_id),
+         {:ok, _subscription} <- WandererApp.Api.MapSubscription.cancel(subscription) do
+      {:ok, map_subscriptions} = SubscriptionManager.get_map_subscriptions(map_id)
 
-    {:ok, map_subscriptions} = SubscriptionManager.get_map_subscriptions(map_id)
+      Phoenix.PubSub.broadcast(
+        WandererApp.PubSub,
+        "maps:#{map_id}",
+        {:subscription_settings_updated, map_id}
+      )
 
-    Phoenix.PubSub.broadcast(
-      WandererApp.PubSub,
-      "maps:#{map_id}",
-      {:subscription_settings_updated, map_id}
-    )
+      :telemetry.execute([:wanderer_app, :map, :subscription, :cancel], %{count: 1}, %{
+        map_id: map_id
+      })
 
-    :telemetry.execute([:wanderer_app, :map, :subscription, :cancel], %{count: 1}, %{
-      map_id: map_id
-    })
+      case LicenseManager.get_license_by_map_id(map_id) do
+        {:ok, license} ->
+          LicenseManager.invalidate_license(license.id)
+          Logger.info("Cancelled license for map #{map_id}")
 
-    case LicenseManager.get_license_by_map_id(map_id) do
-      {:ok, license} ->
-        LicenseManager.invalidate_license(license.id)
-        Logger.info("Cancelled license for map #{map_id}")
+        {:error, reason} ->
+          Logger.error("Failed to cancel license for map #{map_id}: #{inspect(reason)}")
+      end
 
-      {:error, reason} ->
-        Logger.error("Failed to cancel license for map #{map_id}: #{inspect(reason)}")
+      notify_to(
+        socket.assigns.notify_to,
+        socket.assigns.event_name,
+        {:flash, :info, "Subscription cancelled!"}
+      )
+
+      {:noreply,
+       socket
+       |> assign(is_adding_subscription?: false, map_subscriptions: map_subscriptions)}
+    else
+      _ ->
+        notify_to(
+          socket.assigns.notify_to,
+          socket.assigns.event_name,
+          {:flash, :error, "Subscription not found."}
+        )
+
+        {:noreply, socket}
     end
-
-    notify_to(
-      socket.assigns.notify_to,
-      socket.assigns.event_name,
-      {:flash, :info, "Subscription cancelled!"}
-    )
-
-    {:noreply,
-     socket
-     |> assign(is_adding_subscription?: false, map_subscriptions: map_subscriptions)}
   end
 
   @impl true
@@ -209,76 +229,89 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
         } = subscription_form,
         %{assigns: %{map_id: map_id, map: map, current_user: current_user}} = socket
       ) do
-    period = period |> String.to_integer()
-    promo_code = Map.get(subscription_form, "promo_code", "")
+    with {:ok, period} <- WandererAppWeb.HandlerAuth.parse_subscription_period(period),
+         {:ok, characters_limit} <-
+           WandererAppWeb.HandlerAuth.parse_characters_limit(characters_limit),
+         {:ok, hubs_limit} <- WandererAppWeb.HandlerAuth.parse_hubs_limit(hubs_limit) do
+      promo_code = Map.get(subscription_form, "promo_code", "")
 
-    {:ok, estimated_price, discount, _promo_valid?} =
-      WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
+      {:ok, estimated_price, discount, _promo_valid?} =
+        WandererApp.Map.SubscriptionManager.estimate_price(subscription_form, false)
 
-    active_till =
-      DateTime.utc_now()
-      |> DateTime.to_date()
-      |> Date.add(period * 30)
-      |> WandererApp.Map.SubscriptionManager.convert_date_to_datetime()
+      active_till =
+        DateTime.utc_now()
+        |> DateTime.to_date()
+        |> Date.add(period * 30)
+        |> WandererApp.Map.SubscriptionManager.convert_date_to_datetime()
 
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
+      {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
 
-    case map_balance >= estimated_price - discount do
-      true ->
-        {:ok, _t} =
-          WandererApp.Api.MapTransaction.create(%{
+      case map_balance >= estimated_price - discount do
+        true ->
+          {:ok, _t} =
+            WandererApp.Api.MapTransaction.create(%{
+              map_id: map_id,
+              user_id: current_user.id,
+              amount: estimated_price - discount,
+              type: :out
+            })
+
+          {:ok, _sub} =
+            WandererApp.Api.MapSubscription.create(%{
+              map_id: map_id,
+              plan: :omega,
+              active_till: active_till,
+              characters_limit: characters_limit,
+              hubs_limit: hubs_limit,
+              auto_renew?: auto_renew?
+            })
+
+          {:ok, map_subscriptions} =
+            WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
+
+          Phoenix.PubSub.broadcast(
+            WandererApp.PubSub,
+            "maps:#{map_id}",
+            {:subscription_settings_updated, map_id}
+          )
+
+          :telemetry.execute([:wanderer_app, :map, :subscription, :new], %{count: 1}, %{
             map_id: map_id,
-            user_id: current_user.id,
             amount: estimated_price - discount,
-            type: :out
+            promo_code: if(promo_code != "", do: String.upcase(promo_code), else: nil)
           })
 
-        {:ok, _sub} =
-          WandererApp.Api.MapSubscription.create(%{
-            map_id: map_id,
-            plan: :omega,
-            active_till: active_till,
-            characters_limit: characters_limit |> String.to_integer(),
-            hubs_limit: hubs_limit |> String.to_integer(),
-            auto_renew?: auto_renew?
-          })
+          # Automatically create a license for the map
+          create_map_license(socket, map_id)
 
-        {:ok, map_subscriptions} =
-          WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
+          notify_to(
+            socket.assigns.notify_to,
+            socket.assigns.event_name,
+            {:flash, :info, "Subscription added!"}
+          )
 
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "maps:#{map_id}",
-          {:subscription_settings_updated, map_id}
-        )
+          {:noreply,
+           socket
+           |> assign(
+             is_adding_subscription?: false,
+             map_subscriptions: map_subscriptions
+           )}
 
-        :telemetry.execute([:wanderer_app, :map, :subscription, :new], %{count: 1}, %{
-          map_id: map_id,
-          amount: estimated_price - discount,
-          promo_code: if(promo_code != "", do: String.upcase(promo_code), else: nil)
-        })
+        _ ->
+          notify_to(
+            socket.assigns.notify_to,
+            socket.assigns.event_name,
+            {:flash, :error, "You have not enough ISK on Map Balance!"}
+          )
 
-        # Automatically create a license for the map
-        create_map_license(socket, map_id)
-
+          {:noreply, socket}
+      end
+    else
+      {:error, message} ->
         notify_to(
           socket.assigns.notify_to,
           socket.assigns.event_name,
-          {:flash, :info, "Subscription added!"}
-        )
-
-        {:noreply,
-         socket
-         |> assign(
-           is_adding_subscription?: false,
-           map_subscriptions: map_subscriptions
-         )}
-
-      _ ->
-        notify_to(
-          socket.assigns.notify_to,
-          socket.assigns.event_name,
-          {:flash, :error, "You have not enough ISK on Map Balance!"}
+          {:flash, :error, message}
         )
 
         {:noreply, socket}
@@ -302,102 +335,125 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
           }
         } = socket
       ) do
-    {:ok, additional_price, discount, _promo_valid?} =
-      WandererApp.Map.SubscriptionManager.calc_additional_price(
-        subscription_form,
-        selected_subscription
-      )
-
-    {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
-
-    case map_balance >= additional_price - discount do
-      true ->
-        {:ok, _t} =
-          WandererApp.Api.MapTransaction.create(%{
-            map_id: map_id,
-            user_id: current_user.id,
-            amount: additional_price - discount,
-            type: :out
-          })
-
-        {:ok, _} =
+    with true <- selected_subscription.map_id == map_id,
+         {:ok, characters_limit} <-
+           WandererAppWeb.HandlerAuth.parse_characters_limit(characters_limit),
+         {:ok, hubs_limit} <- WandererAppWeb.HandlerAuth.parse_hubs_limit(hubs_limit) do
+      {:ok, additional_price, discount, _promo_valid?} =
+        WandererApp.Map.SubscriptionManager.calc_additional_price(
+          subscription_form,
           selected_subscription
-          |> WandererApp.Api.MapSubscription.update_characters_limit!(%{
-            characters_limit: characters_limit |> String.to_integer()
-          })
-          |> WandererApp.Api.MapSubscription.update_hubs_limit!(%{
-            hubs_limit: hubs_limit |> String.to_integer()
-          })
-          |> WandererApp.Api.MapSubscription.update_auto_renew(%{auto_renew?: auto_renew?})
-
-        {:ok, map_subscriptions} =
-          WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
-
-        Phoenix.PubSub.broadcast(
-          WandererApp.PubSub,
-          "maps:#{map_id}",
-          {:subscription_settings_updated, map_id}
         )
 
-        :telemetry.execute([:wanderer_app, :map, :subscription, :update], %{count: 1}, %{
-          map_id: map_id,
-          amount: additional_price - discount
-        })
+      {:ok, map_balance} = WandererApp.Map.SubscriptionManager.get_balance(map)
 
-        # Check if a license exists, if not create one, otherwise update its expiration
-        # The License Manager service will verify the subscription is active
-        case LicenseManager.get_license_by_map_id(map_id) do
-          {:ok, _license} ->
-            # License exists, update its expiration date
-            case LicenseManager.update_license_expiration_from_subscription(map_id) do
-              {:ok, updated_license} ->
-                Logger.info(
-                  "Updated license expiration for map #{map_id} to #{updated_license.expire_at}"
-                )
+      case map_balance >= additional_price - discount do
+        true ->
+          {:ok, _t} =
+            WandererApp.Api.MapTransaction.create(%{
+              map_id: map_id,
+              user_id: current_user.id,
+              amount: additional_price - discount,
+              type: :out
+            })
 
-              {:error, "License not found"} ->
-                create_map_license(socket, map_id)
+          {:ok, _} =
+            selected_subscription
+            |> WandererApp.Api.MapSubscription.update_characters_limit!(%{
+              characters_limit: characters_limit
+            })
+            |> WandererApp.Api.MapSubscription.update_hubs_limit!(%{
+              hubs_limit: hubs_limit
+            })
+            |> WandererApp.Api.MapSubscription.update_auto_renew(%{auto_renew?: auto_renew?})
 
-              {:error, reason} ->
-                Logger.error(
-                  "Failed to update license expiration for map #{map_id}: #{inspect(reason)}"
-                )
+          {:ok, map_subscriptions} =
+            WandererApp.Map.SubscriptionManager.get_map_subscriptions(map_id)
 
-                notify_to(
-                  socket.assigns.notify_to,
-                  socket.assigns.event_name,
-                  {:flash, :error, "Failed to update license expiration for map #{map_id}!"}
-                )
-            end
+          Phoenix.PubSub.broadcast(
+            WandererApp.PubSub,
+            "maps:#{map_id}",
+            {:subscription_settings_updated, map_id}
+          )
 
-          {:error, :license_not_found} ->
-            # No license found, create one
-            create_map_license(socket, map_id)
+          :telemetry.execute([:wanderer_app, :map, :subscription, :update], %{count: 1}, %{
+            map_id: map_id,
+            amount: additional_price - discount
+          })
 
-          _ ->
-            # Error occurred, do nothing
-            :ok
-        end
+          # Check if a license exists, if not create one, otherwise update its expiration
+          # The License Manager service will verify the subscription is active
+          case LicenseManager.get_license_by_map_id(map_id) do
+            {:ok, _license} ->
+              # License exists, update its expiration date
+              case LicenseManager.update_license_expiration_from_subscription(map_id) do
+                {:ok, updated_license} ->
+                  Logger.info(
+                    "Updated license expiration for map #{map_id} to #{updated_license.expire_at}"
+                  )
 
+                {:error, "License not found"} ->
+                  create_map_license(socket, map_id)
+
+                {:error, reason} ->
+                  Logger.error(
+                    "Failed to update license expiration for map #{map_id}: #{inspect(reason)}"
+                  )
+
+                  notify_to(
+                    socket.assigns.notify_to,
+                    socket.assigns.event_name,
+                    {:flash, :error, "Failed to update license expiration for map #{map_id}!"}
+                  )
+              end
+
+            {:error, :license_not_found} ->
+              # No license found, create one
+              create_map_license(socket, map_id)
+
+            _ ->
+              # Error occurred, do nothing
+              :ok
+          end
+
+          notify_to(
+            socket.assigns.notify_to,
+            socket.assigns.event_name,
+            {:flash, :info, "Subscription updated!"}
+          )
+
+          {:noreply,
+           socket
+           |> assign(
+             is_adding_subscription?: false,
+             selected_subscription: nil,
+             map_subscriptions: map_subscriptions
+           )}
+
+        _ ->
+          notify_to(
+            socket.assigns.notify_to,
+            socket.assigns.event_name,
+            {:flash, :error, "You have not enough ISK on Map Balance!"}
+          )
+
+          {:noreply, socket}
+      end
+    else
+      {:error, message} ->
         notify_to(
           socket.assigns.notify_to,
           socket.assigns.event_name,
-          {:flash, :info, "Subscription updated!"}
+          {:flash, :error, message}
         )
 
-        {:noreply,
-         socket
-         |> assign(
-           is_adding_subscription?: false,
-           selected_subscription: nil,
-           map_subscriptions: map_subscriptions
-         )}
+        {:noreply, socket}
 
       _ ->
         notify_to(
           socket.assigns.notify_to,
           socket.assigns.event_name,
-          {:flash, :error, "You have not enough ISK on Map Balance!"}
+          {:flash, :error, "Subscription not found."}
         )
 
         {:noreply, socket}

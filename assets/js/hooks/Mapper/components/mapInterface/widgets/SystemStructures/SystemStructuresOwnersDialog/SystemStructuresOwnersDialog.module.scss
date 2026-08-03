@@ -18,13 +18,13 @@
     .p-inputtext {
       background-color: #2a2a2a !important;
       color: #ddd !important;
-      font-size: 12px !important;
+      font-size: var(--rf-dialog-control-font-size, 12px) !important;
       padding: 0.25rem 0.5rem !important;
     }
 
     .p-dialog-footer {
       .p-button {
-        font-size: 12px !important;
+        font-size: var(--rf-dialog-control-font-size, 12px) !important;
         padding: 0.3rem 0.75rem !important;
       }
     }

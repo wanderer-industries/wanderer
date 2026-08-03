@@ -10,5 +10,5 @@
 .tooltip {
   animation: fadeIn 0.3s ease-in-out;
 
-  font-size: 12px;
+  font-size: var(--rf-tooltip-font-size, 12px);
 }

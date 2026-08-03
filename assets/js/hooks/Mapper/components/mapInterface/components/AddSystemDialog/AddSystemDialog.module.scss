@@ -1,6 +1,6 @@
 .SearchItem {
   & > * {
-    font-size: 13px !important;
+    font-size: var(--rf-search-item-font-size, 13px) !important;
   }
 }
 

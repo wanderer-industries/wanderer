@@ -107,7 +107,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               <div
                 className={clsx(
                   classes.classSystemName,
-                  '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap font-sans',
+                  '[text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] flex-grow overflow-hidden text-ellipsis whitespace-nowrap',
                 )}
               >
                 {nodeVars.systemName}
@@ -142,23 +142,18 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
               <div className="flex items-center gap-0.5 justify-end">
-                <div className={clsx('flex items-center gap-0.5')}>
+                <div className={classes.StatusIcons}>
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
                   )}
                   {nodeVars.description != null && nodeVars.description !== '' && (
                     <WdTooltipWrapper
-                      className="h-[15px] transform -translate-y-[6%]"
+                      className={classes.descriptionIconWrapper}
                       position={TooltipPosition.top}
                       content={`System have description`}
                     >
-                      <i
-                        className={clsx(
-                          'pi hero-chat-bubble-bottom-center-text w-[10px] h-[10px]',
-                          'text-[8px] relative top-[1px]',
-                        )}
-                      />
+                      <i className={clsx('pi hero-chat-bubble-bottom-center-text', classes.descriptionIcon)} />
                     </WdTooltipWrapper>
                   )}
                 </div>

@@ -5,21 +5,21 @@
 }
 
 .wdTooltipSizeXs {
-  font-size: 0.7rem;
-  max-width: 150px;
+  font-size: var(--rf-tooltip-size-xs-font-size, 0.7rem);
+  max-width: var(--rf-tooltip-size-xs-max-width, 150px);
 }
 
 .wdTooltipSizeSm {
-  font-size: 0.8rem;
-  max-width: 200px;
+  font-size: var(--rf-tooltip-size-sm-font-size, 0.8rem);
+  max-width: var(--rf-tooltip-size-sm-max-width, 200px);
 }
 
 .wdTooltipSizeMd {
-  font-size: 0.9rem;
-  max-width: 250px;
+  font-size: var(--rf-tooltip-size-md-font-size, 0.9rem);
+  max-width: var(--rf-tooltip-size-md-max-width, 250px);
 }
 
 .wdTooltipSizeLg {
-  font-size: 1rem !important;
-  min-width: 350px;
+  font-size: var(--rf-tooltip-size-lg-font-size, 1rem) !important;
+  min-width: var(--rf-tooltip-size-lg-min-width, 350px);
 }

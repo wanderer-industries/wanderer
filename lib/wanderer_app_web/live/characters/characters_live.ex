@@ -78,26 +78,32 @@ defmodule WandererAppWeb.CharactersLive do
 
   @impl true
   def handle_event("delete", %{"character_id" => character_id}, socket) do
-    WandererApp.Character.TrackerManager.stop_tracking(character_id)
+    user_id = socket.assigns.user_id
 
-    {:ok, map_character_settings} =
-      WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
+    case WandererAppWeb.HandlerAuth.authorize_character(character_id, user_id) do
+      {:ok, character} ->
+        WandererApp.Character.TrackerManager.stop_tracking(character_id)
 
-    map_character_settings
-    |> Enum.each(fn settings ->
-      {:ok, _} = WandererApp.MapCharacterSettingsRepo.untrack(settings)
-    end)
+        {:ok, map_character_settings} =
+          WandererApp.Api.MapCharacterSettings.tracked_by_character(%{character_id: character_id})
 
-    # Load character from DB instead of using plain map from assigns
-    {:ok, character} = WandererApp.Api.Character.by_id(character_id)
-    {:ok, _updated_character} = WandererApp.Api.Character.mark_as_deleted(character)
+        map_character_settings
+        |> Enum.each(fn settings ->
+          {:ok, _} = WandererApp.MapCharacterSettingsRepo.untrack(settings)
+        end)
 
-    WandererApp.Character.update_character(character_id, %{deleted: true, user_id: nil})
+        {:ok, _updated_character} = WandererApp.Api.Character.mark_as_deleted(character)
 
-    {:ok, characters} =
-      WandererApp.Api.Character.active_by_user(%{user_id: socket.assigns.user_id})
+        WandererApp.Character.update_character(character_id, %{deleted: true, user_id: nil})
 
-    {:noreply, socket |> assign(characters: characters |> Enum.map(&map_ui_character/1))}
+        {:ok, characters} =
+          WandererApp.Api.Character.active_by_user(%{user_id: user_id})
+
+        {:noreply, socket |> assign(characters: characters |> Enum.map(&map_ui_character/1))}
+
+      {:error, :not_found} ->
+        {:noreply, socket |> put_flash(:error, "Character not found.")}
+    end
   end
 
   @impl true

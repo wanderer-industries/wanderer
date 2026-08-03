@@ -1,0 +1,7 @@
+@use './accessible-dark-theme' as accessibleDark;
+@use './accessible-large-theme' as accessibleLarge;
+
+.accessible-large-colorblind-theme {
+  @include accessibleDark.accessible-dark-palette;
+  @include accessibleLarge.accessible-large-layout;
+}

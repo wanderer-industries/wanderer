@@ -271,6 +271,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
         %{"id" => passage_id, "mass" => mass} = _event,
         %{
           assigns: %{
+            map_id: map_id,
             has_tracked_characters?: true,
             user_permissions: %{update_system: true}
           }
@@ -291,12 +292,14 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
           nil
       end
 
-    case WandererApp.Api.MapChainPassages.by_id(passage_id) do
-      {:ok, passage} when not is_nil(passage) ->
+    case WandererAppWeb.HandlerAuth.authorize_passage(passage_id, map_id) do
+      {:ok, passage} ->
         WandererApp.Api.MapChainPassages.update_mass(passage, %{mass: mass_value})
 
-      _ ->
-        Logger.warning("update_passage_mass: passage not found id=#{passage_id}")
+      {:error, :not_found} ->
+        Logger.warning(
+          "update_passage_mass rejected: passage #{inspect(passage_id)} not on map #{map_id}"
+        )
     end
 
     {:noreply, socket}

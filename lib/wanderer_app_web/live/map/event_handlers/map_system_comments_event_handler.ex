@@ -136,12 +136,20 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           socket
       )
       when not is_nil(main_character_id) do
-    map_id
-    |> WandererApp.Map.Server.remove_system_comment(
-      comment_id,
-      current_user.id,
-      main_character_id
-    )
+    case WandererAppWeb.HandlerAuth.authorize_system_comment(comment_id, map_id) do
+      {:ok, _comment} ->
+        map_id
+        |> WandererApp.Map.Server.remove_system_comment(
+          comment_id,
+          current_user.id,
+          main_character_id
+        )
+
+      {:error, :not_found} ->
+        Logger.warning(
+          "deleteSystemComment rejected: comment #{inspect(comment_id)} not on map #{map_id}"
+        )
+    end
 
     {:noreply, socket}
   end

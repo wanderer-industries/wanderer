@@ -2,11 +2,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 8px;
+    font-size: var(--rf-node-bookmark-font-size, 8px);
     font-weight: 700;
     border: 0;
-    border-radius: 5px 5px 0 0;
-    padding: 4px 3px;
+    border-radius: var(--rf-node-bookmark-border-radius, 5px) var(--rf-node-bookmark-border-radius, 5px) 0 0;
+    padding: var(--rf-kills-bookmark-padding, 4px 3px);
 
   }
   
@@ -14,21 +14,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: -2px;
+    margin-top: var(--rf-node-bookmark-icon-margin-top, -2px);
     text-shadow: 0 0 3px #000;
-    padding-right: 2px;
-    height: 8px;
-    font-size: 8px;
-    line-height: 12px;
+    padding-right: var(--rf-node-bookmark-icon-padding-right, 2px);
+    height: var(--rf-kills-bookmark-icon-height, 8px);
+    font-size: var(--rf-node-bookmark-icon-font-size, 8px);
+    line-height: var(--rf-kills-bookmark-line-height, 12px);
     font-weight: 700;
     text-size-adjust: 100%;
 
     .pi {
-        font-size: 9px;
+        font-size: var(--rf-node-bookmark-icon-font-size, 9px);
     }
 
     .text {
-        font-size: 9px;
+        font-size: var(--rf-node-bookmark-text-font-size, 9px);
         font-family: var(--rf-node-font-family, inherit) !important;
         font-weight: var(--rf-node-font-weight, inherit) !important;
     }

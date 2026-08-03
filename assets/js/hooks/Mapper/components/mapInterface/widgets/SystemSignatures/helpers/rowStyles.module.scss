@@ -1,4 +1,4 @@
 .TableRowCompact {
-  font-size: 12px !important;
-  line-height: 1.333;
+  font-size: var(--rf-table-font-size, 12px) !important;
+  line-height: var(--rf-table-row-line-height, 1.333);
 }

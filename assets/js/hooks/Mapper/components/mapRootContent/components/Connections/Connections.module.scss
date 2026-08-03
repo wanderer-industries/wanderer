@@ -22,5 +22,5 @@
 }
 
 .InfoTextSize {
-  font-size: 12px !important;
+  font-size: var(--rf-info-text-font-size, 12px) !important;
 }

@@ -12,7 +12,7 @@ config :ash, :disable_async?, true
 config :wanderer_app, WandererApp.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: System.get_env("DB_HOST", "localhost"),
+  hostname: "localhost",
   database: "wanderer_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 20,

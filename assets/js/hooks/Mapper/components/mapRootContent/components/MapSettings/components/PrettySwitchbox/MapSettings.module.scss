@@ -5,7 +5,7 @@
 
   & > span:nth-child(1) {
     color: var(--gray-200);
-    font-size: 13px;
+    font-size: var(--rf-settings-label-font-size, 13px);
     user-select: none;
   }
 
