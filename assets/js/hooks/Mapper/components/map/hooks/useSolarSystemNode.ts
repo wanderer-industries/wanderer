@@ -54,7 +54,6 @@ export interface SolarSystemNodeVars {
   description: string | null;
   comments_count: number | null;
   systemHighlighted: string | undefined;
-  hasIntelSource: boolean;
 }
 
 export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarSystemNodeVars => {
@@ -74,7 +73,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
 
   const {
     storedSettings: { interfaceSettings },
-    data: { systemSignatures: mapSystemSignatures, pings, options: mapOptions },
+    data: { systemSignatures: mapSystemSignatures, pings },
   } = useMapRootState();
 
   const systemStaticInfo = useMemo(() => {
@@ -222,7 +221,6 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     description,
     comments_count,
     systemHighlighted,
-    hasIntelSource: !!mapOptions?.intel_source_map_id,
   };
 
   return nodeVars;

@@ -31,6 +31,7 @@ export const useContextMenuSystemItems = ({
   onSystemTag,
   onSystemStatus,
   onSystemLabels,
+  onSyncIntel,
   onCustomLabelDialog,
   onOpenSettings,
   onWaypointSet,
@@ -159,6 +160,16 @@ export const useContextMenuSystemItems = ({
           ]
         : []),
 
+      ...(hasIntelSource && canManageSystem
+        ? [
+            {
+              label: 'Sync Intel',
+              icon: clsx(PrimeIcons.SYNC, 'text-blue-400'),
+              command: onSyncIntel,
+            },
+          ]
+        : []),
+
       ...(canDeleteSystem && !system.locked
         ? [
             { separator: true },
@@ -201,6 +212,7 @@ export const useContextMenuSystemItems = ({
     onDeleteSystem,
     onOpenSettings,
     onTogglePing,
+    onSyncIntel,
     ping,
     isShowPingBtn,
     hasIntelSource,
