@@ -13,16 +13,19 @@ services:
       - db-new:/var/lib/postgresql/data
 
   wanderer:
+    env_file:
+      - .env
     environment:
       PORT: 4444
       DB_HOST: db
-      WEB_APP_URL: "http://localhost:4444"
+      WEB_APP_URL: "https://localhost:4443"
       ERL_AFLAGS: "-kernel shell_history enabled"
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - 4444:4444
+      - 4443:4443
     volumes:
       - ..:/app:delegated
       - ~/.gitconfig:/root/.gitconfig

@@ -4,6 +4,8 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   import Plug.Conn
   alias Plug.Crypto
   alias WandererApp.Api.Map, as: ApiMap
+  alias WandererApp.Api.Character, as: ApiCharacter
+  alias WandererApp.Map.EveTokenAuth
   alias WandererAppWeb.Schemas.ResponseSchemas, as: R
   require Logger
 
@@ -11,9 +13,42 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   def init(opts), do: opts
 
   @impl true
-  def call(conn, _opts) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, map_id} <- fetch_map_id(conn),
+  def call(conn, opts) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization") do
+      # Tokens minted by EveTokenAuth.exchange/2 (see the /auth/eve-token
+      # endpoint) are tried first; any other value falls back to the
+      # long-standing static map.public_api_key check below.
+      case EveTokenAuth.verify(token) do
+        {:ok, payload} -> call_with_eve_token(conn, payload)
+        {:error, :invalid} -> call_with_static_key(conn, token, opts)
+      end
+    else
+      [] ->
+        Logger.warning("Missing or invalid 'Bearer' token")
+        conn |> respond(401, "Missing or invalid 'Bearer' token") |> halt()
+
+      [_non_bearer_token] ->
+        Logger.warning("Invalid authorization format - Bearer token required")
+        conn |> respond(401, "Invalid authorization format - Bearer token required") |> halt()
+    end
+  end
+
+  defp call_with_eve_token(conn, %{map_id: map_id, character_eve_id: eve_id}) do
+    with {:ok, map} <- ApiMap.by_id(map_id),
+         {:ok, character} <- ApiCharacter.by_eve_id(eve_id) do
+      conn
+      |> assign(:map, map)
+      |> assign(:map_id, map.id)
+      |> assign(:current_character, character)
+    else
+      _ ->
+        Logger.warning("Unauthorized: stale eve-token for map #{inspect(map_id)}")
+        conn |> respond(401, "Unauthorized (stale token)") |> halt()
+    end
+  end
+
+  defp call_with_static_key(conn, token, _opts) do
+    with {:ok, map_id} <- fetch_map_id(conn),
          {:ok, map} <- ApiMap.by_id(map_id),
          true <-
            is_binary(map.public_api_key) &&
@@ -24,14 +59,6 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
       |> assign(:map_id, map.id)
       |> assign(:current_character, owner_character)
     else
-      [] ->
-        Logger.warning("Missing or invalid 'Bearer' token")
-        conn |> respond(401, "Missing or invalid 'Bearer' token") |> halt()
-
-      [_non_bearer_token] ->
-        Logger.warning("Invalid authorization format - Bearer token required")
-        conn |> respond(401, "Invalid authorization format - Bearer token required") |> halt()
-
       {:error, :bad_request, msg} ->
         Logger.warning("Bad request: #{msg}")
         conn |> respond(400, msg) |> halt()
