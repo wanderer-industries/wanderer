@@ -18,7 +18,7 @@ services:
     environment:
       PORT: 4444
       DB_HOST: db
-      WEB_APP_URL: "https://localhost:4443"
+      WEB_APP_URL: "http://localhost:4444"
       ERL_AFLAGS: "-kernel shell_history enabled"
     build:
       context: .
