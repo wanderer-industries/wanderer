@@ -72,6 +72,22 @@ jobs:
           fi
         continue-on-error: true
 
+      # Advisory, like the other checks here. Catches resource definitions that
+      # have drifted from priv/resource_snapshots — usually after a dependency
+      # bump changes how a default is serialized, which is otherwise invisible
+      # until someone runs `mix ash.codegen` locally and gets an unrelated diff.
+      - name: Check Ash codegen is up to date
+        id: codegen
+        run: |
+          if mix ash.codegen --check; then
+            echo "status=✅ Up to date" >> $GITHUB_OUTPUT
+            echo "count=0" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ Pending changes" >> $GITHUB_OUTPUT
+            echo "count=1" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
       - name: Compile code and capture warnings
         id: compile
         run: |
@@ -279,6 +295,7 @@ jobs:
             | Category | Status | Count | Details |
             |----------|---------|-------|---------|
             | 📝 **Code Formatting** | ${{ steps.format.outputs.status }} | ${{ steps.format.outputs.count }} issues | `mix format --check-formatted` |
+            | 🧬 **Ash Codegen** | ${{ steps.codegen.outputs.status }} | ${{ steps.codegen.outputs.count }} pending | `mix ash.codegen --check` |
             | 🔨 **Compilation** | ${{ steps.compile.outputs.status }} | ${{ steps.compile.outputs.warnings }} warnings | `mix compile` |
             | 🧪 **Tests** | ${{ steps.tests.outputs.status }} | ${{ steps.tests.outputs.failures }}/${{ steps.tests.outputs.total }} failed | Success rate: ${{ steps.tests.outputs.success_rate }}% |
             | 📊 **Coverage** | ${{ steps.coverage.outputs.status }} | ${{ steps.coverage.outputs.percentage }}% | `mix coveralls` |
