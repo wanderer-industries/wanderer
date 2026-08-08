@@ -15,6 +15,12 @@ defmodule WandererApp.Api.MapConnection do
       # Critical index for list_connections query performance
       index [:map_id], name: "map_chain_v1_map_id_index"
     end
+
+    references do
+      # A deleted character releases its locks rather than taking the
+      # connections with it -- the connection outlives whoever locked it.
+      reference :locked_by, on_delete: :nilify
+    end
   end
 
   json_api do
