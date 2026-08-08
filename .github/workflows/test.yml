@@ -6,10 +6,11 @@ on:
   push:
     branches: [main, develop]
 
+# This workflow executes fork-authored code (mix deps.get / compile / test), so
+# it holds no write scopes. The test-results comment is posted by the privileged
+# pr-comment.yml workflow via workflow_run.
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 env:
   MIX_ENV: test

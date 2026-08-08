@@ -14,6 +14,12 @@ name: 💬 PR Test Comment
 # the comment body is passed to the API via `body-path` (never interpolated into
 # a run: block or a ${{ }} expression) and the PR number is re-validated as
 # numeric before use.
+#
+# A numeric PR number is not necessarily the *right* PR number: the artifact is
+# produced by a job that has already run fork-authored code, so it could name
+# any issue or PR in the base repository. The "Verify PR matches triggering run"
+# step below closes that by requiring the claimed PR's head SHA to equal the
+# head SHA of the run that triggered this workflow.
 
 on:
   workflow_run:
@@ -23,7 +29,15 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
+  # `actions: read` is required: download-artifact with `run-id:` reads the
+  # artifacts of a *different* workflow run, which the default token scope does
+  # not cover. Without it the download 403s and the workflow silently posts
+  # nothing.
+  actions: read
+  # Read-only PR access is only used to verify the artifact's PR number against
+  # the triggering run's head SHA. The comment itself is an *issue* comment, so
+  # `issues: write` is the scope that grants posting.
+  pull-requests: read
   issues: write
 
 jobs:
@@ -61,6 +75,30 @@ jobs:
 
           echo "number=$number" >> "$GITHUB_OUTPUT"
           echo "valid=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify PR matches triggering run
+        if: steps.pr.outputs.valid == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          # The artifact comes from a job that ran untrusted code, so the PR
+          # number it claims is only a hint. Accept it only if that PR's head
+          # commit is the exact commit the triggering run tested; otherwise a
+          # fork could steer this privileged comment at any PR or issue.
+          actual_sha=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq .head.sha)
+
+          if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
+            echo "PR #$PR_NUMBER head is $actual_sha but the triggering run tested $EXPECTED_SHA." >&2
+            echo "Refusing to comment on a PR the artifact does not belong to." >&2
+            exit 1
+          fi
+
+          echo "PR #$PR_NUMBER head matches the triggering run ($EXPECTED_SHA)."
 
       - name: Find existing PR comment
         id: find_comment
