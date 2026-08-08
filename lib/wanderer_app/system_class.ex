@@ -54,10 +54,11 @@ defmodule WandererApp.SystemClass do
 
   @doc """
   Resolves a solar system id to its class and reports whether it is wormhole
-  space. Returns false when static info cannot be resolved.
+  space. Returns false when static info cannot be resolved, and for any
+  non-integer input (callers pass ids straight from external payloads).
   """
-  @spec wormhole_system?(integer()) :: boolean()
-  def wormhole_system?(solar_system_id) do
+  @spec wormhole_system?(term()) :: boolean()
+  def wormhole_system?(solar_system_id) when is_integer(solar_system_id) do
     case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
       {:ok, %{system_class: class}} ->
         wormhole?(class)
@@ -69,5 +70,13 @@ defmodule WandererApp.SystemClass do
 
         false
     end
+  end
+
+  def wormhole_system?(solar_system_id) do
+    Logger.warning(
+      "[SystemClass] wormhole_system?/1 expects an integer solar system id, got: #{inspect(solar_system_id)}"
+    )
+
+    false
   end
 end

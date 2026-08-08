@@ -1,5 +1,7 @@
 defmodule WandererApp.SystemClassTest do
-  use ExUnit.Case, async: true
+  # `wormhole_system?/1` resolves static info via `CachedInfo`, which hits the
+  # DB-backed cache, so this needs sandbox access rather than plain ExUnit.Case.
+  use WandererApp.DataCase, async: true
 
   alias WandererApp.SystemClass
 
@@ -35,6 +37,38 @@ defmodule WandererApp.SystemClassTest do
     test "returns false for nil and unknown classes" do
       refute SystemClass.wormhole?(nil)
       refute SystemClass.wormhole?(999)
+    end
+  end
+
+  describe "wormhole_classes/0" do
+    test "returns the exact canonical set" do
+      assert Enum.sort(SystemClass.wormhole_classes()) == [
+               1,
+               2,
+               3,
+               4,
+               5,
+               6,
+               12,
+               13,
+               14,
+               15,
+               16,
+               17,
+               18
+             ]
+    end
+  end
+
+  describe "wormhole_system?/1" do
+    test "returns false for non-integer input" do
+      refute SystemClass.wormhole_system?("31000005")
+      refute SystemClass.wormhole_system?(:not_an_id)
+      refute SystemClass.wormhole_system?(nil)
+    end
+
+    test "returns false for an unresolvable solar system id" do
+      refute SystemClass.wormhole_system?(-1)
     end
   end
 end
