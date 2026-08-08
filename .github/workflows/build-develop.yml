@@ -50,13 +50,13 @@ jobs:
           elixir-version: ${{matrix.elixir}}
         # nix build would also work here because `todos` is the default package
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ssh-key: "${{ secrets.COMMIT_KEY }}"
           fetch-depth: 0
       - name: 😅 Cache deps
         id: cache-deps
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         env:
           cache-name: cache-elixir-deps
         with:
@@ -67,7 +67,7 @@ jobs:
             ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
       - name: 😅 Cache compiled build
         id: cache-build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         env:
           cache-name: cache-compiled-build
         with:
@@ -118,7 +118,7 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit_hash }}
           fetch-depth: 0
@@ -164,7 +164,7 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: /tmp/digests/*
@@ -177,7 +177,7 @@ jobs:
       - docker
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/digests
           pattern: digests-*
@@ -219,7 +219,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [docker, merge]
     steps:
-      - name: Discord Webhook Action
+      - name: Notify Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_DEV }}
           COMMIT_SHA: ${{ github.sha }}

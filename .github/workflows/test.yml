@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Setup Elixir/OTP
         uses: erlef/setup-beam@v1
@@ -47,7 +47,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Cache Elixir dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             deps
