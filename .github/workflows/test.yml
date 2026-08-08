@@ -349,8 +349,10 @@ jobs:
   # history, so gating merges on them from day one is a policy change for
   # maintainers to make, not this PR. Remove it to turn them into a hard gate.
   integration-test:
-    name: Integration Tests (non-blocking)
+    name: Integration Tests
     runs-on: ubuntu-latest
+    # Temporary, pending #637: drop this line to make the job a hard gate.
+    # The check name stays stable so branch protection keeps matching it.
     continue-on-error: true
 
     services:
