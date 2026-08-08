@@ -356,7 +356,7 @@ defmodule WandererApp.MapTestHelpers do
   ## Parameters
   - character_id: The character ID to update
   - solar_system_id: The solar system ID where the character is located
-  - opts: Optional parameters (structure_id, station_id, ship)
+  - opts: Optional parameters (structure_id, station_id, ship, online)
 
   ## Examples
       iex> set_character_location(character.id, 30_000_142, ship: 670)
@@ -431,7 +431,7 @@ defmodule WandererApp.MapTestHelpers do
     {:ok, character} = WandererApp.Character.get_character(character_id)
     :ok = WandererApp.Map.add_character(map_id, character)
 
-    WandererApp.Cache.put(
+    WandererApp.Cache.insert(
       "character:#{character_id}:map:#{map_id}:tracking_start_time",
       DateTime.utc_now()
     )

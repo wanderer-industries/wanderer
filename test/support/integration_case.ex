@@ -64,15 +64,18 @@ defmodule WandererApp.IntegrationCase do
   end
 
   @doc """
-  Sets up the sandbox with shared mode for async integration tests.
+  Sets up the test sandbox, per the `:shared_sandbox` moduletag.
 
-  For async tests (async: true):
-  - Uses shared: true to allow dynamically spawned processes database access
-  - Trades some isolation for reliability and simplicity
+  With `@moduletag :shared_sandbox` (only valid with `async: false`):
+  - Uses shared: true so dynamically spawned processes (e.g. MapPool
+    GenServers that query the DB during `init`) get database access
+  - Trades some isolation for reliability with background processes
 
-  For sync tests (async: false):
-  - Uses shared: false for better isolation
+  Without the tag (the default):
+  - Starts a dedicated, private sandbox owner (shared: false)
   - Child processes require explicit allowance
+
+  Raises `ArgumentError` if `:shared_sandbox` is set on an `async: true` suite.
   """
   def setup_sandbox(tags) do
     # Ensure the repo is started before setting up sandbox
@@ -142,13 +145,12 @@ defmodule WandererApp.IntegrationCase do
     owner_pid = owner_pid || Process.get(:sandbox_owner_pid)
 
     if owner_pid do
-      # Already-allowed processes raise; re-allowing on every poll tick is
-      # expected, so treat that as success rather than crashing the monitor.
-      try do
-        Ecto.Adapters.SQL.Sandbox.allow(WandererApp.Repo, owner_pid, pid)
-      rescue
-        _ -> :ok
-      end
+      # Returns `:ok | {:already, :owner | :allowed}` on every poll tick;
+      # re-allowing an already-allowed process is a normal, non-error case, so
+      # both are treated as success here. It raises only for infrastructure
+      # faults (repo not started, or `pid`/`owner_pid` not resolving to a live
+      # process) -- those should surface rather than be swallowed.
+      Ecto.Adapters.SQL.Sandbox.allow(WandererApp.Repo, owner_pid, pid)
     end
   end
 

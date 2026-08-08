@@ -43,7 +43,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
   #     @jita 30_000_142
   #     @prohibited_systems [@jita]
   #
-  # These tests previously used Hek as the "start system" and asserted it was
+  # These tests previously used Jita as the "start system" and asserted it was
   # added to the map, which asserts behaviour the application forbids by design
   # and can never pass. Hek is a plain hi-sec system with no such restriction, so
   # the intent of each test (a system the character moved away from gets added)
