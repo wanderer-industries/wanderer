@@ -271,6 +271,43 @@ defmodule WandererAppWeb.MapDuplicationAPIControllerSuccessTest do
       assert copied.system_id == new_jita.id
     end
 
+    test "soft-deleted signatures are not copied when copy_signatures is true", %{
+      conn: conn,
+      source_map: source_map,
+      system1: system1
+    } do
+      _deleted_signature =
+        insert(:map_system_signature, %{
+          system_id: system1.id,
+          eve_id: "DEL-999",
+          name: "Deleted Wormhole",
+          type: "wormhole",
+          deleted: true
+        })
+
+      duplication_params = %{
+        "name" => "Soft Delete Copy",
+        "copy_signatures" => true
+      }
+
+      conn = post(conn, ~p"/api/maps/#{source_map.slug}/duplicate", duplication_params)
+
+      assert %{"data" => %{"id" => new_map_id}} = json_response(conn, 201)
+
+      {:ok, new_systems} = WandererApp.Api.MapSystem.read_all_by_map(%{map_id: new_map_id})
+      new_jita = Enum.find(new_systems, &(&1.name == "Jita"))
+      assert new_jita != nil
+
+      {:ok, new_signatures} = WandererApp.Api.MapSystemSignature.by_system_id_all(new_jita.id)
+
+      # Only the live signature (from the top-level `setup`) should be
+      # copied; the soft-deleted one must not resurface as a tombstone in
+      # the duplicate.
+      assert length(new_signatures) == 1
+      assert hd(new_signatures).eve_id == "ABC-123"
+      assert hd(new_signatures).deleted == false
+    end
+
     test "duplicated map has no signatures when copy_signatures is false", %{
       conn: conn,
       source_map: source_map

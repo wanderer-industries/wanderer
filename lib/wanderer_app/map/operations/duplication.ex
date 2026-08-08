@@ -126,13 +126,16 @@ defmodule WandererApp.Map.Operations.Duplication do
     end
   end
 
-  # Copy a single connection with updated system references
-  defp copy_single_connection(source_connection, new_map_id, system_mapping) do
+  # Copy a single connection. `solar_system_source`/`solar_system_target` are
+  # EVE solar-system ids, which are identical between the source map and the
+  # duplicate, so no remapping is needed here (unlike `system_mapping`, which
+  # translates MapSystem UUIDs and is only used to resolve signatures' system
+  # references).
+  defp copy_single_connection(source_connection, new_map_id, _system_mapping) do
     connection_attrs =
       source_connection
       |> acceptable_attrs(MapConnection, :create)
       |> Map.put(:map_id, new_map_id)
-      |> update_system_references(system_mapping)
 
     MapConnection.create(connection_attrs)
   end
@@ -163,28 +166,6 @@ defmodule WandererApp.Map.Operations.Duplication do
     end)
   end
 
-  # Update system references in connection attributes using the system mapping
-  defp update_system_references(connection_attrs, system_mapping) do
-    connection_attrs
-    |> maybe_update_system_reference(:solar_system_source, system_mapping)
-    |> maybe_update_system_reference(:solar_system_target, system_mapping)
-  end
-
-  # Update a single system reference if it exists in the mapping
-  defp maybe_update_system_reference(attrs, field, system_mapping) do
-    case Map.get(attrs, field) do
-      nil ->
-        attrs
-
-      old_system_id ->
-        case Map.get(system_mapping, old_system_id) do
-          # Keep original if no mapping found
-          nil -> attrs
-          new_system_id -> Map.put(attrs, field, new_system_id)
-        end
-    end
-  end
-
   # Conditionally copy signatures if requested
   defp maybe_copy_signatures(_source_map, _new_map, _system_mapping, false), do: {:ok, []}
 
@@ -210,15 +191,23 @@ defmodule WandererApp.Map.Operations.Duplication do
   # system aborts the copy with an error rather than silently omitting those
   # signatures, which would return an incomplete duplicate reported as success.
   defp get_all_map_signatures(_source_map_id, system_mapping) do
-    # Get source system IDs and query signatures for each
+    # Get source system IDs and query signatures for each. `by_system_id/1`
+    # (unlike `by_system_id_all/1`) filters out soft-deleted signatures, so
+    # tombstones from the source map are never fetched to copy.
     source_system_ids = Map.keys(system_mapping)
 
-    Enum.reduce_while(source_system_ids, {:ok, []}, fn system_id, {:ok, acc} ->
-      case MapSystemSignature.by_system_id_all(system_id) do
-        {:ok, signatures} -> {:cont, {:ok, acc ++ signatures}}
-        {:error, reason} -> {:halt, {:error, {:signature_read_failed, reason}}}
-      end
-    end)
+    result =
+      Enum.reduce_while(source_system_ids, {:ok, []}, fn system_id, {:ok, acc} ->
+        case MapSystemSignature.by_system_id(system_id) do
+          {:ok, signatures} -> {:cont, {:ok, [signatures | acc]}}
+          {:error, reason} -> {:halt, {:error, {:signature_read_failed, reason}}}
+        end
+      end)
+
+    case result do
+      {:ok, acc} -> {:ok, Enum.concat(acc)}
+      error -> error
+    end
   end
 
   # Copy a single signature with updated system reference
@@ -226,31 +215,11 @@ defmodule WandererApp.Map.Operations.Duplication do
     new_system_id = Map.get(system_mapping, source_signature.system_id)
 
     if new_system_id do
-      # Get all attributes from the source signature, excluding system-managed fields and metadata
-      excluded_fields = [
-        # System managed fields
-        :id,
-        :inserted_at,
-        :updated_at,
-        :system_id,
-        :system,
-        # Fields not accepted by create action
-        :linked_system_id,
-        :update_forced_at,
-        # Ash/Ecto metadata fields
-        :__meta__,
-        :__lateral_join_source__,
-        :__metadata__,
-        :__order__,
-        :aggregates,
-        :calculations
-      ]
-
-      # Convert the source signature struct to a map and filter out excluded fields
+      # Same allowlist approach as systems/connections -- see acceptable_attrs/3
+      # above for why a denylist was the wrong shape here.
       signature_attrs =
         source_signature
-        |> Map.from_struct()
-        |> Map.drop(excluded_fields)
+        |> acceptable_attrs(MapSystemSignature, :create)
         |> Map.put(:system_id, new_system_id)
 
       MapSystemSignature.create(signature_attrs)
