@@ -132,8 +132,10 @@ defmodule WandererApp.Api.AccessList do
 
     # Inverse of MapAccessList.access_list. Required so the AclScoped read
     # policy can express `exists(map_access_lists, map_id == ^map_id)`.
+    # Kept private: this is a policy-internal join, not part of the public
+    # filter surface for /api/v1/access_lists.
     has_many :map_access_lists, WandererApp.Api.MapAccessList do
-      public? true
+      public? false
     end
   end
 end

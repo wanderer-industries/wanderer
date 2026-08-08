@@ -18,6 +18,15 @@ defmodule WandererApp.Api.MapSolarSystem do
   # list staying empty. Token actors are forbidden outright; trusted internal
   # User/Character actors pass via the bypass.
   #
+  # The criterion is `json_api do` — declaring a type is what makes a resource
+  # reachable through the API surface (as an include/relationship target), with
+  # or without routes of its own. Every resource that declares one is policed:
+  # map, map_default_settings, map_solar_system, map_state, ship_type_info,
+  # user. The remaining route-less resources (character, license, the
+  # *_transaction/*_invite/*_ping/*_webhook_subscription/*_jumps set) declare no
+  # `json_api` block at all, so they are unreachable from JSON:API and a policy
+  # there would gate only internal callers.
+  #
   # Safe for internal callers: the domain gate is `authorize :when_requested`,
   # which only authorizes when an `actor:` key is present
   # (ash/lib/ash/actions/helpers.ex:390). No internal caller of this resource
