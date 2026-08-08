@@ -397,4 +397,7 @@ jobs:
           mix ecto.migrate
 
       - name: Run integration tests
-        run: mix test --include integration
+        # --only, not --include: --include would run the whole suite on top of
+        # the tagged tests, duplicating the main test job's ~10 minutes and
+        # re-reporting failures it already covers.
+        run: mix test --only integration
