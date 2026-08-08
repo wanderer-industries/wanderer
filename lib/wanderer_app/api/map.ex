@@ -15,6 +15,13 @@ defmodule WandererApp.Api.Map do
     table("maps_v1")
 
     migration_defaults scopes: "'{wormholes}'"
+
+    references do
+      # Matches ON DELETE SET NULL in 20260209100000_add_intel_source_map_id.
+      # Deleting a source map unsubscribes its subscribers rather than
+      # cascading the delete into unrelated maps.
+      reference :intel_source_map, on_delete: :nilify
+    end
   end
 
   json_api do

@@ -9,6 +9,13 @@ defmodule WandererApp.Api.MapSystemComment do
   postgres do
     repo(WandererApp.Repo)
     table("map_system_comments_v1")
+
+    references do
+      # Matches ON DELETE CASCADE in 20260209100001_add_inherited_from_map_id.
+      # Inherited copies are worthless once the map they were copied from is
+      # gone, so they go with it.
+      reference :inherited_from_map, on_delete: :delete
+    end
   end
 
   json_api do
