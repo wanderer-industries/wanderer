@@ -5,9 +5,6 @@ defmodule WandererApp.Application do
 
   require Logger
 
-  # Mirrors the WANDERER_DISCORD_POOL_SIZE default in config/runtime.exs.
-  @default_discord_pool_size 10
-
   @impl true
   def start(_type, _args) do
     # Skip test mocks setup - handled in test helper if needed
@@ -59,8 +56,8 @@ defmodule WandererApp.Application do
         name: WandererApp.Finch.Discord,
         pools: %{
           default: [
-            size: discord_pool_size(),
-            count: 1
+            size: Application.get_env(:wanderer_app, :finch_discord_pool_size, 10),
+            count: Application.get_env(:wanderer_app, :finch_discord_pool_count, 1)
           ]
         }
       },
@@ -283,11 +280,5 @@ defmodule WandererApp.Application do
 
       webhook_services ++ sse_services ++ relay
     end
-  end
-
-  defp discord_pool_size do
-    :wanderer_app
-    |> Application.get_env(:discord_finch, [])
-    |> Keyword.get(:pool_size, @default_discord_pool_size)
   end
 end

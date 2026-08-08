@@ -227,6 +227,11 @@ config :wanderer_app,
     System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_SIZE", "25") |> String.to_integer(),
   finch_webhooks_pool_count:
     System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_COUNT", "2") |> String.to_integer(),
+  # Discord pool - isolated so a slow Discord cannot exhaust shared pools
+  finch_discord_pool_size:
+    System.get_env("WANDERER_FINCH_DISCORD_POOL_SIZE", "10") |> String.to_integer(),
+  finch_discord_pool_count:
+    System.get_env("WANDERER_FINCH_DISCORD_POOL_COUNT", "1") |> String.to_integer(),
   # Default pool - everything else (email, license manager, etc.)
   finch_default_pool_size:
     System.get_env("WANDERER_FINCH_DEFAULT_POOL_SIZE", "25") |> String.to_integer(),
@@ -237,10 +242,6 @@ config :wanderer_app,
   location_concurrency:
     System.get_env("WANDERER_LOCATION_CONCURRENCY", "#{System.schedulers_online() * 12}")
     |> String.to_integer()
-
-# Discord kill notification delivery pool - read by discord_pool_size/0 in application.ex
-config :wanderer_app, :discord_finch,
-  pool_size: System.get_env("WANDERER_DISCORD_POOL_SIZE", "10") |> String.to_integer()
 
 config :ueberauth, Ueberauth,
   providers: [

@@ -14,7 +14,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   cannot process incoming casts, which would make the 100-item queue bound
   meaningless — events would pile up unbounded in the mailbox instead of being
   dropped by the cap. (The existing `WebhookDispatcher` sleeps inside its retry
-  loop at `webhook_dispatcher.ex:355,376`; it is not the model here.)
+  loop at `webhook_dispatcher.ex:377`; it is not the model here.)
 
   The HTTP request itself runs in a monitored `Task` for the same reason: a
   synchronous call would block the process for up to the client's 15s receive
@@ -67,7 +67,11 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   @max_queue 100
   @max_attempts 5
   @event_deadline_ms 60_000
-  @max_retry_after_ms 10_000
+  # A 429's Retry-After above this is not honored early: repeatedly ignoring
+  # Retry-After is the specific behaviour Discord/Cloudflare issue temporary
+  # IP bans for, and that ban would take down every map on the instance, not
+  # just the rate-limited one. See parse_retry_after/1.
+  @retry_after_give_up_ms 10_000
   @min_retry_after_ms 50
   @default_retry_after_ms 1_000
   @backoff_base_ms 1_000
@@ -290,7 +294,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
 
       {:ok, 429, headers} ->
         state = put_current(state, %{current | task_ref: nil})
-        schedule_retry(state, retry_after_ms(headers), "Discord returned 429 (rate limited)")
+        handle_rate_limited(state, headers)
 
       {:ok, 404, _headers} ->
         # The only status that disables immediately: the webhook was deleted
@@ -398,6 +402,26 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
 
   # -- timing helpers -------------------------------------------------------
 
+  # A Retry-After within budget is honored and the event retried; one beyond
+  # @retry_after_give_up_ms is not sent early — the event is recorded as a
+  # failed delivery instead (record_failure, same as any other terminal
+  # outcome; the kill is already recoverable per this module's at-most-once
+  # rationale). This is the only place the worker deliberately gives up
+  # rather than retrying, because retrying anyway is the thing that gets a
+  # webhook (and the shared IP) rate-limited by Cloudflare.
+  defp handle_rate_limited(state, headers) do
+    case retry_after_ms(headers) do
+      ms when ms > @retry_after_give_up_ms ->
+        finish(
+          state,
+          {:error, "Discord returned 429 with retry-after #{ms}ms exceeding budget", :count}
+        )
+
+      ms ->
+        schedule_retry(state, ms, "Discord returned 429 (rate limited)")
+    end
+  end
+
   defp retry_after_ms(headers) do
     headers
     |> Enum.find_value(fn {k, v} ->
@@ -409,19 +433,11 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   defp parse_retry_after(nil), do: @default_retry_after_ms
 
   defp parse_retry_after(value) do
-    # Clamped to @max_retry_after_ms. Tradeoff, stated explicitly: if Discord
-    # asks for a wait longer than 10s we retry sooner than requested and burn
-    # an attempt, so a heavily rate-limited event can exhaust its 5 attempts
-    # and be recorded as a failure rather than waiting the full window. We
-    # accept that to keep the worker's queue moving — a 60s honored wait would
-    # stall every other event for this map behind one rate-limited chunk, and
-    # the event deadline would likely kill it anyway.
     case Float.parse(to_string(value)) do
       {seconds, _} ->
         seconds
         |> Kernel.*(1000)
         |> round()
-        |> min(@max_retry_after_ms)
         |> max(@min_retry_after_ms)
 
       :error ->

@@ -245,11 +245,12 @@ defmodule WandererApp.Api.MapDiscordNotification do
   # after_transaction, not after_action: an after_action hook runs *inside* the
   # transaction, so a concurrent reader can re-populate the cache from the
   # pre-commit row in the window between the invalidation and the commit.
-  # DiscordDispatcher caches with no TTL (discord_dispatcher.ex:270), so that
-  # stale entry would survive until the next config change — kills would keep
-  # being posted to a webhook the user had already replaced or disabled. The
-  # sibling resource map_webhook_subscription.ex still uses after_action for the
-  # same purpose; this deviates from it deliberately.
+  # DiscordDispatcher's cache has a 5-minute TTL (discord_dispatcher.ex:271,277),
+  # but within that window a stale entry would survive an after_action
+  # invalidation racing a concurrent reader — kills would keep being posted to
+  # a webhook the user had already replaced or disabled until the TTL expires.
+  # The sibling resource map_webhook_subscription.ex still uses after_action for
+  # the same purpose; this deviates from it deliberately.
   @doc """
   PubSub topic carrying delivery-status changes for a map's Discord config.
 
@@ -299,7 +300,9 @@ defmodule WandererApp.Api.MapDiscordNotification do
 
   @doc """
   Returns true when the URL is a syntactically valid Discord webhook endpoint.
-  Exposed so the LiveView form can validate before submitting.
+
+  Used by the changeset validation on create/update; also available to any
+  caller that wants to check a URL up front, outside of a changeset.
   """
   def valid_webhook_url?(url) when is_binary(url) do
     trimmed = String.trim(url)
@@ -311,8 +314,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     #
     # Surrounding whitespace is tolerated instead, because Ash's :string type
     # trims before the value is stored — rejecting it here would make this
-    # function, which the form also calls to pre-validate raw input, disagree
-    # with what the write actually does.
+    # function disagree with what the write actually does.
     not String.match?(trimmed, ~r/[[:cntrl:]]/u) and parsed_webhook_url?(trimmed)
   end
 

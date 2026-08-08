@@ -143,6 +143,30 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
     assert length(wait_for_requests(2)) == 2
   end
 
+  test "a 429 with retry-after above the budget does not retry and records a failure", %{
+    map: map,
+    notification: n
+  } do
+    # Above @retry_after_give_up_ms: retrying this early ignores what Discord
+    # asked for, so it must not be sent — the event is recorded as failed
+    # instead of burning an attempt on an early request.
+    HttpStub.set_responses([{:ok, 429, [{"retry-after", "20"}]}])
+
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    wait_for_requests(1)
+
+    reloaded =
+      await_condition(fn ->
+        rec = reload(map.id)
+        if rec.consecutive_failures == 1, do: {:ok, rec}, else: :retry
+      end)
+
+    # One request only — no early retry against the instructed wait.
+    assert length(HttpStub.requests()) == 1
+    assert reloaded.enabled? == true
+    assert reloaded.last_error =~ "429"
+  end
+
   test "does not block its mailbox while waiting to retry", %{map: map, notification: n} do
     # A long retry-after must not stop the worker answering new casts: if the
     # send path slept, this :sys.get_state would time out.
