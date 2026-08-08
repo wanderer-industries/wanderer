@@ -419,12 +419,25 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
       with {:ok, source_map} <- fetch_source_map(source_map_id),
            :ok <- validate_no_circular_ref(map_id, source_map),
+           :ok <- validate_no_chain(map_id, source_map),
            :ok <- validate_source_access(current_user, source_map),
            {:ok, map} <- WandererApp.MapRepo.get(map_id),
-           {:ok, updated_map} <-
+           {:ok, _updated_map} <-
              WandererApp.MapRepo.set_intel_source_map(map, source_map_id) do
-        # Update the map state cache so subsequent reads see the new value
-        WandererApp.Map.update_map_state(map_id, %{map: updated_map})
+        # Update the %WandererApp.Map{} held in the map-state cache. Caching the
+        # Ash resource here instead would replace the struct that
+        # Impl.update_subscription_settings/2, Impl.update_options/2 and
+        # AclsImpl all pattern-match on.
+        WandererApp.Map.Server.update_intel_source_map(map_id, source_map_id)
+
+        # The previous source's inherited records are no longer reachable by any
+        # sync (delete_inherited/3 scopes to the *current* source), so clear them
+        # before syncing the new source in.
+        previous_source_id = Map.get(map, :intel_source_map_id)
+
+        if previous_source_id && previous_source_id != source_map_id do
+          WandererApp.Map.IntelSync.clear_inherited_from(map_id, previous_source_id)
+        end
 
         if source_map_id do
           Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
@@ -441,6 +454,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         {:error, :circular_reference} ->
           {:reply, %{success: false, error: "circular_reference"}, socket}
 
+        {:error, :source_is_subscriber} ->
+          {:reply, %{success: false, error: "source_is_subscriber"}, socket}
+
+        {:error, :map_is_a_source} ->
+          {:reply, %{success: false, error: "map_is_a_source"}, socket}
+
         {:error, :unauthorized_source} ->
           {:reply, %{success: false, error: "unauthorized_source"}, socket}
 
@@ -453,6 +472,14 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
+  # Without this clause a caller lacking manage_map falls through to the generic
+  # handle_ui_event/3 catch-all, which returns {:noreply, socket} — the client's
+  # outCommand promise never resolves and the dropdown sticks in its optimistic
+  # state. Matches the fallbacks on get_intel_source_maps and sync_intel.
+  def handle_ui_event("set_intel_source_map", _params, socket) do
+    {:reply, %{success: false, error: "forbidden"}, socket}
+  end
+
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
@@ -460,13 +487,21 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
   defp maybe_add_intel_source_info(options, map_id) do
     if WandererApp.Env.intel_sharing_enabled?() do
-      case WandererApp.Map.get_map_state(map_id, false) do
-        {:ok, %{map: %{intel_source_map_id: source_id}}} ->
-          Map.put(options, "intel_source_map_id", source_id)
+      source_id =
+        case WandererApp.Map.get_map_state(map_id, false) do
+          {:ok, %{map: %{intel_source_map_id: id}}} -> id
+          _ -> nil
+        end
 
-        _ ->
-          Map.put(options, "intel_source_map_id", nil)
-      end
+      options
+      |> Map.put("intel_source_map_id", source_id)
+      # Which systems are actually intel-inherited. Read-only gating keys off
+      # membership here rather than off `intel_source_map_id` alone, so systems
+      # the source map has no data for stay editable on the subscriber map.
+      |> Map.put(
+        "intel_inherited_system_ids",
+        WandererApp.Map.IntelSync.inherited_solar_system_ids(map_id, source_id)
+      )
     else
       options
     end
@@ -507,6 +542,40 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         _ ->
           :ok
       end
+    end
+  end
+
+  # Chains (A -> B -> C) are refused in both directions. The six system intel
+  # fields are copied verbatim into MapSystem columns with no provenance marker
+  # (unlike comments and structures, which carry inherited_from_map_id), so a
+  # chain would propagate A's intel into C even though C's admin was never
+  # authorised against A. validate_source_access/2 only authorises the immediate
+  # source, and walk_intel_chain/2 only rejects cycles, so neither closes this.
+  defp validate_no_chain(_map_id, nil), do: :ok
+
+  defp validate_no_chain(map_id, source_map) do
+    cond do
+      # Forward: the map we are subscribing to is itself a subscriber.
+      not is_nil(Map.get(source_map, :intel_source_map_id)) ->
+        {:error, :source_is_subscriber}
+
+      # Reverse: this map is already somebody else's source, so subscribing it
+      # now would retroactively form a chain behind them.
+      map_has_subscribers?(map_id) ->
+        {:error, :map_is_a_source}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp map_has_subscribers?(map_id) do
+    case WandererApp.Api.Map.intel_subscribers_of(map_id) do
+      {:ok, []} -> false
+      {:ok, _subscribers} -> true
+      # Fail closed: if we cannot prove there are no subscribers, refuse rather
+      # than risk forming an unauthorised chain.
+      _ -> true
     end
   end
 

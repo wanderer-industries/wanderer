@@ -18,6 +18,7 @@ import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoa
 import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { PingType } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useIsIntelInherited } from '@/hooks/Mapper/hooks';
 import clsx from 'clsx';
 import { MenuItem } from 'primereact/menuitem';
 import { MenuItemWithInfo, WdMenuItem } from '@/hooks/Mapper/components/ui-kit';
@@ -41,11 +42,12 @@ export const useContextMenuSystemItems = ({
   systems,
 }: Omit<ContextMenuSystemProps, 'contextMenuRef'>) => {
   const {
-    data: { pings, isSubscriptionActive, options: mapOptions },
+    data: { pings, isSubscriptionActive },
   } = useMapRootState();
 
-  // Intel-managed fields are owned by the source map, so their menus are read-only here.
-  const hasIntelSource = !!mapOptions?.intel_source_map_id;
+  // Intel-managed fields are owned by the source map, so their menus are
+  // read-only here — but only for systems the source map actually has.
+  const hasIntelSource = useIsIntelInherited(systemId);
 
   const getTags = useTagMenu(systems, systemId, onSystemTag, hasIntelSource);
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus, hasIntelSource);

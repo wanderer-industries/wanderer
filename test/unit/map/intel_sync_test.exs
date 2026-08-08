@@ -264,6 +264,178 @@ defmodule WandererApp.Map.IntelSyncTest do
     end
   end
 
+  describe "inherited_solar_system_ids/2" do
+    test "returns only the systems the source map also has", ctx do
+      enable_intel_sharing()
+
+      # Present on the subscriber but not on the source: stays editable.
+      insert(:map_system, %{
+        map_id: ctx.subscriber_map.id,
+        solar_system_id: 30_002_659,
+        visible: true
+      })
+
+      assert [30_000_142] ==
+               IntelSync.inherited_solar_system_ids(ctx.subscriber_map.id, ctx.source_map.id)
+    end
+
+    test "returns [] when the map has no source", ctx do
+      enable_intel_sharing()
+
+      assert [] == IntelSync.inherited_solar_system_ids(ctx.subscriber_map.id, nil)
+    end
+
+    test "returns [] when the feature flag is off", ctx do
+      disable_intel_sharing()
+
+      assert [] ==
+               IntelSync.inherited_solar_system_ids(ctx.subscriber_map.id, ctx.source_map.id)
+    end
+  end
+
+  describe "inherited_system?/2" do
+    setup ctx do
+      Cachex.put(:map_state_cache, ctx.subscriber_map.id, %{
+        map: %WandererApp.Map{
+          map_id: ctx.subscriber_map.id,
+          intel_source_map_id: ctx.source_map.id
+        }
+      })
+
+      on_exit(fn -> Cachex.del(:map_state_cache, ctx.subscriber_map.id) end)
+
+      :ok
+    end
+
+    test "true when the source map has the system", ctx do
+      enable_intel_sharing()
+
+      assert IntelSync.inherited_system?(ctx.subscriber_map.id, 30_000_142)
+    end
+
+    test "false when the source map does not have the system", ctx do
+      enable_intel_sharing()
+
+      refute IntelSync.inherited_system?(ctx.subscriber_map.id, 99_999_999)
+    end
+
+    test "false when the feature flag is off", ctx do
+      disable_intel_sharing()
+
+      refute IntelSync.inherited_system?(ctx.subscriber_map.id, 30_000_142)
+    end
+
+    test "false when the map has no cached state", ctx do
+      enable_intel_sharing()
+
+      refute IntelSync.inherited_system?(ctx.source_map.id, 30_000_142)
+    end
+  end
+
+  describe "clear_inherited_from/2" do
+    test "removes inherited records but leaves the map's own", ctx do
+      enable_intel_sharing()
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.source_system.id,
+          character_id: ctx.character.id,
+          text: "From source"
+        })
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemStructure.create(%{
+          system_id: ctx.source_system.id,
+          structure_type_id: "35825",
+          structure_type: "Astrahus",
+          character_eve_id: "2000000001",
+          solar_system_name: "Jita",
+          solar_system_id: 30_000_142,
+          name: "From source",
+          status: "anchored"
+        })
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.subscriber_system.id,
+          character_id: ctx.character.id,
+          text: "Locally written"
+        })
+
+      {:ok, _} = IntelSync.sync_system(ctx.subscriber_map.id, ctx.source_map.id, 30_000_142)
+
+      assert {:ok, _cleared} =
+               IntelSync.clear_inherited_from(ctx.subscriber_map.id, ctx.source_map.id)
+
+      {:ok, comments} =
+        WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+
+      {:ok, structures} =
+        WandererApp.Api.MapSystemStructure.by_system_id(ctx.subscriber_system.id)
+
+      assert Enum.all?(comments, &is_nil(&1.inherited_from_map_id))
+      assert Enum.map(comments, & &1.text) == ["Locally written"]
+      assert structures == []
+    end
+
+    test "is a no-op when there is no previous source", ctx do
+      enable_intel_sharing()
+
+      assert {:ok, 0} == IntelSync.clear_inherited_from(ctx.subscriber_map.id, nil)
+    end
+  end
+
+  describe "SystemsImpl.remove_system_comment/4" do
+    test "refuses to delete an inherited comment", ctx do
+      enable_intel_sharing()
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.source_system.id,
+          character_id: ctx.character.id,
+          text: "From source"
+        })
+
+      {:ok, _} = IntelSync.sync_system(ctx.subscriber_map.id, ctx.source_map.id, 30_000_142)
+
+      {:ok, [inherited]} =
+        WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+
+      assert :ok ==
+               WandererApp.Map.Server.SystemsImpl.remove_system_comment(
+                 ctx.subscriber_map.id,
+                 inherited.id,
+                 ctx.user.id,
+                 ctx.character.id
+               )
+
+      assert {:ok, [still_there]} =
+               WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+
+      assert still_there.id == inherited.id
+    end
+
+    test "still deletes a comment the map owns", ctx do
+      {:ok, own} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.subscriber_system.id,
+          character_id: ctx.character.id,
+          text: "Locally written"
+        })
+
+      assert :ok ==
+               WandererApp.Map.Server.SystemsImpl.remove_system_comment(
+                 ctx.subscriber_map.id,
+                 own.id,
+                 ctx.user.id,
+                 ctx.character.id
+               )
+
+      assert {:ok, []} =
+               WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+    end
+  end
+
   describe "sync_all_visible_systems/2" do
     test "syncs all visible systems", ctx do
       enable_intel_sharing()

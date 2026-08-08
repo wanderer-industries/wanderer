@@ -47,7 +47,14 @@ export const Comments = ({}: CommentsProps) => {
   return (
     <div className="flex flex-col gap-1 whitespace-nowrap overflow-auto text-ellipsis custom-scrollbar">
       {commentsList.map(({ id, text, updated_at, characterEveId, inherited_from_map_id }) => (
-        <MarkdownComment key={id} text={text} time={updated_at} characterEveId={characterEveId} id={id} inherited={!!inherited_from_map_id} />
+        <MarkdownComment
+          key={id}
+          text={text}
+          time={updated_at}
+          characterEveId={characterEveId}
+          id={id}
+          inherited={!!inherited_from_map_id}
+        />
       ))}
     </div>
   );

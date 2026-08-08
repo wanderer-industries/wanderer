@@ -1,6 +1,7 @@
 import { TooltipPosition, WdButton, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useIsIntelInherited } from '@/hooks/Mapper/hooks';
 import { useMapGetOption } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { OutCommand } from '@/hooks/Mapper/types';
@@ -19,12 +20,14 @@ interface SystemSettingsDialog {
 
 export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSettingsDialog) => {
   const {
-    data: { systems, options: mapOptions },
+    data: { systems },
     outCommand,
   } = useMapRootState();
 
   const isTempSystemNameEnabled = useMapGetOption('show_temp_system_name') === 'true';
-  const hasIntelSource = !!mapOptions?.intel_source_map_id;
+  // Only systems the source map also has are intel-owned; the rest of this
+  // map's systems stay editable.
+  const hasIntelSource = useIsIntelInherited(systemId);
 
   const system = getSystemById(systems, systemId);
   const systemStaticInfo = getSystemStaticInfo(systemId);

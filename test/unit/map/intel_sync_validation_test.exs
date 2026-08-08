@@ -75,4 +75,26 @@ defmodule WandererApp.Map.IntelSyncValidationTest do
       assert {:error, _} = result
     end
   end
+
+  # Backs the chain guard in MapCoreEventHandler.validate_no_chain/2: a map that
+  # is already somebody's source must not itself become a subscriber.
+  describe "Api.Map.intel_subscribers_of/1" do
+    test "returns the maps pointing at the given source", ctx do
+      {:ok, _} = WandererApp.MapRepo.set_intel_source_map(ctx.map_a, ctx.map_b.id)
+
+      assert {:ok, [subscriber]} = WandererApp.Api.Map.intel_subscribers_of(ctx.map_b.id)
+      assert subscriber.id == ctx.map_a.id
+    end
+
+    test "returns [] for a map nobody subscribes to", ctx do
+      assert {:ok, []} = WandererApp.Api.Map.intel_subscribers_of(ctx.map_b.id)
+    end
+
+    test "ignores soft-deleted subscribers", ctx do
+      {:ok, map_a} = WandererApp.MapRepo.set_intel_source_map(ctx.map_a, ctx.map_b.id)
+      {:ok, _deleted} = WandererApp.Api.Map.mark_as_deleted(map_a)
+
+      assert {:ok, []} = WandererApp.Api.Map.intel_subscribers_of(ctx.map_b.id)
+    end
+  end
 end

@@ -12,15 +12,14 @@ import { useDetectSettingsChanged } from '@/hooks/Mapper/components/hooks';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { IntelSettings } from './IntelSettings.tsx';
 
-interface AdminSettingsProps {
-  intelSharingEnabled?: boolean;
-}
-
-export const AdminSettings = ({ intelSharingEnabled = false }: AdminSettingsProps) => {
+export const AdminSettings = () => {
   const {
+    data: { clientEnv },
     storedSettings: { getSettingsForExport },
     outCommand,
   } = useMapRootState();
+
+  const intelSharingEnabled = clientEnv?.intelSharingEnabled ?? false;
 
   const settingsChanged = useDetectSettingsChanged();
 
