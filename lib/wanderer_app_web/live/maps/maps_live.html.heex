@@ -665,7 +665,7 @@
 
               <.live_component
                 :if={@webhooks_enabled? && @active_settings_tab == "notifications"}
-                module={WandererAppWeb.MapNotificationsComponent}
+                module={WandererAppWeb.Maps.MapNotificationsComponent}
                 id="map-notifications"
                 map_id={@map.id}
               />

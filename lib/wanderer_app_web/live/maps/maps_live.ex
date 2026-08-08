@@ -211,7 +211,7 @@ defmodule WandererAppWeb.MapsLive do
     end
   end
 
-  # Subscribed here rather than inside MapNotificationsComponent: a
+  # Subscribed here rather than inside Maps.MapNotificationsComponent: a
   # live_component runs in this process, so it cannot receive messages itself,
   # and it is unmounted every time the user leaves the Notifications tab — which
   # would leak a fresh subscription on each visit. Doing it once per settings
@@ -636,7 +636,7 @@ defmodule WandererAppWeb.MapsLive do
   # A map, not a tuple: the {ref, result} clause below matches any two-element
   # tuple and would call Process.demonitor/2 on whatever it found there.
   def handle_info(%{event: :discord_notification_status, map_id: map_id}, socket) do
-    send_update(WandererAppWeb.MapNotificationsComponent,
+    send_update(WandererAppWeb.Maps.MapNotificationsComponent,
       id: "map-notifications",
       map_id: map_id,
       refresh_status: true

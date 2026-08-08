@@ -1,4 +1,4 @@
-defmodule WandererAppWeb.MapNotificationsComponent do
+defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   @moduledoc """
   Settings tab for per-map Discord kill notifications.
 
@@ -12,10 +12,12 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   alias WandererApp.Api.MapDiscordNotification
   alias WandererApp.Api.MapSolarSystem
+  alias WandererApp.CachedInfo
 
   @live_select_id "excluded_system_live_select_component"
   @min_search_length 2
   @max_search_results 20
+  @masked_url_token_prefix 4
 
   @impl true
   # Delivery outcomes are written by the map's Discord worker, asynchronously.
@@ -380,25 +382,25 @@ defmodule WandererAppWeb.MapNotificationsComponent do
 
   defp search_systems(_), do: []
 
-  # One query for every excluded system, not one per system. Falls back to the
-  # bare id for anything the lookup did not return, and keeps the stored order.
+  # Static system data is already fully cached (CachedInfo warms the whole EVE
+  # SDE into :system_static_info_cache on first miss), so this never hits the
+  # database. Labelled the same way as the live_select search results
+  # ("Jita (The Forge)") so the entry a user picked matches what they see here
+  # afterwards. Falls back to the bare id for anything unresolvable, and keeps
+  # the stored order.
   defp excluded_system_labels(nil), do: []
   defp excluded_system_labels(%{excluded_systems: []}), do: []
 
   defp excluded_system_labels(%{excluded_systems: ids}) do
-    labels =
-      case MapSolarSystem.by_solar_system_ids(ids) do
-        {:ok, systems} ->
-          Map.new(
-            systems,
-            &{&1.solar_system_id, "#{&1.solar_system_name} (#{&1.solar_system_id})"}
-          )
+    Enum.map(ids, fn id ->
+      label =
+        case CachedInfo.get_system_static_info(id) do
+          {:ok, %{solar_system_name: name, region_name: region}} -> "#{name} (#{region})"
+          _ -> to_string(id)
+        end
 
-        _ ->
-          %{}
-      end
-
-    Enum.map(ids, &{&1, Map.get(labels, &1, to_string(&1))})
+      {id, label}
+    end)
   end
 
   defp checked?("true"), do: true
@@ -428,7 +430,7 @@ defmodule WandererAppWeb.MapNotificationsComponent do
     case String.split(url, "/", trim: true) do
       parts when length(parts) >= 2 ->
         [token, id | _] = Enum.reverse(parts)
-        ".../#{id}/#{String.slice(token, 0, 4)}••••"
+        ".../#{id}/#{String.slice(token, 0, @masked_url_token_prefix)}••••"
 
       _ ->
         "••••"
