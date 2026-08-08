@@ -1,4 +1,9 @@
-FROM elixir:1.17-otp-26
+# Pins Elixir to the .tool-versions value (1.17.3) instead of the floating
+# 1.17 tag, which could drift to a different Elixir patch. This matters because
+# _build is shared with the host via the /app bind. Note the OTP suffix pins
+# only the major (26); the Erlang patch may still differ from .tool-versions'
+# 26.2.5.5, since the official images publish no patch-level tag.
+FROM elixir:1.17.3-otp-26
 
 ARG USERNAME=developer
 ARG USER_UID=1000

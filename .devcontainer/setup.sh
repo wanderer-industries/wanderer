@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-echo "→ ensuring build dirs are writable"
-# deps/ and _build/ come from the /app bind mount (see docker-compose.yml), so
-# they carry host ownership. When the host uid differs from the container user's,
-# mix cannot write to them. Best-effort fix; harmless when uids already match.
-sudo chown -R "$(id -u):$(id -g)" /app/deps /app/_build 2>/dev/null || true
-
 echo "→ fetching & compiling deps"
 mix deps.get
 mix compile

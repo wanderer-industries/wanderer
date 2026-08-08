@@ -21,6 +21,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # The container user is created with these ids so that files written
+        # through the /app bind mount (deps/, _build/, generated assets) keep
+        # host ownership. Hosts whose uid is not 1000 export USER_UID/USER_GID
+        # (see docker-compose.override.yml.example) before building.
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
     environment:
       PORT: 4444
       DB_HOST: db
