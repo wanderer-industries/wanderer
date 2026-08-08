@@ -138,9 +138,8 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert reloaded.webhook_url == valid_url()
   end
 
-  test "accepts a valid replacement url on UPDATE" do
+  test "accepts a valid replacement url on UPDATE", %{map: map} do
     # Guards against a blanket-reject regression: replacement must still work.
-    map = WandererAppWeb.Factory.insert(:map, %{})
     {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
     replacement = "https://canary.discord.com/api/v10/webhooks/999/newtok"
 
@@ -301,11 +300,9 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert rec.last_delivery_at != nil
   end
 
-  test "destroy invalidates the cache and stops the worker", %{map: map} do
+  test "destroy removes the record", %{map: map} do
     {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
 
-    # Neither the cache nor the worker registry is running in this test; the
-    # custom destroy must tolerate that rather than crash.
     assert :ok = MapDiscordNotification.destroy(rec)
     assert {:error, _} = MapDiscordNotification.by_map(map.id)
   end

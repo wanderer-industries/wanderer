@@ -55,9 +55,15 @@ defmodule WandererApp.Api.MapDiscordNotification do
     define(:destroy, action: :destroy)
     define(:by_id, get_by: [:id], action: :read)
     define(:by_map, action: :by_map, args: [:map_id])
-    define(:record_success, action: :record_success)
-    define(:record_failure, action: :record_failure, args: [:error])
-    define(:disable, action: :disable, args: [:error])
+    define(:record_success, action: :record_success, exclude_inputs: [:webhook_url])
+
+    define(:record_failure,
+      action: :record_failure,
+      args: [:error],
+      exclude_inputs: [:webhook_url]
+    )
+
+    define(:disable, action: :disable, args: [:error], exclude_inputs: [:webhook_url])
   end
 
   actions do
