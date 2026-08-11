@@ -169,9 +169,12 @@
 // a bubble is drawn around the end of the connection it covers, in the edge layer so the system
 // card sits on top of it
 .Bubble {
-  fill: rgba(255, 176, 58, 0.18);
+  // r is a geometry property, so the radius is themeable like every other bit of the bubble;
+  // the r attribute on the circle stays as the fallback
+  r: var(--rf-edge-bubble-size, 24px);
+  fill: var(--rf-edge-bubble-fill, rgba(255, 176, 58, 0.18));
   stroke: var(--rf-edge-bubble, #ffb03a);
-  stroke-width: 2px;
-  stroke-dasharray: 6 4;
+  stroke-width: var(--rf-edge-bubble-border, 2px);
+  stroke-dasharray: var(--rf-edge-bubble-dash, 6 4);
   pointer-events: none;
 }

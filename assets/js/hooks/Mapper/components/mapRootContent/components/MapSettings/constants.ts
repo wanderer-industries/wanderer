@@ -1,6 +1,12 @@
 import { InterfaceStoredSettingsProps } from '@/hooks/Mapper/mapRootProvider';
 import { AvailableThemes, MiniMapPlacement, PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
+import {
+  BUBBLE_BORDER_RANGE,
+  BUBBLE_DEFAULT_COLOR,
+  BUBBLE_OPACITY_RANGE,
+  BUBBLE_SIZE_RANGE,
+} from '@/hooks/Mapper/constants/connectionBubble.ts';
 
 export { DEFAULT_REMOTE_SETTINGS, UserSettingsRemoteList } from '@/hooks/Mapper/constants/userSettings.ts';
 
@@ -97,6 +103,41 @@ export const CONNECTIONS_CHECKBOXES_PROPS: SettingsListItem[] = [
     prop: InterfaceStoredSettingsProps.isThickConnections,
     label: 'Thicker connections',
     type: 'checkbox',
+  },
+];
+
+// The bubble drawn on a bubbled connection end. Leaving a setting empty keeps the theme's own
+// value - see BUBBLE_CSS_VARS for the variables a theme can set.
+export const CONNECTION_BUBBLE_SETTINGS_PROPS: SettingsListItem[] = [
+  {
+    prop: UserSettingsRemoteProps.connection_bubble_color,
+    label: 'Bubble colour',
+    type: 'color',
+    fallback: BUBBLE_DEFAULT_COLOR,
+  },
+  {
+    prop: UserSettingsRemoteProps.connection_bubble_size,
+    label: 'Bubble size',
+    type: 'number',
+    min: BUBBLE_SIZE_RANGE.min,
+    max: BUBBLE_SIZE_RANGE.max,
+    suffix: ' px',
+  },
+  {
+    prop: UserSettingsRemoteProps.connection_bubble_border,
+    label: 'Bubble border',
+    type: 'number',
+    min: BUBBLE_BORDER_RANGE.min,
+    max: BUBBLE_BORDER_RANGE.max,
+    suffix: ' px',
+  },
+  {
+    prop: UserSettingsRemoteProps.connection_bubble_opacity,
+    label: 'Bubble fill',
+    type: 'number',
+    min: BUBBLE_OPACITY_RANGE.min,
+    max: BUBBLE_OPACITY_RANGE.max,
+    suffix: ' %',
   },
 ];
 

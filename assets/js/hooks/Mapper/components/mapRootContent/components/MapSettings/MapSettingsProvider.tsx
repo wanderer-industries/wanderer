@@ -9,12 +9,16 @@ import { OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
+import { ColorPicker } from 'primereact/colorpicker';
+import { PrimeIcons } from 'primereact/api';
+import { WdImgButton } from '@/hooks/Mapper/components/ui-kit/WdImgButton';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 import { FormatTemplateInput } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/FormatTemplateInput.tsx';
 import { SystemLabelDefinition } from '@/hooks/Mapper/constants/labels.ts';
 
-export type SettingValue = boolean | string | Record<string, string> | SystemLabelDefinition[];
+export type SettingValue = boolean | number | string | Record<string, string> | SystemLabelDefinition[];
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
@@ -129,6 +133,51 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
             helperText={item.helperText}
             onChange={value => handleSettingChange(item.prop, value)}
           />
+        );
+      }
+
+      if (item.type === 'color') {
+        const value = (currentValue as string) || '';
+
+        return (
+          <div key={item.prop.toString()} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+            <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}:</label>
+            <div className="border-b-2 border-dotted border-[#3f3f3f] h-px mx-3" />
+            <div className="flex items-center gap-2">
+              <ColorPicker
+                format="hex"
+                value={value || item.fallback}
+                onChange={e => handleSettingChange(item.prop, e.value ? `#${String(e.value).replace('#', '')}` : '')}
+              />
+              <WdImgButton
+                className={PrimeIcons.REPLAY}
+                tooltip={{ content: 'Back to the theme colour' }}
+                onClick={() => handleSettingChange(item.prop, '')}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      if (item.type === 'number') {
+        return (
+          <div key={item.prop.toString()} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+            <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}:</label>
+            <div className="border-b-2 border-dotted border-[#3f3f3f] h-px mx-3" />
+            <div className="flex items-center gap-2">
+              <InputNumber
+                className="text-sm w-[110px]"
+                inputClassName="text-sm w-[70px]"
+                value={(currentValue as number) || null}
+                min={item.min}
+                max={item.max}
+                suffix={item.suffix}
+                showButtons
+                placeholder={item.placeholder ?? 'theme'}
+                onValueChange={e => handleSettingChange(item.prop, e.value ?? 0)}
+              />
+            </div>
+          </div>
         );
       }
 

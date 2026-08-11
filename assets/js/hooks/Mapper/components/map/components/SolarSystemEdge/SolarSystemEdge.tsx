@@ -39,7 +39,8 @@ const MAP_OFFSETS: Record<string, { x: number; y: number }> = {
   [Position.Right]: { x: 0, y: 0 },
 };
 
-// a bubble covers the system it sits on, so it reads better a little wider than the system card
+// a bubble covers the system it sits on, so it reads better a little wider than the system card.
+// This is only the fallback - the drawn radius comes from --rf-edge-bubble-size.
 const BUBBLE_RADIUS = 24;
 
 export const SHIP_SIZES_COLORS = {

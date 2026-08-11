@@ -4,7 +4,12 @@ import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
-import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
+import {
+  CONNECTION_BUBBLE_SETTINGS_PROPS,
+  CONNECTIONS_CHECKBOXES_PROPS,
+  SIGNATURES_CHECKBOXES_PROPS,
+  SYSTEMS_CHECKBOXES_PROPS,
+} from './constants.ts';
 import {
   MapSettingsProvider,
   useMapSettings,
@@ -89,7 +94,15 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
             </TabPanel>
 
             <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
-              {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
+              <div className="flex flex-col gap-1">
+                {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
+
+                <div className="text-[var(--gray-200)] text-[13px] font-semibold mt-3">Bubbled ends</div>
+                <div className="text-gray-400 text-xs mb-1">
+                  Leave a field empty to keep whatever the current theme uses.
+                </div>
+                {renderSettingsList(CONNECTION_BUBBLE_SETTINGS_PROPS)}
+              </div>
             </TabPanel>
 
             <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>

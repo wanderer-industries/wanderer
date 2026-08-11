@@ -13,6 +13,7 @@ import { CommandSelectSystems, OutCommand, OutCommandHandler, SolarSystemConnect
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import isEqual from 'lodash.isequal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { bubbleCssVars } from '@/hooks/Mapper/constants/connectionBubble.ts';
 import { Node, useReactFlow, Viewport, XYPosition } from 'reactflow';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 
@@ -50,8 +51,13 @@ export const MapWrapper = () => {
       systemSignatures,
     },
     storedSettings: { interfaceSettings, settingsLocal, mapSettings, mapSettingsUpdate },
+    userRemoteSettings: { userRemoteSettings },
     undoStack: { popUndoEntry },
   } = useMapRootState();
+
+  // the bubble on a bubbled connection end is drawn from CSS variables, so a theme styles it and
+  // the user's own settings override it
+  const bubbleVars = useMemo(() => bubbleCssVars(userRemoteSettings), [userRemoteSettings]);
 
   const { show } = useToast();
 
@@ -327,6 +333,7 @@ export const MapWrapper = () => {
         minimapPlacement={minimapPosition}
         localShowShipName={settingsLocal.showShipName}
         defaultViewport={mapSettings.viewport}
+        styleVars={bubbleVars}
       />
 
       {openSettings != null && (
