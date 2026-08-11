@@ -1,6 +1,3 @@
-//yo mamma so fat when she takes the gate she can be seen on both locals at the same time
-//and when Obi-Wan Kenobi saw her, he said: "That's no moon..."
-
 @use './eve-common-variables';
 @use './eve-common';
 @use "sass:color";
@@ -44,7 +41,7 @@
   --eve-solar-system-status-dangerous: linear-gradient(330deg,#001c30ff,  #c75919, #001c30ff,  #c75919, #001c30ff, #c75919, #001c30ff, #c75919, #001c30ff);
   --eve-solar-system-status-color-dangerous:  #c75919;
   --eve-solar-system-status-rally: repeating-linear-gradient(45deg, #3182d6 0px,#3182d6 8px,transparent 8px,transparent 21px);
-  --eve-solar0system-status-color-rally: #3182d6;
+  --eve-solarsystem-status-color-rally: #3182d6;
 
   --rf-edge-time-normal-width: 7px;
   --rf-edge-time-normal-thick-width: 12px;
@@ -55,7 +52,7 @@
   --rf-edge-time-critical-thick-width: 12px;
   --rf-edge-time-critical-linecap: butt;
   --rf-edge-time-supercritical-width: 7px;
-  --rf-edge-time-supercritical-thick-width: 4px;
+  --rf-edge-time-supercritical-thick-width: 12px;
   --rf-edge-time-supercritical-dasharray: 5, 5;
   --rf-edge-time-supercritical-linecap: butt;
   --rf-edge-time-normal: #303d4a;
@@ -63,10 +60,10 @@
   --rf-edge-mass-normal-thick-width: 5px;
   --rf-edge-mass-normal: #182028;
   --rf-edge-mass-normal-linecap: butt;
-  --rf-edge-mass-half-dasshofset: 5;
+  --rf-edge-mass-half-dashoffset: 5;
   --rf-edge-mass-half-linecap: butt;
   --rf-edge-mass-verge: #e15200;
-  --rf-edge-mass-verge-dasshofset: 15;
+  --rf-edge-mass-verge-dashoffset: 15;
   --rf-edge-mass-verge-linecap: butt;
   --rf-edge-bridge-dasharray: 15, 15;
   --rf-edge-handle-size: 8px;

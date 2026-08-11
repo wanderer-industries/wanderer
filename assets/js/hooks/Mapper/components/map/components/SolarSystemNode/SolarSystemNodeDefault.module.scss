@@ -167,7 +167,7 @@
 }
 
 .RootCustomNode .BottomRow * { //node custom name override
-  font-size: var(--rf-custm-name-font-size);
+  font-size: var(--rf-custom-name-font-size);
   font-weight: var(--rf-custom-name-font-weight, thin);
   text-shadow: var( --rf-custom-name-text-shadow);
   color: var(--rf-custom-name, #d6d3d1);
