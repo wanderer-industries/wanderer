@@ -2,17 +2,19 @@ defmodule WandererApp.IntegrationCase do
   @moduledoc """
   This module defines the test case for integration tests.
 
-  Integration tests use shared sandbox mode (`shared: true`) when running async
-  to avoid timing issues with dynamically spawned processes like MapPool GenServers
-  that need database access immediately upon spawn.
+  Integration tests default to a private sandbox owner. Suites that start real
+  map servers must opt into shared sandbox mode:
 
-  For async integration tests, shared mode allows:
-  - MapPool GenServers to access the database without explicit allowance
-  - Tests to run in parallel without complex permission granting
-  - Reliable test execution without race conditions
+      use WandererApp.IntegrationCase, async: false
+      @moduletag :shared_sandbox
 
-  For synchronous integration tests, shared mode is disabled (shared: false)
-  for better isolation.
+  Shared mode is required when a dynamically spawned process queries the
+  database immediately upon spawn (MapPool GenServers load map state during
+  `init`), because there is no window in which the test process can allow it
+  onto the connection first.
+
+  Shared mode is node-global, so it is opt-in and reverted on exit. It is only
+  valid with `async: false`.
 
   Use this case for:
   - API controller integration tests that spawn map servers
@@ -62,15 +64,18 @@ defmodule WandererApp.IntegrationCase do
   end
 
   @doc """
-  Sets up the sandbox with shared mode for async integration tests.
+  Sets up the test sandbox, per the `:shared_sandbox` moduletag.
 
-  For async tests (async: true):
-  - Uses shared: true to allow dynamically spawned processes database access
-  - Trades some isolation for reliability and simplicity
+  With `@moduletag :shared_sandbox` (only valid with `async: false`):
+  - Uses shared: true so dynamically spawned processes (e.g. MapPool
+    GenServers that query the DB during `init`) get database access
+  - Trades some isolation for reliability with background processes
 
-  For sync tests (async: false):
-  - Uses shared: false for better isolation
+  Without the tag (the default):
+  - Starts a dedicated, private sandbox owner (shared: false)
   - Child processes require explicit allowance
+
+  Raises `ArgumentError` if `:shared_sandbox` is set on an `async: true` suite.
   """
   def setup_sandbox(tags) do
     # Ensure the repo is started before setting up sandbox
@@ -78,20 +83,39 @@ defmodule WandererApp.IntegrationCase do
       {:ok, _} = WandererApp.Repo.start_link()
     end
 
-    # For integration tests:
-    # - Use shared: true for async tests to avoid MapPool timing issues
-    # - Use shared: false for sync tests for better isolation
-    shared_mode = tags[:async] == true
+    # Shared mode is opt-in per suite via `@moduletag :shared_sandbox`.
+    #
+    # Suites that start real map servers need it: MapPool GenServers are spawned
+    # dynamically and load map state from the DB *during init*, so there is no
+    # point at which the test process can allow them onto the connection first
+    # (polling loses the race). Shared mode is the only mechanism that covers a
+    # process that queries immediately upon spawn.
+    #
+    # It is opt-in rather than global because Sandbox shared mode applies to the
+    # whole node: enabling it for every sync integration suite regresses suites
+    # that rely on owner-private connections. Ecto only permits shared mode when
+    # the test is not async, so the tag is rejected on async suites.
+    shared_mode = tags[:shared_sandbox] == true
+
+    if shared_mode and tags[:async] == true do
+      raise ArgumentError,
+            "#{inspect(tags[:module])} sets @moduletag :shared_sandbox but is `async: true`. " <>
+              "Ecto sandbox shared mode is node-global and is only safe with `async: false`."
+    end
 
     # Set up sandbox mode based on test type
     pid =
       if shared_mode do
-        # For async tests with shared mode:
-        # Checkout the sandbox connection instead of starting an owner
-        # This allows multiple async tests to use the same connection pool
         :ok = Ecto.Adapters.SQL.Sandbox.checkout(WandererApp.Repo)
-        # Put the connection in shared mode
         Ecto.Adapters.SQL.Sandbox.mode(WandererApp.Repo, {:shared, self()})
+
+        # Shared mode is node-global, so it MUST be reverted to :manual when the
+        # test ends. Leaving it set leaks into every later suite on the node and
+        # is why an earlier global-flip attempt broke unrelated controller tests.
+        on_exit(fn ->
+          Ecto.Adapters.SQL.Sandbox.mode(WandererApp.Repo, :manual)
+        end)
+
         self()
       else
         # For sync tests, start a dedicated owner
@@ -117,10 +141,15 @@ defmodule WandererApp.IntegrationCase do
   Allows a process to access the database by granting it sandbox access.
   This is necessary for background processes that need database access in non-shared mode.
   """
-  def allow_database_access(pid) when is_pid(pid) do
-    owner_pid = Process.get(:sandbox_owner_pid)
+  def allow_database_access(pid, owner_pid \\ nil) when is_pid(pid) do
+    owner_pid = owner_pid || Process.get(:sandbox_owner_pid)
 
     if owner_pid do
+      # Returns `:ok | {:already, :owner | :allowed}` on every poll tick;
+      # re-allowing an already-allowed process is a normal, non-error case, so
+      # both are treated as success here. It raises only for infrastructure
+      # faults (repo not started, or `pid`/`owner_pid` not resolving to a live
+      # process) -- those should surface rather than be swallowed.
       Ecto.Adapters.SQL.Sandbox.allow(WandererApp.Repo, owner_pid, pid)
     end
   end
@@ -192,6 +221,23 @@ defmodule WandererApp.IntegrationCase do
             |> Enum.filter(&is_pid/1)
             |> Enum.filter(&Process.alive?/1)
             |> Enum.each(fn child_pid ->
+              # Grant BOTH mock ownership and Ecto sandbox access.
+              #
+              # MapPool GenServers are spawned dynamically *after* the one-shot
+              # grant_supervision_tree_access/2 call above has already run, so
+              # they are never on the sandbox connection. Their map-state
+              # loaders (Task.async in Map.Server.Impl.do_init_state/1) then die
+              # with DBConnection.OwnershipError, the error is reported as
+              # "map not loaded", and the test surfaces only a misleading
+              # "Timeout waiting for map ... Check Map.Manager is running".
+              #
+              # Sandbox.allow/3 also propagates to the pool's Task.async
+              # children via $callers, which is what the loaders rely on.
+              #
+              # owner_pid is passed explicitly: this runs inside the spawned
+              # monitor process, where the :sandbox_owner_pid process dict entry
+              # set by setup_sandbox/1 is not visible.
+              allow_database_access(child_pid, owner_pid)
               WandererApp.Test.MockOwnership.allow_mocks_for_process(child_pid, owner_pid)
             end)
 
