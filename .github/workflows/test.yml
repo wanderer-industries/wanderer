@@ -6,10 +6,11 @@ on:
   push:
     branches: [main, develop]
 
+# This workflow executes fork-authored code (mix deps.get / compile / test), so
+# it holds no write scopes. The test-results comment is posted by the privileged
+# pr-comment.yml workflow via workflow_run.
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 env:
   MIX_ENV: test
@@ -253,81 +254,117 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Find existing PR comment
-        if: github.event_name == 'pull_request'
-        id: find_comment
-        uses: peter-evans/find-comment@v3
+      # Fork PRs get a read-only GITHUB_TOKEN, so this workflow cannot post the
+      # comment itself. Instead the rendered body is uploaded as an artifact and
+      # posted by the privileged `pr-comment.yml` workflow via workflow_run.
+      - name: Render PR comment body
+        if: always() && github.event_name == 'pull_request'
+        env:
+          OVERALL_SCORE: ${{ steps.summary.outputs.overall_score }}
+          OVERALL_STATUS: ${{ steps.summary.outputs.overall_status }}
+          FORMAT_STATUS: ${{ steps.format.outputs.status }}
+          FORMAT_COUNT: ${{ steps.format.outputs.count }}
+          COMPILE_STATUS: ${{ steps.compile.outputs.status }}
+          COMPILE_WARNINGS: ${{ steps.compile.outputs.warnings }}
+          TESTS_STATUS: ${{ steps.tests.outputs.status }}
+          TESTS_FAILURES: ${{ steps.tests.outputs.failures }}
+          TESTS_TOTAL: ${{ steps.tests.outputs.total }}
+          TESTS_SUCCESS_RATE: ${{ steps.tests.outputs.success_rate }}
+          COVERAGE_STATUS: ${{ steps.coverage.outputs.status }}
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
+          CREDO_STATUS: ${{ steps.credo.outputs.status }}
+          CREDO_TOTAL: ${{ steps.credo.outputs.total_issues }}
+          CREDO_HIGH: ${{ steps.credo.outputs.high_issues }}
+          CREDO_NORMAL: ${{ steps.credo.outputs.normal_issues }}
+          CREDO_LOW: ${{ steps.credo.outputs.low_issues }}
+          DIALYZER_STATUS: ${{ steps.dialyzer.outputs.status }}
+          DIALYZER_ERRORS: ${{ steps.dialyzer.outputs.errors }}
+          DIALYZER_WARNINGS: ${{ steps.dialyzer.outputs.warnings }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p pr-comment
+          # Validate the PR number so the trusted workflow can trust this file.
+          case "$PR_NUMBER" in
+            ''|*[!0-9]*) echo "Refusing to emit non-numeric PR number" >&2; exit 1 ;;
+          esac
+          printf '%s\n' "$PR_NUMBER" > pr-comment/pr-number
+
+          # Values are interpolated by the shell from env, never by Actions
+          # expression substitution, so tool output cannot inject workflow syntax.
+          cat > pr-comment/body.md <<EOF
+          ## 🧪 Test Results Summary
+
+          **Overall Quality Score: ${OVERALL_SCORE}%** ${OVERALL_STATUS}
+
+          ### 📊 Metrics Dashboard
+
+          | Category | Status | Count | Details |
+          |----------|---------|-------|---------|
+          | 📝 **Code Formatting** | ${FORMAT_STATUS} | ${FORMAT_COUNT} issues | \`mix format --check-formatted\` |
+          | 🔨 **Compilation** | ${COMPILE_STATUS} | ${COMPILE_WARNINGS} warnings | \`mix compile\` |
+          | 🧪 **Tests** | ${TESTS_STATUS} | ${TESTS_FAILURES}/${TESTS_TOTAL} failed | Success rate: ${TESTS_SUCCESS_RATE}% |
+          | 📊 **Coverage** | ${COVERAGE_STATUS} | ${COVERAGE_PERCENTAGE}% | \`mix coveralls\` |
+          | 🎯 **Credo** | ${CREDO_STATUS} | ${CREDO_TOTAL} issues | High: ${CREDO_HIGH}, Normal: ${CREDO_NORMAL}, Low: ${CREDO_LOW} |
+          | 🔍 **Dialyzer** | ${DIALYZER_STATUS} | ${DIALYZER_ERRORS} errors, ${DIALYZER_WARNINGS} warnings | \`mix dialyzer\` |
+
+          ### 🎯 Quality Gates
+
+          Based on the project's quality thresholds:
+          - **Compilation Warnings**: ${COMPILE_WARNINGS}/148 (limit: 148)
+          - **Credo Issues**: ${CREDO_TOTAL}/87 (limit: 87)
+          - **Dialyzer Warnings**: ${DIALYZER_WARNINGS}/161 (limit: 161)
+          - **Test Coverage**: ${COVERAGE_PERCENTAGE}%/50% (minimum: 50%)
+          - **Test Failures**: ${TESTS_FAILURES}/0 (limit: 0)
+
+          <details>
+          <summary>📈 Progress Toward Goals</summary>
+
+          Target goals for the project:
+          - ✨ **Zero compilation warnings** (currently: ${COMPILE_WARNINGS})
+          - ✨ **≤10 Credo issues** (currently: ${CREDO_TOTAL})
+          - ✨ **Zero Dialyzer warnings** (currently: ${DIALYZER_WARNINGS})
+          - ✨ **≥85% test coverage** (currently: ${COVERAGE_PERCENTAGE}%)
+          - ✅ **Zero test failures** (currently: ${TESTS_FAILURES})
+
+          </details>
+
+          <details>
+          <summary>🔧 Quick Actions</summary>
+
+          To improve code quality:
+          \`\`\`bash
+          # Fix formatting issues
+          mix format
+
+          # View detailed Credo analysis
+          mix credo --strict
+
+          # Check Dialyzer warnings
+          mix dialyzer
+
+          # Generate detailed coverage report
+          mix coveralls.html
+          \`\`\`
+
+          </details>
+
+          ---
+
+          🤖 *Auto-generated by GitHub Actions* • Updated: $(date -u '+%Y-%m-%d %H:%M UTC')
+
+          > **Note**: This comment will be updated automatically when new commits are pushed to this PR.
+          EOF
+
+          # Mirror to the run summary so the report is visible even if the
+          # follow-up commenting workflow is unavailable.
+          cat pr-comment/body.md >> "$GITHUB_STEP_SUMMARY"
+        continue-on-error: true
+
+      - name: Upload PR comment body
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '## 🧪 Test Results Summary'
-
-      - name: Create or update PR comment
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find_comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## 🧪 Test Results Summary
-
-            **Overall Quality Score: ${{ steps.summary.outputs.overall_score }}%** ${{ steps.summary.outputs.overall_status }}
-
-            ### 📊 Metrics Dashboard
-
-            | Category | Status | Count | Details |
-            |----------|---------|-------|---------|
-            | 📝 **Code Formatting** | ${{ steps.format.outputs.status }} | ${{ steps.format.outputs.count }} issues | `mix format --check-formatted` |
-            | 🔨 **Compilation** | ${{ steps.compile.outputs.status }} | ${{ steps.compile.outputs.warnings }} warnings | `mix compile` |
-            | 🧪 **Tests** | ${{ steps.tests.outputs.status }} | ${{ steps.tests.outputs.failures }}/${{ steps.tests.outputs.total }} failed | Success rate: ${{ steps.tests.outputs.success_rate }}% |
-            | 📊 **Coverage** | ${{ steps.coverage.outputs.status }} | ${{ steps.coverage.outputs.percentage }}% | `mix coveralls` |
-            | 🎯 **Credo** | ${{ steps.credo.outputs.status }} | ${{ steps.credo.outputs.total_issues }} issues | High: ${{ steps.credo.outputs.high_issues }}, Normal: ${{ steps.credo.outputs.normal_issues }}, Low: ${{ steps.credo.outputs.low_issues }} |
-            | 🔍 **Dialyzer** | ${{ steps.dialyzer.outputs.status }} | ${{ steps.dialyzer.outputs.errors }} errors, ${{ steps.dialyzer.outputs.warnings }} warnings | `mix dialyzer` |
-
-            ### 🎯 Quality Gates
-
-            Based on the project's quality thresholds:
-            - **Compilation Warnings**: ${{ steps.compile.outputs.warnings }}/148 (limit: 148)
-            - **Credo Issues**: ${{ steps.credo.outputs.total_issues }}/87 (limit: 87)
-            - **Dialyzer Warnings**: ${{ steps.dialyzer.outputs.warnings }}/161 (limit: 161)
-            - **Test Coverage**: ${{ steps.coverage.outputs.percentage }}%/50% (minimum: 50%)
-            - **Test Failures**: ${{ steps.tests.outputs.failures }}/0 (limit: 0)
-
-            <details>
-            <summary>📈 Progress Toward Goals</summary>
-
-            Target goals for the project:
-            - ✨ **Zero compilation warnings** (currently: ${{ steps.compile.outputs.warnings }})
-            - ✨ **≤10 Credo issues** (currently: ${{ steps.credo.outputs.total_issues }})
-            - ✨ **Zero Dialyzer warnings** (currently: ${{ steps.dialyzer.outputs.warnings }})
-            - ✨ **≥85% test coverage** (currently: ${{ steps.coverage.outputs.percentage }}%)
-            - ✅ **Zero test failures** (currently: ${{ steps.tests.outputs.failures }})
-
-            </details>
-
-            <details>
-            <summary>🔧 Quick Actions</summary>
-
-            To improve code quality:
-            ```bash
-            # Fix formatting issues
-            mix format
-
-            # View detailed Credo analysis
-            mix credo --strict
-
-            # Check Dialyzer warnings
-            mix dialyzer
-
-            # Generate detailed coverage report
-            mix coveralls.html
-            ```
-
-            </details>
-
-            ---
-
-            🤖 *Auto-generated by GitHub Actions* • Updated: ${{ github.event.head_commit.timestamp }}
-
-            > **Note**: This comment will be updated automatically when new commits are pushed to this PR.
+          name: pr-comment
+          path: pr-comment/
+          retention-days: 1
+        continue-on-error: true
