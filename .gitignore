@@ -51,6 +51,13 @@ erl_crash.dump
 /config/*.secret.exs
 .elixir_ls/
 
+# Devcontainer host-specific files
+# .devcontainer/docker-compose.override.yml is deliberately tracked as an empty
+# no-op so devcontainer.json's compose file list resolves on a clean checkout.
+# The negation is explicit because a common global/user gitignore rule matches
+# docker-compose.override.yml anywhere. Keep local edits to it out of commits.
+!/.devcontainer/docker-compose.override.yml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
