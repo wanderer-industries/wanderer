@@ -96,6 +96,42 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
         continue-on-error: true
 
+      # Advisory, like the other checks here. Catches resource definitions that
+      # have drifted from priv/resource_snapshots — usually after a dependency
+      # bump changes how a default is serialized, which is otherwise invisible
+      # until someone runs `mix ash.codegen` locally and gets an unrelated diff.
+      #
+      # Runs after the compile step on purpose: `mix ash.codegen` compiles first,
+      # so on a branch that doesn't build it would fail here and report a
+      # codegen-drift verdict for what is really a compile error.
+      - name: Check Ash codegen is up to date
+        id: codegen
+        run: |
+          # Capture codegen output
+          if output=$(mix ash.codegen --check 2>&1); then
+            echo "status=✅ Up to date" >> $GITHUB_OUTPUT
+            echo "count=0" >> $GITHUB_OUTPUT
+            echo "details=" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ Pending changes" >> $GITHUB_OUTPUT
+            echo "count=1" >> $GITHUB_OUTPUT
+
+            # Surface the drift in the PR comment; bounded so a large diff
+            # cannot blow out the comment body.
+            echo "details<<EOF" >> $GITHUB_OUTPUT
+            echo "<details>" >> $GITHUB_OUTPUT
+            echo "<summary>🧬 Pending Ash codegen changes</summary>" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo '```' >> $GITHUB_OUTPUT
+            echo "$output" | tail -n 40 >> $GITHUB_OUTPUT
+            echo '```' >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "Run \`mix ash.codegen <name>\` locally and commit the result." >> $GITHUB_OUTPUT
+            echo "</details>" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
       - name: Setup database
         run: |
           mix ecto.create
@@ -238,6 +274,10 @@ jobs:
           credo_score=$(echo "scale=0; (100 - ${{ steps.credo.outputs.total_issues }} * 2)" | bc | sed 's/^-.*$/0/')
           dialyzer_score=$(echo "scale=0; (100 - ${{ steps.dialyzer.outputs.warnings }} * 2 - ${{ steps.dialyzer.outputs.errors }} * 10)" | bc | sed 's/^-.*$/0/')
 
+          # Note: the Ash codegen drift row is reported in the metrics table but
+          # deliberately left out of this score — `main` is currently drifted, so
+          # including it would permanently depress every PR's score. Add it as a
+          # term once `main` is clean.
           overall_score=$(echo "scale=1; ($format_score + $compile_score + $test_score + $coverage_score + $credo_score + $dialyzer_score) / 6" | bc)
 
           echo "overall_score=$overall_score" >> $GITHUB_OUTPUT
@@ -264,6 +304,9 @@ jobs:
           OVERALL_STATUS: ${{ steps.summary.outputs.overall_status }}
           FORMAT_STATUS: ${{ steps.format.outputs.status }}
           FORMAT_COUNT: ${{ steps.format.outputs.count }}
+          CODEGEN_STATUS: ${{ steps.codegen.outputs.status }}
+          CODEGEN_COUNT: ${{ steps.codegen.outputs.count }}
+          CODEGEN_DETAILS: ${{ steps.codegen.outputs.details }}
           COMPILE_STATUS: ${{ steps.compile.outputs.status }}
           COMPILE_WARNINGS: ${{ steps.compile.outputs.warnings }}
           TESTS_STATUS: ${{ steps.tests.outputs.status }}
@@ -301,6 +344,7 @@ jobs:
           | Category | Status | Count | Details |
           |----------|---------|-------|---------|
           | 📝 **Code Formatting** | ${FORMAT_STATUS} | ${FORMAT_COUNT} issues | \`mix format --check-formatted\` |
+          | 🧬 **Ash Codegen** | ${CODEGEN_STATUS} | ${CODEGEN_COUNT} pending | \`mix ash.codegen --check\` |
           | 🔨 **Compilation** | ${COMPILE_STATUS} | ${COMPILE_WARNINGS} warnings | \`mix compile\` |
           | 🧪 **Tests** | ${TESTS_STATUS} | ${TESTS_FAILURES}/${TESTS_TOTAL} failed | Success rate: ${TESTS_SUCCESS_RATE}% |
           | 📊 **Coverage** | ${COVERAGE_STATUS} | ${COVERAGE_PERCENTAGE}% | \`mix coveralls\` |
@@ -315,6 +359,8 @@ jobs:
           - **Dialyzer Warnings**: ${DIALYZER_WARNINGS}/161 (limit: 161)
           - **Test Coverage**: ${COVERAGE_PERCENTAGE}%/50% (minimum: 50%)
           - **Test Failures**: ${TESTS_FAILURES}/0 (limit: 0)
+
+          ${CODEGEN_DETAILS}
 
           <details>
           <summary>📈 Progress Toward Goals</summary>
