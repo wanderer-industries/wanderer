@@ -1,0 +1,454 @@
+defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
+  # `async: false` is mandatory: `HttpStub` keeps its state in a single named
+  # Agent, and this file also mutates application env.
+  use WandererApp.DataCase, async: false
+
+  import WandererApp.ExternalEvents.Discord.TestHelpers
+
+  alias WandererApp.Api.MapDiscordNotification
+  alias WandererApp.ExternalEvents.{DiscordDispatcher, Event}
+  alias WandererApp.ExternalEvents.Discord.{EmbedFormatter, HttpStub, WorkerSupervisor}
+  alias WandererAppWeb.Factory
+
+  # A real wormhole system id (J-space) and a real known-space id (Jita).
+  @wh_system 31_000_005
+  @ks_system 30_000_142
+
+  setup do
+    # `wh_only` filtering resolves the system class through
+    # `CachedInfo.get_system_static_info/1`, which falls back to the
+    # `map_solar_systems` table. That table is static import data and is NOT
+    # populated by `mix test` on a clean database, so seed the cache directly —
+    # the same approach `WandererApp.MapTestHelpers` uses.
+    seed_static_info()
+
+    # `config/test.exs:35` sets `external_events: [webhooks_enabled: false]`, and
+    # the dispatcher checks `Env.webhooks_enabled?/0` at call time. Without this
+    # override EVERY delivery assertion below would pass while sending nothing.
+    original = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(original, :webhooks_enabled, true)
+    )
+
+    on_exit(fn -> Application.put_env(:wanderer_app, :external_events, original) end)
+
+    HttpStub.start()
+    HttpStub.reset()
+    start_supervised!(WorkerSupervisor)
+    start_supervised!(DiscordDispatcher)
+
+    map = Factory.insert(:map, %{})
+
+    {:ok, notification} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    DiscordDispatcher.invalidate_cache(map.id)
+
+    %{map: map, notification: notification}
+  end
+
+  # C3 for the J-space id, high-sec (class 0) for Jita, matching the shape
+  # `MapTestHelpers.default_test_systems/0` stores.
+  #
+  # `:system_static_info_cache` is a GLOBAL Cachex table, not sandboxed per test,
+  # so whatever was there before has to come back afterwards. Deleting the keys
+  # instead is not enough: several suites seed the full Jita row via
+  # `setup_system_static_info_cache/0` and never clean it up, and later tests
+  # (`CommonAPIControllerTest`, `OpenAPIValidationTest`) read it back through
+  # this same cache. Overwriting it with the partial row below and then deleting
+  # it leaves those tests with no entry at all, which made them fail at some
+  # seeds. Restore the previous value, or remove the key only if there was none.
+  defp seed_static_info do
+    Enum.each(
+      [
+        {@wh_system,
+         %{solar_system_id: @wh_system, solar_system_name: "J115405", system_class: 3}},
+        {@ks_system, %{solar_system_id: @ks_system, solar_system_name: "Jita", system_class: 0}}
+      ],
+      fn {id, info} ->
+        previous = Cachex.get(:system_static_info_cache, id)
+        Cachex.put(:system_static_info_cache, id, info)
+
+        on_exit(fn ->
+          case previous do
+            {:ok, nil} -> Cachex.del(:system_static_info_cache, id)
+            {:ok, value} -> Cachex.put(:system_static_info_cache, id, value)
+            _ -> Cachex.del(:system_static_info_cache, id)
+          end
+        end)
+      end
+    )
+
+    :ok
+  end
+
+  defp disable_gate do
+    original = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(original, :webhooks_enabled, false)
+    )
+
+    on_exit(fn -> Application.put_env(:wanderer_app, :external_events, original) end)
+  end
+
+  defp kill_event(payload), do: %Event{map_id: nil, type: :map_kill, payload: payload}
+
+  # Dispatch is a cast and delivery is a second async hop, so tests synchronize
+  # rather than guess: drain the dispatcher's mailbox, then the worker's.
+  defp settle(map_id) do
+    :sys.get_state(DiscordDispatcher)
+    sync(map_id)
+  end
+
+  # Asserting "nothing was delivered" needs more than `settle/1`: the HTTP call
+  # itself runs in a `Task.Supervisor.async_nolink` task, so a request can still
+  # be in flight when the worker's mailbox is drained. Wait until the worker is
+  # genuinely idle (no queued event, none in progress) before asserting, or the
+  # assertion passes for the wrong reason. Mutating the seeded system class
+  # confirms this: without the wait, marking Jita as wormhole space still leaves
+  # "skips non-wormhole systems" green.
+  defp refute_delivery(map_id, timeout \\ 2_000) do
+    settle(map_id)
+
+    case await_worker_idle(map_id, System.monotonic_time(:millisecond) + timeout) do
+      :timeout -> flunk("worker for #{map_id} did not become idle within #{timeout}ms")
+      _ -> :ok
+    end
+
+    assert HttpStub.requests() == []
+  end
+
+  defp await_worker_idle(map_id, deadline) do
+    case Registry.lookup(WorkerSupervisor.registry(), map_id) do
+      [] ->
+        :no_worker
+
+      [{pid, _}] ->
+        state = :sys.get_state(pid)
+
+        cond do
+          state.current == nil and state.queue_len == 0 ->
+            :idle
+
+          System.monotonic_time(:millisecond) >= deadline ->
+            :timeout
+
+          true ->
+            Process.sleep(25)
+            await_worker_idle(map_id, deadline)
+        end
+    end
+  end
+
+  test "sends nothing when the global webhook gate is off", %{map: map} do
+    # Covers the gate itself rather than assuming it. This is the failure mode
+    # that would otherwise make every test in this file green but meaningless.
+    disable_gate()
+
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  test "delivers a wormhole kill", %{map: map} do
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+    settle(map.id)
+
+    assert length(wait_for_requests(1)) == 1
+  end
+
+  test "ignores kill_count events", %{map: map} do
+    event = kill_event(Factory.build(:kill_count_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  test "skips non-wormhole systems when wh_only is set", %{map: map} do
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  # With wh_only off there is no system-class gate left to incidentally drop it,
+  # so a missing id would otherwise reach the formatter and render an embed for
+  # a nil system.
+  test "drops an event with no solar system id even when wh_only is off", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.by_map(map.id)
+    {:ok, _} = MapDiscordNotification.update(rec, %{wh_only: false})
+
+    payload =
+      :kill_event
+      |> Factory.build(%{solar_system_id: @wh_system})
+      |> Map.delete("solar_system_id")
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+
+    refute_delivery(map.id)
+  end
+
+  # Diagnosing "kills happened but nothing posted" once took a console session,
+  # because every gate in do_dispatch/2 returned a bare `:ok`. Each drop must
+  # name itself and the system, or the next person pays that cost again.
+  test "a filtered system logs which gate dropped it", %{map: map} do
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))
+
+    # `config/test.exs:52` pins the Logger at :warning, which drops debug
+    # messages at the source — before capture_log's handler can see them.
+    previous = Logger.level()
+    Logger.configure(level: :debug)
+    on_exit(fn -> Logger.configure(level: previous) end)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        DiscordDispatcher.dispatch_event(map.id, event)
+        refute_delivery(map.id)
+      end)
+
+    assert log =~ "no notification sent"
+    assert log =~ "not wormhole space"
+    assert log =~ to_string(@ks_system)
+  end
+
+  test "delivers known-space kills when wh_only is off", %{map: map, notification: n} do
+    {:ok, _} = MapDiscordNotification.update(n, %{wh_only: false})
+    DiscordDispatcher.invalidate_cache(map.id)
+
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @ks_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+    settle(map.id)
+
+    assert length(wait_for_requests(1)) == 1
+  end
+
+  test "skips excluded systems", %{map: map, notification: n} do
+    {:ok, _} = MapDiscordNotification.update(n, %{excluded_systems: [@wh_system]})
+    DiscordDispatcher.invalidate_cache(map.id)
+
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  test "skips when disabled", %{map: map, notification: n} do
+    {:ok, _} = MapDiscordNotification.update(n, %{enabled?: false})
+    DiscordDispatcher.invalidate_cache(map.id)
+
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  test "no-ops for a map with no configuration" do
+    other_map = Factory.insert(:map, %{})
+    event = kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system}))
+
+    DiscordDispatcher.dispatch_event(other_map.id, event)
+
+    refute_delivery(other_map.id)
+  end
+
+  test "deduplicates a replayed killmail", %{map: map} do
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 777_777})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    settle(map.id)
+    wait_for_requests(1)
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    settle(map.id)
+
+    assert length(HttpStub.requests()) == 1
+  end
+
+  test "delivers only the new kills in a partially-replayed batch", %{map: map} do
+    old = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 111})
+    new = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 222})
+
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [old]}))
+    )
+
+    settle(map.id)
+    wait_for_requests(1)
+
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(
+        Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [old, new]})
+      )
+    )
+
+    settle(map.id)
+
+    assert [{_, _}, {_, second_body}] = wait_for_requests(2)
+    assert length(second_body["embeds"]) == 1
+  end
+
+  test "ignores non-kill event types", %{map: map} do
+    event = %Event{map_id: map.id, type: :add_system, payload: %{}}
+
+    DiscordDispatcher.dispatch_event(map.id, event)
+
+    refute_delivery(map.id)
+  end
+
+  # Guards the carry-forward constraint: WorkerSupervisor.deliver/3 answers
+  # {:error, :not_running} when the worker tree is down. The dispatcher must
+  # neither crash nor treat that as delivered, and — since nothing was enqueued
+  # — must release the dedup marks so the kill can still be sent later.
+  test "survives the worker tree being down and does not burn the dedup mark", %{map: map} do
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 999_111})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    :ok = stop_supervised(WorkerSupervisor)
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    :sys.get_state(DiscordDispatcher)
+
+    assert HttpStub.requests() == []
+    assert Process.alive?(Process.whereis(DiscordDispatcher))
+
+    start_supervised!(WorkerSupervisor)
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    settle(map.id)
+
+    assert length(wait_for_requests(1)) == 1
+  end
+
+  # Pins the dedup key as PER-MAP. Deleting `map_id` from `dedup_key/2` makes
+  # every other test still pass, while the second map would silently stop
+  # receiving any kill the first one already reported.
+  test "dedup is per-map: two maps both receive the same killmail", %{map: map_a} do
+    map_b = Factory.insert(:map, %{})
+    url_b = "https://discord.com/api/webhooks/456/tok-b"
+
+    {:ok, _} = MapDiscordNotification.create(%{map_id: map_b.id, webhook_url: url_b})
+    DiscordDispatcher.invalidate_cache(map_b.id)
+
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 555_555})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    DiscordDispatcher.dispatch_event(map_a.id, kill_event(payload))
+    settle(map_a.id)
+    wait_for_requests(1)
+
+    DiscordDispatcher.dispatch_event(map_b.id, kill_event(payload))
+    settle(map_b.id)
+
+    requests = wait_for_requests(2)
+    assert length(requests) == 2
+
+    # Distinct webhook URLs prove both maps were served, not one map twice.
+    urls = requests |> Enum.map(&elem(&1, 0)) |> Enum.sort()
+    assert urls == Enum.sort(["https://discord.com/api/webhooks/123/tok", url_b])
+  end
+
+  # The DB cascade (`reference :map, on_delete: :delete`) removes the
+  # notification row without running MapDiscordNotification.after_destroy/3, so
+  # the Map resource's own destroy hook is the only thing clearing the cache.
+  # Without it a warmed entry outlives the map for the full cache TTL.
+  test "destroying a map clears its warmed notification cache entry", %{map: map} do
+    kill = Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 777_777})
+    payload = Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: [kill]})
+
+    DiscordDispatcher.dispatch_event(map.id, kill_event(payload))
+    settle(map.id)
+    wait_for_requests(1)
+
+    # Warmed by the dispatch above.
+    assert {:ok, cached} = Cachex.get(:discord_notification_cache, map.id)
+    refute is_nil(cached)
+
+    :ok = Ash.destroy!(map)
+
+    assert {:ok, nil} = Cachex.get(:discord_notification_cache, map.id)
+  end
+
+  # Kills past the formatter's per-event cap are never rendered into a message,
+  # so they must not be marked attempted — otherwise they are burned for the
+  # full dedup TTL without ever being sent.
+  test "does not burn kills dropped by the formatter's per-event cap", %{map: map} do
+    cap = EmbedFormatter.max_kills_per_event()
+
+    kills =
+      for i <- 1..(cap + 5) do
+        Factory.build(:killmail, %{solar_system_id: @wh_system, killmail_id: 600_000 + i})
+      end
+
+    overflow = Enum.drop(kills, cap)
+    assert length(overflow) == 5
+
+    # The capped event spans several chunks, and the worker deliberately spaces
+    # them. Derive how many messages to expect from the formatter itself rather
+    # than assuming the first `wait_for_requests/1` catches all of them.
+    first_batch_size = length(EmbedFormatter.format_batch(kills, "X"))
+    assert first_batch_size > 1
+
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: kills}))
+    )
+
+    settle(map.id)
+    first_batch = wait_for_requests(first_batch_size)
+    assert length(first_batch) == first_batch_size
+
+    # The overflow kills arrive again on their own: they were never formatted,
+    # so they are still eligible and must be delivered now.
+    DiscordDispatcher.dispatch_event(
+      map.id,
+      kill_event(Factory.build(:kill_event, %{solar_system_id: @wh_system, killmails: overflow}))
+    )
+
+    settle(map.id)
+
+    later = wait_for_requests(first_batch_size + 1)
+    [{_url, body} | _] = Enum.drop(later, first_batch_size)
+    assert length(body["embeds"]) == 5
+  end
+
+  test "send_test_message reports the global gate being off", %{map: map} do
+    disable_gate()
+
+    assert {:error, :notifications_disabled} = DiscordDispatcher.send_test_message(map.id)
+    assert HttpStub.requests() == []
+  end
+
+  test "send_test_message goes through the worker", %{map: map} do
+    assert :ok = DiscordDispatcher.send_test_message(map.id)
+
+    assert [{_url, body}] = wait_for_requests(1)
+    assert body["content"] =~ "test message"
+  end
+
+  test "send_test_message reports an unconfigured map" do
+    other_map = Factory.insert(:map, %{})
+
+    assert {:error, :not_configured} = DiscordDispatcher.send_test_message(other_map.id)
+  end
+end
