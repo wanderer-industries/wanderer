@@ -1,0 +1,37 @@
+# docker-compose.override.yml.example
+#
+# Copy this file over docker-compose.override.yml for host-specific settings.
+# docker-compose.override.yml is tracked and empty by default (`services: {}`),
+# so the devcontainer works without any of this.
+#
+# Uncomment what you need.
+services:
+  wanderer:
+    # The container user is created with USER_UID/USER_GID (default 1000) so
+    # that deps/, _build/ and generated assets written through the /app bind
+    # mount stay owned by you on the host. If `id -u` on your host is not 1000,
+    # either export USER_UID/USER_GID before starting the devcontainer:
+    #
+    #   export USER_UID="$(id -u)" USER_GID="$(id -g)"
+    #
+    # or pin them here and rebuild the container.
+    #
+    # build:
+    #   args:
+    #     USER_UID: "1001"
+    #     USER_GID: "1001"
+
+    # volumes:
+    #   # Host SSH keys (Git over SSH, commit signing)
+    #   - ~/.ssh:/home/developer/.ssh:ro
+    #
+    #   # GitHub CLI auth
+    #   - ~/.config/gh:/home/developer/.config/gh:ro
+
+    # environment:
+    #   SOME_LOCAL_OVERRIDE: "value"
+
+  # db:
+  #   # Publish Postgres on a different host port if 5432 is already taken.
+  #   ports:
+  #     - "5433:5432"
