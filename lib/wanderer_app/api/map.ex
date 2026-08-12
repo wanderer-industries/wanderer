@@ -15,6 +15,13 @@ defmodule WandererApp.Api.Map do
     table("maps_v1")
 
     migration_defaults scopes: "'{wormholes}'"
+
+    references do
+      # Matches ON DELETE SET NULL in 20260209100000_add_intel_source_map_id.
+      # Deleting a source map unsubscribes its subscribers rather than
+      # cascading the delete into unrelated maps.
+      reference :intel_source_map, on_delete: :nilify
+    end
   end
 
   json_api do
@@ -69,6 +76,8 @@ defmodule WandererApp.Api.Map do
     define(:duplicate, action: :duplicate)
     define(:admin_all, action: :admin_all)
     define(:restore, action: :restore)
+    define(:set_intel_source_map, action: :set_intel_source_map)
+    define(:intel_subscribers_of, action: :intel_subscribers_of, args: [:source_map_id])
   end
 
   calculations do
@@ -107,6 +116,21 @@ defmodule WandererApp.Api.Map do
 
     read :available do
       prepare WandererApp.Api.Preparations.FilterMapsByRoles
+    end
+
+    # Maps that use the given map as their intel source. Used to refuse making a
+    # map a subscriber while it is itself somebody's source, which would create
+    # an A->B->C chain. Chains are not safe: the six system intel fields are
+    # copied verbatim with no provenance marker, so A's intel would reach C
+    # whose admin never had access to A.
+    read :intel_subscribers_of do
+      argument :source_map_id, :uuid, allow_nil?: false
+
+      # Soft-deleted maps are excluded: they have no running map server and so
+      # sync nothing, but their intel_source_map_id is left set by
+      # mark_as_deleted. Counting them would block a subscription for a reason
+      # the admin cannot see or undo.
+      filter expr(intel_source_map_id == ^arg(:source_map_id) and deleted != true)
     end
 
     read :admin_all do
@@ -193,6 +217,22 @@ defmodule WandererApp.Api.Map do
     update :update_options do
       accept [:options]
       require_atomic? false
+    end
+
+    update :set_intel_source_map do
+      accept [:intel_source_map_id]
+      require_atomic? false
+
+      validate fn changeset, _context ->
+        source_id = Ash.Changeset.get_attribute(changeset, :intel_source_map_id)
+        map_id = changeset.data.id
+
+        if source_id != nil and source_id == map_id do
+          {:error, field: :intel_source_map_id, message: "a map cannot be its own intel source"}
+        else
+          :ok
+        end
+      end
     end
 
     update :mark_as_deleted do
@@ -442,6 +482,17 @@ defmodule WandererApp.Api.Map do
     end
 
     has_many :transactions, WandererApp.Api.MapTransaction do
+      public? false
+    end
+
+    belongs_to :intel_source_map, WandererApp.Api.Map do
+      attribute_writable? true
+      public? true
+      allow_nil? true
+    end
+
+    has_many :intel_subscriber_maps, WandererApp.Api.Map do
+      destination_attribute :intel_source_map_id
       public? false
     end
   end

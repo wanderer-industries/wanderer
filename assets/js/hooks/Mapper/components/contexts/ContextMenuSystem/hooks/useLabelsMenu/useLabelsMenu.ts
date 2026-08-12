@@ -26,12 +26,13 @@ export const useLabelsMenu = (
   systemId: string | undefined,
   onSystemLabels: (val: string) => void,
   onCustomLabelDialog: () => void,
+  disabled = false,
 ): (() => MenuItem[]) => {
-  const ref = useRef({ onSystemLabels, systemId, systems, onCustomLabelDialog });
-  ref.current = { onSystemLabels, systemId, systems, onCustomLabelDialog };
+  const ref = useRef({ onSystemLabels, systemId, systems, onCustomLabelDialog, disabled });
+  ref.current = { onSystemLabels, systemId, systems, onCustomLabelDialog, disabled };
 
   return useCallback(() => {
-    const { onSystemLabels, systemId, systems, onCustomLabelDialog } = ref.current;
+    const { onSystemLabels, systemId, systems, onCustomLabelDialog, disabled } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
     const labels = new LabelsManager(system?.labels ?? '');
 
@@ -53,6 +54,7 @@ export const useLabelsMenu = (
       {
         label: 'Labels',
         icon: PrimeIcons.BOOKMARK,
+        disabled,
         className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: hasLabels }),
         items: [
           ...(labels.customLabel.length > 0
@@ -60,6 +62,7 @@ export const useLabelsMenu = (
                 {
                   label: 'Clear custom label',
                   icon: 'pi pi-trash',
+                  disabled,
                   command: () => {
                     labels.updateCustomLabel('');
                     onSystemLabels(labels.toString());
@@ -70,12 +73,14 @@ export const useLabelsMenu = (
           {
             label: 'Custom label',
             icon: 'pi pi-language',
+            disabled,
             command: onCustomLabelDialog,
           },
           { separator: true },
           ...statusList.map(x => ({
             label: LABELS_INFO[x].name,
             icon: x === LABELS.clear ? PrimeIcons.TRASH : PrimeIcons.BOOKMARK,
+            disabled,
             command: () => {
               if (x === LABELS.clear) {
                 labels.clearLabels();

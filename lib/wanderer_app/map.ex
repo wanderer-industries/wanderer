@@ -26,7 +26,8 @@ defmodule WandererApp.Map do
             hubs_limit: nil,
             sse_enabled: false,
             webhooks_enabled: false,
-            subscription_plan: @default_subscription_plan
+            subscription_plan: @default_subscription_plan,
+            intel_source_map_id: nil
 
   def new(
         %{id: map_id, name: name, scope: scope, owner_id: owner_id, acls: acls, hubs: hubs} =
@@ -37,6 +38,12 @@ defmodule WandererApp.Map do
     # Extract SSE/webhooks settings (default to false if not present)
     sse_enabled = Map.get(input, :sse_enabled, false)
     webhooks_enabled = Map.get(input, :webhooks_enabled, false)
+    # Intel sharing source. Must live on this struct rather than being read from
+    # the Ash resource on demand: the map-state cache holds a %WandererApp.Map{}
+    # under :map, and every consumer pattern-matches it. Reading it from the Ash
+    # struct instead would mean caching the Ash resource here, which breaks the
+    # update_*!/2 callers in Map.Server.Impl and AclsImpl.
+    intel_source_map_id = Map.get(input, :intel_source_map_id)
 
     map =
       struct!(__MODULE__,
@@ -48,7 +55,8 @@ defmodule WandererApp.Map do
         acls: acls,
         hubs: hubs,
         sse_enabled: sse_enabled,
-        webhooks_enabled: webhooks_enabled
+        webhooks_enabled: webhooks_enabled,
+        intel_source_map_id: intel_source_map_id
       )
 
     update_map(map_id, map)
@@ -367,6 +375,21 @@ defmodule WandererApp.Map do
   def update_options!(%{map_id: map_id} = _map, options) do
     map_id
     |> update_map(%{options: options})
+
+    map_id
+    |> get_map!()
+  end
+
+  @doc """
+  Updates the intel sharing source in the map cache.
+
+  Mirrors `update_options!/2`. The value belongs on the `%WandererApp.Map{}`
+  struct rather than being copied from the Ash resource, so that the map-state
+  cache's `:map` key keeps holding the struct every other consumer expects.
+  """
+  def update_intel_source_map_id!(%{map_id: map_id} = _map, intel_source_map_id) do
+    map_id
+    |> update_map(%{intel_source_map_id: intel_source_map_id})
 
     map_id
     |> get_map!()

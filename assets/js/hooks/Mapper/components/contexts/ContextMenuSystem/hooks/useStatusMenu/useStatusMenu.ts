@@ -11,12 +11,13 @@ export const useStatusMenu = (
   systems: SolarSystemRawType[],
   systemId: string | undefined,
   onSystemStatus: (val: number) => void,
+  disabled = false,
 ): (() => MenuItem) => {
-  const ref = useRef({ onSystemStatus, systemId, systems });
-  ref.current = { onSystemStatus, systemId, systems };
+  const ref = useRef({ onSystemStatus, systemId, systems, disabled });
+  ref.current = { onSystemStatus, systemId, systems, disabled };
 
   return useCallback(() => {
-    const { onSystemStatus, systemId, systems } = ref.current;
+    const { onSystemStatus, systemId, systems, disabled } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
     if (!system) {
@@ -33,10 +34,12 @@ export const useStatusMenu = (
     const menuItem: MenuItem = {
       label: 'Status',
       icon: PrimeIcons.BOLT,
+      disabled,
       className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedStatus }),
       items: statusList.map(x => ({
         label: STATUS_NAMES[x],
         icon: x !== 0 ? `${PrimeIcons.BOLT} ${STATUS_COLOR_CLASSES[x]}` : PrimeIcons.BAN,
+        disabled,
         command: () => onSystemStatus(x),
         className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: x === system.status }),
       })),

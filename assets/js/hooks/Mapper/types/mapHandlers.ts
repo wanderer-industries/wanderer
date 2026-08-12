@@ -84,6 +84,11 @@ export type Command =
   | Commands.pingCancelled
   | Commands.pingBlocked;
 
+export type ClientEnv = {
+  intelSharingEnabled: boolean;
+  detailedKillsDisabled: boolean;
+};
+
 export type CommandInit = {
   systems: SolarSystemRawType[];
   system_signatures: Record<string, SystemSignature[]>;
@@ -109,6 +114,7 @@ export type CommandInit = {
   following_character_eve_id?: string | null;
   map_slug?: string;
   expired_characters: string[];
+  client_env?: ClientEnv;
 };
 
 export type CommandAddSystems = SolarSystemRawType[];
@@ -290,6 +296,10 @@ export enum OutCommand {
   addPing = 'add_ping',
   cancelPing = 'cancel_ping',
   startTracking = 'startTracking',
+
+  getIntelSourceMaps = 'get_intel_source_maps',
+  setIntelSourceMap = 'set_intel_source_map',
+  syncIntel = 'sync_intel',
 
   // Only UI commands
   openSettings = 'open_settings',
