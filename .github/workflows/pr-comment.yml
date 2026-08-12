@@ -34,10 +34,13 @@ permissions:
   # not cover. Without it the download 403s and the workflow silently posts
   # nothing.
   actions: read
-  # Read-only PR access is only used to verify the artifact's PR number against
-  # the triggering run's head SHA. The comment itself is an *issue* comment, so
-  # `issues: write` is the scope that grants posting.
-  pull-requests: read
+  # Posting the comment needs BOTH of the scopes below. The body goes to the
+  # issue-comments endpoint, but the target is a pull request, and GitHub gates
+  # that on the pull-requests scope as well: with `pull-requests: read` the POST
+  # 403s and answers `x-accepted-github-permissions: issues=write;
+  # pull_requests=write`. PR access is otherwise only read for verifying the
+  # artifact's PR number against the triggering run's head SHA.
+  pull-requests: write
   issues: write
 
 jobs:
