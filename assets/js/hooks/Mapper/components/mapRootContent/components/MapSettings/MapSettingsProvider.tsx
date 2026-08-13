@@ -58,7 +58,7 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
     async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
       const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
 
-      if (UserSettingsRemoteList.includes(prop as any) {
+      if (UserSettingsRemoteList.includes(prop as any)) {
         const newRemoteSettings = {
           ...userRemoteSettings,
           [prop]: value,
