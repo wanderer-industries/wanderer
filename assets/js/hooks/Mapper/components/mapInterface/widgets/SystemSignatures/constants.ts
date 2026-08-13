@@ -1,4 +1,5 @@
-import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SIGNATURES_GLOWINGROWS_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SIGNATURES_GLOWINGROWS_TIMING, SignatureSettingsType }
+  from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -186,7 +187,8 @@ export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
   [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTRA]: 10_000,
   [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED]: 30_000,
 };
-/**
+
+/*
  * Helper function to extract the deletion timeout in milliseconds from settings
  */
 export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
