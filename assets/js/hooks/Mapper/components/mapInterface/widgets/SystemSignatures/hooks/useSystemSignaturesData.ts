@@ -56,15 +56,6 @@ export const useSystemSignaturesData = ({
 
       const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
 
-/* //fanaberiatracker - do skasowania jesli nie wywali kodu
-      const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-      const glowingRowsIndex = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-        ? (glowingRowsValue as any).value
-        : glowingRowsValue;
-
-      const glowingRowsTimeout = [0, 1000, 5000, 10000, 30000];
-      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 1000;
-*/
       setTimeout(() => {
         setGlowingRows(current => {
           if (!current) return new Map();
