@@ -36,7 +36,7 @@ import { getSignatureRowClass } from '../helpers/rowStyles';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
-const EMPTY_GLOWING_ROWS = new Map()
+const GlowingRows = new Map()
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -52,8 +52,7 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
-  //glowingRows?: Map<string, { isNew: boolean }>;
-  EMPTY_GLOWING_ROWS?: Map<string, { isNew: boolean }>;
+  glowingRows?: Map<string, { isNew: boolean }>;
 }
 
 export const SystemSignaturesContent = ({
@@ -70,8 +69,7 @@ export const SystemSignaturesContent = ({
   selectable,
   onSelect,
   filterSignature,
-  //glowingRows = new Map(),
-  EMPTY_GLOWING_ROWS,
+  glowingRows,
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -233,10 +231,9 @@ export const SystemSignaturesContent = ({
       rowData as ExtendedSystemSignature,
       refVars.current.selectedSignatures || [],
       refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
-      //glowingRows,
-      EMPTY_GLOWING_ROWS,
+      glowingRows,
     );
-  }, [/*glowingRows*/ EMPTY_GLOWING_ROWS]);
+  }, [glowingRows]);
 
   const handleSortSettings = useCallback((e: DataTableStateEvent) => {
     refVars.current.settingsSignaturesUpdate({
