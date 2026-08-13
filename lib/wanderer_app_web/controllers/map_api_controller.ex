@@ -1336,7 +1336,9 @@ defmodule WandererAppWeb.MapAPIController do
   def export_map(%{assigns: %{map_id: map_id}} = conn, params) do
     include_signatures = params["include_signatures"] not in ["false", false]
 
-    case WandererApp.Map.Operations.Transfer.export(map_id, include_signatures: include_signatures) do
+    case WandererApp.Map.Operations.Transfer.export(map_id,
+           include_signatures: include_signatures
+         ) do
       {:ok, data} ->
         json(conn, %{data: data})
 
@@ -1354,10 +1356,13 @@ defmodule WandererAppWeb.MapAPIController do
 
   Replays an exported document into this map. Systems that already exist are left untouched.
   """
+  # AssignMapOwner assigns both keys even when it cannot resolve an owner, so the guard is what
+  # sends an unresolvable owner to the clause below instead of into an import with a nil user.
   def import_map(
         %{assigns: %{map_id: map_id, owner_character_id: char_id, owner_user_id: user_id}} = conn,
         params
-      ) do
+      )
+      when not is_nil(char_id) and not is_nil(user_id) do
     document = params["data"] || params
 
     include_signatures = params["include_signatures"] not in ["false", false]

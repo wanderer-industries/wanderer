@@ -9,6 +9,16 @@ import { applyMigrations } from '@/hooks/Mapper/mapRootProvider/migrations';
 import { createDefaultStoredSettings } from '@/hooks/Mapper/mapRootProvider/helpers/createDefaultStoredSettings.ts';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { Dialog } from 'primereact/dialog';
+import { WdCheckbox } from '@/hooks/Mapper/components/ui-kit/WdCheckbox';
+
+type PendingImport = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  document: any;
+  systems: number;
+  connections: number;
+  signatures: number;
+};
 
 export const ImportExport = () => {
   const {
@@ -19,6 +29,8 @@ export const ImportExport = () => {
 
   const toast = useRef<Toast | null>(null);
   const [mapDataBusy, setMapDataBusy] = useState(false);
+  const [includeSignatures, setIncludeSignatures] = useState(true);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
   const handleImportFromClipboard = useCallback(async () => {
     const text = await navigator.clipboard.readText();
@@ -152,7 +164,10 @@ export const ImportExport = () => {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res: any = await outCommand({ type: OutCommand.exportMapData, data: null });
+      const res: any = await outCommand({
+        type: OutCommand.exportMapData,
+        data: { include_signatures: includeSignatures },
+      });
 
       if (!res?.data) {
         throw new Error(res?.error ?? 'Empty response');
@@ -180,7 +195,7 @@ export const ImportExport = () => {
     } finally {
       setMapDataBusy(false);
     }
-  }, [outCommand, map_slug]);
+  }, [includeSignatures, outCommand, map_slug]);
 
   const handleImportMapData = useCallback(async () => {
     let parsed;
@@ -199,11 +214,31 @@ export const ImportExport = () => {
       return;
     }
 
+    // the map is shared and an import cannot be undone, so the counts get confirmed first
+    setPendingImport({
+      document: parsed,
+      systems: Array.isArray(parsed?.systems) ? parsed.systems.length : 0,
+      connections: Array.isArray(parsed?.connections) ? parsed.connections.length : 0,
+      signatures: Array.isArray(parsed?.signatures) ? parsed.signatures.length : 0,
+    });
+  }, []);
+
+  const handleConfirmImport = useCallback(async () => {
+    if (!pendingImport) {
+      return;
+    }
+
+    const { document } = pendingImport;
+
+    setPendingImport(null);
     setMapDataBusy(true);
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res: any = await outCommand({ type: OutCommand.importMapData, data: { data: parsed } });
+      const res: any = await outCommand({
+        type: OutCommand.importMapData,
+        data: { data: document, include_signatures: includeSignatures },
+      });
 
       if (!res?.result) {
         throw new Error(res?.error ?? 'Empty response');
@@ -214,7 +249,10 @@ export const ImportExport = () => {
       toast.current?.show({
         severity: 'success',
         summary: 'Import map',
-        detail: `Added ${systems} systems, ${connections} connections, ${signatures} signatures.`,
+        detail:
+          systems + connections + signatures === 0
+            ? 'Everything in that file was already on the map - nothing was added.'
+            : `Added ${systems} systems, ${connections} connections, ${signatures} signatures.`,
         life: 4000,
       });
     } catch (error) {
@@ -229,7 +267,7 @@ export const ImportExport = () => {
     } finally {
       setMapDataBusy(false);
     }
-  }, [outCommand]);
+  }, [includeSignatures, outCommand, pendingImport]);
 
   const importItems = useMemo(
     () => [
@@ -311,11 +349,38 @@ export const ImportExport = () => {
           />
         </div>
 
+        <WdCheckbox
+          label="Include signatures"
+          value={includeSignatures}
+          onChange={e => setIncludeSignatures(!!e.checked)}
+        />
+
         <span className="text-stone-500 text-[12px]">
           *Map contents - systems, connections and signatures - as a file. Import adds what is missing, systems already
           on the map are left untouched.
         </span>
       </div>
+
+      <Dialog
+        header="Import map"
+        visible={pendingImport != null}
+        draggable={false}
+        className="w-[420px]"
+        onHide={() => setPendingImport(null)}
+      >
+        <div className="flex flex-col gap-3">
+          <span className="text-stone-200 text-[13px]">
+            This adds up to {pendingImport?.systems} systems, {pendingImport?.connections} connections and{' '}
+            {includeSignatures ? pendingImport?.signatures : 0} signatures to <b>{map_slug ?? 'this map'}</b>, for
+            everyone on the map. Systems already there are left alone, and an import cannot be undone.
+          </span>
+
+          <div className="flex justify-end gap-2">
+            <WdButton size="small" outlined label="Cancel" onClick={() => setPendingImport(null)} />
+            <WdButton size="small" severity="warning" label="Import" onClick={handleConfirmImport} />
+          </div>
+        </div>
+      </Dialog>
 
       <Toast ref={toast} />
     </div>

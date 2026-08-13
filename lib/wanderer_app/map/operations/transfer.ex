@@ -19,7 +19,11 @@ defmodule WandererApp.Map.Operations.Transfer do
 
   @export_version 1
 
-  @type stats :: %{systems: non_neg_integer(), connections: non_neg_integer(), signatures: non_neg_integer()}
+  @type stats :: %{
+          systems: non_neg_integer(),
+          connections: non_neg_integer(),
+          signatures: non_neg_integer()
+        }
 
   @doc """
   Builds the export document for a map.
@@ -79,7 +83,7 @@ defmodule WandererApp.Map.Operations.Transfer do
       |> Enum.count(& &1)
 
     imported_connections = import_connections(map_id, connections, user_id, character_id)
-    imported_signatures = import_signatures(map_id, signatures)
+    imported_signatures = import_signatures(map_id, signatures, character_id)
 
     Logger.info(
       "Imported #{imported_systems} systems, #{imported_connections} connections, " <>
@@ -132,24 +136,23 @@ defmodule WandererApp.Map.Operations.Transfer do
   defp export_signatures(_systems, false), do: []
 
   defp export_signatures(systems, true) do
-    Enum.flat_map(systems, fn system ->
-      case MapSystemSignature.by_system_id_all(%{system_id: system.id}) do
-        {:ok, signatures} ->
-          signatures
-          |> Enum.reject(& &1.deleted)
-          |> Enum.map(&export_signature(&1, system.solar_system_id))
+    solar_system_ids = Map.new(systems, &{&1.id, &1.solar_system_id})
 
-        {:error, _} ->
-          []
-      end
-    end)
+    case MapSystemSignature.by_system_ids(Map.keys(solar_system_ids)) do
+      {:ok, signatures} ->
+        signatures
+        |> Enum.reject(& &1.deleted)
+        |> Enum.map(&export_signature(&1, Map.fetch!(solar_system_ids, &1.system_id)))
+
+      {:error, _} ->
+        []
+    end
   end
 
   defp export_signature(signature, solar_system_id) do
     %{
       "solar_system_id" => solar_system_id,
       "eve_id" => signature.eve_id,
-      "character_eve_id" => signature.character_eve_id,
       "name" => signature.name,
       "temporary_name" => signature.temporary_name,
       "description" => signature.description,
@@ -162,8 +165,11 @@ defmodule WandererApp.Map.Operations.Transfer do
 
   # -- import helpers ------------------------------------------------------------------------
 
+  # Deletion on a map is a soft `visible: false`, and `Server.add_system` decides a system is
+  # missing on exactly that basis. Counting the hidden rows as present would let a deleted system
+  # come back stripped of everything the document carries for it.
   defp existing_solar_system_ids(map_id) do
-    case WandererApp.MapSystemRepo.get_all_by_map(map_id) do
+    case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
       {:ok, systems} -> MapSet.new(systems, & &1.solar_system_id)
       _ -> MapSet.new()
     end
@@ -215,6 +221,8 @@ defmodule WandererApp.Map.Operations.Transfer do
   end
 
   defp import_connections(map_id, connections, user_id, character_id) do
+    existing_pairs = existing_connection_pairs(map_id)
+
     paste_payload =
       connections
       |> Enum.filter(&is_map/1)
@@ -223,7 +231,14 @@ defmodule WandererApp.Map.Operations.Transfer do
              {:ok, target} <- parse_solar_system_id(connection["target"]) do
           [
             connection
-            |> Map.take(["type", "mass_status", "time_status", "ship_size_type", "wormhole_type", "locked"])
+            |> Map.take([
+              "type",
+              "mass_status",
+              "time_status",
+              "ship_size_type",
+              "wormhole_type",
+              "locked"
+            ])
             |> Map.merge(%{"source" => to_string(source), "target" => to_string(target)})
           ]
         else
@@ -233,10 +248,32 @@ defmodule WandererApp.Map.Operations.Transfer do
 
     Server.paste_connections(map_id, paste_payload, user_id, character_id)
 
-    length(paste_payload)
+    # the payload is everything the document had; only the pairs the map did not already carry
+    # are new, and a document may well name the same pair twice
+    paste_payload
+    |> Enum.map(&connection_pair(&1["source"], &1["target"]))
+    |> Enum.uniq()
+    |> Enum.count(&(not MapSet.member?(existing_pairs, &1)))
   end
 
-  defp import_signatures(map_id, signatures) do
+  defp existing_connection_pairs(map_id) do
+    case WandererApp.MapConnectionRepo.get_by_map(map_id) do
+      {:ok, connections} ->
+        MapSet.new(connections, &connection_pair(&1.solar_system_source, &1.solar_system_target))
+
+      _ ->
+        MapSet.new()
+    end
+  end
+
+  # a connection is the same connection whichever end the document names first
+  defp connection_pair(source, target) do
+    [to_string(source), to_string(target)] |> Enum.sort() |> List.to_tuple()
+  end
+
+  defp import_signatures(map_id, signatures, character_id) do
+    character_eve_id = importing_character_eve_id(character_id)
+
     signatures
     |> Enum.filter(&is_map/1)
     |> Enum.group_by(& &1["solar_system_id"])
@@ -244,20 +281,23 @@ defmodule WandererApp.Map.Operations.Transfer do
       with {:ok, parsed_id} <- parse_solar_system_id(solar_system_id),
            {:ok, system} when not is_nil(system) <-
              WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, parsed_id) do
-        acc + create_signatures(system.id, system_signatures)
+        acc + create_signatures(system.id, system_signatures, character_eve_id)
       else
         _ -> acc
       end
     end)
   end
 
-  defp create_signatures(system_id, signatures) do
+  # `create` upserts on (system_id, eve_id), so a signature the target already has comes back
+  # {:ok, _} without anything having been added. Only the ones that were not there are new.
+  defp create_signatures(system_id, signatures, character_eve_id) do
+    existing_eve_ids = existing_signature_eve_ids(system_id, signatures)
+
     Enum.count(signatures, fn signature ->
       attrs =
         signature
         |> Map.take([
           "eve_id",
-          "character_eve_id",
           "name",
           "temporary_name",
           "description",
@@ -268,16 +308,35 @@ defmodule WandererApp.Map.Operations.Transfer do
         ])
         |> Map.new(fn {key, value} -> {String.to_existing_atom(key), value} end)
         |> Map.put(:system_id, system_id)
+        |> Map.put(:character_eve_id, character_eve_id)
 
       case MapSystemSignature.create(attrs) do
         {:ok, _} ->
-          true
+          not MapSet.member?(existing_eve_ids, to_string(signature["eve_id"]))
 
         {:error, reason} ->
           Logger.warning("[Transfer] skipped signature: #{inspect(reason)}")
           false
       end
     end)
+  end
+
+  defp existing_signature_eve_ids(system_id, signatures) do
+    eve_ids = signatures |> Enum.map(&to_string(&1["eve_id"])) |> Enum.uniq()
+
+    case MapSystemSignature.by_system_id_and_eve_ids(system_id, eve_ids) do
+      {:ok, existing} -> MapSet.new(existing, &to_string(&1.eve_id))
+      _ -> MapSet.new()
+    end
+  end
+
+  # `character_eve_id` is required on a signature, and the character who scanned it on the
+  # exporting side means nothing here - the import is attributed to whoever ran it.
+  defp importing_character_eve_id(character_id) do
+    case WandererApp.Character.get_character(character_id) do
+      {:ok, %{eve_id: eve_id}} when not is_nil(eve_id) -> to_string(eve_id)
+      _ -> "0"
+    end
   end
 
   defp position(%{"x" => x, "y" => y}) when is_number(x) and is_number(y),

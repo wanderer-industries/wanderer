@@ -209,10 +209,12 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:noreply, socket}
   end
 
+  # Export hands the whole map over as one file, so it asks for the permission to see the map
+  # rather than relying on the caller having got this far.
   def handle_ui_event(
         "export_map_data",
         params,
-        %{assigns: %{map_id: map_id}} = socket
+        %{assigns: %{map_id: map_id, user_permissions: %{view_system: true}}} = socket
       ) do
     include_signatures = Map.get(params || %{}, "include_signatures", true)
 
@@ -264,6 +266,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         {:reply, %{error: "Failed to import map data"}, socket}
     end
   end
+
+  def handle_ui_event("export_map_data", _params, socket),
+    do: {:reply, %{error: "You don't have permission to export map data"}, socket}
 
   def handle_ui_event("import_map_data", _params, socket),
     do: {:reply, %{error: "You don't have permission to import map data"}, socket}
