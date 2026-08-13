@@ -39,8 +39,7 @@ export const SystemSignatures = () => {
     handleSelectAll,
     handlePaste,
     hasUnsupportedLanguage,
-    //glowingRows,
-    EMPTY_GLOWING_ROWS,
+    glowingRows,
   } = useSystemSignaturesData({
     systemId,
     settings: settingsSignatures,
@@ -100,8 +99,7 @@ export const SystemSignatures = () => {
           onPaste={handlePaste}
           hasUnsupportedLanguage={hasUnsupportedLanguage}
           settings={settingsSignatures}
-          //glowingRows={glowingRows}
-          EMPTY_GLOWING_ROWS={EMPTY_GLOWING_ROWS}
+          glowingRows={glowingRows}
         />
       )}
 
