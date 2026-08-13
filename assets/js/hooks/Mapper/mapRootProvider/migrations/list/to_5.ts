@@ -1,4 +1,4 @@
-import { SIGNATURES_GLOWINGROWS_TIMING } from '@/hooks/Mapper/components/mapInterface/components/signatures/signatures.ts';
+import { SIGNATURES_GLOWINGROWS_TIMING } from '@/hooks/Mapper/constants/signatures.ts';
 
 export const to_5: MigrationStructure = {
   to: 5,
