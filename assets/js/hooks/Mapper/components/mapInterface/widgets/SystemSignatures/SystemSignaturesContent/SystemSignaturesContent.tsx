@@ -35,6 +35,7 @@ import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
+const EMPTY_GLOWING_ROWS = new Map()
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -67,7 +68,7 @@ export const SystemSignaturesContent = ({
   selectable,
   onSelect,
   filterSignature,
-  glowingRows = new Map(),
+  //glowingRows = new Map(),
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -229,9 +230,10 @@ export const SystemSignaturesContent = ({
       rowData as ExtendedSystemSignature,
       refVars.current.selectedSignatures || [],
       refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
-      glowingRows,
+      //glowingRows,
+      EMPTY_GLOWING_ROWS,
     );
-  }, [glowingRows]);
+  }, [/*glowingRows*/ EMPTY_GLOWING_ROWS]);
 
   const handleSortSettings = useCallback((e: DataTableStateEvent) => {
     refVars.current.settingsSignaturesUpdate({

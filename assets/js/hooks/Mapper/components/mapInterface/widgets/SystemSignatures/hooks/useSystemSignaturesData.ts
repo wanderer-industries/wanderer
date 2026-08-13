@@ -4,7 +4,7 @@ import { Commands, ExtendedSystemSignature, SignatureKind } from '@/hooks/Mapper
 import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 
-import { SETTINGS_KEYS} from '@/hooks/Mapper/constants/signatures.ts';
+import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures.ts';
 import { UseSystemSignaturesDataProps } from './types';
 import { useSignatureFetching } from './useSignatureFetching';
 
@@ -54,15 +54,7 @@ export const useSystemSignaturesData = ({
         return newGlowing;
       });
 
-       const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
-
-      const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-      const glowingRowsIndex = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-        ? (glowingRowsValue as any).value
-        : glowingRowsValue;
-
-      const glowingRowsTimeout = [0, 1000, 5000, 10000, 30000];
-      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 1000;
+      const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
 
       setTimeout(() => {
         setGlowingRows(current => {
