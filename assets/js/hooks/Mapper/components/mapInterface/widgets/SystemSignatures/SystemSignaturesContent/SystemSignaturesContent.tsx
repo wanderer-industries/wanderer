@@ -52,7 +52,8 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
-  glowingRows?: Map<string, { isNew: boolean }>;
+  //glowingRows?: Map<string, { isNew: boolean }>;
+  EMPTY_GLOWING_ROWS?: Map<string, { isNew: boolean }>;
 }
 
 export const SystemSignaturesContent = ({
@@ -70,6 +71,7 @@ export const SystemSignaturesContent = ({
   onSelect,
   filterSignature,
   //glowingRows = new Map(),
+  EMPTY_GLOWING_ROWS,
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);

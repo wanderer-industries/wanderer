@@ -19,7 +19,7 @@ export const useSystemSignaturesData = ({
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
   const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
-  const [glowingRows, setGlowingRows] = useState<Map<string, { isNew: boolean }>>(new Map());
+  const [/*glowingRows*/ EMPTY_GLOWING_ROWS, setGlowingRows] = useState<Map<string, { isNew: boolean }>>(new Map());
 
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({
     systemId,
@@ -55,6 +55,15 @@ export const useSystemSignaturesData = ({
       });
 
       const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
+
+      //fanaberiatracker - removing this block now fuck ups pasting sigs for some reason...
+      const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+      const glowingRowsIndex = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
+        ? (glowingRowsValue as any).value
+        : glowingRowsValue;
+      const glowingRowsTimeout = [0, 1000, 5000, 10000, 30000];
+      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 1000;
+
 
       setTimeout(() => {
         setGlowingRows(current => {
@@ -126,6 +135,7 @@ export const useSystemSignaturesData = ({
     handleSelectAll,
     handlePaste,
     hasUnsupportedLanguage,
-    glowingRows,
+    //glowingRows,
+    EMPTY_GLOWING_ROWS,
   };
 };
