@@ -36,7 +36,7 @@ import { getSignatureRowClass } from '../helpers/rowStyles';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
-const GlowingRows = new Map()
+const glowingRows = new Map()
 
 interface SystemSignaturesContentProps {
   systemId: string;
