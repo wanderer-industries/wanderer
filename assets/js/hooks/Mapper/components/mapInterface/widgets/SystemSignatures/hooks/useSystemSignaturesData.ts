@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import useRefState from 'react-usestateref';
 
 import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures.ts';
+import { SIGNATURE_GLOWINGROWS_TIMEOUTS } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
 import { UseSystemSignaturesDataProps } from './types';
 import { useSignatureFetching } from './useSignatureFetching';
 
@@ -41,46 +42,44 @@ export const useSystemSignaturesData = ({
       if (incomingSignatures.length === 0) {
         return;
       }
-
+      //fanaberiatracker - ostawienie podswietlenia poczatek
+      /*
       setGlowingRows(current => {
         const newGlowing = new Map(current);
         incomingSignatures.forEach(sig => {
           const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
           const isBrandNew = !existing || !existing.updated_at ||
             Math.abs(new Date(existing.inserted_at).getTime() - new Date(existing.updated_at).getTime()) < 50;
-
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
         });
         return newGlowing;
-      });
+      });*/
+      //fanaberiatracker - ostawienie podswietlenia koniec
 
-      const idsToRemove = incomingSignatures.map(sig => sig.eve_id);
-
-      //fanaberiatracker - removing this block now fucks up pasting sigs for some reason...
-      const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-      const glowingRowsIndex = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-        ? (glowingRowsValue as any).value
-        : glowingRowsValue;
-      const glowingRowsTimeout = [0, 1000, 5000, 10000, 30000];
-      const glowingrowsTimeoutDuration = glowingRowsTimeout[glowingRowsIndex] ?? 1000;
-
-
-      setTimeout(() => {
-        setGlowingRows(current => {
-          if (!current) return new Map();
-          const updated = new Map(current);
-          idsToRemove.forEach(id => updated.delete(id));
-          return updated;
-        });
-      }, glowingrowsTimeoutDuration);
-
+      //fanaberiatracker - ustawienie podswietlenia z warunkiem na okolicznosc podwojnego wklejenia aby nie nadpisac "zieolonych" poczatek
+      setGlowingRows(current => {
+  const newGlowing = new Map(current);
+  incomingSignatures.forEach(sig => {
+    const alreadyGlowing = current.get(sig.eve_id);
+    if (alreadyGlowing && alreadyGlowing.isNew) {
+      newGlowing.set(sig.eve_id, { isNew: true });
+      return;
+    }
+    const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
+    const isBrandNew = !existing || !existing.updated_at ||
+      Math.abs(new Date(existing.inserted_at).getTime() - new Date(existing.updated_at).getTime()) < 50;
+    newGlowing.set(sig.eve_id, { isNew: isBrandNew });
+  });
+  return newGlowing;
+});
+//fanaberiatracker - ustawienie podswietlenia z warunkiem na okolicznosc podwojnego wklejenia aby nie nadpisac "zieolonych" koniec
 
       // Check if any signatures might be using unsupported languages
       // This is a basic heuristic: if we have signatures where the original group wasn't mapped
       const clipboardRows = clipboardString.split('\n').filter(row => row.trim() !== '');
       const detectedSignatureCount = clipboardRows.filter(row => row.match(/^[A-Z]{3}-\d{3}/)).length;
 
-      // If we detected valid IDs but got fewer parsed signatures, we might have language issues
+      // If we detected valid IDs but got fewer parsed signatures, we might have language issue
       if (detectedSignatureCount > 0 && incomingSignatures.length < detectedSignatureCount) {
         setHasUnsupportedLanguage(true);
       } else {
@@ -96,6 +95,23 @@ export const useSystemSignaturesData = ({
     },
     [settings, handleUpdateSignatures, onLazyDeleteChange],
   );
+
+  useEffect(() => {
+    if (glowingRows.size === 0) return;
+
+    const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+    const timingKey = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
+      ? (glowingRowsValue as any).value
+      : glowingRowsValue;
+
+    const glowingRowsTimeoutDuration = SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey] ?? 1000;
+
+    const GlowingRowsTimer1 = setTimeout(() => {
+      setGlowingRows(new Map());
+    }, glowingRowsTimeoutDuration);
+
+    return () => clearTimeout(GlowingRowsTimer1);
+  }, [glowingRows, settings, systemId]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;

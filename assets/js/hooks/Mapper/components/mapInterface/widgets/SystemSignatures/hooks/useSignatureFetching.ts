@@ -52,11 +52,32 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
           type: OutCommand.updateSignatures,
           data: { ...prepareUpdatePayload(systemId, added, updated, removed), deleteTimeout },
         });
+//fanaberiatracker - fuck me sideways, pojebanie z poplataniem zmiana obslugi wklejenia wierszy z dupy - start
+        setSignatures(prev => {
+          const removedIds = removed.map(r => r.eve_id);
+          let filtered = prev.filter(s => !removedIds.includes(s.eve_id));
+          filtered = filtered.map(item => {
+            const up = updated.find(u => u.eve_id === item.eve_id);
+            if (up) {
+              return {
+                ...item,
+                ...up,
+                character_name: up.character_name ?? characters.find(c => c.eve_id === up.character_eve_id)?.name,
+              };
+            }
+            return item;
+          });
+          const mappedAdded = added.map(a => ({
+            ...a,
+            character_name: a.character_name ?? characters.find(c => c.eve_id === a.character_eve_id)?.name,
+          })) as ExtendedSystemSignature[];
+          return [...filtered, ...mappedAdded];
+        });
       }
     },
-    [systemId, deleteTimeout, outCommand, signaturesRef],
+    [systemId, deleteTimeout, outCommand, signaturesRef, setSignatures, characters],
   );
-
+  //fanaberiatracker - fuck me sideways, pojebanie z poplataniem zmiana obslugi wklejenia wierszy z dupy - koniec
   return {
     handleGetSignatures,
     handleUpdateSignatures,
