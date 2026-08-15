@@ -1,5 +1,5 @@
 import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SIGNATURES_GLOWINGROWS_TIMING, SignatureSettingsType }
-  from '@/hooks/Mapper/constants/signatures';
+from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -154,9 +154,7 @@ export const SIGNATURE_SETTINGS = {
       name: 'Deletion Timing',
       options: [
         { value: SIGNATURES_DELETION_TIMING.IMMEDIATE, label: '0s' },
-        { value: SIGNATURES_DELETION_TIMING.DEFAULT, label: '1s' },
-        { value: SIGNATURES_DELETION_TIMING.LONG, label: '5s' },
-        { value: SIGNATURES_DELETION_TIMING.EXTRA, label: '10s' },
+        { value: SIGNATURES_DELETION_TIMING.DEFAULT, label: '10s' },
         { value: SIGNATURES_DELETION_TIMING.EXTENDED, label: '30s' },
       ],
     },
@@ -178,9 +176,7 @@ export const SIGNATURE_SETTINGS = {
 // Now this map is strongly typed as “number” for each timing enum
 export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
   [SIGNATURES_DELETION_TIMING.IMMEDIATE]: 0,
-  [SIGNATURES_DELETION_TIMING.DEFAULT]: 1_000,
-  [SIGNATURES_DELETION_TIMING.LONG]: 5_000,
-  [SIGNATURES_DELETION_TIMING.EXTRA]: 10_000,
+  [SIGNATURES_DELETION_TIMING.DEFAULT]: 10_000,
   [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
 
@@ -198,9 +194,9 @@ export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
 export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
   const raw = settings[SETTINGS_KEYS.DELETION_TIMING];
   const timing =
-    raw && typeof raw === 'object' && 'value' in raw
-      ? (raw as { value: SIGNATURES_DELETION_TIMING }).value
-      : (raw as SIGNATURES_DELETION_TIMING | undefined);
+        raw && typeof raw === 'object' && 'value' in raw
+  ? (raw as { value: SIGNATURES_DELETION_TIMING }).value
+  : (raw as SIGNATURES_DELETION_TIMING | undefined);
 
   const validTiming = typeof timing === 'number' ? timing : SIGNATURES_DELETION_TIMING.DEFAULT;
 
@@ -210,9 +206,9 @@ export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
 export function getGlowingRowsTimeoutMs(settings: SignatureSettingsType): number {
   const raw = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
   const timing =
-    raw && typeof raw === 'object' && 'value' in raw
-      ? (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value
-      : (raw as SIGNATURES_GLOWINGROWS_TIMING | undefined);
+        raw && typeof raw === 'object' && 'value' in raw
+  ? (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value
+  : (raw as SIGNATURES_GLOWINGROWS_TIMING | undefined);
 
   const glowingRowsTiming = typeof timing === 'number' ? timing : SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT;
 

@@ -14,7 +14,7 @@ export const useSystemSignaturesData = ({
   settings,
   onLazyDeleteChange,
 }: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & {
-  onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
+                                        onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
 }) => {
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
@@ -38,42 +38,27 @@ export const useSystemSignaturesData = ({
         clipboardString,
         Object.keys(settings).filter(skey => skey in SignatureKind),
       ) as ExtendedSystemSignature[];
-
       if (incomingSignatures.length === 0) {
         return;
       }
-      //fanaberiatracker - ostawienie podswietlenia poczatek
-      /*
+
       setGlowingRows(current => {
         const newGlowing = new Map(current);
         incomingSignatures.forEach(sig => {
+          const alreadyGlowing = current.get(sig.eve_id);
+          if (alreadyGlowing && alreadyGlowing.isNew) {
+            newGlowing.set(sig.eve_id, { isNew: true });
+            return;
+          }
+
           const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
-          const isBrandNew = !existing || !existing.updated_at ||
-            Math.abs(new Date(existing.inserted_at).getTime() - new Date(existing.updated_at).getTime()) < 50;
+
+          const isBrandNew = !existing || !existing.updated_at || !existing.inserted_at ||
+                Math.abs(new Date(existing.inserted_at ?? "").getTime() - new Date(existing.updated_at ?? "").getTime()) < 50;
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
         });
         return newGlowing;
-      });*/
-      //fanaberiatracker - ostawienie podswietlenia koniec
-
-      //fanaberiatracker - ustawienie podswietlenia z warunkiem na okolicznosc podwojnego wklejenia aby nie nadpisac "zieolonych" poczatek
-      setGlowingRows(current => {
-  const newGlowing = new Map(current);
-  incomingSignatures.forEach(sig => {
-    const alreadyGlowing = current.get(sig.eve_id);
-    if (alreadyGlowing && alreadyGlowing.isNew) {
-      newGlowing.set(sig.eve_id, { isNew: true });
-      return;
-    }
-    const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
-    const isBrandNew = !existing || !existing.updated_at ||
-      Math.abs(new Date(existing.inserted_at).getTime() - new Date(existing.updated_at).getTime()) < 50;
-    newGlowing.set(sig.eve_id, { isNew: isBrandNew });
-  });
-  return newGlowing;
-});
-//fanaberiatracker - ustawienie podswietlenia z warunkiem na okolicznosc podwojnego wklejenia aby nie nadpisac "zieolonych" koniec
-
+      });
       // Check if any signatures might be using unsupported languages
       // This is a basic heuristic: if we have signatures where the original group wasn't mapped
       const clipboardRows = clipboardString.split('\n').filter(row => row.trim() !== '');
@@ -101,10 +86,11 @@ export const useSystemSignaturesData = ({
 
     const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
     const timingKey = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-      ? (glowingRowsValue as any).value
-      : glowingRowsValue;
+    ? (glowingRowsValue as any).value
+    : glowingRowsValue;
 
-    const glowingRowsTimeoutDuration = SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey] ?? 1000;
+    const glowingRowsTimeoutDuration =
+          SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ?? 1000;
 
     const GlowingRowsTimer1 = setTimeout(() => {
       setGlowingRows(new Map());
