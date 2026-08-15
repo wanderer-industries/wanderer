@@ -26,7 +26,7 @@ export function getSignatureRowClass(
     return clsx([...baseCls, 'bg-red-400/40 hover:bg-red-400/50']);
   }
 
-  const glowInfo = glowingRows.get(row.eve_id);
+  const glowInfo = glowingRows?.get(row.eve_id);
   if (glowInfo) {
     if (glowInfo.isNew) {
       return clsx([...baseCls, 'transition duration-500 bg-lime-500/30 hover:bg-lime-500/50']);
@@ -51,7 +51,7 @@ export function getSignatureRowClass(
     }
 
     // Default for color by type - apply same color as CosmicSignature (red) and small text size
-    return clsx([...baseCls, '[&_td:nth-child(-n+3)]:text-rose-400/100']);
+    return clsx([...baseCls, '[&_td:nth-child(-n+3)]:text-rose-900/100']);
   }
 
   // Original styling when color by type is disabled

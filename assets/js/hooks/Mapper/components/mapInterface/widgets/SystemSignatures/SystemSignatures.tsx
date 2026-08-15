@@ -80,10 +80,10 @@ export const SystemSignatures = () => {
           onLazyDeleteChange={handleLazyDeleteToggle}
           onUndoClick={handleUndo}
           onSettingsClick={openSettings}
-        />
+          />
       }
       windowId={SIGNATURE_WINDOW_ID}
-    >
+      >
       {!isSystemSelected ? (
         <div className="w-full h-full flex justify-center items-center select-none text-center text-stone-400/80 text-sm">
           System is not selected
@@ -100,7 +100,7 @@ export const SystemSignatures = () => {
           hasUnsupportedLanguage={hasUnsupportedLanguage}
           settings={settingsSignatures}
           glowingRows={glowingRows}
-        />
+          />
       )}
 
       {showSettings && (
@@ -108,7 +108,7 @@ export const SystemSignatures = () => {
           settings={settingsSignatures}
           onCancel={() => setShowSettings(false)}
           onSave={handleSettingsSave}
-        />
+          />
       )}
     </Widget>
   );

@@ -31,7 +31,8 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
       type: OutCommand.getSignatures,
       data: { system_id: systemId },
     });
-    const serverSigs = (resp.signatures ?? []) as SystemSignature[];
+
+    const serverSigs = ((resp as { signatures?: SystemSignature[] })?.signatures ?? []) as SystemSignature[];
 
     const extended = serverSigs.map(s => ({
       ...s,
@@ -52,7 +53,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
           type: OutCommand.updateSignatures,
           data: { ...prepareUpdatePayload(systemId, added, updated, removed), deleteTimeout },
         });
-//fanaberiatracker - fuck me sideways, pojebanie z poplataniem zmiana obslugi wklejenia wierszy z dupy - start
+
         setSignatures(prev => {
           const removedIds = removed.map(r => r.eve_id);
           let filtered = prev.filter(s => !removedIds.includes(s.eve_id));
@@ -77,7 +78,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     },
     [systemId, deleteTimeout, outCommand, signaturesRef, setSignatures, characters],
   );
-  //fanaberiatracker - fuck me sideways, pojebanie z poplataniem zmiana obslugi wklejenia wierszy z dupy - koniec
+
   return {
     handleGetSignatures,
     handleUpdateSignatures,
