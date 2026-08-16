@@ -1,8 +1,13 @@
-version: "0.1"
-
 services:
   db:
-    image: postgres:13-alpine
+    # Matches production (postgres:16-alpine). AshPostgres declares
+    # min_pg_version 15 in lib/wanderer_app/repo.ex, so 13 was below the
+    # supported floor. The volume is renamed from db-new because a PG13 data
+    # directory is not readable by a PG16 server — reusing the old name would
+    # make the container fail to start rather than upgrade. Recreate the
+    # databases with `mix ecto.setup`, which also runs priv/repo/seeds.exs to
+    # re-download the EVE SDE reference data (solar systems, jumps, ship types).
+    image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -10,27 +15,47 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db-new:/var/lib/postgresql/data
+      - db-pg16:/var/lib/postgresql/data
 
   wanderer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # The container user is created with these ids so that files written
+        # through the /app bind mount (deps/, _build/, generated assets) keep
+        # host ownership. Hosts whose uid is not 1000 export USER_UID/USER_GID
+        # (see docker-compose.override.yml.example) before building.
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
     environment:
       PORT: 4444
       DB_HOST: db
       WEB_APP_URL: "http://localhost:4444"
       ERL_AFLAGS: "-kernel shell_history enabled"
-    build:
-      context: .
-      dockerfile: Dockerfile
     ports:
       - 4444:4444
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ..:/app:delegated
-      - ~/.gitconfig:/root/.gitconfig
-      - ~/.gitignore:/root/.gitignore
-      - ~/.ssh:/root/.ssh
-      - elixir-artifacts:/opt/elixir-artifacts
+      - command-history:/commandhistory
+      # deps/ and _build/ deliberately live in the repo via the /app bind
+      # rather than in named volumes nested at /app/deps and /app/_build.
+      #
+      # A named volume mounted inside the bind MASKS whatever the repo has at
+      # that path, and it only does so for the main working tree. Git worktrees
+      # therefore came up with an empty deps/ and _build/ and had to recompile
+      # from scratch, which invites ad-hoc `ln -sfn /app/deps deps` workarounds
+      # that resolve in the container but dangle on the host.
+      #
+      # Tradeoff accepted: host and container now share _build. BEAM artifacts
+      # are OTP-version-specific, so after changing the Erlang/Elixir version
+      # (including this container's OTP 27 -> 26 correction), run
+      # `rm -rf _build` once or mix will report modules compiled by a
+      # different version.
     command: sleep infinity
 
 volumes:
-  elixir-artifacts: {}
-  db-new: {}
+  db-pg16: {}
+  command-history: {}
