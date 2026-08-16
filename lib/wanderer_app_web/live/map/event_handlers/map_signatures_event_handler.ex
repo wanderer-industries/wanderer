@@ -210,7 +210,7 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
 
     {:noreply,
       socket
-        |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)} #  NAPRAWIONE: Używamy nowej zmiennej!
+        |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)}
   end
 
   def handle_ui_event(
