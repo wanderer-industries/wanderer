@@ -1,7 +1,7 @@
 ARG BUILDER_IMAGE="wandererltd/build-base:latest"
 ARG RUNNER_IMAGE="wandererltd/runner-base:latest"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # prepare build dir
 WORKDIR /app
