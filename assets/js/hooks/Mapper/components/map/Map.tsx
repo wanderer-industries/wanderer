@@ -4,7 +4,7 @@ import { MapHandlers, OutCommand, OutCommandHandler } from '@/hooks/Mapper/types
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 import type { PanelPosition } from '@reactflow/core';
 import clsx from 'clsx';
-import { ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo, useRef } from 'react';
+import { CSSProperties, ForwardedRef, forwardRef, MouseEvent, useCallback, useEffect, useMemo, useRef } from 'react';
 import ReactFlow, {
   Background,
   Edge,
@@ -90,6 +90,8 @@ interface MapCompProps {
   minimapPlacement?: PanelPosition;
   localShowShipName?: boolean;
   defaultViewport?: Viewport;
+  // CSS variables the map root hands down to the edges, e.g. the bubble styling
+  styleVars?: CSSProperties;
 }
 
 const MapComp = ({
@@ -112,6 +114,7 @@ const MapComp = ({
   localShowShipName = false,
   onChangeViewport,
   defaultViewport,
+  styleVars,
 }: MapCompProps) => {
   const { getNodes, setViewport } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -234,6 +237,7 @@ const MapComp = ({
       <div
         data-window-id={MAP_ROOT_ID}
         className={clsx(classes.MapRoot, { [classes.BackgroundAlternateColor]: isSoftBackground })}
+        style={styleVars}
       >
         <ReactFlow
           nodes={nodes}

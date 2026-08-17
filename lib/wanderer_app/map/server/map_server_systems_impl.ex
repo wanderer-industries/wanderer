@@ -862,13 +862,18 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                   rtree_name
                 )
 
-                WandererApp.MapSystemRepo.create(%{
+                %{
                   map_id: map_id,
                   solar_system_id: solar_system_id,
                   name: solar_system_info.solar_system_name,
                   position_x: x,
                   position_y: y
-                })
+                }
+                |> WandererApp.MapSystemRepo.create()
+                |> case do
+                  {:ok, system} -> {:ok, maybe_update_extra_info(system, extra_info)}
+                  error -> error
+                end
 
               {:error, reason} ->
                 Logger.error(
@@ -938,25 +943,17 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   defp maybe_update_extra_info(system, nil), do: system
 
-  defp maybe_update_extra_info(
-         system,
-         %{
-           "description" => description,
-           "labels" => labels,
-           "name" => name,
-           "status" => status,
-           "tag" => tag,
-           "temporary_name" => temporary_name
-         }
-       ) do
+  defp maybe_update_extra_info(system, %{} = extra_info) do
     system
-    |> maybe_update_name(name)
-    |> maybe_update_description(description)
-    |> maybe_update_labels(labels)
-    |> maybe_update_status(status)
-    |> maybe_update_tag(tag)
-    |> maybe_update_temporary_name(temporary_name)
+    |> maybe_update_name(Map.get(extra_info, "name"))
+    |> maybe_update_description(Map.get(extra_info, "description"))
+    |> maybe_update_labels(Map.get(extra_info, "labels"))
+    |> maybe_update_status(Map.get(extra_info, "status"))
+    |> maybe_update_tag(Map.get(extra_info, "tag"))
+    |> maybe_update_temporary_name(Map.get(extra_info, "temporary_name"))
   end
+
+  defp maybe_update_extra_info(system, _extra_info), do: system
 
   defp maybe_update_description(
          %{description: old_description} = system,
@@ -985,18 +982,6 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   end
 
   defp maybe_update_name(system, _name), do: system
-
-  defp maybe_update_labels(
-         %{name: old_labels} = system,
-         labels
-       )
-       when not is_nil(labels) and old_labels != labels do
-    {:ok, updated_system} =
-      system
-      |> WandererApp.MapSystemRepo.update_labels(%{labels: labels})
-
-    updated_system
-  end
 
   defp maybe_update_labels(
          %{labels: old_labels} = system,

@@ -4,7 +4,12 @@ import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
-import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
+import {
+  CONNECTION_BUBBLE_SETTINGS_PROPS,
+  CONNECTIONS_CHECKBOXES_PROPS,
+  SIGNATURES_CHECKBOXES_PROPS,
+  SYSTEMS_CHECKBOXES_PROPS,
+} from './constants.ts';
 import {
   MapSettingsProvider,
   useMapSettings,
@@ -12,6 +17,7 @@ import {
 import { WidgetsSettings } from './components/WidgetsSettings';
 import { CommonSettings } from './components/CommonSettings';
 import { BookmarksSettings } from './components/BookmarksSettings';
+import { LabelsSettings } from './components/LabelsSettings';
 import { SettingsListItem } from './types.ts';
 import { ImportExport } from './components/ImportExport.tsx';
 import { ServerSettings } from './components/ServerSettings.tsx';
@@ -83,8 +89,20 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
               <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
             </TabPanel>
 
+            <TabPanel header="Labels" className="h-full" headerClassName={styles.verticalTabHeader}>
+              <LabelsSettings />
+            </TabPanel>
+
             <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>
-              {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
+              <div className="flex flex-col gap-1">
+                {renderSettingsList(CONNECTIONS_CHECKBOXES_PROPS)}
+
+                <div className="text-[var(--gray-200)] text-[13px] font-semibold mt-3">Bubbled ends</div>
+                <div className="text-gray-400 text-xs mb-1">
+                  Leave a field empty to keep whatever the current theme uses.
+                </div>
+                {renderSettingsList(CONNECTION_BUBBLE_SETTINGS_PROPS)}
+              </div>
             </TabPanel>
 
             <TabPanel header="Signatures" headerClassName={styles.verticalTabHeader}>

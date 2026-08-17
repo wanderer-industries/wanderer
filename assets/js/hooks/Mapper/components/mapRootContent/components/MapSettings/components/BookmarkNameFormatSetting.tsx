@@ -6,6 +6,7 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper';
 import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
+import { FORMAT_VARIABLES } from '@/hooks/Mapper/constants/formatVariables';
 
 const DUMMY_SIG_BASE: SystemSignature = {
   eve_id: 'ABC-123',
@@ -18,26 +19,6 @@ const DUMMY_SIG_BASE: SystemSignature = {
   custom_info: '',
 };
 
-const VARIABLES = [
-  { id: '{index}', desc: 'Numeric index (e.g., 1, 2, 3)' },
-  { id: '{index_letter}', desc: 'Letter index (e.g., A, B, C)' },
-  { id: '{chain_index}', desc: 'Numeric chain path (e.g., 11, 12, 121)' },
-  { id: '{chain_index_letters}', desc: 'Letter chain path (e.g., A, A1, A21)' },
-  { id: '{sig_letters}', desc: 'First 3 chars of signature (e.g., ABC)' },
-  { id: '{sig}', desc: 'Full signature ID (e.g., ABC-123)' },
-  { id: '{dest_type}', desc: 'Destination class (e.g., C5, HS, Thera)' },
-  {
-    id: '{dest_class_index}',
-    desc: 'Letter index for multiple holes to same class (empty if only 1, otherwise a, b, c...)',
-  },
-  { id: '{type}', desc: 'Wormhole type (e.g., K162, H900)' },
-  { id: '{size}', desc: 'Hole size (e.g., S, M, XL)' },
-  { id: '{mass}', desc: 'Total mass in bil (e.g., 3.3)' },
-  { id: '{time_status}', desc: 'Time remaining (e.g., 1H, 4H, 16H)' },
-  { id: '{mass_status}', desc: 'Mass remaining (e.g., Destab, Crit)' },
-  { id: '{temporary_name}', desc: 'Temporary name if set' },
-  { id: '{description}', desc: 'Custom description' },
-];
 
 interface CustomMappingInputProps {
   mappingKey: string;
@@ -286,7 +267,7 @@ export const BookmarkNameFormatSetting = () => {
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 text-xs text-stone-400 p-2 bg-stone-800/50 rounded border border-stone-800 mt-2 max-h-[160px]">
         <h4 className="text-stone-300 font-semibold mb-2">Available Variables (Click to insert)</h4>
         <ul className="space-y-1">
-          {VARIABLES.map(v => (
+          {FORMAT_VARIABLES.map(v => (
             <li key={v.id}>
               <code
                 className="text-stone-200 cursor-pointer hover:bg-stone-700 px-1 rounded transition-colors inline-block"

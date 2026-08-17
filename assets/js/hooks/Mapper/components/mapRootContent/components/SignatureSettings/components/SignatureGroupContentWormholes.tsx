@@ -6,6 +6,7 @@ import { SignatureLeadsToSelect } from '@/hooks/Mapper/components/mapRootContent
 import { SignatureLifetimeSelect } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureLifetimeSelect.tsx';
 import { SignatureTempName } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureTempName.tsx';
 import { SignatureMassStatusSelect } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureMassStatusSelect.tsx';
+import { SignatureBubbledCheckbox } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components/SignatureBubbledCheckbox.tsx';
 import { MULTI_DEST_WHS } from '@/hooks/Mapper/constants';
 
 export const SignatureGroupContentWormholes = () => {
@@ -39,6 +40,11 @@ export const SignatureGroupContentWormholes = () => {
       <div className="grid grid-cols-[100px_250px_1fr] gap-2 items-center text-[14px]">
         <span>Mass status:</span>
         <SignatureMassStatusSelect name="mass_status" />
+      </div>
+
+      <div className="grid grid-cols-[100px_250px_1fr] gap-2 items-center text-[14px]">
+        <span>Bubbled:</span>
+        <SignatureBubbledCheckbox name="isBubbled" />
       </div>
 
       <label className="grid grid-cols-[100px_250px_1fr] gap-2 items-center text-[14px]">

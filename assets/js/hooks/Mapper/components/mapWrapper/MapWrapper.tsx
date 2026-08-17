@@ -13,6 +13,7 @@ import { CommandSelectSystems, OutCommand, OutCommandHandler, SolarSystemConnect
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import isEqual from 'lodash.isequal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { bubbleCssVars } from '@/hooks/Mapper/constants/connectionBubble.ts';
 import { Node, useReactFlow, Viewport, XYPosition } from 'reactflow';
 import { ContextMenuSystemMultiple, useContextMenuSystemMultipleHandlers } from '../contexts/ContextMenuSystemMultiple';
 
@@ -32,6 +33,7 @@ import { PingType } from '@/hooks/Mapper/types/ping.ts';
 import type { PanelPosition } from '@reactflow/core';
 import { useHotkey } from '../../hooks/useHotkey';
 import { MINI_MAP_PLACEMENT_OFFSETS } from './constants.ts';
+import { useToast } from '@/hooks/Mapper/ToastProvider.tsx';
 
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = () => {
@@ -49,7 +51,15 @@ export const MapWrapper = () => {
       systemSignatures,
     },
     storedSettings: { interfaceSettings, settingsLocal, mapSettings, mapSettingsUpdate },
+    userRemoteSettings: { userRemoteSettings },
+    undoStack: { popUndoEntry },
   } = useMapRootState();
+
+  // the bubble on a bubbled connection end is drawn from CSS variables, so a theme styles it and
+  // the user's own settings override it
+  const bubbleVars = useMemo(() => bubbleCssVars(userRemoteSettings), [userRemoteSettings]);
+
+  const { show } = useToast();
 
   const {
     isShowMenu,
@@ -226,6 +236,44 @@ export const MapWrapper = () => {
     systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
   }, []);
 
+  const handleUndo = useCallback(async () => {
+    const entry = popUndoEntry();
+
+    if (!entry) {
+      return;
+    }
+
+    await outCommand({
+      type: OutCommand.manualPasteSystemsAndConnections,
+      data: {
+        systems: entry.systems.map(({ position, ...rest }) => ({
+          ...rest,
+          position: { x: Math.round(position.x), y: Math.round(position.y) },
+        })),
+        connections: entry.connections,
+      },
+    });
+
+    show({
+      severity: 'success',
+      summary: 'Undo',
+      detail: `Restored ${entry.systems.length} system(s) and ${entry.connections.length} connection(s).`,
+      life: 3000,
+    });
+  }, [outCommand, popUndoEntry, show]);
+
+  useHotkey(true, ['z', 'Z'], (event: KeyboardEvent) => {
+    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
+
+    if (!targetWindow) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    handleUndo();
+  });
+
   useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
 
@@ -285,6 +333,7 @@ export const MapWrapper = () => {
         minimapPlacement={minimapPosition}
         localShowShipName={settingsLocal.showShipName}
         defaultViewport={mapSettings.viewport}
+        styleVars={bubbleVars}
       />
 
       {openSettings != null && (

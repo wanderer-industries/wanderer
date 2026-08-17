@@ -33,6 +33,8 @@ defmodule WandererApp.Api.MapConnection do
       :count_of_passage,
       :locked,
       :locked_at,
+      :dangerous,
+      :bubbled,
       :custom_info
     ])
 
@@ -68,6 +70,8 @@ defmodule WandererApp.Api.MapConnection do
     define(:update_time_status, action: :update_time_status)
     define(:update_ship_size_type, action: :update_ship_size_type)
     define(:update_locked, action: :update_locked)
+    define(:update_dangerous, action: :update_dangerous)
+    define(:update_bubbled, action: :update_bubbled)
     define(:update_custom_info, action: :update_custom_info)
     define(:update_type, action: :update_type)
     define(:update_wormhole_type, action: :update_wormhole_type)
@@ -96,6 +100,8 @@ defmodule WandererApp.Api.MapConnection do
         :solar_system_source,
         :solar_system_target,
         :type,
+        :dangerous,
+        :bubbled,
         :ship_size_type,
         :mass_status,
         :time_status,
@@ -192,6 +198,16 @@ defmodule WandererApp.Api.MapConnection do
       require_atomic? false
     end
 
+    update :update_dangerous do
+      accept [:dangerous]
+      require_atomic? false
+    end
+
+    update :update_bubbled do
+      accept [:bubbled]
+      require_atomic? false
+    end
+
     update :update_custom_info do
       accept [:custom_info]
       require_atomic? false
@@ -273,6 +289,20 @@ defmodule WandererApp.Api.MapConnection do
 
     attribute :locked, :boolean do
       public? true
+    end
+
+    # Whether the connection itself is considered dangerous, set by hand rather than derived
+    # from the status of the systems it links.
+    attribute :dangerous, :boolean do
+      default false
+      allow_nil? false
+    end
+
+    # Which ends of the connection are bubbled: 0 none, 1 source, 2 target, 3 both.
+    attribute :bubbled, :integer do
+      default 0
+      allow_nil? false
+      constraints min: 0, max: 3
     end
 
     attribute :locked_at, :utc_datetime_usec do

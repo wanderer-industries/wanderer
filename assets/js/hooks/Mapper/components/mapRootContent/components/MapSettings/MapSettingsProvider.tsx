@@ -1,34 +1,29 @@
-import {
-  createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef } from 'react';
 import {
   SettingsListItem,
   UserSettings,
   UserSettingsRemote,
 } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/types.ts';
-import {
-  DEFAULT_REMOTE_SETTINGS,
-  UserSettingsRemoteList,
-} from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/constants.ts';
+import { UserSettingsRemoteList } from '@/hooks/Mapper/constants/userSettings.ts';
 import { OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
+import { ColorPicker } from 'primereact/colorpicker';
+import { PrimeIcons } from 'primereact/api';
+import { WdImgButton } from '@/hooks/Mapper/components/ui-kit/WdImgButton';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WithChildren } from '@/hooks/Mapper/types/common.ts';
+import { FormatTemplateInput } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components/FormatTemplateInput.tsx';
+import { SystemLabelDefinition } from '@/hooks/Mapper/constants/labels.ts';
+
+export type SettingValue = boolean | number | string | Record<string, string> | SystemLabelDefinition[];
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
-  updateSetting: (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => Promise<void>;
-  setUserRemoteSettings: Dispatch<SetStateAction<UserSettingsRemote>>;
+  updateSetting: (prop: keyof UserSettings, value: SettingValue) => Promise<void>;
+  setUserRemoteSettings: (settings: UserSettingsRemote) => void;
   settings: UserSettings;
 };
 
@@ -38,11 +33,8 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   const {
     outCommand,
     storedSettings: { interfaceSettings, setInterfaceSettings },
+    userRemoteSettings: { userRemoteSettings, setUserRemoteSettings },
   } = useMapRootState();
-
-  const [userRemoteSettings, setUserRemoteSettings] = useState<UserSettingsRemote>({
-    ...DEFAULT_REMOTE_SETTINGS,
-  });
 
   const mergedSettings: UserSettings = useMemo(() => {
     return {
@@ -51,12 +43,27 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
     };
   }, [userRemoteSettings, interfaceSettings]);
 
-  const refVars = useRef({ mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings });
-  refVars.current = { mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings };
+  const refVars = useRef({
+    mergedSettings,
+    userRemoteSettings,
+    interfaceSettings,
+    outCommand,
+    setInterfaceSettings,
+    setUserRemoteSettings,
+  });
+  refVars.current = {
+    mergedSettings,
+    userRemoteSettings,
+    interfaceSettings,
+    outCommand,
+    setInterfaceSettings,
+    setUserRemoteSettings,
+  };
 
   const handleSettingChange = useCallback(
-    async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
-      const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
+    async (prop: keyof UserSettings, value: SettingValue) => {
+      const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings, setUserRemoteSettings } =
+        refVars.current;
 
       if (UserSettingsRemoteList.includes(prop as any)) {
         const newRemoteSettings = {
@@ -112,6 +119,64 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
               onChange={e => handleSettingChange(item.prop, e.value)}
               placeholder="Select a theme"
             />
+          </div>
+        );
+      }
+
+      if (item.type === 'template') {
+        return (
+          <FormatTemplateInput
+            key={item.prop.toString()}
+            label={item.label}
+            value={(currentValue as string) || ''}
+            placeholder={item.placeholder}
+            helperText={item.helperText}
+            onChange={value => handleSettingChange(item.prop, value)}
+          />
+        );
+      }
+
+      if (item.type === 'color') {
+        const value = (currentValue as string) || '';
+
+        return (
+          <div key={item.prop.toString()} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+            <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}:</label>
+            <div className="border-b-2 border-dotted border-[#3f3f3f] h-px mx-3" />
+            <div className="flex items-center gap-2">
+              <ColorPicker
+                format="hex"
+                value={value || item.fallback}
+                onChange={e => handleSettingChange(item.prop, e.value ? `#${String(e.value).replace('#', '')}` : '')}
+              />
+              <WdImgButton
+                className={PrimeIcons.REPLAY}
+                tooltip={{ content: 'Back to the theme colour' }}
+                onClick={() => handleSettingChange(item.prop, '')}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      if (item.type === 'number') {
+        return (
+          <div key={item.prop.toString()} className="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+            <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}:</label>
+            <div className="border-b-2 border-dotted border-[#3f3f3f] h-px mx-3" />
+            <div className="flex items-center gap-2">
+              <InputNumber
+                className="text-sm w-[110px]"
+                inputClassName="text-sm w-[70px]"
+                value={(currentValue as number) || null}
+                min={item.min}
+                max={item.max}
+                suffix={item.suffix}
+                showButtons
+                placeholder={item.placeholder ?? 'theme'}
+                onValueChange={e => handleSettingChange(item.prop, e.value ?? 0)}
+              />
+            </div>
           </div>
         );
       }

@@ -20,7 +20,7 @@ export class LabelsManager {
     } catch (err) {
       return {
         customLabel: '',
-        labels: this.labelsRaw.split(','),
+        labels: this.labelsRaw.split(',').filter(x => x.trim() !== ''),
       };
     }
   }
@@ -85,6 +85,6 @@ export class LabelsManager {
   }
 
   get list() {
-    return this.parsedLabels.labels;
+    return (this.parsedLabels.labels ?? []).filter(x => x.trim() !== '');
   }
 }

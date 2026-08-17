@@ -315,6 +315,18 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
       ),
       do: update_connection(map_id, :update_ship_size_type, [:ship_size_type], connection_update)
 
+  def update_connection_dangerous(
+        map_id,
+        connection_update
+      ),
+      do: update_connection(map_id, :update_dangerous, [:dangerous], connection_update)
+
+  def update_connection_bubbled(
+        map_id,
+        connection_update
+      ),
+      do: update_connection(map_id, :update_bubbled, [:bubbled], connection_update)
+
   def update_connection_locked(
         map_id,
         connection_update
@@ -711,6 +723,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         mass_status = get_extra_info(extra_info, "mass_status", 0)
         locked = get_extra_info(extra_info, "locked", false)
         wormhole_type = get_extra_info(extra_info, "wormhole_type", nil)
+        dangerous = get_extra_info(extra_info, "dangerous", false)
+        bubbled = get_extra_info(extra_info, "bubbled", 0)
 
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
@@ -722,7 +736,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             time_status: time_status,
             mass_status: mass_status,
             locked: locked,
-            wormhole_type: wormhole_type
+            wormhole_type: wormhole_type,
+            dangerous: dangerous,
+            bubbled: bubbled
           })
 
         if connection_type == @connection_type_wormhole do

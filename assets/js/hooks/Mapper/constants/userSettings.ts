@@ -1,0 +1,62 @@
+import { getDefaultSystemLabels } from '@/hooks/Mapper/constants/labels.ts';
+
+export enum UserSettingsRemoteProps {
+  link_signature_on_splash = 'link_signature_on_splash',
+  select_on_spash = 'select_on_spash',
+  delete_connection_with_sigs = 'delete_connection_with_sigs',
+  bookmark_name_format = 'bookmark_name_format',
+  bookmark_custom_mapping = 'bookmark_custom_mapping',
+  bookmark_wormholes_start_at_zero = 'bookmark_wormholes_start_at_zero',
+  bookmark_auto_copy = 'bookmark_auto_copy',
+  bookmark_auto_temp_name = 'bookmark_auto_temp_name',
+  system_auto_tag = 'system_auto_tag',
+  system_custom_label_name = 'system_custom_label_name',
+  system_labels = 'system_labels',
+  bookmark_return_hole_ignore = 'bookmark_return_hole_ignore',
+  bookmark_return_hole_symbol = 'bookmark_return_hole_symbol',
+  connection_bubble_color = 'connection_bubble_color',
+  connection_bubble_size = 'connection_bubble_size',
+  connection_bubble_border = 'connection_bubble_border',
+  connection_bubble_opacity = 'connection_bubble_opacity',
+}
+
+export const DEFAULT_REMOTE_SETTINGS = {
+  [UserSettingsRemoteProps.link_signature_on_splash]: false,
+  [UserSettingsRemoteProps.select_on_spash]: false,
+  [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
+  [UserSettingsRemoteProps.bookmark_name_format]: '',
+  [UserSettingsRemoteProps.bookmark_custom_mapping]: {},
+  [UserSettingsRemoteProps.bookmark_wormholes_start_at_zero]: false,
+  [UserSettingsRemoteProps.bookmark_auto_copy]: true,
+  [UserSettingsRemoteProps.bookmark_auto_temp_name]: '',
+  [UserSettingsRemoteProps.system_auto_tag]: '',
+  [UserSettingsRemoteProps.system_custom_label_name]: '',
+  [UserSettingsRemoteProps.system_labels]: getDefaultSystemLabels(),
+  [UserSettingsRemoteProps.bookmark_return_hole_ignore]: false,
+  [UserSettingsRemoteProps.bookmark_return_hole_symbol]: '',
+  // empty means "whatever the theme says" - see BUBBLE_CSS_VARS
+  [UserSettingsRemoteProps.connection_bubble_color]: '',
+  [UserSettingsRemoteProps.connection_bubble_size]: 0,
+  [UserSettingsRemoteProps.connection_bubble_border]: 0,
+  [UserSettingsRemoteProps.connection_bubble_opacity]: 0,
+};
+
+export const UserSettingsRemoteList = [
+  UserSettingsRemoteProps.link_signature_on_splash,
+  UserSettingsRemoteProps.select_on_spash,
+  UserSettingsRemoteProps.delete_connection_with_sigs,
+  UserSettingsRemoteProps.bookmark_name_format,
+  UserSettingsRemoteProps.bookmark_custom_mapping,
+  UserSettingsRemoteProps.bookmark_wormholes_start_at_zero,
+  UserSettingsRemoteProps.bookmark_auto_copy,
+  UserSettingsRemoteProps.bookmark_auto_temp_name,
+  UserSettingsRemoteProps.system_auto_tag,
+  UserSettingsRemoteProps.system_custom_label_name,
+  UserSettingsRemoteProps.system_labels,
+  UserSettingsRemoteProps.bookmark_return_hole_ignore,
+  UserSettingsRemoteProps.bookmark_return_hole_symbol,
+  UserSettingsRemoteProps.connection_bubble_color,
+  UserSettingsRemoteProps.connection_bubble_size,
+  UserSettingsRemoteProps.connection_bubble_border,
+  UserSettingsRemoteProps.connection_bubble_opacity,
+];

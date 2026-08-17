@@ -2,13 +2,24 @@ import { Edge, EdgeMouseHandler } from 'reactflow';
 import { useCallback, useRef, useState } from 'react';
 import { ContextMenu } from 'primereact/contextmenu';
 import { useMapState } from '../../MapProvider.tsx';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
-import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
+import {
+  BubbleState,
+  ConnectionType,
+  MassState,
+  ShipSizeStatus,
+  SolarSystemConnection,
+  TimeStatus,
+} from '@/hooks/Mapper/types';
 import { ctxManager } from '@/hooks/Mapper/utils/contextManager.ts';
 
 export const useContextMenuConnectionHandlers = () => {
   const contextMenuRef = useRef<ContextMenu | null>(null);
   const { outCommand } = useMapState();
+  const {
+    undoStack: { pushUndoEntry },
+  } = useMapRootState();
   const [edge, setEdge] = useState<Edge<SolarSystemConnection>>();
 
   const ref = useRef({ edge, outCommand });
@@ -24,6 +35,11 @@ export const useContextMenuConnectionHandlers = () => {
   const onDeleteConnection = () => {
     if (!edge) {
       return;
+    }
+
+    // snapshot before it goes, so the delete can be taken back
+    if (edge.data) {
+      pushUndoEntry({ systems: [], connections: [edge.data] });
     }
 
     outCommand({ type: OutCommand.manualDeleteConnection, data: { source: edge.source, target: edge.target } });
@@ -59,6 +75,40 @@ export const useContextMenuConnectionHandlers = () => {
         source: edge.source,
         target: edge.target,
         value: type,
+      },
+    });
+  }, []);
+
+  const onToggleDangerous = useCallback((dangerous: boolean) => {
+    const { edge, outCommand } = ref.current;
+
+    if (!edge) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.updateConnectionDangerous,
+      data: {
+        source: edge.source,
+        target: edge.target,
+        value: dangerous,
+      },
+    });
+  }, []);
+
+  const onChangeBubbled = useCallback((bubbled: BubbleState) => {
+    const { edge, outCommand } = ref.current;
+
+    if (!edge) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.updateConnectionBubbled,
+      data: {
+        source: edge.source,
+        target: edge.target,
+        value: bubbled,
       },
     });
   }, []);
@@ -137,6 +187,8 @@ export const useContextMenuConnectionHandlers = () => {
     onDeleteConnection,
     onChangeTimeState,
     onChangeType,
+    onToggleDangerous,
+    onChangeBubbled,
     onChangeMassState,
     onChangeShipSizeStatus,
     onToggleMassSave,

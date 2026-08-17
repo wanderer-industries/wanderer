@@ -28,6 +28,13 @@ export enum ShipSizeStatus {
   capital = 4, // less than 1.8M t
 }
 
+export enum BubbleState {
+  none = 0,
+  source = 1,
+  target = 2,
+  both = 3,
+}
+
 export type SolarSystemConnection = {
   // expect that it will be string which joined solarSystemSource and solarSystemTarget
   id: string;
@@ -36,6 +43,8 @@ export type SolarSystemConnection = {
   mass_status: MassState;
   ship_size_type: ShipSizeStatus;
   locked: boolean;
+  dangerous?: boolean;
+  bubbled?: BubbleState;
 
   source: string;
   target: string;

@@ -304,6 +304,24 @@ defmodule WandererApp.Maps do
     |> WandererApp.Repo.all()
   end
 
+  @doc """
+  Whether any live signature in the system is marked as bubbled.
+
+  The flag lives inside the free form `custom_info` JSON the signature editor writes, so it is
+  matched on the stored text rather than decoded per row - the map payload asks this for every
+  system it sends.
+  """
+  def system_has_bubbled_signature?(system_id) do
+    from(s in WandererApp.Api.MapSystemSignature,
+      where:
+        s.system_id == ^system_id and s.deleted == false and
+          like(s.custom_info, "%\"isBubbled\":true%"),
+      limit: 1,
+      select: 1
+    )
+    |> WandererApp.Repo.exists?()
+  end
+
   def can_edit?(map, user) do
     user_is_owner?(user, map) or
       user_has_roles?(user, map, [:admin])
