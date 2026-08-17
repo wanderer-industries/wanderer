@@ -114,6 +114,8 @@ export enum InterfaceStoredSettingsProps {
   isShowBackgroundPattern = 'isShowBackgroundPattern',
   isSoftBackground = 'isSoftBackground',
   theme = 'theme',
+  killActivityNotifications = 'killActivityNotifications',
+  killActivitySounds = 'killActivitySounds',
 }
 
 export interface MapRootContextProps {

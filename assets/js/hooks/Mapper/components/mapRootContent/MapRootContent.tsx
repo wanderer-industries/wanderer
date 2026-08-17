@@ -17,6 +17,7 @@ import { Commands } from '@/hooks/Mapper/types';
 import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/components';
 import { OldSettingsDialog } from '@/hooks/Mapper/components/mapRootContent/components/OldSettingsDialog.tsx';
 import { TopSearch } from '@/hooks/Mapper/components/mapRootContent/components/TopSearch';
+import { MapKillsNotifications } from '@/hooks/Mapper/components/mapRootContent/components/MapKillsNotifications/MapKillsNotifications';
 
 export interface MapRootContentProps {}
 
@@ -101,6 +102,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         <WormholeSignaturesDialog visible={showWormholeList} onHide={() => setShowWormholeList(false)} />
 
         {hasOldSettings && <OldSettingsDialog />}
+        <MapKillsNotifications />
       </Layout>
     </div>
   );

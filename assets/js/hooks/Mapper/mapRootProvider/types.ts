@@ -35,6 +35,8 @@ export type InterfaceStoredSettings = {
   minimapPlacement: MiniMapPlacement;
   pingsPlacement: PingsPlacement;
   hideBookmarkWarning: boolean;
+  killActivityNotifications: boolean;
+  killActivitySounds: boolean;
 };
 
 export type RoutesType = {

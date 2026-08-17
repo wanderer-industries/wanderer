@@ -50,8 +50,8 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
               killsActivityType={localKillsActivityType}
               className={clsx(classes.Bookmark, MARKER_BOOKMARK_BG_STYLES[localKillsActivityType])}
             >
-              <div className={clsx(classes.BookmarkWithIcon)}>
-                <span className={clsx(PrimeIcons.BOLT, classes.icon)} />
+              <div className={clsx(classes.BookmarkWithIcon, 'gap-[2px]')}>
+                <span className={clsx('material-symbols-outlined', classes.icon)} style={{ fontSize: '9px', lineHeight: 1 }}>skull</span>
                 <span className={clsx(classes.text)}>{localKillsCount}</span>
               </div>
             </KillsCounter>
