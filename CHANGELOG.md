@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.101.13](https://github.com/wanderer-industries/wanderer/compare/v1.101.12...v1.101.13) (2026-08-17)
+
+
+
+
+### Bug Fixes:
+
+* tracker: characters stop moving on the map after a browser disconnect
+
 ## [v1.101.12](https://github.com/wanderer-industries/wanderer/compare/v1.101.11...v1.101.12) (2026-08-16)
 
 
