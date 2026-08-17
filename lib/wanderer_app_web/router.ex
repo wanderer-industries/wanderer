@@ -291,6 +291,10 @@ defmodule WandererAppWeb.Router do
     # Map duplication endpoint
     post "/duplicate", MapAPIController, :duplicate_map
 
+    # Map contents export/import
+    get "/export", MapAPIController, :export_map
+    post "/import", MapAPIController, :import_map
+
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete_batch

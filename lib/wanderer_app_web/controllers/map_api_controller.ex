@@ -1327,6 +1327,77 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
+  @doc """
+  GET /api/maps/{map_identifier}/export
+
+  Returns the map contents (systems, connections, signatures) as a portable document that can be
+  imported into another map, on this or another instance.
+  """
+  def export_map(%{assigns: %{map_id: map_id}} = conn, params) do
+    include_signatures = params["include_signatures"] not in ["false", false]
+
+    case WandererApp.Map.Operations.Transfer.export(map_id,
+           include_signatures: include_signatures
+         ) do
+      {:ok, data} ->
+        json(conn, %{data: data})
+
+      {:error, reason} ->
+        Logger.error("Map export failed: #{inspect(reason)}")
+
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to export map"})
+    end
+  end
+
+  @doc """
+  POST /api/maps/{map_identifier}/import
+
+  Replays an exported document into this map. Systems that already exist are left untouched.
+  """
+  # AssignMapOwner assigns both keys even when it cannot resolve an owner, so the guard is what
+  # sends an unresolvable owner to the clause below instead of into an import with a nil user.
+  def import_map(
+        %{assigns: %{map_id: map_id, owner_character_id: char_id, owner_user_id: user_id}} = conn,
+        params
+      )
+      when not is_nil(char_id) and not is_nil(user_id) do
+    document = params["data"] || params
+
+    include_signatures = params["include_signatures"] not in ["false", false]
+
+    case WandererApp.Map.Operations.Transfer.import(map_id, document, user_id, char_id,
+           include_signatures: include_signatures
+         ) do
+      {:ok, stats} ->
+        json(conn, %{data: stats})
+
+      {:error, {:unsupported_version, version}} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Unsupported export version: #{version}"})
+
+      {:error, :invalid_document} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid export document"})
+
+      {:error, reason} ->
+        Logger.error("Map import failed: #{inspect(reason)}")
+
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to import map"})
+    end
+  end
+
+  def import_map(conn, _params) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{error: "Map owner character could not be resolved"})
+  end
+
   # Helper functions for map duplication
 
   defp validate_duplicate_params(params) do

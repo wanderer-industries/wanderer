@@ -296,6 +296,8 @@ export enum OutCommand {
   showActivity = 'show_activity',
   showTracking = 'show_tracking',
   getUserSettings = 'get_user_settings',
+  exportMapData = 'export_map_data',
+  importMapData = 'import_map_data',
   updateUserSettings = 'update_user_settings',
   saveDefaultSettings = 'save_default_settings',
   getDefaultSettings = 'get_default_settings',
