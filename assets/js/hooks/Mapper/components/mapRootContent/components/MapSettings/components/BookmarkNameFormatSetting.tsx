@@ -7,6 +7,8 @@ import { formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper'
 import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
 
+const EMPTY_MAPPING: Record<string, string> = {};
+
 const DUMMY_SIG_BASE: SystemSignature = {
   eve_id: 'ABC-123',
   name: 'ABC-123',
@@ -37,6 +39,8 @@ const VARIABLES = [
   { id: '{mass_status}', desc: 'Mass remaining (e.g., Destab, Crit)' },
   { id: '{temporary_name}', desc: 'Temporary name if set' },
   { id: '{description}', desc: 'Custom description' },
+  { id: '{direction}', desc: 'Wormhole direction (e.g., In, Out)' },
+  { id: '{spawn_type}', desc: 'Spawn type for outgoing wormholes (e.g., Static, Wandering)' },
 ];
 
 interface CustomMappingInputProps {
@@ -117,6 +121,17 @@ const MASS_OPTIONS = [
 
 const OTHER_OPTIONS = [{ key: 'chain_separator', label: 'Chain Separator', defaultVal: '' }];
 
+const DIRECTION_OPTIONS = [
+  { key: 'direction_outgoing', label: 'Outgoing', defaultVal: 'Out' },
+  { key: 'direction_incoming', label: 'Incoming (K162)', defaultVal: 'In' },
+];
+
+const SPAWN_OPTIONS = [
+  { key: 'spawn_static', label: 'Static', defaultVal: 'Static' },
+  { key: 'spawn_wandering', label: 'Wandering', defaultVal: 'Wandering' },
+  { key: 'spawn_k162', label: 'K162 (Incoming)', defaultVal: 'K162' },
+];
+
 const SIZE_OPTIONS = [
   { key: 'size_small', label: 'Small (Frigate)', defaultVal: 'S' },
   { key: 'size_medium', label: 'Medium', defaultVal: 'M' },
@@ -147,7 +162,7 @@ const CLASS_OPTIONS = [
 export const BookmarkNameFormatSetting = () => {
   const { settings, updateSetting } = useMapSettings();
   const formatStr = settings.bookmark_name_format || '';
-  const customMapping = settings.bookmark_custom_mapping || {};
+  const customMapping = settings.bookmark_custom_mapping || EMPTY_MAPPING;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [localFormat, setLocalFormat] = useState(formatStr);
@@ -210,6 +225,8 @@ export const BookmarkNameFormatSetting = () => {
       localMapping,
       { preview_sys: [otherDummySig] },
       'preview_sys',
+      undefined,
+      ['V283'],
     );
   }, [localFormat, settings.bookmark_wormholes_start_at_zero, localMapping]);
 
@@ -338,6 +355,16 @@ export const BookmarkNameFormatSetting = () => {
             <div className="flex flex-col gap-2">
               <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Other / Formatting</h5>
               <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(OTHER_OPTIONS)}</div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Direction</h5>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(DIRECTION_OPTIONS)}</div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h5 className="text-stone-300 text-xs font-semibold uppercase tracking-wider">Spawn Type</h5>
+              <div className="flex flex-wrap gap-2">{renderCustomMappingInputs(SPAWN_OPTIONS)}</div>
             </div>
 
             <div className="flex flex-col gap-2">
