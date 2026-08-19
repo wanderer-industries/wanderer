@@ -27,6 +27,9 @@ export enum PingsPlacement {
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowKSpace: boolean;
+  show_animated_border: boolean;
+  show_animated_outline: boolean;
+  disable_animated_outlineborder: boolean;
   isThickConnections: boolean;
   isShowUnsplashedSignatures: boolean;
   isShowBackgroundPattern: boolean;

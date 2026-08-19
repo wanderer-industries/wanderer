@@ -186,6 +186,20 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     location.reload();
   }, [isReady, resetSettings, windowsSettings]);
 
+  useEffect(() => {
+    if (map_slug && mapUserSettings?.[map_slug]?.interface) {
+      const currentInterface = mapUserSettings[map_slug].interface;
+
+      const hasAnimBorder = currentInterface.show_animated_border;
+      const hasAnimOutline = currentInterface.show_animated_outline;
+      const hasAnimOutBor = currentInterface.disable_animated_outlineborder;
+
+      document.body.classList.toggle('animated-border-active', !!hasAnimBorder);
+      document.body.classList.toggle('animated-outline-active', !!hasAnimOutline);
+      document.body.classList.toggle('animated-outbor-active', !!hasAnimOutBor);
+    }
+  }, [map_slug, mapUserSettings]);
+
   return {
     isReady,
     hasOldSettings,
