@@ -176,7 +176,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                   aria-describedby="label"
                   autoComplete="off"
                   value={label}
-                  maxLength={5}
+                  maxLength={11}
                   onChange={e => setLabel(e.target.value)}
                   onInput={handleInput}
                 />
