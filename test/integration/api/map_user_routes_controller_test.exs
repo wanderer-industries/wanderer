@@ -4,6 +4,21 @@ defmodule WandererAppWeb.Api.MapUserRoutesControllerTest do
   alias WandererAppWeb.Factory
 
   describe "GET /api/maps/:map_identifier/user-routes" do
+    setup do
+      # Routes.find/5 ultimately calls WandererApp.Esi.get_routes_custom/3, which
+      # otherwise POSTs to an unconfigured/live external routing service in test
+      # env. Stub it so the destination-based assertions below are backed by a
+      # deterministic response instead of network availability.
+      Mox.stub(WandererApp.Esi.Mock, :get_routes_custom, fn hubs, origin, _params ->
+        {:ok,
+         Enum.map(hubs, fn hub ->
+           %{"origin" => origin, "destination" => hub, "systems" => [], "success" => true}
+         end)}
+      end)
+
+      :ok
+    end
+
     test "returns 400 when system_id is missing", %{conn: conn} do
       map = Factory.insert(:map)
 
@@ -13,6 +28,59 @@ defmodule WandererAppWeb.Api.MapUserRoutesControllerTest do
         |> get(~p"/api/maps/#{map.slug}/user-routes")
 
       assert %{"error" => _} = json_response(conn, 400)
+    end
+
+    test "returns 400 (not 500) when system_id is not an integer", %{conn: conn} do
+      map = Factory.insert(:map)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{map.public_api_key}")
+        |> get(~p"/api/maps/#{map.slug}/user-routes?system_id=abc")
+
+      assert %{"error" => _} = json_response(conn, 400)
+    end
+
+    test "returns 400 when avoid contains a non-integer", %{conn: conn} do
+      map = Factory.insert(:map)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{map.public_api_key}")
+        |> get(~p"/api/maps/#{map.slug}/user-routes?system_id=30000142&avoid=30000001,not-a-number")
+
+      assert %{"error" => _} = json_response(conn, 400)
+    end
+
+    test "avoid param is parsed to integers and forwarded to the routing service", %{conn: conn} do
+      user = Factory.insert(:user)
+      owner = Factory.insert(:character, %{user_id: user.id})
+      map = Factory.insert(:map, %{owner_id: owner.id})
+
+      {:ok, _} = WandererApp.MapUserSettingsRepo.update_hubs(map.id, user.id, ["30000142"])
+
+      test_pid = self()
+
+      Mox.stub(WandererApp.Esi.Mock, :get_routes_custom, fn hubs, origin, params ->
+        send(test_pid, {:avoid_param, params.avoid})
+
+        {:ok,
+         Enum.map(hubs, fn hub ->
+           %{"origin" => origin, "destination" => hub, "systems" => [], "success" => true}
+         end)}
+      end)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{map.public_api_key}")
+        |> get(
+          ~p"/api/maps/#{map.slug}/user-routes?system_id=30002187&avoid=30000001,30000002"
+        )
+
+      assert %{"data" => %{"routes" => [_route]}} = json_response(conn, 200)
+      assert_received {:avoid_param, avoid}
+      assert 30_000_001 in avoid
+      assert 30_000_002 in avoid
     end
 
     test "returns an empty route list for the map owner when no hubs are configured", %{

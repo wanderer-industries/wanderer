@@ -907,7 +907,8 @@ defmodule WandererAppWeb.MapAPIController do
         %{assigns: %{map_id: map_id, current_character: current_character}} = conn,
         params
       ) do
-    with {:ok, system_id} <- fetch_required_param(params, "system_id"),
+    with {:ok, system_id} <- APIUtils.require_param(params, "system_id"),
+         {:ok, _} <- validate_integer_string(system_id, "system_id"),
          {:ok, hubs_limit} <- WandererApp.Map.get_hubs_limit(map_id),
          {:ok, is_subscription_active?} <- WandererApp.Map.is_subscription_active?(map_id),
          {:ok, hubs} <-
@@ -938,7 +939,7 @@ defmodule WandererAppWeb.MapAPIController do
           |> json(%{error: "Could not compute user routes: #{APIUtils.format_error(reason)}"})
       end
     else
-      {:error, :missing_param, msg} ->
+      {:error, msg} when is_binary(msg) ->
         conn |> put_status(:bad_request) |> json(%{error: msg})
 
       {:error, reason} ->
@@ -948,10 +949,10 @@ defmodule WandererAppWeb.MapAPIController do
     end
   end
 
-  defp fetch_required_param(params, key) do
-    case Map.get(params, key) do
-      value when is_binary(value) and value != "" -> {:ok, value}
-      _ -> {:error, :missing_param, "#{key} is required"}
+  defp validate_integer_string(value, key) do
+    case Integer.parse(value) do
+      {_int, ""} -> {:ok, value}
+      _ -> {:error, "#{key} must be an integer"}
     end
   end
 
@@ -961,11 +962,12 @@ defmodule WandererAppWeb.MapAPIController do
   )
 
   defp parse_routes_settings(params) do
-    with {:ok, booleans} <- parse_routes_settings_booleans(params) do
+    with {:ok, booleans} <- parse_routes_settings_booleans(params),
+         {:ok, avoid} <- parse_avoid_param(params["avoid"]) do
       settings =
         booleans
         |> maybe_put_string(:path_type, params["path_type"])
-        |> maybe_put_avoid(params["avoid"])
+        |> maybe_put_string(:avoid, avoid)
 
       {:ok, settings}
     end
@@ -984,24 +986,27 @@ defmodule WandererAppWeb.MapAPIController do
           end
       end
     end)
-    |> case do
-      {:ok, acc} -> {:ok, acc}
-      {:error, msg} -> {:error, :missing_param, msg}
-    end
   end
 
   defp maybe_put_string(settings, _key, nil), do: settings
   defp maybe_put_string(settings, key, value), do: Map.put(settings, key, value)
 
-  defp maybe_put_avoid(settings, nil), do: settings
+  defp parse_avoid_param(nil), do: {:ok, nil}
 
-  defp maybe_put_avoid(settings, value) do
-    avoid =
-      value
-      |> String.split(",", trim: true)
-      |> Enum.map(&String.trim/1)
-
-    Map.put(settings, :avoid, avoid)
+  defp parse_avoid_param(value) do
+    value
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reduce_while({:ok, []}, fn token, {:ok, acc} ->
+      case Integer.parse(token) do
+        {int, ""} -> {:cont, {:ok, [int | acc]}}
+        _ -> {:halt, {:error, "avoid must be a comma-separated list of integers"}}
+      end
+    end)
+    |> case do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      error -> error
+    end
   end
 
   # Helper function to fetch and format user characters for a map
