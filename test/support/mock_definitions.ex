@@ -128,6 +128,8 @@ if Mix.env() == :test do
     @callback get_corporation_info(binary(), keyword()) :: {:ok, map()} | {:error, any()}
     @callback get_alliance_info(binary()) :: {:ok, map()} | {:error, any()}
     @callback get_alliance_info(binary(), keyword()) :: {:ok, map()} | {:error, any()}
+    @callback get_routes_custom(list(), integer(), map()) :: {:ok, list()} | {:error, any()}
+    @callback get_routes_eve(list(), integer(), map(), keyword()) :: {:ok, list()} | {:error, any()}
   end
 
   # Define all the mocks
