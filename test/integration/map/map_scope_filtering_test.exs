@@ -213,6 +213,17 @@ defmodule WandererApp.Map.MapScopeFilteringTest do
       to_solar_system_id: @ls_system_halmah
     })
 
+    # These "jump_*" keys live in the global cache and are never invalidated
+    # once written -- CachedInfo.get_solar_system_jump/2 only rebuilds the index
+    # when a key is missing. MapScopesTest asserts on the same system IDs
+    # (30_000_001 / 30_000_002 / 30_000_100) expecting NO stargate, so leaving
+    # these behind made its "valid when no stargate exists" cases fail depending
+    # on whether this suite happened to run first.
+    on_exit(fn ->
+      WandererApp.Cache.delete(halenan_mili_key)
+      WandererApp.Cache.delete(halenan_halmah_key)
+    end)
+
     :ok
   end
 

@@ -104,8 +104,12 @@ jobs:
       - name: Run tests with coverage
         id: tests
         run: |
-          # Run tests with coverage
-          output=$(mix test --cover 2>&1 || true)
+          # Run tests with coverage. The exit code is captured rather than
+          # discarded: this step must fail the job when the suite is red.
+          set +e
+          output=$(mix test --cover 2>&1)
+          test_exit_code=$?
+          set -e
           echo "$output" > test_output.txt
 
           # Parse test results
@@ -134,11 +138,12 @@ jobs:
           fi
           echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
 
-          exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-        continue-on-error: true
+          # Fail the job on a red suite. Reporting steps below still run
+          # because they depend on this step's outputs via always().
+          exit $test_exit_code
 
       - name: Generate coverage report
+        if: always()
         id: coverage
         run: |
           # Generate coverage report with GitHub format
@@ -164,6 +169,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Credo analysis
+        if: always()
         id: credo
         run: |
           # Run Credo and capture output
@@ -201,6 +207,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Dialyzer analysis
+        if: always()
         id: dialyzer
         run: |
           # Ensure PLT is built
@@ -228,6 +235,7 @@ jobs:
         continue-on-error: true
 
       - name: Create test results summary
+        if: always()
         id: summary
         run: |
           # Calculate overall score
@@ -368,3 +376,64 @@ jobs:
           path: pr-comment/
           retention-days: 1
         continue-on-error: true
+
+  # Integration tests are excluded from the default `mix test` run by
+  # test/test_helper.exs, so until now they had never executed in CI at all.
+  # They run here as a separate job rather than by changing the default
+  # exclusion, so local `mix test` stays fast.
+  #
+  # This is a hard gate: a red integration run blocks the merge. Note that 30 of
+  # the tests `--only integration` selects are `@tag :skip`, so the gate covers
+  # the 35 that actually execute.
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wanderer_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Cache Elixir dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - name: Install Elixir dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Setup database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+
+      - name: Run integration tests
+        # --only, not --include: --include would run the whole suite on top of
+        # the tagged tests, duplicating the main test job's ~10 minutes and
+        # re-reporting failures it already covers.
+        run: mix test --only integration

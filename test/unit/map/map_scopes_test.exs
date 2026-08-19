@@ -70,6 +70,19 @@ defmodule WandererApp.Map.Server.MapScopesTest do
       Cachex.put(:system_static_info_cache, solar_system_id, system_info)
     end)
 
+    # :system_static_info_cache is global and shared with every other suite in
+    # the run. These stub entries carry only :solar_system_id and :system_class,
+    # so leaving them behind silently replaces the full records other suites
+    # expect -- 30_000_142 (Jita) in particular is also used by
+    # CommonAPIControllerTest and OpenAPIValidationTest, which then read a
+    # record missing solar_system_name and friends. Whether that surfaced
+    # depended on suite order, which is why these failures moved with --seed.
+    on_exit(fn ->
+      Enum.each(Map.keys(test_systems), fn solar_system_id ->
+        Cachex.del(:system_static_info_cache, solar_system_id)
+      end)
+    end)
+
     :ok
   end
 
