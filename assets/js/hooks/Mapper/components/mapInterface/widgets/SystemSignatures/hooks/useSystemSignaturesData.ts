@@ -14,7 +14,7 @@ export const useSystemSignaturesData = ({
   settings,
   onLazyDeleteChange,
 }: Omit<UseSystemSignaturesDataProps, 'deletionTiming'> & {
-                                        onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
+  onSignatureDeleted?: (deletedSignatures: ExtendedSystemSignature[]) => void;
 }) => {
   const [signatures, setSignatures, signaturesRef] = useRefState<ExtendedSystemSignature[]>([]);
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
@@ -36,7 +36,7 @@ export const useSystemSignaturesData = ({
       // Parse the incoming signatures
       const incomingSignatures = parseSignatures(
         clipboardString,
-        Object.keys(settings).filter(skey => skey in SignatureKind),
+        Object.keys(settings).filter(skye => skye in SignatureKind),
       ) as ExtendedSystemSignature[];
       if (incomingSignatures.length === 0) {
         return;
@@ -53,8 +53,12 @@ export const useSystemSignaturesData = ({
 
           const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
 
-          const isBrandNew = !existing || !existing.updated_at || !existing.inserted_at ||
-                Math.abs(new Date(existing.inserted_at ?? "").getTime() - new Date(existing.updated_at ?? "").getTime()) < 50;
+          const isBrandNew =
+            !existing ||
+            !existing.updated_at ||
+            !existing.inserted_at ||
+            Math.abs(new Date(existing.inserted_at ?? '').getTime() - new Date(existing.updated_at ?? '').getTime()) <
+              50;
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
         });
         return newGlowing;
@@ -78,19 +82,20 @@ export const useSystemSignaturesData = ({
         onLazyDeleteChange?.(false);
       }
     },
-    [settings, handleUpdateSignatures, onLazyDeleteChange],
+    [settings, handleUpdateSignatures, onLazyDeleteChange, signaturesRef],
   );
 
   useEffect(() => {
     if (glowingRows.size === 0) return;
 
     const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-    const timingKey = glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-    ? (glowingRowsValue as any).value
-    : glowingRowsValue;
+    const timingKey =
+      glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
+        ? (glowingRowsValue as Record<string, unknown>).value
+        : glowingRowsValue;
 
     const glowingRowsTimeoutDuration =
-          SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ?? 1000;
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ?? 1000;
 
     const GlowingRowsTimer1 = setTimeout(() => {
       setGlowingRows(new Map());
@@ -116,7 +121,7 @@ export const useSystemSignaturesData = ({
 
   useMapEventListener(event => {
     if (event.name === Commands.signaturesUpdated && String(event.data) === String(systemId)) {
-      handleGetSignatures();
+      handleGetSignatures().then(() => {});
       return true;
     }
   });
@@ -126,8 +131,8 @@ export const useSystemSignaturesData = ({
       setSignatures([]);
       return;
     }
-    handleGetSignatures();
-  }, [systemId]);
+    void handleGetSignatures();
+  }, [systemId, handleGetSignatures, setSignatures]);
 
   return {
     signatures,
