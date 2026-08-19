@@ -33,16 +33,42 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
     end
   end
 
-  defp call_with_eve_token(conn, %{map_id: map_id, character_eve_id: eve_id}) do
-    with {:ok, map} <- ApiMap.by_id(map_id),
+  defp call_with_eve_token(conn, %{
+         map_id: token_map_id,
+         character_eve_id: eve_id,
+         permission_mask: mask
+       }) do
+    # The token only proves access to `token_map_id` - it has to be checked
+    # against whichever map the request is actually addressed to (path
+    # `:map_identifier`, or the legacy `map_id`/`slug` query params), the same
+    # way call_with_static_key/2 resolves it below. Without this, a token
+    # minted for map A would quietly authenticate requests to map B. A
+    # mismatch (or an identifier that doesn't resolve to any map at all)
+    # returns 404 rather than 401/403, so this never confirms whether some
+    # other map exists.
+    with {:ok, requested_map_id} <- fetch_map_id(conn),
+         true <- to_string(requested_map_id) == to_string(token_map_id),
+         {:ok, map} <- ApiMap.by_id(token_map_id),
          {:ok, character} <- ApiCharacter.by_eve_id(eve_id) do
       conn
       |> assign(:map, map)
       |> assign(:map_id, map.id)
       |> assign(:current_character, character)
+      |> assign(:permission_mask, mask)
     else
+      false ->
+        Logger.warning("Unauthorized: eve-token for a different map than requested")
+        conn |> respond(404, "Map not found") |> halt()
+
+      {:error, :not_found, _msg} ->
+        conn |> respond(404, "Map not found") |> halt()
+
+      {:error, :bad_request, msg} ->
+        Logger.warning("Bad request: #{msg}")
+        conn |> respond(400, msg) |> halt()
+
       _ ->
-        Logger.warning("Unauthorized: stale eve-token for map #{inspect(map_id)}")
+        Logger.warning("Unauthorized: stale eve-token for map #{inspect(token_map_id)}")
         conn |> respond(401, "Unauthorized (stale token)") |> halt()
     end
   end
@@ -58,6 +84,7 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
       |> assign(:map, map)
       |> assign(:map_id, map.id)
       |> assign(:current_character, owner_character)
+      |> assign(:permission_mask, WandererApp.Permissions.role_mask(:admin))
     else
       {:error, :bad_request, msg} ->
         Logger.warning("Bad request: #{msg}")

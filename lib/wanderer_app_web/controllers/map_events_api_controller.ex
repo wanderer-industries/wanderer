@@ -7,6 +7,9 @@ defmodule WandererAppWeb.MapEventsAPIController do
   alias WandererApp.ExternalEvents.MapEventRelay
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
+  # No dedicated events-feed permission bit exists; falls back to admin_map.
+  plug WandererAppWeb.Plugs.RequirePermission, %{list_events: :admin_map}
+
   # -----------------------------------------------------------------
   # Schema Definitions
   # -----------------------------------------------------------------

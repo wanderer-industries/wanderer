@@ -16,6 +16,13 @@ defmodule WandererAppWeb.MapConnectionAPIController do
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.ResponseSchemas
 
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    index: :view_connection, show: :view_connection, list_all_connections: :view_connection,
+    create: :add_connection,
+    update: :update_system,
+    delete: :delete_connection
+  }
+
   action_fallback WandererAppWeb.FallbackController
 
   # -- JSON Schemas --

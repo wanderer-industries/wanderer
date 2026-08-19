@@ -10,6 +10,24 @@ defmodule WandererAppWeb.MapAPIController do
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
+  # duplicate_map and toggle_webhooks already have their own check_map_owner/2
+  # guard (stricter than any bit - literal map ownership); admin_map here is
+  # redundant defense-in-depth, not the only thing stopping a non-owner.
+  # structure timers has no dedicated bit, so it falls back to admin_map like
+  # the rest of the structures family.
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    list_systems_kills: :view_system,
+    show_user_routes: :view_system,
+    show_structure_timers: :admin_map,
+    list_tracked_characters: :view_character,
+    character_activity: :view_character,
+    user_characters: :view_character,
+    show_user_characters: :view_character,
+    show_tracked_characters: :view_character,
+    duplicate_map: :admin_map,
+    toggle_webhooks: :admin_map
+  }
+
   # -----------------------------------------------------------------
   # V1 API Actions (for compatibility with versioned API router)
   # -----------------------------------------------------------------

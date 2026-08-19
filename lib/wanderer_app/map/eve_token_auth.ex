@@ -23,7 +23,7 @@ defmodule WandererApp.Map.EveTokenAuth do
   Wanderer has already seen at least once, even though their corp/alliance
   membership could in principle be resolved from public ESI data alone.
   Whether to add a public-ESI fallback lookup for entirely unknown
-  characters is left as a follow-up decision (see CLAUDE.md).
+  characters is left as a follow-up decision.
   """
 
   alias WandererApp.Api.Map, as: MapApi
@@ -49,7 +49,7 @@ defmodule WandererApp.Map.EveTokenAuth do
          mask when mask not in [0, -1] <- permission_mask(map, character) do
       {:ok,
        %{
-         token: sign_token(map, character),
+         token: sign_token(map, character, mask),
          token_type: "Bearer",
          expires_in: @token_ttl,
          map_id: map.id,
@@ -68,7 +68,8 @@ defmodule WandererApp.Map.EveTokenAuth do
   map key check.
   """
   @spec verify(String.t()) ::
-          {:ok, %{map_id: String.t(), character_eve_id: String.t()}} | {:error, :invalid}
+          {:ok, %{map_id: String.t(), character_eve_id: String.t(), permission_mask: integer()}}
+          | {:error, :invalid}
   def verify(token) do
     case Phoenix.Token.verify(WandererAppWeb.Endpoint, @salt, token, max_age: @token_ttl) do
       {:ok, payload} -> {:ok, payload}
@@ -76,10 +77,11 @@ defmodule WandererApp.Map.EveTokenAuth do
     end
   end
 
-  defp sign_token(map, character) do
+  defp sign_token(map, character, mask) do
     Phoenix.Token.sign(WandererAppWeb.Endpoint, @salt, %{
       map_id: map.id,
-      character_eve_id: character.eve_id
+      character_eve_id: character.eve_id,
+      permission_mask: mask
     })
   end
 
