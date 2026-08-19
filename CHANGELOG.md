@@ -2,6 +2,48 @@
 
 <!-- changelog -->
 
+## [v1.101.13](https://github.com/wanderer-industries/wanderer/compare/v1.101.12...v1.101.13) (2026-08-17)
+
+
+
+
+### Bug Fixes:
+
+* tracker: characters stop moving on the map after a browser disconnect
+
+## [v1.101.12](https://github.com/wanderer-industries/wanderer/compare/v1.101.11...v1.101.12) (2026-08-16)
+
+
+
+
+## [v1.101.11](https://github.com/wanderer-industries/wanderer/compare/v1.101.10...v1.101.11) (2026-08-11)
+
+
+
+
+### Bug Fixes:
+
+* test: address upstream review findings
+
+* map: match Ash-wrapped NotFound in MapRepo.get/2
+
+* map: stop MapRepo.get/2 masking all errors as :not_found
+
+## [v1.101.10](https://github.com/wanderer-industries/wanderer/compare/v1.101.9...v1.101.10) (2026-08-10)
+
+
+
+
+## [v1.101.9](https://github.com/wanderer-industries/wanderer/compare/v1.101.8...v1.101.9) (2026-08-10)
+
+
+
+
+## [v1.101.8](https://github.com/wanderer-industries/wanderer/compare/v1.101.7...v1.101.8) (2026-08-10)
+
+
+
+
 ## [v1.101.7](https://github.com/wanderer-industries/wanderer/compare/v1.101.6...v1.101.7) (2026-07-17)
 
 

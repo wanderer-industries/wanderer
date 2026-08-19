@@ -93,9 +93,7 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
 
-    to_remove =
-      removed_signatures
-      |> Enum.filter(fn %{"eve_id" => eve_id} -> eve_id in removed_sig_eve_ids end)
+to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{solar_system_id}_#{eve_id}" in removed_sig_eve_ids end)
 
     to_remove_eve_ids =
       to_remove
@@ -115,7 +113,10 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
     socket
     |> assign(
       removed_sig_eve_ids:
-        removed_sig_eve_ids |> Enum.reject(fn sig_id -> sig_id in to_remove_eve_ids end)
+      removed_sig_eve_ids
+    |> Enum.reject(fn sig_id ->
+      sig_id in Enum.map(to_remove_eve_ids, &("#{solar_system_id}_#{&1}")) 
+    end)
     )
   end
 
@@ -200,46 +201,51 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
       removed_signatures: []
     })
 
+    saved_eve_ids = (added_signatures ++ updated_signatures) |> Enum.map(fn sig -> sig["eve_id"] end)
+    saved_system_keys = saved_eve_ids |> Enum.map(&("#{solar_system_id}_#{&1}"))
+    just_removed_system_keys = new_removed_sig_eve_ids |> Enum.map(&("#{solar_system_id}_#{&1}"))
+    updated_removed_sig_eve_ids = (old_removed_sig_eve_ids ++ just_removed_system_keys)
+      |> Enum.uniq()
+      |> Enum.reject(fn key -> key in saved_system_keys end)
+
     {:noreply,
-     socket
-     |> assign(
-       removed_sig_eve_ids: (old_removed_sig_eve_ids ++ new_removed_sig_eve_ids) |> Enum.uniq()
-     )}
+      socket
+        |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)}
   end
 
   def handle_ui_event(
-        "get_signatures",
+      "get_signatures",
         %{"system_id" => solar_system_id},
-        %{
-          assigns:
-            %{
-              map_id: map_id
-            } = assigns
+          %{
+            assigns:
+          %{
+            map_id: map_id
+          } = assigns
         } = socket
       ) do
-    case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-           map_id: map_id,
-           solar_system_id: get_integer(solar_system_id)
-         }) do
-      {:ok, system} ->
-        removed_sig_eve_ids = Map.get(assigns, :removed_sig_eve_ids, [])
+        solar_system_id_int = get_integer(solar_system_id)
+        case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+          map_id: map_id,
+          solar_system_id: solar_system_id_int
+        }) do
+          {:ok, system} ->
+            removed_sig_eve_ids = Map.get(assigns, :removed_sig_eve_ids, [])
+            system_signatures =
+              get_system_signatures(system.id)
+                |> Enum.map(fn sig ->
+                  if "#{solar_system_id_int}_#{sig.eve_id}" in removed_sig_eve_ids do
+                    sig |> Map.put(:deleted, true)
+                  else
+                    sig
+                  end
+                end)
 
-        system_signatures =
-          get_system_signatures(system.id)
-          |> Enum.map(fn sig ->
-            if sig.eve_id in removed_sig_eve_ids do
-              sig |> Map.put(:deleted, true)
-            else
-              sig
-            end
-          end)
-
-        {:reply, %{signatures: system_signatures}, socket}
-
-      _ ->
-        {:reply, %{signatures: []}, socket}
-    end
+          {:reply, %{signatures: system_signatures}, socket}
+            _ ->
+            {:reply, %{signatures: []}, socket}
+        end
   end
+
 
   def handle_ui_event(
         "link_signature_to_system",
@@ -461,13 +467,17 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
         } = socket
       )
       when not is_nil(main_character_id) do
+      solar_system_id_int = get_integer(solar_system_id)
     WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
 
     {:noreply,
-     socket
-     |> assign(
-       removed_sig_eve_ids: removed_sig_eve_ids |> Enum.reject(fn sig_id -> sig_id in eve_ids end)
-     )}
+      socket
+      |> assign(
+        removed_sig_eve_ids:
+        removed_sig_eve_ids|> Enum.reject(fn sig_id ->
+        sig_id in Enum.map(eve_ids, &("#{solar_system_id_int}_#{&1}"))
+        end)
+      )}
   end
 
   def handle_ui_event(event, body, socket),
