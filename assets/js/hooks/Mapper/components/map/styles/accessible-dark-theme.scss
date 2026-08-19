@@ -81,28 +81,31 @@
   --eve-security-color-m-09: #a78bfa;
   --eve-security-color-m-10: #a78bfa;
 
-  --eve-solar-system-status-home: rgba(86, 180, 233, 0.24);
+
+  --eve-solar-system-status-home: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
   --eve-solar-system-status-color-home: #56b4e9;
   --eve-solar-system-status-color-background: rgba(86, 180, 233, 0.18);
   --eve-solar-system-status-color-home-dark30: #1f6f99;
 
-  --eve-solar-system-status-friendly: rgba(0, 158, 115, 0.26);
+  --eve-solar-system-status-friendly: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30),transparent);
   --eve-solar-system-status-color-friendly: #009e73;
   --eve-solar-system-status-friendly-dark30: #005f46;
   --eve-solar-system-status-color-friendly-dark20: #007a5a;
   --eve-solar-system-status-color-friendly-dark5: #00b887;
 
-  --eve-solar-system-status-lookingFor: rgba(230, 159, 0, 0.28);
+    --eve-solar-system-status-lookingFor: linear-gradient(275deg,
+        var(--eve-solar-system-status-lookingFor-gradient-from, #45ff8f2f),
+        var(--eve-solar-system-status-lookingFor-gradient-to, #457fff2f));
   --eve-solar-system-status-color-lookingFor: #e69f00;
   --eve-solar-system-status-color-lookingFor-dark15: #a86f00;
   --eve-solar-system-status-lookingFor-gradient-from: rgba(230, 159, 0, 0.26);
-  --eve-solar-system-status-lookingFor-gradient-to: rgba(86, 180, 233, 0.2);
 
-  --eve-solar-system-status-warning: rgba(240, 228, 66, 0.28);
+  --eve-solar-system-status-lookingFor-gradient-to: rgba(86, 180, 233, 0.2);
+  --eve-solar-system-status-warning: linear-gradient(275deg, rgba(240, 228, 66, 0.28), transparent);
   --eve-solar-system-status-color-warning: #f0e442;
-  --eve-solar-system-status-target: rgba(204, 121, 167, 0.32);
+  --eve-solar-system-status-target: linear-gradient(275deg, rgba(204, 121, 167, 0.32), transparent);
   --eve-solar-system-status-color-target: #cc79a7;
-  --eve-solar-system-status-dangerous: rgba(213, 94, 0, 0.34);
+  --eve-solar-system-status-dangerous: linear-gradient(275deg, rgba(213, 94, 0, 0.34), transparent);
   --eve-solar-system-status-color-dangerous: #d55e00;
 
   --conn-time-eol: rgba(230, 159, 0, 0.85);
@@ -117,6 +120,8 @@
   --rf-edge-time-eol-hover: #f5c55f;
   --rf-edge-time-critical: #cc79a7;
   --rf-edge-time-critical-hover: #f0a9d1;
+  --rf-edge-time-supercritical: #cc79a7;
+  --rf-edge-time-supercritical-hover: #f0a9d1;
   --rf-edge-time-normal-width: 4px;
   --rf-edge-time-eol-width: 5px;
   --rf-edge-time-critical-width: 5px;
@@ -127,6 +132,8 @@
   --rf-edge-time-eol-linecap: round;
   --rf-edge-time-critical-dasharray: 2 5;
   --rf-edge-time-critical-linecap: round;
+  --rf-edge-time-supercritical-dasharray: 4 7;
+  --rf-edge-time-supercritical-linecap: round;
 
   --rf-edge-mass-normal: #26313d;
   --rf-edge-mass-hover: #526070;

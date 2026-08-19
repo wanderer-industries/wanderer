@@ -7,6 +7,8 @@ export enum AvailableThemes {
   accessibleDark = 'accessible-dark',
   accessibleLarge = 'accessible-large',
   accessibleLargeColorblind = 'accessible-large-colorblind',
+  fanaberia = 'fanaberia',
+  fanaberiadashed = 'fanaberiadashed',
 }
 
 export enum MiniMapPlacement {

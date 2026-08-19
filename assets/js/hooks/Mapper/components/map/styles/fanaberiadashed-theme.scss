@@ -1,0 +1,103 @@
+@use './eve-common-variables';
+@use './eve-common';
+@use "sass:color";
+
+
+.fanaberiadashed-theme {
+  --rf-bg-color: #0C0A09;
+  --rf-soft-bg-color: #171717;
+
+  --rf-node-bg-color: #202020;
+  --rf-node-soft-bg-color: #202020;
+  --rf-text-color: #ffffff;
+  --rf-tag-color:  #000000;
+  --rf-region-name: #D6D3D1;
+  --rf-custom-name: #ffffff;
+  --rf-custom-name-font-weight: bold;
+  --rf-custom-name-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-font-family: 'Shentox', 'Rogan', sans-serif !important;
+  --rf-node-font-weight: 500;
+
+
+
+  --selected-system-shadow: 0 0 30px #1e68ffae;
+  --selected-system-border-puls-0: #ccddffae;
+  --selected-system-border-puls-100: #1e68ffae;
+  --selected-system-outline-width: 3px;
+  --selected-system-outline-offset: 2px;
+  --selected-system-outline-puls-0: #ccddffae;
+  --selected-system-outline-puls-100: #1e68ffae;
+
+
+  --eve-solar-system-status-home: radial-gradient(at 0px 10px, #001c30ff, #001c30ff, #13b211ff, #001c30ff, #13b211ff);
+  --eve-solar-system-status-color-home: #13b211ff;
+  --eve-solar-system-status-friendly: linear-gradient(330deg,#001c30ff, #001c30ff, #028000a6, #001c30ff, #001c30ff);
+  --eve-solar-system-status-color-friendly: #028000a6;
+  --eve-solar-system-status-lookingFor: linear-gradient(330deg,#001c30ff, #006aefff, #001c30ff, #006aefff, #001c30ff);
+  --eve-solar-system-status-color-lookingFor: #006aefff;
+  --eve-solar-system-status-warning: linear-gradient(330deg, #001c30ff, #b0a312, #001c30ff, #b0a312, #001c30ff, #b0a312, #001c30ff);
+  --eve-solar-system-status-color-warning: #b0a312;
+  --eve-solar-system-status-target: radial-gradient(circle, #001c30ff, #7500bd, #001c30ff, #7500bd, #001c30ff, #7500bd, #001c30ff, #7500bd);
+  --eve-solar-system-status-color-target: #7500bd;
+  --eve-solar-system-status-dangerous: linear-gradient(330deg,#001c30ff,  #c75919, #001c30ff,  #c75919, #001c30ff, #c75919, #001c30ff, #c75919, #001c30ff);
+  --eve-solar-system-status-color-dangerous:  #c75919;
+  --eve-solar-system-status-rally: repeating-linear-gradient(45deg, #3182d6 0px,#3182d6 8px,transparent 8px,transparent 21px);
+  --eve-solarsystem-status-color-rally: #3182d6;
+
+
+  --rf-edge-time-normal-width: 7px;
+  --rf-edge-time-normal-thick-width: 12px;
+  --rf-edge-time-eol-width: 7px;
+  --rf-edge-time-eol-thick-width: 12px;
+  --rf-edge-time-eol-linecap: butt;
+  --rf-edge-time-eol-dasharray: 30, 5;
+  --rf-edge-time-critical-width: 7px;
+  --rf-edge-time-critical-thick-width: 12px;
+  --rf-edge-time-critical-linecap: butt;
+  --rf-edge-time-critical-dasharray: 15, 5;
+  --rf-edge-time-supercritical-width: 7px;
+  --rf-edge-time-supercritical-thick-width: 12px;
+  --rf-edge-time-supercritical-dasharray: 5, 5;
+  --rf-edge-time-supercritical-linecap: butt;
+  --rf-edge-time-normal: #303d4a;
+  --rf-edge-mass-normal-width: 3px;
+  --rf-edge-mass-normal-thick-width: 5px;
+  --rf-edge-mass-normal: #182028;
+  --rf-edge-mass-normal-linecap: butt;
+  --rf-edge-mass-half-dasharray: 30 5;
+  --rf-edge-mass-half-dasshofset: 5;
+  --rf-edge-mass-half-linecap: butt;
+  --rf-edge-mass-verge: #e15200;
+  --rf-edge-mass-verge-dasharray: 5 5;
+  --rf-edge-mass-verge-dasshofset: 15;
+  --rf-edge-mass-verge-linecap: butt;
+  --rf-edge-bridge-dasharray: 15, 15;
+  --rf-edge-handle-size: 8px;
+
+
+  --rf-node-width: 135px;
+  --rf-node-height: 34px;
+  --rf-node-bookmark-top: -20px;
+  --rf-node-bookmark-font-color: #ffffff;
+  --rf-node-bookmark-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-bookmark-font-size: 10px;
+  --rf-node-bookmark-icon-font-size: 10px;
+  --rf-node-bookmark-text-font-size: 10px;
+
+  --rf-node-icon-font-size: 10px;
+  --rf-node-head-font-size: 12px;
+  --rf-node-head-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-class-title-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-tag-title-font-size: 12px;
+  --rf-node-tag-title-font-weight: 900;
+  --rf-node-tag-background-color: #ffff00;
+  --rf-node-tag-background-padding: 0px 1px;
+  --rf-node-tag-background-border-radius: 2px;
+  --rf-node-bottom-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-effect-size: 10px;
+  --rf-node-effect-box-shadow: 1px 0 #444444, 0 1px #444444, -1px 0 #444444, 0 -1px #444444;
+  --rf-node-statics-font-size: 11px;
+  --rf-node-statics-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
+  --rf-node-handle-size: 8px;
+
+}
