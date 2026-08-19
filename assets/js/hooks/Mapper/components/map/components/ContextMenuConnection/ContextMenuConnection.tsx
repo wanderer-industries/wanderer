@@ -20,6 +20,7 @@ export interface ContextMenuConnectionProps {
   onChangeShipSizeStatus(state: ShipSizeStatus): void;
   onChangeType(type: ConnectionType): void;
   onToggleMassSave(isLocked: boolean): void;
+  onToggleBridge(isBridge: boolean): void;
   onHide(): void;
   edge?: Edge<SolarSystemConnection>;
 }
@@ -32,6 +33,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
   onChangeShipSizeStatus,
   onChangeType,
   onToggleMassSave,
+  onToggleBridge,
   onHide,
   edge,
 }) => {
@@ -103,6 +105,11 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
           );
         },
       },
+       {
+          label: `Set as Bridge`,
+          icon: 'pi hero-forward',
+          command: () => onChangeType(ConnectionType.bridge),
+        },
       {
         label: `Save mass`,
         className: clsx({
@@ -113,11 +120,6 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
       },
       ...(bothNullsec
         ? [
-            {
-              label: `Set as Bridge`,
-              icon: 'pi hero-forward',
-              command: () => onChangeType(ConnectionType.bridge),
-            },
           ]
         : []),
       {
@@ -133,6 +135,7 @@ export const ContextMenuConnection: React.FC<ContextMenuConnectionProps> = ({
     onChangeType,
     onChangeShipSizeStatus,
     onToggleMassSave,
+    onToggleBridge,
     onChangeMassState,
   ]);
 
