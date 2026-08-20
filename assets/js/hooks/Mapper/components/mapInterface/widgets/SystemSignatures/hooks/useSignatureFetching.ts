@@ -7,6 +7,10 @@ import { getDeletionTimeoutMs } from '../constants';
 import { getActualSigs, prepareUpdatePayload } from '../helpers';
 import { UseFetchingParams } from './types';
 
+type GetSignaturesResponse = {
+  signatures?: SystemSignature[];
+};
+
 export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSignatures }: UseFetchingParams) => {
   const {
     data: { characters },
@@ -32,7 +36,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
       data: { system_id: systemId },
     });
 
-    const serverSigs = ((resp as { signatures?: SystemSignature[] })?.signatures ?? []) as SystemSignature[];
+    const serverSigs = ((resp as GetSignaturesResponse)?.signatures ?? []) as SystemSignature[];
 
     const extended = serverSigs.map(s => ({
       ...s,
@@ -40,7 +44,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
-  }, [characters, systemId, outCommand]);
+  }, [characters, systemId, outCommand, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
@@ -60,18 +64,23 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
           filtered = filtered.map(item => {
             const up = updated.find(u => u.eve_id === item.eve_id);
             if (up) {
+              const characterName = up.character_name ?? characters.find(c => c.eve_id === up.character_eve_id)?.name;
               return {
                 ...item,
                 ...up,
-                character_name: up.character_name ?? characters.find(c => c.eve_id === up.character_eve_id)?.name,
+                character_name: characterName,
               };
             }
             return item;
           });
-          const mappedAdded = added.map(a => ({
-            ...a,
-            character_name: a.character_name ?? characters.find(c => c.eve_id === a.character_eve_id)?.name,
-          })) as ExtendedSystemSignature[];
+
+          const mappedAdded = added.map(a => {
+            const characterName = a.character_name ?? characters.find(c => c.eve_id === a.character_eve_id)?.name;
+            return {
+              ...a,
+              character_name: characterName,
+            };
+          }) as ExtendedSystemSignature[];
           return [...filtered, ...mappedAdded];
         });
       }
