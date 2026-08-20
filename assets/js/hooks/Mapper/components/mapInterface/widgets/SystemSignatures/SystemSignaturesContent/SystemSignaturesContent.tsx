@@ -34,9 +34,11 @@ import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 
-const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
+type GlowingRowInfo = {
+  isNew: boolean;
+};
 
-//const glowingRows = new Map() //fanaberiatracker - looks like this is no longer required leaving this in just in case i had to remember to be removed after review
+const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -52,7 +54,7 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
-  glowingRows?: Map<string, { isNew: boolean }>;
+  glowingRows?: Map<string, GlowingRowInfo>;
 }
 
 export const SystemSignaturesContent = ({
@@ -147,7 +149,7 @@ export const SystemSignaturesContent = ({
 
       selectable
         ? onSelect?.(selectableSignatures[0])
-      : onSelectSignatures?.(selectableSignatures as ExtendedSystemSignature[]);
+        : onSelectSignatures?.(selectableSignatures as ExtendedSystemSignature[]);
     },
     [onSelect, selectable, onSelectSignatures, deletedSignatures],
   );
@@ -222,18 +224,21 @@ export const SystemSignaturesContent = ({
   refVars.current = { settings, selectedSignatures, settingsSignatures, settingsSignaturesUpdate };
 
   // @ts-ignore
-  const getRowClassName = useCallback(rowData => {
-    if (!rowData) {
-      return null;
-    }
+  const getRowClassName = useCallback(
+    (rowData: ExtendedSystemSignature) => {
+      if (!rowData) {
+        return '';
+      }
 
-    return getSignatureRowClass(
-      rowData as ExtendedSystemSignature,
-      refVars.current.selectedSignatures || [],
-      refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
-      glowingRows,
-    );
-  }, [glowingRows]);
+      return getSignatureRowClass(
+        rowData,
+        refVars.current.selectedSignatures || [],
+        refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
+        glowingRows,
+      );
+    },
+    [glowingRows],
+  );
 
   const handleSortSettings = useCallback((e: DataTableStateEvent) => {
     refVars.current.settingsSignaturesUpdate({
@@ -278,21 +283,21 @@ export const SystemSignaturesContent = ({
             onRowMouseLeave={onRowMouseLeave}
             // @ts-ignore
             rowClassName={getRowClassName}
-            >
+          >
             <Column
               field="icon"
               header=""
               body={renderColIcon}
               bodyClassName="p-0 px-1"
               style={{ maxWidth: 26, minWidth: 26, width: 26 }}
-              />
+            />
             <Column
               field="eve_id"
               header="Id"
               bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
               style={{ maxWidth: 72, minWidth: 72, width: 72 }}
               sortable
-              />
+            />
             {showGroupColumn && (
               <Column
                 field="group"
@@ -302,7 +307,7 @@ export const SystemSignaturesContent = ({
                 body={sig => sig.group ?? ''}
                 hidden={isCompact}
                 sortable
-                />
+              />
             )}
             <Column
               field="info"
@@ -313,7 +318,7 @@ export const SystemSignaturesContent = ({
               body={renderInfoColumn}
               sortable
               sortField="name"
-              />
+            />
             {showDescriptionColumn && (
               <Column
                 field="description"
@@ -322,7 +327,7 @@ export const SystemSignaturesContent = ({
                 hidden={isCompact}
                 body={renderDescription}
                 sortable
-                />
+              />
             )}
             {showAddedColumn && (
               <Column
@@ -333,7 +338,7 @@ export const SystemSignaturesContent = ({
                 style={{ minWidth: 70, maxWidth: 80 }}
                 bodyClassName="ssc-header text-ellipsis overflow-hidden whitespace-nowrap"
                 sortable
-                />
+              />
             )}
             {showUpdatedColumn && (
               <Column
@@ -344,7 +349,7 @@ export const SystemSignaturesContent = ({
                 style={{ minWidth: 70, maxWidth: 80 }}
                 bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
                 sortable
-                />
+              />
             )}
 
             {showCharacterColumn && (
@@ -353,7 +358,7 @@ export const SystemSignaturesContent = ({
                 header="Character"
                 bodyClassName="w-[70px] text-ellipsis overflow-hidden whitespace-nowrap"
                 sortable
-                ></Column>
+              ></Column>
             )}
 
             {!selectable && (
@@ -368,7 +373,7 @@ export const SystemSignaturesContent = ({
                 )}
                 style={{ maxWidth: 26, minWidth: 26, width: 26 }}
                 bodyClassName="p-0 pl-1 pr-2"
-                />
+              />
             )}
           </DataTable>
         </>
@@ -383,7 +388,7 @@ export const SystemSignaturesContent = ({
             <SignatureView signature={hoveredSignature} showCharacterPortrait={showCharacterPortrait} />
           ) : null
         }
-        />
+      />
 
       {showSignatureSettings && (
         <SignatureSettings
@@ -391,7 +396,7 @@ export const SystemSignaturesContent = ({
           show
           onHide={() => setShowSignatureSettings(false)}
           signatureData={selectedSignatureForDialog || undefined}
-          />
+        />
       )}
     </div>
   );

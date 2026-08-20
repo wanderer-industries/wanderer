@@ -9,6 +9,29 @@ import { SIGNATURE_GLOWINGROWS_TIMEOUTS } from '@/hooks/Mapper/components/mapInt
 import { UseSystemSignaturesDataProps } from './types';
 import { useSignatureFetching } from './useSignatureFetching';
 
+type GlowingRowInfo = {
+  isNew: boolean;
+};
+const DEFAULT_GLOWINGROWS_TIMEOUT = 1000;
+
+const checkIfSignatureIsBrandNew = (sigId: string, existingSignatures: ExtendedSystemSignature[]): boolean => {
+  const existing = existingSignatures.find(s => s.eve_id === sigId);
+  if (!existing) return true;
+  if (!existing.updated_at) return true;
+  if (!existing.inserted_at) return true;
+  const insertedTime = new Date(existing.inserted_at).getTime();
+  const updatedTime = new Date(existing.updated_at).getTime();
+  const timeDifference = Math.abs(insertedTime - updatedTime);
+  return timeDifference < 50;
+};
+
+const extractGlowingRowsTimingKey = (glowingRowsValue: unknown): unknown => {
+  if (glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue) {
+    return (glowingRowsValue as Record<string, unknown>).value;
+  }
+  return glowingRowsValue;
+};
+
 export const useSystemSignaturesData = ({
   systemId,
   settings,
@@ -20,7 +43,7 @@ export const useSystemSignaturesData = ({
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
   const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
-  const [glowingRows, setGlowingRows] = useState<Map<string, { isNew: boolean }>>(new Map());
+  const [glowingRows, setGlowingRows] = useState<Map<string, GlowingRowInfo>>(new Map());
 
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({
     systemId,
@@ -50,15 +73,7 @@ export const useSystemSignaturesData = ({
             newGlowing.set(sig.eve_id, { isNew: true });
             return;
           }
-
-          const existing = signaturesRef.current.find(s => s.eve_id === sig.eve_id);
-
-          const isBrandNew =
-            !existing ||
-            !existing.updated_at ||
-            !existing.inserted_at ||
-            Math.abs(new Date(existing.inserted_at ?? '').getTime() - new Date(existing.updated_at ?? '').getTime()) <
-              50;
+          const isBrandNew = checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
         });
         return newGlowing;
@@ -89,19 +104,17 @@ export const useSystemSignaturesData = ({
     if (glowingRows.size === 0) return;
 
     const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-    const timingKey =
-      glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue
-        ? (glowingRowsValue as Record<string, unknown>).value
-        : glowingRowsValue;
+    const timingKey = extractGlowingRowsTimingKey(glowingRowsValue);
 
     const glowingRowsTimeoutDuration =
-      SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ?? 1000;
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ??
+      DEFAULT_GLOWINGROWS_TIMEOUT;
 
-    const GlowingRowsTimer1 = setTimeout(() => {
+    const glowingRowsTimer1 = setTimeout(() => {
       setGlowingRows(new Map());
     }, glowingRowsTimeoutDuration);
 
-    return () => clearTimeout(GlowingRowsTimer1);
+    return () => clearTimeout(glowingRowsTimer1);
   }, [glowingRows, settings, systemId]);
 
   const handleDeleteSelected = useCallback(async () => {

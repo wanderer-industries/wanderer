@@ -1,5 +1,9 @@
-import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SIGNATURES_GLOWINGROWS_TIMING, SignatureSettingsType }
-from '@/hooks/Mapper/constants/signatures';
+import {
+  SETTINGS_KEYS,
+  SIGNATURES_DELETION_TIMING,
+  SIGNATURES_GLOWINGROWS_TIMING,
+  SignatureSettingsType,
+} from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -193,28 +197,14 @@ export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
  */
 export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
   const raw = settings[SETTINGS_KEYS.DELETION_TIMING];
-  const timing =
-        raw && typeof raw === 'object' && 'value' in raw
-  ? (raw as { value: SIGNATURES_DELETION_TIMING }).value
-  : (raw as SIGNATURES_DELETION_TIMING | undefined);
-
+  if (raw && typeof raw === 'object' && 'value' in raw) {
+    const timing = (raw as { value: SIGNATURES_DELETION_TIMING }).value;
+    return SIGNATURE_DELETION_TIMEOUTS[timing] ?? SIGNATURE_DELETION_TIMEOUTS[SIGNATURES_DELETION_TIMING.DEFAULT];
+  }
+  const timing = raw as SIGNATURES_DELETION_TIMING | undefined;
   const validTiming = typeof timing === 'number' ? timing : SIGNATURES_DELETION_TIMING.DEFAULT;
-
   return SIGNATURE_DELETION_TIMEOUTS[validTiming];
 }
-
-export function getGlowingRowsTimeoutMs(settings: SignatureSettingsType): number {
-  const raw = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-  const timing =
-        raw && typeof raw === 'object' && 'value' in raw
-  ? (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value
-  : (raw as SIGNATURES_GLOWINGROWS_TIMING | undefined);
-
-  const glowingRowsTiming = typeof timing === 'number' ? timing : SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT;
-
-  return SIGNATURE_GLOWINGROWS_TIMEOUTS[glowingRowsTiming];
-}
-
 // Replace the flat structure with a nested structure by language
 export const LANGUAGE_TYPE_MAPPINGS = {
   EN: {
