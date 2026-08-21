@@ -7,8 +7,13 @@ defmodule WandererAppWeb.MapEventsAPIController do
   alias WandererApp.ExternalEvents.MapEventRelay
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
-  # No dedicated events-feed permission bit exists; falls back to admin_map.
-  plug WandererAppWeb.Plugs.RequirePermission, %{list_events: :admin_map}
+  # The event types here (add_system, connection_added, signature_added,
+  # character_added, map_kill, ...) are the same map content a viewer can
+  # already read via the systems/connections/signatures endpoints, just
+  # delivered as a feed - unlike webhooks/audit/ACLs, this isn't a
+  # management-tier concern, so it uses the same view_system bit as those
+  # reads instead of falling back to admin_map.
+  plug WandererAppWeb.Plugs.RequirePermission, %{list_events: :view_system}
 
   # -----------------------------------------------------------------
   # Schema Definitions
