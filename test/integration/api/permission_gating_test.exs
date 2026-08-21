@@ -70,6 +70,30 @@ defmodule WandererAppWeb.Api.PermissionGatingTest do
       assert %{"error" => _} = json_response(conn, 403)
     end
 
+    test "a member-role eve-token can create a system (has the bit, isn't over-restricted)", %{
+      conn: conn,
+      map: map,
+      acl: acl
+    } do
+      member_user = Factory.insert(:user)
+      member = Factory.insert(:character, %{user_id: member_user.id})
+
+      Factory.insert(:access_list_member, %{
+        access_list_id: acl.id,
+        eve_character_id: member.eve_id,
+        role: "member"
+      })
+
+      token = mint_eve_token(conn, map, member)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post(~p"/api/maps/#{map.slug}/systems", %{"solar_system_id" => 30_000_157})
+
+      assert %{"data" => _} = json_response(conn, 200)
+    end
+
     test "an admin-role eve-token can create a system", %{conn: conn, map: map, acl: acl} do
       admin_user = Factory.insert(:user)
       admin = Factory.insert(:character, %{user_id: admin_user.id})
