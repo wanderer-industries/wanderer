@@ -5,6 +5,8 @@ defmodule WandererApp.Map.Routes do
 
   require Logger
 
+  @esi Application.compile_env(:wanderer_app, :esi, WandererApp.Esi)
+
   @default_routes_settings %{
     path_type: "shortest",
     include_mass_crit: true,
@@ -229,7 +231,7 @@ defmodule WandererApp.Map.Routes do
         {:ok, result}
 
       _ ->
-        case WandererApp.Esi.get_routes_custom(hubs, origin, params) do
+        case @esi.get_routes_custom(hubs, origin, params) do
           {:ok, result} ->
             WandererApp.Cache.insert(
               cache_key,
@@ -246,7 +248,7 @@ defmodule WandererApp.Map.Routes do
               "Error getting custom routes for #{inspect(origin)}: #{inspect(params)}. Params saved to: #{error_file_path}"
             )
 
-            WandererApp.Esi.get_routes_eve(hubs, origin, params, opts)
+            @esi.get_routes_eve(hubs, origin, params, opts)
         end
     end
   end

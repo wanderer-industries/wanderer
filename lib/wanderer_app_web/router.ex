@@ -283,6 +283,17 @@ defmodule WandererAppWeb.Router do
   end
 
   #
+  # EVE SSO token exchange - mints a map-scoped token from an EVE SSO access
+  # token (see WandererApp.Map.EveTokenAuth). Deliberately NOT behind
+  # :api_map - this endpoint issues the credential that pipeline checks for.
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api]
+
+    post "/auth/eve-token", Api.EveAuthController, :create
+  end
+
+  #
   # Unified RESTful routes for systems & connections by slug or ID
   #
   scope "/api/maps/:map_identifier", WandererAppWeb do
@@ -307,6 +318,7 @@ defmodule WandererAppWeb.Router do
     delete "/signatures/:id/link", MapSystemSignatureAPIController, :unlink
     get "/user-characters", MapAPIController, :show_user_characters
     get "/tracked-characters", MapAPIController, :show_tracked_characters
+    get "/user-routes", MapAPIController, :show_user_routes
   end
 
   # Webhook management endpoints (requires WANDERER_WEBHOOKS_ENABLED=true)
@@ -420,8 +432,6 @@ defmodule WandererAppWeb.Router do
     pipe_through [:browser, :blog]
     get "/", BlogController, :license
   end
-
-
 
   scope "/swaggerui" do
     pipe_through [:browser, :api_spec]

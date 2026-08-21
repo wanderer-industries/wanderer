@@ -4,6 +4,8 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   import Plug.Conn
   alias Plug.Crypto
   alias WandererApp.Api.Map, as: ApiMap
+  alias WandererApp.Api.Character, as: ApiCharacter
+  alias WandererApp.Map.EveTokenAuth
   alias WandererAppWeb.Schemas.ResponseSchemas, as: R
   require Logger
 
@@ -11,9 +13,68 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
   def init(opts), do: opts
 
   @impl true
-  def call(conn, _opts) do
-    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, map_id} <- fetch_map_id(conn),
+  def call(conn, opts) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization") do
+      # Tokens minted by EveTokenAuth.exchange/2 (see the /auth/eve-token
+      # endpoint) are tried first; any other value falls back to the
+      # long-standing static map.public_api_key check below.
+      case EveTokenAuth.verify(token) do
+        {:ok, payload} -> call_with_eve_token(conn, payload)
+        {:error, :invalid} -> call_with_static_key(conn, token, opts)
+      end
+    else
+      [] ->
+        Logger.warning("Missing or invalid 'Bearer' token")
+        conn |> respond(401, "Missing or invalid 'Bearer' token") |> halt()
+
+      [_non_bearer_token] ->
+        Logger.warning("Invalid authorization format - Bearer token required")
+        conn |> respond(401, "Invalid authorization format - Bearer token required") |> halt()
+    end
+  end
+
+  defp call_with_eve_token(conn, %{
+         map_id: token_map_id,
+         character_eve_id: eve_id,
+         permission_mask: mask
+       }) do
+    # The token only proves access to `token_map_id` - it has to be checked
+    # against whichever map the request is actually addressed to (path
+    # `:map_identifier`, or the legacy `map_id`/`slug` query params), the same
+    # way call_with_static_key/2 resolves it below. Without this, a token
+    # minted for map A would quietly authenticate requests to map B. A
+    # mismatch (or an identifier that doesn't resolve to any map at all)
+    # returns 404 rather than 401/403, so this never confirms whether some
+    # other map exists.
+    with {:ok, requested_map_id} <- fetch_map_id(conn),
+         true <- to_string(requested_map_id) == to_string(token_map_id),
+         {:ok, map} <- ApiMap.by_id(token_map_id),
+         {:ok, character} <- ApiCharacter.by_eve_id(eve_id) do
+      conn
+      |> assign(:map, map)
+      |> assign(:map_id, map.id)
+      |> assign(:current_character, character)
+      |> assign(:permission_mask, mask)
+    else
+      false ->
+        Logger.warning("Unauthorized: eve-token for a different map than requested")
+        conn |> respond(404, "Map not found") |> halt()
+
+      {:error, :not_found, _msg} ->
+        conn |> respond(404, "Map not found") |> halt()
+
+      {:error, :bad_request, msg} ->
+        Logger.warning("Bad request: #{msg}")
+        conn |> respond(400, msg) |> halt()
+
+      _ ->
+        Logger.warning("Unauthorized: stale eve-token for map #{inspect(token_map_id)}")
+        conn |> respond(401, "Unauthorized (stale token)") |> halt()
+    end
+  end
+
+  defp call_with_static_key(conn, token, _opts) do
+    with {:ok, map_id} <- fetch_map_id(conn),
          {:ok, map} <- ApiMap.by_id(map_id),
          true <-
            is_binary(map.public_api_key) &&
@@ -23,15 +84,8 @@ defmodule WandererAppWeb.Plugs.CheckMapApiKey do
       |> assign(:map, map)
       |> assign(:map_id, map.id)
       |> assign(:current_character, owner_character)
+      |> assign(:permission_mask, WandererApp.Permissions.role_mask(:admin))
     else
-      [] ->
-        Logger.warning("Missing or invalid 'Bearer' token")
-        conn |> respond(401, "Missing or invalid 'Bearer' token") |> halt()
-
-      [_non_bearer_token] ->
-        Logger.warning("Invalid authorization format - Bearer token required")
-        conn |> respond(401, "Invalid authorization format - Bearer token required") |> halt()
-
       {:error, :bad_request, msg} ->
         Logger.warning("Bad request: #{msg}")
         conn |> respond(400, msg) |> halt()

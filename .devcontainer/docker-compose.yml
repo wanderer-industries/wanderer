@@ -18,6 +18,13 @@ services:
       - db-pg16:/var/lib/postgresql/data
 
   wanderer:
+    # `.env` is gitignored (per-dev EVE_CLIENT_ID/SECRET etc. for the real
+    # SSO login flow, see CLAUDE.md). `required: false` (compose spec 2.24+)
+    # keeps this optional - without it, compose hard-errors for anyone who
+    # doesn't happen to have that file instead of just skipping it.
+    env_file:
+      - path: .env
+        required: false
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,6 +42,7 @@ services:
       ERL_AFLAGS: "-kernel shell_history enabled"
     ports:
       - 4444:4444
+      - 4443:4443
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
