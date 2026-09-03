@@ -145,6 +145,16 @@ export const UI_CHECKBOXES_PROPS: SettingsListItem[] = [
     label: 'Enable soft background',
     type: 'checkbox',
   },
+  {
+    prop: InterfaceStoredSettingsProps.killActivityNotifications,
+    label: 'Show visual toast for map kill activity',
+    type: 'checkbox',
+  },
+  {
+    prop: InterfaceStoredSettingsProps.killActivitySounds,
+    label: 'Play sound for map kill activity',
+    type: 'checkbox',
+  },
 ];
 
 export const THEME_OPTIONS = [
