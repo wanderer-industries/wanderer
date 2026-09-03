@@ -2,8 +2,8 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   @moduledoc """
   Plug for authenticating JSON:API v1 endpoints.
 
-  Supports both session-based authentication (for web clients) and
-  Bearer token authentication (for API clients).
+  Token-only: `/api/v1` accepts Bearer token authentication exclusively.
+  Session-based authentication is not supported on this surface.
 
   Currently, Bearer token authentication only supports map API keys.
   When a valid map API key is provided, the map owner is set as the
@@ -23,8 +23,7 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   @error_messages %{
     map_owner_not_found: "Authentication failed",
     invalid_token: "Authentication failed",
-    missing_auth_header: "Missing or invalid authorization header",
-    invalid_session: "Invalid session"
+    missing_auth_header: "Missing or invalid authorization header"
   }
 
   def init(opts), do: opts
@@ -56,30 +55,6 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
         |> assign(:current_user_role, get_user_role(user))
         |> PlugHelpers.set_actor(actor)
         |> maybe_assign_map(map)
-
-      {:ok, user} ->
-        # Backward compatibility for session auth without map
-        end_time = System.monotonic_time(:millisecond)
-        duration = end_time - start_time
-
-        # Log successful authentication
-        request_details = extract_request_details(conn)
-        SecurityAudit.log_auth_event(:auth_success, user.id, request_details)
-
-        # Emit successful authentication event
-        :telemetry.execute(
-          [:wanderer_app, :json_api, :auth],
-          %{count: 1, duration: duration},
-          %{auth_type: get_auth_type(conn), result: "success"}
-        )
-
-        # Wrap user with nil map as actor for Ash (session auth has no map context)
-        actor = ActorWithMap.new(user, nil)
-
-        conn
-        |> assign(:current_user, user)
-        |> assign(:current_user_role, get_user_role(user))
-        |> PlugHelpers.set_actor(actor)
 
       {:error, reason} when is_atom(reason) ->
         # Error handling with atom reasons
@@ -114,18 +89,9 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
   end
 
   defp authenticate_request(conn) do
-    # Try session-based auth first (for web clients)
-    case get_session(conn, :user_id) do
-      nil ->
-        # Fallback to Bearer token auth
-        authenticate_bearer_token(conn)
-
-      user_id ->
-        case User.by_id(user_id, load: :characters) do
-          {:ok, user} -> {:ok, user}
-          {:error, _} -> {:error, :invalid_session}
-        end
-    end
+    # /api/v1 is token-only: no session auth (prevents cross-tenant access via
+    # a logged-in user wrapped as ActorWithMap{map: nil}).
+    authenticate_bearer_token(conn)
   end
 
   defp authenticate_bearer_token(conn) do
@@ -167,14 +133,8 @@ defmodule WandererAppWeb.Plugs.CheckJsonApiAuth do
 
   defp get_auth_type(conn) do
     case get_req_header(conn, "authorization") do
-      ["Bearer " <> _token] ->
-        "bearer_token"
-
-      _ ->
-        case get_session(conn, :user_id) do
-          nil -> "none"
-          _ -> "session"
-        end
+      ["Bearer " <> _token] -> "bearer_token"
+      _ -> "none"
     end
   end
 

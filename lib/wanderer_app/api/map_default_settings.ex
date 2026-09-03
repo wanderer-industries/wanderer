@@ -7,7 +7,31 @@ defmodule WandererApp.Api.MapDefaultSettings do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource],
+    authorizers: [Ash.Policy.Authorizer]
+
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
+    end
+
+    # Create has no existing row to filter, so it uses a simple check rather
+    # than a filter check. `map_id` is `allow_nil? false` here and there is no
+    # `InjectMapFromActor` change, so the "absent map_id" branch of this check
+    # is unreachable -- an omitted map_id fails validation before persisting.
+    policy action_type(:create) do
+      authorize_if WandererApp.Api.Policies.MapScoped.create_map_matches_token()
+    end
+
+    # Update/destroy use the filter check; see map_connection.ex for why.
+    policy action_type([:update, :destroy]) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
+    end
+  end
 
   postgres do
     repo(WandererApp.Repo)
