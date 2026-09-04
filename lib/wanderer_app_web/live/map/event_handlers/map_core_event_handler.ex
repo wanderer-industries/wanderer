@@ -356,9 +356,253 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:noreply, socket}
   end
 
+  def handle_ui_event(
+        "get_intel_source_maps",
+        _params,
+        %{
+          assigns: %{
+            current_user: current_user,
+            map_id: map_id,
+            user_permissions: %{manage_map: true}
+          }
+        } = socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      case WandererApp.Maps.get_available_maps(current_user) do
+        {:ok, maps} ->
+          character_ids = Enum.map(current_user.characters, & &1.id)
+
+          candidates =
+            Enum.filter(maps, fn m -> m.id != map_id and not m.deleted end)
+
+          loaded_candidates =
+            case Ash.load(candidates, :user_permissions, actor: current_user) do
+              {:ok, loaded} -> loaded
+              _ -> candidates
+            end
+
+          eligible_maps =
+            loaded_candidates
+            |> Enum.filter(fn m ->
+              m.owner_id in character_ids or
+                has_manage_access?(m, character_ids)
+            end)
+            |> Enum.map(fn m -> %{id: m.id, name: m.name, slug: m.slug} end)
+
+          {:reply, %{maps: eligible_maps}, socket}
+
+        _error ->
+          {:reply, %{maps: []}, socket}
+      end
+    else
+      {:reply, %{maps: []}, socket}
+    end
+  end
+
+  def handle_ui_event("get_intel_source_maps", _params, socket) do
+    {:reply, %{maps: []}, socket}
+  end
+
+  def handle_ui_event(
+        "set_intel_source_map",
+        %{"intel_source_map_id" => source_map_id},
+        %{
+          assigns: %{
+            map_id: map_id,
+            user_permissions: %{manage_map: true}
+          }
+        } = socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      source_map_id = if source_map_id in [nil, ""], do: nil, else: source_map_id
+      current_user = socket.assigns[:current_user]
+
+      with {:ok, source_map} <- fetch_source_map(source_map_id),
+           :ok <- validate_no_circular_ref(map_id, source_map),
+           :ok <- validate_no_chain(map_id, source_map),
+           :ok <- validate_source_access(current_user, source_map),
+           {:ok, map} <- WandererApp.MapRepo.get(map_id),
+           {:ok, _updated_map} <-
+             WandererApp.MapRepo.set_intel_source_map(map, source_map_id) do
+        # Update the %WandererApp.Map{} held in the map-state cache. Caching the
+        # Ash resource here instead would replace the struct that
+        # Impl.update_subscription_settings/2, Impl.update_options/2 and
+        # AclsImpl all pattern-match on.
+        WandererApp.Map.Server.update_intel_source_map(map_id, source_map_id)
+
+        # The previous source's inherited records are no longer reachable by any
+        # sync (delete_inherited/3 scopes to the *current* source), so clear them
+        # before syncing the new source in.
+        previous_source_id = Map.get(map, :intel_source_map_id)
+
+        if previous_source_id && previous_source_id != source_map_id do
+          WandererApp.Map.IntelSync.clear_inherited_from(map_id, previous_source_id)
+        end
+
+        if source_map_id do
+          Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
+            WandererApp.Map.IntelSync.sync_all_visible_systems(map_id, source_map_id)
+          end)
+        end
+
+        {:reply,
+         %{
+           success: true,
+           intel_source_map_id: source_map_id
+         }, socket}
+      else
+        {:error, :circular_reference} ->
+          {:reply, %{success: false, error: "circular_reference"}, socket}
+
+        {:error, :source_is_subscriber} ->
+          {:reply, %{success: false, error: "source_is_subscriber"}, socket}
+
+        {:error, :map_is_a_source} ->
+          {:reply, %{success: false, error: "map_is_a_source"}, socket}
+
+        {:error, :unauthorized_source} ->
+          {:reply, %{success: false, error: "unauthorized_source"}, socket}
+
+        {:error, reason} ->
+          Logger.error("Failed to set intel source map: #{inspect(reason)}")
+          {:reply, %{success: false, error: "update_failed"}, socket}
+      end
+    else
+      {:reply, %{success: false, error: "feature_disabled"}, socket}
+    end
+  end
+
+  # Without this clause a caller lacking manage_map falls through to the generic
+  # handle_ui_event/3 catch-all, which returns {:noreply, socket} — the client's
+  # outCommand promise never resolves and the dropdown sticks in its optimistic
+  # state. Matches the fallbacks on get_intel_source_maps and sync_intel.
+  def handle_ui_event("set_intel_source_map", _params, socket) do
+    {:reply, %{success: false, error: "forbidden"}, socket}
+  end
+
   def handle_ui_event(event, body, socket) do
     Logger.debug(fn -> "unhandled map ui event: #{inspect(event)} #{inspect(body)}" end)
     {:noreply, socket}
+  end
+
+  defp maybe_add_intel_source_info(options, map_id) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      source_id =
+        case WandererApp.Map.get_map_state(map_id, false) do
+          {:ok, %{map: %{intel_source_map_id: id}}} -> id
+          _ -> nil
+        end
+
+      options
+      |> Map.put("intel_source_map_id", source_id)
+      # Which systems are actually intel-inherited. Read-only gating keys off
+      # membership here rather than off `intel_source_map_id` alone, so systems
+      # the source map has no data for stay editable on the subscriber map.
+      |> Map.put(
+        "intel_inherited_system_ids",
+        WandererApp.Map.IntelSync.inherited_solar_system_ids(map_id, source_id)
+      )
+    else
+      options
+    end
+  end
+
+  defp fetch_source_map(nil), do: {:ok, nil}
+
+  defp fetch_source_map(source_map_id) do
+    case WandererApp.MapRepo.get(source_map_id) do
+      {:ok, source_map} -> {:ok, source_map}
+      _ -> {:error, :source_not_found}
+    end
+  end
+
+  defp validate_no_circular_ref(_map_id, nil), do: :ok
+
+  defp validate_no_circular_ref(map_id, %{id: source_id} = source_map) do
+    if source_id == map_id do
+      {:error, :circular_reference}
+    else
+      # Start walking from the source map's own intel_source_map_id
+      # (we already have the source map struct, no need to re-fetch it)
+      next_id = Map.get(source_map, :intel_source_map_id)
+      walk_intel_chain(next_id, MapSet.new([map_id, source_id]))
+    end
+  end
+
+  defp walk_intel_chain(nil, _visited), do: :ok
+
+  defp walk_intel_chain(current_id, visited) do
+    if MapSet.member?(visited, current_id) do
+      {:error, :circular_reference}
+    else
+      case WandererApp.MapRepo.get(current_id) do
+        {:ok, %{intel_source_map_id: next_id}} ->
+          walk_intel_chain(next_id, MapSet.put(visited, current_id))
+
+        _ ->
+          :ok
+      end
+    end
+  end
+
+  # Chains (A -> B -> C) are refused in both directions. The six system intel
+  # fields are copied verbatim into MapSystem columns with no provenance marker
+  # (unlike comments and structures, which carry inherited_from_map_id), so a
+  # chain would propagate A's intel into C even though C's admin was never
+  # authorised against A. validate_source_access/2 only authorises the immediate
+  # source, and walk_intel_chain/2 only rejects cycles, so neither closes this.
+  defp validate_no_chain(_map_id, nil), do: :ok
+
+  defp validate_no_chain(map_id, source_map) do
+    cond do
+      # Forward: the map we are subscribing to is itself a subscriber.
+      not is_nil(Map.get(source_map, :intel_source_map_id)) ->
+        {:error, :source_is_subscriber}
+
+      # Reverse: this map is already somebody else's source, so subscribing it
+      # now would retroactively form a chain behind them.
+      map_has_subscribers?(map_id) ->
+        {:error, :map_is_a_source}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp map_has_subscribers?(map_id) do
+    case WandererApp.Api.Map.intel_subscribers_of(map_id) do
+      {:ok, []} -> false
+      {:ok, _subscribers} -> true
+      # Fail closed: if we cannot prove there are no subscribers, refuse rather
+      # than risk forming an unauthorised chain.
+      _ -> true
+    end
+  end
+
+  defp validate_source_access(_current_user, nil), do: :ok
+
+  defp validate_source_access(current_user, source_map) do
+    case WandererApp.Maps.get_user_role_for_map(source_map, current_user) do
+      role when role in [:admin, :manager] -> :ok
+      _ -> {:error, :unauthorized_source}
+    end
+  end
+
+  defp has_manage_access?(map, character_ids) do
+    user_permissions =
+      case Map.get(map, :user_permissions) do
+        perms when is_list(perms) -> perms
+        _ -> []
+      end
+
+    permissions =
+      WandererApp.Permissions.get_map_permissions(
+        user_permissions,
+        map.owner_id,
+        character_ids
+      )
+
+    permissions.admin_map or permissions.manage_map
   end
 
   defp save_default_settings(map_id, settings, current_user) do
@@ -451,15 +695,17 @@ defmodule WandererAppWeb.MapCoreEventHandler do
          user_permissions,
          owner_id
        ) do
-    with user_permissions <-
-           WandererApp.Permissions.get_map_permissions(
-             user_permissions,
-             owner_id,
-             current_user_characters |> Enum.map(& &1.id)
-           ),
-         {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id),
-         {:ok, %{characters: available_map_characters}} =
-           WandererApp.Maps.load_characters(map, current_user_id) do
+    user_permissions =
+      WandererApp.Permissions.get_map_permissions(
+        user_permissions,
+        owner_id,
+        current_user_characters |> Enum.map(& &1.id)
+      )
+
+    with {:ok, map_user_settings} <- WandererApp.MapUserSettingsRepo.get(map_id, current_user_id) do
+      {:ok, %{characters: available_map_characters}} =
+        WandererApp.Maps.load_characters(map, current_user_id)
+
       tracked_data =
         get_tracked_data(
           available_map_characters,
@@ -694,6 +940,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
       map_id
       |> WandererApp.Map.get_options()
 
+    options = maybe_add_intel_source_info(options, map_id)
+
     map_characters =
       map_id
       |> WandererApp.Map.list_characters()
@@ -725,6 +973,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           user_permissions: user_permissions,
           characters: map_characters,
           options: options,
+          client_env: WandererApp.Env.to_client_env(),
           classes: WandererApp.CachedInfo.get_wormhole_classes!(),
           wormholes: WandererApp.CachedInfo.get_wormhole_types!(),
           effects: WandererApp.CachedInfo.get_effects!(),

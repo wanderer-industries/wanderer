@@ -58,6 +58,10 @@ defmodule WandererApp.Map.Server do
 
   defdelegate update_system_custom_name(map_id, update), to: Impl
 
+  defdelegate update_intel_source_map(map_id, intel_source_map_id), to: Impl
+
+  defdelegate sync_intel_for_system(map_id, source_map_id, solar_system_id), to: Impl
+
   defdelegate update_system_locked(map_id, update), to: Impl
 
   defdelegate update_system_labels(map_id, update), to: Impl

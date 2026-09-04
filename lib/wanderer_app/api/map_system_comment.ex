@@ -9,6 +9,13 @@ defmodule WandererApp.Api.MapSystemComment do
   postgres do
     repo(WandererApp.Repo)
     table("map_system_comments_v1")
+
+    references do
+      # Matches ON DELETE CASCADE in 20260209100001_add_inherited_from_map_id.
+      # Inherited copies are worthless once the map they were copied from is
+      # gone, so they go with it.
+      reference :inherited_from_map, on_delete: :delete
+    end
   end
 
   json_api do
@@ -37,6 +44,7 @@ defmodule WandererApp.Api.MapSystemComment do
   code_interface do
     define(:create, action: :create)
     define(:destroy, action: :destroy)
+    define(:inherited_by_system, action: :inherited_by_system, args: [:system_id, :source_map_id])
 
     define(:by_id,
       get_by: [:id],
@@ -61,7 +69,8 @@ defmodule WandererApp.Api.MapSystemComment do
       accept [
         :system_id,
         :character_id,
-        :text
+        :text,
+        :inherited_from_map_id
       ]
     end
 
@@ -69,6 +78,15 @@ defmodule WandererApp.Api.MapSystemComment do
       argument(:system_id, :string, allow_nil?: false)
 
       filter(expr(system_id == ^arg(:system_id)))
+    end
+
+    read :inherited_by_system do
+      argument(:system_id, :string, allow_nil?: false)
+      argument(:source_map_id, :uuid, allow_nil?: false)
+
+      filter(
+        expr(system_id == ^arg(:system_id) and inherited_from_map_id == ^arg(:source_map_id))
+      )
     end
   end
 
@@ -93,6 +111,12 @@ defmodule WandererApp.Api.MapSystemComment do
     belongs_to :character, WandererApp.Api.Character do
       attribute_writable? true
       public? true
+    end
+
+    belongs_to :inherited_from_map, WandererApp.Api.Map do
+      attribute_writable? true
+      public? true
+      allow_nil? true
     end
   end
 end

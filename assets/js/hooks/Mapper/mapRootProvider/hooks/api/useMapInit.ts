@@ -30,6 +30,7 @@ export const useMapInit = () => {
         user_hubs,
         map_slug,
         expired_characters,
+        client_env,
       } = props;
 
       const updateData: Partial<MapRootData> = {};
@@ -111,6 +112,10 @@ export const useMapInit = () => {
 
       if ('expired_characters' in props) {
         updateData.expiredCharacters = expired_characters;
+      }
+
+      if ('client_env' in props) {
+        updateData.clientEnv = client_env;
       }
 
       update(updateData);

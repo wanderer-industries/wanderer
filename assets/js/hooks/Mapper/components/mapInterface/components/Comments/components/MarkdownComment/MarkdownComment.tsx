@@ -22,9 +22,10 @@ export interface MarkdownCommentProps {
   time: string;
   characterEveId: string;
   id: string;
+  inherited?: boolean;
 }
 
-export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownCommentProps) => {
+export const MarkdownComment = ({ text, time, characterEveId, id, inherited }: MarkdownCommentProps) => {
   const char = useGetCacheCharacter(characterEveId);
   const [hovered, setHovered] = useState(false);
 
@@ -57,16 +58,18 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
         onMouseLeave={handleMouseLeave}
         title={
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-1">
               <span className="text-stone-500">
                 by <span className="text-orange-300/70">{char?.data?.name ?? ''}</span>
               </span>
+              {inherited && (
+                <span className="text-[9px] text-blue-400/70 bg-blue-900/30 px-1 rounded">inherited</span>
+              )}
             </div>
 
             <WdTransition active={hovered} timeout={100}>
               <div className="text-stone-500 max-h-[12px]">
-                {!hovered && <TimeAgo timestamp={time} />}
-                {hovered && (
+                {hovered && !inherited ? (
                   // @ts-ignore
                   <div ref={cfRef}>
                     <WdImgButton
@@ -75,6 +78,8 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
                       onClick={cfShow}
                     />
                   </div>
+                ) : (
+                  <TimeAgo timestamp={time} />
                 )}
               </div>
             </WdTransition>
@@ -84,14 +89,16 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
         <MarkdownTextViewer>{text}</MarkdownTextViewer>
       </InfoDrawer>
 
-      <ConfirmPopup
-        target={cfRef.current}
-        visible={cfVisible}
-        onHide={cfHide}
-        message="Are you sure you want to delete?"
-        icon="pi pi-exclamation-triangle"
-        accept={handleDelete}
-      />
+      {!inherited && (
+        <ConfirmPopup
+          target={cfRef.current}
+          visible={cfVisible}
+          onHide={cfHide}
+          message="Are you sure you want to delete?"
+          icon="pi pi-exclamation-triangle"
+          accept={handleDelete}
+        />
+      )}
     </>
   );
 };

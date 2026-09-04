@@ -101,6 +101,7 @@ defmodule WandererApp.Api.MapSystem do
     define(:update_linked_sig_eve_id, action: :update_linked_sig_eve_id)
     define(:update_position, action: :update_position)
     define(:update_visible, action: :update_visible)
+    define(:update_intel, action: :update_intel)
   end
 
   actions do
@@ -289,6 +290,11 @@ defmodule WandererApp.Api.MapSystem do
 
     update :update_visible do
       accept [:visible]
+      require_atomic? false
+    end
+
+    update :update_intel do
+      accept [:custom_name, :description, :tag, :temporary_name, :labels, :status]
       require_atomic? false
     end
   end

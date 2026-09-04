@@ -166,14 +166,15 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           system: system,
           text: text,
           updated_at: updated_at
-        } = _comment
+        } = comment
       ) do
     %{
       id: id,
       characterEveId: character.eve_id,
       solarSystemId: system.solar_system_id,
       text: text,
-      updated_at: updated_at
+      updated_at: updated_at,
+      inherited_from_map_id: comment.inherited_from_map_id
     }
   end
 
@@ -185,7 +186,7 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
           character: character,
           text: text,
           updated_at: updated_at
-        } = _comment,
+        } = comment,
         solar_system_id
       ) do
     %{
@@ -193,7 +194,8 @@ defmodule WandererAppWeb.MapSystemCommentsEventHandler do
       characterEveId: character.eve_id,
       solarSystemId: solar_system_id,
       text: text,
-      updated_at: updated_at
+      updated_at: updated_at,
+      inherited_from_map_id: comment.inherited_from_map_id
     }
   end
 end

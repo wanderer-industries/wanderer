@@ -18,6 +18,7 @@ export interface ContextMenuSystemProps {
   onSystemTag(val?: string): void;
   onSystemStatus(val: number): void;
   onSystemLabels(val: string): void;
+  onSyncIntel(): void;
   onCustomLabelDialog(): void;
   onTogglePing(type: PingType, solar_system_id: string, ping_id: string | undefined, hasPing: boolean): void;
   onWaypointSet: WaypointSetContextHandler;

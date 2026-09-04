@@ -18,6 +18,7 @@ import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoa
 import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { PingType } from '@/hooks/Mapper/types';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useIsIntelInherited } from '@/hooks/Mapper/hooks';
 import clsx from 'clsx';
 import { MenuItem } from 'primereact/menuitem';
 import { MenuItemWithInfo, WdMenuItem } from '@/hooks/Mapper/components/ui-kit';
@@ -31,6 +32,7 @@ export const useContextMenuSystemItems = ({
   onSystemTag,
   onSystemStatus,
   onSystemLabels,
+  onSyncIntel,
   onCustomLabelDialog,
   onOpenSettings,
   onWaypointSet,
@@ -39,18 +41,22 @@ export const useContextMenuSystemItems = ({
   userHubs,
   systems,
 }: Omit<ContextMenuSystemProps, 'contextMenuRef'>) => {
-  const getTags = useTagMenu(systems, systemId, onSystemTag);
-  const getStatus = useStatusMenu(systems, systemId, onSystemStatus);
-  const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
+  const {
+    data: { pings, isSubscriptionActive },
+  } = useMapRootState();
+
+  // Intel-managed fields are owned by the source map, so their menus are
+  // read-only here — but only for systems the source map actually has.
+  const hasIntelSource = useIsIntelInherited(systemId);
+
+  const getTags = useTagMenu(systems, systemId, onSystemTag, hasIntelSource);
+  const getStatus = useStatusMenu(systems, systemId, onSystemStatus, hasIntelSource);
+  const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog, hasIntelSource);
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
   const canManageSystem = useMapCheckPermissions([UserPermission.UPDATE_SYSTEM]);
   const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
-
-  const {
-    data: { pings, isSubscriptionActive },
-  } = useMapRootState();
 
   const ping = useMemo(() => (pings.length === 1 ? pings[0] : undefined), [pings]);
   const isShowPingBtn = useMemo(() => {
@@ -156,6 +162,16 @@ export const useContextMenuSystemItems = ({
           ]
         : []),
 
+      ...(hasIntelSource && canManageSystem
+        ? [
+            {
+              label: 'Sync Intel',
+              icon: clsx(PrimeIcons.SYNC, 'text-blue-400'),
+              command: onSyncIntel,
+            },
+          ]
+        : []),
+
       ...(canDeleteSystem && !system.locked
         ? [
             { separator: true },
@@ -198,7 +214,9 @@ export const useContextMenuSystemItems = ({
     onDeleteSystem,
     onOpenSettings,
     onTogglePing,
+    onSyncIntel,
     ping,
     isShowPingBtn,
+    hasIntelSource,
   ]);
 };

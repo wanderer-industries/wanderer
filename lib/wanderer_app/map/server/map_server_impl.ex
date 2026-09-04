@@ -244,6 +244,7 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_system_labels(map_id, update), to: SystemsImpl
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl
   defdelegate update_system_position(map_id, update), to: SystemsImpl
+  defdelegate sync_intel_for_system(map_id, source_map_id, solar_system_id), to: SystemsImpl
   defdelegate add_hub(map_id, hub_info), to: SystemsImpl
   defdelegate remove_hub(map_id, hub_info), to: SystemsImpl
   defdelegate add_ping(map_id, ping_info), to: PingsImpl
@@ -443,6 +444,14 @@ defmodule WandererApp.Map.Server.Impl do
     WandererApp.Map.update_map_state(map_id, %{
       map: map |> WandererApp.Map.update_options!(options),
       map_opts: map_options(options)
+    })
+  end
+
+  def update_intel_source_map(map_id, intel_source_map_id) do
+    {:ok, %{map: map}} = WandererApp.Map.get_map_state(map_id)
+
+    WandererApp.Map.update_map_state(map_id, %{
+      map: map |> WandererApp.Map.update_intel_source_map_id!(intel_source_map_id)
     })
   end
 
