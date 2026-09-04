@@ -14,7 +14,10 @@ defmodule WandererApp.Api.Map do
     repo(WandererApp.Repo)
     table("maps_v1")
 
-    migration_defaults scopes: "'{wormholes}'"
+    # This value is injected verbatim into generated migrations. It must be
+    # Elixir source for a list of strings: `'{wormholes}'` is a charlist, which
+    # generated a default of the character codes of the literal "{wormholes}".
+    migration_defaults scopes: ~s(["wormholes"])
   end
 
   json_api do
