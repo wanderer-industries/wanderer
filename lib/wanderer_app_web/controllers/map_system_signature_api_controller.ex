@@ -5,6 +5,14 @@ defmodule WandererAppWeb.MapSystemSignatureAPIController do
   alias WandererApp.Api.MapSystemSignature
   alias WandererApp.Map.Operations, as: MapOperations
 
+  # No dedicated permission bit exists for signatures - same read/write split
+  # rationale as MapSystemStructureAPIController.
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    index: :view_system, show: :view_system,
+    create: :admin_map, update: :admin_map, delete: :admin_map,
+    link: :admin_map, unlink: :admin_map
+  }
+
   @moduledoc """
   API controller for managing map system signatures.
   """
