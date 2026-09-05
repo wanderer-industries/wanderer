@@ -2,10 +2,10 @@ import Config
 
 # Configure your database
 config :wanderer_app, WandererApp.Repo,
-  username: "wandererbase",
-  password: "base151416",
+  username: "postgres",
+  password: "postgres",
   hostname: "localhost",
-  database: "wanderer",
+  database: "wanderer_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
