@@ -56,7 +56,6 @@ export const useSystemSignaturesData = ({
     async (clipboardString: string) => {
       const lazyDeleteValue = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
 
-      // Parse the incoming signatures
       const incomingSignatures = parseSignatures(
         clipboardString,
         Object.keys(settings).filter(skye => skye in SignatureKind),
@@ -65,25 +64,34 @@ export const useSystemSignaturesData = ({
         return;
       }
 
+      const currentPasteIds = incomingSignatures.map(sig => sig.eve_id);
+
       setGlowingRows(current => {
         const newGlowing = new Map(current);
-        incomingSignatures.forEach(sig => {
+        incomingSignatures.forEach((sig, index) => {
           const alreadyGlowing = current.get(sig.eve_id);
+
           if (alreadyGlowing && alreadyGlowing.isNew) {
             newGlowing.set(sig.eve_id, { isNew: true });
             return;
           }
-          const isBrandNew = checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
+
+          if (alreadyGlowing && !alreadyGlowing.isNew) {
+            newGlowing.set(sig.eve_id, { isNew: false });
+            return;
+          }
+
+          const isDuplicateInThisPaste = currentPasteIds.indexOf(sig.eve_id) < index;
+          const isBrandNew = !isDuplicateInThisPaste && checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
         });
         return newGlowing;
       });
+
       // Check if any signatures might be using unsupported languages
-      // This is a basic heuristic: if we have signatures where the original group wasn't mapped
       const clipboardRows = clipboardString.split('\n').filter(row => row.trim() !== '');
       const detectedSignatureCount = clipboardRows.filter(row => row.match(/^[A-Z]{3}-\d{3}/)).length;
 
-      // If we detected valid IDs but got fewer parsed signatures, we might have language issue
       if (detectedSignatureCount > 0 && incomingSignatures.length < detectedSignatureCount) {
         setHasUnsupportedLanguage(true);
       } else {

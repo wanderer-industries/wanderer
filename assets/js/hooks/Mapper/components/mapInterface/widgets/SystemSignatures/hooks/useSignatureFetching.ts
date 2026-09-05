@@ -49,7 +49,6 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
       const actualSigs = getActualSigs(signaturesRef.current, newList, updateOnly, skipUpdateUntouched);
-
       const { added, updated, removed } = actualSigs;
 
       if (updated.length !== 0 || added.length !== 0 || removed.length !== 0) {
