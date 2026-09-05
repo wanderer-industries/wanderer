@@ -25,6 +25,8 @@ COPY priv priv
 COPY lib lib
 COPY assets assets
 
+RUN yarn config set ignore-engines true
+
 RUN mix assets.deploy
 RUN mix compile
 

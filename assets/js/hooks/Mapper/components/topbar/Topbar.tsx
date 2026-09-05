@@ -17,11 +17,14 @@ const Topbar = ({ children }: WithChildren) => {
   return (
     <nav
       className={clsx(
-        'px-2 flex items-center justify-center min-w-0 h-12 pointer-events-auto',
+        'relative px-2 flex items-center justify-center min-w-0 h-12 pointer-events-auto',
         'border-b border-stone-800 bg-gray-800 bg-opacity-5',
         'bg-opacity-70 bg-neutral-900',
       )}
     >
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-medium pointer-events-none">
+        TNA-wanderer v260904-1
+      </div>
       <span className="flex-1"></span>
       <span className="mr-2"></span>
       <div className="flex gap-1 items-center">
