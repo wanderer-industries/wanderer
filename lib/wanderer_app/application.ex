@@ -50,6 +50,17 @@ defmodule WandererApp.Application do
           ]
         }
       },
+      # Discord pool - isolated so a slow Discord cannot exhaust shared pools
+      {
+        Finch,
+        name: WandererApp.Finch.Discord,
+        pools: %{
+          default: [
+            size: Application.get_env(:wanderer_app, :finch_discord_pool_size, 10),
+            count: Application.get_env(:wanderer_app, :finch_discord_pool_count, 1)
+          ]
+        }
+      },
       # Default pool - everything else (email, license manager, etc.)
       {
         Finch,
@@ -113,6 +124,16 @@ defmodule WandererApp.Application do
       Supervisor.child_spec(
         {Cachex, name: :webhook_subscriptions_cache, default_ttl: :timer.minutes(5)},
         id: :webhook_subscriptions_cache_worker
+      ),
+      # Cache for per-map Discord notification config - 5 minute TTL
+      Supervisor.child_spec(
+        {Cachex, name: :discord_notification_cache, default_ttl: :timer.minutes(5)},
+        id: :discord_notification_cache_worker
+      ),
+      # Dedup marks for {map_id, killmail_id} - 24h, matching kill cache TTLs
+      Supervisor.child_spec(
+        {Cachex, name: :discord_dedup_cache, default_ttl: :timer.hours(24)},
+        id: :discord_dedup_cache_worker
       ),
       {Registry, keys: :unique, name: WandererApp.Character.TrackerRegistry},
       {PartitionSupervisor,
@@ -223,36 +244,41 @@ defmodule WandererApp.Application do
       sse_enabled = WandererApp.Env.sse_enabled?()
       webhooks_enabled = external_events_config[:webhooks_enabled] || false
 
-      services = []
-
-      # Always include MapEventRelay if any external events are enabled
-      services =
-        if sse_enabled || webhooks_enabled do
-          Logger.info("Starting external events system...")
-          [WandererApp.ExternalEvents.MapEventRelay | services]
-        else
-          services
-        end
-
-      # Add WebhookDispatcher if webhooks are enabled
-      services =
+      webhook_services =
         if webhooks_enabled do
           Logger.info("Starting webhook dispatcher...")
-          [WandererApp.ExternalEvents.WebhookDispatcher | services]
+
+          [
+            WandererApp.ExternalEvents.WebhookDispatcher,
+            # Supervisor before the dispatcher that routes work into it, so the
+            # first event does not find the worker tree missing.
+            WandererApp.ExternalEvents.Discord.WorkerSupervisor,
+            WandererApp.ExternalEvents.DiscordDispatcher
+          ]
         else
-          services
+          []
         end
 
-      # Add SseStreamManager if SSE is enabled
-      services =
+      sse_services =
         if sse_enabled do
           Logger.info("Starting SSE stream manager...")
-          [WandererApp.ExternalEvents.SseStreamManager | services]
+          [WandererApp.ExternalEvents.SseStreamManager]
         else
-          services
+          []
         end
 
-      Enum.reverse(services)
+      relay =
+        if sse_enabled || webhooks_enabled do
+          Logger.info("Starting external events system...")
+          # Started last: it produces the events every service above consumes,
+          # and dispatch is a cast, so anything emitted before its consumers are
+          # registered is silently dropped.
+          [WandererApp.ExternalEvents.MapEventRelay]
+        else
+          []
+        end
+
+      webhook_services ++ sse_services ++ relay
     end
   end
 end
