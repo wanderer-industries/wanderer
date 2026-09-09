@@ -32,7 +32,8 @@ config :wanderer_app,
   map_subscriptions_enabled: false,
   wanderer_kills_service_enabled: false,
   sse: [enabled: false],
-  external_events: [webhooks_enabled: false]
+  external_events: [webhooks_enabled: false],
+  discord_http_client: WandererApp.ExternalEvents.Discord.HttpStub
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

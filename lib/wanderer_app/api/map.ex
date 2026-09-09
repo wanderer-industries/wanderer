@@ -89,7 +89,16 @@ defmodule WandererApp.Api.Map do
   end
 
   actions do
-    defaults [:create, :read, :destroy]
+    defaults [:create, :read]
+
+    # Promoted out of `defaults` only to hang an after_transaction hook on it;
+    # the action is otherwise the stock primary destroy.
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      change after_transaction(&__MODULE__.after_destroy/3)
+    end
 
     read :by_slug do
       get? true
@@ -200,6 +209,9 @@ defmodule WandererApp.Api.Map do
       require_atomic? false
 
       change(set_attribute(:deleted, true))
+      # This soft delete, not the hard :destroy action, is the path users
+      # actually take (maps_live.ex, admin_maps_live.ex) — see after_destroy/3.
+      change after_transaction(&__MODULE__.after_destroy/3)
     end
 
     update :restore do
@@ -303,6 +315,32 @@ defmodule WandererApp.Api.Map do
                end
              end)
     end
+  end
+
+  @doc false
+  def after_destroy(_changeset, {:error, _} = result, _context), do: result
+
+  # Wired to both the hard `:destroy` action and the soft-delete
+  # `:mark_as_deleted` action — the latter is the path actual users take
+  # (maps_live.ex, admin_maps_live.ex), and neither leaves Discord's cache or
+  # delivery worker cleaned up on its own.
+  def after_destroy(changeset, result, _context) do
+    # Only the hard :destroy actually removes the row: map_discord_notifications_v1
+    # has `reference :map, on_delete: :delete`, so on that path its rows are
+    # removed by the database cascade and MapDiscordNotification's own
+    # after_destroy/3 never runs — its cache entry and delivery worker would
+    # survive the map otherwise. :mark_as_deleted never touches that row at
+    # all, so the same cleanup is needed there too. Both helpers tolerate a
+    # cache or registry that was never started.
+    #
+    # after_transaction, for the commit-window race documented in
+    # map_discord_notification.ex. It yields `:ok` or `{:ok, record}` depending
+    # on the action, so the id comes from the changeset either way.
+    map_id = changeset.data.id
+
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
+    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    result
   end
 
   # Generate a unique slug from map name

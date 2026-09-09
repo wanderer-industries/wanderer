@@ -718,10 +718,21 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:update_min_len, :integer, default: nil)
   attr(:available_option_class, :string, default: nil)
   attr(:value_mapper, :any, default: nil)
+  # Declared so callers inside a LiveComponent can scope the change/blur events to
+  # themselves. Both are forwarded only when set, so callers that omit them keep
+  # LiveSelect's own defaults (it derives an id from the field name).
+  attr(:id, :string, default: nil)
+  attr(:"phx-target", :any, default: nil)
   slot(:inner_block)
   slot(:option)
 
   def live_select(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    optional_opts =
+      Enum.reject(
+        [id: assigns[:id], "phx-target": assigns[:"phx-target"]],
+        fn {_key, value} -> is_nil(value) end
+      )
+
     assigns =
       assigns
       |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
@@ -734,8 +745,10 @@ defmodule WandererAppWeb.CoreComponents do
           :label_class,
           :input_class,
           :dropdown_extra_class,
-          :option_extra_class
-        ])
+          :option_extra_class,
+          :id,
+          :"phx-target"
+        ]) ++ optional_opts
       )
 
     ~H"""
