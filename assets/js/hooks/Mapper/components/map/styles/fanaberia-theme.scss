@@ -2,8 +2,7 @@
 @use './eve-common';
 @use "sass:color";
 
-
-.fanaberia-theme {
+@mixin fanaberia-theme-mainstyle {
   --rf-bg-color: #0C0A09;
   --rf-soft-bg-color: #171717;
 
@@ -94,4 +93,8 @@
   --rf-node-statics-text-shadow: 1px 0 #0e0e0e, 0 1px #0e0e0e, -1px 0 #0e0e0e, 0 -1px #0e0e0e;
   --rf-node-handle-size: 8px;
 
+}
+
+.fanaberia-theme {
+  @include fanaberia-theme-mainstyle;
 }
