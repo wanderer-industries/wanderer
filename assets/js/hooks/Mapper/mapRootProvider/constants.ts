@@ -1,6 +1,7 @@
 import {
   AvailableThemes,
   InterfaceStoredSettings,
+  JumpPlannerSettings,
   KillsWidgetSettings,
   LocalWidgetSettings,
   MapSettings,
@@ -64,6 +65,15 @@ export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
 
 export const DEFAULT_MAP_SETTINGS: MapSettings = {
   viewport: { zoom: 1, x: 0, y: 0 },
+};
+
+export const DEFAULT_JUMP_PLANNER_SETTINGS: JumpPlannerSettings = {
+  shipType: 'Rorqual',
+  jumpDriveCalibration: 5,
+  jumpFuelConservation: 4,
+  jumpFreighter: 4,
+  preferStationSystems: true,
+  avoidIncursions: true,
 };
 
 export const getDefaultWidgetProps = () => ({
