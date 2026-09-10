@@ -322,6 +322,29 @@ defmodule WandererApp.MapTestHelpers do
         wandering: [],
         triglavian_invasion_status: nil,
         sun_type_id: 45041
+      },
+      # Hek. Used as the default "start system" in location-tracking tests
+      # because, unlike Jita, it is not in @prohibited_systems and so can
+      # actually be added to a map.
+      30_002_053 => %{
+        solar_system_id: 30_002_053,
+        region_id: 10_000_042,
+        constellation_id: 20_000_302,
+        solar_system_name: "Hek",
+        solar_system_name_lc: "hek",
+        constellation_name: "Hedgehog",
+        region_name: "Metropolis",
+        system_class: 0,
+        security: "0.5",
+        type_description: "High Security",
+        class_title: "High Sec",
+        is_shattered: false,
+        effect_name: nil,
+        effect_power: nil,
+        statics: [],
+        wandering: [],
+        triglavian_invasion_status: nil,
+        sun_type_id: 45041
       }
     }
   end
@@ -333,7 +356,7 @@ defmodule WandererApp.MapTestHelpers do
   ## Parameters
   - character_id: The character ID to update
   - solar_system_id: The solar system ID where the character is located
-  - opts: Optional parameters (structure_id, station_id, ship)
+  - opts: Optional parameters (structure_id, station_id, ship, online)
 
   ## Examples
       iex> set_character_location(character.id, 30_000_142, ship: 670)
@@ -349,12 +372,18 @@ defmodule WandererApp.MapTestHelpers do
     {:ok, existing_character} = WandererApp.Character.get_character(character_id)
 
     # Update character cache (mimics Character.update_character/2)
+    # `online: true` is required, not cosmetic. When a character is offline the
+    # `{:character_online, ...}` handler in CharactersImpl DELETES the
+    # `map:<id>:character:<id>:solar_system_id` cache key that
+    # `check_location_update` just wrote, so no location change is ever observed
+    # and no system is added. Characters reporting a location are online.
     character_data =
       Map.merge(existing_character, %{
         solar_system_id: solar_system_id,
         structure_id: structure_id,
         station_id: station_id,
         ship: ship,
+        online: Keyword.get(opts, :online, true),
         updated_at: DateTime.utc_now()
       })
 
@@ -377,6 +406,45 @@ defmodule WandererApp.MapTestHelpers do
     {:ok, current_chars} = WandererApp.Cache.lookup("map_#{map_id}:presence_character_ids", [])
     updated_chars = Enum.uniq([character_id | current_chars])
     WandererApp.Cache.insert("map_#{map_id}:presence_character_ids", updated_chars)
+  end
+
+  @doc """
+  Makes a character actually tracked for `update_characters/1`.
+
+  Presence alone is NOT enough. `WandererApp.Map.get_tracked_character_ids/1`
+  requires both:
+
+    * the character to be registered on the map (`map.characters`), and
+    * a `character:<id>:map:<id>:tracking_start_time` cache key
+
+  Production sets these via `CharactersImpl.track_character/2`, which needs real
+  `MapCharacterSettings` rows and ESI access tokens. Tests short-circuit to the
+  same end state, mirroring `Character.TrackingUtils.track_character/3`.
+
+  Without this, `update_characters/1` iterates an empty list and silently does
+  nothing, which reads as "the feature is broken" rather than "the character was
+  never tracked".
+  """
+  def track_character_on_map(map_id, character_id) do
+    add_character_to_map_presence(map_id, character_id)
+
+    {:ok, character} = WandererApp.Character.get_character(character_id)
+    :ok = WandererApp.Map.add_character(map_id, character)
+
+    WandererApp.Cache.insert(
+      "character:#{character_id}:map:#{map_id}:tracking_start_time",
+      DateTime.utc_now()
+    )
+
+    # Production clears stale per-map location caches when tracking starts
+    # (TrackingUtils.track_character/4). Mirror it, so a character tracked after
+    # a previous location was cached does not appear to have "already been" at
+    # that system.
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+
+    :ok
   end
 
   @doc """

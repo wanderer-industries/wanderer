@@ -19,6 +19,11 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
   use WandererApp.IntegrationCase, async: false
 
+  # These tests start real map servers. The MapPool GenServer loads map state
+  # from the database during init, so it needs shared sandbox mode -- see
+  # WandererApp.IntegrationCase.
+  @moduletag :shared_sandbox
+
   import Mox
 
   setup :verify_on_exit!
@@ -26,15 +31,29 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
   import WandererApp.MapTestHelpers
 
   alias WandererApp.Map.Server.CharactersImpl
-  alias WandererApp.Map.Server.SystemsImpl
 
   @test_character_eve_id 2_123_456_789
 
-  # EVE Online solar system IDs for testing
-  @system_jita 30_000_142
+  # EVE Online solar system IDs for testing.
+  #
+  # NOTE: Jita (30_000_142) is deliberately NOT used here. It is hardcoded as
+  # permanently un-addable in production:
+  #
+  #     # map_server_connections_impl.ex
+  #     @jita 30_000_142
+  #     @prohibited_systems [@jita]
+  #
+  # These tests previously used Jita as the "start system" and asserted it was
+  # added to the map, which asserts behaviour the application forbids by design
+  # and can never pass. Hek is a plain hi-sec system with no such restriction, so
+  # the intent of each test (a system the character moved away from gets added)
+  # is preserved while testing behaviour that is actually reachable.
+  # The prohibition itself is pinned by its own regression test below.
+  @system_hek 30_002_053
   @system_amarr 30_002_187
   @system_dodixie 30_002_659
   @system_rens 30_002_510
+  @system_jita_prohibited 30_000_142
 
   setup do
     # Setup system static info cache for test systems
@@ -65,6 +84,11 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
         slug: "test-char-tracking-#{:rand.uniform(1_000_000)}",
         owner_id: character.id,
         scope: :all,
+        # `scopes` (array) takes precedence over `scope` in
+        # CharactersImpl.get_effective_scopes/1 and defaults to [:wormholes].
+        # Without setting it, hi-sec movement is rejected as an invalid
+        # connection and no system is ever added.
+        scopes: [:hi, :low, :null, :pochven, :wormholes],
         only_tracked_characters: false
       })
 
@@ -93,7 +117,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
     @tag :integration
     test "character location update adds system to map", %{map: map, character: character} do
       # This test verifies the basic flow:
-      # 1. Character starts tracking on a map at Jita
+      # 1. Character starts tracking on a map at Hek
       # 2. Character moves to Amarr
       # 3. update_characters() is called
       # 4. Both systems are added to the map
@@ -102,23 +126,23 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       ensure_map_started(map.id)
 
       # Setup: Add character to presence
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Setup: Character starts at Jita
-      set_character_location(character.id, @system_jita)
+      # Setup: Character starts at Hek
+      set_character_location(character.id, @system_hek)
 
       # Setup: Set start_solar_system_id (this happens when tracking starts)
       # Note: The start system is NOT added until the character moves
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # Execute: First update - start system is intentionally NOT added yet
       CharactersImpl.update_characters(map.id)
 
-      # Verify: Jita should NOT be on map yet (design: start position not added)
-      refute system_on_map?(map.id, @system_jita),
+      # Verify: Hek should NOT be on map yet (design: start position not added)
+      refute system_on_map?(map.id, @system_hek),
              "Start system should not be added until character moves"
 
       # Character moves to Amarr
@@ -128,8 +152,8 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify: Both systems should now be on map
-      assert wait_for_system_on_map(map.id, @system_jita),
-             "Jita should be added after character moves"
+      assert wait_for_system_on_map(map.id, @system_hek),
+             "Hek should be added after character moves"
 
       assert wait_for_system_on_map(map.id, @system_amarr),
              "Amarr should be added as the new location"
@@ -148,20 +172,20 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       ensure_map_started(map.id)
 
       # Setup: Add character to presence
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Setup: Character starts at Jita
-      set_character_location(character.id, @system_jita)
+      # Setup: Character starts at Hek
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # First update - start system is intentionally NOT added yet
       CharactersImpl.update_characters(map.id)
 
-      refute system_on_map?(map.id, @system_jita),
+      refute system_on_map?(map.id, @system_hek),
              "Start system should not be added until character moves"
 
       # Character moves to Amarr
@@ -171,8 +195,8 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify: Both systems should be on map after character moves
-      assert wait_for_system_on_map(map.id, @system_jita),
-             "Jita should be added after character moves"
+      assert wait_for_system_on_map(map.id, @system_hek),
+             "Hek should be added after character moves"
 
       assert wait_for_system_on_map(map.id, @system_amarr),
              "Amarr should be added as the new location"
@@ -188,31 +212,31 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # Note: Start system is NOT added until character moves (design decision)
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Character starts at Jita
-      set_character_location(character.id, @system_jita)
+      # Character starts at Hek
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # First update - start system is intentionally NOT added yet
       CharactersImpl.update_characters(map.id)
 
-      refute system_on_map?(map.id, @system_jita),
+      refute system_on_map?(map.id, @system_hek),
              "Start system should not be added until character moves"
 
       # Rapid jump to Amarr (intermediate system)
       set_character_location(character.id, @system_amarr)
 
-      # Second update - should add both Jita (start) and Amarr (current)
+      # Second update - should add both Hek (start) and Amarr (current)
       CharactersImpl.update_characters(map.id)
 
-      # Verify both Jita and Amarr are now on map
-      assert wait_for_system_on_map(map.id, @system_jita),
-             "Jita (start) should be on map after movement"
+      # Verify both Hek and Amarr are now on map
+      assert wait_for_system_on_map(map.id, @system_hek),
+             "Hek (start) should be on map after movement"
 
       assert wait_for_system_on_map(map.id, @system_amarr), "Amarr should be on map"
 
@@ -223,7 +247,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify: All three systems should be on map
-      assert wait_for_system_on_map(map.id, @system_jita), "Jita (start) should still be on map"
+      assert wait_for_system_on_map(map.id, @system_hek), "Hek (start) should still be on map"
 
       assert wait_for_system_on_map(map.id, @system_amarr),
              "Amarr (intermediate) should still be on map - this is the critical test"
@@ -240,21 +264,21 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # don't cause intermediate systems to be lost due to cache races.
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Start at Jita
-      set_character_location(character.id, @system_jita)
+      # Start at Hek
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       CharactersImpl.update_characters(map.id)
 
       # Simulate rapid updates happening faster than update_characters cycle (1 second)
       # Jump through 4 systems in quick succession
-      systems = [@system_amarr, @system_dodixie, @system_rens, @system_jita]
+      systems = [@system_amarr, @system_dodixie, @system_rens, @system_hek]
 
       for system <- systems do
         set_character_location(character.id, system)
@@ -266,7 +290,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
 
       # Verify: All systems should eventually be on the map
       # Even if some updates happened concurrently
-      for system <- [@system_jita | systems] do
+      for system <- [@system_hek | systems] do
         assert wait_for_system_on_map(map.id, system),
                "System #{system} should be on map despite rapid movements"
       end
@@ -283,15 +307,15 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # start_solar_system_id should not be lost after first use
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Set character at Jita
-      set_character_location(character.id, @system_jita)
+      # Set character at Hek
+      set_character_location(character.id, @system_hek)
 
       # Set start_solar_system_id
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # First update
@@ -301,7 +325,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       {:ok, start_system} =
         WandererApp.Cache.lookup("map:#{map.id}:character:#{character.id}:start_solar_system_id")
 
-      assert start_system == @system_jita,
+      assert start_system == @system_hek,
              "start_solar_system_id should persist after first update (not be taken/removed)"
 
       # Character moves to Amarr
@@ -311,7 +335,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify both systems are on map
-      assert wait_for_system_on_map(map.id, @system_jita)
+      assert wait_for_system_on_map(map.id, @system_hek)
       assert wait_for_system_on_map(map.id, @system_amarr)
     end
 
@@ -325,22 +349,22 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # Design: Start system is NOT added until character moves
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
-      # Character is at Jita, no previous location
-      set_character_location(character.id, @system_jita)
+      # Character is at Hek, no previous location
+      set_character_location(character.id, @system_hek)
 
       # Set start_solar_system_id
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # First update - character still at start position
       CharactersImpl.update_characters(map.id)
 
-      # Verify Jita is NOT added yet (design: start position not added until movement)
-      refute system_on_map?(map.id, @system_jita),
+      # Verify Hek is NOT added yet (design: start position not added until movement)
+      refute system_on_map?(map.id, @system_hek),
              "Start system should not be added until character moves"
 
       # Character moves to Amarr
@@ -350,8 +374,8 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       CharactersImpl.update_characters(map.id)
 
       # Verify both systems are added after movement
-      assert wait_for_system_on_map(map.id, @system_jita),
-             "Jita should be added after character moves away"
+      assert wait_for_system_on_map(map.id, @system_hek),
+             "Hek should be added after character moves away"
 
       assert wait_for_system_on_map(map.id, @system_amarr),
              "Amarr should be added as the new location"
@@ -366,7 +390,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # (Retry logic not yet implemented)
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
       test_pid = self()
 
@@ -380,12 +404,12 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
         nil
       )
 
-      # Set character at Jita and set start location
-      set_character_location(character.id, @system_jita)
+      # Set character at Hek and set start location
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # Trigger update which may encounter database issues
@@ -411,14 +435,14 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # and logged without crashing the entire update_characters cycle
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
       # Set up character location
-      set_character_location(character.id, @system_jita)
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # Run update_characters - should complete even if individual character updates fail
@@ -478,14 +502,14 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # Note: Recovery ETS table not yet implemented
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
       # Set up character with location
-      set_character_location(character.id, @system_jita)
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       # Run multiple update cycles to verify stability
@@ -528,10 +552,10 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
             })
 
           # Add character to presence and set location
-          add_character_to_map_presence(map.id, character.id)
+          track_character_on_map(map.id, character.id)
 
           solar_system_id =
-            Enum.at([@system_jita, @system_amarr, @system_dodixie, @system_rens], rem(i, 4))
+            Enum.at([@system_hek, @system_amarr, @system_dodixie, @system_rens], rem(i, 4))
 
           set_character_location(character.id, solar_system_id)
 
@@ -563,7 +587,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # emit proper telemetry events for monitoring
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
       test_pid = self()
 
@@ -582,7 +606,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       )
 
       # Set up character location
-      set_character_location(character.id, @system_jita)
+      set_character_location(character.id, @system_hek)
 
       # Trigger update_characters
       CharactersImpl.update_characters(map.id)
@@ -615,14 +639,14 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       # 3. Cachex.get(:character_state_cache, character_id) - character state
 
       ensure_map_started(map.id)
-      add_character_to_map_presence(map.id, character.id)
+      track_character_on_map(map.id, character.id)
 
       # Set location in character cache
-      set_character_location(character.id, @system_jita)
+      set_character_location(character.id, @system_hek)
 
       WandererApp.Cache.insert(
         "map:#{map.id}:character:#{character.id}:start_solar_system_id",
-        @system_jita
+        @system_hek
       )
 
       CharactersImpl.update_characters(map.id)
@@ -631,7 +655,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
       {:ok, map_cached_location} =
         WandererApp.Cache.lookup("map:#{map.id}:character:#{character.id}:solar_system_id")
 
-      assert map_cached_location == @system_jita,
+      assert map_cached_location == @system_hek,
              "Map-specific cache should match character cache"
 
       # Move character
@@ -685,7 +709,7 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
         %{
           character_id: character.id,
           map_id: map.id,
-          from_system: @system_jita,
+          from_system: @system_hek,
           to_system: @system_amarr
         }
       )
@@ -700,6 +724,45 @@ defmodule WandererApp.Map.CharacterLocationTrackingTest do
                      500
 
       :telemetry.detach("test-character-location-events")
+    end
+  end
+
+  describe "Prohibited systems" do
+    @tag :integration
+    test "Jita is never added to a map, even when a character moves through it",
+         %{map: map, character: character} do
+      # Pins the reason every other test in this module uses Hek rather than
+      # Jita as its start system. Jita is hardcoded as permanently un-addable
+      # (`@prohibited_systems [@jita]` in map_server_connections_impl.ex).
+      #
+      # If this test starts failing, the prohibition was changed or removed --
+      # revisit the constants at the top of this file rather than deleting this.
+      ensure_map_started(map.id)
+      track_character_on_map(map.id, character.id)
+
+      set_character_location(character.id, @system_jita_prohibited)
+
+      WandererApp.Cache.insert(
+        "map:#{map.id}:character:#{character.id}:start_solar_system_id",
+        @system_jita_prohibited
+      )
+
+      CharactersImpl.update_characters(map.id)
+
+      # Move away from Jita. For any non-prohibited system this is exactly the
+      # sequence that causes the start system to be added to the map.
+      set_character_location(character.id, @system_amarr)
+      CharactersImpl.update_characters(map.id)
+
+      # The prohibition is evaluated per-connection, not per-system: Jita being
+      # prohibited invalidates the whole Jita->Amarr movement, so neither
+      # endpoint is added. Assert both, so the test pins the actual semantics
+      # rather than a convenient half of them.
+      refute system_on_map?(map.id, @system_jita_prohibited),
+             "Jita is in @prohibited_systems and must never be added to a map"
+
+      refute system_on_map?(map.id, @system_amarr),
+             "A connection touching a prohibited system is rejected entirely"
     end
   end
 end

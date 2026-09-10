@@ -21,9 +21,31 @@ defmodule WandererApp.MapRepo do
       {:ok, map} ->
         map |> load_relationships(relationships)
 
-      _ ->
+      # Ash wraps NotFound inside Ash.Error.Invalid, so match the wrapped shape
+      # as well as a bare NotFound. Getting this wrong turns a genuine
+      # "map does not exist" into a generic error for every caller.
+      {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :not_found}
+
+      {:error, %Ash.Error.Invalid{errors: errors}} = error ->
+        if Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) do
+          {:error, :not_found}
+        else
+          log_get_failure(map_id, error)
+          error
+        end
+
+      {:error, _reason} = error ->
+        log_get_failure(map_id, error)
+        error
     end
+  end
+
+  # Previously every error was flattened into {:error, :not_found}, which masked
+  # infrastructure faults (e.g. DBConnection ownership errors) as "map does not
+  # exist" and made them very hard to diagnose.
+  defp log_get_failure(map_id, {:error, reason}) do
+    Logger.error("MapRepo.get failed for map #{inspect(map_id)}: #{inspect(reason)}")
   end
 
   def get_by_slug_with_permissions(map_slug, current_user) do

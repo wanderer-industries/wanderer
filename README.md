@@ -53,13 +53,19 @@ Now you can visit [`localhost:8000`](http://localhost:8000) from your browser.
 
 #### Using .devcontainer
 
-- Run devcontainer
-- Install additional dependencies inside Dev container
-- `root@0d0a785313b6:/app# apt update`
-- `root@0d0a785313b6:/app# curl -sL https://deb.nodesource.com/setup_18.x  | bash -`
-- `root@0d0a785313b6:/app# apt-get install nodejs inotify-tools -y`
-- `root@0d0a785313b6:/app# npm install -g yarn`
-- `root@0d0a785313b6:/app# mix setup`
+- Copy `.env.example` to `.env` and fill in the values
+- Open the repository in the dev container ("Reopen in Container")
+
+The image ships Erlang/Elixir pinned to `.tool-versions`, Node.js 18, yarn and
+the usual CLI tooling, and runs as the non-root `developer` user. On first
+create, `.devcontainer/setup.sh` fetches and compiles deps, creates and migrates
+the database, seeds the EVE SDE reference data if it is missing, and installs
+and builds the client assets — so there is nothing to install by hand.
+
+- If your host user id is not `1000`, export `USER_UID`/`USER_GID` before
+  building so files written through the bind mount stay host-owned. See
+  `.devcontainer/docker-compose.override.yml.example` for this and other
+  host-specific settings.
 
 - See how to run server in #Run section
 

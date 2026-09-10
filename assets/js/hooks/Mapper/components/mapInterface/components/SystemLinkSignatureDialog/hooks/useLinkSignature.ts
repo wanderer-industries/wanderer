@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { handleAutoBookmark, numberToLetters } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
@@ -52,6 +53,7 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
         targetSystemClassGroup,
         targetSystemUuid,
         targetSolarSystemIdStr,
+        getSystemStaticInfo(data.solar_system_source)?.statics,
       );
 
       if (shouldUpdate) {

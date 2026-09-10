@@ -32,9 +32,17 @@ import { PingType } from '@/hooks/Mapper/types/ping.ts';
 import type { PanelPosition } from '@reactflow/core';
 import { useHotkey } from '../../hooks/useHotkey';
 import { MINI_MAP_PLACEMENT_OFFSETS } from './constants.ts';
+import {
+  JumpPlannerField,
+  JumpPlannerInitialSystem,
+} from '@/hooks/Mapper/components/mapRootContent/components/JumpPlanner';
+
+export interface MapWrapperProps {
+  onShowJumpPlanner(initialSystem: JumpPlannerInitialSystem): void;
+}
 
 // TODO: INFO - this component needs for abstract work with Map instance
-export const MapWrapper = () => {
+export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   const {
     update,
     outCommand,
@@ -206,6 +214,20 @@ export const MapWrapper = () => {
     ref.current.systemContextProps.systemId && setOpenSettings(ref.current.systemContextProps.systemId);
   }, []);
 
+  const handleJumpFrom = useCallback(
+    (systemId: string) => {
+      onShowJumpPlanner({ field: JumpPlannerField.From, systemId });
+    },
+    [onShowJumpPlanner],
+  );
+
+  const handleJumpTo = useCallback(
+    (systemId: string) => {
+      onShowJumpPlanner({ field: JumpPlannerField.Destination, systemId });
+    },
+    [onShowJumpPlanner],
+  );
+
   const handleTogglePing = useCallback(
     async (type: PingType, solar_system_id: string, ping_id: string | undefined, hasPing: boolean) => {
       if (hasPing) {
@@ -321,6 +343,8 @@ export const MapWrapper = () => {
         userHubs={userHubs}
         {...systemContextProps}
         onOpenSettings={handleOpenSettings}
+        onJumpFrom={handleJumpFrom}
+        onJumpTo={handleJumpTo}
         onTogglePing={handleTogglePing}
         onCustomLabelDialog={handleCustomLabelDialog}
       />

@@ -30,6 +30,7 @@
 /test/
 /tmp/
 .elixir_ls
+.devcontainer/
 
 # Mix artifacts
 *.ez

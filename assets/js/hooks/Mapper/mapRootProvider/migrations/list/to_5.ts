@@ -1,10 +1,10 @@
+import { DEFAULT_JUMP_PLANNER_SETTINGS } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 import { MigrationStructure } from '@/hooks/Mapper/mapRootProvider/types.ts';
 
 export const to_5: MigrationStructure = {
   to: 5,
   up: (prev: any) => {
     const interfaceSettings = prev?.interface || {};
-
     return {
       ...prev,
       interface: {
@@ -13,6 +13,10 @@ export const to_5: MigrationStructure = {
         show_animated_border: interfaceSettings.show_animated_border ?? false,
         show_animated_outline: interfaceSettings.show_animated_outline ?? false,
         disable_animated_outlineborder: interfaceSettings.disable_animated_outlineborder ?? false,
+      },
+      jumpPlanner: {
+        ...DEFAULT_JUMP_PLANNER_SETTINGS,
+        ...prev?.jumpPlanner,
       },
     };
   },

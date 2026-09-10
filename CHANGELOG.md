@@ -2,6 +2,74 @@
 
 <!-- changelog -->
 
+## [v1.101.15](https://github.com/wanderer-industries/wanderer/compare/v1.101.14...v1.101.15) (2026-09-10)
+
+
+
+
+### Bug Fixes:
+
+* chore: revision
+
+* chore: Expand scroll height
+
+* chore: Added ability to open Jump planer from Right bar. Also changed icon for Wormholes References
+
+* chore: Refactor Jump planner
+
+* chore: Added ability to select skill levels and some additional options
+
+* chore: Added storing jump planner data. Changed selection of ship type
+
+* core: Route planner v2 first prototype
+
+## [v1.101.14](https://github.com/wanderer-industries/wanderer/compare/v1.101.13...v1.101.14) (2026-09-03)
+
+
+
+
+## [v1.101.13](https://github.com/wanderer-industries/wanderer/compare/v1.101.12...v1.101.13) (2026-08-17)
+
+
+
+
+### Bug Fixes:
+
+* tracker: characters stop moving on the map after a browser disconnect
+
+## [v1.101.12](https://github.com/wanderer-industries/wanderer/compare/v1.101.11...v1.101.12) (2026-08-16)
+
+
+
+
+## [v1.101.11](https://github.com/wanderer-industries/wanderer/compare/v1.101.10...v1.101.11) (2026-08-11)
+
+
+
+
+### Bug Fixes:
+
+* test: address upstream review findings
+
+* map: match Ash-wrapped NotFound in MapRepo.get/2
+
+* map: stop MapRepo.get/2 masking all errors as :not_found
+
+## [v1.101.10](https://github.com/wanderer-industries/wanderer/compare/v1.101.9...v1.101.10) (2026-08-10)
+
+
+
+
+## [v1.101.9](https://github.com/wanderer-industries/wanderer/compare/v1.101.8...v1.101.9) (2026-08-10)
+
+
+
+
+## [v1.101.8](https://github.com/wanderer-industries/wanderer/compare/v1.101.7...v1.101.8) (2026-08-10)
+
+
+
+
 ## [v1.101.7](https://github.com/wanderer-industries/wanderer/compare/v1.101.6...v1.101.7) (2026-07-17)
 
 

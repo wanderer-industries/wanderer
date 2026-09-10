@@ -1,0 +1,119 @@
+name: 💬 PR Test Comment
+
+# Posts the test-results comment produced by the "🧪 Test Suite" workflow.
+#
+# Why this is a separate workflow: for pull_request events from forks GitHub
+# issues a read-only GITHUB_TOKEN regardless of the `permissions:` block, so the
+# test workflow itself cannot post a comment (403 "Resource not accessible by
+# integration"). A workflow_run workflow runs in the base repository's context
+# with a writable token, so it can.
+#
+# SECURITY: this workflow runs with write permissions and must never execute
+# code from the pull request. Do not add actions/checkout of the PR head, and do
+# not run build/test tooling here. The downloaded artifact is untrusted input:
+# the comment body is passed to the API via `body-path` (never interpolated into
+# a run: block or a ${{ }} expression) and the PR number is re-validated as
+# numeric before use.
+#
+# A numeric PR number is not necessarily the *right* PR number: the artifact is
+# produced by a job that has already run fork-authored code, so it could name
+# any issue or PR in the base repository. The "Verify PR matches triggering run"
+# step below closes that by requiring the claimed PR's head SHA to equal the
+# head SHA of the run that triggered this workflow.
+
+on:
+  workflow_run:
+    # Must match the `name:` of .github/workflows/test.yml exactly.
+    workflows: ['🧪 Test Suite']
+    types: [completed]
+
+permissions:
+  contents: read
+  # `actions: read` is required: download-artifact with `run-id:` reads the
+  # artifacts of a *different* workflow run, which the default token scope does
+  # not cover. Without it the download 403s and the workflow silently posts
+  # nothing.
+  actions: read
+  # Read-only PR access is only used to verify the artifact's PR number against
+  # the triggering run's head SHA. The comment itself is an *issue* comment, so
+  # `issues: write` is the scope that grants posting.
+  pull-requests: read
+  issues: write
+
+jobs:
+  comment:
+    name: Post test results comment
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request'
+    steps:
+      - name: Download comment artifact
+        id: download
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: pr-comment
+          path: pr-comment
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read PR number
+        id: pr
+        if: steps.download.outcome == 'success'
+        run: |
+          if [ ! -f pr-comment/pr-number ] || [ ! -f pr-comment/body.md ]; then
+            echo "Artifact incomplete; nothing to post."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          number=$(tr -dc '0-9' < pr-comment/pr-number | head -c 10)
+          if [ -z "$number" ]; then
+            echo "PR number is not numeric; refusing to continue."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "valid=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify PR matches triggering run
+        if: steps.pr.outputs.valid == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          # The artifact comes from a job that ran untrusted code, so the PR
+          # number it claims is only a hint. Accept it only if that PR's head
+          # commit is the exact commit the triggering run tested; otherwise a
+          # fork could steer this privileged comment at any PR or issue.
+          actual_sha=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq .head.sha)
+
+          if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
+            echo "PR #$PR_NUMBER head is $actual_sha but the triggering run tested $EXPECTED_SHA." >&2
+            echo "Refusing to comment on a PR the artifact does not belong to." >&2
+            exit 1
+          fi
+
+          echo "PR #$PR_NUMBER head matches the triggering run ($EXPECTED_SHA)."
+
+      - name: Find existing PR comment
+        id: find_comment
+        if: steps.pr.outputs.valid == 'true'
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ steps.pr.outputs.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 🧪 Test Results Summary'
+
+      - name: Create or update PR comment
+        if: steps.pr.outputs.valid == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          edit-mode: replace
+          body-path: pr-comment/body.md

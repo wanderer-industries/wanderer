@@ -1,0 +1,10 @@
+# Host-specific devcontainer overrides.
+#
+# This file is intentionally empty and is tracked so that
+# `docker compose -f docker-compose.yml -f docker-compose.override.yml ...`
+# — the invocation devcontainer.json uses — works on a clean checkout.
+#
+# Edit it locally for host-specific settings (SSH keys, gh auth, a non-1000
+# uid, alternate Postgres port). See docker-compose.override.yml.example for
+# ready-to-uncomment snippets. Local edits here are not meant to be committed.
+services: {}
