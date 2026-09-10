@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+  <defs>
+    <mask id="diagonal-cut">
+      <rect width="24" height="24" fill="white"/>
+      <path d="M2.5 17.5C6 7.5 13 19 21 6m0 0l-4.5.25M21 6l-1 4.5" fill="none" stroke="black" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g mask="url(#diagonal-cut)">
+    <circle cx="12" cy="12" r="6.5" stroke-width="1" opacity=".5"/>
+    <circle cx="12" cy="12" r="10" stroke-width="1" opacity=".3"/>
+    <path d="M5 6l6 11 8-9" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+    <path d="M5 3.5l.65 1.85L7.5 6l-1.85.65L5 8.5l-.65-1.85L2.5 6l1.85-.65L5 3.5zm6 11l.65 1.85 1.85.65-1.85.65L11 19.5l-.65-1.85L8.5 17l1.85-.65L11 14.5zm8-9l.65 1.85 1.85.65-1.85.65L19 10.5l-.65-1.85L16.5 8l1.85-.65L19 5.5z" fill="currentColor" stroke="none"/>
+  </g>
+  <path d="M2.5 17.5C6 7.5 13 19 21 6m0 0l-4.5.25M21 6l-1 4.5" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

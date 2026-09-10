@@ -22,6 +22,7 @@ import { WindowsManagerOnChange } from '@/hooks/Mapper/components/ui-kit/WindowM
 import { DetailedKill } from '../types/kills';
 import {
   InterfaceStoredSettings,
+  JumpPlannerSettings,
   KillsWidgetSettings,
   LocalWidgetSettings,
   MapSettings,
@@ -32,6 +33,7 @@ import {
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_JUMP_PLANNER_SETTINGS,
   DEFAULT_MAP_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
   DEFAULT_ROUTES_BY_SETTINGS,
@@ -149,6 +151,8 @@ export interface MapRootContextProps {
     settingsKillsUpdate: Dispatch<SetStateAction<KillsWidgetSettings>>;
     mapSettings: MapSettings;
     mapSettingsUpdate: Dispatch<SetStateAction<MapSettings>>;
+    settingsJumpPlanner: JumpPlannerSettings;
+    settingsJumpPlannerUpdate: Dispatch<SetStateAction<JumpPlannerSettings>>;
     isReady: boolean;
     hasOldSettings: boolean;
     getSettingsForExport(): string | undefined;
@@ -198,6 +202,8 @@ const MapRootContext = createContext<MapRootContextProps>({
     settingsKillsUpdate: () => null,
     mapSettings: DEFAULT_MAP_SETTINGS,
     mapSettingsUpdate: () => null,
+    settingsJumpPlanner: DEFAULT_JUMP_PLANNER_SETTINGS,
+    settingsJumpPlannerUpdate: () => null,
     isReady: false,
     hasOldSettings: false,
     getSettingsForExport: () => '',
