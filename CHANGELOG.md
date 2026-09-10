@@ -2,6 +2,27 @@
 
 <!-- changelog -->
 
+## [v1.101.15](https://github.com/wanderer-industries/wanderer/compare/v1.101.14...v1.101.15) (2026-09-10)
+
+
+
+
+### Bug Fixes:
+
+* chore: revision
+
+* chore: Expand scroll height
+
+* chore: Added ability to open Jump planer from Right bar. Also changed icon for Wormholes References
+
+* chore: Refactor Jump planner
+
+* chore: Added ability to select skill levels and some additional options
+
+* chore: Added storing jump planner data. Changed selection of ship type
+
+* core: Route planner v2 first prototype
+
 ## [v1.101.14](https://github.com/wanderer-industries/wanderer/compare/v1.101.13...v1.101.14) (2026-09-03)
 
 

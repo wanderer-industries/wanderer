@@ -13,6 +13,8 @@ export interface ContextMenuSystemProps {
   onDeleteSystem(): void;
   onLockToggle(): void;
   onOpenSettings(): void;
+  onJumpFrom(systemId: string): void;
+  onJumpTo(systemId: string): void;
   onHubToggle(): void;
   onUserHubToggle(): void;
   onSystemTag(val?: string): void;
