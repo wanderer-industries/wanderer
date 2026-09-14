@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.102.0](https://github.com/wanderer-industries/wanderer/compare/v1.101.19...v1.102.0) (2026-09-14)
+
+
+
+
+### Features:
+
+* map: export and import map contents
+
+### Bug Fixes:
+
+* map: make an import count and carry what it says it does
+
 ## [v1.101.19](https://github.com/wanderer-industries/wanderer/compare/v1.101.18...v1.101.19) (2026-09-11)
 
 
