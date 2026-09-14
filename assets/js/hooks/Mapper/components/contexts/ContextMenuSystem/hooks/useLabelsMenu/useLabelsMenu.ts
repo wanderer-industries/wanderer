@@ -4,9 +4,9 @@ import { useCallback, useRef } from 'react';
 import { SolarSystemRawType } from '@/hooks/Mapper/types';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import clsx from 'clsx';
-import { LABELS, LABELS_INFO, LABELS_ORDER } from '@/hooks/Mapper/components/map/constants.ts';
 import { GRADIENT_MENU_ACTIVE_CLASSES } from '@/hooks/Mapper/constants.ts';
 import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 
 export const getLabels = (labels: string | null) => (labels ? (labels ?? '').split(',') : []);
 export const updateLabels = (labels: string | null, label: string) => {
@@ -27,11 +27,15 @@ export const useLabelsMenu = (
   onSystemLabels: (val: string) => void,
   onCustomLabelDialog: () => void,
 ): (() => MenuItem[]) => {
-  const ref = useRef({ onSystemLabels, systemId, systems, onCustomLabelDialog });
-  ref.current = { onSystemLabels, systemId, systems, onCustomLabelDialog };
+  const {
+    userRemoteSettings: { systemLabels },
+  } = useMapRootState();
+
+  const ref = useRef({ onSystemLabels, systemId, systems, onCustomLabelDialog, systemLabels });
+  ref.current = { onSystemLabels, systemId, systems, onCustomLabelDialog, systemLabels };
 
   return useCallback(() => {
-    const { onSystemLabels, systemId, systems, onCustomLabelDialog } = ref.current;
+    const { onSystemLabels, systemId, systems, onCustomLabelDialog, systemLabels } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
     const labels = new LabelsManager(system?.labels ?? '');
 
@@ -45,9 +49,7 @@ export const useLabelsMenu = (
       ];
     }
 
-    // const labels = getLabels(system.labels);
     const hasLabels = labels?.list?.length > 0;
-    const statusList = hasLabels ? LABELS_ORDER : LABELS_ORDER.slice(1);
 
     return [
       {
@@ -73,20 +75,26 @@ export const useLabelsMenu = (
             command: onCustomLabelDialog,
           },
           { separator: true },
-          ...statusList.map(x => ({
-            label: LABELS_INFO[x].name,
-            icon: x === LABELS.clear ? PrimeIcons.TRASH : PrimeIcons.BOOKMARK,
+          ...(hasLabels
+            ? [
+                {
+                  label: 'Clear',
+                  icon: PrimeIcons.TRASH,
+                  command: () => {
+                    labels.clearLabels();
+                    onSystemLabels(labels.toString());
+                  },
+                },
+              ]
+            : []),
+          ...systemLabels.map(x => ({
+            label: x.name,
+            icon: PrimeIcons.BOOKMARK,
             command: () => {
-              if (x === LABELS.clear) {
-                labels.clearLabels();
-                onSystemLabels(labels.toString());
-                return;
-              }
-
-              labels.toggleLabel(x);
+              labels.toggleLabel(x.id);
               onSystemLabels(labels.toString());
             },
-            className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: labels.hasLabel(x) }),
+            className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: labels.hasLabel(x.id) }),
           })),
         ],
       },

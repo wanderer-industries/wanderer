@@ -15,6 +15,8 @@ defmodule WandererApp.Map.Routes do
     avoid_pochven: false,
     avoid_edencom: false,
     avoid_triglavian: false,
+    avoid_dangerous_bridges: false,
+    avoid_bubbled_connections: false,
     include_thera: true,
     avoid: []
   }
@@ -35,6 +37,10 @@ defmodule WandererApp.Map.Routes do
     :include_eol,
     :include_frig
   ]
+
+  # bridges marked dangerous by hand, and connections with a bubble on either end, can be left
+  # out of route calculation
+  @bridge_connection_type 2
 
   @zarzakh_system 30_100_000
   @default_avoid_systems [@zarzakh_system]
@@ -114,6 +120,7 @@ defmodule WandererApp.Map.Routes do
               }
             end)
             |> Enum.uniq()
+            |> reject_avoided_connections(map_id, routes_settings)
 
           {:ok, thera_chains} =
             case routes_settings.include_thera do
@@ -279,6 +286,47 @@ defmodule WandererApp.Map.Routes do
       @logger.error("Failed to save error params: #{inspect(e)}")
       "error_saving_params"
   end
+
+  defp reject_avoided_connections(chains, map_id, routes_settings) do
+    avoid_dangerous = Map.get(routes_settings, :avoid_dangerous_bridges, false)
+    avoid_bubbled = Map.get(routes_settings, :avoid_bubbled_connections, false)
+
+    if not avoid_dangerous and not avoid_bubbled do
+      chains
+    else
+      pairs = avoided_pairs(map_id, avoid_dangerous, avoid_bubbled)
+
+      chains
+      |> Enum.reject(fn %{first: first, second: second} ->
+        MapSet.member?(pairs, pair_key(first, second))
+      end)
+    end
+  end
+
+  @doc false
+  def avoided_pairs(map_id, avoid_dangerous, avoid_bubbled) do
+    case WandererApp.MapConnectionRepo.get_by_map(map_id) do
+      {:ok, connections} ->
+        connections
+        |> Enum.filter(&avoided_connection?(&1, avoid_dangerous, avoid_bubbled))
+        |> MapSet.new(&pair_key(&1.solar_system_source, &1.solar_system_target))
+
+      _ ->
+        MapSet.new()
+    end
+  end
+
+  defp avoided_connection?(connection, avoid_dangerous, avoid_bubbled) do
+    dangerous_bridge? =
+      avoid_dangerous and connection.dangerous and
+        connection.type == @bridge_connection_type
+
+    bubbled? = avoid_bubbled and (connection.bubbled || 0) > 0
+
+    dangerous_bridge? or bubbled?
+  end
+
+  defp pair_key(first, second), do: {min(first, second), max(first, second)}
 
   defp remove_intersection(pairs_arr) do
     tuples = pairs_arr |> Enum.map(fn x -> {x.first, x.second} end)

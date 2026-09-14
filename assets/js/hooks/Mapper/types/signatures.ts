@@ -32,6 +32,7 @@ export type SignatureCustomInfo = {
   k162Type?: string;
   time_status?: number;
   isCrit?: boolean;
+  isBubbled?: boolean;
   mass_status?: number;
   bookmark_index?: number;
   bookmark_index_chained?: string;

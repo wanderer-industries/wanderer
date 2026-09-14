@@ -119,6 +119,7 @@ export type SolarSystemRawType = {
   temporary_name: string | null;
   linked_sig_eve_id: string | null;
   comments_count: number | null;
+  has_bubbled_signature?: boolean;
 
   system_static_info: SolarSystemStaticInfoRaw;
   system_signatures: SystemSignature[];

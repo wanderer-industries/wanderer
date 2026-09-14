@@ -21,6 +21,7 @@ type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   k162Type?: string;
   time_status: TimeStatus;
   mass_status: MassState;
+  isBubbled: boolean;
 };
 
 export interface MapSettingsProps {
@@ -70,6 +71,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
               k162Type: values.k162Type,
               time_status: values.time_status,
               mass_status: values.mass_status,
+              isBubbled: values.isBubbled,
             }),
           };
 
@@ -216,12 +218,14 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     let k162Type: string | undefined = undefined;
     let time_status = TimeStatus._24h;
     let mass_status = MassState.normal;
+    let isBubbled = false;
     if (custom_info) {
       const customInfo = parseSignatureCustomInfo(custom_info);
       destType = customInfo.destType;
       k162Type = customInfo.k162Type;
       time_status = customInfo.time_status ?? TimeStatus._24h;
       mass_status = customInfo.mass_status ?? MassState.normal;
+      isBubbled = customInfo.isBubbled ?? false;
     }
 
     signatureForm.reset({
@@ -230,6 +234,7 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       k162Type: k162Type,
       time_status: time_status,
       mass_status: mass_status,
+      isBubbled: isBubbled,
       ...rest,
     });
   }, [signatureForm, signatureData]);

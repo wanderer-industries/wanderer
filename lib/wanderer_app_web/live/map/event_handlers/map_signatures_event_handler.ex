@@ -208,9 +208,26 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
       |> Enum.uniq()
       |> Enum.reject(fn key -> key in saved_system_keys end)
 
+    # the system card carries a marker when one of its signatures is bubbled, so it has to be
+    # pushed again once the signatures change
+    broadcast_system_update(map_id, solar_system_id)
+
     {:noreply,
       socket
         |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)}
+  end
+
+  defp broadcast_system_update(map_id, solar_system_id) do
+    case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+           map_id: map_id,
+           solar_system_id: solar_system_id
+         }) do
+      {:ok, system} ->
+        WandererApp.Map.Server.Impl.broadcast!(map_id, :update_system, system)
+
+      _ ->
+        :ok
+    end
   end
 
   def handle_ui_event(
