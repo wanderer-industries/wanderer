@@ -134,8 +134,6 @@ export const OldSettingsDialog = () => {
         footer={
           <div className="flex items-center justify-end">
             <WdButton
-              // @ts-ignore
-              ref={cfRef}
               onClick={cfShow}
               icon="pi pi-exclamation-triangle"
               size="small"

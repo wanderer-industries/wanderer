@@ -1,5 +1,6 @@
 import {
   AvailableThemes,
+  DotlanBehavior,
   InterfaceStoredSettings,
   JumpPlannerSettings,
   KillsWidgetSettings,
@@ -24,6 +25,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   pingsPlacement: PingsPlacement.rightTop,
   minimapPlacement: MiniMapPlacement.rightBottom,
   hideBookmarkWarning: false,
+  dotlanBehavior: DotlanBehavior.system,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {

@@ -4,7 +4,12 @@ import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
-import { CONNECTIONS_CHECKBOXES_PROPS, SIGNATURES_CHECKBOXES_PROPS, SYSTEMS_CHECKBOXES_PROPS } from './constants.ts';
+import {
+  CONNECTIONS_CHECKBOXES_PROPS,
+  DOTLAN_BEHAVIOR_SETTING,
+  SIGNATURES_CHECKBOXES_PROPS,
+  SYSTEMS_CHECKBOXES_PROPS,
+} from './constants.ts';
 import {
   MapSettingsProvider,
   useMapSettings,
@@ -27,7 +32,7 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { outCommand } = useMapRootState();
 
-  const { renderSettingItem, setUserRemoteSettings, settings } = useMapSettings();
+  const { renderSettingItem, setUserRemoteSettings } = useMapSettings();
   const isAdmin = useMapCheckPermissions([UserPermission.ADMIN_MAP]);
 
   const refVars = useRef({ outCommand, onHide, visible });
@@ -80,7 +85,12 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
             </TabPanel>
 
             <TabPanel header="Systems" headerClassName={styles.verticalTabHeader}>
-              <div className="w-full h-full flex flex-col gap-1">{renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}</div>
+              <div className="flex h-full w-full flex-col gap-1">
+                {renderSettingsList(SYSTEMS_CHECKBOXES_PROPS)}
+                <div className="mt-3 border-t border-stone-800 pt-3 [&_.p-dropdown]:w-48">
+                  {renderSettingItem(DOTLAN_BEHAVIOR_SETTING)}
+                </div>
+              </div>
             </TabPanel>
 
             <TabPanel header="Connections" headerClassName={styles.verticalTabHeader}>

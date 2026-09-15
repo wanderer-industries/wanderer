@@ -66,8 +66,6 @@ export const ServerSettings = () => {
       <div className="flex flex-col gap-1">
         <div>
           <WdButton
-            // @ts-ignore
-            ref={cfRef}
             onClick={cfShow}
             icon="pi pi-file-import"
             size="small"
