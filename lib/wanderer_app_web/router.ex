@@ -291,6 +291,10 @@ defmodule WandererAppWeb.Router do
     # Map duplication endpoint
     post "/duplicate", MapAPIController, :duplicate_map
 
+    # Map contents export/import
+    get "/export", MapAPIController, :export_map
+    post "/import", MapAPIController, :import_map
+
     patch "/connections", MapConnectionAPIController, :update
     delete "/connections", MapConnectionAPIController, :delete
     delete "/systems", MapSystemAPIController, :delete_batch
@@ -315,13 +319,13 @@ defmodule WandererAppWeb.Router do
 
     get "/events", MapEventsAPIController, :list_events
 
+    # This static route must precede the resource routes so "toggle" is not parsed as :id.
+    put "/webhooks/toggle", MapAPIController, :toggle_webhooks
+
     # Webhook management endpoints
     resources "/webhooks", MapWebhooksAPIController, except: [:new, :edit] do
       post "/rotate-secret", MapWebhooksAPIController, :rotate_secret
     end
-
-    # Webhook control endpoint
-    put "/webhooks/toggle", MapAPIController, :toggle_webhooks
   end
 
   #

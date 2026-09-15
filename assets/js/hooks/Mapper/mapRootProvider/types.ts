@@ -24,6 +24,17 @@ export enum PingsPlacement {
   leftBottom = 'leftBottom',
 }
 
+export enum DotlanBehavior {
+  system = 'system',
+  security = 'sec',
+  sovereignty = 'sov',
+  constellation = 'const',
+  jumps = 'jumps',
+  kills = 'kills',
+  npcKills = 'npc',
+  npcKillsDelta = 'npc_delta',
+}
+
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowKSpace: boolean;
@@ -35,6 +46,7 @@ export type InterfaceStoredSettings = {
   minimapPlacement: MiniMapPlacement;
   pingsPlacement: PingsPlacement;
   hideBookmarkWarning: boolean;
+  dotlanBehavior: DotlanBehavior;
 };
 
 export type RoutesType = {

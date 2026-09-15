@@ -2,6 +2,55 @@
 
 <!-- changelog -->
 
+## [v1.102.0](https://github.com/wanderer-industries/wanderer/compare/v1.101.19...v1.102.0) (2026-09-14)
+
+
+
+
+### Features:
+
+* map: export and import map contents
+
+### Bug Fixes:
+
+* map: make an import count and carry what it says it does
+
+## [v1.101.19](https://github.com/wanderer-industries/wanderer/compare/v1.101.18...v1.101.19) (2026-09-11)
+
+
+
+
+### Bug Fixes:
+
+* map: Fixed links in Description - now it opens sites in new tab
+
+## [v1.101.18](https://github.com/wanderer-industries/wanderer/compare/v1.101.17...v1.101.18) (2026-09-11)
+
+
+
+
+### Bug Fixes:
+
+* make map webhooks usable
+
+## [v1.101.17](https://github.com/wanderer-industries/wanderer/compare/v1.101.16...v1.101.17) (2026-09-11)
+
+
+
+
+### Bug Fixes:
+
+* chore: Fix to_6 migration
+
+## [v1.101.16](https://github.com/wanderer-industries/wanderer/compare/v1.101.15...v1.101.16) (2026-09-11)
+
+
+
+
+### Bug Fixes:
+
+* map: Added ability to select type of dotlan opening settings for system
+
 ## [v1.101.15](https://github.com/wanderer-industries/wanderer/compare/v1.101.14...v1.101.15) (2026-09-10)
 
 
