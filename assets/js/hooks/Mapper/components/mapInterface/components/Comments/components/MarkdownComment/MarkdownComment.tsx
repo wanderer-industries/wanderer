@@ -67,8 +67,7 @@ export const MarkdownComment = ({ text, time, characterEveId, id }: MarkdownComm
               <div className="text-stone-500 max-h-[12px]">
                 {!hovered && <TimeAgo timestamp={time} />}
                 {hovered && (
-                  // @ts-ignore
-                  <div ref={cfRef}>
+                  <div>
                     <WdImgButton
                       className={clsx(PrimeIcons.TRASH, 'hover:text-red-400')}
                       tooltip={TOOLTIP_PROPS}
