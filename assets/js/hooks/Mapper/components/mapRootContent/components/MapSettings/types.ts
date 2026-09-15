@@ -3,6 +3,9 @@ import { InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider/types.ts
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
   select_on_spash = 'select_on_spash',
+  show_animated_border = 'show_animated_border',
+  show_animated_outline = 'show_animated_outline',
+  disable_animated_outlineborder = 'disable_animated_outlineborder',
   delete_connection_with_sigs = 'delete_connection_with_sigs',
   bookmark_name_format = 'bookmark_name_format',
   bookmark_custom_mapping = 'bookmark_custom_mapping',
@@ -17,6 +20,9 @@ export enum UserSettingsRemoteProps {
 
 export type UserSettingsRemote = {
   link_signature_on_splash: boolean;
+  show_animated_border: boolean;
+  show_animated_outline: boolean;
+  disable_animated_outlineborder: boolean;
   select_on_spash: boolean;
   delete_connection_with_sigs: boolean;
   bookmark_name_format: string;
