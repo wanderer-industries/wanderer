@@ -13,6 +13,14 @@ defmodule WandererAppWeb.MapSystemAPIController do
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    index: :view_system, show: :view_system,
+    list_systems: :view_system, show_system: :view_system,
+    create: :add_system,
+    update: :update_system,
+    delete: :delete_system, delete_batch: :delete_system
+  }
+
   action_fallback WandererAppWeb.FallbackController
 
   # -----------------------------------------------------------------
