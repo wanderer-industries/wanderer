@@ -22,6 +22,8 @@ const checkboxes: { label: string; propName: keyof RoutesFlagsType }[] = [
   { label: 'Avoid Pochven', propName: 'avoid_pochven' },
   { label: 'Avoid Edencom systems', propName: 'avoid_edencom' },
   { label: 'Avoid Triglavian systems', propName: 'avoid_triglavian' },
+  { label: 'Avoid dangerous bridges', propName: 'avoid_dangerous_bridges' },
+  { label: 'Avoid bubbled connections', propName: 'avoid_bubbled_connections' },
 ];
 
 export const RoutesSettingsDialog = ({ visible, setVisible }: RoutesSettingsDialog) => {

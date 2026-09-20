@@ -19,7 +19,8 @@ export const Widget = ({ label, children, windowId, contentClassName }: WidgetPr
         'flex flex-col w-full h-full rounded',
         'text-gray-200 shadow-lg',
         'border border-gray-500 border-opacity-30',
-        'bg-opacity-80 bg-neutral-900 ',
+        // the map shows through the widget, so blur what is behind it to keep the content readable
+        'bg-opacity-70 bg-neutral-900 backdrop-blur-md',
       )}
     >
       <div

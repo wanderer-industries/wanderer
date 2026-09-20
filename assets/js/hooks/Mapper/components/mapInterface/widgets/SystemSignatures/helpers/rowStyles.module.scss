@@ -2,3 +2,19 @@
   font-size: var(--rf-table-font-size, 12px) !important;
   line-height: var(--rf-table-row-line-height, 1.333);
 }
+
+// bubbled holes carry a flat, quiet amber tint so they stand out while scanning without
+// shouting over the selected and deleted row colours
+.BubbledRow {
+  td {
+    background-color: rgba(255, 176, 58, 0.12);
+  }
+
+  td:first-child {
+    box-shadow: inset 3px 0 0 0 rgba(255, 176, 58, 0.85);
+  }
+
+  &:hover td {
+    background-color: rgba(255, 176, 58, 0.18);
+  }
+}

@@ -82,6 +82,49 @@ defmodule WandererApp.Release do
     run_post_migration_tasks()
   end
 
+  @doc """
+  Brings the database up to date if it is behind, then stops.
+
+  Meant for container start: the image cannot assume anyone remembered to run `db migrate` after
+  pulling a new version, and starting against a schema that is missing columns fails in ways that
+  look like application bugs. Reports what it finds either way, and does nothing when there is
+  nothing pending, so it is cheap to run on every boot.
+
+  Set `WANDERER_AUTO_MIGRATE=false` to skip it and migrate by hand instead.
+  """
+  def auto_migrate(repos \\ repos()) do
+    if auto_migrate_enabled?() do
+      prepare()
+
+      case all_pending_migrations(repos) do
+        [] ->
+          IO.puts("Database schema is up to date.")
+
+        pending ->
+          IO.puts("Database schema is behind, running #{length(pending)} migration(s):")
+
+          Enum.each(pending, fn {repo, version, name} ->
+            IO.puts("  #{inspect(repo)} #{version} #{name}")
+          end)
+
+          interweave_migrate(repos)
+
+          IO.puts("Migrations complete.")
+      end
+    else
+      IO.puts("WANDERER_AUTO_MIGRATE is off, skipping the schema check.")
+    end
+
+    :init.stop()
+  end
+
+  defp auto_migrate_enabled? do
+    case System.get_env("WANDERER_AUTO_MIGRATE", "true") |> String.downcase() do
+      value when value in ["false", "0", "no"] -> false
+      _ -> true
+    end
+  end
+
   defp migration_streaks(pending_migrations) do
     sorted_migrations =
       pending_migrations
