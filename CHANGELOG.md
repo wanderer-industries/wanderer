@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.103.1](https://github.com/wanderer-industries/wanderer/compare/v1.103.0...v1.103.1) (2026-09-20)
+
+
+
+
+### Bug Fixes:
+
+* db: add the missing map_chain_v1.locked_by_id foreign key
+
 ## [v1.103.0](https://github.com/wanderer-industries/wanderer/compare/v1.102.0...v1.103.0) (2026-09-20)
 
 
