@@ -4,11 +4,29 @@ defmodule WandererApp.Api.MapSystemSignature do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_signatures_v1")
+  end
+
+  # /api/v1 exposes only read + delete for signatures, so only those action
+  # types are scoped here. Both are filter checks, so an out-of-scope row is
+  # invisible rather than rejected: list omits it and GET/DELETE return 404.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:system, :map_id])
+    end
+
+    policy action_type(:destroy) do
+      authorize_if WandererApp.Api.Policies.MapScoped.parent_in_token_map([:system, :map_id])
+    end
   end
 
   json_api do
