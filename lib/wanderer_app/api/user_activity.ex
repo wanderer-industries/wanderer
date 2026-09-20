@@ -4,10 +4,27 @@ defmodule WandererApp.Api.UserActivity do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource],
     primary_read_warning?: false
 
   require Ash.Expr
+
+  # user_activity is an audit log spanning all users and maps; there is no
+  # meaningful map-scoped subset, so it is hard-forbidden for token actors.
+  # `forbid_if always()` raises Ash.Error.Forbidden -> 403 on every action,
+  # deliberately NOT a filter check (which would return 200 with an empty
+  # list and imply the endpoint is legitimately available to tokens).
+  # Trusted internal User/Character actors pass via the bypass above.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy always() do
+      forbid_if always()
+    end
+  end
 
   @ash_pagify_options %{
     default_limit: 15,
