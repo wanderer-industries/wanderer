@@ -2,6 +2,17 @@
 
 <!-- changelog -->
 
+## [v1.103.2](https://github.com/wanderer-industries/wanderer/compare/v1.103.1...v1.103.2) (2026-09-20)
+
+
+
+
+### Bug Fixes:
+
+* ash: regenerate the maps_v1 snapshot for the scopes default
+
+* db: repair maps_v1.scopes charlist default
+
 ## [v1.103.1](https://github.com/wanderer-industries/wanderer/compare/v1.103.0...v1.103.1) (2026-09-20)
 
 
