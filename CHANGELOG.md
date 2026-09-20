@@ -2,6 +2,61 @@
 
 <!-- changelog -->
 
+## [v1.103.2](https://github.com/wanderer-industries/wanderer/compare/v1.103.1...v1.103.2) (2026-09-20)
+
+
+
+
+### Bug Fixes:
+
+* ash: regenerate the maps_v1 snapshot for the scopes default
+
+* db: repair maps_v1.scopes charlist default
+
+## [v1.103.1](https://github.com/wanderer-industries/wanderer/compare/v1.103.0...v1.103.1) (2026-09-20)
+
+
+
+
+### Bug Fixes:
+
+* db: add the missing map_chain_v1.locked_by_id foreign key
+
+## [v1.103.0](https://github.com/wanderer-industries/wanderer/compare/v1.102.0...v1.103.0) (2026-09-20)
+
+
+
+
+### Features:
+
+* api: guard + actor-propagate custom systems_and_connections endpoint
+
+* api: deny-by-default policies for zero-operation v1 resources
+
+* api: token-read-only ACLs and denied user_activity on v1
+
+* api: scope system-child v1 resources per real route matrix
+
+* api: enable domain authz gate + policies for direct-map_id resources
+
+* api: add MapScoped bypass/read/write policy checks
+
+* api: make /api/v1 token-only (remove session auth branch)
+
+### Bug Fixes:
+
+* duplication: address upstream review findings
+
+* map: copy action-accepted attrs and actually copy signatures on duplicate
+
+* map: copy signatures during duplication + harden endpoint guard test
+
+* map: copy only action-accepted attrs when duplicating a map
+
+* requesting another map's id returned 200 with its data.
+
+* api: replace broken Ash.Expr.ref/2 filters with nested keyword filters
+
 ## [v1.102.0](https://github.com/wanderer-industries/wanderer/compare/v1.101.19...v1.102.0) (2026-09-14)
 
 

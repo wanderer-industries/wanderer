@@ -4,11 +4,41 @@ defmodule WandererApp.Api.MapState do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_state_v1")
+  end
+
+  # Defense in depth. This resource exposes no /api/v1 routes, but it remains
+  # reachable as a relationship `include` and via any future route, so the
+  # guarantee is enforced at the Ash layer rather than relying on the route
+  # list staying empty. Token actors are forbidden outright; trusted internal
+  # User/Character actors pass via the bypass.
+  #
+  # The criterion is `json_api do` — declaring a type is what makes a resource
+  # reachable through the API surface (as an include/relationship target), with
+  # or without routes of its own. Every resource that declares one is policed:
+  # map, map_default_settings, map_solar_system, map_state, ship_type_info,
+  # user. The remaining route-less resources (character, license, the
+  # *_transaction/*_invite/*_ping/*_webhook_subscription/*_jumps set) declare no
+  # `json_api` block at all, so they are unreachable from JSON:API and a policy
+  # there would gate only internal callers.
+  #
+  # Safe for internal callers: the domain gate is `authorize :when_requested`,
+  # which only authorizes when an `actor:` key is present
+  # (ash/lib/ash/actions/helpers.ex:390). No internal caller of this resource
+  # passes an actor, so actor-less reads/writes are unaffected.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy always() do
+      forbid_if always()
+    end
   end
 
   json_api do

@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.102.0"
+  @version "1.103.2"
 
   def project do
     [
@@ -99,6 +99,11 @@ defmodule WandererApp.MixProject do
       {:ueberauth, "~> 0.10.0"},
       {:req, "~> 0.5"},
       {:ash, "~> 3.9"},
+      # Required at runtime by Ash.Policy.Authorizer: Ash/Crux resolve policy
+      # scenarios with a SAT solver, and simple_sat is an OPTIONAL dep of both.
+      # Without it, any authorized action raises UndefinedFunctionError
+      # (SimpleSat.solve/1 undefined) from Crux.satisfying_scenarios/2.
+      {:simple_sat, "~> 0.1"},
       {:ash_cloak, "~> 0.1.7"},
       {:ash_json_api, "~> 1.4"},
       {:ash_phoenix, "~> 2.1"},
