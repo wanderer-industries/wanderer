@@ -27,11 +27,36 @@ defmodule WandererApp.Api.MapSystemStructure do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_structures_v1")
+  end
+
+  # Structures expose full CRUD on /api/v1. Read/update/destroy are filter
+  # checks (out-of-scope rows are invisible -> 404); create has no existing row
+  # to filter, so it is a SimpleCheck that looks up the parent system -> 403.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:system, :map_id])
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if WandererApp.Api.Policies.MapScoped.parent_in_token_map([:system, :map_id])
+    end
+
+    policy action_type(:create) do
+      authorize_if WandererApp.Api.Policies.MapScoped.create_parent_in_token_map(
+                     WandererApp.Api.MapSystem,
+                     :system_id
+                   )
+    end
   end
 
   json_api do
