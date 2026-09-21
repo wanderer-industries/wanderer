@@ -10,6 +10,22 @@ defmodule WandererApp.Api.MapChainPassages do
   postgres do
     repo(WandererApp.Repo)
     table("map_chain_passages_v1")
+
+    # Built concurrently: passages are inserted on every jump, so a plain
+    # CREATE INDEX would block those inserts for the whole build.
+    custom_indexes do
+      # `by_connection` filters on map_id, source, target and a lower bound
+      # on inserted_at. The character activity report filters on map_id and
+      # inserted_at only, so it uses just the map_id prefix of this index.
+      index [:map_id, :solar_system_source_id, :solar_system_target_id, :inserted_at],
+        name: "map_chain_passages_v1_connection_index",
+        concurrently: true
+
+      # `WandererApp.Map.GarbageCollector.cleanup_chain_passages/0`
+      # deletes by updated_at; the retention window is configurable,
+      # so the table can grow well past the default week.
+      index [:updated_at], name: "map_chain_passages_v1_updated_at_index", concurrently: true
+    end
   end
 
   code_interface do

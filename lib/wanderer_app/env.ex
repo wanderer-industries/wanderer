@@ -4,6 +4,11 @@ defmodule WandererApp.Env do
 
   @app :wanderer_app
 
+  # Single source for the retention defaults: `config/runtime.exs` reads them
+  # through the `default_*` functions below, the getters fall back to them.
+  @default_map_chain_passages_retention_days 7
+  @default_map_system_signatures_retention_days 14
+
   @decorate cacheable(
               cache: WandererApp.Cache,
               key: "vsn_version"
@@ -111,6 +116,37 @@ defmodule WandererApp.Env do
             )
   def map_connection_eol_expire_timeout_mins(),
     do: get_key(:map_connection_eol_expire_timeout_mins)
+
+  @doc """
+  Number of days a map chain passage is kept before the daily
+  `WandererApp.Map.GarbageCollector.cleanup_chain_passages/0` job deletes it.
+
+  Configured via `WANDERER_MAP_CHAIN_PASSAGES_RETENTION_DAYS`; see
+  `default_map_chain_passages_retention_days/0`.
+  """
+  def map_chain_passages_retention_days(),
+    do: get_key(:map_chain_passages_retention_days, @default_map_chain_passages_retention_days)
+
+  @doc "Default for `map_chain_passages_retention_days/0` (#{@default_map_chain_passages_retention_days} days)."
+  def default_map_chain_passages_retention_days(), do: @default_map_chain_passages_retention_days
+
+  @doc """
+  Number of days a map system signature is kept before the daily
+  `WandererApp.Map.GarbageCollector.cleanup_system_signatures/0` job deletes it.
+
+  Configured via `WANDERER_MAP_SYSTEM_SIGNATURES_RETENTION_DAYS`; see
+  `default_map_system_signatures_retention_days/0`.
+  """
+  def map_system_signatures_retention_days(),
+    do:
+      get_key(
+        :map_system_signatures_retention_days,
+        @default_map_system_signatures_retention_days
+      )
+
+  @doc "Default for `map_system_signatures_retention_days/0` (#{@default_map_system_signatures_retention_days} days)."
+  def default_map_system_signatures_retention_days(),
+    do: @default_map_system_signatures_retention_days
 
   def get_key(key, default \\ nil), do: Application.get_env(@app, key, default)
 
