@@ -1,7 +1,7 @@
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, ExtendedSystemSignature, SignatureKind } from '@/hooks/Mapper/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import useRefState from 'react-usestateref';
 
 import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures.ts';
@@ -16,13 +16,7 @@ const DEFAULT_GLOWINGROWS_TIMEOUT = 1000;
 
 const checkIfSignatureIsBrandNew = (sigId: string, existingSignatures: ExtendedSystemSignature[]): boolean => {
   const existing = existingSignatures.find(s => s.eve_id === sigId);
-  if (!existing) return true;
-  if (!existing.updated_at) return true;
-  if (!existing.inserted_at) return true;
-  const insertedTime = new Date(existing.inserted_at).getTime();
-  const updatedTime = new Date(existing.updated_at).getTime();
-  const timeDifference = Math.abs(insertedTime - updatedTime);
-  return timeDifference < 50;
+  return !existing;
 };
 
 const extractGlowingRowsTimingKey = (glowingRowsValue: unknown): unknown => {
@@ -45,6 +39,8 @@ export const useSystemSignaturesData = ({
 
   const [glowingRows, setGlowingRows] = useState<Map<string, GlowingRowInfo>>(new Map());
 
+  const timeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
+
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({
     systemId,
     settings,
@@ -66,25 +62,40 @@ export const useSystemSignaturesData = ({
       }
 
       const currentPasteIds = incomingSignatures.map(sig => sig.eve_id);
+      const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+      const timingKey = extractGlowingRowsTimingKey(glowingRowsValue);
+      const glowingRowsTimeoutDuration =
+        SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ??
+        DEFAULT_GLOWINGROWS_TIMEOUT;
 
       setGlowingRows(current => {
         const newGlowing = new Map(current);
+
         incomingSignatures.forEach((sig, index) => {
           const alreadyGlowing = current.get(sig.eve_id);
-          if (alreadyGlowing && alreadyGlowing.isNew) {
-            newGlowing.set(sig.eve_id, { isNew: true });
-            return;
+          let isBrandNew: boolean;
+          if (alreadyGlowing) {
+            isBrandNew = alreadyGlowing.isNew;
+          } else {
+            const isDuplicateInThisPaste = currentPasteIds.indexOf(sig.eve_id) < index;
+            isBrandNew = !isDuplicateInThisPaste && checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
           }
 
-          if (alreadyGlowing && !alreadyGlowing.isNew) {
-            newGlowing.set(sig.eve_id, { isNew: false });
-            return;
-          }
-
-          const isDuplicateInThisPaste = currentPasteIds.indexOf(sig.eve_id) < index;
-          const isBrandNew = !isDuplicateInThisPaste && checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
           newGlowing.set(sig.eve_id, { isNew: isBrandNew });
+          if (timeoutsRef.current[sig.eve_id]) {
+            clearTimeout(timeoutsRef.current[sig.eve_id]);
+          }
+
+          timeoutsRef.current[sig.eve_id] = setTimeout(() => {
+            setGlowingRows(prev => {
+              const updatedMap = new Map(prev);
+              updatedMap.delete(sig.eve_id);
+              return updatedMap;
+            });
+            delete timeoutsRef.current[sig.eve_id];
+          }, glowingRowsTimeoutDuration);
         });
+
         return newGlowing;
       });
 
@@ -108,21 +119,13 @@ export const useSystemSignaturesData = ({
   );
 
   useEffect(() => {
-    if (glowingRows.size === 0) return;
-
-    const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-    const timingKey = extractGlowingRowsTimingKey(glowingRowsValue);
-
-    const glowingRowsTimeoutDuration =
-      SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ??
-      DEFAULT_GLOWINGROWS_TIMEOUT;
-
-    const glowingRowsTimer1 = setTimeout(() => {
-      setGlowingRows(new Map());
-    }, glowingRowsTimeoutDuration);
-
-    return () => clearTimeout(glowingRowsTimer1);
-  }, [glowingRows, settings, systemId]);
+    const currentTimeouts = timeoutsRef.current;
+    return () => {
+      if (currentTimeouts) {
+        Object.values(currentTimeouts).forEach(clearTimeout);
+      }
+    };
+  }, []);
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
