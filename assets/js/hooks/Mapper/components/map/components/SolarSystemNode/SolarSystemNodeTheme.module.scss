@@ -4,7 +4,7 @@
    Only override what's different from the base
    Currently none required
 ---------------------------------------------- */
-
+/* //commenting thios out, its annoing to troubleshoot when active since overriding HOME system when active
 .RootCustomNode {
   &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);
@@ -18,3 +18,4 @@
     }
   }
 }
+*/
