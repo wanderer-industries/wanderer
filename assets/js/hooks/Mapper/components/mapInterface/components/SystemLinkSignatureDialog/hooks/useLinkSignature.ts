@@ -54,6 +54,7 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
         targetSystemUuid,
         targetSolarSystemIdStr,
         getSystemStaticInfo(data.solar_system_source)?.statics,
+        sourceSystem?.tag,
       );
 
       if (shouldUpdate) {
