@@ -123,6 +123,7 @@ export const calculateBookmarkIndex = (
   currentEveId: string,
   startAtZero: boolean = false,
   separator: string = '',
+  currentSystemTag?: string | null,
 ): { index: number; chained: string; chainedLetters: string } => {
   let parentBookmarkIndex: string | undefined;
   let parentBookmarkIndexLetters: string | undefined;
@@ -162,6 +163,17 @@ export const calculateBookmarkIndex = (
         }
       }
     }
+  }
+
+  // Parent signatures are lazy-loaded, but numeric chain tags survive a reload.
+  if (
+    parentBookmarkIndex === undefined &&
+    currentSystemTag &&
+    currentSystemTag !== '00' &&
+    currentSystemTag !== '0' &&
+    (separator ? currentSystemTag.split(separator) : [currentSystemTag]).every(part => /^\d+$/.test(part))
+  ) {
+    parentBookmarkIndex = currentSystemTag;
   }
 
   const currentSigsRaw = [
@@ -426,6 +438,7 @@ export const handleAutoBookmark = async (
   targetSystemUuid?: string,
   targetSolarSystemId?: string,
   currentSystemStatics?: string[],
+  currentSystemTag?: string | null,
 ): Promise<{ updatedSignature: SystemSignature; shouldUpdate: boolean }> => {
   let updatedSignature = signature;
   let shouldUpdate = false;
@@ -480,6 +493,7 @@ export const handleAutoBookmark = async (
       signature.eve_id,
       currentSettings?.bookmark_wormholes_start_at_zero,
       separator,
+      currentSettings?.system_auto_tag === 'chain_index' ? currentSystemTag : undefined,
     );
     bookmarkIndex = calculated.index;
     info.bookmark_index = calculated.index;

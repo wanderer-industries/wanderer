@@ -11,6 +11,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
   const {
     data: { characters },
     outCommand,
+    update,
   } = useMapRootState();
 
   const deleteTimeout = useMemo(() => {
@@ -39,7 +40,8 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
-  }, [characters, systemId, outCommand]);
+    update(prev => ({ systemSignatures: { ...prev.systemSignatures, [systemId]: serverSigs } }), true);
+  }, [characters, systemId, outCommand, update, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {
