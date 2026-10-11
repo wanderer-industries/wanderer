@@ -151,7 +151,7 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
                     <WdTooltipWrapper
                       className={classes.descriptionIconWrapper}
                       position={TooltipPosition.top}
-                      content={`System have description`}
+                      content={`System has description`}
                     >
                       <i className={clsx('pi hero-chat-bubble-bottom-center-text', classes.descriptionIcon)} />
                     </WdTooltipWrapper>
