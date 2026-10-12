@@ -50,13 +50,13 @@ jobs:
           elixir-version: ${{matrix.elixir}}
         # nix build would also work here because `todos` is the default package
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ssh-key: "${{ secrets.COMMIT_KEY }}"
           fetch-depth: 0
       - name: 😅 Cache deps
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         env:
           cache-name: cache-elixir-deps
         with:
@@ -67,7 +67,7 @@ jobs:
             ${{ runner.os }}-mix-${{ matrix.elixir }}-${{ matrix.otp }}-
       - name: 😅 Cache compiled build
         id: cache-build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         env:
           cache-name: cache-compiled-build
         with:
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.get-latest-tag.outputs.tag }}
-      release-notes: ${{ steps.get-content.outputs.string }}
+      release-notes: ${{ steps.release-notes.outputs.content }}
     permissions:
       checks: write
       contents: write
@@ -131,14 +131,14 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.build.outputs.commit_hash }}
           fetch-depth: 0
 
       - name: Get Release Tag
         id: get-latest-tag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
         with:
           fallback: 1.0.0
 
@@ -149,25 +149,25 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.WANDERER_DOCKER_USER }}
           password: ${{ secrets.WANDERER_DOCKER_PASSWORD }}
 
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
@@ -188,30 +188,44 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
-      - uses: markpatterson27/markdown-to-output@v1
-        id: extract-changelog
-        with:
-          filepath: CHANGELOG.md
-
-      - name: Get content
-        uses: 2428392/gh-truncate-string-action@v1.3.0
-        id: get-content
-        with:
-          stringToTruncate: |
-            📣 Wanderer new release available 🎉
-
-            **Version**: ${{ steps.get-latest-tag.outputs.tag }}
-
-            ${{ steps.extract-changelog.outputs.body }}
-          maxLength: 500
-          truncationSymbol: "…"
+      - name: Build release notes
+        id: release-notes
+        env:
+          RELEASE_TAG: ${{ steps.get-latest-tag.outputs.tag }}
+        shell: bash
+        run: |
+          python3 <<'PY' > /tmp/release-notes.txt
+          import os
+          # Carried over unchanged from the gh-truncate-string-action inputs this replaced;
+          # don't raise toward Discord's 2000-char message cap without checking that action's intent.
+          MAX_LENGTH = 500
+          TRUNCATION_SYMBOL = '…'
+          header = (
+              '\U0001F4E3 Wanderer new release available \U0001F389\n\n'
+              '**Version**: ' + os.environ['RELEASE_TAG'] + '\n\n'
+          )
+          with open('CHANGELOG.md', encoding='utf-8') as fh:
+              content = (header + fh.read() + '\n').strip()
+          units = content.encode('utf-16-le')
+          if len(units) // 2 > MAX_LENGTH:
+              cut = (MAX_LENGTH - len(TRUNCATION_SYMBOL)) * 2
+              content = units[:cut].decode('utf-16-le', 'replace') + TRUNCATION_SYMBOL
+          print(content, end='')
+          PY
+          delimiter="EOF_$(openssl rand -hex 16)"
+          {
+            echo "content<<${delimiter}"
+            cat /tmp/release-notes.txt
+            echo ""
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
 
   merge:
     runs-on: ubuntu-latest
@@ -219,24 +233,24 @@ jobs:
       - docker
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.WANDERER_DOCKER_USER }}
           password: ${{ secrets.WANDERER_DOCKER_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ env.REGISTRY_IMAGE }}
@@ -264,18 +278,18 @@ jobs:
     needs: build
     steps:
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Get Release Tag
         id: get-latest-tag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
         with:
           fallback: 1.0.0
 
       - name: 🏷 Create Draft Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get-latest-tag.outputs.tag }}
           name: Release ${{ steps.get-latest-tag.outputs.tag }}
@@ -294,8 +308,13 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [docker, merge]
     steps:
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          content: ${{ needs.docker.outputs.release-notes }}
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_NOTES: ${{ needs.docker.outputs.release-notes }}
+        shell: bash
+        run: |
+          jq -n --arg content "$RELEASE_NOTES" '{content: $content}' \
+            | curl --fail-with-body -sS -X POST \
+                -H "Content-Type: application/json" \
+                -d @- "$DISCORD_WEBHOOK_URL"

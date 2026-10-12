@@ -25,7 +25,31 @@ defmodule WandererApp.Api.MapSystem do
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshJsonApi.Resource],
+    authorizers: [Ash.Policy.Authorizer],
     primary_read_warning?: false
+
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
+    end
+
+    policy action_type(:create) do
+      authorize_if WandererApp.Api.Policies.MapScoped.create_map_matches_token()
+    end
+
+    # Update/destroy use a FILTER check rather than a SimpleCheck.
+    # A SimpleCheck requiring original data disqualifies Ash's `:atomic` bulk
+    # strategy, which both breaks atomic updates (NoMatchingBulkStrategy) and
+    # forces the `:stream` destroy path, whose `Ash.Query.select([])` re-read
+    # returns pkey-only records that then fail Jason encoding.
+    policy action_type([:update, :destroy]) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
+    end
+  end
 
   postgres do
     repo(WandererApp.Repo)
@@ -171,6 +195,7 @@ defmodule WandererApp.Api.MapSystem do
 
     destroy :destroy do
       primary? true
+      require_atomic? false
     end
 
     create :upsert do
