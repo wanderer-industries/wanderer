@@ -33,10 +33,7 @@ import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
-
-type GlowingRowInfo = {
-  isNew: boolean;
-};
+import { GlowingRowInfo } from '../hooks/types';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
@@ -235,9 +232,10 @@ export const SystemSignaturesContent = ({
         refVars.current.selectedSignatures || [],
         refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
         glowingRows,
+        systemId,
       );
     },
-    [glowingRows],
+    [glowingRows, systemId],
   );
 
   const handleSortSettings = useCallback((e: DataTableStateEvent) => {

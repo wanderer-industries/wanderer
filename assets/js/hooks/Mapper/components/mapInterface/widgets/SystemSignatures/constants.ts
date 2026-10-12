@@ -192,6 +192,26 @@ export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
   [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED]: 30_000,
 };
 
+export function getGlowingRowsTimeoutMs(settings: SignatureSettingsType): number {
+  const raw = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+  if (raw && typeof raw === 'object' && 'value' in raw) {
+    const timing = (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value;
+    return (
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[timing] ??
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]
+    );
+  }
+
+  const timing = raw as SIGNATURES_GLOWINGROWS_TIMING | undefined;
+  if (typeof timing !== 'number') {
+    return SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT];
+  }
+
+  return (
+    SIGNATURE_GLOWINGROWS_TIMEOUTS[timing] ?? SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]
+  );
+}
+
 /*
  * Helper function to extract the deletion timeout in milliseconds from settings
  */

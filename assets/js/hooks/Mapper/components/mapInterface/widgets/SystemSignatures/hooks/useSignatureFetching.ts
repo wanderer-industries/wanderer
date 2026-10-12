@@ -2,7 +2,7 @@ import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { getDeletionTimeoutMs } from '../constants';
 import { getActualSigs, prepareUpdatePayload } from '../helpers';
 import { UseFetchingParams } from './types';
@@ -16,6 +16,9 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     data: { characters },
     outCommand,
   } = useMapRootState();
+  const systemIdRef = useRef(systemId);
+  const latestGetRequestRef = useRef(0);
+  systemIdRef.current = systemId;
 
   const deleteTimeout = useMemo(() => {
     const lazyDelete = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
@@ -27,14 +30,20 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
   }, [settings]);
 
   const handleGetSignatures = useCallback(async () => {
+    const requestId = ++latestGetRequestRef.current;
     if (!systemId) {
       setSignatures([]);
-      return;
+      return [];
     }
+    const requestedSystemId = systemId;
     const resp = await outCommand({
       type: OutCommand.getSignatures,
-      data: { system_id: systemId },
+      data: { system_id: requestedSystemId },
     });
+
+    if (systemIdRef.current !== requestedSystemId || latestGetRequestRef.current !== requestId) {
+      return;
+    }
 
     const serverSigs = ((resp as GetSignaturesResponse)?.signatures ?? []) as SystemSignature[];
 
@@ -44,6 +53,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
+    return extended;
   }, [characters, systemId, outCommand, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
@@ -57,35 +67,9 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
           type: OutCommand.updateSignatures,
           data: { ...prepareUpdatePayload(systemId, added, updated, removed), deleteTimeout },
         });
-
-        setSignatures(prev => {
-          const removedIds = removed.map(r => r.eve_id);
-          let filtered = prev.filter(s => !removedIds.includes(s.eve_id));
-          filtered = filtered.map(item => {
-            const up = updated.find(u => u.eve_id === item.eve_id);
-            if (up) {
-              const characterName = up.character_name ?? characters.find(c => c.eve_id === up.character_eve_id)?.name;
-              return {
-                ...item,
-                ...up,
-                character_name: characterName,
-              };
-            }
-            return item;
-          });
-
-          const mappedAdded = added.map(a => {
-            const characterName = a.character_name ?? characters.find(c => c.eve_id === a.character_eve_id)?.name;
-            return {
-              ...a,
-              character_name: characterName,
-            };
-          }) as ExtendedSystemSignature[];
-          return [...filtered, ...mappedAdded];
-        });
       }
     },
-    [systemId, deleteTimeout, outCommand, signaturesRef, setSignatures, characters],
+    [systemId, deleteTimeout, outCommand, signaturesRef],
   );
 
   return {

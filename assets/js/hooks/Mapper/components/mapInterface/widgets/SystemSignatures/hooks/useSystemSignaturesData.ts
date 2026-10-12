@@ -1,35 +1,19 @@
 import { useMapEventListener } from '@/hooks/Mapper/events';
 import { parseSignatures } from '@/hooks/Mapper/helpers';
 import { Commands, ExtendedSystemSignature, SignatureKind } from '@/hooks/Mapper/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useRefState from 'react-usestateref';
 
 import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures.ts';
-import { SIGNATURE_GLOWINGROWS_TIMEOUTS } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
-import { UseSystemSignaturesDataProps } from './types';
+import { getGlowingRowsTimeoutMs } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
+import { getSignatureUpdateGlows } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/helpers';
+import { GlowingRowInfo, UseSystemSignaturesDataProps } from './types';
 import { useSignatureFetching } from './useSignatureFetching';
 
-type GlowingRowInfo = {
-  isNew: boolean;
-};
-const DEFAULT_GLOWINGROWS_TIMEOUT = 1000;
-
-const checkIfSignatureIsBrandNew = (sigId: string, existingSignatures: ExtendedSystemSignature[]): boolean => {
-  const existing = existingSignatures.find(s => s.eve_id === sigId);
-  if (!existing) return true;
-  if (!existing.updated_at) return true;
-  if (!existing.inserted_at) return true;
-  const insertedTime = new Date(existing.inserted_at).getTime();
-  const updatedTime = new Date(existing.updated_at).getTime();
-  const timeDifference = Math.abs(insertedTime - updatedTime);
-  return timeDifference < 50;
-};
-
-const extractGlowingRowsTimingKey = (glowingRowsValue: unknown): unknown => {
-  if (glowingRowsValue && typeof glowingRowsValue === 'object' && 'value' in glowingRowsValue) {
-    return (glowingRowsValue as Record<string, unknown>).value;
-  }
-  return glowingRowsValue;
+const deduplicateSignatures = (signatures: ExtendedSystemSignature[]): ExtendedSystemSignature[] => {
+  const signaturesById = new Map<string, ExtendedSystemSignature>();
+  signatures.forEach(signature => signaturesById.set(signature.eve_id, signature));
+  return Array.from(signaturesById.values());
 };
 
 export const useSystemSignaturesData = ({
@@ -43,7 +27,12 @@ export const useSystemSignaturesData = ({
   const [selectedSignatures, setSelectedSignatures] = useState<ExtendedSystemSignature[]>([]);
   const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
-  const [glowingRows, setGlowingRows] = useState<Map<string, GlowingRowInfo>>(new Map());
+  const [pendingGlowingRows, setPendingGlowingRows] = useState<Map<string, GlowingRowInfo>>(() => new Map());
+  const [glowingRows, setGlowingRows] = useState<Map<string, GlowingRowInfo>>(() => new Map());
+  const glowingRowTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const loadedSystemIdRef = useRef<string | null>(null);
+
+  const glowingRowsTimeout = useMemo(() => getGlowingRowsTimeoutMs(settings), [settings]);
 
   const { handleGetSignatures, handleUpdateSignatures } = useSignatureFetching({
     systemId,
@@ -57,35 +46,30 @@ export const useSystemSignaturesData = ({
       const lazyDeleteValue = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
 
       // Parse the incoming signatures
-      const incomingSignatures = parseSignatures(
+      const parsedSignatures = parseSignatures(
         clipboardString,
-        Object.keys(settings).filter(skye => skye in SignatureKind),
+        Object.keys(settings).filter(key => key in SignatureKind),
       ) as ExtendedSystemSignature[];
+      const incomingSignatures = deduplicateSignatures(parsedSignatures);
       if (incomingSignatures.length === 0) {
         return;
       }
 
-      const currentPasteIds = incomingSignatures.map(sig => sig.eve_id);
-
-      setGlowingRows(current => {
-        const newGlowing = new Map(current);
-        incomingSignatures.forEach((sig, index) => {
-          const alreadyGlowing = current.get(sig.eve_id);
-          if (alreadyGlowing && alreadyGlowing.isNew) {
-            newGlowing.set(sig.eve_id, { isNew: true });
+      const existingSignatureIds = new Set(signaturesRef.current.map(signature => signature.eve_id));
+      setPendingGlowingRows(current => {
+        const next = new Map(current);
+        incomingSignatures.forEach(signature => {
+          const existingPendingGlow = current.get(signature.eve_id);
+          if (existingPendingGlow?.systemId === systemId) {
             return;
           }
 
-          if (alreadyGlowing && !alreadyGlowing.isNew) {
-            newGlowing.set(sig.eve_id, { isNew: false });
-            return;
-          }
-
-          const isDuplicateInThisPaste = currentPasteIds.indexOf(sig.eve_id) < index;
-          const isBrandNew = !isDuplicateInThisPaste && checkIfSignatureIsBrandNew(sig.eve_id, signaturesRef.current);
-          newGlowing.set(sig.eve_id, { isNew: isBrandNew });
+          next.set(signature.eve_id, {
+            isNew: !existingSignatureIds.has(signature.eve_id),
+            systemId,
+          });
         });
-        return newGlowing;
+        return next;
       });
 
       const clipboardRows = clipboardString.split('\n').filter(row => row.trim() !== '');
@@ -104,25 +88,68 @@ export const useSystemSignaturesData = ({
         onLazyDeleteChange?.(false);
       }
     },
-    [settings, handleUpdateSignatures, onLazyDeleteChange, signaturesRef],
+    [settings, handleUpdateSignatures, onLazyDeleteChange, signaturesRef, systemId],
   );
 
   useEffect(() => {
-    if (glowingRows.size === 0) return;
+    const glowingRowTimers = glowingRowTimersRef.current;
+    glowingRowTimers.forEach(timer => clearTimeout(timer));
+    glowingRowTimers.clear();
+    setPendingGlowingRows(new Map());
+    setGlowingRows(new Map());
 
-    const glowingRowsValue = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
-    const timingKey = extractGlowingRowsTimingKey(glowingRowsValue);
+    return () => {
+      glowingRowTimers.forEach(timer => clearTimeout(timer));
+      glowingRowTimers.clear();
+    };
+  }, [systemId]);
 
-    const glowingRowsTimeoutDuration =
-      SIGNATURE_GLOWINGROWS_TIMEOUTS[timingKey as keyof typeof SIGNATURE_GLOWINGROWS_TIMEOUTS] ??
-      DEFAULT_GLOWINGROWS_TIMEOUT;
+  useEffect(() => {
+    if (pendingGlowingRows.size === 0) return;
 
-    const glowingRowsTimer1 = setTimeout(() => {
-      setGlowingRows(new Map());
-    }, glowingRowsTimeoutDuration);
+    const visibleSignatureIds = new Set(signatures.map(signature => signature.eve_id));
+    const rowsReadyToGlow = Array.from(pendingGlowingRows.entries()).filter(([signatureId, glowInfo]) => {
+      return glowInfo.systemId === systemId && visibleSignatureIds.has(signatureId);
+    });
 
-    return () => clearTimeout(glowingRowsTimer1);
-  }, [glowingRows, settings, systemId]);
+    if (rowsReadyToGlow.length === 0) return;
+
+    setPendingGlowingRows(current => {
+      const next = new Map(current);
+      rowsReadyToGlow.forEach(([signatureId]) => next.delete(signatureId));
+      return next;
+    });
+
+    if (glowingRowsTimeout === 0) return;
+
+    setGlowingRows(current => {
+      const next = new Map(current);
+      rowsReadyToGlow.forEach(([signatureId, glowInfo]) => next.set(signatureId, glowInfo));
+      return next;
+    });
+
+    rowsReadyToGlow.forEach(([signatureId, glowInfo]) => {
+      const currentTimer = glowingRowTimersRef.current.get(signatureId);
+      if (currentTimer) {
+        clearTimeout(currentTimer);
+      }
+
+      const timer = setTimeout(() => {
+        glowingRowTimersRef.current.delete(signatureId);
+        setGlowingRows(current => {
+          const activeGlow = current.get(signatureId);
+          if (activeGlow?.systemId !== glowInfo.systemId) {
+            return current;
+          }
+
+          const next = new Map(current);
+          next.delete(signatureId);
+          return next;
+        });
+      }, glowingRowsTimeout);
+      glowingRowTimersRef.current.set(signatureId, timer);
+    });
+  }, [glowingRowsTimeout, pendingGlowingRows, signatures, systemId]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
@@ -141,17 +168,53 @@ export const useSystemSignaturesData = ({
 
   useMapEventListener(event => {
     if (event.name === Commands.signaturesUpdated && String(event.data) === String(systemId)) {
-      handleGetSignatures().then(() => {});
+      const previousSignatures = signaturesRef.current;
+      const hadLoadedSignatures = loadedSystemIdRef.current === systemId;
+
+      void handleGetSignatures().then(nextSignatures => {
+        if (!nextSignatures) {
+          return;
+        }
+
+        loadedSystemIdRef.current = systemId;
+        if (!hadLoadedSignatures) {
+          return;
+        }
+
+        const remotelyGlowingRows = getSignatureUpdateGlows(previousSignatures, nextSignatures, systemId);
+        if (remotelyGlowingRows.size === 0) {
+          return;
+        }
+
+        setPendingGlowingRows(current => {
+          const next = new Map(current);
+          remotelyGlowingRows.forEach((glowInfo, signatureId) => {
+            const localGlow = current.get(signatureId);
+            if (localGlow?.systemId === systemId) {
+              return;
+            }
+
+            next.set(signatureId, glowInfo);
+          });
+          return next;
+        });
+      });
       return true;
     }
   });
 
   useEffect(() => {
+    loadedSystemIdRef.current = null;
+    setSelectedSignatures([]);
+    setSignatures([]);
     if (!systemId) {
-      setSignatures([]);
       return;
     }
-    void handleGetSignatures();
+    void handleGetSignatures().then(nextSignatures => {
+      if (nextSignatures) {
+        loadedSystemIdRef.current = systemId;
+      }
+    });
   }, [systemId, handleGetSignatures, setSignatures]);
 
   return {
