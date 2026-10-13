@@ -12,8 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
   COMPACT_MAX_WIDTH,
-  getGroupIdByRawGroup,
-  GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
@@ -25,7 +23,7 @@ import {
   WdTooltipHandlers,
   WdTooltipWrapper,
 } from '@/hooks/Mapper/components/ui-kit';
-import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 
 import {
   renderAddedTimeLeft,
@@ -40,6 +38,7 @@ import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useToast } from '@/hooks/Mapper/ToastProvider';
 import { formatSignaturesForClipboard } from '../helpers/formatSignaturesForClipboard';
+import { isSignatureEnabledByFilters } from '../helpers/isSignatureEnabledByFilters';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import { GlowingRowInfo } from '../hooks/types';
 
@@ -242,27 +241,7 @@ export const SystemSignaturesContent = ({
         return false;
       }
 
-      if (sig.kind === SignatureKind.CosmicSignature) {
-        if (!settings[SETTINGS_KEYS.COSMIC_SIGNATURE]) {
-          return false;
-        }
-
-        if (sig.group) {
-          const enabledGroups = Object.keys(settings).filter(
-            x => GROUPS_LIST.includes(x as SignatureGroup) && settings[x as SETTINGS_KEYS],
-          );
-
-          const mappedGroup = getGroupIdByRawGroup(sig.group);
-          if (!mappedGroup) {
-            return true; // If we can't determine the group, still show it
-          }
-          return enabledGroups.includes(mappedGroup);
-        }
-
-        return true;
-      }
-
-      return settings[sig.kind] as boolean;
+      return isSignatureEnabledByFilters(sig, settings);
     };
 
     return signatures.filter(sig => shouldShowSignature(sig));
