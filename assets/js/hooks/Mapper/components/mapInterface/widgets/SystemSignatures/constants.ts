@@ -138,17 +138,18 @@ export const SIGNATURE_SETTINGS = {
   ],
   uiFlags: [
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_GROUP_COLUMN, name: 'Show Group Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_INFO_COLUMN, name: 'Show Info Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_ADDED_COLUMN, name: 'Show Added Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_UPDATED_COLUMN, name: 'Show Updated Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN, name: 'Show Description Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_CHARACTER_COLUMN, name: 'Show Character Column' },
-    { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
-    { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
     {
       type: SettingsTypes.flag,
       key: SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT,
       name: 'Show Character Portrait in Tooltip',
     },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COLOR_BY_TYPE, name: 'Color Signatures by Type' },
   ],
   uiOther: [
