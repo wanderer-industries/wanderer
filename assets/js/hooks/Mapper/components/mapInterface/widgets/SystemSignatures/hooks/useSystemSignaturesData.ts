@@ -28,7 +28,7 @@ export const useSystemSignaturesData = ({
   const [hasUnsupportedLanguage, setHasUnsupportedLanguage] = useState<boolean>(false);
 
   const [pendingGlowingRows, setPendingGlowingRows] = useState<Map<string, GlowingRowInfo>>(() => new Map());
-  const [glowingRows, setGlowingRows] = useState<Map<string, GlowingRowInfo>>(() => new Map());
+  const [glowingRows, setGlowingRows, glowingRowsRef] = useRefState<Map<string, GlowingRowInfo>>(new Map());
   const glowingRowTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const loadedSystemIdRef = useRef<string | null>(null);
 
@@ -60,7 +60,8 @@ export const useSystemSignaturesData = ({
         const next = new Map(current);
         incomingSignatures.forEach(signature => {
           const existingPendingGlow = current.get(signature.eve_id);
-          if (existingPendingGlow?.systemId === systemId) {
+          const existingActiveGlow = glowingRowsRef.current.get(signature.eve_id);
+          if (existingPendingGlow?.systemId === systemId || existingActiveGlow?.systemId === systemId) {
             return;
           }
 
@@ -88,7 +89,7 @@ export const useSystemSignaturesData = ({
         onLazyDeleteChange?.(false);
       }
     },
-    [settings, handleUpdateSignatures, onLazyDeleteChange, signaturesRef, systemId],
+    [settings, handleUpdateSignatures, onLazyDeleteChange, signaturesRef, systemId, glowingRowsRef],
   );
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export const useSystemSignaturesData = ({
       glowingRowTimers.forEach(timer => clearTimeout(timer));
       glowingRowTimers.clear();
     };
-  }, [systemId]);
+  }, [setGlowingRows, systemId]);
 
   useEffect(() => {
     if (pendingGlowingRows.size === 0) return;
@@ -149,7 +150,7 @@ export const useSystemSignaturesData = ({
       }, glowingRowsTimeout);
       glowingRowTimersRef.current.set(signatureId, timer);
     });
-  }, [glowingRowsTimeout, pendingGlowingRows, signatures, systemId]);
+  }, [glowingRowsTimeout, pendingGlowingRows, setGlowingRows, signatures, systemId]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSignatures.length) return;
@@ -190,7 +191,8 @@ export const useSystemSignaturesData = ({
           const next = new Map(current);
           remotelyGlowingRows.forEach((glowInfo, signatureId) => {
             const localGlow = current.get(signatureId);
-            if (localGlow?.systemId === systemId) {
+            const activeGlow = glowingRowsRef.current.get(signatureId);
+            if (localGlow?.systemId === systemId || activeGlow?.systemId === systemId) {
               return;
             }
 
