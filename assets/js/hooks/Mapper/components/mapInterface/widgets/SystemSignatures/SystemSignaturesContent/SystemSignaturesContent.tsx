@@ -33,6 +33,7 @@ import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSignatureRowClass } from '../helpers/rowStyles';
+import { GlowingRowInfo } from '../hooks/types';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
 
@@ -50,6 +51,7 @@ interface SystemSignaturesContentProps {
   selectable?: boolean;
   onSelect?: (signature: SystemSignature) => void;
   filterSignature?: (signature: SystemSignature) => boolean;
+  glowingRows?: Map<string, GlowingRowInfo>;
 }
 
 export const SystemSignaturesContent = ({
@@ -66,6 +68,7 @@ export const SystemSignaturesContent = ({
   selectable,
   onSelect,
   filterSignature,
+  glowingRows,
 }: SystemSignaturesContentProps) => {
   const [selectedSignatureForDialog, setSelectedSignatureForDialog] = useState<SystemSignature | null>(null);
   const [showSignatureSettings, setShowSignatureSettings] = useState(false);
@@ -218,17 +221,22 @@ export const SystemSignaturesContent = ({
   refVars.current = { settings, selectedSignatures, settingsSignatures, settingsSignaturesUpdate };
 
   // @ts-ignore
-  const getRowClassName = useCallback(rowData => {
-    if (!rowData) {
-      return null;
-    }
+  const getRowClassName = useCallback(
+    (rowData: ExtendedSystemSignature) => {
+      if (!rowData) {
+        return '';
+      }
 
-    return getSignatureRowClass(
-      rowData as ExtendedSystemSignature,
-      refVars.current.selectedSignatures || [],
-      refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
-    );
-  }, []);
+      return getSignatureRowClass(
+        rowData,
+        refVars.current.selectedSignatures || [],
+        refVars.current.settings[SETTINGS_KEYS.COLOR_BY_TYPE] as boolean,
+        glowingRows,
+        systemId,
+      );
+    },
+    [glowingRows, systemId],
+  );
 
   const handleSortSettings = useCallback((e: DataTableStateEvent) => {
     refVars.current.settingsSignaturesUpdate({
