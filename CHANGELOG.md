@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.103.5](https://github.com/wanderer-industries/wanderer/compare/v1.103.4...v1.103.5) (2026-10-13)
+
+
+
+
+### Bug Fixes:
+
+* chore: handling second paste coloring
+
+* chore: removed unnecessary files
+
+* core: Add highlighting for signatures
+
 ## [v1.103.4](https://github.com/wanderer-industries/wanderer/compare/v1.103.3...v1.103.4) (2026-09-20)
 
 
