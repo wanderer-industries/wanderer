@@ -7,18 +7,21 @@ import { WdImgButton } from './WdImgButton';
 import { TooltipPosition } from './WdTooltip';
 
 const COPY_TOOLTIP = { content: 'Copy selected', position: TooltipPosition.top };
+const EDIT_TOOLTIP = { content: 'Edit selected', position: TooltipPosition.top };
 const DELETE_TOOLTIP = { content: 'Delete selected', position: TooltipPosition.top };
 
 export interface WdSelectionToolbarProps {
   selectedCount: number;
   onCopy?: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   className?: string;
 }
 
-export const WdSelectionToolbar = ({ selectedCount, onCopy, onDelete, className }: WdSelectionToolbarProps) => {
+export const WdSelectionToolbar = ({ selectedCount, onCopy, onEdit, onDelete, className }: WdSelectionToolbarProps) => {
   const hasSelection = selectedCount > 0;
   const canCopy = hasSelection && Boolean(onCopy);
+  const canEdit = selectedCount === 1 && Boolean(onEdit);
   const canDelete = hasSelection && Boolean(onDelete);
   const { cfShow, cfHide, cfVisible, cfRef } = useConfirmPopup();
 
@@ -44,6 +47,13 @@ export const WdSelectionToolbar = ({ selectedCount, onCopy, onDelete, className 
             tooltip={COPY_TOOLTIP}
             disabled={!canCopy}
             onClick={onCopy}
+          />
+          <WdImgButton
+            className={PrimeIcons.PENCIL}
+            aria-label="Edit selected"
+            tooltip={EDIT_TOOLTIP}
+            disabled={!canEdit}
+            onClick={onEdit}
           />
           <WdImgButton
             className={clsx(PrimeIcons.TRASH, {

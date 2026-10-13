@@ -176,10 +176,22 @@ export const SystemSignaturesContent = ({
     };
   }, [handleResize]);
 
-  const handleRowClick = useCallback((e: DataTableRowClickEvent) => {
-    setSelectedSignatureForDialog(e.data as SystemSignature);
+  const openSignatureSettings = useCallback((signature: SystemSignature) => {
+    setSelectedSignatureForDialog(signature);
     setShowSignatureSettings(true);
   }, []);
+
+  const handleRowClick = useCallback(
+    (e: DataTableRowClickEvent) => {
+      openSignatureSettings(e.data as SystemSignature);
+    },
+    [openSignatureSettings],
+  );
+
+  const handleEditSelected = useCallback(() => {
+    if (selectedSignatures?.length !== 1) return;
+    openSignatureSettings(selectedSignatures[0]);
+  }, [openSignatureSettings, selectedSignatures]);
 
   const handleSelectSignatures = useCallback(
     (e: { value: SystemSignature[] }) => {
@@ -314,6 +326,7 @@ export const SystemSignaturesContent = ({
             <WdSelectionToolbar
               selectedCount={selectedSignatures?.length ?? 0}
               onCopy={handleCopySelected}
+              onEdit={handleEditSelected}
               onDelete={handleDeleteSelected}
             />
           )}
