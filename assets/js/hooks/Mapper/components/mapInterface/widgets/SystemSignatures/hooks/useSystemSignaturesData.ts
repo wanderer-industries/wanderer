@@ -10,6 +10,8 @@ import { getSignatureUpdateGlows } from '@/hooks/Mapper/components/mapInterface/
 import { GlowingRowInfo, UseSystemSignaturesDataProps } from './types';
 import { useSignatureFetching } from './useSignatureFetching';
 
+const SIGNATURE_KINDS = new Set<string>(Object.values(SignatureKind));
+
 const deduplicateSignatures = (signatures: ExtendedSystemSignature[]): ExtendedSystemSignature[] => {
   const signaturesById = new Map<string, ExtendedSystemSignature>();
   signatures.forEach(signature => signaturesById.set(signature.eve_id, signature));
@@ -48,7 +50,7 @@ export const useSystemSignaturesData = ({
       // Parse the incoming signatures
       const parsedSignatures = parseSignatures(
         clipboardString,
-        Object.keys(settings).filter(key => key in SignatureKind),
+        Object.keys(settings).filter(key => SIGNATURE_KINDS.has(key)),
       ) as ExtendedSystemSignature[];
       const incomingSignatures = deduplicateSignatures(parsedSignatures);
       if (incomingSignatures.length === 0) {
