@@ -1,0 +1,8 @@
+[
+  {
+    "name": "wanderer_dev_web",
+    "listen": "0.0.0.0:4444",
+    "upstream": "host.docker.internal:4446",
+    "enabled": true
+  }
+]

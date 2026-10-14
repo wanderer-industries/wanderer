@@ -12,14 +12,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SignatureView } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/SignatureView';
 import {
   COMPACT_MAX_WIDTH,
-  getGroupIdByRawGroup,
-  GROUPS_LIST,
   MEDIUM_MAX_WIDTH,
   OTHER_COLUMNS_WIDTH,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants';
 import { SignatureSettings } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings';
-import { TooltipPosition, WdTooltip, WdTooltipHandlers, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
-import { ExtendedSystemSignature, SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+import {
+  TooltipPosition,
+  WdSelectionToolbar,
+  WdTooltip,
+  WdTooltipHandlers,
+  WdTooltipWrapper,
+} from '@/hooks/Mapper/components/ui-kit';
+import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 
 import {
   renderAddedTimeLeft,
@@ -32,10 +36,21 @@ import { SETTINGS_KEYS, SIGNATURE_WINDOW_ID, SignatureSettingsType } from '@/hoo
 import { useClipboard, useHotkey } from '@/hooks/Mapper/hooks';
 import useMaxWidth from '@/hooks/Mapper/hooks/useMaxWidth';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { useToast } from '@/hooks/Mapper/ToastProvider';
+import { formatSignaturesForClipboard } from '../helpers/formatSignaturesForClipboard';
+import { isSignatureEnabledByFilters } from '../helpers/isSignatureEnabledByFilters';
 import { getSignatureRowClass } from '../helpers/rowStyles';
 import { GlowingRowInfo } from '../hooks/types';
 
 const renderColIcon = (sig: SystemSignature) => renderIcon(sig);
+const SELECT_ALL_HOTKEYS = ['a', 'KeyA'];
+const DELETE_HOTKEYS = ['Backspace', 'Delete'];
+const SIGNATURE_WINDOW_SELECTOR = `[data-window-id="${SIGNATURE_WINDOW_ID}"]`;
+
+const isEventInsideSignatureWindow = (event: KeyboardEvent): boolean => {
+  if (!(event.target instanceof Element)) return false;
+  return Boolean(event.target.closest(SIGNATURE_WINDOW_SELECTOR));
+};
 
 interface SystemSignaturesContentProps {
   systemId: string;
@@ -86,6 +101,7 @@ export const SystemSignaturesContent = ({
   const isMedium = useMaxWidth(tableRef, MEDIUM_MAX_WIDTH);
 
   const { clipboardContent, setClipboardContent } = useClipboard();
+  const { show: showToast } = useToast();
 
   const deletedSignatures = useMemo(() => signatures.filter(s => s.deleted), [signatures]);
 
@@ -98,21 +114,48 @@ export const SystemSignaturesContent = ({
     setClipboardContent(null);
   }, [selectable, clipboardContent, onPaste, setClipboardContent]);
 
-  useHotkey(true, ['a'], () => onSelectAll?.());
-
-  useHotkey(false, ['Backspace', 'Delete'], (event: KeyboardEvent) => {
-    const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${SIGNATURE_WINDOW_ID}"]`);
-
-    if (!targetWindow) {
-      return;
+  useHotkey(true, SELECT_ALL_HOTKEYS, (event: KeyboardEvent) => {
+    if (!onSelectAll || !isEventInsideSignatureWindow(event)) {
+      return false;
     }
 
-    event.preventDefault();
+    event.stopPropagation();
+    onSelectAll();
+    return true;
+  });
+
+  useHotkey(false, DELETE_HOTKEYS, (event: KeyboardEvent) => {
+    if (!isEventInsideSignatureWindow(event)) {
+      return false;
+    }
+
     event.stopPropagation();
 
     // Delete key should always immediately delete, never show pending deletions
     onDeleteSelected?.();
+    return true;
   });
+
+  const handleCopySelected = useCallback(async () => {
+    if (!selectedSignatures?.length) return;
+
+    try {
+      await navigator.clipboard.writeText(formatSignaturesForClipboard(selectedSignatures));
+      const signatureLabel = selectedSignatures.length === 1 ? 'signature' : 'signatures';
+      showToast({
+        severity: 'success',
+        summary: 'Copied to clipboard',
+        detail: `Successfully copied ${selectedSignatures.length} ${signatureLabel}`,
+        life: 3000,
+      });
+    } catch (error) {
+      console.error('Clipboard write error:', error);
+    }
+  }, [selectedSignatures, showToast]);
+
+  const handleDeleteSelected = useCallback(() => {
+    void onDeleteSelected?.();
+  }, [onDeleteSelected]);
 
   const handleResize = useCallback(() => {
     if (!tableRef.current) return;
@@ -132,10 +175,22 @@ export const SystemSignaturesContent = ({
     };
   }, [handleResize]);
 
-  const handleRowClick = useCallback((e: DataTableRowClickEvent) => {
-    setSelectedSignatureForDialog(e.data as SystemSignature);
+  const openSignatureSettings = useCallback((signature: SystemSignature) => {
+    setSelectedSignatureForDialog(signature);
     setShowSignatureSettings(true);
   }, []);
+
+  const handleRowClick = useCallback(
+    (e: DataTableRowClickEvent) => {
+      openSignatureSettings(e.data as SystemSignature);
+    },
+    [openSignatureSettings],
+  );
+
+  const handleEditSelected = useCallback(() => {
+    if (selectedSignatures?.length !== 1) return;
+    openSignatureSettings(selectedSignatures[0]);
+  }, [openSignatureSettings, selectedSignatures]);
 
   const handleSelectSignatures = useCallback(
     (e: { value: SystemSignature[] }) => {
@@ -144,15 +199,19 @@ export const SystemSignaturesContent = ({
         sig => !deletedSignatures.some(deleted => deleted.eve_id === sig.eve_id),
       );
 
-      selectable
-        ? onSelect?.(selectableSignatures[0])
-        : onSelectSignatures?.(selectableSignatures as ExtendedSystemSignature[]);
+      if (selectable) {
+        onSelect?.(selectableSignatures[0]);
+        return;
+      }
+
+      onSelectSignatures?.(selectableSignatures as ExtendedSystemSignature[]);
     },
     [onSelect, selectable, onSelectSignatures, deletedSignatures],
   );
 
   const {
     showGroupColumn,
+    showInfoColumn,
     showDescriptionColumn,
     showAddedColumn,
     showUpdatedColumn,
@@ -161,6 +220,7 @@ export const SystemSignaturesContent = ({
   } = useMemo(
     () => ({
       showGroupColumn: settings[SETTINGS_KEYS.SHOW_GROUP_COLUMN] as boolean,
+      showInfoColumn: settings[SETTINGS_KEYS.SHOW_INFO_COLUMN] !== false,
       showDescriptionColumn: settings[SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN] as boolean,
       showAddedColumn: settings[SETTINGS_KEYS.SHOW_ADDED_COLUMN] as boolean,
       showUpdatedColumn: settings[SETTINGS_KEYS.SHOW_UPDATED_COLUMN] as boolean,
@@ -181,27 +241,7 @@ export const SystemSignaturesContent = ({
         return false;
       }
 
-      if (sig.kind === SignatureKind.CosmicSignature) {
-        if (!settings[SETTINGS_KEYS.COSMIC_SIGNATURE]) {
-          return false;
-        }
-
-        if (sig.group) {
-          const enabledGroups = Object.keys(settings).filter(
-            x => GROUPS_LIST.includes(x as SignatureGroup) && settings[x as SETTINGS_KEYS],
-          );
-
-          const mappedGroup = getGroupIdByRawGroup(sig.group);
-          if (!mappedGroup) {
-            return true; // If we can't determine the group, still show it
-          }
-          return enabledGroups.includes(mappedGroup);
-        }
-
-        return true;
-      }
-
-      return settings[sig.kind] as boolean;
+      return isSignatureEnabledByFilters(sig, settings);
     };
 
     return signatures.filter(sig => shouldShowSignature(sig));
@@ -247,7 +287,7 @@ export const SystemSignaturesContent = ({
   }, []);
 
   return (
-    <div ref={tableRef} className="h-full">
+    <div ref={tableRef} className="flex h-full min-h-0 flex-col">
       {filteredSignatures.length === 0 ? (
         <div className="w-full h-full flex justify-center items-center select-none text-stone-400/80 text-sm">
           No signatures
@@ -261,6 +301,14 @@ export const SystemSignaturesContent = ({
               details.
             </div>
           )}
+          {!selectable && (
+            <WdSelectionToolbar
+              selectedCount={selectedSignatures?.length ?? 0}
+              onCopy={handleCopySelected}
+              onEdit={handleEditSelected}
+              onDelete={handleDeleteSelected}
+            />
+          )}
           <DataTable
             value={filteredSignatures}
             size="small"
@@ -269,7 +317,7 @@ export const SystemSignaturesContent = ({
             metaKeySelection
             onSelectionChange={handleSelectSignatures}
             dataKey="eve_id"
-            className="w-full select-none"
+            className="min-h-0 w-full flex-1 select-none"
             resizableColumns={false}
             rowHover
             selectAll
@@ -307,16 +355,18 @@ export const SystemSignaturesContent = ({
                 sortable
               />
             )}
-            <Column
-              field="info"
-              header="Info"
-              bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
-              style={{ maxWidth: nameColumnWidth }}
-              hidden={isCompact || isMedium}
-              body={renderInfoColumn}
-              sortable
-              sortField="name"
-            />
+            {showInfoColumn && (
+              <Column
+                field="info"
+                header="Info"
+                bodyClassName="text-ellipsis overflow-hidden whitespace-nowrap"
+                style={{ maxWidth: nameColumnWidth }}
+                hidden={isCompact || isMedium}
+                body={renderInfoColumn}
+                sortable
+                sortField="name"
+              />
+            )}
             {showDescriptionColumn && (
               <Column
                 field="description"
