@@ -43,7 +43,22 @@ case $COMMAND in
     cd assets && yarn watch
     ;;
   s|server|start)
+    bash scripts/toxiproxy.sh stop
     source .env && MIX_ENV=dev iex -S mix phx.server
+    ;;
+  s:p|server:proxy|start:proxy)
+    bash scripts/toxiproxy.sh start
+    trap 'bash scripts/toxiproxy.sh stop' EXIT
+    source .env && PORT=4446 WEB_APP_URL=http://localhost:4444 MIX_ENV=dev iex -S mix phx.server
+    ;;
+  s:p:f|server:proxy:fast|start:proxy:fast)
+    bash scripts/toxiproxy.sh profile fast
+    ;;
+  s:p:s|server:proxy:slow|start:proxy:slow)
+    bash scripts/toxiproxy.sh profile slow
+    ;;
+  s:p:u|server:proxy:unstable|start:proxy:unstable)
+    bash scripts/toxiproxy.sh profile unstable
     ;;
   m|migrate)
     MIX_ENV=dev mix ash.migrate
@@ -70,7 +85,7 @@ case $COMMAND in
     echo
     ;;
   *)
-    echo "Usage: $0 {e|env|i|install|dg|deps|depsf|d|deploy|c|cleanup|y|yarn|s|server|start|m|migrate|f|format|t|test|cover|coverage|co|v|versions|watch|seeds}"
+    echo "Usage: $0 {e|env|i|install|dg|deps|depsf|d|deploy|c|cleanup|y|yarn|s|server|start|s:p|s:p:f|s:p:s|s:p:u|m|migrate|f|format|t|test|cover|coverage|co|v|versions|watch|seeds}"
     exit 1
     ;;
 esac
