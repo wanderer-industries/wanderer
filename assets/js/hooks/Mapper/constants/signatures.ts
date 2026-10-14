@@ -25,6 +25,7 @@ export enum SETTINGS_KEYS {
   SHOW_CHARACTER_PORTRAIT = 'show_character_portrait',
   SHOW_DESCRIPTION_COLUMN = 'show_description_column',
   SHOW_GROUP_COLUMN = 'show_group_column',
+  SHOW_INFO_COLUMN = 'show_info_column',
   SHOW_UPDATED_COLUMN = 'show_updated_column',
   LAZY_DELETE_SIGNATURES = 'lazy_delete_signatures',
   KEEP_LAZY_DELETE = 'keep_lazy_delete_enabled',
@@ -57,6 +58,7 @@ export const DEFAULT_SIGNATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.SORT_ORDER]: -1,
 
   [SETTINGS_KEYS.SHOW_GROUP_COLUMN]: true,
+  [SETTINGS_KEYS.SHOW_INFO_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_ADDED_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_UPDATED_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
