@@ -2,6 +2,19 @@
 
 <!-- changelog -->
 
+## [v1.103.6](https://github.com/wanderer-industries/wanderer/compare/v1.103.5...v1.103.6) (2026-10-14)
+
+
+
+
+### Bug Fixes:
+
+* signatures: Fixed filtering combat sites
+
+* signatures: Added button for edit signature in toolbar
+
+* signatures: Added QoL for signatures - Ctrl + A allow select all. Fixed colors for selected rows. Added toolbar for delete and copy selected sigs. Added toxiproxy for debugging mapper locally with delays
+
 ## [v1.103.5](https://github.com/wanderer-industries/wanderer/compare/v1.103.4...v1.103.5) (2026-10-13)
 
 
