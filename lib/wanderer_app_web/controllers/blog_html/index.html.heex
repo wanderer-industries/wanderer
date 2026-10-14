@@ -2,18 +2,18 @@
   <canvas id="bg-canvas"></canvas>
   <div class="h-full w-full flex flex-col items-center">
     <!--Main-->
-    <div class="artboard artboard-horizontal phone-3 pt-10 !h-40">
-      <div class="container pt-5 mx-auto flex flex-wrap flex-row justify-center items-center gap-8">
+    <div class="artboard artboard-horizontal phone-3 max-w-full pt-10 !h-40">
+      <div class="crimson-harvest-frame-bright container min-h-[74px] mt-[7px] mx-auto flex flex-wrap flex-row justify-center items-center gap-8">
         <!--Left Col-->
         <div class="flex flex-col justify-center items-center overflow-y-hidden">
-          <h1 class="ccp-font my-4 pr-4 text-2xl text-white font-bold leading-tight text-center md:text-left [text-shadow:0_0px_8px_rgba(0,0,0,0.8)]">
+          <h1 class="ccp-font my-4 px-8 py-1 text-2xl text-stone-200 font-bold leading-tight text-center md:text-left [text-shadow:0_0px_8px_rgba(0,0,0,0.7)]">
             THE #1 EVE MAPPER TOOL
           </h1>
         </div>
         <!--Right Col-->
-        <div :if={@invite_token_valid} class="overflow-hidden">
-          <div class="!z-100 relative group alert items-center fade-in-scale text-white w-[224px] h-[44px] rounded p-px overflow-hidden">
-            <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#0ea5e9_20deg,transparent_120deg)] group-hover:bg-[#0ea5e9]" />
+        <div :if={@invite_token_valid} class="overflow-visible">
+          <div class="login-red-glow !z-100 relative group alert items-center fade-in-scale text-white w-[224px] h-[44px] rounded p-px overflow-hidden">
+            <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#ef1b1b_20deg,transparent_120deg)] group-hover:bg-[#ef1b1b]" />
             <div class="!bg-black  rounded w-[220px] h-[40px] flex items-center justify-center relative z-20">
               <.link navigate={~p"/auth/eve?invite=#{@invite_token}"} class="opacity-100">
                 <img
@@ -26,32 +26,35 @@
         </div>
       </div>
     </div>
+
     <div
       id="posts-container"
-      class="bg-neutral rounded-box max-w-[90%] p-4 max-h-[60vh] overflow-y-auto relative z-1"
+      class="bg-neutral rounded-box max-w-[90%] p-4 max-h-[calc(100vh-25rem)] overflow-y-auto relative z-1"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
         <%= for post <- @posts do %>
           <.link class="group carousel-item relative my-2 mx-2" navigate={~p"/news/#{post.id}"}>
-            <div class="artbard-hoorizontal phone-1 relative hover:text-white">
+            <div class="crimson-harvest-frame artbard-hoorizontal phone-1 relative overflow-hidden hover:text-white">
               <img
                 class="rounded-m shadow-lg block !w-[300px] !h-[180px] opacity-75 !m-0"
                 src={post.cover_image_uri}
               />
               <div class="absolute rounded-m top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300">
               </div>
-              <div class="absolute w-full bottom-2 p-4">
+
+              <div class="absolute w-full min-w-0 overflow-hidden bottom-2 p-4">
                 <% {first_part, second_part} =
                   case String.split(post.title, ":", parts: 2) do
                     [first, second] -> {first, second}
                     [first] -> {first, nil}
                   end %>
-                <h3 class="!m-0 !text-s font-bold break-normal ccp-font whitespace-nowrap text-white">
+                <h3 class="!m-0 !text-s w-full truncate font-bold ccp-font text-white">
                   {first_part}
                 </h3>
+
                 <p
                   :if={second_part}
-                  class="!m-0 !text-s text-white text-ellipsis overflow-hidden whitespace-nowrap ccp-font"
+                  class="!m-0 !text-s w-full truncate text-white ccp-font"
                 >
                   {second_part}
                 </p>
@@ -64,6 +67,7 @@
 
     <script>
     </script>
+
     <%!-- <div class="carousel carousel-center !bg-neutral rounded-box max-w-4xl space-x-6 p-4">
 
     </div> --%>

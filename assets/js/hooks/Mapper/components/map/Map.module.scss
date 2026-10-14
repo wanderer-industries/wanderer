@@ -1,11 +1,112 @@
 .MapRoot {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: 100%;
   height: 100%;
 
   background-color: var(--rf-bg-color, #0C0A09);
 
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 0;
+    pointer-events: none;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: translate(-50%, -50%);
+  }
+
+  &::before {
+    width: auto;
+    height: 70%;
+    aspect-ratio: 2117 / 1200;
+    background-image: url('/images/character-selection-background.png');
+    background-size: contain;
+    mask-image: radial-gradient(ellipse at center, #000 42%, rgb(0 0 0 / 92%) 58%, transparent 100%);
+    opacity: 0.046;
+    animation: mapBackgroundGlow 53s ease-in-out -17s infinite alternate;
+  }
+
+  &::after {
+    width: auto;
+    height: 17%;
+    aspect-ratio: 4416 / 1518;
+    background-image: url('/images/crimson-harvest-logo.png');
+    background-size: contain;
+    opacity: 0.092;
+    animation: mapLogoGlow 71s ease-in-out -31s infinite alternate;
+  }
+
+  > :global(.react-flow) {
+    position: relative;
+    z-index: 1;
+  }
+
   &.BackgroundAlternateColor {
     background-color: var(--rf-soft-bg-color, #171717);
     --rf-node-bg-color: var(--rf-node-soft-bg-color, #202020);
+  }
+}
+
+@keyframes mapBackgroundGlow {
+  0% {
+    opacity: 0.043;
+  }
+
+  19% {
+    opacity: 0.051;
+  }
+
+  43% {
+    opacity: 0.039;
+  }
+
+  67% {
+    opacity: 0.053;
+  }
+
+  84% {
+    opacity: 0.044;
+  }
+
+  100% {
+    opacity: 0.049;
+  }
+}
+
+@keyframes mapLogoGlow {
+  0% {
+    opacity: 0.084;
+  }
+
+  23% {
+    opacity: 0.101;
+  }
+
+  48% {
+    opacity: 0.081;
+  }
+
+  72% {
+    opacity: 0.097;
+  }
+
+  91% {
+    opacity: 0.087;
+  }
+
+  100% {
+    opacity: 0.104;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .MapRoot::before,
+  .MapRoot::after {
+    animation: none;
   }
 }
