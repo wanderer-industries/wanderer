@@ -95,32 +95,7 @@ body > div:first-of-type {
 }
 
 .crimson-harvest-frame {
-  background: transparent;
   box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
-  transition:
-    border-color 300ms ease,
-    box-shadow 300ms ease;
-}
-
-.crimson-harvest-card-caption {
-  background-color: rgb(77 21 21 / 65%);
-  border-top: 2px solid #ff5656;
-  box-shadow: 0 -6px 36px -3px #ff1919;
-  transition:
-    background-color 300ms ease,
-    border-color 300ms ease,
-    box-shadow 300ms ease;
-}
-
-.group:hover .crimson-harvest-frame {
-  border-color: #ff7777;
-  box-shadow: 0 0 30px 7px rgb(255 25 25 / 48%);
-}
-
-.group:hover .crimson-harvest-card-caption {
-  background-color: rgb(94 23 23 / 78%);
-  border-top-color: #ff7777;
-  box-shadow: 0 -8px 42px -3px rgb(255 25 25 / 90%);
 }
 
 .crimson-harvest-frame-bright {
@@ -131,6 +106,19 @@ body > div:first-of-type {
   width: min(640px, calc(100% - 2rem));
   padding: 1.5rem clamp(1rem, 5vw, 3rem);
   box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
+}
+
+.crimson-harvest-news-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 90%;
+  max-height: calc(100vh - 25rem);
+  overflow-y: auto;
+  border: 2px solid #ffadad80;
+  background: rgb(0 0 0 / 20%);
+  padding: 2rem 4rem;
+  box-shadow: 0 0 26px 6px rgb(181 9 9);
+  backdrop-filter: blur(3px);
 }
 
 #posts-container {
