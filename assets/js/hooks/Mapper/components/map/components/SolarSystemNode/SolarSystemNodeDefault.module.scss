@@ -306,7 +306,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: var(--rf-node-bottom-height, 19px);
+  height: var(--rf-node-bottom-height, 20px);
   color: var(--rf-node-bottom-color, #ffffff);
   text-shadow: var(--rf-node-bottom-text-shadow);
 
@@ -351,9 +351,9 @@
 }
 
 .descriptionIcon {
-  width: var(--rf-node-description-icon-size, 10px);
-  height: var(--rf-node-description-icon-size, 10px);
-  font-size: var(--rf-node-description-icon-font-size, 8px);
+  width: var(--rf-node-description-icon-size, 12px);
+  height: var(--rf-node-description-icon-size, 12px);
+  font-size: var(--rf-node-description-icon-font-size,  7px) !important;
   line-height: 1;
 }
 
