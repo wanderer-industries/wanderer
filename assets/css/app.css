@@ -95,7 +95,32 @@ body > div:first-of-type {
 }
 
 .crimson-harvest-frame {
+  background: transparent;
   box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
+  transition:
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.crimson-harvest-card-caption {
+  background-color: rgb(77 21 21 / 65%);
+  border-top: 2px solid #ff5656;
+  box-shadow: 0 -6px 36px -3px #ff1919;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.group:hover .crimson-harvest-frame {
+  border-color: #ff7777;
+  box-shadow: 0 0 30px 7px rgb(255 25 25 / 48%);
+}
+
+.group:hover .crimson-harvest-card-caption {
+  background-color: rgb(94 23 23 / 78%);
+  border-top-color: #ff7777;
+  box-shadow: 0 -8px 42px -3px rgb(255 25 25 / 90%);
 }
 
 .crimson-harvest-frame-bright {
