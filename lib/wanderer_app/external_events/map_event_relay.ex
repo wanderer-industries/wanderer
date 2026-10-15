@@ -159,6 +159,10 @@ defmodule WandererApp.ExternalEvents.MapEventRelay do
 
     WebhookDispatcher.dispatch_event(event.map_id, event)
 
+    # Also a cast, so Discord config lookups and formatting never delay SSE or
+    # generic webhook delivery on this process.
+    WandererApp.ExternalEvents.DiscordDispatcher.dispatch_event(event.map_id, event)
+
     case WandererApp.ExternalEvents.SseAccessControl.sse_allowed?(event.map_id) do
       :ok ->
         WandererApp.ExternalEvents.SseStreamManager.broadcast_event(event.map_id, event_json)
