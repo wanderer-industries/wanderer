@@ -43,6 +43,27 @@ defmodule WandererApp.Permissions do
   def role_mask(:admin), do: @admin_role_mask
   def role_mask(:blocked), do: 0
 
+  @doc """
+  Exposes a single permission bit by name, for callers (e.g.
+  `WandererAppWeb.Plugs.RequirePermission`) that need to check one specific
+  capability rather than a whole role mask.
+  """
+  def bit(:view_system), do: @view_system
+  def bit(:view_character), do: @view_character
+  def bit(:view_connection), do: @view_connection
+  def bit(:add_system), do: @add_system
+  def bit(:add_connection), do: @add_connection
+  def bit(:update_system), do: @update_system
+  def bit(:track_character), do: @track_character
+  def bit(:delete_connection), do: @delete_connection
+  def bit(:delete_system), do: @delete_system
+  def bit(:lock_system), do: @lock_system
+  def bit(:add_acl), do: @add_acl
+  def bit(:delete_acl), do: @delete_acl
+  def bit(:delete_map), do: @delete_map
+  def bit(:manage_map), do: @manage_map
+  def bit(:admin_map), do: @admin_map
+
   def calc_roles_mask([], mask), do: mask
 
   def calc_roles_mask([role | rest], mask) do
