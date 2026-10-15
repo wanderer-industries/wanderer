@@ -1,20 +1,31 @@
 defmodule WandererApp.Map.GarbageCollector do
   @moduledoc """
-  Manager map subscription plans
+  Daily cleanup of map data that is only useful for a limited time:
+  chain passages and system signatures.
+
+  The jobs are scheduled in `config/runtime.exs` under `WandererApp.Scheduler`.
   """
 
   require Logger
   require Ash.Query
 
   @logger Application.compile_env(:wanderer_app, :logger)
-  @one_week_seconds 7 * 24 * 60 * 60
-  @two_weeks_seconds 14 * 24 * 60 * 60
+  @seconds_per_day 24 * 60 * 60
 
+  @doc """
+  Deletes chain passages whose `updated_at` is older than
+  `WandererApp.Env.map_chain_passages_retention_days/0` days
+  (`WANDERER_MAP_CHAIN_PASSAGES_RETENTION_DAYS`, default 7).
+  """
   def cleanup_chain_passages() do
-    Logger.info("Start cleanup old map chain passages...")
+    retention_days = WandererApp.Env.map_chain_passages_retention_days()
+
+    Logger.info("Start cleanup map chain passages older than #{retention_days} days...")
 
     WandererApp.Api.MapChainPassages
-    |> Ash.Query.filter(updated_at: [less_than: get_cutoff_time(@one_week_seconds)])
+    |> Ash.Query.filter(
+      updated_at: [less_than: get_cutoff_time(retention_days * @seconds_per_day)]
+    )
     |> Ash.bulk_destroy!(:destroy, %{}, batch_size: 100)
 
     @logger.info(fn -> "All map chain passages processed" end)
@@ -22,11 +33,20 @@ defmodule WandererApp.Map.GarbageCollector do
     :ok
   end
 
+  @doc """
+  Deletes system signatures whose `updated_at` is older than
+  `WandererApp.Env.map_system_signatures_retention_days/0` days
+  (`WANDERER_MAP_SYSTEM_SIGNATURES_RETENTION_DAYS`, default 14).
+  """
   def cleanup_system_signatures() do
-    Logger.info("Start cleanup old map system signatures...")
+    retention_days = WandererApp.Env.map_system_signatures_retention_days()
+
+    Logger.info("Start cleanup map system signatures older than #{retention_days} days...")
 
     WandererApp.Api.MapSystemSignature
-    |> Ash.Query.filter(updated_at: [less_than: get_cutoff_time(@two_weeks_seconds)])
+    |> Ash.Query.filter(
+      updated_at: [less_than: get_cutoff_time(retention_days * @seconds_per_day)]
+    )
     |> Ash.bulk_destroy!(:destroy, %{}, batch_size: 100)
 
     @logger.info(fn -> "All map system signatures processed" end)

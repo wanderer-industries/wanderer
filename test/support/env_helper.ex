@@ -20,6 +20,9 @@ defmodule WandererApp.EnvHelper do
   The original value is automatically restored after the block executes, even if an
   exception is raised.
 
+  This is a macro on purpose: as a plain function the `do` block would be
+  evaluated as an argument, before the override is applied.
+
   ## Parameters
 
     - `key` - The environment key to override (atom)
@@ -32,18 +35,21 @@ defmodule WandererApp.EnvHelper do
         assert WandererApp.Env.sse_enabled?() == true
       end
   """
-  def with_env_override(key, value, do: block) do
-    app = :wanderer_app
-    original = Application.get_env(app, key)
+  defmacro with_env_override(key, value, do: block) do
+    quote do
+      app = :wanderer_app
+      key = unquote(key)
+      original = Application.get_env(app, key)
 
-    try do
-      Application.put_env(app, key, value)
-      block
-    after
-      if original != nil do
-        Application.put_env(app, key, original)
-      else
-        Application.delete_env(app, key)
+      try do
+        Application.put_env(app, key, unquote(value))
+        unquote(block)
+      after
+        if original != nil do
+          Application.put_env(app, key, original)
+        else
+          Application.delete_env(app, key)
+        end
       end
     end
   end

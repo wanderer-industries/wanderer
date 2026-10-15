@@ -10,6 +10,15 @@ defmodule WandererApp.Api.MapSystemSignature do
   postgres do
     repo(WandererApp.Repo)
     table("map_system_signatures_v1")
+
+    custom_indexes do
+      # `WandererApp.Map.GarbageCollector.cleanup_system_signatures/0` and
+      # `by_deleted_and_updated_before` filter on updated_at; the retention
+      # window is configurable, so the table can grow past the default.
+      index [:updated_at],
+        name: "map_system_signatures_v1_updated_at_index",
+        concurrently: true
+    end
   end
 
   # /api/v1 exposes only read + delete for signatures, so only those action
