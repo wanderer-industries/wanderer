@@ -283,6 +283,15 @@ defmodule WandererAppWeb.Router do
   end
 
   #
+  # The way into a map's home, for whoever holds the token it was shared with
+  #
+  scope "/api/maps/:map_identifier", WandererAppWeb do
+    pipe_through [:api]
+
+    get "/home", MapHomeAPIController, :show
+  end
+
+  #
   # Unified RESTful routes for systems & connections by slug or ID
   #
   scope "/api/maps/:map_identifier", WandererAppWeb do
@@ -424,8 +433,6 @@ defmodule WandererAppWeb.Router do
     pipe_through [:browser, :blog]
     get "/", BlogController, :license
   end
-
-
 
   scope "/swaggerui" do
     pipe_through [:browser, :api_spec]
