@@ -182,6 +182,11 @@ defmodule WandererApp.Map.MapTransferTest do
         }
       )
 
+    Server.update_system_linked_sig_eve_id(map_id, %{
+      solar_system_id: @system_a,
+      linked_sig_eve_id: "ABC-123"
+    })
+
     {:ok, system} = WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, @system_a)
 
     {:ok, _} =
