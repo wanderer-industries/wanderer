@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.104.1](https://github.com/wanderer-industries/wanderer/compare/v1.104.0...v1.104.1) (2026-10-17)
+
+
+
+
+### Bug Fixes:
+
+* routes: Change endpoint for routes - it should reduce cpu using for a lot of routes build
+
 ## [v1.104.0](https://github.com/wanderer-industries/wanderer/compare/v1.103.7...v1.104.0) (2026-10-15)
 
 

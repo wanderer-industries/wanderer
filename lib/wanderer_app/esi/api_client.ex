@@ -57,21 +57,52 @@ defmodule WandererApp.Esi.ApiClient do
           @character_tracking_pool
         )
 
-  def get_routes_custom(hubs, origin, params),
-    do:
+  def get_routes_custom([], _origin, _params), do: {:ok, []}
+
+  def get_routes_custom(hubs, origin, params) do
+    destinations = Enum.uniq(hubs)
+
+    response =
       do_post(
-        "#{get_custom_route_base_url()}/route/multiple",
+        "#{get_custom_route_base_url()}/route/findClosest",
         [
           json: %{
             origin: origin,
-            destinations: hubs,
+            destinations: destinations,
             flag: params.flag,
             connections: params.connections,
-            avoid: params.avoid
+            avoid: params.avoid,
+            count: length(destinations)
           }
         ]
         |> Keyword.merge(@timeout_opts)
       )
+
+    case response do
+      {:ok, routes} when is_list(routes) ->
+        {:ok, restore_requested_routes(routes, hubs, origin)}
+
+      response ->
+        response
+    end
+  end
+
+  defp restore_requested_routes(routes, hubs, origin) do
+    routes_by_destination =
+      Map.new(routes, fn route ->
+        destination = Map.get(route, "destination") || Map.get(route, :destination)
+        {to_string(destination), route}
+      end)
+
+    Enum.map(hubs, fn destination ->
+      Map.get(routes_by_destination, to_string(destination), %{
+        "origin" => origin,
+        "destination" => destination,
+        "systems" => [],
+        "success" => false
+      })
+    end)
+  end
 
   def get_routes_eve(hubs, origin, _params, _opts),
     do:
