@@ -10,6 +10,7 @@ defmodule WandererAppWeb.Nav do
     MapLive,
     MapsLive,
     CharactersLive,
+    PageCharactersLive,
     CharactersTrackingLive
   }
 
@@ -64,6 +65,9 @@ defmodule WandererAppWeb.Nav do
 
         {CharactersLive, _} ->
           :characters
+
+        {PageCharactersLive, _} ->
+          :characters_react
 
         {CharacterProfileLive, _} ->
           :characters

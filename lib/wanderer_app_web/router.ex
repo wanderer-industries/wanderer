@@ -559,6 +559,7 @@ defmodule WandererAppWeb.Router do
       live "/tracking", CharactersTrackingLive, :index
       live "/characters", CharactersLive, :index
       live "/characters/authorize", CharactersLive, :authorize
+      live "/characters-react", PageCharactersLive, :index
       live "/characters/:eve_id", CharacterProfileLive, :show
       live "/sponsors", SponsorsLive, :index
       live "/maps/new", MapsLive, :create

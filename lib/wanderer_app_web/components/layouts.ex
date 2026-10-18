@@ -232,6 +232,12 @@ defmodule WandererAppWeb.Layouts do
             tip="Characters"
           />
           <.nav_link
+            href="/characters-react"
+            active={@active_tab == :characters_react}
+            icon="hero-beaker-solid"
+            tip="Characters (React prototype)"
+          />
+          <.nav_link
             href="/tracking"
             active={@active_tab == :characters_tracking}
             icon="hero-signal-solid"

@@ -22,6 +22,8 @@ export * from './WdMenuItem';
 export * from './MenuItemWithInfo';
 export * from './MarkdownTextViewer.tsx';
 export * from './WdButton.tsx';
+export * from './WdDialog.tsx';
+export * from './WdInputText.tsx';
 export * from './WdSelectionToolbar.tsx';
 export * from './constants.ts';
 export * from './RespawnTag';
