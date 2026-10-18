@@ -22,17 +22,17 @@ const THEME_BEHAVIORS: {
   },
   pathfinder: {
     isPanAndDrag: true,
-    nodeComponent: SolarSystemNodeTheme,
+    nodeComponent: SolarSystemNodeDefault,
     connectionMode: ConnectionMode.Loose,
   },
   fanaberia: {
     isPanAndDrag: true,
-    nodeComponent: SolarSystemNodeTheme,
+    nodeComponent: SolarSystemNodeDefault,
     connectionMode: ConnectionMode.Loose,
   },
   fanaberiadashed: {
     isPanAndDrag: true,
-    nodeComponent: SolarSystemNodeTheme,
+    nodeComponent: SolarSystemNodeDefault,
     connectionMode: ConnectionMode.Loose,
   },
 };

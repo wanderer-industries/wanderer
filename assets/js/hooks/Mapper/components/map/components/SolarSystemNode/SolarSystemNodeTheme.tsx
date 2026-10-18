@@ -141,15 +141,6 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
                   )}
-                  {nodeVars.description != null && nodeVars.description !== '' && (
-                    <WdTooltipWrapper
-                      className={classes.descriptionIconWrapper}
-                      position={TooltipPosition.top}
-                      content={`System has description`}
-                    >
-                      <i className={clsx('pi pi-pen-to-square', classes.descriptionIcon)} />
-                    </WdTooltipWrapper>
-                  )}
                 </div>
 
                 <LocalCounter
