@@ -27,6 +27,20 @@ defmodule WandererApp.Character.TrackerManager do
     do:
       GenServer.cast(__MODULE__, {&Impl.update_track_settings/3, [character_id, track_settings]})
 
+  def register_characters_consumer(character_ids, consumer_pid \\ self()),
+    do:
+      GenServer.cast(
+        __MODULE__,
+        {&Impl.register_characters_consumer/3, [character_ids, consumer_pid]}
+      )
+
+  def unregister_characters_consumer(consumer_pid \\ self()),
+    do:
+      GenServer.cast(
+        __MODULE__,
+        {&Impl.unregister_characters_consumer/2, [consumer_pid]}
+      )
+
   @impl true
   def init(args) do
     Logger.info("#{__MODULE__} started")

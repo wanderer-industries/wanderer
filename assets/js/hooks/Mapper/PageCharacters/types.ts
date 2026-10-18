@@ -47,16 +47,17 @@ export type PageCharactersEventRef = string | number;
 
 export enum PageCharactersCommand {
   snapshot = 'snapshot',
+  characterUpdated = 'character_updated',
 }
 
 export interface PageCharactersCommandData {
   [PageCharactersCommand.snapshot]: PageCharactersSnapshot;
+  [PageCharactersCommand.characterUpdated]: PageCharacter;
 }
 
-export interface PageCharactersIncomingEvent {
-  type: PageCharactersCommand;
-  body: PageCharactersSnapshot;
-}
+export type PageCharactersIncomingEvent =
+  | { type: PageCharactersCommand.snapshot; body: PageCharactersSnapshot }
+  | { type: PageCharactersCommand.characterUpdated; body: PageCharacter };
 
 export interface PageCharactersHandlers {
   command<T extends PageCharactersCommand>(type: T, data: PageCharactersCommandData[T]): void;

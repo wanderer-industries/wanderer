@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/Mapper/ToastProvider';
 import type {
   PageCharactersCommandReply,
   PageCharactersContextValue,
+  PageCharacter,
   PageCharactersProviderProps,
   PageCharactersSnapshot,
   PageCharactersStatus,
@@ -33,7 +34,17 @@ export const PageCharactersProvider = ({ fwdRef, outCommand, children }: PageCha
     setError(null);
   }, []);
 
-  usePageCharactersEventHandlers(fwdRef, applySnapshot);
+  const applyCharacterUpdate = useCallback((updatedCharacter: PageCharacter) => {
+    setSnapshot(currentSnapshot => ({
+      ...currentSnapshot,
+      characters: currentSnapshot.characters.map(character => {
+        if (character.id === updatedCharacter.id) return updatedCharacter;
+        return character;
+      }),
+    }));
+  }, []);
+
+  usePageCharactersEventHandlers(fwdRef, applySnapshot, applyCharacterUpdate);
 
   const refresh = useCallback(() => {
     setStatus(currentStatus => (currentStatus === 'ready' ? currentStatus : 'loading'));

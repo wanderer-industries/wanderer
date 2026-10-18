@@ -128,4 +128,56 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
       assert state.active_maps == []
     end
   end
+
+  describe "update_settings/2 with a Characters page consumer" do
+    test "enables offline location and ship tracking", %{character_id: character_id} do
+      seed_state(character_id, %{
+        is_online: false,
+        track_location: false,
+        track_ship: false,
+        active_maps: [],
+        characters_consumers: %{}
+      })
+
+      {:ok, state} =
+        Tracker.update_settings(character_id, %{
+          consumer: :characters,
+          consumer_pid: self(),
+          track: true
+        })
+
+      assert state.track_location
+      assert state.track_ship
+      assert Map.has_key?(state.characters_consumers, self())
+    end
+
+    test "keeps tracking until the last source is removed", %{
+      character_id: character_id,
+      map_id: map_id
+    } do
+      seed_state(character_id, %{
+        is_online: false,
+        track_location: true,
+        track_ship: true,
+        active_maps: [map_id],
+        characters_consumers: %{self() => true}
+      })
+
+      {:ok, state} =
+        Tracker.update_settings(character_id, %{
+          consumer: :characters,
+          consumer_pid: self(),
+          track: false
+        })
+
+      assert state.track_location
+      assert state.track_ship
+
+      Cachex.put(:character_state_cache, character_id, state)
+      {:ok, state} = Tracker.update_settings(character_id, %{map_id: map_id, track: false})
+
+      refute state.track_location
+      refute state.track_ship
+    end
+  end
 end

@@ -10,6 +10,7 @@ defmodule WandererAppWeb.PageCharactersLive do
 
   @page_event "page_characters_event"
   @snapshot_command "snapshot"
+  @character_updated_command "character_updated"
 
   @impl true
   def mount(_params, %{"user_id" => user_id}, socket) when not is_nil(user_id) do
@@ -83,11 +84,22 @@ defmodule WandererAppWeb.PageCharactersLive do
   def handle_info({:character_wallet_balance, _character_id}, socket), do: refresh(socket)
 
   @impl true
+  def handle_info({:character_tracking_updated, character_id}, socket) do
+    push_character_update(socket, character_id)
+  end
+
+  @impl true
   def handle_info(event, socket) when event in [:character_token_invalid, :token_updated],
     do: refresh(socket)
 
   @impl true
   def handle_info(_event, socket), do: {:noreply, socket}
+
+  @impl true
+  def terminate(_reason, _socket) do
+    WandererApp.Character.TrackerManager.unregister_characters_consumer(self())
+    :ok
+  end
 
   defp refresh(%{assigns: %{user_id: nil}} = socket), do: {:noreply, socket}
   defp refresh(socket), do: {:noreply, push_snapshot(socket)}
@@ -103,6 +115,23 @@ defmodule WandererAppWeb.PageCharactersLive do
   defp push_snapshot_event(socket, snapshot) do
     push_event(socket, @page_event, %{type: @snapshot_command, body: snapshot})
   end
+
+  defp push_character_update(%{assigns: %{user_id: user_id}} = socket, character_id)
+       when not is_nil(user_id) do
+    case WandererAppWeb.HandlerAuth.authorize_character(character_id, user_id) do
+      {:ok, character} ->
+        {:noreply,
+         push_event(socket, @page_event, %{
+           type: @character_updated_command,
+           body: serialize_character(character)
+         })}
+
+      _error ->
+        {:noreply, socket}
+    end
+  end
+
+  defp push_character_update(socket, _character_id), do: {:noreply, socket}
 
   defp build_snapshot(user_id) do
     %{
@@ -127,6 +156,9 @@ defmodule WandererAppWeb.PageCharactersLive do
       Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{character.id}")
       :ok = WandererApp.Character.TrackerManager.start_tracking(character.id)
     end)
+
+    character_ids = Enum.map(characters, & &1.id)
+    :ok = WandererApp.Character.TrackerManager.register_characters_consumer(character_ids)
   end
 
   defp delete_character(character_id, user_id) do

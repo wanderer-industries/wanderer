@@ -17,12 +17,16 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   defstruct [
     :characters,
-    :opts
+    :opts,
+    characters_consumers: %{}
   ]
 
   @type t :: %__MODULE__{
           characters: [integer],
-          opts: map
+          opts: map,
+          characters_consumers: %{
+            optional(pid()) => %{monitor_ref: reference(), character_ids: MapSet.t(binary())}
+          }
         }
 
   @check_start_queue_interval :timer.seconds(1)
@@ -49,7 +53,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     %{
       characters: [],
-      opts: args
+      opts: args,
+      characters_consumers: %{}
     }
     |> new()
   end
@@ -96,6 +101,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   def stop_tracking(state, character_id) do
+    state = forget_character_consumers(state, character_id)
+
     with {:ok, characters} <- WandererApp.Cache.lookup("tracked_characters", []),
          true <- Enum.member?(characters, character_id),
          false <- WandererApp.Cache.has_key?("#{character_id}:track_requested") do
@@ -226,6 +233,47 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     {characters, state}
   end
 
+  def register_characters_consumer(state, character_ids, consumer_pid)
+      when is_list(character_ids) and is_pid(consumer_pid) do
+    character_ids = MapSet.new(character_ids)
+
+    previous_character_ids =
+      state.characters_consumers
+      |> Map.get(consumer_pid, %{character_ids: MapSet.new()})
+      |> Map.fetch!(:character_ids)
+
+    consumer =
+      case Map.get(state.characters_consumers, consumer_pid) do
+        nil ->
+          %{monitor_ref: Process.monitor(consumer_pid), character_ids: character_ids}
+
+        existing ->
+          %{existing | character_ids: character_ids}
+      end
+
+    character_ids
+    |> MapSet.difference(previous_character_ids)
+    |> Enum.each(&update_characters_consumer(&1, consumer_pid, true))
+
+    previous_character_ids
+    |> MapSet.difference(character_ids)
+    |> Enum.each(&update_characters_consumer(&1, consumer_pid, false))
+
+    %{state | characters_consumers: Map.put(state.characters_consumers, consumer_pid, consumer)}
+  end
+
+  def unregister_characters_consumer(state, consumer_pid) when is_pid(consumer_pid) do
+    case Map.pop(state.characters_consumers, consumer_pid) do
+      {nil, _consumers} ->
+        state
+
+      {%{monitor_ref: monitor_ref, character_ids: character_ids}, consumers} ->
+        Process.demonitor(monitor_ref, [:flush])
+        Enum.each(character_ids, &update_characters_consumer(&1, consumer_pid, false))
+        %{state | characters_consumers: consumers}
+    end
+  end
+
   def handle_event({ref, result}, state) do
     Process.demonitor(ref, [:flush])
 
@@ -264,6 +312,10 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     end)
 
     state
+  end
+
+  def handle_info({:DOWN, _monitor_ref, :process, consumer_pid, _reason}, state) do
+    unregister_characters_consumer(state, consumer_pid)
   end
 
   def handle_info(
@@ -514,6 +566,27 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
         WandererApp.Cache.delete("#{character_id}:track_requested")
     end
+  end
+
+  defp update_characters_consumer(character_id, consumer_pid, track) do
+    {:ok, character_state} =
+      WandererApp.Character.Tracker.update_settings(character_id, %{
+        consumer: :characters,
+        consumer_pid: consumer_pid,
+        track: track
+      })
+
+    WandererApp.Character.update_character_state(character_id, character_state)
+  end
+
+  defp forget_character_consumers(state, character_id) do
+    consumers =
+      Map.new(state.characters_consumers, fn {consumer_pid, consumer} ->
+        {consumer_pid,
+         %{consumer | character_ids: MapSet.delete(consumer.character_ids, character_id)}}
+      end)
+
+    %{state | characters_consumers: consumers}
   end
 
   def character_is_present(map_id, character_id) do

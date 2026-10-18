@@ -6,6 +6,8 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
   alias WandererAppWeb.Factory
 
   setup %{conn: conn} do
+    start_supervised!({WandererApp.Character.TrackerManager, []})
+
     user = Factory.insert(:user, %{})
     character = Factory.insert(:character, %{user_id: user.id, name: "React Prototype Pilot"})
 
@@ -40,5 +42,22 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
     assert Map.has_key?(character, :ship_type_id)
     assert Map.has_key?(character, :system_info)
     assert Map.has_key?(character, :station_name)
+  end
+
+  test "pushes a point update when tracked character data changes", ctx do
+    {:ok, view, _html} = live(ctx.conn, ~p"/characters-react")
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "character:#{ctx.character.id}",
+      {:character_tracking_updated, ctx.character.id}
+    )
+
+    assert_push_event(view, "page_characters_event", %{
+      type: "character_updated",
+      body: character
+    })
+
+    assert character.id == ctx.character.id
   end
 end

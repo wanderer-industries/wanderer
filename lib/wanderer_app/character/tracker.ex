@@ -12,6 +12,7 @@ defmodule WandererApp.Character.Tracker do
     server_online: true,
     start_time: nil,
     active_maps: [],
+    characters_consumers: %{},
     is_online: false,
     track_online: true,
     track_location: false,
@@ -28,6 +29,7 @@ defmodule WandererApp.Character.Tracker do
           server_online: boolean,
           start_time: DateTime.t(),
           active_maps: [integer],
+          characters_consumers: %{optional(pid()) => true},
           is_online: boolean,
           track_online: boolean,
           track_location: boolean,
@@ -44,6 +46,7 @@ defmodule WandererApp.Character.Tracker do
   @forbidden_ttl :timer.seconds(10)
   @limit_ttl :timer.seconds(5)
   @location_limit_ttl :timer.seconds(1)
+  @characters_poll_interval :timer.minutes(1)
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def new(), do: __struct__()
@@ -104,10 +107,12 @@ defmodule WandererApp.Character.Tracker do
 
   def update_settings(character_id, track_settings) do
     {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
+    character_state = Map.put_new(character_state, :characters_consumers, %{})
 
     {:ok,
      character_state
      |> maybe_update_active_maps(track_settings)
+     |> maybe_update_characters_consumers(track_settings)
      |> maybe_stop_tracking(track_settings)
      |> maybe_start_online_tracking(track_settings)
      |> maybe_start_location_tracking(track_settings)
@@ -184,11 +189,13 @@ defmodule WandererApp.Character.Tracker do
                   end
 
                   try do
+                    tracking_requested = tracking_requested?(character_state)
+
                     WandererApp.Character.update_character_state(character_id, %{
                       character_state
                       | is_online: online.online,
-                        track_ship: online.online,
-                        track_location: online.online
+                        track_ship: tracking_requested,
+                        track_location: tracking_requested
                     })
                   rescue
                     error ->
@@ -362,15 +369,24 @@ defmodule WandererApp.Character.Tracker do
       |> WandererApp.Character.get_character_state!()
       |> update_ship()
 
-  def update_ship(
-        %{character_id: character_id, track_ship: true, is_online: true} = character_state
-      ) do
+  def update_ship(%{track_ship: true} = character_state) do
+    if tracking_due?(character_state, :ship) do
+      do_update_ship(character_state)
+    else
+      {:error, :skipped}
+    end
+  end
+
+  def update_ship(_), do: {:error, :skipped}
+
+  defp do_update_ship(%{character_id: character_id} = character_state) do
     character_id
     |> WandererApp.Character.get_character()
     |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
-        (WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden") ||
+        ((not characters_consumer_active?(character_state) &&
+            WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden")) ||
            WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden"))
         |> case do
           true ->
@@ -466,17 +482,23 @@ defmodule WandererApp.Character.Tracker do
     end
   end
 
-  def update_ship(_), do: {:error, :skipped}
-
   def update_location(character_id) when is_binary(character_id),
     do:
       character_id
       |> WandererApp.Character.get_character_state!()
       |> update_location()
 
-  def update_location(
-        %{track_location: true, is_online: true, character_id: character_id} = character_state
-      ) do
+  def update_location(%{track_location: true} = character_state) do
+    if tracking_due?(character_state, :location) do
+      do_update_location(character_state)
+    else
+      {:error, :skipped}
+    end
+  end
+
+  def update_location(_), do: {:error, :skipped}
+
+  defp do_update_location(%{character_id: character_id} = character_state) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
@@ -612,8 +634,6 @@ defmodule WandererApp.Character.Tracker do
         {:error, :skipped}
     end
   end
-
-  def update_location(_), do: {:error, :skipped}
 
   def update_wallet(character_id) do
     character_id
@@ -909,6 +929,8 @@ defmodule WandererApp.Character.Tracker do
         WandererApp.Api.Character.update_ship(character, character_update)
 
       WandererApp.Character.update_character(character_id, character_update)
+
+      broadcast_tracking_update(character_id)
     end
 
     state
@@ -939,6 +961,8 @@ defmodule WandererApp.Character.Tracker do
       true ->
         {:ok, _character} = WandererApp.Api.Character.update_location(character, location)
         WandererApp.Character.update_character(character_id, location)
+
+        broadcast_tracking_update(character_id)
 
         :ok
 
@@ -1016,6 +1040,13 @@ defmodule WandererApp.Character.Tracker do
        do: %{state | track_location: true}
 
   defp maybe_start_location_tracking(
+         %{characters_consumers: consumers} = state,
+         _track_settings
+       )
+       when map_size(consumers) > 0,
+       do: %{state | track_location: true}
+
+  defp maybe_start_location_tracking(
          state,
          _track_settings
        ),
@@ -1025,6 +1056,13 @@ defmodule WandererApp.Character.Tracker do
          %{active_maps: [_ | _]} = state,
          _track_settings
        ),
+       do: %{state | track_ship: true}
+
+  defp maybe_start_ship_tracking(
+         %{characters_consumers: consumers} = state,
+         _track_settings
+       )
+       when map_size(consumers) > 0,
        do: %{state | track_ship: true}
 
   defp maybe_start_ship_tracking(
@@ -1094,10 +1132,43 @@ defmodule WandererApp.Character.Tracker do
        ),
        do: state
 
+  defp maybe_update_characters_consumers(
+         %{characters_consumers: consumers, character_id: character_id} = state,
+         %{consumer: :characters, consumer_pid: consumer_pid, track: true}
+       )
+       when is_pid(consumer_pid) do
+    if Map.has_key?(consumers, consumer_pid) do
+      state
+    else
+      if map_size(consumers) == 0 do
+        clear_characters_poll_throttles(character_id)
+      end
+
+      WandererApp.Cache.take("character:#{character_id}:last_active_time")
+      %{state | characters_consumers: Map.put(consumers, consumer_pid, true)}
+    end
+  end
+
+  defp maybe_update_characters_consumers(
+         %{characters_consumers: consumers} = state,
+         %{consumer: :characters, consumer_pid: consumer_pid, track: false}
+       )
+       when is_pid(consumer_pid),
+       do: %{state | characters_consumers: Map.delete(consumers, consumer_pid)}
+
+  defp maybe_update_characters_consumers(state, _track_settings), do: state
+
   defp maybe_stop_tracking(
-         %{active_maps: [], character_id: character_id, opts: opts} = state,
+         %{
+           active_maps: [],
+           characters_consumers: consumers,
+           character_id: character_id,
+           opts: opts
+         } =
+           state,
          _track_settings
-       ) do
+       )
+       when map_size(consumers) == 0 do
     if is_nil(opts[:keep_alive]) do
       WandererApp.Cache.put(
         "character:#{character_id}:last_active_time",
@@ -1113,6 +1184,46 @@ defmodule WandererApp.Character.Tracker do
          _track_settings
        ),
        do: state
+
+  defp tracking_requested?(state),
+    do:
+      Map.get(state, :active_maps, []) != [] ||
+        map_size(Map.get(state, :characters_consumers, %{})) > 0
+
+  defp tracking_due?(%{active_maps: [_ | _], is_online: true}, _kind), do: true
+
+  defp tracking_due?(%{characters_consumers: consumers, character_id: character_id}, kind)
+       when map_size(consumers) > 0 do
+    throttle_key = characters_poll_throttle_key(character_id, kind)
+
+    if WandererApp.Cache.has_key?(throttle_key) do
+      false
+    else
+      WandererApp.Cache.put(throttle_key, true, ttl: @characters_poll_interval)
+      true
+    end
+  end
+
+  defp tracking_due?(_state, _kind), do: false
+
+  defp characters_consumer_active?(%{characters_consumers: consumers}),
+    do: map_size(consumers) > 0
+
+  defp characters_poll_throttle_key(character_id, kind),
+    do: "character:#{character_id}:characters:#{kind}_poll"
+
+  defp clear_characters_poll_throttles(character_id) do
+    WandererApp.Cache.delete(characters_poll_throttle_key(character_id, :location))
+    WandererApp.Cache.delete(characters_poll_throttle_key(character_id, :ship))
+  end
+
+  defp broadcast_tracking_update(character_id) do
+    @pubsub_client.broadcast(
+      WandererApp.PubSub,
+      "character:#{character_id}",
+      {:character_tracking_updated, character_id}
+    )
+  end
 
   defp get_location(%{
          "solar_system_id" => solar_system_id,
