@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.104.2](https://github.com/wanderer-industries/wanderer/compare/v1.104.1...v1.104.2) (2026-10-18)
+
+
+
+
+### Bug Fixes:
+
+* esi: honour 304 response headers when revalidating cached ESI data
+
 ## [v1.104.1](https://github.com/wanderer-industries/wanderer/compare/v1.104.0...v1.104.1) (2026-10-17)
 
 
