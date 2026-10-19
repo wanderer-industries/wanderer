@@ -2,6 +2,15 @@
 
 <!-- changelog -->
 
+## [v1.104.3](https://github.com/wanderer-industries/wanderer/compare/v1.104.2...v1.104.3) (2026-10-19)
+
+
+
+
+### Bug Fixes:
+
+* webhooks: return state in process_active_subscriptions to avoid BadMapError crash
+
 ## [v1.104.2](https://github.com/wanderer-industries/wanderer/compare/v1.104.1...v1.104.2) (2026-10-18)
 
 
