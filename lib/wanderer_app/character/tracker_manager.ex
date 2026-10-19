@@ -27,18 +27,18 @@ defmodule WandererApp.Character.TrackerManager do
     do:
       GenServer.cast(__MODULE__, {&Impl.update_track_settings/3, [character_id, track_settings]})
 
-  def register_characters_consumer(character_ids, consumer_pid \\ self()),
+  def register_consumer(character_ids, consumer_id, profile, monitor_pid \\ nil),
     do:
       GenServer.cast(
         __MODULE__,
-        {&Impl.register_characters_consumer/3, [character_ids, consumer_pid]}
+        {&Impl.register_consumer/5, [character_ids, consumer_id, profile, monitor_pid]}
       )
 
-  def unregister_characters_consumer(consumer_pid \\ self()),
+  def unregister_consumer(consumer_id),
     do:
       GenServer.cast(
         __MODULE__,
-        {&Impl.unregister_characters_consumer/2, [consumer_pid]}
+        {&Impl.unregister_consumer/2, [consumer_id]}
       )
 
   @impl true

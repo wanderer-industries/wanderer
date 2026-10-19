@@ -11,12 +11,9 @@ defmodule WandererApp.Character.Tracker do
     :opts,
     server_online: true,
     start_time: nil,
-    active_maps: [],
-    characters_consumers: %{},
+    consumers: %{},
     is_online: false,
     track_online: true,
-    track_location: false,
-    track_ship: false,
     track_wallet: false,
     status: "new"
   ]
@@ -28,12 +25,9 @@ defmodule WandererApp.Character.Tracker do
           opts: map,
           server_online: boolean,
           start_time: DateTime.t(),
-          active_maps: [integer],
-          characters_consumers: %{optional(pid()) => true},
+          consumers: %{optional(term()) => :fast | :slow},
           is_online: boolean,
           track_online: boolean,
-          track_location: boolean,
-          track_ship: boolean,
           track_wallet: boolean,
           status: binary()
         }
@@ -46,7 +40,16 @@ defmodule WandererApp.Character.Tracker do
   @forbidden_ttl :timer.seconds(10)
   @limit_ttl :timer.seconds(5)
   @location_limit_ttl :timer.seconds(1)
-  @characters_poll_interval :timer.minutes(1)
+  @consumer_profiles %{
+    fast: %{
+      location: %{interval: 0, online_only: true},
+      ship: %{interval: 0, online_only: true}
+    },
+    slow: %{
+      location: %{interval: :timer.minutes(1), online_only: false},
+      ship: %{interval: :timer.minutes(1), online_only: false}
+    }
+  }
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
 
   def new(), do: __struct__()
@@ -84,6 +87,8 @@ defmodule WandererApp.Character.Tracker do
             is_online: false
           })
 
+          broadcast_tracking_update(character_id)
+
           WandererApp.Cache.delete("character:#{character_id}:last_online_time")
 
           :ok
@@ -105,18 +110,60 @@ defmodule WandererApp.Character.Tracker do
     WandererApp.Cache.delete("character:#{character_id}:location_error_count")
   end
 
-  def update_settings(character_id, track_settings) do
-    {:ok, character_state} = WandererApp.Character.get_character_state(character_id)
-    character_state = Map.put_new(character_state, :characters_consumers, %{})
+  def update_settings(character_id, %{map_id: map_id, track: track}) do
+    update_consumer(character_id, {:map, map_id}, :fast, track)
+  end
 
-    {:ok,
-     character_state
-     |> maybe_update_active_maps(track_settings)
-     |> maybe_update_characters_consumers(track_settings)
-     |> maybe_stop_tracking(track_settings)
-     |> maybe_start_online_tracking(track_settings)
-     |> maybe_start_location_tracking(track_settings)
-     |> maybe_start_ship_tracking(track_settings)}
+  def update_settings(character_id, %{
+        consumer_id: consumer_id,
+        profile: profile,
+        track: track
+      }) do
+    update_consumer(character_id, consumer_id, profile, track)
+  end
+
+  def update_consumer(character_id, consumer_id, profile, track)
+      when profile in [:fast, :slow] and is_boolean(track) do
+    {:ok, current_state} = WandererApp.Character.get_character_state(character_id)
+    was_registered? = consumer_registered?(current_state, consumer_id)
+
+    result =
+      WandererApp.Character.update_character_state(character_id, fn state ->
+        consumers =
+          state |> normalized_consumers() |> update_consumers(consumer_id, profile, track)
+
+        state
+        |> without_legacy_consumers()
+        |> Map.put(:character_id, character_id)
+        |> Map.put(:consumers, consumers)
+      end)
+
+    update_consumer_lifecycle(
+      character_id,
+      consumer_id,
+      profile,
+      track,
+      was_registered?,
+      result
+    )
+
+    result
+  end
+
+  def consumer_registered?(state, consumer_id) do
+    Map.has_key?(normalized_consumers(state), consumer_id)
+  end
+
+  def polling_interval(state, kind) when kind in [:location, :ship] do
+    state
+    |> normalized_consumers()
+    |> Map.values()
+    |> Enum.uniq()
+    |> Enum.map(&get_in(@consumer_profiles, [&1, kind]))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&(&1.online_only && !state.is_online))
+    |> Enum.map(& &1.interval)
+    |> Enum.min(fn -> nil end)
   end
 
   def update_online(character_id) when is_binary(character_id),
@@ -125,9 +172,7 @@ defmodule WandererApp.Character.Tracker do
       |> WandererApp.Character.get_character_state!()
       |> update_online()
 
-  def update_online(
-        %{track_online: true, character_id: character_id, is_online: is_online} = character_state
-      ) do
+  def update_online(%{track_online: true, character_id: character_id, is_online: is_online}) do
     case WandererApp.Character.get_character(character_id) do
       {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
@@ -189,14 +234,11 @@ defmodule WandererApp.Character.Tracker do
                   end
 
                   try do
-                    tracking_requested = tracking_requested?(character_state)
-
                     WandererApp.Character.update_character_state(character_id, %{
-                      character_state
-                      | is_online: online.online,
-                        track_ship: tracking_requested,
-                        track_location: tracking_requested
+                      is_online: online.online
                     })
+
+                    broadcast_tracking_update(character_id)
                   rescue
                     error ->
                       Logger.error("DB_ERROR: Failed to update character state in database",
@@ -317,7 +359,10 @@ defmodule WandererApp.Character.Tracker do
               |> maybe_update_corporation(corporation_id)
               |> maybe_update_alliance(alliance_id)
 
-            WandererApp.Character.update_character_state(character_id, updated_state)
+            WandererApp.Character.update_character_state(character_id, %{
+              corporation_id: updated_state.corporation_id,
+              alliance_id: updated_state.alliance_id
+            })
 
             :ok
 
@@ -369,7 +414,7 @@ defmodule WandererApp.Character.Tracker do
       |> WandererApp.Character.get_character_state!()
       |> update_ship()
 
-  def update_ship(%{track_ship: true} = character_state) do
+  def update_ship(%{character_id: _character_id} = character_state) do
     if tracking_due?(character_state, :ship) do
       do_update_ship(character_state)
     else
@@ -385,7 +430,7 @@ defmodule WandererApp.Character.Tracker do
     |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
-        ((not characters_consumer_active?(character_state) &&
+        ((not consumer_allows_offline?(character_state, :ship) &&
             WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden")) ||
            WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden"))
         |> case do
@@ -488,7 +533,7 @@ defmodule WandererApp.Character.Tracker do
       |> WandererApp.Character.get_character_state!()
       |> update_location()
 
-  def update_location(%{track_location: true} = character_state) do
+  def update_location(%{character_id: _character_id} = character_state) do
     if tracking_due?(character_state, :location) do
       do_update_location(character_state)
     else
@@ -1013,93 +1058,90 @@ defmodule WandererApp.Character.Tracker do
     state
   end
 
-  defp maybe_start_online_tracking(
-         state,
-         %{track_online: true} = _track_settings
-       ),
-       do: %{
-         state
-         | track_online: true
-       }
+  defp normalized_consumers(state) do
+    consumers = Map.get(state, :consumers, %{})
 
-  defp maybe_start_online_tracking(
-         state,
-         _track_settings
-       ),
-       do: state
+    consumers =
+      Enum.reduce(Map.get(state, :active_maps, []), consumers, fn map_id, acc ->
+        Map.put_new(acc, {:map, map_id}, :fast)
+      end)
 
-  # Matches on the state's active_maps rather than a `track_location` key in
-  # track_settings. No caller passes that key -- every call site sends
-  # %{map_id: _, track: true | false} -- so the previous clause never matched
-  # and this function could not turn location tracking back on once
-  # maybe_stop_tracking/2 had cleared it.
-  defp maybe_start_location_tracking(
-         %{active_maps: [_ | _]} = state,
-         _track_settings
-       ),
-       do: %{state | track_location: true}
+    Enum.reduce(Map.get(state, :characters_consumers, %{}), consumers, fn
+      {consumer_pid, _value}, acc -> Map.put_new(acc, {:characters_page, consumer_pid}, :slow)
+    end)
+  end
 
-  defp maybe_start_location_tracking(
-         %{characters_consumers: consumers} = state,
-         _track_settings
-       )
-       when map_size(consumers) > 0,
-       do: %{state | track_location: true}
+  defp without_legacy_consumers(state) do
+    state
+    |> Map.drop([:__struct__, :active_maps, :characters_consumers, :track_location, :track_ship])
+    |> then(&struct(__MODULE__, &1))
+  end
 
-  defp maybe_start_location_tracking(
-         state,
-         _track_settings
-       ),
-       do: state
+  defp update_consumers(consumers, consumer_id, profile, true),
+    do: Map.put(consumers, consumer_id, profile)
 
-  defp maybe_start_ship_tracking(
-         %{active_maps: [_ | _]} = state,
-         _track_settings
-       ),
-       do: %{state | track_ship: true}
+  defp update_consumers(consumers, consumer_id, _profile, false),
+    do: Map.delete(consumers, consumer_id)
 
-  defp maybe_start_ship_tracking(
-         %{characters_consumers: consumers} = state,
-         _track_settings
-       )
-       when map_size(consumers) > 0,
-       do: %{state | track_ship: true}
-
-  defp maybe_start_ship_tracking(
-         state,
-         _track_settings
-       ),
-       do: state
-
-  defp maybe_update_active_maps(
-         %{character_id: character_id, active_maps: active_maps} =
-           state,
-         %{map_id: map_id, track: true}
+  defp update_consumer_lifecycle(
+         character_id,
+         consumer_id,
+         profile,
+         true,
+         was_registered?,
+         _result
        ) do
-    if not Enum.member?(active_maps, map_id) do
-      WandererApp.Cache.put(
-        "character:#{character_id}:map:#{map_id}:tracking_start_time",
-        DateTime.utc_now()
-      )
+    WandererApp.Cache.take("character:#{character_id}:last_active_time")
 
-      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
-      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
-      WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+    if profile == :slow && !was_registered? do
+      clear_poll_throttles(character_id)
+    end
 
-      WandererApp.Cache.take("character:#{character_id}:last_active_time")
-
-      %{state | active_maps: [map_id | active_maps]}
-    else
-      WandererApp.Cache.take("character:#{character_id}:last_active_time")
-
-      state
+    if !was_registered? do
+      maybe_start_map_tracking(character_id, consumer_id)
     end
   end
 
-  defp maybe_update_active_maps(
-         %{character_id: character_id, active_maps: active_maps} = state,
-         %{map_id: map_id, track: false} = _track_settings
+  defp update_consumer_lifecycle(
+         character_id,
+         consumer_id,
+         _profile,
+         false,
+         was_registered?,
+         result
        ) do
+    if was_registered? do
+      maybe_stop_map_tracking(character_id, consumer_id)
+    end
+
+    case result do
+      {:ok, state} ->
+        if map_size(normalized_consumers(state)) == 0 && is_nil(state.opts[:keep_alive]) do
+          WandererApp.Cache.put(
+            "character:#{character_id}:last_active_time",
+            DateTime.utc_now()
+          )
+        end
+
+      _error ->
+        :ok
+    end
+  end
+
+  defp maybe_start_map_tracking(character_id, {:map, map_id}) do
+    WandererApp.Cache.put(
+      "character:#{character_id}:map:#{map_id}:tracking_start_time",
+      DateTime.utc_now()
+    )
+
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:solar_system_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:station_id")
+    WandererApp.Cache.delete("map:#{map_id}:character:#{character_id}:structure_id")
+  end
+
+  defp maybe_start_map_tracking(_character_id, _consumer_id), do: :ok
+
+  defp maybe_stop_map_tracking(character_id, {:map, map_id}) do
     WandererApp.Cache.take("character:#{character_id}:map:#{map_id}:tracking_start_time")
     |> case do
       start_time when not is_nil(start_time) ->
@@ -1112,109 +1154,56 @@ defmodule WandererApp.Character.Tracker do
 
         :telemetry.execute([:wanderer_app, :character, :tracker], %{duration: duration})
 
-        :ok
-
       _ ->
         Logger.info(
           "[Tracker] tracking_start_time cache key already missing for character #{character_id} " <>
             "on map #{map_id} when attempting to untrack"
         )
-
-        :ok
     end
-
-    %{state | active_maps: Enum.filter(active_maps, &(&1 != map_id))}
   end
 
-  defp maybe_update_active_maps(
-         state,
-         _track_settings
-       ),
-       do: state
+  defp maybe_stop_map_tracking(_character_id, _consumer_id), do: :ok
 
-  defp maybe_update_characters_consumers(
-         %{characters_consumers: consumers, character_id: character_id} = state,
-         %{consumer: :characters, consumer_pid: consumer_pid, track: true}
-       )
-       when is_pid(consumer_pid) do
-    if Map.has_key?(consumers, consumer_pid) do
-      state
-    else
-      if map_size(consumers) == 0 do
-        clear_characters_poll_throttles(character_id)
+  defp tracking_due?(%{character_id: character_id} = state, kind) do
+    case polling_interval(state, kind) do
+      nil ->
+        false
+
+      0 ->
+        true
+
+      interval ->
+        throttle_key = poll_throttle_key(character_id, kind, interval)
+
+        if WandererApp.Cache.has_key?(throttle_key) do
+          false
+        else
+          WandererApp.Cache.put(throttle_key, true, ttl: interval)
+          true
+        end
+    end
+  end
+
+  defp consumer_allows_offline?(state, kind) do
+    state
+    |> normalized_consumers()
+    |> Map.values()
+    |> Enum.any?(fn profile ->
+      case get_in(@consumer_profiles, [profile, kind]) do
+        %{online_only: false} -> true
+        _request -> false
       end
-
-      WandererApp.Cache.take("character:#{character_id}:last_active_time")
-      %{state | characters_consumers: Map.put(consumers, consumer_pid, true)}
-    end
+    end)
   end
 
-  defp maybe_update_characters_consumers(
-         %{characters_consumers: consumers} = state,
-         %{consumer: :characters, consumer_pid: consumer_pid, track: false}
-       )
-       when is_pid(consumer_pid),
-       do: %{state | characters_consumers: Map.delete(consumers, consumer_pid)}
+  defp poll_throttle_key(character_id, kind, interval),
+    do: "character:#{character_id}:#{kind}:poll:#{interval}"
 
-  defp maybe_update_characters_consumers(state, _track_settings), do: state
-
-  defp maybe_stop_tracking(
-         %{
-           active_maps: [],
-           characters_consumers: consumers,
-           character_id: character_id,
-           opts: opts
-         } =
-           state,
-         _track_settings
-       )
-       when map_size(consumers) == 0 do
-    if is_nil(opts[:keep_alive]) do
-      WandererApp.Cache.put(
-        "character:#{character_id}:last_active_time",
-        DateTime.utc_now()
-      )
-    end
-
-    %{state | track_location: false, track_ship: false}
-  end
-
-  defp maybe_stop_tracking(
-         state,
-         _track_settings
-       ),
-       do: state
-
-  defp tracking_requested?(state),
-    do:
-      Map.get(state, :active_maps, []) != [] ||
-        map_size(Map.get(state, :characters_consumers, %{})) > 0
-
-  defp tracking_due?(%{active_maps: [_ | _], is_online: true}, _kind), do: true
-
-  defp tracking_due?(%{characters_consumers: consumers, character_id: character_id}, kind)
-       when map_size(consumers) > 0 do
-    throttle_key = characters_poll_throttle_key(character_id, kind)
-
-    if WandererApp.Cache.has_key?(throttle_key) do
-      false
-    else
-      WandererApp.Cache.put(throttle_key, true, ttl: @characters_poll_interval)
-      true
-    end
-  end
-
-  defp tracking_due?(_state, _kind), do: false
-
-  defp characters_consumer_active?(%{characters_consumers: consumers}),
-    do: map_size(consumers) > 0
-
-  defp characters_poll_throttle_key(character_id, kind),
-    do: "character:#{character_id}:characters:#{kind}_poll"
-
-  defp clear_characters_poll_throttles(character_id) do
-    WandererApp.Cache.delete(characters_poll_throttle_key(character_id, :location))
-    WandererApp.Cache.delete(characters_poll_throttle_key(character_id, :ship))
+  defp clear_poll_throttles(character_id) do
+    Enum.each([:location, :ship], fn kind ->
+      interval = get_in(@consumer_profiles, [:slow, kind, :interval])
+      WandererApp.Cache.delete(poll_throttle_key(character_id, kind, interval))
+    end)
   end
 
   defp broadcast_tracking_update(character_id) do

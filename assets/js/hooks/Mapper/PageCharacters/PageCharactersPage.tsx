@@ -66,6 +66,7 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
   const [trackWallet, setTrackWallet] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PageCharacter | null>(null);
   const isEveView = viewMode === 'eve';
+  const isTableView = viewMode === 'table';
 
   const characterCountLabel = useMemo(() => {
     const visibleCount = filteredCharacters.length;
@@ -197,8 +198,13 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <main className={styles.main}>
+      <div
+        className={clsx('min-h-0 flex-1', {
+          'overflow-hidden': isTableView,
+          'overflow-y-auto': !isTableView,
+        })}
+      >
+        <main className={clsx(styles.main, { [styles.tableMain]: isTableView })}>
           {error && (
             <div className={styles.errorBanner} role="alert">
               <span>{error}</span>

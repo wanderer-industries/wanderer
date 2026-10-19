@@ -124,8 +124,8 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
   defp is_character_map_active?(map_id, character_id) do
     case WandererApp.Character.get_character_state(character_id) do
-      {:ok, %{active_maps: active_maps}} ->
-        map_id in active_maps
+      {:ok, state} ->
+        WandererApp.Character.Tracker.consumer_registered?(state, {:map, map_id})
 
       _ ->
         false

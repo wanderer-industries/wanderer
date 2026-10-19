@@ -1,5 +1,12 @@
 import type { PageCharacter } from './types';
-import { filterCharacters, formatWalletBalance, getCharacterPortraitUrl, getShipRenderUrl } from './utils';
+import {
+  filterCharacters,
+  formatWalletBalance,
+  getCharacterPortraitUrl,
+  getDockedAt,
+  getShipRenderUrl,
+  isUnknownStructure,
+} from './utils';
 
 const CHARACTER: PageCharacter = {
   id: 'character-id',
@@ -12,7 +19,9 @@ const CHARACTER: PageCharacter = {
   alliance_name: 'EvE-Scout Enclave',
   alliance_ticker: 'EVE-SCOUT',
   location_name: 'Thera',
+  station_id: null,
   station_name: null,
+  structure_id: null,
   system_info: {
     solar_system_id: 31000005,
     solar_system_name: 'Thera',
@@ -25,6 +34,7 @@ const CHARACTER: PageCharacter = {
   ship_type_id: 11192,
   wallet_balance: 1_250_000,
   show_wallet_balance: true,
+  online: true,
   invalid_token: false,
 };
 
@@ -41,5 +51,15 @@ describe('PageCharacters utilities', () => {
     expect(getShipRenderUrl(45647)).toBe(
       'https://wanderer-industries.github.io/wanderer-assets/images/phantom-ship-renders/1024x512/45647.png',
     );
+  });
+
+  it('describes the current docking location', () => {
+    expect(getDockedAt(CHARACTER)).toBe('In Space');
+    expect(getDockedAt({ ...CHARACTER, station_id: 60003760, station_name: 'Jita IV - Moon 4' })).toBe(
+      'Jita IV - Moon 4',
+    );
+    expect(getDockedAt({ ...CHARACTER, structure_id: 1_000_000_000_001 })).toBe('Unknown structure');
+    expect(getDockedAt({ ...CHARACTER, station_id: 60003760 })).toBe('Unknown station');
+    expect(isUnknownStructure({ ...CHARACTER, structure_id: 1_000_000_000_001 })).toBe(true);
   });
 });

@@ -97,7 +97,7 @@ defmodule WandererAppWeb.PageCharactersLive do
 
   @impl true
   def terminate(_reason, _socket) do
-    WandererApp.Character.TrackerManager.unregister_characters_consumer(self())
+    WandererApp.Character.TrackerManager.unregister_consumer({:characters_page, self()})
     :ok
   end
 
@@ -154,11 +154,17 @@ defmodule WandererAppWeb.PageCharactersLive do
       Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{character.id}:alliance")
       Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{character.id}:corporation")
       Phoenix.PubSub.subscribe(WandererApp.PubSub, "character:#{character.id}")
-      :ok = WandererApp.Character.TrackerManager.start_tracking(character.id)
     end)
 
     character_ids = Enum.map(characters, & &1.id)
-    :ok = WandererApp.Character.TrackerManager.register_characters_consumer(character_ids)
+
+    :ok =
+      WandererApp.Character.TrackerManager.register_consumer(
+        character_ids,
+        {:characters_page, self()},
+        :slow,
+        self()
+      )
   end
 
   defp delete_character(character_id, user_id) do
@@ -207,14 +213,24 @@ defmodule WandererAppWeb.PageCharactersLive do
       alliance_name: character.alliance_name,
       alliance_ticker: character.alliance_ticker,
       location_name: nested_value(location, :solar_system_info, :solar_system_name),
+      station_id: map_value(location, :station_id),
       station_name: station_name(location),
+      structure_id: map_value(location, :structure_id),
       system_info: serialize_system_info(location),
       ship_name: nested_value(ship, :ship_type_info, :name) || map_value(ship, :ship_name),
       ship_type_id: map_value(ship, :ship_type_id),
       wallet_balance: wallet_balance(character, can_track_wallet?),
       show_wallet_balance: can_track_wallet?,
+      online: character_online?(character),
       invalid_token: is_nil(character.access_token)
     }
+  end
+
+  defp character_online?(character) do
+    case WandererApp.Character.get_character_state(character.id, false) do
+      {:ok, %{is_online: is_online}} when is_boolean(is_online) -> is_online
+      _state -> character.online == true
+    end
   end
 
   defp wallet_balance(_character, false), do: 0.0

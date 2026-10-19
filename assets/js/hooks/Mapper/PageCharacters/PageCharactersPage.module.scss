@@ -209,6 +209,13 @@
   padding: 1.25rem 1.5rem;
 }
 
+.tableMain {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .main > * + * {
   margin-top: 1rem;
 }

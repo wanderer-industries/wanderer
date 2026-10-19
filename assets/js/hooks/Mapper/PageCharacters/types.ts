@@ -23,12 +23,15 @@ export interface PageCharacter {
   alliance_name: string | null;
   alliance_ticker: string | null;
   location_name: string | null;
+  station_id: number | null;
   station_name: string | null;
+  structure_id: number | null;
   system_info: PageCharacterSystemInfo | null;
   ship_name: string | null;
   ship_type_id: number | null;
   wallet_balance: number;
   show_wallet_balance: boolean;
+  online: boolean;
   invalid_token: boolean;
 }
 

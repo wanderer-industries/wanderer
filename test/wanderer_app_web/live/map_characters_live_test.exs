@@ -376,7 +376,7 @@ defmodule WandererAppWeb.MapCharactersLiveTest do
       complete_presence_join(ctx.map, ctx.present)
 
       assert {:ok, %{tracked: false}} = MapCharacterSettingsRepo.get(ctx.map.id, ctx.present.id)
-      assert {:ok, %{active_maps: []}} = Character.get_character_state(ctx.present.id, false)
+      assert {:ok, %{consumers: %{}}} = Character.get_character_state(ctx.present.id, false)
       send(view.pid, :refresh_tracking_data)
       render(view)
       assert selected?(view, "tracked")
@@ -394,7 +394,7 @@ defmodule WandererAppWeb.MapCharactersLiveTest do
       complete_presence_join(ctx.map, ctx.present)
 
       assert {:ok, %{tracked: false}} = MapCharacterSettingsRepo.get(ctx.map.id, ctx.present.id)
-      assert {:ok, %{active_maps: []}} = Character.get_character_state(ctx.present.id, false)
+      assert {:ok, %{consumers: %{}}} = Character.get_character_state(ctx.present.id, false)
     end
 
     test "resumes enabled tracking with refreshed credentials", ctx do
@@ -405,9 +405,7 @@ defmodule WandererAppWeb.MapCharactersLiveTest do
 
       assert {:ok, %{tracked: true}} = MapCharacterSettingsRepo.get(ctx.map.id, ctx.present.id)
       assert {:ok, state} = Character.get_character_state(ctx.present.id, false)
-      assert ctx.map.id in state.active_maps
-      assert state.track_location
-      assert state.track_ship
+      assert state.consumers[{:map, ctx.map.id}] == :fast
     end
 
     test "permits an explicit tracking enable after administrator untrack", ctx do
@@ -424,7 +422,7 @@ defmodule WandererAppWeb.MapCharactersLiveTest do
 
       assert {:ok, %{tracked: true}} = MapCharacterSettingsRepo.get(ctx.map.id, ctx.present.id)
       assert {:ok, state} = Character.get_character_state(ctx.present.id, false)
-      assert ctx.map.id in state.active_maps
+      assert state.consumers[{:map, ctx.map.id}] == :fast
     end
 
     test "ignores unknown ids, other-map targets, and already-untracked viewers", ctx do

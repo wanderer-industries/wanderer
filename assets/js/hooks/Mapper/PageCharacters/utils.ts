@@ -22,6 +22,7 @@ export const filterCharacters = (characters: PageCharacter[], query: string): Pa
       character.alliance_name,
       character.alliance_ticker,
       character.location_name,
+      character.station_name,
       character.ship_name,
     ];
 
@@ -31,6 +32,17 @@ export const filterCharacters = (characters: PageCharacter[], query: string): Pa
 
 export const formatWalletBalance = (balance: number): string => {
   return `ISK ${WALLET_FORMATTER.format(balance)}`;
+};
+
+export const isUnknownStructure = (character: PageCharacter): boolean => {
+  return Boolean(character.structure_id && !character.station_name);
+};
+
+export const getDockedAt = (character: PageCharacter): string => {
+  if (character.station_name) return character.station_name;
+  if (isUnknownStructure(character)) return 'Unknown structure';
+  if (character.station_id) return 'Unknown station';
+  return 'In Space';
 };
 
 export const getCharacterPortraitUrl = (eveId: string): string => {

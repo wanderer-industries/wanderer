@@ -11,7 +11,13 @@ import {
 } from '@/hooks/Mapper/components/ui-kit';
 import { EMPTY_VALUE } from '../constants';
 import type { PageCharacter } from '../types';
-import { formatWalletBalance, getCharacterPortraitUrl, getShipRenderUrl } from '../utils';
+import {
+  formatWalletBalance,
+  getCharacterPortraitUrl,
+  getDockedAt,
+  getShipRenderUrl,
+  isUnknownStructure,
+} from '../utils';
 import styles from './EveCharactersView.module.scss';
 
 export interface EveCharacterCardProps {
@@ -36,6 +42,8 @@ export const EveCharacterCard = ({
   onDelete,
 }: EveCharacterCardProps) => {
   const walletVisible = showBalance && character.show_wallet_balance;
+  const dockedAt = getDockedAt(character);
+  const unknownStructure = isUnknownStructure(character);
   const [toolbarVisible, setToolbarVisible] = useState(false);
 
   const selectCharacter = () => {
@@ -61,7 +69,10 @@ export const EveCharacterCard = ({
 
   return (
     <article
-      className={clsx(styles.characterCard, active && styles.active, character.invalid_token && styles.invalidToken)}
+      className={clsx(styles.characterCard, {
+        [styles.active]: active,
+        [styles.invalidToken]: character.invalid_token,
+      })}
       style={{ zIndex: stackIndex }}
       role="button"
       tabIndex={0}
@@ -83,7 +94,7 @@ export const EveCharacterCard = ({
           })}
           aria-hidden={!toolbarVisible}
         >
-          <div className="flex items-center gap-0.5" onClick={stopPropagation}>
+          <div className="flex items-center gap-0" onClick={stopPropagation}>
             <button
               type="button"
               className={clsx(styles.actionButton, styles.refreshButton)}
@@ -146,6 +157,18 @@ export const EveCharacterCard = ({
               </span>
             </WdTooltipWrapper>
           )}
+          {!character.invalid_token && character.online && (
+            <WdTooltipWrapper
+              className="absolute bottom-3 right-3"
+              content="Character is online and live data is being tracked."
+              position={TooltipPosition.top}
+            >
+              <span className={styles.onlineStatus}>
+                <span className="font-mono text-[11px] uppercase leading-none tracking-[0.08em]">Online</span>
+                <i className="pi pi-wifi text-sm leading-none" aria-hidden="true" />
+              </span>
+            </WdTooltipWrapper>
+          )}
         </div>
 
         <div className={styles.detailsPanel}>
@@ -201,8 +224,13 @@ export const EveCharacterCard = ({
               {character.location_name ?? EMPTY_VALUE}
             </div>
           )}
-          <div className="mt-0.5 w-full truncate text-stone-500" title={character.station_name ?? undefined}>
-            {character.station_name ?? ''}
+          <div
+            className={clsx('mt-0.5 w-full truncate text-stone-500', {
+              '!text-stone-600': unknownStructure,
+            })}
+            title={dockedAt}
+          >
+            {dockedAt}
           </div>
         </div>
       </div>

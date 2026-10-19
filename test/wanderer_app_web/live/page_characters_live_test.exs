@@ -39,13 +39,19 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
     assert character.eve_id == ctx.character.eve_id
     assert character.name == "React Prototype Pilot"
     assert character.corporation_id == ctx.character.corporation_id
+    assert character.online == (ctx.character.online == true)
     assert Map.has_key?(character, :ship_type_id)
     assert Map.has_key?(character, :system_info)
+    assert Map.has_key?(character, :station_id)
     assert Map.has_key?(character, :station_name)
+    assert Map.has_key?(character, :structure_id)
   end
 
   test "pushes a point update when tracked character data changes", ctx do
     {:ok, view, _html} = live(ctx.conn, ~p"/characters-react")
+
+    {:ok, _state} =
+      WandererApp.Character.update_character_state(ctx.character.id, %{is_online: true})
 
     Phoenix.PubSub.broadcast(
       WandererApp.PubSub,
@@ -59,5 +65,6 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
     })
 
     assert character.id == ctx.character.id
+    assert character.online
   end
 end
