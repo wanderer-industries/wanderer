@@ -135,6 +135,28 @@ map_connection_eol_expire_timeout_mins =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_CONNECTION_EOL_EXPIRE_TIMEOUT_MINS", 60)
 
+map_chain_passages_retention_days =
+  config_dir
+  |> get_int_from_path_or_env(
+    "WANDERER_MAP_CHAIN_PASSAGES_RETENTION_DAYS",
+    WandererApp.Env.default_map_chain_passages_retention_days()
+  )
+
+map_system_signatures_retention_days =
+  config_dir
+  |> get_int_from_path_or_env(
+    "WANDERER_MAP_SYSTEM_SIGNATURES_RETENTION_DAYS",
+    WandererApp.Env.default_map_system_signatures_retention_days()
+  )
+
+for {name, value} <- [
+      {"WANDERER_MAP_CHAIN_PASSAGES_RETENTION_DAYS", map_chain_passages_retention_days},
+      {"WANDERER_MAP_SYSTEM_SIGNATURES_RETENTION_DAYS", map_system_signatures_retention_days}
+    ],
+    value < 1 do
+  raise "Config variable #{name} must be a positive integer. Got #{value}"
+end
+
 wallet_tracking_enabled =
   config_dir
   |> get_var_from_path_or_env("WANDERER_WALLET_TRACKING_ENABLED", "false")
@@ -184,6 +206,8 @@ config :wanderer_app,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
+  map_chain_passages_retention_days: map_chain_passages_retention_days,
+  map_system_signatures_retention_days: map_system_signatures_retention_days,
   wallet_tracking_enabled: wallet_tracking_enabled,
   restrict_maps_creation: restrict_maps_creation,
   restrict_acls_creation: restrict_acls_creation,
