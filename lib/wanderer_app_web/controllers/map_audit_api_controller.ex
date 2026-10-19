@@ -7,6 +7,9 @@ defmodule WandererAppWeb.MapAuditAPIController do
   alias WandererAppWeb.UserActivityItem
   alias WandererAppWeb.Helpers.APIUtils
 
+  # No dedicated audit-log permission bit exists; falls back to admin_map.
+  plug WandererAppWeb.Plugs.RequirePermission, %{index: :admin_map}
+
   # -----------------------------------------------------------------
   # Inline Schemas
   # -----------------------------------------------------------------
