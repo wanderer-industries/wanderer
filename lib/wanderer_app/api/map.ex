@@ -78,6 +78,9 @@ defmodule WandererApp.Api.Map do
     define(:update_acls, action: :update_acls)
     define(:update_hubs, action: :update_hubs)
     define(:update_options, action: :update_options)
+    define(:update_home_system, action: :update_home_system)
+    define(:update_home_share_token, action: :update_home_share_token)
+    define(:by_home_share_token, action: :by_home_share_token, args: [:home_share_token])
     define(:assign_owner, action: :assign_owner)
     define(:mark_as_deleted, action: :mark_as_deleted)
     define(:update_api_key, action: :update_api_key)
@@ -211,6 +214,22 @@ defmodule WandererApp.Api.Map do
     update :update_hubs do
       accept [:hubs]
       require_atomic? false
+    end
+
+    update :update_home_system do
+      accept [:home_solar_system_id]
+      require_atomic? false
+    end
+
+    update :update_home_share_token do
+      accept [:home_share_token]
+      require_atomic? false
+    end
+
+    read :by_home_share_token do
+      argument(:home_share_token, :string, allow_nil?: false)
+
+      filter(expr(home_share_token == ^arg(:home_share_token) and not is_nil(home_share_token)))
     end
 
     update :update_options do
@@ -403,6 +422,19 @@ defmodule WandererApp.Api.Map do
 
     attribute :options, :string do
       allow_nil? true
+    end
+
+    # the system a group calls home; what a share hands out is the way into it
+    attribute :home_solar_system_id, :integer do
+      allow_nil?(true)
+      default(nil)
+    end
+
+    # set when the owner shares this map's home; whoever holds it may read the way in
+    attribute :home_share_token, :string do
+      allow_nil?(true)
+      default(nil)
+      constraints(max_length: 64)
     end
 
     attribute :webhooks_enabled, :boolean do
