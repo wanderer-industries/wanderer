@@ -1,10 +1,9 @@
 @use './SolarSystemNodeDefault.module.scss';
 
 /* ---------------------------------------------
-   Only override what's different from the base
+   Only override what's different from the base SolarSystemNodeDefault
    Currently none required
 ---------------------------------------------- */
-
 .RootCustomNode {
   &.eve-system-status-home {
     border: 1px solid var(--eve-solar-system-status-color-home-dark30);

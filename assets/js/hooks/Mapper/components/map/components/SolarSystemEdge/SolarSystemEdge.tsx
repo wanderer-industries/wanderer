@@ -91,6 +91,15 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
         style={style}
       />
       <path
+        id={`middle_${id}`}
+        className={clsx(classes.EdgePathMiddle, {
+          [classes.Tick]: isThickConnections,
+        })}
+        d={path}
+        markerEnd={markerEnd}
+        style={style}
+      />
+      <path
         id={`front_${id}`}
         className={clsx(classes.EdgePathFront, {
           [classes.Tick]: isThickConnections,
