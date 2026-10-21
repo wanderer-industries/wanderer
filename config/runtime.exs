@@ -161,6 +161,10 @@ config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
   custom_route_base_url: System.get_env("CUSTOM_ROUTE_BASE_URL"),
+  layout_service_enabled:
+    System.get_env("WANDERER_LAYOUT_SERVICE_ENABLED", "false") |> String.to_existing_atom(),
+  layout_service_base_url:
+    System.get_env("WANDERER_LAYOUT_SERVICE_BASE_URL", "http://layout-service:3000"),
   invites: System.get_env("WANDERER_INVITES", "false") |> String.to_existing_atom(),
   admin_username: System.get_env("WANDERER_ADMIN_USERNAME", "admin"),
   admin_password: System.get_env("WANDERER_ADMIN_PASSWORD"),

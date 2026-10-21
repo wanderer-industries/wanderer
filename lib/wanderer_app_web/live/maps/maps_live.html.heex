@@ -11,14 +11,20 @@
           <h3 class="card-title text-center text-md">Create Map</h3>
         </div>
       </.link>
+
       <.async_result :let={maps} :if={assigns[:maps]} assign={@maps}>
         <:loading>
           <div class="skeleton card rounded"></div>
+
           <div class="skeleton card rounded"></div>
+
           <div class="skeleton card rounded"></div>
+
           <div class="skeleton card rounded"></div>
         </:loading>
+
         <:failed :let={reason}>{reason}</:failed>
+
         <.link
           :for={map <- maps}
           navigate={~p"/#{map.slug}"}
@@ -39,9 +45,11 @@
               <h2 class="card-title text-sm">
                 {map.name}
               </h2>
+
               <p title={map.description} class="text-sm mt-4 line-clamp-2">
                 {map.description}
               </p>
+
               <div
                 :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
                 class="w-full flex gap-2 mt-2 text-xs"
@@ -61,6 +69,7 @@
                 </button>
               </div>
             </div>
+
             <div>
               <h2 class="w-full flex justify-between mb-4 text-sm">
                 Tracked Characters:
@@ -68,6 +77,7 @@
                   {map.characters_count}
                 </span>
               </h2>
+
               <div class="flex gap-2 justify-end">
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
@@ -79,6 +89,7 @@
                 >
                   <.icon name="hero-user-group-solid" class="w-6 h-6" />
                 </button>
+
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
                   id={"map-audit-#{map.slug}"}
@@ -89,6 +100,7 @@
                 >
                   <.icon name="hero-key-solid" class="w-6 h-6" />
                 </button>
+
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
                   id={"map-settings-#{map.slug}"}
@@ -99,6 +111,7 @@
                 >
                   <.icon name="hero-cog-6-tooth-solid" class="w-6 h-6" />
                 </button>
+
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
                   id={"edit-map-#{map.slug}"}
@@ -110,6 +123,7 @@
                 >
                   <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
                 </button>
+
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
                   id={"delete-map-#{map.slug}"}
@@ -156,6 +170,7 @@
       <p class="text-xs text-stone-400 mb-2">
         Select which space types to automatically track on the map
       </p>
+
       <div class="grid grid-cols-2 gap-1">
         <%= for scope_option <- @available_scopes do %>
           <% is_checked = scope_option.value in (get_current_scopes(f) || []) %>
@@ -211,6 +226,7 @@
         <% end %>
       </div>
     </div>
+
     <.input
       type="checkbox"
       field={f[:only_tracked_characters]}
@@ -281,6 +297,32 @@
                   >
                     <span class="p-tabview-title" data-pc-section="headertitle">
                       <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
+                    </span>
+                  </a>
+                </li>
+
+                <li
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "layout")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-controls="map-layout-settings-content"
+                    aria-selected={@active_settings_tab == "layout"}
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="layout"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-squares-2x2-solid" class="w-4 h-4" />&nbsp;Auto Layout
                     </span>
                   </a>
                 </li>
@@ -366,6 +408,7 @@
                     </span>
                   </a>
                 </li>
+
                 <li
                   :if={not WandererApp.Env.public_api_disabled?()}
                   class={[
@@ -394,6 +437,7 @@
                     </span>
                   </a>
                 </li>
+
                 <li
                   :if={@map_subscriptions_enabled?}
                   class={[
@@ -423,6 +467,7 @@
               </ul>
             </div>
           </div>
+
           <div class="p-tabview-panels" data-pc-section="panelcontainer">
             <div
               id="pr_id_330_content"
@@ -491,6 +536,119 @@
                 </.form>
               </div>
 
+              <div
+                :if={@active_settings_tab == "layout"}
+                id="map-layout-settings-content"
+                role="tabpanel"
+              >
+                <div
+                  :if={not @layout_service_available?}
+                  class="mb-4 rounded border border-amber-700/60 bg-amber-950/30 p-3 text-sm text-amber-300"
+                >
+                  Layout service is disabled by the server administrator.
+                </div>
+
+                <.form
+                  :let={f}
+                  for={@layout_settings_form}
+                  phx-change="change_layout_settings"
+                  phx-submit="save_layout_settings"
+                  class="flex flex-col gap-2"
+                >
+                  <.input
+                    type="checkbox"
+                    field={f[:enabled]}
+                    label="Enable auto layout for this map"
+                  />
+                  <.input
+                    type="select"
+                    field={f[:engine]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Engine"
+                    options={@layout_engine_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:direction]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Direction"
+                    options={@layout_direction_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:orderBy]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Order by"
+                    options={@layout_order_by_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:orderDirection]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Order direction"
+                    options={@layout_order_direction_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:orderPolicy]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Ordering policy"
+                    options={@layout_order_policy_options}
+                  />
+                  <.input
+                    type="select"
+                    field={f[:groups]}
+                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
+                    label="Groups"
+                    options={@layout_group_options}
+                  />
+
+                  <div class="grid grid-cols-3 gap-3">
+                    <.input
+                      type="number"
+                      field={f[:nodeSpacing]}
+                      label="Node spacing"
+                      min="0"
+                      max="1000"
+                    />
+                    <.input
+                      type="number"
+                      field={f[:layerSpacing]}
+                      label="Layer spacing"
+                      min="0"
+                      max="1000"
+                    />
+                    <.input
+                      type="number"
+                      field={f[:edgeSpacing]}
+                      label="Edge spacing"
+                      min="0"
+                      max="1000"
+                    />
+                  </div>
+
+                  <.input type="text" field={f[:locale]} label="Locale" />
+                  <.input
+                    type="checkbox"
+                    field={f[:preservePreviousPositions]}
+                    label="Prefer previous positions"
+                  />
+
+                  <div class="mt-4 flex gap-3 border-t border-neutral-700 pt-4">
+                    <.button type="submit" disabled={not @layout_service_available?}>
+                      <.icon name="hero-check-solid" class="w-4 h-4" /> Save
+                    </.button>
+                    <.button
+                      type="button"
+                      phx-click="run_auto_layout"
+                      disabled={not @layout_service_available? or not @layout_settings["enabled"]}
+                    >
+                      <.icon name="hero-squares-2x2-solid" class="w-4 h-4" /> Run layout
+                    </.button>
+                  </div>
+                </.form>
+              </div>
+
               <div :if={@active_settings_tab == "import"}>
                 <.form
                   :if={assigns |> Map.get(:import_form, false)}
@@ -517,14 +675,18 @@
 
               <div :if={@active_settings_tab == "bot"}>
                 <h3 class="text-lg font-semibold mb-2">Bots Integration</h3>
+
                 <div class="mb-6 p-4 border rounded-md">
                   <p class="mb-2">
                     The bot license allows you to integrate your map with automated tools and bots.
                     Here's how to use it:
                   </p>
+
                   <ol class="list-decimal pl-5 mb-4 space-y-2">
                     <li>Create a license key below (requires an active subscription)</li>
+
                     <li>Use the license key to authenticate your bot with our API</li>
+
                     <%!-- <li>
                       Make API calls to <code class="bg-gray-800 px-1 py-0.5 rounded">GET /api/license/validate</code>
                       with the license key as a Bearer token in the Authorization header
@@ -533,6 +695,7 @@
                       If valid, you'll receive the map ID which you can use for other API endpoints
                     </li> --%>
                   </ol>
+
                   <p class="text-sm text-gray-600">
                     For detailed API documentation, please refer to our <a
                       href="/license"
@@ -556,6 +719,7 @@
                 class="p-6"
               >
                 <h2 class="text-lg font-semibold mb-4">Public API</h2>
+
                 <div class="flex flex-col gap-3 items-start w-full">
                   <div>
                     <input
@@ -573,6 +737,7 @@
                       placeholder="No Public API Key yet"
                     />
                   </div>
+
                   <div class="flex items-center gap-2">
                     <.button
                       type="button"
@@ -582,6 +747,7 @@
                     >
                       <span class="p-button-label">Generate</span>
                     </.button>
+
                     <.button
                       type="button"
                       phx-hook="CopyToClipboard"
@@ -597,6 +763,7 @@
 
                 <div class="border-t border-stone-700 mt-4 pt-4">
                   <h3 class="text-md font-semibold mb-3">Server-Sent Events (SSE)</h3>
+
                   <div class="flex items-center gap-3">
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input
@@ -604,10 +771,10 @@
                         class="checkbox checkbox-primary"
                         checked={@sse_enabled}
                         phx-click="toggle-sse"
-                      />
-                      <span>Enable SSE for this map</span>
+                      /> <span>Enable SSE for this map</span>
                     </label>
                   </div>
+
                   <p class="text-sm text-stone-400 mt-2">
                     When enabled, external clients can subscribe to real-time map events via SSE.
                   </p>
@@ -623,7 +790,6 @@
                 event_name="balance_event"
                 current_user={@current_user}
               />
-
               <.live_component
                 :if={@active_settings_tab == "subscription"}
                 module={WandererAppWeb.Maps.MapSubscriptionsComponent}

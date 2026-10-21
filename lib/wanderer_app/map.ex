@@ -491,13 +491,15 @@ defmodule WandererApp.Map do
         map_id,
         update
       ) do
-    updated_systems =
-      map_id |> get_map!() |> Map.get(:systems, Map.new()) |> update_by_solar_system_id(update)
-
-    map_id
-    |> update_map(%{systems: updated_systems})
-
-    :ok
+    case Cachex.get_and_update(:map_cache, map_id, fn map ->
+           map = map || %{}
+           systems = Map.get(map, :systems, Map.new())
+           updated_systems = update_by_solar_system_id(systems, update)
+           {:commit, Map.put(map, :systems, updated_systems)}
+         end) do
+      {:commit, _map} -> :ok
+      error -> error
+    end
   end
 
   def remove_system(map_id, solar_system_id) do

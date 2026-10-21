@@ -1,16 +1,31 @@
 import classes from './RightBar.module.scss';
 import clsx from 'clsx';
-import { ReactNode, useCallback } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper';
 import { TooltipPosition } from '@/hooks/Mapper/components/ui-kit';
+import { Toast } from 'primereact/toast';
 
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
-import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
+import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
 import { TopSearch } from '@/hooks/Mapper/components/mapRootContent/components/TopSearch';
+import { callToastError, callToastSuccess } from '@/hooks/Mapper/helpers';
 // import { DebugComponent } from '@/hooks/Mapper/components/mapRootContent/components/RightBar/DebugComponent.tsx';
 
-interface RightBarProps {
+const AUTO_LAYOUT_PERMISSIONS: UserPermission[] = [UserPermission.ADMIN_MAP, UserPermission.UPDATE_SYSTEM];
+const TRACKING_PERMISSIONS: UserPermission[] = [UserPermission.TRACK_CHARACTER];
+
+interface LayoutSettingsStatus {
+  available: boolean;
+  enabled: boolean;
+}
+
+interface RunAutoLayoutResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface RightBarProps {
   onShowOnTheMap?: () => void;
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
@@ -29,9 +44,26 @@ export const RightBar = ({
 }: RightBarProps) => {
   const {
     storedSettings: { interfaceSettings, setInterfaceSettings },
+    outCommand,
   } = useMapRootState();
+  const toast = useRef<Toast | null>(null);
+  const [showAutoLayout, setShowAutoLayout] = useState(false);
+  const [autoLayoutRunning, setAutoLayoutRunning] = useState(false);
 
-  const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
+  const canTrackCharacters = useMapCheckPermissions(TRACKING_PERMISSIONS);
+  const canRunAutoLayout = useMapCheckPermissions(AUTO_LAYOUT_PERMISSIONS);
+
+  useEffect(() => {
+    if (!canRunAutoLayout) {
+      setShowAutoLayout(false);
+      return;
+    }
+
+    void outCommand<LayoutSettingsStatus>({ type: OutCommand.getLayoutSettings, data: null })
+      .then(({ available, enabled }) => setShowAutoLayout(available && enabled))
+      .catch(() => setShowAutoLayout(false));
+  }, [canRunAutoLayout, outCommand]);
+
   let kSpaceTooltip = 'Show highlighting Imperial Space';
   if (interfaceSettings.isShowKSpace) {
     kSpaceTooltip = 'Hide highlighting Imperial Space';
@@ -50,6 +82,25 @@ export const RightBar = ({
       isShowMenu: !x.isShowMenu,
     }));
   }, [setInterfaceSettings]);
+
+  const runAutoLayout = useCallback(async () => {
+    setAutoLayoutRunning(true);
+
+    try {
+      const response = await outCommand<RunAutoLayoutResponse>({ type: OutCommand.runAutoLayout, data: null });
+
+      if (!response.success) {
+        callToastError(toast.current, response.error ?? 'Unable to run auto layout');
+        return;
+      }
+
+      callToastSuccess(toast.current, 'Map layout applied');
+    } catch {
+      callToastError(toast.current, 'Unable to run auto layout');
+    } finally {
+      setAutoLayoutRunning(false);
+    }
+  }, [outCommand]);
 
   return (
     <div
@@ -130,6 +181,20 @@ export const RightBar = ({
         {/* TODO - do not delete this code needs for debug */}
         {/*<DebugComponent />*/}
 
+        {showAutoLayout && (
+          <WdTooltipWrapper content="Auto layout" position={TooltipPosition.left}>
+            <button
+              className="btn bg-transparent text-sky-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+              type="button"
+              onClick={() => void runAutoLayout()}
+              disabled={autoLayoutRunning}
+              aria-label="Run auto layout"
+            >
+              <i className={autoLayoutRunning ? 'pi pi-spinner pi-spin' : 'pi pi-sitemap'}></i>
+            </button>
+          </WdTooltipWrapper>
+        )}
+
         <WdTooltipWrapper content="Map user settings" position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
@@ -160,6 +225,7 @@ export const RightBar = ({
           </button>
         </WdTooltipWrapper>
       </div>
+      <Toast ref={toast} />
     </div>
   );
 };

@@ -283,6 +283,26 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           end
         )
 
+  def update_system_position_silently(map_id, update) do
+    with :ok <- WandererApp.Map.update_system_by_solar_system_id(map_id, update),
+         {:ok, system} <-
+           WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
+             map_id,
+             update.solar_system_id
+           ),
+         {:ok, update_map} <- Impl.get_update_map(update, [:position_x, :position_y]),
+         {:ok, updated_system} <- WandererApp.MapSystemRepo.update_position(system, update_map) do
+      @ddrt.update(
+        updated_system.solar_system_id,
+        WandererApp.Map.PositionCalculator.get_system_bounding_rect(updated_system),
+        "rtree_#{map_id}"
+      )
+
+      update_map_system_last_activity(map_id, updated_system, false)
+      {:ok, updated_system}
+    end
+  end
+
   def add_hub(
         map_id,
         hub_info
@@ -1100,7 +1120,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   defp update_map_system_last_activity(
          map_id,
-         updated_system
+         updated_system,
+         broadcast? \\ true
        ) do
     WandererApp.Cache.put(
       "map_#{map_id}:system_#{updated_system.id}:last_activity",
@@ -1108,7 +1129,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       ttl: @system_inactive_timeout
     )
 
-    Impl.broadcast!(map_id, :update_system, updated_system)
+    if broadcast? do
+      Impl.broadcast!(map_id, :update_system, updated_system)
+    end
 
     # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
     # This may fail if the relay is not available (e.g., in tests), which is fine

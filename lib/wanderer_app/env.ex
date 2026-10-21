@@ -14,6 +14,11 @@ defmodule WandererApp.Env do
   def base_url(), do: get_key(:web_app_url, "<BASE_URL>")
   def base_metrics_only(), do: get_key(:base_metrics_only, false)
   def custom_route_base_url(), do: get_key(:custom_route_base_url, "<CUSTOM_ROUTE_BASE_URL>")
+  def layout_service_enabled?(), do: get_key(:layout_service_enabled, false)
+
+  def layout_service_base_url(),
+    do: get_key(:layout_service_base_url, "http://layout-service:3000")
+
   def invites(), do: get_key(:invites, false)
 
   def map_subscriptions_enabled?(), do: get_key(:map_subscriptions_enabled, false)
@@ -119,6 +124,9 @@ defmodule WandererApp.Env do
   made available to react
   """
   def to_client_env() do
-    %{detailedKillsDisabled: not wanderer_kills_service_enabled?()}
+    %{
+      detailedKillsDisabled: not wanderer_kills_service_enabled?(),
+      layoutServiceEnabled: layout_service_enabled?()
+    }
   end
 end

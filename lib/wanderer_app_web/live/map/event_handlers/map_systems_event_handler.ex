@@ -26,6 +26,14 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         MapEventHandler.map_ui_system(system, false)
       ])
 
+  def handle_server_event(%{event: :update_systems, payload: systems}, socket),
+    do:
+      socket
+      |> MapEventHandler.push_map_event(
+        "update_systems",
+        Enum.map(systems, &MapEventHandler.map_ui_system(&1, false))
+      )
+
   def handle_server_event(%{event: :systems_removed, payload: solar_system_ids}, socket),
     do:
       socket

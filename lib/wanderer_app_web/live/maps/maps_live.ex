@@ -6,6 +6,21 @@ defmodule WandererAppWeb.MapsLive do
   require Logger
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+  @layout_engine_options [{"ELK Layered", "elk"}, {"Dagre", "dagre"}]
+  @layout_direction_options [
+    {"Top to Bottom", "TB"},
+    {"Bottom to Top", "BT"},
+    {"Left to Right", "LR"},
+    {"Right to Left", "RL"}
+  ]
+  @layout_order_by_options [{"Name", "name"}, {"ID", "id"}, {"Previous order", "previous-order"}]
+  @layout_order_direction_options [{"Ascending", "asc"}, {"Descending", "desc"}]
+  @layout_order_policy_options [
+    {"Strict", "strict"},
+    {"Prefer order", "prefer"},
+    {"Crossings first", "crossings-first"}
+  ]
+  @layout_group_options [{"None", "none"}, {"Compound", "compound"}]
 
   @impl true
   def mount(
@@ -160,6 +175,7 @@ defmodule WandererAppWeb.MapsLive do
           |> WandererApp.Map.Server.get_export_settings()
 
         {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
+        layout_settings = WandererApp.LayoutSettings.get(map.id)
 
         socket
         |> assign(:active_page, :maps)
@@ -179,6 +195,15 @@ defmodule WandererAppWeb.MapsLive do
           is_adding_subscription?: false,
           selected_subscription: nil,
           options_form: options_form_data |> to_form(),
+          layout_settings: layout_settings,
+          layout_settings_form: to_form(layout_settings, as: :layout),
+          layout_service_available?: WandererApp.Env.layout_service_enabled?(),
+          layout_engine_options: @layout_engine_options,
+          layout_direction_options: @layout_direction_options,
+          layout_order_by_options: @layout_order_by_options,
+          layout_order_direction_options: @layout_order_direction_options,
+          layout_order_policy_options: @layout_order_policy_options,
+          layout_group_options: @layout_group_options,
           layout_options: [
             {"Left To Right", "left_to_right"},
             {"Top To Bottom", "top_to_bottom"}
@@ -586,6 +611,61 @@ defmodule WandererAppWeb.MapsLive do
     )
 
     {:noreply, socket |> assign(map: updated_map, options_form: options_form)}
+  end
+
+  def handle_event(
+        "change_layout_settings",
+        %{"layout" => layout_settings},
+        socket
+      ) do
+    normalized_settings = WandererApp.LayoutSettings.normalize(layout_settings)
+
+    {:noreply, assign(socket, :layout_settings_form, to_form(normalized_settings, as: :layout))}
+  end
+
+  def handle_event(
+        "save_layout_settings",
+        %{"layout" => layout_settings},
+        %{assigns: %{map_id: map_id, current_user: current_user}} = socket
+      ) do
+    case WandererApp.LayoutSettings.save(map_id, layout_settings, current_user) do
+      {:ok, _settings} ->
+        normalized_settings = WandererApp.LayoutSettings.get(map_id)
+
+        {:noreply,
+         socket
+         |> assign(:layout_settings, normalized_settings)
+         |> assign(:layout_settings_form, to_form(normalized_settings, as: :layout))
+         |> put_flash(:info, "Auto layout settings saved")}
+
+      {:error, reason} ->
+        Logger.error("Unable to save auto layout settings: #{inspect(reason)}")
+        {:noreply, put_flash(socket, :error, "Unable to save auto layout settings")}
+    end
+  end
+
+  def handle_event(
+        "run_auto_layout",
+        _params,
+        %{assigns: %{map: map, map_id: map_id}} = socket
+      ) do
+    settings = WandererApp.LayoutSettings.get(map_id)
+
+    with true <- WandererApp.Env.layout_service_enabled?(),
+         %{"enabled" => true} <- settings,
+         {:ok, _result} <- WandererApp.Map.Layout.run(map, settings) do
+      {:noreply, put_flash(socket, :info, "Map layout applied")}
+    else
+      false ->
+        {:noreply, put_flash(socket, :error, "Layout service is disabled")}
+
+      %{} ->
+        {:noreply, put_flash(socket, :error, "Enable auto layout and save the settings first")}
+
+      {:error, reason} ->
+        Logger.error("Unable to run auto layout: #{inspect(reason)}")
+        {:noreply, put_flash(socket, :error, "Unable to run auto layout")}
+    end
   end
 
   @impl true

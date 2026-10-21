@@ -336,6 +336,46 @@ defmodule WandererAppWeb.MapCoreEventHandler do
   end
 
   def handle_ui_event(
+        "get_layout_settings",
+        _,
+        %{assigns: %{map_id: map_id}} = socket
+      ) do
+    settings = WandererApp.LayoutSettings.get(map_id)
+
+    {:reply,
+     %{
+       available: WandererApp.Env.layout_service_enabled?(),
+       enabled: settings["enabled"]
+     }, socket}
+  end
+
+  def handle_ui_event(
+        "run_auto_layout",
+        _,
+        %{
+          assigns: %{
+            map_id: map_id,
+            user_permissions: %{admin_map: true, update_system: true}
+          }
+        } = socket
+      ) do
+    settings = WandererApp.LayoutSettings.get(map_id)
+
+    with true <- WandererApp.Env.layout_service_enabled?(),
+         %{"enabled" => true} <- settings,
+         {:ok, result} <- WandererApp.Map.Layout.run(map_id, settings) do
+      {:reply, %{success: true, result: result}, socket}
+    else
+      false -> {:reply, %{success: false, error: "Layout service is disabled"}, socket}
+      %{} -> {:reply, %{success: false, error: "Auto layout is disabled for this map"}, socket}
+      {:error, reason} -> {:reply, %{success: false, error: inspect(reason)}, socket}
+    end
+  end
+
+  def handle_ui_event("run_auto_layout", _, socket),
+    do: {:reply, %{success: false, error: "Unauthorized"}, socket}
+
+  def handle_ui_event(
         "save_default_settings",
         %{"settings" => settings},
         %{
@@ -436,6 +476,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     if actor do
       case WandererApp.Api.MapDefaultSettings.get_by_map_id(%{map_id: map_id}) do
         {:ok, [existing | _]} ->
+          settings = WandererApp.LayoutSettings.preserve(settings, existing.settings)
           WandererApp.Api.MapDefaultSettings.update(existing, %{settings: settings}, actor: actor)
 
         _error ->

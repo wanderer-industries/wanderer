@@ -40,6 +40,7 @@ defmodule WandererAppWeb.MapEventHandler do
   @map_system_events [
     :add_system,
     :update_system,
+    :update_systems,
     :systems_removed,
     :maybe_select_system
   ]

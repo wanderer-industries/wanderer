@@ -43,6 +43,7 @@ defmodule WandererApp.Map.Server do
   defdelegate remove_system_comment(map_id, comment_id, user_id, character_id), to: Impl
 
   defdelegate update_system_position(map_id, update), to: Impl
+  defdelegate update_system_position_silently(map_id, update), to: Impl
 
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: Impl
 

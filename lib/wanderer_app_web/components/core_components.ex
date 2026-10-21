@@ -379,7 +379,7 @@ defmodule WandererAppWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name} class="form-control mt-2">
-      <label class="inputContainer" for={@name}>
+      <label class="inputContainer" for={@id}>
         <span>{@label}</span>
         <div></div>
         <div class="smallInputSwitch">

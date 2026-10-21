@@ -308,6 +308,8 @@ export enum OutCommand {
   updateUserSettings = 'update_user_settings',
   saveDefaultSettings = 'save_default_settings',
   getDefaultSettings = 'get_default_settings',
+  getLayoutSettings = 'get_layout_settings',
+  runAutoLayout = 'run_auto_layout',
   unlinkSignature = 'unlink_signature',
   searchSystems = 'search_systems',
   undoDeleteSignatures = 'undo_delete_signatures',
