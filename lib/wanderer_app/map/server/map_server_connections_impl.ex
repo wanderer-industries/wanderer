@@ -3,6 +3,7 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
 
   require Logger
 
+  alias WandererApp.Map.ConnectionLifetime
   alias WandererApp.Map.Server.Impl
   alias WandererApp.Map.Server.SignaturesImpl
   alias WandererApp.Map.Server.SystemsImpl
@@ -371,6 +372,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
                         id: connection_id,
                         solar_system_source: solar_system_source_id,
                         solar_system_target: solar_system_target_id,
+                        inserted_at: inserted_at,
+                        wormhole_type: wormhole_type,
                         time_status: time_status,
                         type: type
                       } ->
@@ -389,6 +392,11 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           )
 
       not is_connection_exist ||
+        (type == @connection_type_wormhole &&
+           ConnectionLifetime.drifter_wormhole_expired?(
+             wormhole_type,
+             inserted_at
+           )) ||
         (type == @connection_type_wormhole &&
            time_status == @connection_time_status_eol &&
            is_connection_valid(
@@ -678,23 +686,25 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
             connection_type
           )
 
-        time_status =
+        connection_type = get_extra_info(extra_info, "type", connection_type)
+        ship_size_type = get_extra_info(extra_info, "ship_size_type", ship_size_type)
+        wormhole_type = get_extra_info(extra_info, "wormhole_type", nil)
+
+        default_time_status =
           if connection_type == @connection_type_wormhole do
             get_time_status(
               old_location.solar_system_id,
               location.solar_system_id,
-              ship_size_type
+              ship_size_type,
+              wormhole_type
             )
           else
             @connection_time_status_default
           end
 
-        connection_type = get_extra_info(extra_info, "type", connection_type)
-        ship_size_type = get_extra_info(extra_info, "ship_size_type", ship_size_type)
-        time_status = get_extra_info(extra_info, "time_status", time_status)
+        time_status = get_extra_info(extra_info, "time_status", default_time_status)
         mass_status = get_extra_info(extra_info, "mass_status", 0)
         locked = get_extra_info(extra_info, "locked", false)
-        wormhole_type = get_extra_info(extra_info, "wormhole_type", nil)
 
         {:ok, connection} =
           WandererApp.MapConnectionRepo.create(%{
@@ -1171,35 +1181,20 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     do: @large_ship_size
 
   defp get_time_status(
-         _source_solar_system_id,
-         _target_solar_system_id,
-         @frigate_ship_size
-       ),
-       do: @connection_time_status_eol_4_5
-
-  defp get_time_status(
          source_solar_system_id,
          target_solar_system_id,
-         _ship_size_type
+         ship_size_type,
+         wormhole_type
        ) do
-    # Check if either system is C1 before creating the connection
     {:ok, source_system_info} = get_system_static_info(source_solar_system_id)
     {:ok, target_system_info} = get_system_static_info(target_solar_system_id)
 
-    cond do
-      # C1/2/3/4 systems always get eol_16
-      source_system_info.system_class in [@c1, @c2, @c3, @c4] or
-          target_system_info.system_class in [@c1, @c2, @c3, @c4] ->
-        @connection_time_status_eol_16
-
-      # C5/6 systems always get eol_24
-      source_system_info.system_class in [@c5, @c6] or
-          target_system_info.system_class in [@c5, @c6] ->
-        @connection_time_status_eol_24
-
-      true ->
-        @connection_time_status_default
-    end
+    ConnectionLifetime.initial_time_status(
+      source_system_info.system_class,
+      target_system_info.system_class,
+      ship_size_type,
+      wormhole_type
+    )
   end
 
   defp get_new_time_status(_start_time, @connection_time_status_default),
