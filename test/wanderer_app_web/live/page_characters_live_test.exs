@@ -6,6 +6,13 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
   alias WandererAppWeb.Factory
 
   setup %{conn: conn} do
+    previous_flag = Application.get_env(:wanderer_app, :legacy_characters_page_enabled, false)
+    Application.put_env(:wanderer_app, :legacy_characters_page_enabled, false)
+
+    on_exit(fn ->
+      Application.put_env(:wanderer_app, :legacy_characters_page_enabled, previous_flag)
+    end)
+
     start_supervised!({WandererApp.Character.TrackerManager, []})
 
     user = Factory.insert(:user, %{})
@@ -19,16 +26,30 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
     %{conn: conn, character: character}
   end
 
-  test "mounts the React hook on a route separate from the existing Characters page", ctx do
-    {:ok, view, html} = live(ctx.conn, ~p"/characters-react")
+  test "mounts the React hook on the primary Characters route", ctx do
+    {:ok, view, html} = live(ctx.conn, ~p"/characters")
 
     assert html =~ ~s(id="page-characters-root")
     assert html =~ ~s(phx-hook="PageCharacters")
     assert has_element?(view, "#page-characters-root[phx-update=ignore]")
+
+    assert {:error, {:redirect, %{to: "/characters"}}} =
+             live(ctx.conn, ~p"/characters/authorize")
+  end
+
+  test "mounts the legacy page on /characters when enabled", ctx do
+    Application.put_env(:wanderer_app, :legacy_characters_page_enabled, true)
+
+    {:ok, _legacy_view, legacy_html} = live(ctx.conn, ~p"/characters")
+    assert legacy_html =~ ~s(phx-hook="ShowCharactersAddAlert")
+    refute legacy_html =~ ~s(id="page-characters-root")
+
+    {:ok, _authorize_view, authorize_html} = live(ctx.conn, ~p"/characters/authorize")
+    assert authorize_html =~ "Authorize Character"
   end
 
   test "sends a serialized character snapshot through the socket contract", ctx do
-    {:ok, view, _html} = live(ctx.conn, ~p"/characters-react")
+    {:ok, view, _html} = live(ctx.conn, ~p"/characters")
 
     render_hook(view, "page_characters_init", %{})
 
@@ -48,7 +69,7 @@ defmodule WandererAppWeb.PageCharactersLiveTest do
   end
 
   test "pushes a point update when tracked character data changes", ctx do
-    {:ok, view, _html} = live(ctx.conn, ~p"/characters-react")
+    {:ok, view, _html} = live(ctx.conn, ~p"/characters")
 
     {:ok, _state} =
       WandererApp.Character.update_character_state(ctx.character.id, %{is_online: true})

@@ -189,6 +189,7 @@ defmodule WandererAppWeb.Layouts do
   attr :show_admin, :boolean
   attr :show_sidebar, :boolean
   attr :map_subscriptions_enabled, :boolean
+  attr :legacy_characters_page_enabled, :boolean
 
   def sidebar_nav_links(assigns) do
     ~H"""
@@ -228,15 +229,13 @@ defmodule WandererAppWeb.Layouts do
           <.nav_link
             href="/characters"
             active={@active_tab == :characters}
-            icon="hero-user-plus-solid"
+            icon={
+              if @legacy_characters_page_enabled,
+                do: "hero-user-plus-solid",
+                else: "hero-identification-solid"
+            }
             tip="Characters"
-          />
-          <.nav_link
-            href="/characters-react"
-            active={@active_tab == :characters_react}
-            icon="hero-identification-solid"
-            tip="Characters"
-            badge="NEW"
+            badge={if @legacy_characters_page_enabled, do: nil, else: "NEW"}
           />
           <.nav_link
             href="/tracking"
