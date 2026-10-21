@@ -23,7 +23,7 @@ defmodule WandererAppWeb.PageCharactersLive do
     {:ok,
      assign(socket,
        active_page: :characters_react,
-       page_title: "Characters (React prototype)",
+       page_title: "Characters",
        user_id: user_id
      )}
   end
@@ -33,7 +33,7 @@ defmodule WandererAppWeb.PageCharactersLive do
     {:ok,
      assign(socket,
        active_page: :characters_react,
-       page_title: "Characters (React prototype)",
+       page_title: "Characters",
        user_id: nil
      )}
   end

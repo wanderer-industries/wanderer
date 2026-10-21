@@ -147,7 +147,6 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold text-white">Characters</h1>
-              <span className={styles.prototypeBadge}>React prototype</span>
               <span className="text-xs text-stone-500">{characterCountLabel}</span>
             </div>
             <p className="mt-1 text-xs text-stone-500">Manage linked EVE characters and authorization state.</p>

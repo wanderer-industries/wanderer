@@ -235,7 +235,7 @@ defmodule WandererAppWeb.Layouts do
             href="/characters-react"
             active={@active_tab == :characters_react}
             icon="hero-identification-solid"
-            tip="Characters (React prototype)"
+            tip="Characters"
             badge="NEW"
           />
           <.nav_link
