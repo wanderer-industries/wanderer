@@ -2,6 +2,60 @@
 
 <!-- changelog -->
 
+## [v1.104.3](https://github.com/wanderer-industries/wanderer/compare/v1.104.2...v1.104.3) (2026-10-19)
+
+
+
+
+### Bug Fixes:
+
+* webhooks: return state in process_active_subscriptions to avoid BadMapError crash
+
+## [v1.104.2](https://github.com/wanderer-industries/wanderer/compare/v1.104.1...v1.104.2) (2026-10-18)
+
+
+
+
+### Bug Fixes:
+
+* esi: honour 304 response headers when revalidating cached ESI data
+
+## [v1.104.1](https://github.com/wanderer-industries/wanderer/compare/v1.104.0...v1.104.1) (2026-10-17)
+
+
+
+
+### Bug Fixes:
+
+* routes: Change endpoint for routes - it should reduce cpu using for a lot of routes build
+
+## [v1.104.0](https://github.com/wanderer-industries/wanderer/compare/v1.103.7...v1.104.0) (2026-10-15)
+
+
+
+
+### Features:
+
+* show all tracked map characters
+
+## [v1.103.7](https://github.com/wanderer-industries/wanderer/compare/v1.103.6...v1.103.7) (2026-10-15)
+
+
+
+
+## [v1.103.6](https://github.com/wanderer-industries/wanderer/compare/v1.103.5...v1.103.6) (2026-10-14)
+
+
+
+
+### Bug Fixes:
+
+* signatures: Fixed filtering combat sites
+
+* signatures: Added button for edit signature in toolbar
+
+* signatures: Added QoL for signatures - Ctrl + A allow select all. Fixed colors for selected rows. Added toolbar for delete and copy selected sigs. Added toxiproxy for debugging mapper locally with delays
+
 ## [v1.103.5](https://github.com/wanderer-industries/wanderer/compare/v1.103.4...v1.103.5) (2026-10-13)
 
 

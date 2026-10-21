@@ -5,7 +5,7 @@ import classes from './rowStyles.module.scss';
 import { GlowingRowInfo } from '../hooks/types';
 
 const BASE_ROW_CLASSES = 'transition duration-200 my-2 hover:bg-purple-400/20';
-const SELECTED_ROW_CLASSES = 'bg-violet-400/40 hover:bg-violet-300/40';
+const SELECTED_ROW_CLASSES = '!bg-white/20 hover:!bg-white/25';
 const DELETED_ROW_CLASSES = 'bg-red-400/40 hover:bg-red-400/50';
 const NEW_ROW_GLOW_CLASSES = 'duration-500 bg-lime-500/30 hover:bg-lime-500/50';
 const EXISTING_ROW_GLOW_CLASSES = 'duration-500 bg-orange-200/10 hover:bg-orange-200/50';
@@ -41,9 +41,10 @@ export function getSignatureRowClass(
     getRowBackgroundColor(row.inserted_at ? new Date(row.inserted_at) : undefined),
     BASE_ROW_CLASSES,
   ];
+  const colorByTypeClasses = colorByType ? getColorByTypeClasses(row) : undefined;
 
   if (isSelected) {
-    return clsx(baseCls, SELECTED_ROW_CLASSES);
+    return clsx(baseCls, colorByTypeClasses, SELECTED_ROW_CLASSES);
   }
 
   if (row.deleted) {
@@ -55,8 +56,6 @@ export function getSignatureRowClass(
   if (glowInfo && glowInfo.systemId === systemId) {
     glowClasses = glowInfo.isNew ? NEW_ROW_GLOW_CLASSES : EXISTING_ROW_GLOW_CLASSES;
   }
-
-  const colorByTypeClasses = colorByType ? getColorByTypeClasses(row) : undefined;
 
   return clsx(baseCls, colorByTypeClasses, glowClasses);
 }

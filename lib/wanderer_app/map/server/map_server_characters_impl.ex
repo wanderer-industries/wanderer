@@ -1053,48 +1053,9 @@ defmodule WandererApp.Map.Server.CharactersImpl do
            character_id: character_id
          }) do
       {:ok, %{tracked: false}} ->
-        # Was previously untracked (by system cleanup or user).
-        # If character now has valid tokens, check permissions and auto-restore tracking.
-        # This handles the case where re-auth gives fresh tokens but DB still says tracked: false.
-        if not is_nil(character.access_token) do
-          case WandererApp.Character.TrackingUtils.check_character_tracking_permission(
-                 character,
-                 map_id
-               ) do
-            {:ok, :allowed} ->
-              Logger.info(
-                "[CharactersImpl] Auto-restoring tracking for character #{character_id} on map #{map_id} - " <>
-                  "character has valid tokens and permissions after reconnect"
-              )
-
-              add_character(map_id, character, true)
-
-              WandererApp.MapCharacterSettingsRepo.track(%{
-                map_id: map_id,
-                character_id: character_id
-              })
-
-              WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
-                map_id: map_id,
-                track: true
-              })
-
-            _ ->
-              Logger.debug(fn ->
-                "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
-                  "character lacks permissions"
-              end)
-
-              add_character(map_id, character, false)
-          end
-        else
-          Logger.debug(fn ->
-            "[CharactersImpl] Skipping re-track for character #{character_id} on map #{map_id} - " <>
-              "character has no valid access token"
-          end)
-
-          add_character(map_id, character, false)
-        end
+        # Presence can arrive after an explicit untrack. Fresh credentials do not
+        # override that saved preference; TrackingUtils persists an explicit re-enable.
+        add_character(map_id, character, false)
 
       _ ->
         # New character or already tracked - enable tracking
