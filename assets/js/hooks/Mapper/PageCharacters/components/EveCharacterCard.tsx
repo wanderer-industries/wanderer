@@ -51,6 +51,8 @@ export const EveCharacterCard = ({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return;
+
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       selectCharacter();
@@ -124,14 +126,16 @@ export const EveCharacterCard = ({
           <img src={getCharacterPortraitUrl(character.eve_id)} alt={character.name} className={styles.portraitImage} />
           <div className={styles.portraitShade} />
           <div className="absolute bottom-2 left-2 flex items-end gap-1.5">
-            <WdTooltipWrapper content={character.corporation_name ?? 'Corporation'} position={TooltipPosition.top}>
-              <WdEveEntityPortrait
-                type={WdEveEntityPortraitType.corporation}
-                eveId={character.corporation_id.toString()}
-                size={WdEveEntityPortraitSize.w33}
-                className={styles.entityLogo}
-              />
-            </WdTooltipWrapper>
+            {character.corporation_id !== null && (
+              <WdTooltipWrapper content={character.corporation_name ?? 'Corporation'} position={TooltipPosition.top}>
+                <WdEveEntityPortrait
+                  type={WdEveEntityPortraitType.corporation}
+                  eveId={character.corporation_id.toString()}
+                  size={WdEveEntityPortraitSize.w33}
+                  className={styles.entityLogo}
+                />
+              </WdTooltipWrapper>
+            )}
             {character.alliance_id && (
               <WdTooltipWrapper content={character.alliance_name ?? 'Alliance'} position={TooltipPosition.top}>
                 <WdEveEntityPortrait

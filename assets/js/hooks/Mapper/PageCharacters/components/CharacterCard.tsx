@@ -45,12 +45,14 @@ export const CharacterCard = ({ character, showBalance, deleting, onAuthorize, o
           })}
         />
         <div className={styles.entityLogos}>
-          <WdEveEntityPortrait
-            type={WdEveEntityPortraitType.corporation}
-            eveId={character.corporation_id.toString()}
-            size={WdEveEntityPortraitSize.w33}
-            className={styles.entityLogo}
-          />
+          {character.corporation_id !== null && (
+            <WdEveEntityPortrait
+              type={WdEveEntityPortraitType.corporation}
+              eveId={character.corporation_id.toString()}
+              size={WdEveEntityPortraitSize.w33}
+              className={styles.entityLogo}
+            />
+          )}
           {character.alliance_id && (
             <WdEveEntityPortrait
               type={WdEveEntityPortraitType.alliance}

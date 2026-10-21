@@ -16,7 +16,7 @@ export interface PageCharacter {
   id: string;
   eve_id: string;
   name: string;
-  corporation_id: number;
+  corporation_id: number | null;
   corporation_name: string | null;
   corporation_ticker: string | null;
   alliance_id: number | null;

@@ -119,18 +119,20 @@ export const CharactersTable = ({
                         size={WdEveEntityPortraitSize.w33}
                         className="!border-white/10"
                       />
-                      <WdTooltipWrapper
-                        content={character.corporation_name ?? 'Unknown corporation'}
-                        position={TooltipPosition.top}
-                        wrapperClassName="flex"
-                      >
-                        <WdEveEntityPortrait
-                          type={WdEveEntityPortraitType.corporation}
-                          eveId={character.corporation_id.toString()}
-                          size={WdEveEntityPortraitSize.w33}
-                          className="!border-white/10 opacity-80"
-                        />
-                      </WdTooltipWrapper>
+                      {character.corporation_id !== null && (
+                        <WdTooltipWrapper
+                          content={character.corporation_name ?? 'Unknown corporation'}
+                          position={TooltipPosition.top}
+                          wrapperClassName="flex"
+                        >
+                          <WdEveEntityPortrait
+                            type={WdEveEntityPortraitType.corporation}
+                            eveId={character.corporation_id.toString()}
+                            size={WdEveEntityPortraitSize.w33}
+                            className="!border-white/10 opacity-80"
+                          />
+                        </WdTooltipWrapper>
+                      )}
                       <span className={clsx(styles.characterName, 'ml-1')}>{character.name}</span>
                     </div>
                   </td>
