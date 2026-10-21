@@ -7,6 +7,7 @@ defmodule WandererAppWeb.Nav do
   alias WandererAppWeb.{
     AccessListsLive,
     CharacterProfileLive,
+    CharactersPageLive,
     MapLive,
     MapsLive,
     CharactersLive,
@@ -28,6 +29,7 @@ defmodule WandererAppWeb.Nav do
        show_admin: show_admin,
        show_sidebar: true,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
+       legacy_characters_page_enabled?: WandererApp.Env.legacy_characters_page_enabled?(),
        app_version: WandererApp.Env.vsn(),
        latest_post: latest_post
      )}
@@ -63,6 +65,9 @@ defmodule WandererAppWeb.Nav do
           :maps
 
         {CharactersLive, _} ->
+          :characters
+
+        {CharactersPageLive, _} ->
           :characters
 
         {CharacterProfileLive, _} ->

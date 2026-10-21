@@ -17,6 +17,7 @@ defmodule WandererApp.Env do
   def invites(), do: get_key(:invites, false)
 
   def map_subscriptions_enabled?(), do: get_key(:map_subscriptions_enabled, false)
+  def legacy_characters_page_enabled?(), do: get_key(:legacy_characters_page_enabled, false)
   def public_api_disabled?(), do: get_key(:public_api_disabled, false)
 
   @decorate cacheable(

@@ -1,0 +1,301 @@
+.eveLoginButton {
+  position: relative;
+  width: 224px;
+  height: 44px;
+  overflow: hidden;
+  padding: 1px;
+  border-radius: 0.25rem;
+  @apply text-white;
+}
+
+.eveLoginBorder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: conic-gradient(#ef1b1b 20deg, transparent 120deg);
+}
+
+.eveLoginButton:hover .eveLoginBorder {
+  background-color: #ef1b1b;
+}
+
+.eveLoginContent {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  width: 220px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  @apply bg-black;
+}
+
+.page {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  padding-left: 3.5rem;
+  @apply text-stone-100;
+}
+
+.evePage {
+  background-attachment: fixed;
+}
+
+.defaultPage {
+  @apply bg-stone-950;
+}
+
+.header {
+  position: relative;
+  z-index: 50;
+  flex: none;
+  padding: 1rem 0;
+  border-bottom: 1px solid;
+  backdrop-filter: blur(8px);
+}
+
+.eveHeader {
+  @apply border-red-950/80 bg-black/80;
+}
+
+.defaultHeader {
+  @apply border-stone-800 bg-stone-950/95;
+}
+
+.headerContent {
+  display: flex;
+  width: 100%;
+  max-width: 1500px;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 1280px) {
+  .headerContent {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.prototypeBadge {
+  padding: 0.125rem 0.5rem;
+  @apply border-sky-700/60 bg-sky-950 text-sky-300;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.balanceToggle {
+  display: flex;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  @apply text-stone-400;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.balanceToggle:hover {
+  @apply text-stone-200;
+}
+
+.balanceInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.balanceSwitch {
+  position: relative;
+  width: 2.25rem;
+  height: 1.25rem;
+  flex: none;
+  @apply border-stone-700 bg-stone-900;
+  border-width: 1px;
+  border-style: solid;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.balanceSwitch::after {
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  @apply bg-stone-500;
+  transition: transform 150ms ease;
+  content: '';
+}
+
+.balanceInput:checked + .balanceSwitch {
+  @apply border-orange-400 bg-orange-400/15;
+}
+
+.balanceInput:checked + .balanceSwitch::after {
+  @apply bg-orange-400;
+  transform: translateX(1rem);
+}
+
+.balanceInput:focus-visible + .balanceSwitch {
+  @apply outline-orange-400/60;
+  outline-width: 2px;
+  outline-style: solid;
+  outline-offset: 2px;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  z-index: 10;
+  @apply text-stone-500;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.viewSelector {
+  display: flex;
+  height: 2.25rem;
+  padding: 0.125rem;
+  @apply border-stone-700 bg-stone-900;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.viewButton {
+  display: flex;
+  width: 2.25rem;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.activeViewButton {
+  @apply border-orange-400 bg-orange-400 text-stone-950;
+}
+
+.idleViewButton {
+  @apply text-stone-500;
+}
+
+.idleViewButton:hover {
+  @apply bg-stone-800 text-orange-400;
+}
+
+.main {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+}
+
+.tableMain {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.main > * + * {
+  margin-top: 1rem;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  @apply border-red-900 bg-red-950/50 text-red-200;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.promoBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  @apply border-stone-800 bg-stone-900/60;
+  border-width: 1px;
+  border-style: solid;
+}
+
+@media (min-width: 640px) {
+  .promoBanner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.authorizeDialog {
+  width: min(560px, calc(100vw - 2rem));
+}
+
+.authorizeDialog :global(.p-dialog-header) {
+  align-items: center !important;
+  padding: 0 1.75rem !important;
+}
+
+.authorizeDialog :global(.p-dialog-header-icons) {
+  align-self: center !important;
+}
+
+.authorizeDialog :global(.p-dialog-content) {
+  padding: 1.25rem 1.75rem !important;
+}
+
+.authorizeDialog :global(.p-dialog-footer) {
+  padding-right: 1.75rem !important;
+  padding-bottom: 1.5rem !important;
+  padding-left: 1.75rem !important;
+}
+
+.requiredScope {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  cursor: not-allowed;
+}
+
+.optionalScope {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  @apply bg-orange-400/[0.03];
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.optionalScope:hover {
+  @apply bg-orange-400/[0.06];
+}

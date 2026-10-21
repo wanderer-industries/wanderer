@@ -189,6 +189,7 @@ defmodule WandererAppWeb.Layouts do
   attr :show_admin, :boolean
   attr :show_sidebar, :boolean
   attr :map_subscriptions_enabled, :boolean
+  attr :legacy_characters_page_enabled, :boolean
 
   def sidebar_nav_links(assigns) do
     ~H"""
@@ -228,8 +229,13 @@ defmodule WandererAppWeb.Layouts do
           <.nav_link
             href="/characters"
             active={@active_tab == :characters}
-            icon="hero-user-plus-solid"
+            icon={
+              if @legacy_characters_page_enabled,
+                do: "hero-user-plus-solid",
+                else: "hero-identification-solid"
+            }
             tip="Characters"
+            badge={if @legacy_characters_page_enabled, do: nil, else: "NEW"}
           />
           <.nav_link
             href="/tracking"
@@ -301,20 +307,30 @@ defmodule WandererAppWeb.Layouts do
   attr :class, :string, default: ""
   attr :icon, :string
   attr :tip, :string
+  attr :badge, :string, default: nil
 
   defp nav_link(assigns) do
     ~H"""
     <li class={["flex-1 w-full ", @class]}>
-      <div class="tooltip tooltip-right" data-tip={@tip}>
+      <div class="tooltip tooltip-right w-full" data-tip={@tip}>
         <.link
           navigate={@href}
           class={[
-            "h-full w-full text-gray-400 hover:text-white block p-3",
-            classes("border-r-4 text-white border-r-orange-400": @active)
+            "relative flex h-12 w-full items-center justify-center text-gray-400 hover:text-white",
+            classes("text-white": @active)
           ]}
           aria-current={if @active, do: "true", else: "false"}
         >
-          <.icon name={@icon} class="w-6 h-6" />
+          <span :if={@active} class="absolute inset-y-0 right-0 w-1 bg-orange-400" />
+          <span class="relative inline-flex">
+            <.icon name={@icon} class="w-6 h-6" />
+            <span
+              :if={@badge}
+              class="absolute -right-2 -top-[1px] rounded-sm bg-orange-400 px-0.5 py-px text-[7px] font-bold leading-none tracking-wide text-stone-950 shadow-sm"
+            >
+              {@badge}
+            </span>
+          </span>
         </.link>
       </div>
     </li>

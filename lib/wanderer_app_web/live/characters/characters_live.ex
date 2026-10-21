@@ -5,8 +5,17 @@ defmodule WandererAppWeb.CharactersLive do
 
   alias BetterNumber, as: Number
 
-  def mount(_params, %{"user_id" => user_id} = _session, socket)
-      when not is_nil(user_id) do
+  @impl true
+  def mount(params, session, socket) do
+    if WandererApp.Env.legacy_characters_page_enabled?() do
+      mount_legacy_page(params, session, socket)
+    else
+      {:ok, redirect(socket, to: ~p"/characters")}
+    end
+  end
+
+  defp mount_legacy_page(_params, %{"user_id" => user_id} = _session, socket)
+       when not is_nil(user_id) do
     {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
     characters
@@ -41,8 +50,7 @@ defmodule WandererAppWeb.CharactersLive do
      )}
   end
 
-  @impl true
-  def mount(_params, _session, socket) do
+  defp mount_legacy_page(_params, _session, socket) do
     {:ok, socket |> assign(characters: [], user_id: nil)}
   end
 

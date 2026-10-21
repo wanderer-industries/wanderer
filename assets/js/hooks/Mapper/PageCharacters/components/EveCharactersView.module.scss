@@ -1,0 +1,512 @@
+.view {
+  position: relative;
+  min-height: 700px;
+  padding: 2rem 0;
+  @apply border-red-900/40 bg-black/25;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0 80px rgb(127 29 29 / 20%);
+}
+
+.topGlow {
+  @apply from-transparent via-red-400 to-transparent;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+  pointer-events: none;
+  box-shadow: 0 0 14px 2px rgb(248 113 113 / 80%);
+}
+
+.viewTitle {
+  margin-bottom: 1.25rem;
+  padding: 0 1.5rem;
+  @apply text-slate-300/80;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.38em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cardsLayout {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 0;
+}
+
+.viewport {
+  width: fit-content;
+  min-width: 0;
+  max-width: calc(100% - 262px);
+  flex: none;
+  overflow-x: auto;
+  padding-bottom: 1.5rem;
+  scrollbar-color: rgba(0, 0, 0, 0.72) transparent;
+  scrollbar-width: thin;
+}
+
+.viewport::-webkit-scrollbar {
+  height: 8px;
+  background: transparent;
+}
+
+.viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.viewport::-webkit-scrollbar-thumb {
+  border: none;
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.72);
+  background-clip: border-box;
+}
+
+.viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.88);
+}
+
+.characterRail {
+  display: flex;
+  width: max-content;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.characterCard {
+  position: relative;
+  display: flex;
+  width: 250px;
+  height: 630px;
+  flex: none;
+  flex-direction: column;
+  cursor: pointer;
+  outline: none;
+  transition:
+    filter 260ms ease,
+    opacity 180ms ease;
+}
+
+.addCard {
+  display: flex;
+  width: 250px;
+  height: 630px;
+  flex: none;
+  flex-direction: column;
+  text-align: left;
+  outline: none;
+}
+
+.cardHeader {
+  position: relative;
+  display: flex;
+  height: 1.75rem;
+  flex: none;
+  align-items: center;
+  padding: 0 0.5rem;
+  @apply bg-black/75 text-stone-200;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 10%);
+}
+
+.toolbar {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  display: flex;
+  width: 2.75rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  transform: translateY(-50%);
+  transition: opacity 150ms ease;
+}
+
+.hiddenToolbar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.visibleToolbar {
+  opacity: 1;
+}
+
+.actionButton {
+  display: flex;
+  width: 1.375rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  @apply bg-transparent text-stone-500;
+  transition: color 150ms ease;
+}
+
+.actionButton:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.refreshButton:hover {
+  @apply text-cyan-400;
+}
+
+.deleteButton:hover {
+  @apply text-red-400;
+}
+
+.cardBody {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 0%;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  @apply border-white/15 bg-black/85;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.addCardBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.portraitFrame {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+  margin: 0.5rem;
+  @apply border-white/15 bg-black;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.portraitShade {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4rem;
+  @apply from-black to-transparent;
+  background-image: linear-gradient(to top, var(--tw-gradient-stops));
+}
+
+.characterCard::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255, 255, 255, 0.018) 4px);
+}
+
+.portraitImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  transition: filter 300ms ease, opacity 300ms ease, transform 300ms ease;
+  filter: grayscale(0.8) brightness(0.65);
+}
+
+.entityLogo {
+  border: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.tokenStatus {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.375rem;
+  @apply text-red-400;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0));
+}
+
+.onlineStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  @apply text-emerald-400;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0));
+}
+
+.detailsPanel {
+  margin: 0 0.5rem;
+  @apply border-white/15 bg-black/55 text-stone-300;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+}
+
+.detailRow {
+  display: flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+  @apply border-white/10;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+.lastDetailRow {
+  display: flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.shipPanel {
+  position: relative;
+  display: flex;
+  height: 142px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0.5rem 0.5rem 0;
+  @apply border-white/10 bg-black/80;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.shipGrid,
+.addGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 12%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 12%) 1px, transparent 1px);
+}
+
+.shipGrid {
+  opacity: 0.15;
+  background-size: 18px 18px;
+}
+
+.shipImage {
+  position: relative;
+  width: 10rem;
+  height: 7rem;
+  object-fit: contain;
+  opacity: 0.72;
+  filter: grayscale(1) brightness(1.45) contrast(1.35) drop-shadow(0 0 10px rgb(255 255 255 / 20%));
+  mix-blend-mode: screen;
+  transform: translateY(-14px);
+  transition:
+    opacity 260ms ease,
+    filter 260ms ease;
+}
+
+.shipName {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  left: 0;
+  overflow: hidden;
+  padding: 0 0.5rem;
+  @apply text-stone-200;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locationPanel {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0;
+  left: 0.5rem;
+  display: flex;
+  height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 0.5rem;
+  @apply border-white/15 bg-black/75;
+  border-top-width: 1px;
+  border-top-style: solid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  text-align: center;
+}
+
+.systemInfo {
+  max-width: 100%;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.addPortraitImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.35);
+  transition: filter 300ms ease;
+}
+
+.addCard:hover .addPortraitImage {
+  filter: grayscale(1) brightness(0.5);
+}
+
+.addIcon {
+  display: flex;
+  width: 4rem;
+  height: 4rem;
+  align-items: center;
+  justify-content: center;
+  @apply border-white/40 bg-black/75 text-stone-200;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 9999px;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  transition: color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.addCard:hover .addIcon {
+  @apply border-white/70 text-white;
+  transform: scale(1.1);
+}
+
+.addTitleBar {
+  display: flex;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0.5rem;
+  @apply border-white/15 bg-black/55 text-stone-200;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.addDetails {
+  position: relative;
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.25rem;
+  text-align: center;
+}
+
+.addGrid {
+  opacity: 0.2;
+  background-size: 22px 22px;
+}
+
+.addUserIcon {
+  position: relative;
+  margin-bottom: 0.75rem;
+  @apply text-stone-600;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  transition: color 150ms ease;
+}
+
+.addCard:hover .addUserIcon {
+  @apply text-stone-300;
+}
+
+.characterCard:hover,
+.active {
+  z-index: 100 !important;
+  filter: none;
+}
+
+.addCard:hover .cardBody,
+.addCard:focus-visible .cardBody,
+.characterCard:hover .cardBody,
+.characterCard:focus-visible .cardBody,
+.active .cardBody {
+  @apply border-white/[0.26];
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 55px rgba(0, 0, 0, 0.72);
+}
+
+.characterCard:hover .portraitImage,
+.active .portraitImage {
+  filter: none;
+}
+
+.characterCard:hover .shipImage,
+.active .shipImage {
+  opacity: 0.95;
+  filter: grayscale(0.8) brightness(1.65) contrast(1.4) drop-shadow(0 0 10px rgb(255 255 255 / 20%));
+}
+
+.shipGlow {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 88%;
+  height: 72%;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.27) 0%,
+    rgba(255, 255, 255, 0.075) 42%,
+    transparent 72%
+  );
+  filter: blur(10px);
+  transform: translate(-50%, -50%) scale(0.55);
+  transition:
+    opacity 320ms ease,
+    transform 420ms ease-out;
+}
+
+.characterCard:hover .shipGlow {
+  opacity: 0.82;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.invalidToken .cardBody,
+.invalidToken:hover .cardBody,
+.invalidToken.active .cardBody {
+  @apply border-stone-500/[0.38];
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.62);
+}
+
+.invalidToken {
+  opacity: 0.72;
+}
+
+.invalidToken:hover {
+  opacity: 1;
+}
+
+.invalidToken .portraitImage,
+.invalidToken:hover .portraitImage,
+.invalidToken.active .portraitImage {
+  filter: grayscale(1) brightness(0.48);
+}
+
+.invalidToken .entityLogo,
+.invalidToken .systemInfo {
+  filter: grayscale(1) brightness(0.65);
+}
