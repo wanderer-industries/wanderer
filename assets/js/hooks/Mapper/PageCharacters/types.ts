@@ -1,7 +1,12 @@
 import type { ForwardedRef, ReactNode } from 'react';
 
 export type PageCharactersViewMode = 'cards' | 'table' | 'eve';
-export type PageCharactersStatus = 'loading' | 'ready' | 'error';
+
+export enum PageCharactersStatus {
+  loading = 'loading',
+  ready = 'ready',
+  error = 'error',
+}
 
 export interface PageCharacterSystemInfo {
   solar_system_id: number;
@@ -107,6 +112,6 @@ export interface PageCharactersContextValue {
   setShowBalances(show: boolean): void;
   setPromoHidden(hidden: boolean): void;
   authorizeCharacter(trackWallet: boolean): Promise<void>;
-  deleteCharacter(characterId: string): Promise<boolean>;
+  deleteCharacter(characterId: string, characterName: string): Promise<void>;
   refresh(): void;
 }

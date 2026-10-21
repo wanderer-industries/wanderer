@@ -4,6 +4,7 @@ import useLocalStorageState from 'use-local-storage-state';
 import { createDefaultPageCharactersSettings, normalizePageCharactersSettings } from '../settings/defaults';
 import { applyPageCharactersSettingsMigrations } from '../settings/migrations';
 import type { PageCharactersSettingsPatch } from '../settings/types';
+import type { PageCharactersViewMode } from '../types';
 import { PAGE_CHARACTERS_SETTINGS_KEY } from '../settings/version';
 
 type PageCharactersSettingsUpdater =
@@ -38,5 +39,26 @@ export const usePageCharactersSettings = () => {
     setStoredSettings(createDefaultPageCharactersSettings());
   }, [setStoredSettings]);
 
-  return { settings, updateSettings, resetSettings };
+  const setViewMode = useCallback(
+    (viewMode: PageCharactersViewMode) => {
+      updateSettings({ viewMode });
+    },
+    [updateSettings],
+  );
+
+  const setShowBalances = useCallback(
+    (showBalances: boolean) => {
+      updateSettings({ showBalances });
+    },
+    [updateSettings],
+  );
+
+  const setPromoHidden = useCallback(
+    (promoHidden: boolean) => {
+      updateSettings({ promoHidden });
+    },
+    [updateSettings],
+  );
+
+  return { settings, updateSettings, resetSettings, setViewMode, setShowBalances, setPromoHidden };
 };

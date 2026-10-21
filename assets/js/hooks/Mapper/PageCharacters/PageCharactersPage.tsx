@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { WdButton, WdDialog, WdInputText } from '@/hooks/Mapper/components/ui-kit';
+import { WdButton, WdConfirmDialog, WdDialog, WdInputText } from '@/hooks/Mapper/components/ui-kit';
 import type { PageCharacter, PageCharactersViewMode } from './types';
+import { PageCharactersStatus } from './types';
 import { usePageCharacters } from './PageCharactersProvider';
 import { AddCharacterCard } from './components/AddCharacterCard';
 import { CharacterCard } from './components/CharacterCard';
@@ -67,6 +68,18 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
   const [deleteTarget, setDeleteTarget] = useState<PageCharacter | null>(null);
   const isEveView = viewMode === 'eve';
   const isTableView = viewMode === 'table';
+  const isDeleting = deleteTarget !== null && deletingCharacterId === deleteTarget.id;
+
+  useEffect(() => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const characterStillExists = characters.some(character => character.id === deleteTarget.id);
+    if (!characterStillExists) {
+      setDeleteTarget(null);
+    }
+  }, [characters, deleteTarget]);
 
   const characterCountLabel = useMemo(() => {
     const visibleCount = filteredCharacters.length;
@@ -89,13 +102,16 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
     await authorizeCharacter(trackWallet);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deleteTarget) {
       return;
     }
 
-    const deleted = await deleteCharacter(deleteTarget.id);
-    if (deleted) {
+    void deleteCharacter(deleteTarget.id, deleteTarget.name);
+  };
+
+  const closeDeleteDialog = () => {
+    if (!isDeleting) {
       setDeleteTarget(null);
     }
   };
@@ -120,7 +136,7 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
     </div>
   );
 
-  if (status === 'loading') {
+  if (status === PageCharactersStatus.loading) {
     return (
       <div className="flex h-full items-center justify-center text-stone-400" role="status">
         <i className="pi pi-spin pi-spinner mr-3 text-xl" aria-hidden="true" />
@@ -329,30 +345,18 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
         </div>
       </WdDialog>
 
-      <WdDialog
+      <WdConfirmDialog
         header="Delete character"
         visible={deleteTarget !== null}
-        modal
-        className="w-[min(420px,calc(100vw-2rem))]"
-        onHide={() => setDeleteTarget(null)}
-        footer={
-          <div className="flex justify-end gap-2">
-            <WdButton text label="Cancel" onClick={() => setDeleteTarget(null)} />
-            <WdButton
-              severity="danger"
-              label="Delete character"
-              icon="pi pi-trash"
-              loading={deleteTarget !== null && deletingCharacterId === deleteTarget.id}
-              onClick={confirmDelete}
-            />
-          </div>
-        }
+        confirmLabel="Confirm Delete"
+        confirmIcon="pi pi-trash"
+        loading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteDialog}
       >
-        <p className="text-sm text-stone-300">
-          Remove <strong className="text-white">{deleteTarget?.name}</strong> from your account and stop tracking it on
-          maps?
-        </p>
-      </WdDialog>
+        Remove <strong className="text-white">{deleteTarget?.name}</strong> from your account and stop tracking it on
+        maps?
+      </WdConfirmDialog>
     </div>
   );
 };

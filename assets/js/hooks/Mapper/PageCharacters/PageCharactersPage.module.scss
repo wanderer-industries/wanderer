@@ -131,7 +131,9 @@
   @apply border-stone-700 bg-stone-900;
   border-width: 1px;
   border-style: solid;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .balanceSwitch::after {
@@ -187,7 +189,10 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .activeViewButton {

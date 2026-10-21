@@ -18,7 +18,9 @@
   font-size: 0.875rem;
   line-height: 1.25rem;
   text-align: left;
-  transition: color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .authorizeButton:hover {
@@ -86,6 +88,19 @@
 .actionButton:disabled {
   cursor: wait;
   opacity: 0.5;
+}
+
+.actionButton:focus {
+  outline: none;
+}
+
+.actionButton:focus-visible {
+  @apply bg-orange-950/30 outline-orange-700/70;
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(67 20 7 / 35%);
 }
 
 .refreshButton:hover {

@@ -23,6 +23,7 @@ export * from './MenuItemWithInfo';
 export * from './MarkdownTextViewer.tsx';
 export * from './WdButton.tsx';
 export * from './WdDialog.tsx';
+export * from './WdConfirmDialog.tsx';
 export * from './WdInputText.tsx';
 export * from './WdSelectionToolbar.tsx';
 export * from './constants.ts';
