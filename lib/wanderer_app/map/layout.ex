@@ -50,10 +50,12 @@ defmodule WandererApp.Map.Layout do
           MapSet.member?(system_ids, connection.solar_system_target)
       end)
 
-    {ranks, oriented_connections} = build_forest(systems, connections, settings)
+    {ranks, oriented_connections, parents} = build_forest(systems, connections, settings)
+    layout_names = build_layout_names(systems, ranks, parents, settings)
+    spacing = layout_spacing(settings)
 
     %{
-      nodes: Enum.map(systems, &build_node(&1, ranks)),
+      nodes: Enum.map(systems, &build_node(&1, ranks, layout_names)),
       edges: Enum.map(oriented_connections, &build_edge/1),
       options: %{
         engine: settings["engine"],
@@ -61,12 +63,12 @@ defmodule WandererApp.Map.Layout do
         routing: @edge_routing,
         includeEdgeRoutes: false,
         spacing: %{
-          nodeSpacing: settings["nodeSpacing"],
-          layerSpacing: settings["layerSpacing"],
-          edgeSpacing: settings["edgeSpacing"]
+          nodeSpacing: spacing.node,
+          layerSpacing: spacing.layer,
+          edgeSpacing: spacing.edge
         },
         ordering: %{
-          by: settings["orderBy"],
+          by: service_order_by(settings["orderBy"]),
           direction: settings["orderDirection"],
           locale: settings["locale"],
           policy: settings["orderPolicy"]
@@ -79,19 +81,35 @@ defmodule WandererApp.Map.Layout do
     }
   end
 
-  defp build_node(system, ranks) do
+  defp layout_spacing(%{"direction" => direction} = settings) when direction in ["TB", "BT"] do
+    %{
+      node: settings["verticalNodeSpacing"],
+      layer: settings["verticalLayerSpacing"],
+      edge: settings["verticalEdgeSpacing"]
+    }
+  end
+
+  defp layout_spacing(settings) do
+    %{
+      node: settings["horizontalNodeSpacing"],
+      layer: settings["horizontalLayerSpacing"],
+      edge: settings["horizontalEdgeSpacing"]
+    }
+  end
+
+  defp build_node(system, ranks, layout_names) do
     id = to_string(system.solar_system_id)
 
     node = %{
       id: id,
-      name: system.name || id,
+      name: Map.fetch!(layout_names, system.solar_system_id),
       width: @node_width,
       height: @node_height,
       previousPosition: %{
         x: system.position_x || 0,
         y: system.position_y || 0
       },
-      pinned: system.locked || false
+      pinned: false
     }
 
     case Map.fetch(ranks, system.solar_system_id) do
@@ -117,28 +135,36 @@ defmodule WandererApp.Map.Layout do
     order_index = order |> Enum.with_index() |> Map.new()
     adjacency = build_adjacency(systems, connections)
 
-    {ranks, tree_pairs} =
+    components =
       order
       |> connected_components(adjacency)
-      |> Enum.reduce({%{}, MapSet.new()}, fn component, {ranks, tree_pairs} ->
-        if length(component) == 1 and MapSet.size(Map.fetch!(adjacency, hd(component))) == 0 do
-          {ranks, tree_pairs}
-        else
+      |> Enum.sort_by(&component_sort_key(&1, systems_by_id, order_index))
+
+    {ranks, _tree_pairs, root_owners, parents} =
+      components
+      |> Enum.reduce(
+        {%{}, MapSet.new(), %{}, %{}},
+        fn component, {ranks, tree_pairs, root_owners, parents} ->
           roots = component_roots(component, systems_by_id, order_index)
 
-          {component_ranks, component_pairs} =
+          {component_ranks, component_pairs, component_root_owners, component_parents} =
             breadth_first_forest(roots, adjacency, order_index)
 
-          {Map.merge(ranks, component_ranks), MapSet.union(tree_pairs, component_pairs)}
+          {
+            Map.merge(ranks, component_ranks),
+            MapSet.union(tree_pairs, component_pairs),
+            Map.merge(root_owners, component_root_owners),
+            Map.merge(parents, component_parents)
+          }
         end
-      end)
+      )
 
     oriented =
       connections
-      |> Enum.filter(&MapSet.member?(tree_pairs, connection_pair(&1)))
+      |> Enum.filter(&same_root_chain?(&1, root_owners))
       |> Enum.map(&orient_connection(&1, ranks, order_index))
 
-    {ranks, oriented}
+    {ranks, oriented, parents}
   end
 
   defp ordered_ids(systems, settings) do
@@ -148,6 +174,9 @@ defmodule WandererApp.Map.Layout do
     |> Enum.sort_by(&system_sort_key(&1, settings), sort_direction(direction))
     |> Enum.map(& &1.solar_system_id)
   end
+
+  defp system_sort_key(system, %{"orderBy" => "added-at"}),
+    do: {inserted_at_key(system), system.solar_system_id}
 
   defp system_sort_key(system, %{"orderBy" => "id"}),
     do: {system.solar_system_id}
@@ -224,27 +253,84 @@ defmodule WandererApp.Map.Layout do
     end
   end
 
+  defp component_sort_key(component, systems_by_id, order_index) do
+    component
+    |> component_roots(systems_by_id, order_index)
+    |> List.first()
+    |> then(&Map.fetch!(order_index, &1))
+  end
+
+  defp inserted_at_key(%{inserted_at: %DateTime{} = value}),
+    do: DateTime.to_unix(value, :microsecond)
+
+  defp inserted_at_key(%{inserted_at: %NaiveDateTime{} = value}),
+    do: value |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(:microsecond)
+
+  defp inserted_at_key(_system), do: 0
+
+  defp service_order_by("added-at"), do: "name"
+  defp service_order_by(value), do: value
+
+  defp build_layout_names(systems, ranks, parents, %{"orderBy" => "added-at"}) do
+    systems
+    |> Enum.sort_by(&{Map.get(ranks, &1.solar_system_id, -1), &1.solar_system_id})
+    |> Enum.reduce(%{}, fn system, names ->
+      id = system.solar_system_id
+      segment = layout_order_segment(system)
+
+      name =
+        case Map.get(parents, id) do
+          nil -> segment
+          parent_id -> "#{Map.fetch!(names, parent_id)}/#{segment}"
+        end
+
+      Map.put(names, id, name)
+    end)
+  end
+
+  defp build_layout_names(systems, _ranks, _parents, _settings),
+    do: Map.new(systems, &{&1.solar_system_id, &1.name || to_string(&1.solar_system_id)})
+
+  defp layout_order_segment(system) do
+    timestamp = inserted_at_key(system) |> Integer.to_string() |> String.pad_leading(20, "0")
+    "#{timestamp}:#{system.solar_system_id}"
+  end
+
   defp breadth_first_forest(roots, adjacency, order_index) do
     initial_ranks = Map.new(roots, &{&1, 0})
+    initial_root_owners = Map.new(roots, &{&1, &1})
+    initial_parents = Map.new(roots, &{&1, nil})
 
     breadth_first_forest(
       Enum.map(roots, &{&1, 0}),
       adjacency,
       order_index,
       initial_ranks,
-      MapSet.new()
+      MapSet.new(),
+      initial_root_owners,
+      initial_parents
     )
   end
 
-  defp breadth_first_forest([], _adjacency, _order_index, ranks, tree_pairs),
-    do: {ranks, tree_pairs}
+  defp breadth_first_forest(
+         [],
+         _adjacency,
+         _order_index,
+         ranks,
+         tree_pairs,
+         root_owners,
+         parents
+       ),
+       do: {ranks, tree_pairs, root_owners, parents}
 
   defp breadth_first_forest(
          [{id, rank} | queue],
          adjacency,
          order_index,
          ranks,
-         tree_pairs
+         tree_pairs,
+         root_owners,
+         parents
        ) do
     neighbours =
       adjacency
@@ -255,12 +341,28 @@ defmodule WandererApp.Map.Layout do
     next_rank = rank + 1
     ranks = Enum.reduce(neighbours, ranks, &Map.put(&2, &1, next_rank))
     tree_pairs = Enum.reduce(neighbours, tree_pairs, &MapSet.put(&2, ordered_pair(id, &1)))
+    root_owner = Map.fetch!(root_owners, id)
+    root_owners = Enum.reduce(neighbours, root_owners, &Map.put(&2, &1, root_owner))
+    parents = Enum.reduce(neighbours, parents, &Map.put(&2, &1, id))
     queue = queue ++ Enum.map(neighbours, &{&1, next_rank})
-    breadth_first_forest(queue, adjacency, order_index, ranks, tree_pairs)
+
+    breadth_first_forest(
+      queue,
+      adjacency,
+      order_index,
+      ranks,
+      tree_pairs,
+      root_owners,
+      parents
+    )
   end
 
-  defp connection_pair(connection),
-    do: ordered_pair(connection.solar_system_source, connection.solar_system_target)
+  defp same_root_chain?(connection, root_owners) do
+    source_root = Map.get(root_owners, connection.solar_system_source)
+    target_root = Map.get(root_owners, connection.solar_system_target)
+
+    not is_nil(source_root) and source_root == target_root
+  end
 
   defp ordered_pair(left, right) when left <= right, do: {left, right}
   defp ordered_pair(left, right), do: {right, left}

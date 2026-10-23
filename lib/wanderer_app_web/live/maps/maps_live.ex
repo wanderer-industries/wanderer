@@ -13,7 +13,12 @@ defmodule WandererAppWeb.MapsLive do
     {"Left to Right", "LR"},
     {"Right to Left", "RL"}
   ]
-  @layout_order_by_options [{"Name", "name"}, {"ID", "id"}, {"Previous order", "previous-order"}]
+  @layout_order_by_options [
+    {"Added time", "added-at"},
+    {"Name", "name"},
+    {"ID", "id"},
+    {"Previous order", "previous-order"}
+  ]
   @layout_order_direction_options [{"Ascending", "asc"}, {"Descending", "desc"}]
   @layout_order_policy_options [
     {"Strict", "strict"},

@@ -1,5 +1,6 @@
 import {
   useLabelsMenu,
+  useLockMenu,
   useStatusMenu,
   useTagMenu,
   useUserRoute,
@@ -7,7 +8,6 @@ import {
 import { useMemo } from 'react';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import classes from './ContextMenuSystem.module.scss';
-import { PrimeIcons } from 'primereact/api';
 import { ContextMenuSystemProps } from '@/hooks/Mapper/components/contexts';
 import { useJumpMenu, useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
@@ -46,10 +46,9 @@ export const useContextMenuSystemItems = ({
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog);
   const getJumpMenu = useJumpMenu({ onJumpFrom, onJumpTo });
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
-  const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
-  const canManageSystem = useMapCheckPermissions([UserPermission.UPDATE_SYSTEM]);
   const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
+  const getLockItems = useLockMenu({ systems, systemId, onLockToggle });
 
   const {
     data: { pings, isSubscriptionActive },
@@ -141,24 +140,7 @@ export const useContextMenuSystemItems = ({
           );
         },
       },
-      ...(system.locked && canLockSystem
-        ? [
-            {
-              label: 'Unlock',
-              icon: PrimeIcons.LOCK_OPEN,
-              command: onLockToggle,
-            },
-          ]
-        : []),
-      ...(!system.locked && canManageSystem
-        ? [
-            {
-              label: 'Lock',
-              icon: PrimeIcons.LOCK,
-              command: onLockToggle,
-            },
-          ]
-        : []),
+      ...getLockItems(),
 
       ...(canDeleteSystem && !system.locked
         ? [
@@ -195,11 +177,9 @@ export const useContextMenuSystemItems = ({
     getJumpMenu,
     getWaypointMenu,
     getUserRoutes,
+    getLockItems,
     hubs,
     onHubToggle,
-    canLockSystem,
-    canManageSystem,
-    onLockToggle,
     canDeleteSystem,
     onDeleteSystem,
     onOpenSettings,

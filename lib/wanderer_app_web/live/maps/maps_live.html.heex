@@ -603,24 +603,54 @@
                     options={@layout_group_options}
                   />
 
+                  <div class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Vertical spacing (TB/BT)
+                  </div>
                   <div class="grid grid-cols-3 gap-3">
                     <.input
                       type="number"
-                      field={f[:nodeSpacing]}
+                      field={f[:verticalNodeSpacing]}
                       label="Node spacing"
                       min="0"
                       max="1000"
                     />
                     <.input
                       type="number"
-                      field={f[:layerSpacing]}
+                      field={f[:verticalLayerSpacing]}
                       label="Layer spacing"
                       min="0"
                       max="1000"
                     />
                     <.input
                       type="number"
-                      field={f[:edgeSpacing]}
+                      field={f[:verticalEdgeSpacing]}
+                      label="Edge spacing"
+                      min="0"
+                      max="1000"
+                    />
+                  </div>
+
+                  <div class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                    Horizontal spacing (LR/RL)
+                  </div>
+                  <div class="grid grid-cols-3 gap-3">
+                    <.input
+                      type="number"
+                      field={f[:horizontalNodeSpacing]}
+                      label="Node spacing"
+                      min="0"
+                      max="1000"
+                    />
+                    <.input
+                      type="number"
+                      field={f[:horizontalLayerSpacing]}
+                      label="Layer spacing"
+                      min="0"
+                      max="1000"
+                    />
+                    <.input
+                      type="number"
+                      field={f[:horizontalEdgeSpacing]}
                       label="Edge spacing"
                       min="0"
                       max="1000"

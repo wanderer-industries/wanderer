@@ -6,10 +6,13 @@ defmodule WandererApp.LayoutSettings do
     "engine" => "elk",
     "direction" => "TB",
     "routing" => "orthogonal",
-    "nodeSpacing" => 40,
-    "layerSpacing" => 80,
-    "edgeSpacing" => 16,
-    "orderBy" => "name",
+    "verticalNodeSpacing" => 24,
+    "verticalLayerSpacing" => 52,
+    "verticalEdgeSpacing" => 12,
+    "horizontalNodeSpacing" => 40,
+    "horizontalLayerSpacing" => 80,
+    "horizontalEdgeSpacing" => 16,
+    "orderBy" => "added-at",
     "orderDirection" => "asc",
     "locale" => "en",
     "orderPolicy" => "prefer",
@@ -20,13 +23,20 @@ defmodule WandererApp.LayoutSettings do
   @select_options %{
     "engine" => ~w(elk dagre),
     "direction" => ~w(TB BT LR RL),
-    "orderBy" => ~w(name id previous-order),
+    "orderBy" => ~w(added-at name id previous-order),
     "orderDirection" => ~w(asc desc),
     "orderPolicy" => ~w(strict prefer crossings-first),
     "groups" => ~w(none compound)
   }
 
-  @integer_options ~w(nodeSpacing layerSpacing edgeSpacing)
+  @integer_options %{
+    "verticalNodeSpacing" => "nodeSpacing",
+    "verticalLayerSpacing" => "layerSpacing",
+    "verticalEdgeSpacing" => "edgeSpacing",
+    "horizontalNodeSpacing" => "nodeSpacing",
+    "horizontalLayerSpacing" => "layerSpacing",
+    "horizontalEdgeSpacing" => "edgeSpacing"
+  }
   @boolean_options ~w(enabled preservePreviousPositions)
 
   def defaults, do: @defaults
@@ -70,8 +80,9 @@ defmodule WandererApp.LayoutSettings do
       end)
 
     normalized =
-      Enum.reduce(@integer_options, normalized, fn key, result ->
-        value = settings |> Map.get(key, Map.fetch!(@defaults, key)) |> normalize_integer(key)
+      Enum.reduce(@integer_options, normalized, fn {key, legacy_key}, result ->
+        fallback = Map.get(settings, legacy_key, Map.fetch!(@defaults, key))
+        value = settings |> Map.get(key, fallback) |> normalize_integer(key)
         Map.put(result, key, value)
       end)
 

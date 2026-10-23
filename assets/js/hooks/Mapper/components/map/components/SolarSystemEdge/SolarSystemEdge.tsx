@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import classes from './SolarSystemEdge.module.scss';
 import { EdgeLabelRenderer, EdgeProps, getBezierPath, Position, useStore } from 'reactflow';
-import { getEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
+import { getEdgeParams, getManagedEdgeParams } from '@/hooks/Mapper/components/map/utils.ts';
 import clsx from 'clsx';
 import { ConnectionType, MassState, ShipSizeStatus, SolarSystemConnection, TimeStatus } from '@/hooks/Mapper/types';
 import { PrimeIcons } from 'primereact/api';
@@ -48,13 +48,17 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
   const isBridge = data?.type === ConnectionType.bridge;
 
   const {
-    data: { isThickConnections },
+    data: { isThickConnections, managedLayoutEnabled, managedLayoutDirection },
   } = useMapState();
 
   const [hovered, setHovered] = useState(false);
 
   const [path, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos] = useMemo(() => {
-    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode!, targetNode!);
+    let edgeParams = getEdgeParams(sourceNode!, targetNode!);
+    if (managedLayoutEnabled) {
+      edgeParams = getManagedEdgeParams(sourceNode!, targetNode!, managedLayoutDirection);
+    }
+    const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams;
 
     const offset = isThickConnections ? MAP_OFFSETS_TICK[targetPos] : MAP_OFFSETS[targetPos];
 
@@ -68,7 +72,7 @@ export const SolarSystemEdge = ({ id, source, target, markerEnd, style, data }: 
     });
 
     return [edgePath, labelX, labelY, sx, sy, tx, ty, sourcePos, targetPos];
-  }, [isThickConnections, sourceNode, targetNode]);
+  }, [isThickConnections, managedLayoutDirection, managedLayoutEnabled, sourceNode, targetNode]);
 
   if (!sourceNode || !targetNode || !data) {
     return null;

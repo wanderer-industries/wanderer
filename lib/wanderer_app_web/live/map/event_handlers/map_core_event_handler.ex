@@ -345,7 +345,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:reply,
      %{
        available: WandererApp.Env.layout_service_enabled?(),
-       enabled: settings["enabled"]
+       enabled: settings["enabled"],
+       direction: settings["direction"]
      }, socket}
   end
 

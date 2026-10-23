@@ -19,8 +19,10 @@ defmodule WandererApp.LayoutSettingsTest do
       assert settings["enabled"]
       assert settings["engine"] == "dagre"
       assert settings["direction"] == "LR"
-      assert settings["nodeSpacing"] == 55
-      assert settings["layerSpacing"] == 90
+      assert settings["verticalNodeSpacing"] == 55
+      assert settings["verticalLayerSpacing"] == 90
+      assert settings["horizontalNodeSpacing"] == 55
+      assert settings["horizontalLayerSpacing"] == 90
       refute settings["preservePreviousPositions"]
       assert settings["routing"] == "orthogonal"
     end
@@ -36,8 +38,10 @@ defmodule WandererApp.LayoutSettingsTest do
 
       assert settings["engine"] == "elk"
       assert settings["direction"] == "TB"
-      assert settings["nodeSpacing"] == 0
-      assert settings["layerSpacing"] == 1000
+      assert settings["verticalNodeSpacing"] == 0
+      assert settings["verticalLayerSpacing"] == 1000
+      assert settings["horizontalNodeSpacing"] == 0
+      assert settings["horizontalLayerSpacing"] == 1000
     end
   end
 

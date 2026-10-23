@@ -9,3 +9,4 @@ export * from './useSolarSystemNode';
 export * from './useUnsplashedSignatures';
 export * from './useUpdateNodes';
 export * from './useNodeKillsCount';
+export * from './useManagedLayoutNodes';

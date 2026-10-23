@@ -36,6 +36,7 @@ import {
   JumpPlannerField,
   JumpPlannerInitialSystem,
 } from '@/hooks/Mapper/components/mapRootContent/components/JumpPlanner';
+import { useManagedLayoutSettings } from './hooks/useManagedLayoutSettings.ts';
 
 export interface MapWrapperProps {
   onShowJumpPlanner(initialSystem: JumpPlannerInitialSystem): void;
@@ -75,6 +76,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   const { getNodes } = useReactFlow();
 
   const { updateLinkSignatureToSystem } = useCommandsSystems();
+  const managedLayout = useManagedLayoutSettings();
   const { open, ...systemContextProps } = useContextMenuSystemHandlers({ systems, hubs, userHubs, outCommand });
   const { handleSystemMultipleContext, ...systemMultipleCtxProps } = useContextMenuSystemMultipleHandlers();
 
@@ -307,6 +309,8 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
         minimapPlacement={minimapPosition}
         localShowShipName={settingsLocal.showShipName}
         defaultViewport={mapSettings.viewport}
+        managedLayoutEnabled={managedLayout.enabled}
+        managedLayoutDirection={managedLayout.direction}
       />
 
       {openSettings != null && (

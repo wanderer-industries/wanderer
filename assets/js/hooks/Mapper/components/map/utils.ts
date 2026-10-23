@@ -1,7 +1,11 @@
 import { Position, internalsSymbol, Node } from 'reactflow';
+import { isHorizontalLayoutDirection, ManagedLayoutDirection } from './map.types.ts';
 
 type Coords = [number, number];
 type CoordsWithPosition = [number, number, Position];
+
+const DEFAULT_NODE_WIDTH = 130;
+const DEFAULT_NODE_HEIGHT = 34;
 
 function segmentsIntersect(a1: number, a2: number, b1: number, b2: number): boolean {
   const [minA, maxA] = a1 < a2 ? [a1, a2] : [a2, a1];
@@ -83,4 +87,46 @@ export function getEdgeParams(source: Node, target: Node) {
     sourcePos,
     targetPos,
   };
+}
+
+export function getManagedEdgeParams(source: Node, target: Node, direction: ManagedLayoutDirection) {
+  const [sourcePos, targetPos] = getManagedHandlePositions(source, target, direction);
+  const [sx, sy] = getHandleCoordsByPosition(source, sourcePos);
+  const [tx, ty] = getHandleCoordsByPosition(target, targetPos);
+
+  return { sx, sy, tx, ty, sourcePos, targetPos };
+}
+
+export function getManagedHandlePositions(
+  source: Node,
+  target: Node,
+  direction: ManagedLayoutDirection,
+): [Position, Position] {
+  const sourceCenter = getNodeCenter(source);
+  const targetCenter = getNodeCenter(target);
+  const verticalLayout = !isHorizontalLayoutDirection(direction);
+
+  if (verticalLayout) {
+    const sourceHeight = source.height ?? DEFAULT_NODE_HEIGHT;
+    const targetHeight = target.height ?? DEFAULT_NODE_HEIGHT;
+    const sameLevel = Math.abs(sourceCenter.y - targetCenter.y) < Math.max(sourceHeight, targetHeight);
+    if (sameLevel) return horizontalHandlePositions(sourceCenter.x, targetCenter.x);
+    return verticalHandlePositions(sourceCenter.y, targetCenter.y);
+  }
+
+  const sourceWidth = source.width ?? DEFAULT_NODE_WIDTH;
+  const targetWidth = target.width ?? DEFAULT_NODE_WIDTH;
+  const sameLevel = Math.abs(sourceCenter.x - targetCenter.x) < Math.max(sourceWidth, targetWidth);
+  if (sameLevel) return verticalHandlePositions(sourceCenter.y, targetCenter.y);
+  return horizontalHandlePositions(sourceCenter.x, targetCenter.x);
+}
+
+function horizontalHandlePositions(sourceX: number, targetX: number): [Position, Position] {
+  if (sourceX <= targetX) return [Position.Right, Position.Left];
+  return [Position.Left, Position.Right];
+}
+
+function verticalHandlePositions(sourceY: number, targetY: number): [Position, Position] {
+  if (sourceY <= targetY) return [Position.Bottom, Position.Top];
+  return [Position.Top, Position.Bottom];
 }

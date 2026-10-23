@@ -62,6 +62,7 @@ defmodule WandererApp.Application do
         }
       },
       WandererApp.Cache,
+      WandererApp.Map.LayoutScheduler,
       Supervisor.child_spec({Cachex, name: :api_cache, default_ttl: :timer.hours(1)},
         id: :api_cache_worker
       ),

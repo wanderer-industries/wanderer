@@ -455,6 +455,16 @@ defmodule WandererApp.Map.Server.Impl do
       })
     end
 
+    if event in [
+         :add_system,
+         :systems_removed,
+         :add_connection,
+         :remove_connections,
+         :update_system
+       ] do
+      WandererApp.Map.LayoutScheduler.schedule(map_id)
+    end
+
     :ok
   end
 

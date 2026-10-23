@@ -2,6 +2,19 @@ import { SolarSystemRawType } from '@/hooks/Mapper/types/system';
 import { SolarSystemConnection } from '@/hooks/Mapper/types';
 import { XYPosition } from 'reactflow';
 
+export enum ManagedLayoutDirection {
+  TopBottom = 'TB',
+  BottomTop = 'BT',
+  LeftRight = 'LR',
+  RightLeft = 'RL',
+}
+
+export function isHorizontalLayoutDirection(
+  direction: ManagedLayoutDirection,
+): direction is ManagedLayoutDirection.LeftRight | ManagedLayoutDirection.RightLeft {
+  return direction === ManagedLayoutDirection.LeftRight || direction === ManagedLayoutDirection.RightLeft;
+}
+
 export type MapSolarSystemType = Omit<SolarSystemRawType, 'position'>;
 
 export type OnMapSelectionChange = (event: {

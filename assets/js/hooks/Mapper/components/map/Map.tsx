@@ -29,10 +29,11 @@ import {
   useContextMenuConnectionHandlers,
   useContextMenuRootHandlers,
 } from './components';
+import { DepthBands } from './components/DepthBands';
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
-import { useEdgesState, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
+import { useEdgesState, useManagedLayoutNodes, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
-import { MapViewport, OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
+import { ManagedLayoutDirection, MapViewport, OnMapAddSystemCallback, OnMapSelectionChange } from './map.types';
 import type { Viewport } from '@reactflow/core/dist/esm/types';
 import { usePrevious } from 'primereact/hooks';
 
@@ -90,6 +91,8 @@ interface MapCompProps {
   minimapPlacement?: PanelPosition;
   localShowShipName?: boolean;
   defaultViewport?: Viewport;
+  managedLayoutEnabled?: boolean;
+  managedLayoutDirection?: ManagedLayoutDirection;
 }
 
 const MapComp = ({
@@ -112,6 +115,8 @@ const MapComp = ({
   localShowShipName = false,
   onChangeViewport,
   defaultViewport,
+  managedLayoutEnabled = false,
+  managedLayoutDirection = ManagedLayoutDirection.LeftRight,
 }: MapCompProps) => {
   const { getNodes, setViewport } = useReactFlow();
   const [nodes, , onNodesChange] = useNodesState<Node<SolarSystemRawType>>(initialNodes);
@@ -125,7 +130,7 @@ const MapComp = ({
   const { update } = useMapState();
   const { variant, gap, size, color } = useBackgroundVars(theme);
   const { isPanAndDrag, nodeComponent, connectionMode } = getBehaviorForTheme(theme || 'default');
-
+  const layoutNodes = useManagedLayoutNodes(nodes, managedLayoutEnabled);
   const refVars = useRef({ onChangeViewport });
   refVars.current = { onChangeViewport };
 
@@ -148,20 +153,23 @@ const MapComp = ({
   );
 
   const handleDragStop: NodeDragHandler = useCallback(
-    (_, node) => [
-      // eslint-disable-next-line no-console
+    (_, node) => {
+      if (managedLayoutEnabled) return;
+
       setTimeout(() => {
         onCommand({
           type: OutCommand.updateSystemPosition,
           data: { solar_system_id: node.id, position: node.position },
         });
-      }, 500),
-    ],
-    [onCommand],
+      }, 500);
+    },
+    [managedLayoutEnabled, onCommand],
   );
 
   const handleSelectionDragStop: SelectionDragHandler = useCallback(
     (_, nodes) => {
+      if (managedLayoutEnabled) return;
+
       setTimeout(() => {
         onCommand({
           type: OutCommand.updateSystemPositions,
@@ -169,7 +177,7 @@ const MapComp = ({
         });
       }, 500);
     },
-    [onCommand],
+    [managedLayoutEnabled, onCommand],
   );
 
   const resetContexts = useCallback(() => ctxManager.reset(), []);
@@ -191,19 +199,24 @@ const MapComp = ({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      // prevents single node deselection on background / same node click
-      // allows deseletion of all nodes if multiple are currently selected
-      if (changes.length === 1 && changes[0].type == 'select' && changes[0].selected === false) {
-        changes[0].selected = getNodes().filter(node => node.selected).length === 1;
+      let allowedChanges = changes;
+      if (managedLayoutEnabled) {
+        allowedChanges = changes.filter(change => change.type !== 'position');
       }
 
-      const nextChanges = changes.reduce((acc, change) => {
+      // prevents single node deselection on background / same node click
+      // allows deselection of all nodes if multiple are currently selected
+      if (allowedChanges.length === 1 && allowedChanges[0].type == 'select' && allowedChanges[0].selected === false) {
+        allowedChanges[0].selected = getNodes().filter(node => node.selected).length === 1;
+      }
+
+      const nextChanges = allowedChanges.reduce((acc, change) => {
         return [...acc, change];
       }, [] as NodeChange[]);
 
       onNodesChange(nextChanges);
     },
-    [getNodes, onNodesChange],
+    [getNodes, managedLayoutEnabled, onNodesChange],
   );
 
   useEffect(() => {
@@ -213,8 +226,18 @@ const MapComp = ({
       isThickConnections: isThickConnections,
       pings,
       localShowShipName,
+      managedLayoutEnabled,
+      managedLayoutDirection,
     }));
-  }, [showKSpaceBG, isThickConnections, pings, update, localShowShipName]);
+  }, [
+    showKSpaceBG,
+    isThickConnections,
+    pings,
+    update,
+    localShowShipName,
+    managedLayoutEnabled,
+    managedLayoutDirection,
+  ]);
 
   const prevViewport = usePrevious(defaultViewport);
   useEffect(() => {
@@ -236,7 +259,7 @@ const MapComp = ({
         className={clsx(classes.MapRoot, { [classes.BackgroundAlternateColor]: isSoftBackground })}
       >
         <ReactFlow
-          nodes={nodes}
+          nodes={layoutNodes}
           edges={edges}
           onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
@@ -248,6 +271,7 @@ const MapComp = ({
           nodeTypes={nodeTypes}
           connectionMode={connectionMode}
           snapToGrid
+          nodesDraggable={!managedLayoutEnabled}
           nodeDragThreshold={10}
           onNodeDragStop={handleDragStop}
           onSelectionDragStop={handleSelectionDragStop}
@@ -290,6 +314,7 @@ const MapComp = ({
           // onlyRenderVisibleElements
           selectionMode={SelectionMode.Partial}
         >
+          {managedLayoutEnabled && <DepthBands nodes={nodes} direction={managedLayoutDirection} />}
           {isShowMinimap && (
             <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} position={minimapPlacement} />
           )}

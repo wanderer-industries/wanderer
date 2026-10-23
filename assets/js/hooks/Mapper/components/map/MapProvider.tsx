@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { OutCommandHandler } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { MapUnionTypes, SystemSignature } from '@/hooks/Mapper/types';
 import { ContextStoreDataUpdate, useContextStore } from '@/hooks/Mapper/utils';
+import { ManagedLayoutDirection } from './map.types.ts';
 
 export type MapData = MapUnionTypes & {
   isConnecting: boolean;
@@ -12,6 +13,8 @@ export type MapData = MapUnionTypes & {
   linkedSigEveId: string;
   localShowShipName: boolean;
   systemHighlighted: string | undefined;
+  managedLayoutEnabled: boolean;
+  managedLayoutDirection: ManagedLayoutDirection;
 };
 
 interface MapProviderProps {
@@ -46,6 +49,8 @@ const INITIAL_DATA: MapData = {
   pings: [],
   localShowShipName: false,
   systemHighlighted: undefined,
+  managedLayoutEnabled: false,
+  managedLayoutDirection: ManagedLayoutDirection.LeftRight,
 };
 
 export interface MapContextProps {
