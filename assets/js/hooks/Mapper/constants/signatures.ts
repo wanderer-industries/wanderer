@@ -8,6 +8,14 @@ export enum SIGNATURES_DELETION_TIMING {
   EXTENDED,
 }
 
+export enum SIGNATURES_GLOWINGROWS_TIMING {
+  GLOWIMMEDIATE,
+  GLOWDEFAULT,
+  GLOWLONG,
+  GLOWEXTRA,
+  GLOWEXTENDED,
+}
+
 export enum SETTINGS_KEYS {
   SORT_FIELD = 'sortField',
   SORT_ORDER = 'sortOrder',
@@ -17,10 +25,12 @@ export enum SETTINGS_KEYS {
   SHOW_CHARACTER_PORTRAIT = 'show_character_portrait',
   SHOW_DESCRIPTION_COLUMN = 'show_description_column',
   SHOW_GROUP_COLUMN = 'show_group_column',
+  SHOW_INFO_COLUMN = 'show_info_column',
   SHOW_UPDATED_COLUMN = 'show_updated_column',
   LAZY_DELETE_SIGNATURES = 'lazy_delete_signatures',
   KEEP_LAZY_DELETE = 'keep_lazy_delete_enabled',
   DELETION_TIMING = 'deletion_timing',
+  GLOWINGROWS_TIMING = 'glowingrows_timing',
   COLOR_BY_TYPE = 'color_by_type',
 
   // From SignatureKind
@@ -48,6 +58,7 @@ export const DEFAULT_SIGNATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.SORT_ORDER]: -1,
 
   [SETTINGS_KEYS.SHOW_GROUP_COLUMN]: true,
+  [SETTINGS_KEYS.SHOW_INFO_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_ADDED_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_UPDATED_COLUMN]: true,
   [SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN]: true,
@@ -55,6 +66,7 @@ export const DEFAULT_SIGNATURE_SETTINGS: SignatureSettingsType = {
   [SETTINGS_KEYS.LAZY_DELETE_SIGNATURES]: true,
   [SETTINGS_KEYS.KEEP_LAZY_DELETE]: false,
   [SETTINGS_KEYS.DELETION_TIMING]: SIGNATURES_DELETION_TIMING.DEFAULT,
+  [SETTINGS_KEYS.GLOWINGROWS_TIMING]: SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT,
   [SETTINGS_KEYS.COLOR_BY_TYPE]: true,
   [SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT]: true,
 

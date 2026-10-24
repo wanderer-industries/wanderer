@@ -1,0 +1,13 @@
+name: wanderer-toxiproxy
+
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.12.0
+    command: -host 0.0.0.0 -config /config/toxiproxy.json
+    ports:
+      - "127.0.0.1:4444:4444"
+      - "127.0.0.1:8474:8474"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./dev/toxiproxy/config.json:/config/toxiproxy.json:ro

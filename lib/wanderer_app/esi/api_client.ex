@@ -13,6 +13,7 @@ defmodule WandererApp.Esi.ApiClient do
   @retry_opts [retry: false, retry_log_level: :warning]
   @timeout_opts [pool_timeout: 15_000, receive_timeout: :timer.minutes(1)]
   @api_retry_count 1
+  @validators_ttl :timer.hours(1)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -24,7 +25,8 @@ defmodule WandererApp.Esi.ApiClient do
 
   # Helper function to get Req options with appropriate Finch pool
   defp req_options_for_pool(pool) do
-    [base_url: "https://esi.evetech.net", finch: pool]
+    [base_url: "https://esi.evetech.net", finch: pool] ++
+      Application.get_env(:wanderer_app, :esi_req_options, [])
   end
 
   def get_server_status, do: do_get("/status", [], @cache_opts)
@@ -57,21 +59,52 @@ defmodule WandererApp.Esi.ApiClient do
           @character_tracking_pool
         )
 
-  def get_routes_custom(hubs, origin, params),
-    do:
+  def get_routes_custom([], _origin, _params), do: {:ok, []}
+
+  def get_routes_custom(hubs, origin, params) do
+    destinations = Enum.uniq(hubs)
+
+    response =
       do_post(
-        "#{get_custom_route_base_url()}/route/multiple",
+        "#{get_custom_route_base_url()}/route/findClosest",
         [
           json: %{
             origin: origin,
-            destinations: hubs,
+            destinations: destinations,
             flag: params.flag,
             connections: params.connections,
-            avoid: params.avoid
+            avoid: params.avoid,
+            count: length(destinations)
           }
         ]
         |> Keyword.merge(@timeout_opts)
       )
+
+    case response do
+      {:ok, routes} when is_list(routes) ->
+        {:ok, restore_requested_routes(routes, hubs, origin)}
+
+      response ->
+        response
+    end
+  end
+
+  defp restore_requested_routes(routes, hubs, origin) do
+    routes_by_destination =
+      Map.new(routes, fn route ->
+        destination = Map.get(route, "destination") || Map.get(route, :destination)
+        {to_string(destination), route}
+      end)
+
+    Enum.map(hubs, fn destination ->
+      Map.get(routes_by_destination, to_string(destination), %{
+        "origin" => origin,
+        "destination" => destination,
+        "systems" => [],
+        "success" => false
+      })
+    end)
+  end
 
   def get_routes_eve(hubs, origin, _params, _opts),
     do:
@@ -310,17 +343,16 @@ defmodule WandererApp.Esi.ApiClient do
         (opts |> with_refresh_token()) ++ @cache_opts
       )
 
-  defp with_user_agent_opts(opts),
+  defp with_user_agent_opts(opts, extra_headers \\ []),
     do:
       opts
       |> Keyword.merge(
-        headers: [{:user_agent, "Wanderer/#{WandererApp.Env.vsn()} #{@wanderrer_user_agent}"}]
+        headers:
+          [{:user_agent, "Wanderer/#{WandererApp.Env.vsn()} #{@wanderrer_user_agent}"}] ++
+            extra_headers
       )
 
   defp with_refresh_token(opts), do: opts |> Keyword.merge(refresh_token?: true)
-
-  defp with_cache_opts(opts),
-    do: opts |> Keyword.merge(@cache_opts) |> Keyword.merge(cache_dir: System.tmp_dir!())
 
   defp do_get(path, api_opts, opts, pool \\ @general_pool) do
     case Cachex.get(:api_cache, path) do
@@ -339,16 +371,19 @@ defmodule WandererApp.Esi.ApiClient do
       |> Req.get(
         api_opts
         |> Keyword.merge(url: path)
-        |> with_user_agent_opts()
-        |> with_cache_opts()
+        |> with_user_agent_opts(conditional_headers(path, opts))
         |> Keyword.merge(@retry_opts)
         |> Keyword.merge(@timeout_opts)
       )
       |> case do
         {:ok, %{status: 200, body: body, headers: headers}} ->
+          maybe_store_validators(path, body, headers, opts)
           maybe_cache_response(path, body, headers, opts)
 
           {:ok, body}
+
+        {:ok, %{status: 304, headers: headers}} ->
+          handle_not_modified(path, headers, api_opts, opts, pool)
 
         {:ok, %{status: 504}} ->
           {:error, :timeout}
@@ -476,10 +511,10 @@ defmodule WandererApp.Esi.ApiClient do
   defp maybe_cache_response(path, body, %{"expires" => [expires]} = _headers, opts)
        when is_binary(path) and not is_nil(expires) do
     try do
-      if opts |> Keyword.get(:cache, false) do
-        cached_ttl =
-          DateTime.diff(Timex.parse!(expires, "{RFC1123}"), DateTime.utc_now(), :millisecond)
+      cached_ttl =
+        DateTime.diff(Timex.parse!(expires, "{RFC1123}"), DateTime.utc_now(), :millisecond)
 
+      if opts |> Keyword.get(:cache, false) and cached_ttl > 0 do
         Cachex.put(
           :api_cache,
           path,
@@ -496,6 +531,78 @@ defmodule WandererApp.Esi.ApiClient do
   end
 
   defp maybe_cache_response(_path, _body, _headers, _opts), do: :ok
+
+  # Conditional request support (ETag / Last-Modified).
+  #
+  # On 304 ESI returns fresh cache headers (expires, etag, ...) while the body is the one we
+  # already have. The body is kept from the stored 200 response, but headers must be taken from
+  # the 304 response, otherwise a stale `expires` makes the response uncacheable and we re-fetch
+  # it on every tick.
+  defp validators_key(path), do: {:esi_validators, path}
+
+  defp conditional_headers(path, opts) do
+    with true <- Keyword.get(opts, :cache, false),
+         false <- Keyword.get(opts, :skip_conditional, false),
+         {:ok, %{} = validators} <- Cachex.get(:api_cache, validators_key(path)) do
+      [
+        {"if-none-match", validators.etag},
+        {"if-modified-since", validators.last_modified}
+      ]
+      |> Enum.reject(fn {_name, value} -> is_nil(value) end)
+    else
+      _ -> []
+    end
+  end
+
+  defp maybe_store_validators(path, body, headers, opts) do
+    etag = get_header(headers, "etag")
+    last_modified = get_header(headers, "last-modified")
+
+    if Keyword.get(opts, :cache, false) and not (is_nil(etag) and is_nil(last_modified)) do
+      Cachex.put(
+        :api_cache,
+        validators_key(path),
+        %{body: body, etag: etag, last_modified: last_modified},
+        ttl: @validators_ttl
+      )
+    end
+
+    :ok
+  end
+
+  defp handle_not_modified(path, headers, api_opts, opts, pool) do
+    case Cachex.get(:api_cache, validators_key(path)) do
+      {:ok, %{body: body} = validators} ->
+        Cachex.put(
+          :api_cache,
+          validators_key(path),
+          %{
+            validators
+            | etag: get_header(headers, "etag") || validators.etag,
+              last_modified: get_header(headers, "last-modified") || validators.last_modified
+          },
+          ttl: @validators_ttl
+        )
+
+        maybe_cache_response(path, body, headers, opts)
+
+        {:ok, body}
+
+      _ ->
+        if Keyword.get(opts, :skip_conditional, false) do
+          {:error, "Unexpected status: 304"}
+        else
+          do_get_request(path, api_opts, Keyword.put(opts, :skip_conditional, true), pool)
+        end
+    end
+  end
+
+  defp get_header(headers, name) do
+    case Map.get(headers, name) do
+      [value | _] -> value
+      _ -> nil
+    end
+  end
 
   defp do_post(url, opts) do
     try do

@@ -4,11 +4,25 @@ defmodule WandererApp.Api.MapSystemComment do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("map_system_comments_v1")
+  end
+
+  # /api/v1 exposes comments read-only (get, index, index by_system_id), so
+  # only :read is scoped. Create/destroy exist as code interfaces for internal
+  # callers, which reach them as trusted actors via the bypass.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:system, :map_id])
+    end
   end
 
   json_api do
