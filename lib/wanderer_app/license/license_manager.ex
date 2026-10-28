@@ -22,7 +22,7 @@ defmodule WandererApp.License.LicenseManager do
   """
   def create_license_for_map(map_id) do
     with {:ok, map} <- Map.by_id(map_id),
-         {:ok, true} <- WandererApp.Map.is_subscription_active?(map_id),
+         :ok <- license_creation_status(map_id),
          {:ok, subscription} <- SubscriptionManager.get_active_map_subscription(map_id) do
       # Create a license in the local database
 
@@ -52,8 +52,14 @@ defmodule WandererApp.License.LicenseManager do
           {:error, reason}
       end
     else
-      {:ok, false} -> {:error, :no_active_subscription}
       error -> error
+    end
+  end
+
+  def license_creation_status(map_id) do
+    case WandererApp.Map.is_subscription_active?(map_id) do
+      {:ok, true} -> :ok
+      {:ok, false} -> {:error, :no_active_subscription}
     end
   end
 

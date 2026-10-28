@@ -79,6 +79,14 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:page_title, "Maps - Create")
         |> assign(:available_scopes, available_scopes())
         |> assign(
+          active_create_tab: "common",
+          selected_access_list_ids: [],
+          saved_access_list_ids: [],
+          marked_access_list_ids: [],
+          access_list_search: "",
+          access_list_search_focused: false
+        )
+        |> assign(
           :form,
           AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
             forms: [
@@ -126,6 +134,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:map_id, map.id)
         |> assign(:public_api_key, map.public_api_key)
         |> assign(:sse_enabled, map.sse_enabled)
+        |> assign_sse_enablement_status(map.id)
         |> assign(:map, map)
         |> assign(
           export_settings: export_settings |> _get_export_map_data(),
@@ -216,7 +225,10 @@ defmodule WandererAppWeb.MapsLive do
       AshPhoenix.Form.validate(
         socket.assigns.form,
         form
-        |> maybe_put_create_access_lists(socket.assigns.live_action)
+        |> maybe_put_create_access_lists(
+          socket.assigns.live_action,
+          socket.assigns[:selected_access_list_ids] || []
+        )
         |> Map.put("scopes", scopes)
         |> Map.put(
           "only_tracked_characters",
@@ -250,7 +262,10 @@ defmodule WandererAppWeb.MapsLive do
     # Process scopes from checkbox form data
     scopes = parse_scopes_from_form(form)
 
-    form = form |> Map.put("scopes", scopes)
+    form =
+      form
+      |> Map.put("scopes", scopes)
+      |> Map.put("acls", socket.assigns.selected_access_list_ids)
 
     case WandererApp.Api.Map.new(form) do
       {:ok, new_map} ->
@@ -302,7 +317,7 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map: #{error_message}")
-         |> assign(error: error_message)}
+         |> assign(error: error_message, active_create_tab: "common")}
 
       {:error, %{errors: errors}} ->
         error_message =
@@ -315,7 +330,7 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map: #{error_message}")
-         |> assign(error: error_message)}
+         |> assign(error: error_message, active_create_tab: "common")}
 
       {:error, error} ->
         Logger.error("Unexpected error creating map",
@@ -326,7 +341,7 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map. Please try again.")
-         |> assign(error: error)}
+         |> assign(error: error, active_create_tab: "common")}
     end
   end
 
@@ -349,8 +364,20 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   @impl true
+  def handle_event("change_settings_tab", %{"tab" => "public_api" = tab}, socket) do
+    {:noreply,
+     socket
+     |> assign(active_settings_tab: tab)
+     |> assign_sse_enablement_status(socket.assigns.map_id)}
+  end
+
   def handle_event("change_settings_tab", %{"tab" => tab}, socket),
-    do: {:noreply, socket |> assign(active_settings_tab: tab)}
+    do: {:noreply, assign(socket, active_settings_tab: tab)}
+
+  def handle_event("change_create_tab", %{"tab" => tab}, socket)
+      when tab in ["common", "access_lists"] do
+    {:noreply, assign(socket, active_create_tab: tab)}
+  end
 
   def handle_event(
         "filter_access_lists",
@@ -867,7 +894,7 @@ defmodule WandererAppWeb.MapsLive do
     })
   end
 
-  defp maybe_create_default_acl(%{"create_default_acl" => "true"} = _form, new_map) do
+  defp maybe_create_default_acl(%{"create_default_acl" => "true"} = form, new_map) do
     {:ok, acl} =
       WandererApp.Api.AccessList.new(%{
         name: "#{new_map.name} ACL",
@@ -875,7 +902,13 @@ defmodule WandererAppWeb.MapsLive do
         owner_id: new_map.owner_id
       })
 
-    {:ok, _} = WandererApp.Api.Map.update_acls(new_map, %{acls: [acl.id]})
+    access_list_ids =
+      form
+      |> Map.get("acls", [])
+      |> List.insert_at(0, acl.id)
+      |> Enum.uniq()
+
+    {:ok, _} = WandererApp.Api.Map.update_acls(new_map, %{acls: access_list_ids})
   end
 
   defp maybe_create_default_acl(_form, _new_map), do: :ok
@@ -922,10 +955,6 @@ defmodule WandererAppWeb.MapsLive do
 
   defp map_acl(%{name: name, id: id} = acl) do
     %{label: name, value: id, id: id, name: name, owner_name: acl_owner_name(acl)}
-  end
-
-  defp map_acl_value(acl) do
-    acl
   end
 
   defp acl_owner_name(%{owner: %{name: name}}) when is_binary(name), do: name
@@ -1001,10 +1030,20 @@ defmodule WandererAppWeb.MapsLive do
     end
   end
 
-  defp maybe_put_create_access_lists(form, :create),
-    do: Map.put(form, "acls", form["acls"] || [])
+  defp maybe_put_create_access_lists(form, :create, selected_access_list_ids),
+    do: Map.put(form, "acls", selected_access_list_ids)
 
-  defp maybe_put_create_access_lists(form, _live_action), do: form
+  defp maybe_put_create_access_lists(form, _live_action, _selected_access_list_ids), do: form
+
+  defp assign_sse_enablement_status(socket, map_id) do
+    case WandererApp.Api.Map.sse_enablement_status(map_id) do
+      :ok ->
+        assign(socket, sse_can_enable: true, sse_unavailable_reason: nil)
+
+      {:error, reason} ->
+        assign(socket, sse_can_enable: false, sse_unavailable_reason: reason)
+    end
+  end
 
   # Helper function to get current scopes from form for checkbox state
   def get_current_scopes(form) do

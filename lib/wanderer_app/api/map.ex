@@ -158,6 +158,7 @@ defmodule WandererApp.Api.Map do
       argument :acls_empty_selection, :string, allow_nil?: true
       change manage_relationship(:acls, type: :append_and_remove)
       change WandererApp.Api.Changes.SlugifyName
+      validate present(:owner_id), message: "Map owner is required"
     end
 
     update :update do
@@ -479,7 +480,6 @@ defmodule WandererApp.Api.Map do
   defp validate_sse_subscription(changeset, _context) do
     sse_enabled = Ash.Changeset.get_attribute(changeset, :sse_enabled)
     map_id = changeset.data.id
-    subscriptions_enabled = WandererApp.Env.map_subscriptions_enabled?()
 
     cond do
       # Not enabling SSE - no validation needed
@@ -490,27 +490,29 @@ defmodule WandererApp.Api.Map do
       is_nil(map_id) ->
         :ok
 
-      # Community Edition mode - always allow
-      not subscriptions_enabled ->
-        :ok
-
-      # Enterprise mode - check subscription
       true ->
-        validate_active_subscription(map_id)
+        case sse_enablement_status(map_id) do
+          :ok -> :ok
+          {:error, message} -> {:error, field: :sse_enabled, message: message}
+        end
     end
   end
 
-  defp validate_active_subscription(map_id) do
-    case WandererApp.Map.is_subscription_active?(map_id) do
-      {:ok, true} ->
-        :ok
+  def sse_enablement_status(map_id) do
+    if WandererApp.Env.map_subscriptions_enabled?() do
+      case WandererApp.Map.is_subscription_active?(map_id) do
+        {:ok, true} ->
+          :ok
 
-      {:ok, false} ->
-        {:error, field: :sse_enabled, message: "Active subscription required to enable SSE"}
+        {:ok, false} ->
+          {:error, "Active subscription required to enable SSE"}
 
-      {:error, reason} ->
-        Logger.error("Error checking subscription status: #{inspect(reason)}")
-        {:error, field: :sse_enabled, message: "Unable to verify subscription status"}
+        {:error, reason} ->
+          Logger.error("Error checking subscription status: #{inspect(reason)}")
+          {:error, "Unable to verify subscription status"}
+      end
+    else
+      :ok
     end
   end
 end

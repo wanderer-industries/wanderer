@@ -48,7 +48,7 @@ defmodule WandererAppWeb.Maps.MapSettings.CommonTab do
           <div class="h-px flex-1 border-t border-stone-700" />
         </div>
 
-        <div class="mt-1">
+        <div class="mt-1 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
           <.input
             :for={scope_option <- @available_scopes}
             type="checkbox"

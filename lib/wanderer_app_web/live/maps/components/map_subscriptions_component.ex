@@ -519,27 +519,42 @@ defmodule WandererAppWeb.Maps.MapSubscriptionsComponent do
 
     ~H"""
     <div class="subscriptions-info flex h-full min-h-0 flex-col">
-      <div
-        class="mb-3 w-fit shrink-0"
-        title={
-          if @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active,
-            do: "You can have only one active subscription plan",
-            else: nil
-        }
+      <section
+        :if={not @readonly}
+        class="mb-4 shrink-0 rounded-sm border border-neutral-700/80 bg-neutral-900/30 p-4"
       >
-        <.button
-          :if={not @readonly}
-          type="button"
-          disabled={
-            @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
-              @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha
-          }
-          phx-click="add_subscription"
-          phx-target={@myself}
-        >
-          Add subscription
-        </.button>
-      </div>
+        <div class="flex items-center justify-between gap-6">
+          <div class="min-w-0">
+            <h3 class="text-sm font-medium text-neutral-200">Map subscription</h3>
+            <p class="mt-1 text-sm leading-5 text-neutral-500">
+              Add a subscription plan and configure its limits for this map.
+            </p>
+          </div>
+
+          <div
+            class="shrink-0"
+            title={
+              if @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active,
+                do: "You can have only one active subscription plan",
+                else: nil
+            }
+          >
+            <.button
+              class="inline-flex items-center justify-center gap-2 !rounded-sm !px-4 !py-2"
+              type="button"
+              disabled={
+                @map_subscriptions |> Enum.at(0) |> Map.get(:status) == :active &&
+                  @map_subscriptions |> Enum.at(0) |> Map.get(:plan) != :alpha
+              }
+              phx-click="add_subscription"
+              phx-target={@myself}
+            >
+              <.icon name="hero-plus-solid" class="h-4 w-4 shrink-0" />
+              <span>Add subscription</span>
+            </.button>
+          </div>
+        </div>
+      </section>
 
       <div class="custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-2">
         <table class="w-full border-collapse text-left [&_td]:px-1 [&_th]:px-1">

@@ -94,6 +94,7 @@ defmodule WandererApp.Permissions do
   def check_characters_access(characters, acls) do
     character_ids = characters |> Enum.map(& &1.id)
     character_eve_ids = characters |> Enum.map(& &1.eve_id)
+    owns_access_list? = Enum.any?(acls, &(&1.owner_id in character_ids))
 
     character_corporation_ids =
       characters |> Enum.map(& &1.corporation_id) |> Enum.map(&to_string/1)
@@ -188,15 +189,19 @@ defmodule WandererApp.Permissions do
         end
       end)
 
-    case result do
-      [_, -1] ->
-        [-1]
+    if owns_access_list? do
+      [role_mask(:admin)]
+    else
+      case result do
+        [_, -1] ->
+          [-1]
 
-      [-1, char_acc] ->
-        [char_acc]
+        [-1, char_acc] ->
+          [char_acc]
 
-      [any_acc, _char_acc] ->
-        [any_acc]
+        [any_acc, _char_acc] ->
+          [any_acc]
+      end
     end
   end
 end

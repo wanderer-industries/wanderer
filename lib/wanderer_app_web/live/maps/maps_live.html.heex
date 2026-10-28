@@ -122,34 +122,100 @@
 <.modal
   :if={@is_connected? && @live_action == :create}
   title="Create Map"
-  class="!w-[500px]"
+  class="!flex !h-[min(694px,calc(100vh-2rem))] !w-[760px] !flex-col [&>.p-dialog-content]:!flex [&>.p-dialog-content]:!min-h-0 [&>.p-dialog-content]:!flex-1 [&>.p-dialog-content]:!flex-col [&>.p-dialog-content]:!px-7 [&>.p-dialog-content]:!py-5 [&>.p-dialog-header]:!shrink-0 [&>.p-dialog-header]:!px-7 [&>.p-dialog-header]:!py-2 [&>.p-dialog-header>.p-dialog-header-close]:relative [&>.p-dialog-header>.p-dialog-header-close]:-right-5"
   id="add_map_modal"
   show
   on_cancel={JS.patch(~p"/maps")}
 >
-  <.form :let={f} for={@form} phx-change="validate" phx-submit={@live_action} autocomplete="off">
-    <.input type="text" field={f[:name]} placeholder="Name" />
-    <.input type="text" field={f[:slug]} prefix={@uri} placeholder="map-slug" />
-    <.input type="textarea" field={f[:description]} placeholder="Public description" />
-    <.input
-      type="select"
-      field={f[:owner_id]}
-      class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-      wrapper_class="mt-2"
-      label="Map owner"
-      placeholder="Select a map owner"
-      options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
-    />
-    <!-- Map Scopes Section -->
-    <div class="mt-2 border border-dashed border-stone-600 rounded p-3">
-      <p class="text-xs text-stone-400 mb-2">
-        Select which space types to automatically track on the map
-      </p>
-      <div class="grid grid-cols-2 gap-1">
+  <div
+    class="mb-4 flex shrink-0 border-b border-neutral-700"
+    role="tablist"
+    aria-label="Create map sections"
+  >
+    <button
+      type="button"
+      role="tab"
+      aria-selected={@active_create_tab == "common"}
+      phx-click="change_create_tab"
+      phx-value-tab="common"
+      class={[
+        "inline-flex items-center gap-2 border-b-2 px-4 py-2 text-sm transition-colors",
+        classes(
+          "border-sky-400 bg-neutral-800/70 text-sky-400": @active_create_tab == "common",
+          "border-transparent text-neutral-400 hover:text-neutral-200":
+            @active_create_tab != "common"
+        )
+      ]}
+    >
+      <.icon name="hero-pencil-square-solid" class="size-4 shrink-0" />
+      <span>Common</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      aria-selected={@active_create_tab == "access_lists"}
+      phx-click="change_create_tab"
+      phx-value-tab="access_lists"
+      class={[
+        "inline-flex items-center gap-2 border-b-2 px-4 py-2 text-sm transition-colors",
+        classes(
+          "border-sky-400 bg-neutral-800/70 text-sky-400": @active_create_tab == "access_lists",
+          "border-transparent text-neutral-400 hover:text-neutral-200":
+            @active_create_tab != "access_lists"
+        )
+      ]}
+    >
+      <.icon name="hero-key-solid" class="size-4 shrink-0" />
+      <span>Access Lists</span>
+    </button>
+  </div>
+  <.form
+    :let={f}
+    id="create-map-form"
+    for={@form}
+    phx-change="validate"
+    phx-submit={@live_action}
+    autocomplete="off"
+    class={[
+      "min-h-0 flex-1 flex-col",
+      classes(flex: @active_create_tab == "common", hidden: @active_create_tab != "common")
+    ]}
+  >
+    <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-2 [&_.label-text-alt>span]:hidden [&_.label-text-alt]:before:mr-1 [&_.label-text-alt]:before:content-['*'] [&>label.form-control>.inputContainer]:mb-1">
+      <div class="grid grid-cols-2 items-start gap-4 [&>label.form-control>.inputContainer]:mb-0.5 [&>label.form-control>.label]:h-6 [&>label.form-control>.label]:py-0.5">
+        <.input type="text" field={f[:name]} label="Map Name" placeholder="Map Name" />
+        <.input
+          type="text"
+          field={f[:slug]}
+          label="Map Slug"
+          prefix={@uri}
+          placeholder="map-slug"
+        />
+      </div>
+      <.input
+        type="textarea"
+        field={f[:description]}
+        label="Public description"
+        placeholder="Public description"
+      />
+      <WandererAppWeb.Maps.MapSettings.SettingsSelect.select
+        field={f[:owner_id]}
+        label="Map owner *"
+        options={Enum.map(@characters, fn character -> {character.label, character.id} end)}
+        prompt="Select a map owner"
+        wrapper_class="mt-2"
+      />
+      <div class="mt-4 flex items-center gap-3">
+        <span class="shrink-0 text-xs font-normal uppercase tracking-wide text-stone-500">
+          Automatically tracked space types
+        </span>
+        <div class="h-px flex-1 border-t border-stone-700" />
+      </div>
+      <div class="mt-1 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
         <%= for scope_option <- @available_scopes do %>
           <% is_checked = scope_option.value in (get_current_scopes(f) || []) %>
-          <label class="flex items-center gap-2 cursor-pointer py-1 px-2 rounded hover:bg-stone-800">
-            <div class="flex items-center">
+          <label class="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center py-1.5">
+            <div class="order-3 flex items-center">
               <div
                 class={[
                   "checkboxRoot sizeM p-checkbox p-component",
@@ -195,41 +261,68 @@
                 </div>
               </div>
             </div>
-            <span class="text-xs select-none">{scope_option.label}</span>
+            <span class="order-1 select-none text-[13px] text-neutral-300">
+              {scope_option.label}
+            </span>
+            <div class="order-2 mx-3 h-px border-b-2 border-dotted border-neutral-700" />
           </label>
         <% end %>
       </div>
+      <div class="mt-4 flex items-center gap-3">
+        <span class="shrink-0 text-xs font-normal uppercase tracking-wide text-stone-500">
+          Access restrictions
+        </span>
+        <div class="h-px flex-1 border-t border-stone-700" />
+      </div>
+      <div class="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+        <.input
+          type="checkbox"
+          field={f[:only_tracked_characters]}
+          label="Allow only tracked characters"
+        />
+        <.input
+          type="checkbox"
+          field={f[:create_default_acl]}
+          label="Create default access list"
+          checked={
+            Phoenix.HTML.Form.normalize_value("checkbox", f[:create_default_acl].value) == true or
+              is_nil(f[:create_default_acl].value)
+          }
+        />
+      </div>
     </div>
-    <.input
-      type="checkbox"
-      field={f[:only_tracked_characters]}
-      label="Allow only tracked characters"
-    />
-    <.input
-      type="checkbox"
-      field={f[:create_default_acl]}
-      label="Create default access list"
-      checked={
-        Phoenix.HTML.Form.normalize_value("checkbox", f[:create_default_acl].value) == true or
-          is_nil(f[:create_default_acl].value)
-      }
-    />
-    <.live_select
-      field={f[:acls]}
-      dropdown_extra_class="!h-24"
-      value_mapper={&map_acl_value/1}
-      debounce={250}
-      update_min_len={2}
-      mode={:tags}
-      options={@acls}
-      placeholder="Add an existing access list"
-    />
-    <div class="modal-action">
-      <.button class="mt-2" type="submit">
-        Create
+    <div class="mt-4 flex shrink-0 items-center justify-end">
+      <.button
+        class="inline-flex items-center justify-center gap-2 !rounded-sm !px-4 !py-2"
+        type="submit"
+      >
+        <.icon name="hero-plus-solid" class="h-4 w-4 shrink-0" />
+        <span>Create map</span>
       </.button>
     </div>
   </.form>
+  <div :if={@active_create_tab == "access_lists"} class="flex min-h-0 flex-1 flex-col">
+    <div class="min-h-0 flex-1">
+      <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
+        access_lists={@acls}
+        selected_ids={@selected_access_list_ids}
+        saved_ids={@saved_access_list_ids}
+        marked_ids={@marked_access_list_ids}
+        search={@access_list_search}
+        search_focused={@access_list_search_focused}
+      />
+    </div>
+    <div class="mt-4 flex shrink-0 items-center justify-end">
+      <.button
+        form="create-map-form"
+        class="inline-flex items-center justify-center gap-2 !rounded-sm !px-4 !py-2"
+        type="submit"
+      >
+        <.icon name="hero-plus-solid" class="h-4 w-4 shrink-0" />
+        <span>Create map</span>
+      </.button>
+    </div>
+  </div>
 </.modal>
 
 <.modal
@@ -263,8 +356,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="common"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-pencil-square-solid" class="h-4 w-4" />&nbsp;Common
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-pencil-square-solid" class="h-4 w-4 shrink-0" />
+                    <span>Common</span>
                   </span>
                 </a>
               </li>
@@ -289,8 +386,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="general"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;Settings
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-wrench-screwdriver-solid" class="h-4 w-4 shrink-0" />
+                    <span>Settings</span>
                   </span>
                 </a>
               </li>
@@ -314,8 +415,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="access_lists"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-key-solid" class="h-4 w-4" />&nbsp;Access Lists
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-key-solid" class="h-4 w-4 shrink-0" />
+                    <span>Access Lists</span>
                   </span>
                 </a>
               </li>
@@ -341,8 +446,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="balance"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-banknotes-solid" class="h-4 w-4 shrink-0" />
+                    <span>Balance</span>
                   </span>
                 </a>
               </li>
@@ -370,8 +479,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="subscription"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-check-badge-solid" class="h-4 w-4 shrink-0" />
+                    <span>Subscription</span>
                   </span>
                 </a>
               </li>
@@ -396,8 +509,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="import"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-document-arrow-down-solid" class="h-4 w-4 shrink-0" />
+                    <span>Import/Export</span>
                   </span>
                 </a>
               </li>
@@ -422,8 +539,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="public_api"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-globe-alt-solid" class="w-4 h-4" />&nbsp;Public Api
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-globe-alt-solid" class="h-4 w-4 shrink-0" />
+                    <span>Public Api</span>
                   </span>
                 </a>
               </li>
@@ -448,8 +569,12 @@
                   phx-click="change_settings_tab"
                   phx-value-tab="bot"
                 >
-                  <span class="p-tabview-title" data-pc-section="headertitle">
-                    <.icon name="hero-puzzle-piece-solid" class="w-4 h-4" />&nbsp;Bots
+                  <span
+                    class="p-tabview-title inline-flex items-center gap-1 leading-none"
+                    data-pc-section="headertitle"
+                  >
+                    <.icon name="hero-puzzle-piece-solid" class="h-4 w-4 shrink-0" />
+                    <span>Bots</span>
                   </span>
                 </a>
               </li>
@@ -519,6 +644,8 @@
               <WandererAppWeb.Maps.MapSettings.PublicApiTab.content
                 public_api_key={@public_api_key}
                 sse_enabled={@sse_enabled}
+                sse_can_enable={@sse_can_enable}
+                sse_unavailable_reason={@sse_unavailable_reason}
               />
             </div>
 
