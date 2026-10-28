@@ -101,17 +101,6 @@
                 </button>
                 <button
                   :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                  id={"edit-map-#{map.slug}"}
-                  class="h-8 w-8 hover:text-white"
-                  type="button"
-                  phx-hook="MapAction"
-                  data-event="edit_map"
-                  data-data={map.slug}
-                >
-                  <.icon name="hero-pencil-square-solid" class="w-6 h-6" />
-                </button>
-                <button
-                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
                   id={"delete-map-#{map.slug}"}
                   class="h-8 w-8 hover:text-white"
                   phx-hook="MapAction"
@@ -131,8 +120,8 @@
 </div>
 
 <.modal
-  :if={@is_connected? && @live_action in [:create, :edit]}
-  title={"#{(@live_action == :create && "Create") || "Edit"} Map"}
+  :if={@is_connected? && @live_action == :create}
+  title="Create Map"
   class="!w-[500px]"
   id="add_map_modal"
   show
@@ -217,7 +206,6 @@
       label="Allow only tracked characters"
     />
     <.input
-      :if={@live_action == :create}
       type="checkbox"
       field={f[:create_default_acl]}
       label="Create default access list"
@@ -238,7 +226,7 @@
     />
     <div class="modal-action">
       <.button class="mt-2" type="submit">
-        {(@live_action == :create && "Create") || "Save"}
+        Create
       </.button>
     </div>
   </.form>
@@ -247,375 +235,298 @@
 <.modal
   :if={@live_action in [:settings] && not is_nil(assigns[:map])}
   title="Map Settings"
-  class="!min-w-[700px]"
+  class="mapSettingsDialog"
   id="map-settings-modal"
   show
   on_cancel={JS.patch(~p"/maps")}
 >
-  <div class="flex flex-col gap-3">
-    <div class="flex flex-col gap-2">
-      <div class="verticalTabsContainer">
-        <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
-          <div class="p-tabview-nav-container" data-pc-section="navcontainer">
-            <div class="p-tabview-nav-content" data-pc-section="navcontent">
-              <ul class="p-tabview-nav" role="tablist" data-pc-section="nav">
-                <li
-                  class={[
-                    "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "general")
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="0"
-                    aria-controls="pr_id_330_content"
-                    aria-selected="true"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="general"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;General
-                    </span>
-                  </a>
-                </li>
-
-                <li
-                  :if={@map_subscriptions_enabled?}
-                  class={[
-                    "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "balance")
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_332_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="balance"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
-                    </span>
-                  </a>
-                </li>
-
-                <li
-                  :if={@map_subscriptions_enabled?}
-                  class={[
-                    "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_settings_tab == "subscription"
-                    )
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_334_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="subscription"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
-                    </span>
-                  </a>
-                </li>
-
-                <li
-                  class={[
-                    "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "import")
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_331_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="import"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
-                    </span>
-                  </a>
-                </li>
-                <li
-                  :if={not WandererApp.Env.public_api_disabled?()}
-                  class={[
-                    "p-unselectable-text",
-                    classes(
-                      "p-tabview-selected p-highlight": @active_settings_tab == "public_api"
-                    )
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_335_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="public_api"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-globe-alt-solid" class="w-4 h-4" />&nbsp;Public Api
-                    </span>
-                  </a>
-                </li>
-                <li
-                  :if={@map_subscriptions_enabled?}
-                  class={[
-                    "p-unselectable-text",
-                    classes("p-tabview-selected p-highlight": @active_settings_tab == "bot")
-                  ]}
-                  role="presentation"
-                  data-pc-name=""
-                  data-pc-section="header"
-                >
-                  <a
-                    role="tab"
-                    class="p-tabview-nav-link flex p-[10px]"
-                    tabindex="-1"
-                    aria-controls="pr_id_335_content"
-                    aria-selected="false"
-                    aria-disabled="false"
-                    data-pc-section="headeraction"
-                    phx-click="change_settings_tab"
-                    phx-value-tab="bot"
-                  >
-                    <span class="p-tabview-title" data-pc-section="headertitle">
-                      <.icon name="hero-puzzle-piece-solid" class="w-4 h-4" />&nbsp;Bots
-                    </span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="p-tabview-panels" data-pc-section="panelcontainer">
-            <div
-              id="pr_id_330_content"
-              class="p-tabview-panel"
-              role="tabpanel"
-              aria-labelledby="pr_id_33_header_0"
-              data-pc-name=""
-              data-pc-section="content"
-            >
-              <div :if={@active_settings_tab == "general"}>
-                <.form
-                  :let={f}
-                  :if={assigns |> Map.get(:options_form, false)}
-                  for={@options_form}
-                  phx-change="update_options"
-                >
-                  <.input
-                    type="select"
-                    field={f[:layout]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Map systems layout"
-                    placeholder="Map default layout"
-                    options={@layout_options}
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:store_custom_labels]}
-                    label="Store system custom labels"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_temp_system_name]}
-                    label="Allow temporary system names"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_linked_signature_id]}
-                    label="Show linked signature ID as custom label part"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:show_linked_signature_id_temp_name]}
-                    label="Show linked signature ID as temporary name part"
-                  />
-                  <.input
-                    type="checkbox"
-                    field={f[:restrict_offline_showing]}
-                    label="Show offline characters to admins & managers only"
-                  />
-                  <.input
-                    type="select"
-                    field={f[:allowed_copy_for]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Copy map data allowed for"
-                    placeholder="Select role to allow map data copy"
-                    options={@allowed_copy_for_options}
-                  />
-                  <.input
-                    type="select"
-                    field={f[:allowed_paste_for]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Paste map data allowed for"
-                    placeholder="Select role to allow map data paste"
-                    options={@allowed_paste_for_options}
-                  />
-                </.form>
-              </div>
-
-              <div :if={@active_settings_tab == "import"}>
-                <.form
-                  :if={assigns |> Map.get(:import_form, false)}
-                  for={@import_form}
-                  phx-change="import"
-                >
-                  <%!-- <div phx-drop-target="{@uploads.settings.ref}">
-                    <.live_file_input upload={@uploads.settings} />
-                  </div> --%>
-                </.form>
-                <progress :if={@importing} class="progress w-56"></progress>
-                <.button
-                  id="export-settings-btn"
-                  class="mt-8"
-                  type="button"
-                  disabled={@importing}
-                  phx-hook="DownloadJson"
-                  data-name={@map_slug}
-                  data-content={Jason.encode!(assigns[:export_settings] || %{})}
-                >
-                  <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" /> Export Settings
-                </.button>
-              </div>
-
-              <div :if={@active_settings_tab == "bot"}>
-                <h3 class="text-lg font-semibold mb-2">Bots Integration</h3>
-                <div class="mb-6 p-4 border rounded-md">
-                  <p class="mb-2">
-                    The bot license allows you to integrate your map with automated tools and bots.
-                    Here's how to use it:
-                  </p>
-                  <ol class="list-decimal pl-5 mb-4 space-y-2">
-                    <li>Create a license key below (requires an active subscription)</li>
-                    <li>Use the license key to authenticate your bot with our API</li>
-                    <%!-- <li>
-                      Make API calls to <code class="bg-gray-800 px-1 py-0.5 rounded">GET /api/license/validate</code>
-                      with the license key as a Bearer token in the Authorization header
-                    </li>
-                    <li>
-                      If valid, you'll receive the map ID which you can use for other API endpoints
-                    </li> --%>
-                  </ol>
-                  <p class="text-sm text-gray-600">
-                    For detailed API documentation, please refer to our <a
-                      href="/license"
-                      class="text-blue-600 hover:underline"
-                    >API documentation</a>.
-                  </p>
-                </div>
-
-                <.live_component
-                  module={WandererAppWeb.Maps.LicenseComponent}
-                  id="license-component"
-                  map_id={@map.id}
-                />
-              </div>
-
-              <div
-                :if={
-                  @active_settings_tab == "public_api" and
-                    not WandererApp.Env.public_api_disabled?()
-                }
-                class="p-6"
+  <div class="mapSettingsLayout">
+    <div class="verticalTabsContainer">
+      <div class="p-tabview p-component" data-pc-name="tabview" data-pc-section="root">
+        <div class="p-tabview-nav-container" data-pc-section="navcontainer">
+          <div class="p-tabview-nav-content" data-pc-section="navcontent">
+            <ul class="p-tabview-nav" role="tablist" data-pc-section="nav">
+              <li
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "common")
+                ]}
+                role="presentation"
+                data-pc-section="header"
               >
-                <h2 class="text-lg font-semibold mb-4">Public API</h2>
-                <div class="flex flex-col gap-3 items-start w-full">
-                  <div>
-                    <input
-                      :if={not is_nil(@public_api_key)}
-                      class="input input-bordered text-sm truncate bg-neutral-800 text-white w-[350px]"
-                      readonly
-                      type="text"
-                      value={@public_api_key}
-                    />
-                    <input
-                      :if={is_nil(@public_api_key)}
-                      class="input input-bordered text-sm truncate bg-neutral-800 text-gray-400 w-[350px]"
-                      readonly
-                      type="text"
-                      placeholder="No Public API Key yet"
-                    />
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <.button
-                      type="button"
-                      phx-click="generate-map-api-key"
-                      class="p-button p-component p-button-primary"
-                      style="min-width: 120px;"
-                    >
-                      <span class="p-button-label">Generate</span>
-                    </.button>
-                    <.button
-                      type="button"
-                      phx-hook="CopyToClipboard"
-                      id="copy-map-api-key"
-                      data-url={@public_api_key}
-                      disabled={is_nil(@public_api_key)}
-                      class={"p-button p-component " <> if(is_nil(@public_api_key), do: "p-disabled", else: "")}
-                    >
-                      <span class="p-button-label">Copy</span>
-                    </.button>
-                  </div>
-                </div>
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="0"
+                  aria-selected={@active_settings_tab == "common"}
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="common"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-pencil-square-solid" class="h-4 w-4" />&nbsp;Common
+                  </span>
+                </a>
+              </li>
 
-                <div class="border-t border-stone-700 mt-4 pt-4">
-                  <h3 class="text-md font-semibold mb-3">Server-Sent Events (SSE)</h3>
-                  <div class="flex items-center gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        class="checkbox checkbox-primary"
-                        checked={@sse_enabled}
-                        phx-click="toggle-sse"
-                      />
-                      <span>Enable SSE for this map</span>
-                    </label>
-                  </div>
-                  <p class="text-sm text-stone-400 mt-2">
-                    When enabled, external clients can subscribe to real-time map events via SSE.
-                  </p>
-                </div>
-              </div>
+              <li
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "general")
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_330_content"
+                  aria-selected={@active_settings_tab == "general"}
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="general"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-wrench-screwdriver-solid" class="w-4 h-4" />&nbsp;Settings
+                  </span>
+                </a>
+              </li>
 
+              <li
+                class={[
+                  "p-unselectable-text",
+                  classes(
+                    "p-tabview-selected p-highlight": @active_settings_tab == "access_lists"
+                  )
+                ]}
+                role="presentation"
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-selected={@active_settings_tab == "access_lists"}
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="access_lists"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-key-solid" class="h-4 w-4" />&nbsp;Access Lists
+                  </span>
+                </a>
+              </li>
+
+              <li
+                :if={@map_subscriptions_enabled?}
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "balance")
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_332_content"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="balance"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-banknotes-solid" class="w-4 h-4" />&nbsp;Balance
+                  </span>
+                </a>
+              </li>
+
+              <li
+                :if={@map_subscriptions_enabled?}
+                class={[
+                  "p-unselectable-text",
+                  classes(
+                    "p-tabview-selected p-highlight": @active_settings_tab == "subscription"
+                  )
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_334_content"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="subscription"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-check-badge-solid" class="w-4 h-4" />&nbsp;Subscription
+                  </span>
+                </a>
+              </li>
+
+              <li
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "import")
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_331_content"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="import"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-document-arrow-down-solid" class="w-4 h-4" />&nbsp;Import/Export
+                  </span>
+                </a>
+              </li>
+              <li
+                :if={not WandererApp.Env.public_api_disabled?()}
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "public_api")
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_335_content"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="public_api"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-globe-alt-solid" class="w-4 h-4" />&nbsp;Public Api
+                  </span>
+                </a>
+              </li>
+              <li
+                :if={@map_subscriptions_enabled?}
+                class={[
+                  "p-unselectable-text",
+                  classes("p-tabview-selected p-highlight": @active_settings_tab == "bot")
+                ]}
+                role="presentation"
+                data-pc-name=""
+                data-pc-section="header"
+              >
+                <a
+                  role="tab"
+                  class="p-tabview-nav-link flex p-[10px]"
+                  tabindex="-1"
+                  aria-controls="pr_id_335_content"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  data-pc-section="headeraction"
+                  phx-click="change_settings_tab"
+                  phx-value-tab="bot"
+                >
+                  <span class="p-tabview-title" data-pc-section="headertitle">
+                    <.icon name="hero-puzzle-piece-solid" class="w-4 h-4" />&nbsp;Bots
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="p-tabview-panels" data-pc-section="panelcontainer">
+          <div
+            id="pr_id_330_content"
+            class="p-tabview-panel"
+            role="tabpanel"
+            aria-labelledby="pr_id_33_header_0"
+            data-pc-name=""
+            data-pc-section="content"
+          >
+            <WandererAppWeb.Maps.MapSettings.CommonTab.content
+              :if={@active_settings_tab == "common"}
+              form={@form}
+              uri={@uri}
+              characters={@characters}
+              available_scopes={@available_scopes}
+            />
+
+            <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
+              :if={@active_settings_tab == "access_lists"}
+              access_lists={@acls}
+              selected_ids={@selected_access_list_ids}
+              saved_ids={@saved_access_list_ids}
+              marked_ids={@marked_access_list_ids}
+              search={@access_list_search}
+              search_focused={@access_list_search_focused}
+            />
+
+            <div
+              :if={@active_settings_tab == "general"}
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
+              <WandererAppWeb.Maps.MapSettings.GeneralTab.content form={@options_form} />
+            </div>
+
+            <div
+              :if={@active_settings_tab == "import"}
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
+              <WandererAppWeb.Maps.MapSettings.ImportExportTab.content
+                form={@import_form}
+                importing={@importing}
+                map_slug={@map_slug}
+                export_settings={@export_settings}
+              />
+            </div>
+
+            <div
+              :if={@active_settings_tab == "bot"}
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
+              <WandererAppWeb.Maps.MapSettings.BotsTab.content map_id={@map.id} />
+            </div>
+
+            <div
+              :if={
+                @active_settings_tab == "public_api" and
+                  not WandererApp.Env.public_api_disabled?()
+              }
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
+              <WandererAppWeb.Maps.MapSettings.PublicApiTab.content
+                public_api_key={@public_api_key}
+                sse_enabled={@sse_enabled}
+              />
+            </div>
+
+            <div
+              :if={@active_settings_tab == "balance"}
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
               <.live_component
-                :if={@active_settings_tab == "balance"}
                 module={WandererAppWeb.Maps.MapBalanceComponent}
                 id="map-balance-component"
                 map_id={@map.id}
@@ -623,9 +534,13 @@
                 event_name="balance_event"
                 current_user={@current_user}
               />
+            </div>
 
+            <div
+              :if={@active_settings_tab == "subscription"}
+              class="mapSettingsScrollableTab custom-scrollbar"
+            >
               <.live_component
-                :if={@active_settings_tab == "subscription"}
                 module={WandererAppWeb.Maps.MapSubscriptionsComponent}
                 id="map-subscriptions-component"
                 map_id={@map.id}
@@ -636,10 +551,47 @@
               />
             </div>
           </div>
+
+          <div
+            :if={@active_settings_tab == "common"}
+            class="mapSettingsPanelFooter flex items-center justify-end gap-2"
+          >
+            <.button
+              type="button"
+              severity="error"
+              class="py-[4px]"
+              phx-click="reset_common_settings"
+            >
+              Reset
+            </.button>
+            <.button
+              type="submit"
+              form="map-settings-common-form"
+              outlined={false}
+              class="py-[4px]"
+            >
+              Save
+            </.button>
+          </div>
+
+          <div
+            :if={@active_settings_tab == "access_lists"}
+            class="mapSettingsPanelFooter flex items-center justify-end gap-2"
+          >
+            <.button
+              type="button"
+              severity="error"
+              class="py-[4px]"
+              phx-click="reset_access_lists"
+            >
+              Reset
+            </.button>
+            <.button type="button" outlined={false} class="py-[4px]" phx-click="save_access_lists">
+              Save
+            </.button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="modal-action"></div>
 </.modal>

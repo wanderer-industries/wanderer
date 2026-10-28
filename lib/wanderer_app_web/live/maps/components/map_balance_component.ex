@@ -221,10 +221,10 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
   def render(assigns) do
     ~H"""
     <div class="map-balance-info">
-      <div class="stats w-full bg-primary text-primary-content">
+      <div class="stats w-full overflow-hidden rounded-sm border border-neutral-700/80 bg-gradient-to-r from-neutral-800/90 via-stone-900 to-orange-950/20 text-neutral-100 shadow-none">
         <div class="stat">
-          <div class="stat-title">Account balance</div>
-          <div class="stat-value text-white">
+          <div class="stat-title text-stone-400">Account balance</div>
+          <div class="stat-value text-stone-100">
             ISK {@user_balance
             |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
           </div>
@@ -251,8 +251,8 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
               Withdraw
             </.button>
           </div>
-          <div class="stat-title">Map balance</div>
-          <div class="stat-value text-white">
+          <div class="stat-title text-stone-400">Map balance</div>
+          <div class="stat-value text-stone-100">
             ISK {@map_balance
             |> Number.to_human(units: ["", "K", "M", "B", "T", "P"])}
           </div>
@@ -260,7 +260,7 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         </div>
       </div>
 
-      <div class="w-full bg-primary">
+      <div class="w-full bg-transparent">
         <h3 class="mt-2 text-2xl font-semibold mb-4 text-white">
           How to top up map balance?
         </h3>
@@ -293,12 +293,9 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         phx-submit="topup"
         phx-target={@myself}
       >
-        <.input
-          type="select"
+        <WandererAppWeb.Maps.MapSettings.SettingsSelect.select
           field={f[:amount]}
-          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
           label="Topup amount"
-          placeholder="Select topup amount"
           options={@amounts}
         />
         <div class="modal-action">
@@ -319,12 +316,9 @@ defmodule WandererAppWeb.Maps.MapBalanceComponent do
         phx-submit="withdraw"
         phx-target={@myself}
       >
-        <.input
-          type="select"
+        <WandererAppWeb.Maps.MapSettings.SettingsSelect.select
           field={f[:amount]}
-          class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
           label="Withdraw amount"
-          placeholder="Select withdraw amount"
           options={@withdraw_amounts}
         />
         <div class="modal-action">
