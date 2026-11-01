@@ -5,7 +5,14 @@ defmodule WandererAppWeb.MapsLive do
 
   require Logger
 
+  @map_view_options [
+    %{mode: :compact, value: "compact", label: "Compact cards", icon: "hero-queue-list-solid"},
+    %{mode: :cards, value: "cards", label: "Compact table", icon: "hero-list-bullet-solid"}
+  ]
+
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
+  defp map_view_options, do: @map_view_options
 
   @impl true
   def mount(
@@ -29,6 +36,7 @@ defmodule WandererAppWeb.MapsLive do
        importing: false,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
+       map_view_mode: :compact,
        acls: [],
        location: nil,
        is_version_valid?: false
@@ -46,6 +54,7 @@ defmodule WandererAppWeb.MapsLive do
        characters: [],
        location: nil,
        is_version_valid?: false,
+       map_view_mode: :compact,
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
   end
@@ -171,6 +180,16 @@ defmodule WandererAppWeb.MapsLive do
     send_update(LiveSelect.Component, options: socket.assigns.characters, id: id)
 
     {:noreply, socket}
+  end
+
+  def handle_event("set-map-view", %{"mode" => mode}, socket) do
+    map_view_mode =
+      case mode do
+        "compact" -> :compact
+        _ -> :cards
+      end
+
+    {:noreply, assign(socket, map_view_mode: map_view_mode)}
   end
 
   def handle_event("generate-map-api-key", _params, socket) do
@@ -490,12 +509,15 @@ defmodule WandererAppWeb.MapsLive do
          {:ok, updated_map} <-
            WandererApp.Api.Map.update_acls(map_with_acls, %{acls: selected_ids}) do
       track_map_acl_changes(map_with_acls, selected_ids, current_user)
+      {:ok, %{maps: maps}} = load_maps(current_user)
 
       {:noreply,
        socket
        |> put_flash(:info, "Access lists saved")
+       |> assign(:maps, AsyncResult.ok(maps))
        |> assign(:map, updated_map)
-       |> assign_common_form(updated_map, ~p"/maps/#{updated_map.slug}/settings")}
+       |> assign_common_form(updated_map, ~p"/maps/#{updated_map.slug}/settings")
+       |> push_patch(to: ~p"/maps")}
     else
       _error ->
         {:noreply, put_flash(socket, :error, "Failed to update access lists")}
@@ -544,7 +566,7 @@ defmodule WandererAppWeb.MapsLive do
                |> assign(:map, updated_map)
                |> assign(:map_slug, updated_map.slug)
                |> assign_common_form(updated_map, ~p"/maps/#{updated_map.slug}/settings")
-               |> push_patch(to: ~p"/maps/#{updated_map.slug}/settings")}
+               |> push_patch(to: ~p"/maps")}
             else
               {:noreply, push_navigate(socket, to: ~p"/maps")}
             end

@@ -1,119 +1,189 @@
-<div class="grid grid-flow-row gap-2 p-3 h-full w-full pl-20">
-  <main class="w-full rounded-lg shadow col-span-2 lg:col-span-1 overflow-auto p-3">
-    <div class="gap-4 grid grid-cols-2 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-3 ">
-      <.link
+<div class="flex h-full w-full min-h-0 flex-col pl-14">
+  <header class="flex min-h-16 shrink-0 items-center justify-between gap-6 border-b border-neutral-800 bg-neutral-900/70 px-6 py-3">
+    <div class="min-w-0">
+      <h1 class="text-base font-semibold text-neutral-100">Maps</h1>
+      <p class="mt-0.5 text-xs text-neutral-500">Manage and open your available maps</p>
+    </div>
+
+    <div class="flex min-w-0 flex-1 items-center justify-end gap-3">
+      <div :if={not @restrict_maps_creation?} class="shrink-0">
+        <.link
+          patch={~p"/maps/new"}
+          class="inline-flex h-9 items-center overflow-hidden rounded border border-neutral-700 border-l-4 border-l-orange-300/60 bg-neutral-900 text-sm font-medium text-neutral-100 transition-colors hover:border-neutral-600 hover:border-l-orange-200 hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+          aria-label="Create map"
+          title="Create map"
+        >
+          <span class="flex h-full w-8 items-center justify-center text-orange-200">
+            <.icon name="hero-plus-solid" class="size-4" />
+          </span>
+          <span class="border-l border-neutral-700 px-3">New Map</span>
+        </.link>
+
+        <%!--
+          Saved design reference: dashed segmented create-map button.
+
+          <.link
+            patch={~p"/maps/new"}
+            class="inline-flex h-9 shrink-0 items-center overflow-hidden rounded border border-dashed border-orange-300/45 bg-orange-950/10 text-sm font-medium text-neutral-100 transition-colors hover:border-orange-200/80 hover:bg-orange-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+            aria-label="Create map"
+            title="Create map - dashed segmented"
+          >
+            <span class="flex h-full w-9 items-center justify-center border-r border-dashed border-orange-300/35 text-orange-200">
+              <.icon name="hero-plus-solid" class="size-4" />
+            </span>
+            <span class="px-3">Create</span>
+          </.link>
+        --%>
+      </div>
+
+      <span
         :if={not @restrict_maps_creation?}
-        class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white transform transition duration-500"
-        patch={~p"/maps/new"}
+        class="h-6 w-px shrink-0 bg-neutral-700"
+        aria-hidden="true"
+      />
+
+      <div
+        id="map-view-switcher"
+        phx-hook="MapViewPreference"
+        data-current-view-mode={@map_view_mode}
+        class="flex h-9 shrink-0 items-center overflow-hidden rounded border border-neutral-700 bg-neutral-900 p-0.5 [&>button+button]:border-l [&>button+button]:border-neutral-700"
+        role="group"
+        aria-label="Map view"
       >
-        <div class="card-body justify-center items-center">
-          <.icon name="hero-plus-solid" class="w-20 h-20" />
-          <h3 class="card-title text-center text-md">Create Map</h3>
-        </div>
-      </.link>
+        <button
+          :for={option <- map_view_options()}
+          type="button"
+          phx-click="set-map-view"
+          phx-value-mode={option.value}
+          data-map-view-mode={option.value}
+          aria-label={option.label}
+          aria-pressed={@map_view_mode == option.mode}
+          title={option.label}
+          class={[
+            "flex size-7 items-center justify-center text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-orange-300",
+            @map_view_mode == option.mode && "bg-orange-300/15 text-orange-200"
+          ]}
+        >
+          <.icon name={option.icon} class="size-4" />
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="min-h-0 w-full flex-1 overflow-auto bg-black/20 p-6">
+    <div :if={@map_view_mode == :cards}>
       <.async_result :let={maps} :if={assigns[:maps]} assign={@maps}>
         <:loading>
-          <div class="skeleton card rounded"></div>
-          <div class="skeleton card rounded"></div>
-          <div class="skeleton card rounded"></div>
-          <div class="skeleton card rounded"></div>
+          <div class="h-40 animate-pulse rounded border border-dashed border-orange-300/35 bg-neutral-950" />
         </:loading>
         <:failed :let={reason}>{reason}</:failed>
-        <.link
-          :for={map <- maps}
-          navigate={~p"/#{map.slug}"}
-          class="card h-[250px] rounded-none bg-gradient-to-l from-stone-950 to-stone-900 hover:text-white"
-        >
-          <figure class="absolute z-10 h-200 avatar w-full h-full">
-            <img :if={map.scope === :all} class="absolute h-200" src="/images/all_back.webp" />
-            <img :if={map.scope === :wormholes} class="absolute h-200" src="/images/wh_back.jpg" />
-            <img
-              :if={map.scope === :stargates}
-              class="absolute h-200"
-              src="/images/stargates_back.webp"
-            />
-          </figure>
-
-          <div class="absolute z-50 left-0 top-0 w-full h-full p-6 flex flex-col justify-between bg-opacity-70 bg-neutral-900 hover:bg-opacity-30 transform transition duration-500">
-            <div>
-              <h2 class="card-title text-sm">
-                {map.name}
-              </h2>
-              <p title={map.description} class="text-sm mt-4 line-clamp-2">
-                {map.description}
-              </p>
-              <div
-                :if={WandererApp.Maps.can_view_acls?(map, @current_user)}
-                class="w-full flex gap-2 mt-2 text-xs"
+        <div class="overflow-x-auto rounded border border-dashed border-orange-300/45 bg-neutral-950 shadow-sm shadow-black/30">
+          <table class="w-full min-w-[1100px] text-left text-sm [&_td]:align-middle">
+            <thead class="border-b border-dashed border-orange-300/35 bg-orange-300/[0.04] text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+              <tr>
+                <th class="px-3 py-2 font-medium text-neutral-300">Map</th>
+                <th class="w-20 border-l border-dashed border-orange-300/15 px-3 py-2 text-center font-medium">
+                  Active
+                </th>
+                <th class="w-48 border-l border-dashed border-orange-300/15 px-3 py-2 font-medium">
+                  Scope
+                </th>
+                <th class="border-l border-dashed border-orange-300/15 px-3 py-2 font-medium">
+                  Description
+                </th>
+                <th class="w-80 border-l border-dashed border-orange-300/15 px-3 py-2 font-medium">
+                  Access lists
+                </th>
+                <th class="w-px whitespace-nowrap border-l border-dashed border-orange-300/15 px-3 py-2 text-right font-medium">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-dashed divide-orange-300/25">
+              <tr
+                :for={{map, index} <- Enum.with_index(maps, 1)}
+                class="h-12 transition-colors duration-300 hover:bg-orange-300/[0.035]"
               >
-                <button
-                  :for={acl <- map.acls}
-                  class="p-tag p-component rounded-none hover:text-white"
-                  id={"map-acl-#{acl.id}"}
-                  type="button"
-                  phx-hook="MapAction"
-                  data-event="open_acl"
-                  data-data={acl.id}
-                >
-                  <div class="p-tag-value">
-                    {acl.name}
+                <td class="max-w-72 px-3 py-2">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="shrink-0 text-[10px] font-medium tracking-[0.16em] text-orange-200">
+                      {index |> Integer.to_string() |> String.pad_leading(2, "0")}
+                    </span>
+                    <span class="h-5 w-px shrink-0 bg-neutral-700" aria-hidden="true" />
+                    <.link
+                      navigate={~p"/#{map.slug}"}
+                      class="min-w-0 truncate font-semibold text-neutral-100 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-300"
+                      title={map.name}
+                    >
+                      {map.name}
+                    </.link>
+                    <.link
+                      navigate={~p"/#{map.slug}"}
+                      class="flex size-6 shrink-0 items-center justify-center text-orange-200/40 transition-colors duration-300 hover:text-orange-200 focus-visible:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-300"
+                      aria-label={"Open #{map.name}"}
+                      title="Open map"
+                    >
+                      <.icon name="hero-arrow-top-right-on-square-solid" class="h-5 w-[1.25em]" />
+                    </.link>
                   </div>
-                </button>
-              </div>
-            </div>
-            <div>
-              <h2 class="w-full flex justify-between mb-4 text-sm">
-                Tracked Characters:
-                <span class="font-bold">
-                  {map.characters_count}
-                </span>
-              </h2>
-              <div class="flex gap-2 justify-end">
-                <button
-                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                  id={"map-characters-#{map.slug}"}
-                  phx-hook="MapAction"
-                  data-event="open_characters"
-                  data-data={map.slug}
-                  class="h-8 w-8 hover:text-white"
-                >
-                  <.icon name="hero-user-group-solid" class="w-6 h-6" />
-                </button>
-                <button
-                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                  id={"map-audit-#{map.slug}"}
-                  phx-hook="MapAction"
-                  data-event="open_audit"
-                  data-data={map.slug}
-                  class="h-8 w-8 hover:text-white"
-                >
-                  <.icon name="hero-key-solid" class="w-6 h-6" />
-                </button>
-                <button
-                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                  id={"map-settings-#{map.slug}"}
-                  phx-hook="MapAction"
-                  data-event="open_settings"
-                  data-data={map.slug}
-                  class="h-8 w-8 hover:text-white"
-                >
-                  <.icon name="hero-cog-6-tooth-solid" class="w-6 h-6" />
-                </button>
-                <button
-                  :if={WandererApp.Maps.can_edit?(map, @current_user)}
-                  id={"delete-map-#{map.slug}"}
-                  class="h-8 w-8 hover:text-white"
-                  phx-hook="MapAction"
-                  data-event="delete"
-                  data-data={map.slug}
-                  data-confirm="Please confirm to delete map!"
-                >
-                  <.icon name="hero-trash-solid" class="w-6 h-6" />
-                </button>
-              </div>
-            </div>
+                </td>
+                <td class="w-20 border-l border-dashed border-orange-300/15 px-3 py-2 text-center">
+                  <WandererAppWeb.Maps.MapCardVariants.active_count map={map} />
+                </td>
+                <td class="w-48 border-l border-dashed border-orange-300/15 px-3 py-2 text-[10px] tracking-[0.14em] text-neutral-400">
+                  <WandererAppWeb.Maps.MapCardVariants.scope_path map={map} compact />
+                </td>
+                <td class="max-w-80 border-l border-dashed border-orange-300/15 px-3 py-2">
+                  <p class="truncate text-xs text-neutral-500" title={map.description}>
+                    {map.description}
+                  </p>
+                </td>
+                <td class="w-80 border-l border-dashed border-orange-300/15 px-3 py-2">
+                  <WandererAppWeb.Maps.MapCardVariants.acl_tags
+                    map={map}
+                    current_user={@current_user}
+                    limit={3}
+                  />
+                </td>
+                <td class="w-px whitespace-nowrap border-l border-dashed border-orange-300/15 px-3 py-2">
+                  <WandererAppWeb.Maps.MapCardVariants.map_actions
+                    map={map}
+                    current_user={@current_user}
+                    prefix="compact-table-map"
+                    compact
+                    borderless
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </.async_result>
+    </div>
+
+    <div :if={@map_view_mode == :compact}>
+      <.async_result :let={maps} :if={assigns[:maps]} assign={@maps}>
+        <:loading>
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,380px),430px))] gap-x-5 gap-y-7">
+            <div
+              :for={index <- 1..6}
+              id={"map-card-variant-skeleton-#{index}"}
+              class="h-64 animate-pulse rounded border border-neutral-800 bg-neutral-900"
+            />
           </div>
-        </.link>
+        </:loading>
+        <:failed :let={reason}>{reason}</:failed>
+        <div
+          :if={maps != []}
+          class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,380px),430px))] items-start gap-x-5 gap-y-7"
+        >
+          <WandererAppWeb.Maps.MapCardVariants.card
+            :for={{map, index} <- Enum.with_index(maps, 1)}
+            map={map}
+            index={index}
+            current_user={@current_user}
+          />
+        </div>
       </.async_result>
     </div>
   </main>

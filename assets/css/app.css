@@ -176,6 +176,28 @@ body > div:first-of-type {
   }
 }
 
+.map-card-border-pulse:hover {
+  animation: map-card-border-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes map-card-border-pulse {
+  0%,
+  100% {
+    border-color: rgb(253 186 116 / 45%);
+  }
+
+  50% {
+    border-color: rgb(253 186 116 / 85%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-card-border-pulse:hover {
+    animation: none;
+    border-color: rgb(253 186 116 / 70%);
+  }
+}
+
 .cover_bg {
   background-image: url('../images/hello.webp');
   background-size: cover;

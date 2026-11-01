@@ -8,13 +8,17 @@ import CopyToClipboard from './copyToClipboard';
 import DownloadJson from './downloadJson';
 import NewVersionUpdate from './newVersionUpdate';
 import MapAction from './maps/mapAction';
+import MapAclOverflow from './maps/mapAclOverflow';
+import MapViewPreference from './maps/mapViewPreference';
 import ShowCharactersAddAlert from './showCharactersAddAlert';
 import WysiwygEditor from './wysiwygEditor';
 
 export default {
   DownloadJson,
   Drag,
+  MapAclOverflow,
   MapAction,
+  MapViewPreference,
   Mapper,
   LocalTime,
   ClientTime,
