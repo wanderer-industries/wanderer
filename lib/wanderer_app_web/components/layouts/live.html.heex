@@ -18,6 +18,7 @@
       show_admin={@show_admin}
       show_sidebar={@show_sidebar}
       map_subscriptions_enabled={@map_subscriptions_enabled?}
+      legacy_characters_page_enabled={@legacy_characters_page_enabled?}
     />
     <.ping_container :if={@show_sidebar} rtt_class={@rtt_class} />
     <.donate_container :if={@show_sidebar} />
