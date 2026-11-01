@@ -414,9 +414,33 @@ defmodule WandererApp.Map.Server.CharactersImpl do
         )
       end
 
+      # Location/ship polling is driven by the tracker's map consumer, not the
+      # cache key, so re-register consumers that went missing (e.g. after the
+      # character state was garbage collected or re-initialised).
+      present_tracked_ids
+      |> Enum.reject(&character_map_consumer_registered?(map_id, &1))
+      |> Enum.each(fn character_id ->
+        :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
+
+        WandererApp.Character.TrackerManager.update_track_settings(character_id, %{
+          map_id: map_id,
+          track: true
+        })
+      end)
+
       :ok
     else
       _ -> :ok
+    end
+  end
+
+  defp character_map_consumer_registered?(map_id, character_id) do
+    case WandererApp.Character.get_character_state(character_id, false) do
+      {:ok, state} when is_map(state) ->
+        WandererApp.Character.Tracker.consumer_registered?(state, {:map, map_id})
+
+      _ ->
+        false
     end
   end
 

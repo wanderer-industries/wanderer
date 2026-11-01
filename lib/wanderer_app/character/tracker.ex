@@ -430,7 +430,12 @@ defmodule WandererApp.Character.Tracker do
     |> case do
       {:ok, %{eve_id: eve_id, access_token: access_token, tracking_pool: tracking_pool}}
       when not is_nil(access_token) ->
-        ((not consumer_allows_offline?(character_state, :ship) &&
+        # Offline characters routinely carry `online_forbidden` (offline check delay),
+        # so slow consumers may bypass it only while the character is offline.
+        bypass_online_forbidden? =
+          not character_state.is_online && consumer_allows_offline?(character_state, :ship)
+
+        ((not bypass_online_forbidden? &&
             WandererApp.Cache.has_key?("character:#{character_id}:online_forbidden")) ||
            WandererApp.Cache.has_key?("character:#{character_id}:ship_forbidden"))
         |> case do

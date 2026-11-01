@@ -76,10 +76,33 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
     tracked_characters
     |> Enum.each(fn character_id ->
+      prune_dead_page_consumers(character_id)
       start_tracking(state, character_id)
     end)
 
     state
+  end
+
+  # Page consumer monitors live only in this process' state, so after a restart
+  # the `:DOWN` messages of pages that died meanwhile are never received. Drop
+  # their consumers from the character state; live pages re-register on reconnect.
+  defp prune_dead_page_consumers(character_id) do
+    case WandererApp.Character.get_character_state(character_id, false) do
+      {:ok, %{consumers: consumers}} when is_map(consumers) ->
+        consumers
+        |> Map.keys()
+        |> Enum.filter(fn
+          {:characters_page, pid} when is_pid(pid) and node(pid) == node() ->
+            not Process.alive?(pid)
+
+          _consumer_id ->
+            false
+        end)
+        |> Enum.each(&update_consumer(character_id, &1, :slow, false))
+
+      _ ->
+        :ok
+    end
   end
 
   def start_tracking(state, character_id) do

@@ -39,6 +39,16 @@ defmodule WandererAppWeb.CharactersLive do
       :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
     end)
 
+    if connected?(socket) do
+      :ok =
+        WandererApp.Character.TrackerManager.register_consumer(
+          Enum.map(characters, & &1.id),
+          {:characters_page, self()},
+          :slow,
+          self()
+        )
+    end
+
     {:ok,
      socket
      |> assign(
@@ -180,10 +190,31 @@ defmodule WandererAppWeb.CharactersLive do
 
   @impl true
   def handle_info(
+        {:character_tracking_updated, _character_id},
+        %{assigns: %{user_id: user_id}} = socket
+      )
+      when not is_nil(user_id) do
+    {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
+
+    {:noreply,
+     socket
+     |> assign(
+       characters: characters |> Enum.sort_by(& &1.name, :asc) |> Enum.map(&map_ui_character/1)
+     )}
+  end
+
+  @impl true
+  def handle_info(
         _event,
         socket
       ) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def terminate(_reason, _socket) do
+    WandererApp.Character.TrackerManager.unregister_consumer({:characters_page, self()})
+    :ok
   end
 
   defp apply_action(socket, :index, _params) do

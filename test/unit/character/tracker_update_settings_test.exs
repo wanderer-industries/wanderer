@@ -138,6 +138,76 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
     end
   end
 
+  describe "ship polling" do
+    test "respects online_forbidden for online characters even with a slow consumer", %{
+      character_id: character_id,
+      map_id: map_id
+    } do
+      Cachex.put(:character_cache, character_id, %{
+        id: character_id,
+        eve_id: "1",
+        access_token: "token",
+        tracking_pool: "default"
+      })
+
+      WandererApp.Cache.put("character:#{character_id}:online_forbidden", true)
+
+      on_exit(fn ->
+        Cachex.del(:character_cache, character_id)
+        WandererApp.Cache.delete("character:#{character_id}:online_forbidden")
+      end)
+
+      state =
+        seed_state(character_id, %{
+          is_online: true,
+          consumers: %{{:map, map_id} => :fast, {:characters_page, self()} => :slow}
+        })
+
+      assert Tracker.update_ship(state) == {:error, :skipped}
+    end
+  end
+
+  describe "tracker manager restart" do
+    test "prunes page consumers whose process is gone", %{
+      character_id: character_id,
+      map_id: map_id
+    } do
+      dead_pid = spawn(fn -> :ok end)
+      ref = Process.monitor(dead_pid)
+      assert_receive {:DOWN, ^ref, :process, ^dead_pid, _reason}
+
+      live_consumer = {:characters_page, self()}
+
+      seed_state(character_id, %{
+        consumers: %{
+          {:map, map_id} => :fast,
+          {:characters_page, dead_pid} => :slow,
+          live_consumer => :slow
+        }
+      })
+
+      {:ok, previous_tracked} = WandererApp.Cache.lookup("tracked_characters", [])
+      WandererApp.Cache.insert("tracked_characters", [character_id])
+
+      on_exit(fn ->
+        WandererApp.Cache.insert("tracked_characters", previous_tracked)
+        WandererApp.Cache.delete("#{character_id}:track_requested")
+
+        WandererApp.Cache.insert_or_update("track_characters_queue", [], fn queue ->
+          Enum.reject(queue, &(&1 == character_id))
+        end)
+      end)
+
+      TrackerManagerImpl.new(%{characters: [], opts: %{}, consumers: %{}})
+      |> TrackerManagerImpl.start()
+
+      assert Character.get_character_state!(character_id).consumers == %{
+               {:map, map_id} => :fast,
+               live_consumer => :slow
+             }
+    end
+  end
+
   describe "field-scoped state updates" do
     test "a worker patch cannot erase a newly registered consumer", %{
       character_id: character_id
