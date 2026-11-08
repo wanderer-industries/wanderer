@@ -160,9 +160,7 @@ defmodule WandererApp.MixProject do
       ],
       "assets.build": [],
       "assets.deploy": [
-        "assets.setup",
-        "cmd --cd assets yarn run build",
-        "phx.digest"
+        "assets.setup", "cmd --cd assets yarn run build", "phx.digest"
       ]
     ]
   end
