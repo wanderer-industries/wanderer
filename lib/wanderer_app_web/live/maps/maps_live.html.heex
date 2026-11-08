@@ -286,6 +286,31 @@
                 </li>
 
                 <li
+                  class={[
+                    "p-unselectable-text",
+                    classes("p-tabview-selected p-highlight": @active_settings_tab == "sharing")
+                  ]}
+                  role="presentation"
+                  data-pc-name=""
+                  data-pc-section="header"
+                >
+                  <a
+                    role="tab"
+                    class="p-tabview-nav-link flex p-[10px]"
+                    tabindex="-1"
+                    aria-selected="false"
+                    aria-disabled="false"
+                    data-pc-section="headeraction"
+                    phx-click="change_settings_tab"
+                    phx-value-tab="sharing"
+                  >
+                    <span class="p-tabview-title" data-pc-section="headertitle">
+                      <.icon name="hero-share-solid" class="w-4 h-4" />&nbsp;Sharing
+                    </span>
+                  </a>
+                </li>
+
+                <li
                   :if={@map_subscriptions_enabled?}
                   class={[
                     "p-unselectable-text",
@@ -432,6 +457,137 @@
               data-pc-name=""
               data-pc-section="content"
             >
+              <div :if={@active_settings_tab == "sharing"} class="p-6">
+                <h2 class="text-lg font-semibold mb-2">Sharing the way home</h2>
+                <p class="text-sm text-stone-400 mb-4">
+                  A shared map hands out one thing: its home system and the routes that lead into
+                  it. Whoever holds the token sees that home marked on their own chain, on this
+                  instance or on another one.
+                </p>
+
+                <div class="rounded border border-stone-800 p-4 mb-6">
+                  <h3 class="text-sm font-semibold mb-2">This map</h3>
+
+                  <form phx-change="set_home_system" class="flex flex-col gap-1 mb-4">
+                    <label class="text-xs text-stone-400">Home system</label>
+                    <select
+                      name="home_solar_system_id"
+                      class="w-full bg-stone-900 border border-stone-700 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="">Not set</option>
+                      <option
+                        :for={{label, value} <- @map_system_options}
+                        value={value}
+                        selected={value == @map.home_solar_system_id}
+                      >
+                        {label}
+                      </option>
+                    </select>
+                  </form>
+
+                  <p :if={is_nil(@map.home_solar_system_id)} class="text-sm text-amber-400">
+                    Pick a home system first - there is nothing to share without one.
+                  </p>
+
+                  <div :if={@map.home_share_token} class="flex flex-col gap-2">
+                    <label class="text-xs text-stone-400">Token</label>
+                    <input
+                      type="text"
+                      readonly
+                      value={@map.home_share_token}
+                      class="w-full bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs font-mono"
+                    />
+                    <div class="text-xs text-stone-500">
+                      Slug: <span class="font-mono">{@map.slug}</span>
+                    </div>
+                    <div>
+                      <.button type="button" class="btn-secondary" phx-click="revoke_home_share">
+                        Stop sharing
+                      </.button>
+                    </div>
+                  </div>
+
+                  <div :if={is_nil(@map.home_share_token) and @map.home_solar_system_id}>
+                    <.button type="button" phx-click="generate_home_share">
+                      Share this map
+                    </.button>
+                  </div>
+                </div>
+
+                <div class="rounded border border-stone-800 p-4">
+                  <h3 class="text-sm font-semibold mb-2">Homes shared with this map</h3>
+
+                  <%!-- a new id on every change remounts the form, which is what clears the
+                  fields once a share has been taken --%>
+                  <.form
+                    :let={f}
+                    id={"home-share-form-#{length(@home_shares)}"}
+                    for={@home_share_form}
+                    phx-submit="add_home_share"
+                    class="flex flex-col gap-2 mb-4"
+                  >
+                    <.input type="text" field={f[:slug]} label="Map slug" placeholder="their-map" />
+                    <.input
+                      type="text"
+                      field={f[:token]}
+                      label="Token"
+                      placeholder="the token they gave you"
+                    />
+                    <.input
+                      type="text"
+                      field={f[:base_url]}
+                      label="Instance address"
+                      placeholder="empty for a map on this instance, e.g. https://their.wanderer.app"
+                    />
+                    <.input type="text" field={f[:label]} label="Name it (optional)" />
+
+                    <div>
+                      <.button type="submit">Add</.button>
+                    </div>
+                  </.form>
+
+                  <p
+                    :if={@home_share_status}
+                    class={[
+                      "text-sm mb-3",
+                      classes(
+                        "text-emerald-400": elem(@home_share_status, 0) == :ok,
+                        "text-red-400": elem(@home_share_status, 0) == :error
+                      )
+                    ]}
+                  >
+                    {elem(@home_share_status, 1)}
+                  </p>
+
+                  <p :if={@home_shares == []} class="text-sm text-stone-400">
+                    Nothing shared yet.
+                  </p>
+
+                  <table :if={@home_shares != []} class="w-full text-sm">
+                    <tbody>
+                      <tr :for={share <- @home_shares} class="border-b border-stone-800">
+                        <td class="py-1">
+                          {share.label}
+                          <span class="text-stone-500 text-xs">
+                            {if share.remote?, do: share.base_url, else: "this instance"}
+                          </span>
+                        </td>
+                        <td class="py-1 w-10 text-right">
+                          <button
+                            type="button"
+                            class="text-stone-500 hover:text-red-400"
+                            phx-click="delete_home_share"
+                            phx-value-id={share.id}
+                          >
+                            <.icon name="hero-trash-solid" class="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div :if={@active_settings_tab == "general"}>
                 <.form
                   :let={f}

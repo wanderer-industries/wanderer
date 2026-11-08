@@ -390,6 +390,74 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     end
   end
 
+  # a chain runs into somebody else's home now and then, and the useful question is how one gets
+  # in - only maps this user may already open are considered.
+  #
+  # The map asks for this as it comes up, which can be before it has everything assigned, so the
+  # answer to "not ready yet" is an empty list rather than no reply at all.
+  def handle_ui_event("get_known_homes", _params, socket) do
+    map_id = socket.assigns[:map_id]
+    current_user = socket.assigns[:current_user]
+
+    homes =
+      if is_binary(map_id) and not is_nil(current_user) do
+        WandererApp.Map.Homes.known(current_user, map_id) ++
+          WandererApp.Map.HomeShares.homes(map_id)
+      else
+        []
+      end
+
+    {:reply, %{homes: homes}, socket}
+  end
+
+  # a home somebody shared, whether it lives here or on another instance
+  def handle_ui_event("get_home_ways_in", %{"share_id" => share_id}, socket)
+      when is_binary(share_id) do
+    case WandererApp.Map.HomeShares.ways_in(share_id) do
+      {:ok, %{"home" => home, "ways_in" => ways_in}} ->
+        {:reply,
+         %{
+           home: %{
+             map_name: Map.get(home, "map_name"),
+             map_slug: Map.get(home, "map_slug"),
+             solar_system_id: Map.get(home, "solar_system_id")
+           },
+           ways_in: ways_in
+         }, socket}
+
+      {:error, reason} ->
+        {:reply, %{error: to_string(reason)}, socket}
+    end
+  end
+
+  def handle_ui_event(
+        "get_home_ways_in",
+        %{"map_id" => home_map_id, "solar_system_id" => solar_system_id},
+        socket
+      ) do
+    map_id = socket.assigns[:map_id]
+    current_user = socket.assigns[:current_user]
+    solar_system_id = to_solar_system_id(solar_system_id)
+
+    current_user
+    |> WandererApp.Map.Homes.known(map_id)
+    |> Enum.find(&(&1.map_id == home_map_id and &1.solar_system_id == solar_system_id))
+    |> case do
+      nil ->
+        {:reply, %{error: "no_such_home"}, socket}
+
+      home ->
+        {:reply,
+         %{
+           home: Map.take(home, [:map_name, :map_slug, :solar_system_id]),
+           ways_in:
+             home.map_id
+             |> WandererApp.Map.Homes.ways_in(home.solar_system_id)
+             |> WandererApp.Map.Homes.to_wire()
+         }, socket}
+    end
+  end
+
   def handle_ui_event("noop", _, socket), do: {:noreply, socket}
 
   def handle_ui_event(
@@ -864,4 +932,15 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         user_character_eve_ids |> Enum.member?(character.eve_id)
     end)
   end
+
+  defp to_solar_system_id(value) when is_integer(value), do: value
+
+  defp to_solar_system_id(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {id, _rest} -> id
+      :error -> nil
+    end
+  end
+
+  defp to_solar_system_id(_value), do: nil
 end

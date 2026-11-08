@@ -179,6 +179,11 @@ defmodule WandererAppWeb.MapsLive do
           is_adding_subscription?: false,
           selected_subscription: nil,
           options_form: options_form_data |> to_form(),
+          map_system_options: map_system_options(map.id),
+          home_shares: WandererApp.Map.HomeShares.list(map.id),
+          home_share_form:
+            %{"label" => "", "base_url" => "", "slug" => "", "token" => ""} |> to_form(),
+          home_share_status: nil,
           layout_options: [
             {"Left To Right", "left_to_right"},
             {"Top To Bottom", "top_to_bottom"}
@@ -213,6 +218,72 @@ defmodule WandererAppWeb.MapsLive do
     do: not WandererApp.Env.restrict_maps_creation?() || WandererApp.Cache.take("create_map_once")
 
   @impl true
+  def handle_event(
+        "set_home_system",
+        %{"home_solar_system_id" => value},
+        %{assigns: %{map: map}} = socket
+      ) do
+    home =
+      case Integer.parse(to_string(value)) do
+        {id, _rest} -> id
+        :error -> nil
+      end
+
+    case WandererApp.Api.Map.update_home_system(map, %{home_solar_system_id: home}) do
+      {:ok, updated} -> {:noreply, socket |> assign(map: updated)}
+      _ -> {:noreply, socket |> assign(home_share_status: {:error, "Could not set the home."})}
+    end
+  end
+
+  def handle_event("generate_home_share", _params, %{assigns: %{map: map}} = socket) do
+    token = 32 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+
+    case WandererApp.Api.Map.update_home_share_token(map, %{home_share_token: token}) do
+      {:ok, updated} ->
+        {:noreply, socket |> assign(map: updated, home_share_status: {:ok, "Sharing is on."})}
+
+      _ ->
+        {:noreply, socket |> assign(home_share_status: {:error, "Could not turn sharing on."})}
+    end
+  end
+
+  def handle_event("revoke_home_share", _params, %{assigns: %{map: map}} = socket) do
+    case WandererApp.Api.Map.update_home_share_token(map, %{home_share_token: nil}) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign(map: updated, home_share_status: {:ok, "Sharing is off - the token is dead."})}
+
+      _ ->
+        {:noreply, socket |> assign(home_share_status: {:error, "Could not turn sharing off."})}
+    end
+  end
+
+  def handle_event("add_home_share", params, %{assigns: %{map: map}} = socket) do
+    status =
+      case WandererApp.Map.HomeShares.add(map.id, params) do
+        {:ok, share} -> {:ok, "Added #{share.label}."}
+        {:error, reason} -> {:error, home_share_error(reason)}
+      end
+
+    {:noreply,
+     socket
+     |> assign(
+       home_shares: WandererApp.Map.HomeShares.list(map.id),
+       home_share_form:
+         %{"label" => "", "base_url" => "", "slug" => "", "token" => ""} |> to_form(),
+       home_share_status: status
+     )}
+  end
+
+  def handle_event("delete_home_share", %{"id" => share_id}, %{assigns: %{map: map}} = socket) do
+    WandererApp.Map.HomeShares.delete(share_id)
+
+    {:noreply,
+     socket
+     |> assign(home_shares: WandererApp.Map.HomeShares.list(map.id), home_share_status: nil)}
+  end
+
   def handle_event("set-default", %{"id" => id}, socket) do
     send_update(LiveSelect.Component, options: socket.assigns.characters, id: id)
 
@@ -668,6 +739,33 @@ defmodule WandererAppWeb.MapsLive do
       {:noreply, socket}
     end
   end
+
+  defp map_system_options(map_id) do
+    case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
+      {:ok, systems} ->
+        systems
+        |> Enum.map(&map_system_option/1)
+        |> Enum.sort_by(&elem(&1, 0))
+
+      _ ->
+        []
+    end
+  end
+
+  defp map_system_option(system) do
+    name =
+      [system.custom_name, system.temporary_name, system.name]
+      |> Enum.find(&(is_binary(&1) and &1 != ""))
+
+    {name || "#{system.solar_system_id}", system.solar_system_id}
+  end
+
+  defp home_share_error(:forbidden), do: "That token is not the one that map is sharing."
+  defp home_share_error(:not_shared), do: "That map is not sharing its home."
+  defp home_share_error(:no_such_map), do: "No map with that slug over there."
+  defp home_share_error(:unreachable), do: "Could not reach that instance."
+  defp home_share_error(:invalid), do: "A slug and a token are needed."
+  defp home_share_error(_reason), do: "Could not read that share."
 
   defp _get_export_map_data(map) do
     %{

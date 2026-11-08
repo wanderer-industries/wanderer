@@ -40,6 +40,8 @@ export const useContextMenuSystemItems = ({
   hubs,
   userHubs,
   systems,
+  knownHome,
+  onShowHomeWaysIn,
 }: Omit<ContextMenuSystemProps, 'contextMenuRef'>) => {
   const getTags = useTagMenu(systems, systemId, onSystemTag);
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus);
@@ -95,6 +97,16 @@ export const useContextMenuSystemItems = ({
         },
       },
       { separator: true },
+      ...(knownHome && onShowHomeWaysIn
+        ? [
+            {
+              label: `Home of ${knownHome.map_name}`,
+              icon: PrimeIcons.HOME,
+              command: () => onShowHomeWaysIn(knownHome),
+            },
+            { separator: true },
+          ]
+        : []),
       getTags(),
       getStatus(),
       ...getLabels(),
@@ -206,5 +218,7 @@ export const useContextMenuSystemItems = ({
     onTogglePing,
     ping,
     isShowPingBtn,
+    knownHome,
+    onShowHomeWaysIn,
   ]);
 };

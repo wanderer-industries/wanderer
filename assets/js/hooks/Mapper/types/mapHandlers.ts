@@ -306,6 +306,8 @@ export enum OutCommand {
   exportMapData = 'export_map_data',
   importMapData = 'import_map_data',
   updateUserSettings = 'update_user_settings',
+  getKnownHomes = 'get_known_homes',
+  getHomeWaysIn = 'get_home_ways_in',
   saveDefaultSettings = 'save_default_settings',
   getDefaultSettings = 'get_default_settings',
   unlinkSignature = 'unlink_signature',
