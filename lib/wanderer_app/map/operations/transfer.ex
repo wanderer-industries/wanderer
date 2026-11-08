@@ -116,7 +116,8 @@ defmodule WandererApp.Map.Operations.Transfer do
       "status" => system.status,
       "tag" => system.tag,
       "temporary_name" => system.temporary_name,
-      "locked" => system.locked
+      "locked" => system.locked,
+      "linked_sig_eve_id" => system.linked_sig_eve_id
     }
   end
 
@@ -159,7 +160,8 @@ defmodule WandererApp.Map.Operations.Transfer do
       "kind" => signature.kind,
       "group" => signature.group,
       "type" => signature.type,
-      "custom_info" => signature.custom_info
+      "custom_info" => signature.custom_info,
+      "linked_system_id" => signature.linked_system_id
     }
   end
 
@@ -184,8 +186,10 @@ defmodule WandererApp.Map.Operations.Transfer do
              user_id,
              character_id
            ) do
-      # a system that was already on the map keeps whatever the map has for it
       if MapSet.member?(existing_ids, solar_system_id) do
+        # a system already on the map keeps what it has, but takes what it is missing: somebody
+        # importing a chain wants the notes and the colours that come with it
+        fill_missing_system_attributes(map_id, solar_system_id, system)
         false
       else
         apply_system_attributes(map_id, solar_system_id, system)
@@ -205,20 +209,48 @@ defmodule WandererApp.Map.Operations.Transfer do
     {"status", :status, :update_system_status},
     {"tag", :tag, :update_system_tag},
     {"temporary_name", :temporary_name, :update_system_temporary_name},
-    {"locked", :locked, :update_system_locked}
+    {"locked", :locked, :update_system_locked},
+    {"linked_sig_eve_id", :linked_sig_eve_id, :update_system_linked_sig_eve_id}
   ]
 
   defp apply_system_attributes(map_id, solar_system_id, system) do
     Enum.each(@system_attributes, fn {key, attribute, fun} ->
-      case Map.get(system, key) do
-        value when value in [nil, "", false] ->
-          :ok
-
-        value ->
-          apply(Server, fun, [map_id, %{:solar_system_id => solar_system_id, attribute => value}])
-      end
+      apply_attribute(map_id, solar_system_id, system, {key, attribute, fun})
     end)
   end
+
+  defp fill_missing_system_attributes(map_id, solar_system_id, system) do
+    case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
+      {:ok, current} when not is_nil(current) ->
+        Enum.each(@system_attributes, fn {_key, attribute, _fun} = definition ->
+          if blank?(Map.get(current, attribute)) do
+            apply_attribute(map_id, solar_system_id, system, definition)
+          end
+        end)
+
+      _ ->
+        apply_system_attributes(map_id, solar_system_id, system)
+    end
+  end
+
+  defp apply_attribute(map_id, solar_system_id, system, {key, attribute, fun}) do
+    case Map.get(system, key) do
+      value when value in [nil, "", false] ->
+        :ok
+
+      value ->
+        apply(Server, fun, [map_id, %{:solar_system_id => solar_system_id, attribute => value}])
+    end
+  end
+
+  # status 0 is "nothing said about this system", which an import is free to fill in
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(0), do: true
+  defp blank?(false), do: true
+  defp blank?([]), do: true
+  defp blank?("[]"), do: true
+  defp blank?(_value), do: false
 
   defp import_connections(map_id, connections, user_id, character_id) do
     existing_pairs = existing_connection_pairs(map_id)
@@ -304,7 +336,8 @@ defmodule WandererApp.Map.Operations.Transfer do
           "kind",
           "group",
           "type",
-          "custom_info"
+          "custom_info",
+          "linked_system_id"
         ])
         |> Map.new(fn {key, value} -> {String.to_existing_atom(key), value} end)
         |> Map.put(:system_id, system_id)
