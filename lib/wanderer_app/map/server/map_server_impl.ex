@@ -164,16 +164,34 @@ defmodule WandererApp.Map.Server.Impl do
             "maps:#{map_id}"
           )
 
-          Process.send_after(self(), {:update_characters, map_id}, @update_characters_timeout)
+          # Per-map loops run inside the shared MapPool process, so they are tagged with
+          # a generation that stop_map/1 (or a later start) invalidates to end them
+          timer_gen = make_ref()
+          WandererApp.Cache.insert("map_#{map_id}:timer_gen", timer_gen)
 
           Process.send_after(
             self(),
-            {:invalidate_characters, map_id},
+            {:update_characters, map_id, timer_gen},
+            @update_characters_timeout
+          )
+
+          Process.send_after(
+            self(),
+            {:invalidate_characters, map_id, timer_gen},
             @invalidate_characters_timeout
           )
 
-          Process.send_after(self(), {:update_presence, map_id}, @update_presence_timeout)
-          Process.send_after(self(), {:reconcile_tracking, map_id}, @reconcile_tracking_timeout)
+          Process.send_after(
+            self(),
+            {:update_presence, map_id, timer_gen},
+            @update_presence_timeout
+          )
+
+          Process.send_after(
+            self(),
+            {:reconcile_tracking, map_id, timer_gen},
+            @reconcile_tracking_timeout
+          )
 
           WandererApp.Cache.insert("map_#{map_id}:started", true)
 
@@ -200,6 +218,7 @@ defmodule WandererApp.Map.Server.Impl do
     )
 
     WandererApp.Cache.delete("map_#{map_id}:started")
+    WandererApp.Cache.delete("map_#{map_id}:timer_gen")
     WandererApp.Cache.delete("map_characters-#{map_id}")
     WandererApp.Map.CacheRTree.clear_tree("rtree_#{map_id}")
     WandererApp.Map.delete_map_state(map_id)
@@ -319,32 +338,40 @@ defmodule WandererApp.Map.Server.Impl do
     })
   end
 
-  def handle_event({:update_characters, map_id} = event) do
-    Process.send_after(self(), event, @update_characters_timeout)
+  def handle_event({:update_characters, map_id, timer_gen} = event) do
+    with_current_timer_gen(map_id, timer_gen, fn ->
+      Process.send_after(self(), event, @update_characters_timeout)
 
-    CharactersImpl.update_characters(map_id)
+      CharactersImpl.update_characters(map_id)
+    end)
   end
 
-  def handle_event({:invalidate_characters, map_id} = event) do
-    Process.send_after(
-      self(),
-      event,
-      @invalidate_characters_timeout
-    )
+  def handle_event({:invalidate_characters, map_id, timer_gen} = event) do
+    with_current_timer_gen(map_id, timer_gen, fn ->
+      Process.send_after(
+        self(),
+        event,
+        @invalidate_characters_timeout
+      )
 
-    CharactersImpl.invalidate_characters(map_id)
+      CharactersImpl.invalidate_characters(map_id)
+    end)
   end
 
-  def handle_event({:update_presence, map_id} = event) do
-    Process.send_after(self(), event, @update_presence_timeout)
+  def handle_event({:update_presence, map_id, timer_gen} = event) do
+    with_current_timer_gen(map_id, timer_gen, fn ->
+      Process.send_after(self(), event, @update_presence_timeout)
 
-    update_presence(map_id)
+      update_presence(map_id)
+    end)
   end
 
-  def handle_event({:reconcile_tracking, map_id} = event) do
-    Process.send_after(self(), event, @reconcile_tracking_timeout)
+  def handle_event({:reconcile_tracking, map_id, timer_gen} = event) do
+    with_current_timer_gen(map_id, timer_gen, fn ->
+      Process.send_after(self(), event, @reconcile_tracking_timeout)
 
-    CharactersImpl.reconcile_tracking(map_id)
+      CharactersImpl.reconcile_tracking(map_id)
+    end)
   end
 
   def handle_event({:map_acl_updated, map_id, added_acls, removed_acls}) do
@@ -456,6 +483,15 @@ defmodule WandererApp.Map.Server.Impl do
     end
 
     :ok
+  end
+
+  # Ends a per-map loop (by not rescheduling it) once the map was stopped or restarted
+  defp with_current_timer_gen(map_id, timer_gen, fun) do
+    if WandererApp.Cache.lookup!("map_#{map_id}:timer_gen") == timer_gen do
+      fun.()
+    else
+      :ok
+    end
   end
 
   defp can_broadcast?(map_id),
