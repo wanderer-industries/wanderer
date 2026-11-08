@@ -133,6 +133,8 @@ defmodule WandererApp.Map do
 
   def delete_map_state(map_id), do: Cachex.del(@map_state_cache, map_id)
 
+  def delete_map(map_id), do: Cachex.del(:map_cache, map_id)
+
   def get_characters_limit(map_id),
     do: {:ok, map_id |> get_map!() |> Map.get(:characters_limit, 50)}
 

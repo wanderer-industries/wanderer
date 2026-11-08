@@ -27,10 +27,7 @@
       </div>
     </div>
 
-    <div
-      id="posts-container"
-      class="crimson-harvest-news-panel"
-    >
+    <div id="posts-container" class="crimson-harvest-news-panel">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
         <%= for post <- @posts do %>
           <.link class="group carousel-item relative my-2 mx-2" navigate={~p"/news/#{post.id}"}>

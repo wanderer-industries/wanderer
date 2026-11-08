@@ -35,19 +35,58 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
     end
   end
 
-  def stop_tracking(tracked_id) do
-    {:ok, uuid} = Cachex.get(@cache, tracked_id)
+  @doc "Returns the set of tracked ids held by all running tracker pools."
+  def tracked_ids do
+    @registry
+    |> Registry.lookup(WandererApp.Character.TrackerPool)
+    |> Enum.flat_map(fn {_pid, uuid} ->
+      case Registry.lookup(
+             @unique_registry,
+             Module.concat(WandererApp.Character.TrackerPool, uuid)
+           ) do
+        [{_pool_pid, tracked_ids}] -> tracked_ids
+        _ -> []
+      end
+    end)
+    |> MapSet.new()
+  end
 
-    case Registry.lookup(
-           @unique_registry,
-           Module.concat(WandererApp.Character.TrackerPool, uuid)
-         ) do
-      [] ->
+  def stop_tracking(tracked_id) do
+    case find_pool_pid(tracked_id) do
+      nil ->
         :ok
 
-      [{pool_pid, _}] ->
+      pool_pid ->
         GenServer.cast(pool_pid, {:remove_tracked_id, tracked_id})
     end
+  end
+
+  defp find_pool_pid(tracked_id) do
+    with {:ok, uuid} when not is_nil(uuid) <- Cachex.get(@cache, tracked_id),
+         [{pool_pid, _}] <-
+           Registry.lookup(
+             @unique_registry,
+             Module.concat(WandererApp.Character.TrackerPool, uuid)
+           ) do
+      pool_pid
+    else
+      _ -> find_pool_pid_by_scanning_registry(tracked_id)
+    end
+  end
+
+  # Cache miss or stale pool uuid - find the pool that actually holds this tracked_id
+  defp find_pool_pid_by_scanning_registry(tracked_id) do
+    @registry
+    |> Registry.lookup(WandererApp.Character.TrackerPool)
+    |> Enum.find_value(fn {_pid, uuid} ->
+      case Registry.lookup(
+             @unique_registry,
+             Module.concat(WandererApp.Character.TrackerPool, uuid)
+           ) do
+        [{pool_pid, tracked_ids}] -> if tracked_id in tracked_ids, do: pool_pid
+        _ -> nil
+      end
+    end)
   end
 
   defp get_available_pool([]), do: nil
@@ -79,7 +118,13 @@ defmodule WandererApp.Character.TrackerPoolDynamicSupervisor do
   end
 
   defp start_child(tracked_ids, pools_count) do
-    case DynamicSupervisor.start_child(@name, {WandererApp.Character.TrackerPool, tracked_ids}) do
+    # Generate the uuid here so it is part of the child spec and survives restarts
+    uuid = UUID.uuid1()
+
+    case DynamicSupervisor.start_child(
+           @name,
+           {WandererApp.Character.TrackerPool, {uuid, tracked_ids}}
+         ) do
       {:ok, pid} ->
         Logger.info("Starting tracking pool, total pools: #{pools_count + 1}")
         {:ok, pid}

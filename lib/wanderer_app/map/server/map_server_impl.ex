@@ -203,6 +203,7 @@ defmodule WandererApp.Map.Server.Impl do
     WandererApp.Cache.delete("map_characters-#{map_id}")
     WandererApp.Map.CacheRTree.clear_tree("rtree_#{map_id}")
     WandererApp.Map.delete_map_state(map_id)
+    WandererApp.Map.delete_map(map_id)
 
     WandererApp.Cache.insert_or_update(
       "started_maps",

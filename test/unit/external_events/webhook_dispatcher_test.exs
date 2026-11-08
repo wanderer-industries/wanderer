@@ -37,7 +37,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcherTest do
           active?: true
         })
 
-      event = Event.new(map.id, :add_system, %{solar_system_id: 30000142})
+      event = Event.new(map.id, :add_system, %{solar_system_id: 30_000_142})
 
       initial_state = %{
         task_supervisor: nil,
@@ -65,7 +65,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcherTest do
         })
 
       # Event type does not match subscription
-      event = Event.new(map.id, :add_system, %{solar_system_id: 30000142})
+      event = Event.new(map.id, :add_system, %{solar_system_id: 30_000_142})
 
       initial_state = %{
         task_supervisor: nil,
@@ -84,7 +84,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcherTest do
       {:ok, map} = Ash.update(map, %{webhooks_enabled: true}, action: :toggle_webhooks)
       WebhookDispatcher.invalidate_cache(map.id)
 
-      event = Event.new(map.id, :add_system, %{solar_system_id: 30000142})
+      event = Event.new(map.id, :add_system, %{solar_system_id: 30_000_142})
 
       initial_state = %{
         task_supervisor: nil,
@@ -103,7 +103,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcherTest do
       # webhooks_enabled is false by default
       WebhookDispatcher.invalidate_cache(map.id)
 
-      event = Event.new(map.id, :add_system, %{solar_system_id: 30000142})
+      event = Event.new(map.id, :add_system, %{solar_system_id: 30_000_142})
 
       initial_state = %{
         task_supervisor: nil,
@@ -132,7 +132,7 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcherTest do
           active?: true
         })
 
-      event = Event.new(map.id, :add_system, %{solar_system_id: 30000142})
+      event = Event.new(map.id, :add_system, %{solar_system_id: 30_000_142})
 
       initial_state = %{
         task_supervisor: nil,

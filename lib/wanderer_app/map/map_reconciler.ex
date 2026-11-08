@@ -191,6 +191,7 @@ defmodule WandererApp.Map.Reconciler do
       WandererApp.Cache.delete("map_characters-#{map_id}")
       WandererApp.Map.CacheRTree.clear_tree("rtree_#{map_id}")
       WandererApp.Map.delete_map_state(map_id)
+      WandererApp.Map.delete_map(map_id)
 
       :telemetry.execute(
         [:wanderer_app, :map, :reconciliation, :zombie_cleanup],
