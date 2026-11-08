@@ -135,11 +135,20 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
 
               {nodeVars.isWormhole && !nodeVars.customName && <div />}
 
-              <div className="flex items-center gap-1 justify-end">
-                <div className={clsx('flex items-center gap-1')}>
+              <div className="flex items-center gap-0.5 justify-end">
+                <div className={classes.StatusIcons}>
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
+                  )}
+                  {nodeVars.description != null && nodeVars.description !== '' && (
+                    <WdTooltipWrapper
+                      className={classes.descriptionIconWrapper}
+                      position={TooltipPosition.top}
+                      content={`System has description`}
+                    >
+                      <i className={clsx('pi hero-chat-bubble-bottom-center-text', classes.descriptionIcon)} />
+                    </WdTooltipWrapper>
                   )}
                 </div>
 
@@ -157,19 +166,13 @@ export const SolarSystemNodeTheme = memo((props: NodeProps<MapSolarSystemType>) 
         <>
           {nodeVars.unsplashedLeft.length > 0 && (
             <div className={classes.Unsplashed}>
-              <UnsplashedSignatureColumn
-                signatures={nodeVars.unsplashedLeft}
-                wormholesData={nodeVars.wormholesData}
-              />
+              <UnsplashedSignatureColumn signatures={nodeVars.unsplashedLeft} wormholesData={nodeVars.wormholesData} />
             </div>
           )}
 
           {nodeVars.unsplashedRight.length > 0 && (
             <div className={clsx(classes.Unsplashed, classes['Unsplashed--right'])}>
-              <UnsplashedSignatureColumn
-                signatures={nodeVars.unsplashedRight}
-                wormholesData={nodeVars.wormholesData}
-              />
+              <UnsplashedSignatureColumn signatures={nodeVars.unsplashedRight} wormholesData={nodeVars.wormholesData} />
             </div>
           )}
         </>

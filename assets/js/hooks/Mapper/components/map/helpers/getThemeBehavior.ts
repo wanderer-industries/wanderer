@@ -1,4 +1,8 @@
-import { SolarSystemNodeDefault, SolarSystemNodeTheme } from '../components/SolarSystemNode';
+import {
+  SolarSystemNodeDefault,
+  SolarSystemNodeTheme,
+  SolarSystemNodeThemeFanaberia,
+} from '../components/SolarSystemNode';
 import type { NodeProps } from 'reactflow';
 import type { ComponentType } from 'react';
 import { MapSolarSystemType } from '../map.types';
@@ -23,6 +27,16 @@ const THEME_BEHAVIORS: {
   pathfinder: {
     isPanAndDrag: true,
     nodeComponent: SolarSystemNodeTheme,
+    connectionMode: ConnectionMode.Loose,
+  },
+  fanaberia: {
+    isPanAndDrag: true,
+    nodeComponent: SolarSystemNodeThemeFanaberia,
+    connectionMode: ConnectionMode.Loose,
+  },
+  fanaberiadashed: {
+    isPanAndDrag: true,
+    nodeComponent: SolarSystemNodeThemeFanaberia,
     connectionMode: ConnectionMode.Loose,
   },
 };
