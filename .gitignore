@@ -23,6 +23,7 @@ repomix*
 
 # Dialyzer PLT files
 /priv/plts/
+/priv/cert/
 
 .DS_Store
 **/.DS_Store

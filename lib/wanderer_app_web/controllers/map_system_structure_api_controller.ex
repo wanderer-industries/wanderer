@@ -6,6 +6,15 @@ defmodule WandererAppWeb.MapSystemStructureAPIController do
   alias OpenApiSpex.Schema
   alias WandererApp.Map.Operations, as: MapOperations
 
+  # No dedicated permission bit exists for structures. Reads are plain
+  # lookups, same character as GET /systems, so they use the existing
+  # view_system bit; writes fall back to admin_map since there's no safer
+  # bit available.
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    index: :view_system, show: :view_system, structure_timers: :view_system,
+    create: :admin_map, update: :admin_map, delete: :admin_map
+  }
+
   @moduledoc """
   API controller for managing map system structures.
   """

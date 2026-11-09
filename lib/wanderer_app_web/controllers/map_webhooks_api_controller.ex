@@ -7,6 +7,14 @@ defmodule WandererAppWeb.MapWebhooksAPIController do
 
   require Logger
 
+  # No dedicated webhook permission bit exists; this resource had zero
+  # authorization guard of any kind before this plug.
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    index: :admin_map, show: :admin_map,
+    create: :admin_map, update: :admin_map, delete: :admin_map,
+    rotate_secret: :admin_map
+  }
+
   # -----------------------------------------------------------------
   # V1 API Actions (for compatibility with versioned API router)
   # -----------------------------------------------------------------

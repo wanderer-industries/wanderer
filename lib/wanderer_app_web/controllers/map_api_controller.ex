@@ -10,6 +10,24 @@ defmodule WandererAppWeb.MapAPIController do
   alias WandererAppWeb.Helpers.APIUtils
   alias WandererAppWeb.Schemas.{ApiSchemas, ResponseSchemas}
 
+  # duplicate_map and toggle_webhooks already have their own check_map_owner/2
+  # guard (stricter than any bit - literal map ownership); admin_map here is
+  # redundant defense-in-depth, not the only thing stopping a non-owner.
+  # structure timers has no dedicated bit, so it falls back to admin_map like
+  # the rest of the structures family.
+  plug WandererAppWeb.Plugs.RequirePermission, %{
+    list_systems_kills: :view_system,
+    show_user_routes: :view_system,
+    show_structure_timers: :admin_map,
+    list_tracked_characters: :view_character,
+    character_activity: :view_character,
+    user_characters: :view_character,
+    show_user_characters: :view_character,
+    show_tracked_characters: :view_character,
+    duplicate_map: :admin_map,
+    toggle_webhooks: :admin_map
+  }
+
   # -----------------------------------------------------------------
   # V1 API Actions (for compatibility with versioned API router)
   # -----------------------------------------------------------------
@@ -296,6 +314,43 @@ defmodule WandererAppWeb.MapAPIController do
                                      type: :array,
                                      items: @user_character_group_schema
                                    })
+
+  # User routes schemas
+  @route_schema %OpenApiSpex.Schema{
+    type: :object,
+    properties: %{
+      origin: %OpenApiSpex.Schema{type: :integer, description: "Origin solar system ID"},
+      destination: %OpenApiSpex.Schema{
+        type: :integer,
+        description: "Destination hub solar system ID"
+      },
+      success: %OpenApiSpex.Schema{type: :boolean, description: "Whether a route was found"},
+      systems: %OpenApiSpex.Schema{
+        type: :array,
+        items: %OpenApiSpex.Schema{type: :integer},
+        description: "Solar system IDs along the route, in order"
+      },
+      has_connection: %OpenApiSpex.Schema{
+        type: :boolean,
+        description: "Whether the route uses a chain (wormhole) connection"
+      }
+    },
+    required: ["origin", "destination", "success"]
+  }
+
+  @user_routes_response_schema ApiSchemas.data_wrapper(%OpenApiSpex.Schema{
+                                 type: :object,
+                                 properties: %{
+                                   routes: %OpenApiSpex.Schema{type: :array, items: @route_schema},
+                                   systems_static_data: %OpenApiSpex.Schema{
+                                     type: :array,
+                                     items: %OpenApiSpex.Schema{type: :object},
+                                     description:
+                                       "Static system info for systems referenced in routes"
+                                   }
+                                 },
+                                 required: ["routes", "systems_static_data"]
+                               })
 
   # Map connection schemas
   @map_connection_schema %OpenApiSpex.Schema{
@@ -812,6 +867,164 @@ defmodule WandererAppWeb.MapAPIController do
 
   def show_user_characters(%{assigns: %{map_id: map_id}} = conn, _params) do
     fetch_and_format_user_characters(conn, map_id)
+  end
+
+  @doc """
+  GET /api/maps/{map_identifier}/user-routes
+
+  Computes routes from a system to the *caller's* personal hubs (the same
+  "User Routes" feature the map UI shows via LiveView), driven by the
+  authenticated character's owning user - works with both the static
+  map API key (defaults to the map owner's hubs) and an EVE-token-minted
+  scoped token (uses that specific character's owner's hubs).
+  """
+  @spec show_user_routes(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  operation(:show_user_routes,
+    summary: "Show User Routes for a Map",
+    description:
+      "Computes routes from a system to the authenticated user's personal hubs, honoring the same routing options as the map UI's User Routes widget.",
+    parameters: [
+      map_identifier: [
+        in: :path,
+        description: "Map identifier (UUID or slug). Provide either a UUID or a slug.",
+        type: :string,
+        required: true,
+        example: "my-map-slug"
+      ],
+      system_id: [
+        in: :query,
+        description: "Origin solar system ID to compute routes from",
+        type: :string,
+        required: true
+      ],
+      path_type: [in: :query, type: :string, required: false, example: "shortest"],
+      include_mass_crit: [in: :query, type: :boolean, required: false],
+      include_eol: [in: :query, type: :boolean, required: false],
+      include_frig: [in: :query, type: :boolean, required: false],
+      include_cruise: [in: :query, type: :boolean, required: false],
+      avoid_wormholes: [in: :query, type: :boolean, required: false],
+      avoid_pochven: [in: :query, type: :boolean, required: false],
+      avoid_edencom: [in: :query, type: :boolean, required: false],
+      avoid_triglavian: [in: :query, type: :boolean, required: false],
+      include_thera: [in: :query, type: :boolean, required: false],
+      avoid: [
+        in: :query,
+        description: "Comma-separated solar system IDs to avoid",
+        type: :string,
+        required: false
+      ]
+    ],
+    responses: [
+      ok: ResponseSchemas.ok(@user_routes_response_schema, "User routes"),
+      bad_request: ResponseSchemas.bad_request("system_id is required"),
+      internal_server_error: ResponseSchemas.internal_server_error()
+    ]
+  )
+
+  def show_user_routes(
+        %{assigns: %{map_id: map_id, current_character: current_character}} = conn,
+        params
+      ) do
+    with {:ok, system_id} <- APIUtils.require_param(params, "system_id"),
+         {:ok, _} <- validate_integer_string(system_id, "system_id"),
+         {:ok, hubs_limit} <- WandererApp.Map.get_hubs_limit(map_id),
+         {:ok, is_subscription_active?} <- WandererApp.Map.is_subscription_active?(map_id),
+         {:ok, hubs} <-
+           WandererApp.MapUserSettingsRepo.get_hubs(map_id, current_character.user_id),
+         {:ok, routes_settings} <- parse_routes_settings(params) do
+      is_hubs_limit_reached = Enum.count(hubs) > hubs_limit
+
+      result =
+        if is_subscription_active? do
+          WandererApp.Map.Routes.find(
+            map_id,
+            hubs,
+            system_id,
+            routes_settings,
+            is_hubs_limit_reached
+          )
+        else
+          {:ok, %{routes: [], systems_static_data: []}}
+        end
+
+      case result do
+        {:ok, data} ->
+          json(conn, %{data: data})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: "Could not compute user routes: #{APIUtils.format_error(reason)}"})
+      end
+    else
+      {:error, msg} when is_binary(msg) ->
+        conn |> put_status(:bad_request) |> json(%{error: msg})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Could not compute user routes: #{APIUtils.format_error(reason)}"})
+    end
+  end
+
+  defp validate_integer_string(value, key) do
+    case Integer.parse(value) do
+      {_int, ""} -> {:ok, value}
+      _ -> {:error, "#{key} must be an integer"}
+    end
+  end
+
+  @routes_settings_boolean_keys ~w(
+    include_mass_crit include_eol include_frig include_cruise
+    avoid_wormholes avoid_pochven avoid_edencom avoid_triglavian include_thera
+  )
+
+  defp parse_routes_settings(params) do
+    with {:ok, booleans} <- parse_routes_settings_booleans(params),
+         {:ok, avoid} <- parse_avoid_param(params["avoid"]) do
+      settings =
+        booleans
+        |> maybe_put_string(:path_type, params["path_type"])
+        |> maybe_put_string(:avoid, avoid)
+
+      {:ok, settings}
+    end
+  end
+
+  defp parse_routes_settings_booleans(params) do
+    Enum.reduce_while(@routes_settings_boolean_keys, {:ok, %{}}, fn key, {:ok, acc} ->
+      case Map.get(params, key) do
+        nil ->
+          {:cont, {:ok, acc}}
+
+        value ->
+          case validate_boolean_param(value, key) do
+            {:ok, bool} -> {:cont, {:ok, Map.put(acc, String.to_existing_atom(key), bool)}}
+            {:error, _} -> {:halt, {:error, "#{key} must be a boolean"}}
+          end
+      end
+    end)
+  end
+
+  defp maybe_put_string(settings, _key, nil), do: settings
+  defp maybe_put_string(settings, key, value), do: Map.put(settings, key, value)
+
+  defp parse_avoid_param(nil), do: {:ok, nil}
+
+  defp parse_avoid_param(value) do
+    value
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reduce_while({:ok, []}, fn token, {:ok, acc} ->
+      case Integer.parse(token) do
+        {int, ""} -> {:cont, {:ok, [int | acc]}}
+        _ -> {:halt, {:error, "avoid must be a comma-separated list of integers"}}
+      end
+    end)
+    |> case do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      error -> error
+    end
   end
 
   # Helper function to fetch and format user characters for a map
