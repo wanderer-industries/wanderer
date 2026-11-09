@@ -73,6 +73,15 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
           ...interfaceSettings,
           [prop]: value,
         });
+        if (prop === 'show_animated_border') {
+          document.body.classList.toggle('animated-border-active', !!value);
+        }
+        if (prop === 'show_animated_outline') {
+          document.body.classList.toggle('animated-outline-active', !!value);
+        }
+        if (prop === 'disable_animated_outlineborder') {
+          document.body.classList.toggle('animated-outbor-active', !!value);
+        }
       }
     },
     [],
