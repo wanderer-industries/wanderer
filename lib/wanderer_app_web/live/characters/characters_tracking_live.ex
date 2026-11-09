@@ -40,8 +40,18 @@ defmodule WandererAppWeb.CharactersTrackingLive do
          :characters,
          %{"slug" => map_slug} = _params
        ) do
-    selected_map = maps |> Enum.find(&(&1.slug == map_slug))
+    case Enum.find(maps, &(&1.slug == map_slug)) do
+      nil ->
+        socket
+        |> put_flash(:error, "Map not found")
+        |> push_patch(to: ~p"/tracking")
 
+      selected_map ->
+        apply_selected_map(socket, current_user, selected_map, map_slug)
+    end
+  end
+
+  defp apply_selected_map(socket, current_user, selected_map, map_slug) do
     # Unsubscribe from previous map and subscribe to new one
     socket = maybe_unsubscribe_from_map(socket)
     socket = maybe_subscribe_to_map(socket, selected_map)

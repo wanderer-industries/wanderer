@@ -4,6 +4,9 @@ import { LayoutEventBlocker, SystemView, TooltipPosition, WdImgButton } from '@/
 import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
+import { DotlanBehavior } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { getDotlanUrl } from '@/hooks/Mapper/helpers/getDotlanUrl.ts';
+import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { PrimeIcons } from 'primereact/api';
 import { useCallback, useState } from 'react';
 import { SystemInfoContent } from './SystemInfoContent';
@@ -13,12 +16,23 @@ export const SystemInfo = () => {
 
   const {
     data: { selectedSystems },
+    storedSettings: { interfaceSettings },
   } = useMapRootState();
 
   const [systemId] = selectedSystems;
 
   const systemStaticInfo = getSystemStaticInfo(systemId)!;
   const { solar_system_name: solarSystemName } = systemStaticInfo || {};
+
+  let dotlanUrl = '';
+  if (systemStaticInfo) {
+    dotlanUrl = getDotlanUrl({
+      behavior: interfaceSettings.dotlanBehavior ?? DotlanBehavior.system,
+      isWormhole: isWormholeSpace(systemStaticInfo.system_class),
+      regionName: systemStaticInfo.region_name,
+      systemName: systemStaticInfo.solar_system_name,
+    });
+  }
 
   const isNotSelectedSystem = selectedSystems.length !== 1;
 
@@ -54,7 +68,7 @@ export const SystemInfo = () => {
               <a href={`http://anoik.is/systems/${solarSystemName}`} rel="noreferrer" target="_blank">
                 <img src={ANOIK_ICON} width="14" height="14" className="external-icon" />
               </a>
-              <a href={`https://evemaps.dotlan.net/system/${solarSystemName}`} rel="noreferrer" target="_blank">
+              <a href={dotlanUrl} rel="noreferrer" target="_blank">
                 <img src={DOTLAN_ICON} alt="" width="14" height="14" className="external-icon" />
               </a>
             </LayoutEventBlocker>

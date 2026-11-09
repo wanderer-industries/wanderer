@@ -4,11 +4,30 @@ defmodule WandererApp.Api.AccessList do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("access_lists_v1")
+  end
+
+  # Token actors get read access to ACLs linked to their map and nothing more.
+  # ACL administration is a session/internal concern, so all token writes are
+  # hard-forbidden (403) rather than filter-scoped -- unlike map-owned
+  # resources, there is no "your own ACL" a map token may legitimately mutate.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.AclScoped.AclInTokenMap
+    end
+
+    policy action_type([:create, :update, :destroy]) do
+      forbid_if always()
+    end
   end
 
   json_api do
@@ -109,6 +128,14 @@ defmodule WandererApp.Api.AccessList do
 
     has_many :members, WandererApp.Api.AccessListMember do
       public? true
+    end
+
+    # Inverse of MapAccessList.access_list. Required so the AclScoped read
+    # policy can express `exists(map_access_lists, map_id == ^map_id)`.
+    # Kept private: this is a policy-internal join, not part of the public
+    # filter surface for /api/v1/access_lists.
+    has_many :map_access_lists, WandererApp.Api.MapAccessList do
+      public? false
     end
   end
 end

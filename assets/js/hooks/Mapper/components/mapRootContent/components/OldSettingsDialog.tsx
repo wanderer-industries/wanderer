@@ -7,6 +7,7 @@ import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { useCallback, useRef } from 'react';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
+import { DEFAULT_JUMP_PLANNER_SETTINGS } from '@/hooks/Mapper/mapRootProvider/constants.ts';
 
 const createSettings = function <T>(lsSettings: string | null, defaultValues: T) {
   return lsSettings ? JSON.parse(lsSettings) : defaultValues;
@@ -43,6 +44,7 @@ export const OldSettingsDialog = () => {
         signaturesWidget: createSettings(signatures, {}),
         interface: createSettings(interfaceSettings, {}),
         map: createSettings(null, { viewport: { zoom: 1, x: 0, y: 0 } }),
+        jumpPlanner: DEFAULT_JUMP_PLANNER_SETTINGS,
       };
 
       if (asFile) {
@@ -132,8 +134,6 @@ export const OldSettingsDialog = () => {
         footer={
           <div className="flex items-center justify-end">
             <WdButton
-              // @ts-ignore
-              ref={cfRef}
               onClick={cfShow}
               icon="pi pi-exclamation-triangle"
               size="small"

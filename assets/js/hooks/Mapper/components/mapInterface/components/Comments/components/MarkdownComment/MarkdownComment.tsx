@@ -70,8 +70,7 @@ export const MarkdownComment = ({ text, time, characterEveId, id, inherited }: M
             <WdTransition active={hovered} timeout={100}>
               <div className="text-stone-500 max-h-[12px]">
                 {hovered && !inherited ? (
-                  // @ts-ignore
-                  <div ref={cfRef}>
+                  <div>
                     <WdImgButton
                       className={clsx(PrimeIcons.TRASH, 'hover:text-red-400')}
                       tooltip={TOOLTIP_PROPS}

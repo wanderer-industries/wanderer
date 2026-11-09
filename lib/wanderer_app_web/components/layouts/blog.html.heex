@@ -1,5 +1,5 @@
 <main
-  class="main flex-col !min-h-screen justify-between flex z-0 focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0 bg-stone-950 ccp-font"
+  class="main relative flex-col !min-h-screen justify-between flex z-0 overflow-x-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0 bg-stone-950 ccp-font"
   phx-mounted={JS.remove_class("opacity-0")}
 >
   <navbar class="navbar bg-base-100 !sticky top-0 z-50 bg-opacity-0 ">
@@ -43,12 +43,12 @@
     </div>
     <div class="navbar-end"></div>
   </navbar>
-  <div class="!z-10 min-h-[calc(100vh-11rem)]">
+  <div class="!z-10 min-h-[calc(100vh-15rem)]">
     {@inner_content}
   </div>
   <!--Footer-->
   <footer class="!z-10 w-full pt-8 pb-4 text-sm text-center fade-in flex justify-center items-center">
-    <div class="flex flex-col justify-center items-center">
+    <div class="crimson-harvest-partner-frame flex flex-col justify-center items-center">
       <a target="_blank" rel="noopener noreferrer" href="https://www.eveonline.com/partners">
         <img src="/images/eo_pp.png" style="width: 300px;" alt="Eve Online Partnership Program" />
       </a>

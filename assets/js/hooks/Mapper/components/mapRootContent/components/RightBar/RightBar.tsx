@@ -15,6 +15,7 @@ interface RightBarProps {
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
   onShowWormholesReference?: () => void;
+  onShowJumpPlanner?: () => void;
   additionalContent?: ReactNode;
 }
 
@@ -23,6 +24,7 @@ export const RightBar = ({
   onShowMapSettings,
   onShowTrackingDialog,
   onShowWormholesReference,
+  onShowJumpPlanner,
   additionalContent,
 }: RightBarProps) => {
   const {
@@ -30,6 +32,10 @@ export const RightBar = ({
   } = useMapRootState();
 
   const canTrackCharacters = useMapCheckPermissions([UserPermission.TRACK_CHARACTER]);
+  let kSpaceTooltip = 'Show highlighting Imperial Space';
+  if (interfaceSettings.isShowKSpace) {
+    kSpaceTooltip = 'Hide highlighting Imperial Space';
+  }
 
   const toggleKSpace = useCallback(() => {
     setInterfaceSettings(x => ({
@@ -99,12 +105,24 @@ export const RightBar = ({
                   type="button"
                   onClick={onShowWormholesReference}
                 >
-                  <i className="pi pi-bullseye"></i>
+                  <i className="pi pi-book"></i>
+                </button>
+              </WdTooltipWrapper>
+
+              <WdTooltipWrapper content="Jump Planner" position={TooltipPosition.left}>
+                <button
+                  className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
+                  type="button"
+                  onClick={onShowJumpPlanner}
+                  aria-label="Open Jump Planner"
+                >
+                  <i className="hero-jump-range-diagonal w-5 h-5 relative left-[-2px]" />
                 </button>
               </WdTooltipWrapper>
             </div>
           </>
         )}
+
         {additionalContent}
       </div>
 
@@ -122,12 +140,7 @@ export const RightBar = ({
           </button>
         </WdTooltipWrapper>
 
-        <WdTooltipWrapper
-          content={
-            interfaceSettings.isShowKSpace ? 'Hide highlighting Imperial Space' : 'Show highlighting Imperial Space'
-          }
-          position={TooltipPosition.left}
-        >
+        <WdTooltipWrapper content={kSpaceTooltip} position={TooltipPosition.left}>
           <button
             className="btn bg-transparent text-gray-400 hover:text-white border-transparent hover:bg-transparent py-2 h-auto min-h-auto"
             type="button"

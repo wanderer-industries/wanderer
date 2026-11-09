@@ -1,4 +1,9 @@
-import { SETTINGS_KEYS, SIGNATURES_DELETION_TIMING, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures';
+import {
+  SETTINGS_KEYS,
+  SIGNATURES_DELETION_TIMING,
+  SIGNATURES_GLOWINGROWS_TIMING,
+  SignatureSettingsType,
+} from '@/hooks/Mapper/constants/signatures';
 import {
   GroupType,
   SignatureGroup,
@@ -113,6 +118,8 @@ export type Setting = {
 // Now use a stricter type: every timing key maps to a number
 export type SignatureDeletionTimingType = Record<SIGNATURES_DELETION_TIMING, number>;
 
+export type SignatureGlowingRowsTimingType = Record<SIGNATURES_GLOWINGROWS_TIMING, number>;
+
 export const SIGNATURE_SETTINGS = {
   filterFlags: [
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COSMIC_ANOMALY, name: 'Show Anomalies' },
@@ -131,17 +138,18 @@ export const SIGNATURE_SETTINGS = {
   ],
   uiFlags: [
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_GROUP_COLUMN, name: 'Show Group Column' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_INFO_COLUMN, name: 'Show Info Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_ADDED_COLUMN, name: 'Show Added Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_UPDATED_COLUMN, name: 'Show Updated Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_DESCRIPTION_COLUMN, name: 'Show Description Column' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.SHOW_CHARACTER_COLUMN, name: 'Show Character Column' },
-    { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
-    { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
     {
       type: SettingsTypes.flag,
       key: SETTINGS_KEYS.SHOW_CHARACTER_PORTRAIT,
       name: 'Show Character Portrait in Tooltip',
     },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.LAZY_DELETE_SIGNATURES, name: 'Lazy Delete Signatures' },
+    { type: SettingsTypes.flag, key: SETTINGS_KEYS.KEEP_LAZY_DELETE, name: 'Keep "Lazy Delete" Enabled' },
     { type: SettingsTypes.flag, key: SETTINGS_KEYS.COLOR_BY_TYPE, name: 'Color Signatures by Type' },
   ],
   uiOther: [
@@ -155,6 +163,18 @@ export const SIGNATURE_SETTINGS = {
         { value: SIGNATURES_DELETION_TIMING.EXTENDED, label: '30s' },
       ],
     },
+    {
+      type: SettingsTypes.dropdown,
+      key: SETTINGS_KEYS.GLOWINGROWS_TIMING,
+      name: 'Paste-Flash Timing',
+      options: [
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWIMMEDIATE, label: '0s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT, label: '1s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWLONG, label: '5s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTRA, label: '10s' },
+        { value: SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED, label: '30s' },
+      ],
+    },
   ],
 };
 
@@ -165,21 +185,47 @@ export const SIGNATURE_DELETION_TIMEOUTS: SignatureDeletionTimingType = {
   [SIGNATURES_DELETION_TIMING.EXTENDED]: 30_000,
 };
 
-/**
+export const SIGNATURE_GLOWINGROWS_TIMEOUTS: SignatureGlowingRowsTimingType = {
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWIMMEDIATE]: 0,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]: 1_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWLONG]: 5_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTRA]: 10_000,
+  [SIGNATURES_GLOWINGROWS_TIMING.GLOWEXTENDED]: 30_000,
+};
+
+export function getGlowingRowsTimeoutMs(settings: SignatureSettingsType): number {
+  const raw = settings[SETTINGS_KEYS.GLOWINGROWS_TIMING];
+  if (raw && typeof raw === 'object' && 'value' in raw) {
+    const timing = (raw as { value: SIGNATURES_GLOWINGROWS_TIMING }).value;
+    return (
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[timing] ??
+      SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]
+    );
+  }
+
+  const timing = raw as SIGNATURES_GLOWINGROWS_TIMING | undefined;
+  if (typeof timing !== 'number') {
+    return SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT];
+  }
+
+  return (
+    SIGNATURE_GLOWINGROWS_TIMEOUTS[timing] ?? SIGNATURE_GLOWINGROWS_TIMEOUTS[SIGNATURES_GLOWINGROWS_TIMING.GLOWDEFAULT]
+  );
+}
+
+/*
  * Helper function to extract the deletion timeout in milliseconds from settings
  */
 export function getDeletionTimeoutMs(settings: SignatureSettingsType): number {
   const raw = settings[SETTINGS_KEYS.DELETION_TIMING];
-  const timing =
-    raw && typeof raw === 'object' && 'value' in raw
-      ? (raw as { value: SIGNATURES_DELETION_TIMING }).value
-      : (raw as SIGNATURES_DELETION_TIMING | undefined);
-
+  if (raw && typeof raw === 'object' && 'value' in raw) {
+    const timing = (raw as { value: SIGNATURES_DELETION_TIMING }).value;
+    return SIGNATURE_DELETION_TIMEOUTS[timing] ?? SIGNATURE_DELETION_TIMEOUTS[SIGNATURES_DELETION_TIMING.DEFAULT];
+  }
+  const timing = raw as SIGNATURES_DELETION_TIMING | undefined;
   const validTiming = typeof timing === 'number' ? timing : SIGNATURES_DELETION_TIMING.DEFAULT;
-
   return SIGNATURE_DELETION_TIMEOUTS[validTiming];
 }
-
 // Replace the flat structure with a nested structure by language
 export const LANGUAGE_TYPE_MAPPINGS = {
   EN: {

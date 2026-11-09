@@ -8,6 +8,7 @@ import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 import { emitMapEvent } from '@/hooks/Mapper/events';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { useRouteProvider } from '@/hooks/Mapper/components/mapInterface/widgets/RoutesWidget/RoutesProvider.tsx';
+import { JumpPlannerField } from '@/hooks/Mapper/components/mapRootContent/components/JumpPlanner';
 
 export const useContextMenuSystemInfoHandlers = () => {
   const { outCommand } = useMapRootState();
@@ -81,6 +82,20 @@ export const useContextMenuSystemInfoHandlers = () => {
     setSystem(undefined);
   }, []);
 
+  const onJumpFrom = useCallback((systemId: string) => {
+    emitMapEvent({
+      name: Commands.showJumpPlanner,
+      data: { field: JumpPlannerField.From, systemId },
+    });
+  }, []);
+
+  const onJumpTo = useCallback((systemId: string) => {
+    emitMapEvent({
+      name: Commands.showJumpPlanner,
+      data: { field: JumpPlannerField.Destination, systemId },
+    });
+  }, []);
+
   const onWaypointSet: WaypointSetContextHandler = useCallback(({ charIds, clearWay, fromBeginning, destination }) => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -105,6 +120,8 @@ export const useContextMenuSystemInfoHandlers = () => {
     onAddSystem,
     onHubToggle,
     onOpenSettings,
+    onJumpFrom,
+    onJumpTo,
     onWaypointSet,
     systemId: system,
   };

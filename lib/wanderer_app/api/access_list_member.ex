@@ -4,11 +4,28 @@ defmodule WandererApp.Api.AccessListMember do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]
 
   postgres do
     repo(WandererApp.Repo)
     table("access_list_members_v1")
+  end
+
+  # Same shape as AccessList: token actors may read members of ACLs linked to
+  # their map, and may not write at all.
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.AclScoped.AclMemberInTokenMap
+    end
+
+    policy action_type([:create, :update, :destroy]) do
+      forbid_if always()
+    end
   end
 
   json_api do

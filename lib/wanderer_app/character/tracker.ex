@@ -1004,9 +1004,14 @@ defmodule WandererApp.Character.Tracker do
        ),
        do: state
 
+  # Matches on the state's active_maps rather than a `track_location` key in
+  # track_settings. No caller passes that key -- every call site sends
+  # %{map_id: _, track: true | false} -- so the previous clause never matched
+  # and this function could not turn location tracking back on once
+  # maybe_stop_tracking/2 had cleared it.
   defp maybe_start_location_tracking(
-         state,
-         %{track_location: true} = _track_settings
+         %{active_maps: [_ | _]} = state,
+         _track_settings
        ),
        do: %{state | track_location: true}
 
@@ -1017,8 +1022,8 @@ defmodule WandererApp.Character.Tracker do
        do: state
 
   defp maybe_start_ship_tracking(
-         state,
-         %{track_ship: true} = _track_settings
+         %{active_maps: [_ | _]} = state,
+         _track_settings
        ),
        do: %{state | track_ship: true}
 

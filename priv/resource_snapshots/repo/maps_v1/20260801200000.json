@@ -161,7 +161,7 @@
     },
     {
       "allow_nil?": true,
-      "default": "'{wormholes}'",
+      "default": "[\"wormholes\"]",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -228,37 +228,6 @@
       "size": null,
       "source": "owner_id",
       "type": "uuid"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "maps_v1_intel_source_map_id_fkey",
-        "on_delete": "nilify",
-        "on_update": null,
-        "primary_key?": true,
-        "schema": null,
-        "table": "maps_v1"
-      },
-      "scale": null,
-      "size": null,
-      "source": "intel_source_map_id",
-      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -266,7 +235,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "0E20AB08A408AF1743321E15D5E845CD136D87CF1AB025E28D88028A4D7B7A4D",
+  "hash": "F00091B5D3467DFD9D0B5DD8E5A5590E581D1F4D51F0D6CD07413358DC1AF2B7",
   "identities": [
     {
       "all_tenants?": false,

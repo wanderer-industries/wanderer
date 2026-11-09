@@ -9,7 +9,7 @@ import { getSystemById } from '@/hooks/Mapper/helpers';
 import classes from './ContextMenuSystem.module.scss';
 import { PrimeIcons } from 'primereact/api';
 import { ContextMenuSystemProps } from '@/hooks/Mapper/components/contexts';
-import { useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
+import { useJumpMenu, useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
@@ -35,6 +35,8 @@ export const useContextMenuSystemItems = ({
   onSyncIntel,
   onCustomLabelDialog,
   onOpenSettings,
+  onJumpFrom,
+  onJumpTo,
   onWaypointSet,
   systemId,
   hubs,
@@ -52,6 +54,7 @@ export const useContextMenuSystemItems = ({
   const getTags = useTagMenu(systems, systemId, onSystemTag, hasIntelSource);
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus, hasIntelSource);
   const getLabels = useLabelsMenu(systems, systemId, onSystemLabels, onCustomLabelDialog, hasIntelSource);
+  const getJumpMenu = useJumpMenu({ onJumpFrom, onJumpTo });
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canLockSystem = useMapCheckPermissions([UserPermission.LOCK_SYSTEM]);
   const canManageSystem = useMapCheckPermissions([UserPermission.UPDATE_SYSTEM]);
@@ -112,7 +115,8 @@ export const useContextMenuSystemItems = ({
         command: onHubToggle,
       },
       ...getUserRoutes(),
-
+      { separator: true },
+      ...getJumpMenu(systemId, systemStaticInfo.system_class),
       { separator: true },
       {
         command: () => onTogglePing(PingType.Rally, systemId, ping?.id, hasPing),
@@ -204,11 +208,13 @@ export const useContextMenuSystemItems = ({
     getTags,
     getStatus,
     getLabels,
+    getJumpMenu,
     getWaypointMenu,
     getUserRoutes,
     hubs,
     onHubToggle,
     canLockSystem,
+    canManageSystem,
     onLockToggle,
     canDeleteSystem,
     onDeleteSystem,

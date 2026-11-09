@@ -9,6 +9,7 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
   use OpenApiSpex.ControllerSpecs
 
   require Ash.Query
+  require Logger
   import Ash.Expr
 
   alias WandererApp.Api.MapSystem
@@ -79,46 +80,89 @@ defmodule WandererAppWeb.Api.MapSystemsConnectionsController do
   )
 
   def show(conn, %{"map_id" => map_id}) do
-    case load_map_data(map_id) do
-      {:ok, systems, connections} ->
-        conn
-        |> put_status(:ok)
-        |> json(%{
-          systems: Enum.map(systems, &format_system/1),
-          connections: Enum.map(connections, &format_connection/1)
-        })
+    # This is a hand-written controller, so it does not inherit the AshJsonApi
+    # route policies. Two independent guards are required:
+    #
+    #   1. The path `:map_id` must equal the token's map. Without this a valid
+    #      token could read any map by id.
+    #   2. The reads below must carry the actor. The domain gate is
+    #      `authorize :when_requested`, which authorizes only when an `actor:`
+    #      key is present (ash/lib/ash/actions/helpers.ex:390), so a bare
+    #      `Ash.read!/1` runs entirely unauthorized.
+    #
+    # A mismatch returns 404 rather than 403 so the endpoint does not confirm
+    # that another map exists.
+    token_map_id = conn.assigns[:map] && conn.assigns.map.id
+    actor = Ash.PlugHelpers.get_actor(conn)
 
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Map not found"})
+    # Compare as strings: token_map_id is a UUID attribute and map_id is the raw
+    # path param. Normalizing both sides (as CreateMapMatchesToken does) keeps
+    # this IDOR guard robust against any future change to the id representation.
+    if not is_nil(token_map_id) and to_string(token_map_id) == to_string(map_id) do
+      case load_map_data(map_id, actor) do
+        {:ok, systems, connections} ->
+          conn
+          |> put_status(:ok)
+          |> json(%{
+            systems: Enum.map(systems, &format_system/1),
+            connections: Enum.map(connections, &format_connection/1)
+          })
 
-      {:error, :unauthorized} ->
-        conn
-        |> put_status(:unauthorized)
-        |> json(%{error: "Unauthorized"})
+        {:error, :not_found} ->
+          not_found(conn)
+
+        {:error, :unauthorized} ->
+          conn
+          |> put_status(:unauthorized)
+          |> json(%{error: "Unauthorized"})
+
+        {:error, :internal} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: "Internal server error"})
+      end
+    else
+      not_found(conn)
     end
   end
 
-  defp load_map_data(map_id) do
+  defp not_found(conn) do
+    conn
+    |> put_status(:not_found)
+    |> json(%{error: "Map not found"})
+  end
+
+  defp load_map_data(map_id, actor) do
     try do
       # Load systems for the map
       systems =
         MapSystem
         |> Ash.Query.filter(expr(map_id == ^map_id and visible == true))
-        |> Ash.read!()
+        |> Ash.read!(actor: actor)
 
       # Load connections for the map
       connections =
         MapConnection
         |> Ash.Query.filter(expr(map_id == ^map_id))
-        |> Ash.read!()
+        |> Ash.read!(actor: actor)
 
       {:ok, systems, connections}
     rescue
-      Ash.Error.Query.NotFound -> {:error, :not_found}
-      Ash.Error.Forbidden -> {:error, :unauthorized}
-      _ -> {:error, :not_found}
+      Ash.Error.Query.NotFound ->
+        {:error, :not_found}
+
+      Ash.Error.Forbidden ->
+        {:error, :unauthorized}
+
+      error ->
+        # Do not mask unexpected failures (DB outage, real bugs) as a benign
+        # 404 -- log with context and surface a 500 so monitoring can see it.
+        Logger.error(
+          "[MapSystemsConnections] unexpected error loading map #{map_id}: " <>
+            Exception.format(:error, error, __STACKTRACE__)
+        )
+
+        {:error, :internal}
     end
   end
 

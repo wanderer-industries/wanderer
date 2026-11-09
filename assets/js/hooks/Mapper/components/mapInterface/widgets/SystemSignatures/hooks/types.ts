@@ -17,6 +17,11 @@ export interface UseFetchingParams {
   setSignatures: React.Dispatch<React.SetStateAction<ExtendedSystemSignature[]>>;
 }
 
+export interface GlowingRowInfo {
+  isNew: boolean;
+  systemId: string;
+}
+
 export interface UsePendingDeletionParams {
   systemId: string;
   deletionTiming?: number;

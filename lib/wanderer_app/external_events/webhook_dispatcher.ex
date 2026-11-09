@@ -163,6 +163,8 @@ defmodule WandererApp.ExternalEvents.WebhookDispatcher do
         start_delivery_task(subscription, events, state)
       end)
     end
+
+    state
   end
 
   defp get_active_subscriptions(map_id) do

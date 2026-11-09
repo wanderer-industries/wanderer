@@ -37,6 +37,7 @@ export type SettingsListItem = {
   label: string;
   type: 'checkbox' | 'dropdown' | 'text';
   options?: { label: string; value: string }[];
+  dropdownScrollHeight?: string;
   placeholder?: string;
   helperText?: string;
   dependsOn?: keyof UserSettings;

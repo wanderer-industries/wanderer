@@ -13,6 +13,7 @@ export interface MapContextMenuProps {
   onShowMapSettings?: () => void;
   onShowTrackingDialog?: () => void;
   onShowWormholesReference?: () => void;
+  onShowJumpPlanner?: () => void;
 }
 
 export const MapContextMenu = ({
@@ -20,6 +21,7 @@ export const MapContextMenu = ({
   onShowMapSettings,
   onShowTrackingDialog,
   onShowWormholesReference,
+  onShowJumpPlanner,
 }: MapContextMenuProps) => {
   const {
     outCommand,
@@ -60,9 +62,15 @@ export const MapContextMenu = ({
         },
         {
           label: 'Wormholes Ref.',
-          icon: 'pi pi-bullseye',
+          icon: 'pi pi-book',
           command: onShowWormholesReference,
           visible: canTrackCharacters,
+        },
+        {
+          label: 'Jump Planner',
+          icon: 'hero-jump-range-diagonal',
+          command: onShowJumpPlanner,
+          visible: true,
         },
         { separator: true, visible: true },
         {
@@ -89,6 +97,8 @@ export const MapContextMenu = ({
     handleShowActivity,
     onShowMapSettings,
     onShowOnTheMap,
+    onShowWormholesReference,
+    onShowJumpPlanner,
     setInterfaceSettings,
   ]);
 

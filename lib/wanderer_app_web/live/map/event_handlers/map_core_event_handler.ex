@@ -209,6 +209,70 @@ defmodule WandererAppWeb.MapCoreEventHandler do
     {:noreply, socket}
   end
 
+  # Export hands the whole map over as one file, so it asks for the permission to see the map
+  # rather than relying on the caller having got this far.
+  def handle_ui_event(
+        "export_map_data",
+        params,
+        %{assigns: %{map_id: map_id, user_permissions: %{view_system: true}}} = socket
+      ) do
+    include_signatures = Map.get(params || %{}, "include_signatures", true)
+
+    case WandererApp.Map.Operations.Transfer.export(map_id,
+           include_signatures: include_signatures
+         ) do
+      {:ok, data} ->
+        {:reply, %{data: data}, socket}
+
+      {:error, error} ->
+        Logger.error(fn -> "Failed to export map #{map_id}: #{inspect(error)}" end)
+
+        {:reply, %{error: "Failed to export map data"}, socket}
+    end
+  end
+
+  def handle_ui_event(
+        "import_map_data",
+        %{"data" => data} = params,
+        %{
+          assigns: %{
+            map_id: map_id,
+            current_user: %{id: current_user_id},
+            has_tracked_characters?: true,
+            main_character_id: main_character_id,
+            user_permissions: %{add_system: true}
+          }
+        } = socket
+      )
+      when not is_nil(main_character_id) do
+    include_signatures = Map.get(params, "include_signatures", true)
+
+    case WandererApp.Map.Operations.Transfer.import(
+           map_id,
+           data,
+           current_user_id,
+           main_character_id,
+           include_signatures: include_signatures
+         ) do
+      {:ok, stats} ->
+        {:reply, %{result: stats}, socket}
+
+      {:error, {:unsupported_version, version}} ->
+        {:reply, %{error: "Unsupported export version: #{version}"}, socket}
+
+      {:error, error} ->
+        Logger.error(fn -> "Failed to import map #{map_id}: #{inspect(error)}" end)
+
+        {:reply, %{error: "Failed to import map data"}, socket}
+    end
+  end
+
+  def handle_ui_event("export_map_data", _params, socket),
+    do: {:reply, %{error: "You don't have permission to export map data"}, socket}
+
+  def handle_ui_event("import_map_data", _params, socket),
+    do: {:reply, %{error: "You don't have permission to import map data"}, socket}
+
   def handle_ui_event(
         "get_user_settings",
         _,

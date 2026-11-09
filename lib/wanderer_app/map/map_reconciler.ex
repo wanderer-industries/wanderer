@@ -188,9 +188,11 @@ defmodule WandererApp.Map.Reconciler do
 
       # Clean up map-specific caches
       WandererApp.Cache.delete("map_#{map_id}:started")
+      WandererApp.Cache.delete("map_#{map_id}:timer_gen")
       WandererApp.Cache.delete("map_characters-#{map_id}")
       WandererApp.Map.CacheRTree.clear_tree("rtree_#{map_id}")
       WandererApp.Map.delete_map_state(map_id)
+      WandererApp.Map.delete_map(map_id)
 
       :telemetry.execute(
         [:wanderer_app, :map, :reconciliation, :zombie_cleanup],

@@ -5,7 +5,7 @@ defmodule WandererAppWeb.AuthControllerTest do
 
   describe "parameter validation and error handling" do
     test "callback/2 validates missing assigns" do
-      conn = build_conn()
+      conn = browser_conn()
       params = %{}
 
       # Should handle gracefully when required assigns are missing
@@ -34,7 +34,7 @@ defmodule WandererAppWeb.AuthControllerTest do
     test "callback/2 handles malformed auth data gracefully" do
       # Test with minimal conn structure to exercise error paths
       # The callback/2 function will match the fallback clause and redirect
-      conn = build_conn()
+      conn = browser_conn()
 
       result = AuthController.callback(conn, %{})
 
@@ -46,7 +46,7 @@ defmodule WandererAppWeb.AuthControllerTest do
     test "callback/2 processes auth structure with missing fields" do
       # Test the fallback clause since auth structure is incomplete
       # Missing CharacterOwnerHash will cause pattern match failure
-      conn = build_conn()
+      conn = browser_conn()
 
       result = AuthController.callback(conn, %{})
 
@@ -58,7 +58,7 @@ defmodule WandererAppWeb.AuthControllerTest do
     test "callback/2 exercises character creation path" do
       # Test the fallback clause for now since character creation involves complex validation
       # The actual implementation requires valid EVE character data which is complex to mock
-      conn = build_conn()
+      conn = browser_conn()
 
       result = AuthController.callback(conn, %{})
 
@@ -69,7 +69,7 @@ defmodule WandererAppWeb.AuthControllerTest do
 
     test "callback/2 handles existing user assignment" do
       # Test the fallback clause for consistent behavior
-      conn = build_conn()
+      conn = browser_conn()
 
       result = AuthController.callback(conn, %{})
 
@@ -81,8 +81,8 @@ defmodule WandererAppWeb.AuthControllerTest do
     test "callback/2 validates various auth credential formats" do
       # Test fallback clause behavior for various cases
       test_cases = [
-        build_conn(),
-        build_conn() |> assign(:some_other_assign, "value")
+        browser_conn(),
+        browser_conn() |> assign(:some_other_assign, "value")
       ]
 
       Enum.each(test_cases, fn conn ->
@@ -191,5 +191,16 @@ defmodule WandererAppWeb.AuthControllerTest do
         end)
       end)
     end
+  end
+
+  # The SSO callback failure path calls put_flash/3, which requires the session
+  # and flash plugs that the real :browser pipeline installs. A bare
+  # build_conn/0 has neither, so these tests died with "flash not fetched"
+  # before ever reaching the redirect they assert on. This mirrors the browser
+  # pipeline rather than relaxing the controller.
+  defp browser_conn do
+    build_conn()
+    |> Plug.Test.init_test_session(%{})
+    |> Phoenix.ConnTest.fetch_flash()
   end
 end
