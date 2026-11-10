@@ -10,9 +10,11 @@ defmodule WandererApp.Map.LayoutTest do
     "verticalNodeSpacing" => 24,
     "verticalLayerSpacing" => 52,
     "verticalEdgeSpacing" => 12,
+    "verticalRootSpacing" => 52,
     "horizontalNodeSpacing" => 40,
     "horizontalLayerSpacing" => 80,
     "horizontalEdgeSpacing" => 16,
+    "horizontalRootSpacing" => 80,
     "orderBy" => "name",
     "orderDirection" => "asc",
     "locale" => "en",
@@ -80,6 +82,35 @@ defmodule WandererApp.Map.LayoutTest do
 
     assert positions["3"] < positions["2"]
     assert positions["2"] < positions["1"]
+  end
+
+  test "uses direction-specific spacing between root components" do
+    systems = [system(1, "Root A", 1), system(2, "Root B", 1)]
+    nodes = [result_node(1, 0, 0), result_node(2, 500, 500)]
+
+    horizontal_settings =
+      @settings
+      |> Map.put("direction", "LR")
+      |> Map.put("horizontalRootSpacing", 10)
+
+    horizontal_request = Layout.build_request(systems, [], horizontal_settings)
+
+    horizontal_positions =
+      nodes
+      |> Layout.repack_root_components(horizontal_request, systems, horizontal_settings)
+      |> Map.new(&{&1["id"], &1})
+
+    assert horizontal_positions["2"]["y"] - horizontal_positions["1"]["y"] == 44
+
+    vertical_settings = Map.put(@settings, "verticalRootSpacing", 15)
+    vertical_request = Layout.build_request(systems, [], vertical_settings)
+
+    vertical_positions =
+      nodes
+      |> Layout.repack_root_components(vertical_request, systems, vertical_settings)
+      |> Map.new(&{&1["id"], &1})
+
+    assert vertical_positions["2"]["x"] - vertical_positions["1"]["x"] == 145
   end
 
   test "selects spacing profile from the layout direction" do

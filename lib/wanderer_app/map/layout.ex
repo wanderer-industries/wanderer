@@ -384,7 +384,7 @@ defmodule WandererApp.Map.Layout do
     order_index = systems |> ordered_ids(settings) |> Enum.with_index() |> Map.new()
     dimensions = Map.new(request.nodes, &{&1.id, {&1.width, &1.height, &1.rank}})
     nodes_by_id = Map.new(nodes, &{&1["id"], &1})
-    component_gap = max(layout_spacing(settings).layer, layout_spacing(settings).node * 2)
+    component_gap = root_component_spacing(settings)
     vertical_tree? = settings["direction"] in ["TB", "BT"]
 
     {_offset, shifted_nodes} =
@@ -467,6 +467,15 @@ defmodule WandererApp.Map.Layout do
         [id | component]
       )
     end
+  end
+
+  defp root_component_spacing(%{"direction" => direction} = settings)
+       when direction in ["TB", "BT"] do
+    Map.get(settings, "verticalRootSpacing", layout_spacing(settings).layer)
+  end
+
+  defp root_component_spacing(settings) do
+    Map.get(settings, "horizontalRootSpacing", layout_spacing(settings).layer)
   end
 
   defp component_bounds(ids, nodes_by_id, dimensions) do

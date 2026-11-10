@@ -13,6 +13,7 @@ defmodule WandererApp.LayoutSettingsTest do
           "routing" => "spline",
           "nodeSpacing" => "55",
           "layerSpacing" => 90,
+          "rootSpacing" => "35",
           "preservePreviousPositions" => "false"
         })
 
@@ -23,6 +24,8 @@ defmodule WandererApp.LayoutSettingsTest do
       assert settings["verticalLayerSpacing"] == 90
       assert settings["horizontalNodeSpacing"] == 55
       assert settings["horizontalLayerSpacing"] == 90
+      assert settings["verticalRootSpacing"] == 35
+      assert settings["horizontalRootSpacing"] == 35
       refute settings["preservePreviousPositions"]
       assert settings["routing"] == "orthogonal"
     end

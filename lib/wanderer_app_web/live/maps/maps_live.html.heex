@@ -580,6 +580,13 @@
                   <div class="grid grid-cols-3 gap-3">
                     <.input
                       type="number"
+                      field={f[:verticalRootSpacing]}
+                      label="Root spacing"
+                      min="0"
+                      max="1000"
+                    />
+                    <.input
+                      type="number"
                       field={f[:verticalNodeSpacing]}
                       label="Node spacing"
                       min="0"
@@ -592,19 +599,19 @@
                       min="0"
                       max="1000"
                     />
-                    <.input
-                      type="number"
-                      field={f[:verticalEdgeSpacing]}
-                      label="Edge spacing"
-                      min="0"
-                      max="1000"
-                    />
                   </div>
 
                   <div class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
                     Horizontal spacing (LR)
                   </div>
                   <div class="grid grid-cols-3 gap-3">
+                    <.input
+                      type="number"
+                      field={f[:horizontalRootSpacing]}
+                      label="Root spacing"
+                      min="0"
+                      max="1000"
+                    />
                     <.input
                       type="number"
                       field={f[:horizontalNodeSpacing]}
@@ -616,13 +623,6 @@
                       type="number"
                       field={f[:horizontalLayerSpacing]}
                       label="Layer spacing"
-                      min="0"
-                      max="1000"
-                    />
-                    <.input
-                      type="number"
-                      field={f[:horizontalEdgeSpacing]}
-                      label="Edge spacing"
                       min="0"
                       max="1000"
                     />

@@ -9,9 +9,11 @@ defmodule WandererApp.LayoutSettings do
     "verticalNodeSpacing" => 24,
     "verticalLayerSpacing" => 52,
     "verticalEdgeSpacing" => 12,
+    "verticalRootSpacing" => 52,
     "horizontalNodeSpacing" => 40,
     "horizontalLayerSpacing" => 80,
     "horizontalEdgeSpacing" => 16,
+    "horizontalRootSpacing" => 80,
     "orderBy" => "added-at",
     "orderDirection" => "asc",
     "locale" => "en",
@@ -33,9 +35,11 @@ defmodule WandererApp.LayoutSettings do
     "verticalNodeSpacing" => "nodeSpacing",
     "verticalLayerSpacing" => "layerSpacing",
     "verticalEdgeSpacing" => "edgeSpacing",
+    "verticalRootSpacing" => "rootSpacing",
     "horizontalNodeSpacing" => "nodeSpacing",
     "horizontalLayerSpacing" => "layerSpacing",
-    "horizontalEdgeSpacing" => "edgeSpacing"
+    "horizontalEdgeSpacing" => "edgeSpacing",
+    "horizontalRootSpacing" => "rootSpacing"
   }
   @boolean_options ~w(enabled preservePreviousPositions)
 
