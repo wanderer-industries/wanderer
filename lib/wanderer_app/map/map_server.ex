@@ -34,6 +34,15 @@ defmodule WandererApp.Map.Server do
 
   defdelegate add_system(map_id, system_info, user_id, character_id, opts \\ []), to: Impl
 
+  defdelegate add_linked_system(
+                map_id,
+                source_system_id,
+                target_system_id,
+                user_id,
+                character_id
+              ),
+              to: Impl
+
   defdelegate paste_connections(map_id, connections, user_id, character_id), to: Impl
 
   defdelegate paste_systems(map_id, systems, user_id, character_id, opts \\ []), to: Impl

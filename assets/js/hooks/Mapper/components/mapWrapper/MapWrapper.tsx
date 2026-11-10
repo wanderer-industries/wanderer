@@ -42,6 +42,13 @@ export interface MapWrapperProps {
   onShowJumpPlanner(initialSystem: JumpPlannerInitialSystem): void;
 }
 
+interface AddSystemDialogState {
+  coordinates?: XYPosition;
+  sourceSystemId?: string;
+}
+
+const NO_EXCLUDED_SYSTEMS: number[] = [];
+
 // TODO: INFO - this component needs for abstract work with Map instance
 export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   const {
@@ -83,7 +90,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   const [openSettings, setOpenSettings] = useState<string | null>(null);
   const [openPing, setOpenPing] = useState<{ type: PingType; solar_system_id: string } | null>(null);
   const [openCustomLabel, setOpenCustomLabel] = useState<string | null>(null);
-  const [openAddSystem, setOpenAddSystem] = useState<XYPosition | null>(null);
+  const [openAddSystem, setOpenAddSystem] = useState<AddSystemDialogState | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<SolarSystemConnection | null>(null);
 
   const ref = useRef({
@@ -191,7 +198,11 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   }, [getNodes, pings]);
 
   const onAddSystem: OnMapAddSystemCallback = useCallback(({ coordinates }) => {
-    setOpenAddSystem(coordinates);
+    setOpenAddSystem({ coordinates });
+  }, []);
+
+  const handleAddLinkedSystem = useCallback((sourceSystemId: string) => {
+    setOpenAddSystem({ sourceSystemId });
   }, []);
 
   const handleSubmitAddSystem: SearchOnSubmitCallback = useCallback(
@@ -204,9 +215,22 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
         return;
       }
 
+      if (!openAddSystem) return;
+
+      if (openAddSystem.sourceSystemId) {
+        await outCommand({
+          type: OutCommand.manualAddLinkedSystem,
+          data: {
+            source_system_id: openAddSystem.sourceSystemId,
+            solar_system_id: item.value,
+          },
+        });
+        return;
+      }
+
       await outCommand({
         type: OutCommand.manualAddSystem,
-        data: { coordinates: openAddSystem, solar_system_id: item.value },
+        data: { coordinates: openAddSystem.coordinates, solar_system_id: item.value },
       });
     },
     [openAddSystem, outCommand],
@@ -242,13 +266,18 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
 
       setOpenPing({ type, solar_system_id });
     },
-    [],
+    [outCommand],
   );
 
   const handleCustomLabelDialog = useCallback(() => {
     const { systemContextProps } = ref.current;
     systemContextProps.systemId && setOpenCustomLabel(systemContextProps.systemId);
   }, []);
+
+  const excludedAddSystemIds = useMemo(() => {
+    if (!openAddSystem?.sourceSystemId) return NO_EXCLUDED_SYSTEMS;
+    return systems.map(system => parseInt(system.id));
+  }, [openAddSystem?.sourceSystemId, systems]);
 
   useHotkey(false, ['Delete'], (event: KeyboardEvent) => {
     const targetWindow = (event.target as HTMLHtmlElement)?.closest(`[data-window-id="${MAP_ROOT_ID}"]`);
@@ -269,7 +298,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     }
 
     outCommand({ type: OutCommand.loadSignatures, data: {} });
-  }, [isShowUnsplashedSignatures, systems]);
+  }, [isShowUnsplashedSignatures, outCommand, systems]);
 
   const { showMinimap, minimapPosition, minimapClasses } = useMemo(() => {
     const rawPlacement = minimapPlacement == null ? MiniMapPlacement.rightBottom : minimapPlacement;
@@ -334,9 +363,10 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
       )}
 
       <AddSystemDialog
-        visible={!!openAddSystem}
+        visible={openAddSystem != null}
         setVisible={() => setOpenAddSystem(null)}
         onSubmit={handleSubmitAddSystem}
+        excludedSystems={excludedAddSystemIds}
       />
 
       <Connections selectedConnection={selectedConnection} onHide={() => setSelectedConnection(null)} />
@@ -346,6 +376,8 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
         hubs={hubs}
         userHubs={userHubs}
         {...systemContextProps}
+        managedLayoutEnabled={managedLayout.enabled}
+        onAddSystem={handleAddLinkedSystem}
         onOpenSettings={handleOpenSettings}
         onJumpFrom={handleJumpFrom}
         onJumpTo={handleJumpTo}

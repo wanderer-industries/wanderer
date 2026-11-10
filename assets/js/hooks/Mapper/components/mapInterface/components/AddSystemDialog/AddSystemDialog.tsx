@@ -4,7 +4,7 @@ import { OutCommand, SearchSystemItem } from '@/hooks/Mapper/types';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dialog } from 'primereact/dialog';
 import { IconField } from 'primereact/iconfield';
-import { useCallback, useRef, useState } from 'react';
+import { FormEvent, useCallback, useRef, useState } from 'react';
 import classes from './AddSystemDialog.module.scss';
 
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
@@ -33,8 +33,7 @@ export const AddSystemDialog = ({
     data: { wormholesData },
   } = useMapRootState();
 
-  // TODO fix it
-  const inputRef = useRef<any>();
+  const inputRef = useRef<AutoComplete>(null);
   const onShow = useCallback(() => {
     inputRef.current?.focus();
   }, []);
@@ -86,19 +85,24 @@ export const AddSystemDialog = ({
   const ref = useRef({ onSubmit, selectedItem });
   ref.current = { onSubmit, selectedItem };
 
-  const handleSubmit = useCallback(() => {
-    const { onSubmit, selectedItem } = ref.current;
-    setFilteredItems([]);
-    setSelectedItem([]);
+  const handleSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    if (!selectedItem) {
+      const { onSubmit, selectedItem } = ref.current;
+      setFilteredItems([]);
+      setSelectedItem([]);
+
+      if (!selectedItem) {
+        setVisible(false);
+        return;
+      }
+
+      onSubmit?.(selectedItem[0]);
       setVisible(false);
-      return;
-    }
-
-    onSubmit?.(selectedItem[0]);
-    setVisible(false);
-  }, [setVisible]);
+    },
+    [setVisible],
+  );
 
   return (
     <Dialog
@@ -193,7 +197,6 @@ export const AddSystemDialog = ({
           <div className="flex gap-2 justify-end">
             <WdButton
               type="submit"
-              onClick={handleSubmit}
               outlined
               disabled={!selectedItem || selectedItem.length !== 1}
               size="small"

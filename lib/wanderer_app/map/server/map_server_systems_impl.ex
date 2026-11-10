@@ -81,6 +81,44 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end
   end
 
+  def add_linked_system(
+        map_id,
+        source_system_id,
+        target_system_id,
+        user_id,
+        character_id
+      ) do
+    with true <- managed_layout_addition?(map_id, []),
+         {:ok, %{visible: true}} <-
+           WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, source_system_id),
+         {:ok, _location} <-
+           WandererApp.Map.check_location(map_id, %{solar_system_id: target_system_id}),
+         {:ok, candidate} <- build_layout_candidate(map_id, target_system_id) do
+      addition = %{
+        candidate: candidate,
+        system_info: %{solar_system_id: target_system_id},
+        user_id: user_id,
+        character_id: character_id
+      }
+
+      connection = %{
+        location: %{solar_system_id: target_system_id},
+        old_location: %{solar_system_id: source_system_id},
+        character_id: character_id,
+        manual: true
+      }
+
+      WandererApp.Map.LayoutScheduler.enqueue(map_id,
+        additions: [addition],
+        jumps: [connection]
+      )
+    else
+      false -> {:error, :managed_layout_disabled}
+      {:ok, _system} -> {:error, :source_system_not_found}
+      {:error, _reason} = error -> error
+    end
+  end
+
   def paste_systems(
         map_id,
         systems,

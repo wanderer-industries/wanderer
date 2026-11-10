@@ -22,8 +22,11 @@ import clsx from 'clsx';
 import { MenuItem } from 'primereact/menuitem';
 import { MenuItemWithInfo, WdMenuItem } from '@/hooks/Mapper/components/ui-kit';
 
+const ADD_LINKED_SYSTEM_PERMISSIONS = [UserPermission.ADD_SYSTEM];
+
 export const useContextMenuSystemItems = ({
   onDeleteSystem,
+  onAddSystem,
   onLockToggle,
   onHubToggle,
   onUserHubToggle,
@@ -40,6 +43,7 @@ export const useContextMenuSystemItems = ({
   hubs,
   userHubs,
   systems,
+  managedLayoutEnabled,
 }: Omit<ContextMenuSystemProps, 'contextMenuRef'>) => {
   const getTags = useTagMenu(systems, systemId, onSystemTag);
   const getStatus = useStatusMenu(systems, systemId, onSystemStatus);
@@ -47,6 +51,7 @@ export const useContextMenuSystemItems = ({
   const getJumpMenu = useJumpMenu({ onJumpFrom, onJumpTo });
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
   const canDeleteSystem = useMapCheckPermissions([UserPermission.DELETE_SYSTEM]);
+  const canAddLinkedSystem = useMapCheckPermissions(ADD_LINKED_SYSTEM_PERMISSIONS);
   const getUserRoutes = useUserRoute({ userHubs, systemId, onUserHubToggle });
   const getLockItems = useLockMenu({ systems, systemId, onLockToggle });
 
@@ -77,6 +82,18 @@ export const useContextMenuSystemItems = ({
       return [];
     }
 
+    const addSystemItems: MenuItem[] = [];
+    if (managedLayoutEnabled && canAddLinkedSystem) {
+      addSystemItems.push(
+        {
+          label: 'Add System',
+          icon: 'pi pi-plus',
+          command: () => onAddSystem(systemId),
+        },
+        { separator: true },
+      );
+    }
+
     return [
       {
         className: classes.FastActions,
@@ -94,6 +111,7 @@ export const useContextMenuSystemItems = ({
         },
       },
       { separator: true },
+      ...addSystemItems,
       getTags(),
       getStatus(),
       ...getLabels(),
@@ -181,6 +199,9 @@ export const useContextMenuSystemItems = ({
     hubs,
     onHubToggle,
     canDeleteSystem,
+    canAddLinkedSystem,
+    managedLayoutEnabled,
+    onAddSystem,
     onDeleteSystem,
     onOpenSettings,
     onTogglePing,

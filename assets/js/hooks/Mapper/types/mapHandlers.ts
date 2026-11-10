@@ -277,6 +277,7 @@ export enum OutCommand {
   updateSystemPositions = 'update_system_positions',
   deleteSystems = 'delete_systems',
   manualAddSystem = 'manual_add_system',
+  manualAddLinkedSystem = 'manual_add_linked_system',
   manualAddConnection = 'manual_add_connection',
   manualPasteSystemsAndConnections = 'manual_paste_systems_and_connections',
   manualDeleteConnection = 'manual_delete_connection',

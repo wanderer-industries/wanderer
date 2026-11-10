@@ -138,6 +138,42 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   end
 
   def handle_ui_event(
+        "manual_add_linked_system",
+        %{
+          "source_system_id" => source_system_id,
+          "solar_system_id" => target_system_id
+        },
+        %{
+          assigns: %{
+            current_user: %{id: current_user_id},
+            has_tracked_characters?: true,
+            map_id: map_id,
+            main_character_id: main_character_id,
+            user_permissions: %{add_system: true}
+          }
+        } = socket
+      )
+      when not is_nil(main_character_id) do
+    with {:ok, source_system_id} <- parse_solar_system_id(source_system_id),
+         {:ok, target_system_id} <- parse_solar_system_id(target_system_id),
+         :ok <-
+           WandererApp.Map.Server.add_linked_system(
+             map_id,
+             source_system_id,
+             target_system_id,
+             current_user_id,
+             main_character_id
+           ) do
+      {:reply, %{success: true}, socket}
+    else
+      {:error, reason} -> {:reply, %{success: false, error: inspect(reason)}, socket}
+    end
+  end
+
+  def handle_ui_event("manual_add_linked_system", _event, socket),
+    do: {:reply, %{success: false, error: "Unauthorized"}, socket}
+
+  def handle_ui_event(
         "manual_add_system",
         %{"solar_system_id" => solar_system_id} = _event,
         %{
@@ -402,6 +438,18 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true
+
+  defp parse_solar_system_id(solar_system_id) when is_integer(solar_system_id),
+    do: {:ok, solar_system_id}
+
+  defp parse_solar_system_id(solar_system_id) when is_binary(solar_system_id) do
+    case Integer.parse(solar_system_id) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> {:error, :invalid_solar_system_id}
+    end
+  end
+
+  defp parse_solar_system_id(_solar_system_id), do: {:error, :invalid_solar_system_id}
 
   defp update_system_positions(_map_id, []), do: :ok
 

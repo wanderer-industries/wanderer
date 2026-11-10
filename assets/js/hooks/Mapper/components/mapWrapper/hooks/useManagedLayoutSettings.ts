@@ -41,7 +41,7 @@ export const useManagedLayoutSettings = (): ManagedLayoutSettings => {
       void outCommand<LayoutSettingsStatus>({ type: OutCommand.getLayoutSettings, data: null })
         .then(status => {
           if (!active) return;
-          setSettings({ enabled: status.enabled, direction: status.direction });
+          setSettings({ enabled: status.available && status.enabled, direction: status.direction });
         })
         .catch(() => {
           if (!active) return;

@@ -11,6 +11,7 @@ export interface ContextMenuSystemProps {
   systemId: string | undefined;
   systems: SolarSystemRawType[];
   onDeleteSystem(): void;
+  onAddSystem(systemId: string): void;
   onLockToggle(): void;
   onOpenSettings(): void;
   onJumpFrom(systemId: string): void;
@@ -23,6 +24,7 @@ export interface ContextMenuSystemProps {
   onCustomLabelDialog(): void;
   onTogglePing(type: PingType, solar_system_id: string, ping_id: string | undefined, hasPing: boolean): void;
   onWaypointSet: WaypointSetContextHandler;
+  managedLayoutEnabled: boolean;
 }
 
 export const ContextMenuSystem: React.FC<ContextMenuSystemProps> = ({ contextMenuRef, ...props }) => {

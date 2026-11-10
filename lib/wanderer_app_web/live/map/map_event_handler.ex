@@ -49,6 +49,7 @@ defmodule WandererAppWeb.MapEventHandler do
     "delete_systems",
     "get_system_static_infos",
     "manual_add_system",
+    "manual_add_linked_system",
     "search_systems",
     "update_system_position",
     "update_system_positions",

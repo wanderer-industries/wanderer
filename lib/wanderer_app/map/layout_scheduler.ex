@@ -293,12 +293,14 @@ defmodule WandererApp.Map.LayoutScheduler do
   defp commit_jumps(map_id, jumps) do
     Enum.each(jumps, fn jump ->
       try do
+        manual = Map.get(jump, :manual, false)
+
         ConnectionsImpl.maybe_add_connection(
           map_id,
           jump.location,
           jump.old_location,
           jump.character_id,
-          false,
+          manual,
           nil,
           schedule_layout: false
         )
