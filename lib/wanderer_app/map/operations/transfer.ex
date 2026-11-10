@@ -82,6 +82,8 @@ defmodule WandererApp.Map.Operations.Transfer do
       |> Enum.map(&import_system(map_id, &1, user_id, character_id, existing_ids))
       |> Enum.count(& &1)
 
+    restore_imported_sort_indexes(map_id, systems, existing_ids)
+
     imported_connections = import_connections(map_id, connections, user_id, character_id)
     imported_signatures = import_signatures(map_id, signatures, character_id)
 
@@ -116,7 +118,8 @@ defmodule WandererApp.Map.Operations.Transfer do
       "status" => system.status,
       "tag" => system.tag,
       "temporary_name" => system.temporary_name,
-      "locked" => system.locked
+      "locked" => system.locked,
+      "sort_index" => system.sort_index
     }
   end
 
@@ -216,6 +219,23 @@ defmodule WandererApp.Map.Operations.Transfer do
 
         value ->
           apply(Server, fun, [map_id, %{:solar_system_id => solar_system_id, attribute => value}])
+      end
+    end)
+  end
+
+  defp restore_imported_sort_indexes(map_id, systems, existing_ids) do
+    systems
+    |> Enum.filter(&is_map/1)
+    |> Enum.each(fn system ->
+      with {:ok, solar_system_id} <- parse_solar_system_id(system["solar_system_id"]),
+           false <- MapSet.member?(existing_ids, solar_system_id),
+           sort_index when is_integer(sort_index) <- system["sort_index"] do
+        Server.update_system_sort_index(map_id, %{
+          solar_system_id: solar_system_id,
+          sort_index: sort_index
+        })
+      else
+        _reason -> :ok
       end
     end)
   end

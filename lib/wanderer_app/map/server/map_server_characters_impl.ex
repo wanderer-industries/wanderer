@@ -803,6 +803,11 @@ defmodule WandererApp.Map.Server.CharactersImpl do
     if character.solar_system_id != old_solar_system_id ||
          character.structure_id != old_structure_id ||
          character.station_id != old_station_id do
+      Logger.debug(
+        "[ManagedLayoutJump] location change detected map=#{map_id} character=#{character_id} " <>
+          "from=#{inspect(old_solar_system_id)} to=#{inspect(character.solar_system_id)}"
+      )
+
       # Race condition detection
       {:ok, current_cached_timestamp} =
         WandererApp.Cache.lookup(location_timestamp_key)
@@ -940,54 +945,165 @@ defmodule WandererApp.Map.Server.CharactersImpl do
 
     case is_valid do
       true ->
-        # Connection is valid (at least one system matches scopes)
-        # Add systems that match the map's scopes - individual system filtering by maybe_add_system
-        case SystemsImpl.maybe_add_system(map_id, location, old_location, map_opts, scopes) do
-          :ok ->
-            :ok
-
-          {:error, error} ->
-            Logger.error(
-              "[CharacterTracking] Failed to add new location system #{location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
+        if managed_layout_enabled?(map_id) do
+          enqueue_managed_jump(map_id, character_id, location, old_location, scopes)
+        else
+          new_location_result =
+            SystemsImpl.maybe_add_system(
+              map_id,
+              location,
+              old_location,
+              map_opts,
+              scopes
             )
-        end
 
-        # Add old location system (in case it wasn't on map) - only if it matches scopes
-        case SystemsImpl.maybe_add_system(map_id, old_location, location, map_opts, scopes) do
-          :ok ->
-            :ok
-
-          {:error, error} ->
-            Logger.error(
-              "[CharacterTracking] Failed to add old location system #{old_location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
-            )
-        end
-
-        # Add connection if character is in space
-        if is_character_in_space?(location) do
-          case ConnectionsImpl.maybe_add_connection(
-                 map_id,
-                 location,
-                 old_location,
-                 character_id,
-                 false,
-                 nil
-               ) do
+          case new_location_result do
             :ok ->
               :ok
 
             {:error, error} ->
               Logger.error(
-                "[CharacterTracking] Failed to add connection for character #{character_id} on map #{map_id}: #{inspect(error)}"
+                "[CharacterTracking] Failed to add new location system #{location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
               )
+          end
 
+          old_location_result =
+            SystemsImpl.maybe_add_system(
+              map_id,
+              old_location,
+              location,
+              map_opts,
+              scopes
+            )
+
+          case old_location_result do
+            :ok ->
               :ok
+
+            {:error, error} ->
+              Logger.error(
+                "[CharacterTracking] Failed to add old location system #{old_location.solar_system_id} for character #{character_id} on map #{map_id}: #{inspect(error)}"
+              )
+          end
+
+          if is_character_in_space?(location) do
+            ConnectionsImpl.maybe_add_connection(
+              map_id,
+              location,
+              old_location,
+              character_id,
+              false,
+              nil
+            )
           end
         end
 
       _ ->
         :ok
     end
+  end
+
+  defp managed_layout_enabled?(map_id) do
+    WandererApp.Env.layout_service_enabled?() and
+      WandererApp.LayoutSettings.get(map_id)["enabled"] == true
+  end
+
+  defp enqueue_managed_jump(map_id, character_id, location, old_location, scopes) do
+    case WandererApp.Character.get_character(character_id) do
+      {:ok, character} ->
+        do_enqueue_managed_jump(
+          map_id,
+          character_id,
+          character.user_id,
+          location,
+          old_location,
+          scopes
+        )
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to load character #{character_id} for managed layout jump: #{inspect(reason)}"
+        )
+
+        :ok
+    end
+  end
+
+  defp do_enqueue_managed_jump(
+         map_id,
+         character_id,
+         user_id,
+         location,
+         old_location,
+         scopes
+       ) do
+    additions =
+      [
+        {location, old_location},
+        {old_location, location}
+      ]
+      |> Enum.reduce([], fn {candidate_location, adjacent_location}, additions ->
+        case SystemsImpl.prepare_location_layout_addition(
+               map_id,
+               candidate_location,
+               adjacent_location,
+               scopes,
+               user_id,
+               character_id
+             ) do
+          {:ok, addition} ->
+            [addition | additions]
+
+          :skip ->
+            additions
+
+          {:error, reason} ->
+            Logger.warning(
+              "Failed to prepare managed layout system #{candidate_location.solar_system_id}: #{inspect(reason)}"
+            )
+
+            additions
+        end
+      end)
+
+    jumps =
+      if is_character_in_space?(location) and
+           WandererApp.Map.check_connection(map_id, location, old_location) == :ok do
+        [
+          %{
+            character_id: character_id,
+            location: location,
+            old_location: old_location
+          }
+        ]
+      else
+        []
+      end
+
+    selection = %{
+      character_id: character_id,
+      solar_system_id: location.solar_system_id
+    }
+
+    if additions == [] and jumps == [] do
+      Impl.broadcast!(map_id, :maybe_select_system, selection)
+    else
+      case WandererApp.Map.LayoutScheduler.enqueue(map_id,
+             additions: additions,
+             jumps: jumps,
+             selection: selection
+           ) do
+        :ok ->
+          :ok
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to enqueue managed layout jump map=#{map_id} character=#{character_id}: #{inspect(reason)}"
+          )
+      end
+    end
+
+    :ok
   end
 
   defp is_character_in_space?(%{station_id: station_id, structure_id: structure_id} = _location),

@@ -27,6 +27,13 @@ defmodule WandererApp.LayoutSettingsTest do
       assert settings["routing"] == "orthogonal"
     end
 
+    test "accepts class and tag ordering" do
+      assert LayoutSettings.normalize(%{"orderBy" => "system-class"})["orderBy"] ==
+               "system-class"
+
+      assert LayoutSettings.normalize(%{"orderBy" => "tag"})["orderBy"] == "tag"
+    end
+
     test "replaces invalid values and clamps spacing" do
       settings =
         LayoutSettings.normalize(%{
@@ -42,6 +49,7 @@ defmodule WandererApp.LayoutSettingsTest do
       assert settings["verticalLayerSpacing"] == 1000
       assert settings["horizontalNodeSpacing"] == 0
       assert settings["horizontalLayerSpacing"] == 1000
+      refute settings["preservePreviousPositions"]
     end
   end
 

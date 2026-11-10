@@ -7,6 +7,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   alias WandererApp.Map.Server.SignaturesImpl
 
   @ddrt Application.compile_env(:wanderer_app, :ddrt)
+  @missing_sort_index 2_147_483_647
   @system_auto_expire_minutes 15
   @system_inactive_timeout :timer.minutes(15)
 
@@ -46,13 +47,34 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         } = system_info,
         user_id,
         character_id,
-        _opts
+        opts
       ) do
     map_id
     |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id})
     |> case do
       {:ok, _location} ->
-        do_add_system(map_id, system_info, user_id, character_id)
+        if managed_layout_addition?(map_id, opts) do
+          with {:ok, candidate} <- build_layout_candidate(map_id, solar_system_id) do
+            layout_opts = [
+              additions: [
+                %{
+                  candidate: candidate,
+                  system_info: system_info,
+                  user_id: user_id,
+                  character_id: character_id
+                }
+              ]
+            ]
+
+            if Keyword.get(opts, :async_layout, false) do
+              WandererApp.Map.LayoutScheduler.enqueue(map_id, layout_opts)
+            else
+              WandererApp.Map.LayoutScheduler.schedule_and_wait(map_id, layout_opts)
+            end
+          end
+        else
+          do_add_system(map_id, system_info, user_id, character_id, opts)
+        end
 
       {:error, :already_exists} ->
         :ok
@@ -66,34 +88,71 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         character_id,
         opts
       ) do
-    systems
-    |> Enum.each(fn %{
-                      "id" => solar_system_id,
-                      "position" => coordinates
-                    } = system ->
-      solar_system_id = solar_system_id |> String.to_integer()
+    if managed_layout_addition?(map_id, opts) do
+      additions =
+        systems
+        |> Enum.reduce([], fn
+          %{"id" => solar_system_id, "position" => coordinates} = system, additions ->
+            solar_system_id = String.to_integer(solar_system_id)
 
-      case map_id |> WandererApp.Map.check_location(%{solar_system_id: solar_system_id}) do
-        {:ok, _location} ->
-          if opts |> Keyword.get(:add_not_existing, true) do
-            do_add_system(
-              map_id,
-              %{solar_system_id: solar_system_id, coordinates: coordinates, extra_info: system},
-              user_id,
-              character_id
-            )
-          else
-            :ok
-          end
+            if Keyword.get(opts, :add_not_existing, true) and
+                 location_missing?(map_id, solar_system_id) do
+              case build_layout_candidate(map_id, solar_system_id) do
+                {:ok, candidate} ->
+                  [
+                    %{
+                      candidate: candidate,
+                      system_info: %{
+                        solar_system_id: solar_system_id,
+                        coordinates: coordinates,
+                        extra_info: system
+                      },
+                      user_id: user_id,
+                      character_id: character_id
+                    }
+                    | additions
+                  ]
 
-        {:error, :already_exists} ->
-          if opts |> Keyword.get(:update_existing, false) do
-            :ok
-          else
-            :ok
-          end
+                {:error, _reason} ->
+                  additions
+              end
+            else
+              additions
+            end
+
+          _system, additions ->
+            additions
+        end)
+
+      if additions == [] do
+        :ok
+      else
+        WandererApp.Map.LayoutScheduler.schedule_and_wait(map_id, additions: additions)
       end
-    end)
+    else
+      Enum.each(systems, fn
+        %{"id" => solar_system_id, "position" => coordinates} = system ->
+          solar_system_id = String.to_integer(solar_system_id)
+
+          if Keyword.get(opts, :add_not_existing, true) and
+               location_missing?(map_id, solar_system_id) do
+            add_system(
+              map_id,
+              %{
+                solar_system_id: solar_system_id,
+                coordinates: coordinates,
+                extra_info: system
+              },
+              user_id,
+              character_id,
+              opts
+            )
+          end
+
+        _system ->
+          :ok
+      end)
+    end
   end
 
   def add_system_comment(
@@ -206,6 +265,11 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       |> Enum.map(& &1.solar_system_id)
 
     if expired_systems |> Enum.empty?() |> Kernel.not() do
+      Logger.info(
+        "[ManagedLayoutCleanup] removing expired systems map=#{map_id} " <>
+          "systems=#{inspect(expired_systems)}"
+      )
+
       delete_systems(map_id, expired_systems, nil, nil)
     end
   end
@@ -248,9 +312,60 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
   def update_system_locked(
         map_id,
-        update
-      ),
-      do: update_system(map_id, :update_locked, [:locked], update)
+        %{locked: locked} = update
+      ) do
+    sort_index = if locked, do: normalize_locked_sort_indices(map_id), else: nil
+
+    result =
+      update_system(
+        map_id,
+        :update_locked,
+        [:locked, :sort_index],
+        Map.put(update, :sort_index, sort_index)
+      )
+
+    WandererApp.Map.LayoutScheduler.schedule(map_id)
+    result
+  end
+
+  def update_system_sort_index(map_id, update),
+    do: update_system(map_id, :update_sort_index, [:sort_index], update)
+
+  def move_locked_system(map_id, solar_system_id, offset) when offset in [-1, 1] do
+    moved? =
+      with {:ok, systems} <- WandererApp.MapSystemRepo.get_visible_by_map(map_id),
+           locked_systems =
+             systems |> Enum.filter(& &1.locked) |> Enum.sort_by(&locked_sort_key/1),
+           current_index when is_integer(current_index) <-
+             Enum.find_index(locked_systems, &(&1.solar_system_id == solar_system_id)),
+           target_index = current_index + offset,
+           true <- target_index >= 0 and target_index < length(locked_systems) do
+        locked_systems
+        |> List.replace_at(current_index, Enum.at(locked_systems, target_index))
+        |> List.replace_at(target_index, Enum.at(locked_systems, current_index))
+        |> Enum.with_index()
+        |> Enum.each(fn {system, sort_index} ->
+          if system.sort_index != sort_index do
+            update_system(map_id, :update_sort_index, [:sort_index], %{
+              solar_system_id: system.solar_system_id,
+              sort_index: sort_index
+            })
+          end
+        end)
+
+        true
+      else
+        _reason -> false
+      end
+
+    if moved? do
+      WandererApp.Map.LayoutScheduler.schedule(map_id)
+    end
+
+    :ok
+  end
+
+  def move_locked_system(_map_id, _solar_system_id, _offset), do: :ok
 
   def update_system_labels(
         map_id,
@@ -543,62 +658,221 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end)
   end
 
-  def maybe_add_system(map_id, location, old_location, map_opts, scopes \\ nil)
+  def maybe_add_system(map_id, location, old_location, map_opts, scopes \\ nil, opts \\ [])
 
-  def maybe_add_system(map_id, location, old_location, map_opts, scopes)
+  def maybe_add_system(map_id, location, old_location, map_opts, scopes, opts)
       when not is_nil(location) do
-    alias WandererApp.Map.Server.ConnectionsImpl
-
-    # Check if the system matches the map's configured scopes before adding
-    should_add =
-      case scopes do
-        nil ->
-          true
-
-        [] ->
-          true
-
-        scopes when is_list(scopes) ->
-          # First check: does the location directly match scopes?
-          if ConnectionsImpl.can_add_location(scopes, location.solar_system_id) do
-            true
-          else
-            # Second check: wormhole border behavior
-            # If :wormholes scope is enabled AND old_location is a wormhole,
-            # allow this system to be added as a border system (so you can see
-            # where your wormhole exits to)
-            wormhole_border_from_wh_space =
-              :wormholes in scopes and
-                not is_nil(old_location) and
-                ConnectionsImpl.can_add_location([:wormholes], old_location.solar_system_id)
-
-            # Third check: k-space wormhole connection
-            # If :wormholes scope is enabled AND there's no stargate between the systems,
-            # this is a wormhole connection through k-space - add both systems
-            kspace_wormhole_connection =
-              :wormholes in scopes and
-                not is_nil(old_location) and
-                not is_nil(old_location.solar_system_id) and
-                ConnectionsImpl.is_kspace_wormhole_connection?(
-                  old_location.solar_system_id,
-                  location.solar_system_id
-                )
-
-            wormhole_border_from_wh_space or kspace_wormhole_connection
-          end
-      end
-
-    if should_add do
-      do_add_system_from_location(map_id, location, old_location, map_opts)
+    if should_add_location?(location, old_location, scopes) do
+      do_add_system_from_location(map_id, location, old_location, map_opts, opts)
     else
       # System filtered out by scope settings - this is expected behavior
       :ok
     end
   end
 
-  def maybe_add_system(_map_id, _location, _old_location, _map_opts, _scopes), do: :ok
+  def maybe_add_system(_map_id, _location, _old_location, _map_opts, _scopes, _opts), do: :ok
 
-  defp do_add_system_from_location(map_id, location, old_location, map_opts) do
+  def publish_added_system(map_id, system, opts \\ []) do
+    unless Keyword.get(opts, :defer_broadcast, false) do
+      Impl.broadcast!(map_id, :add_system, system,
+        schedule_layout: Keyword.get(opts, :schedule_layout, true)
+      )
+
+      WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+        solar_system_id: system.solar_system_id,
+        name: system.name,
+        position_x: system.position_x,
+        position_y: system.position_y
+      })
+    end
+
+    :ok
+  end
+
+  def commit_layout_additions(map_id, additions, positions) do
+    Enum.reduce_while(additions, :ok, fn addition, :ok ->
+      solar_system_id = addition.candidate.solar_system_id
+
+      case Map.fetch(positions, solar_system_id) do
+        {:ok, %{x: x, y: y}} ->
+          system_info = Map.put(addition.system_info, :coordinates, %{"x" => x, "y" => y})
+
+          case add_system(
+                 map_id,
+                 system_info,
+                 addition.user_id,
+                 addition.character_id,
+                 layout_commit: true,
+                 defer_broadcast: true
+               ) do
+            :ok -> {:cont, :ok}
+            {:error, _reason} = error -> {:halt, error}
+          end
+
+        :error ->
+          {:halt, {:error, {:missing_layout_position, solar_system_id}}}
+      end
+    end)
+  end
+
+  def commit_unmanaged_layout_additions(map_id, additions) do
+    Enum.reduce_while(additions, :ok, fn addition, :ok ->
+      case add_system(
+             map_id,
+             addition.system_info,
+             addition.user_id,
+             addition.character_id,
+             layout_commit: true,
+             defer_broadcast: true
+           ) do
+        :ok -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  def prepare_location_layout_addition(
+        map_id,
+        location,
+        old_location,
+        scopes,
+        user_id,
+        character_id
+      ) do
+    if should_add_location?(location, old_location, scopes) and
+         WandererApp.Map.check_location(map_id, location) == {:ok, location} do
+      with {:ok, candidate} <- build_layout_candidate(map_id, location.solar_system_id) do
+        {:ok,
+         %{
+           candidate: candidate,
+           system_info: %{solar_system_id: location.solar_system_id},
+           user_id: user_id,
+           character_id: character_id
+         }}
+      end
+    else
+      :skip
+    end
+  end
+
+  defp build_layout_candidate(map_id, solar_system_id) do
+    case WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(map_id, solar_system_id) do
+      {:ok, existing_system} when not is_nil(existing_system) ->
+        {:ok,
+         existing_system
+         |> Map.put(:visible, true)
+         |> Map.put(:position_x, nil)
+         |> Map.put(:position_y, nil)}
+
+      _ ->
+        case WandererApp.CachedInfo.get_system_static_info(solar_system_id) do
+          {:ok, solar_system_info} ->
+            {:ok,
+             %{
+               solar_system_id: solar_system_id,
+               name: solar_system_info.solar_system_name,
+               status: 0,
+               visible: true,
+               position_x: nil,
+               position_y: nil,
+               locked: false,
+               sort_index: nil,
+               inserted_at: DateTime.utc_now()
+             }}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  defp managed_layout_addition?(map_id, opts) do
+    not Keyword.get(opts, :layout_commit, false) and
+      WandererApp.Env.layout_service_enabled?() and
+      WandererApp.LayoutSettings.get(map_id)["enabled"] == true
+  end
+
+  defp normalize_locked_sort_indices(map_id) do
+    case WandererApp.MapSystemRepo.get_visible_by_map(map_id) do
+      {:ok, systems} ->
+        locked_systems = systems |> Enum.filter(& &1.locked) |> Enum.sort_by(&locked_sort_key/1)
+
+        locked_systems
+        |> Enum.with_index()
+        |> Enum.each(fn {system, sort_index} ->
+          if system.sort_index != sort_index do
+            update_system(map_id, :update_sort_index, [:sort_index], %{
+              solar_system_id: system.solar_system_id,
+              sort_index: sort_index
+            })
+          end
+        end)
+
+        length(locked_systems)
+
+      _ ->
+        0
+    end
+  end
+
+  defp locked_sort_key(system) do
+    sort_index =
+      if is_integer(system.sort_index), do: system.sort_index, else: @missing_sort_index
+
+    {sort_index, inserted_at_sort_key(system), system.solar_system_id}
+  end
+
+  defp inserted_at_sort_key(%{inserted_at: %DateTime{} = inserted_at}),
+    do: DateTime.to_unix(inserted_at, :microsecond)
+
+  defp inserted_at_sort_key(%{inserted_at: %NaiveDateTime{} = inserted_at}),
+    do: inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(:microsecond)
+
+  defp inserted_at_sort_key(_system), do: 0
+
+  defp location_missing?(map_id, solar_system_id) do
+    case WandererApp.Map.check_location(map_id, %{solar_system_id: solar_system_id}) do
+      {:ok, _location} -> true
+      {:error, :already_exists} -> false
+    end
+  end
+
+  defp should_add_location?(nil, _old_location, _scopes), do: false
+
+  defp should_add_location?(location, old_location, scopes) do
+    alias WandererApp.Map.Server.ConnectionsImpl
+
+    case scopes do
+      nil ->
+        true
+
+      [] ->
+        true
+
+      scopes when is_list(scopes) ->
+        if ConnectionsImpl.can_add_location(scopes, location.solar_system_id) do
+          true
+        else
+          wormhole_border_from_wh_space =
+            :wormholes in scopes and
+              not is_nil(old_location) and
+              ConnectionsImpl.can_add_location([:wormholes], old_location.solar_system_id)
+
+          kspace_wormhole_connection =
+            :wormholes in scopes and
+              not is_nil(old_location) and
+              not is_nil(old_location.solar_system_id) and
+              ConnectionsImpl.is_kspace_wormhole_connection?(
+                old_location.solar_system_id,
+                location.solar_system_id
+              )
+
+          wormhole_border_from_wh_space or kspace_wormhole_connection
+        end
+    end
+  end
+
+  defp do_add_system_from_location(map_id, location, old_location, map_opts, opts) do
     :telemetry.execute(
       [:wanderer_app, :map, :system_addition, :start],
       %{system_time: System.system_time()},
@@ -649,15 +923,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
             WandererApp.Map.add_system(map_id, updated_system)
 
-            Impl.broadcast!(map_id, :add_system, updated_system)
-
-            # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-            WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-              solar_system_id: updated_system.solar_system_id,
-              name: updated_system.name,
-              position_x: updated_system.position_x,
-              position_y: updated_system.position_y
-            })
+            publish_added_system(map_id, updated_system, opts)
 
             :telemetry.execute(
               [:wanderer_app, :map, :system_addition, :complete],
@@ -702,15 +968,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                     )
 
                     WandererApp.Map.add_system(map_id, system)
-                    Impl.broadcast!(map_id, :add_system, system)
-
-                    # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-                    WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-                      solar_system_id: system.solar_system_id,
-                      name: system.name,
-                      position_x: system.position_x,
-                      position_y: system.position_y
-                    })
+                    publish_added_system(map_id, system, opts)
 
                     :telemetry.execute(
                       [:wanderer_app, :map, :system_addition, :complete],
@@ -812,7 +1070,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
            solar_system_id: solar_system_id
          } = system_info,
          user_id,
-         character_id
+         character_id,
+         opts
        ) do
     # Verify the map exists in the database before attempting to create a system
     # This prevents foreign key constraint errors when tests roll back transactions
@@ -909,18 +1168,20 @@ defmodule WandererApp.Map.Server.SystemsImpl do
             ttl: @system_inactive_timeout
           )
 
-          Impl.broadcast!(map_id, :add_system, system)
+          unless Keyword.get(opts, :defer_broadcast, false) do
+            Impl.broadcast!(map_id, :add_system, system)
 
-          # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
-          Logger.debug(fn ->
-            "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
-          end)
+            # ADDITIVE: Also broadcast to external event system (webhooks/WebSocket)
+            Logger.debug(fn ->
+              "SystemsImpl.do_add_system calling ExternalEvents.broadcast for map #{map_id}, system: #{solar_system_id}"
+            end)
 
-          WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
-            solar_system_id: system.solar_system_id,
-            position_x: system.position_x,
-            position_y: system.position_y
-          })
+            WandererApp.ExternalEvents.broadcast(map_id, :add_system, %{
+              solar_system_id: system.solar_system_id,
+              position_x: system.position_x,
+              position_y: system.position_y
+            })
+          end
 
           track_add_system(map_id, user_id, character_id, system.solar_system_id)
 
@@ -1144,6 +1405,7 @@ defmodule WandererApp.Map.Server.SystemsImpl do
       description: updated_system.description,
       status: updated_system.status,
       locked: updated_system.locked,
+      sort_index: updated_system.sort_index,
       position_x: updated_system.position_x,
       position_y: updated_system.position_y
     })

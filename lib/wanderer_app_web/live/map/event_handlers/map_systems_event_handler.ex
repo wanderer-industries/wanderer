@@ -130,7 +130,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         coordinates: coordinates
       },
       current_user_id,
-      main_character_id
+      main_character_id,
+      async_layout: true
     )
 
     {:noreply, socket}
@@ -157,7 +158,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         solar_system_id: solar_system_id
       },
       current_user_id,
-      main_character_id
+      main_character_id,
+      async_layout: true
     )
 
     {:noreply, socket}
@@ -213,6 +215,26 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
       when not is_nil(main_character_id) do
     map_id
     |> update_system_position(position)
+
+    {:noreply, socket}
+  end
+
+  def handle_ui_event(
+        "move_locked_system",
+        %{"system_id" => solar_system_id, "offset" => offset},
+        %{
+          assigns: %{
+            map_id: map_id,
+            user_permissions: %{lock_system: true}
+          }
+        } = socket
+      )
+      when offset in [-1, 1] do
+    WandererApp.Map.Server.move_locked_system(
+      map_id,
+      String.to_integer("#{solar_system_id}"),
+      offset
+    )
 
     {:noreply, socket}
   end

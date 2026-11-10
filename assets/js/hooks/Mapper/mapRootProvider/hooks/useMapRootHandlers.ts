@@ -111,6 +111,8 @@ export const useMapRootHandlers = (ref: ForwardedRef<MapHandlers>) => {
           case Commands.mapUpdated: // USED
             mapUpdated(data as CommandMapUpdated);
             break;
+          case Commands.layoutSettingsUpdated:
+            break;
           case Commands.routes:
             mapRoutes(data as CommandRoutes);
             break;

@@ -6,26 +6,26 @@ defmodule WandererAppWeb.MapsLive do
   require Logger
 
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
-  @layout_engine_options [{"ELK Layered", "elk"}, {"Dagre", "dagre"}]
   @layout_direction_options [
-    {"Top to Bottom", "TB"},
-    {"Bottom to Top", "BT"},
     {"Left to Right", "LR"},
-    {"Right to Left", "RL"}
+    {"Top to Bottom", "TB"}
   ]
   @layout_order_by_options [
     {"Added time", "added-at"},
     {"Name", "name"},
-    {"ID", "id"},
-    {"Previous order", "previous-order"}
+    {"System class", "system-class"},
+    {"Tag", "tag"}
   ]
-  @layout_order_direction_options [{"Ascending", "asc"}, {"Descending", "desc"}]
-  @layout_order_policy_options [
-    {"Strict", "strict"},
-    {"Prefer order", "prefer"},
-    {"Crossings first", "crossings-first"}
-  ]
-  @layout_group_options [{"None", "none"}, {"Compound", "compound"}]
+  @layout_direction_values Enum.map(@layout_direction_options, &elem(&1, 1))
+  @layout_order_by_values Enum.map(@layout_order_by_options, &elem(&1, 1))
+  @layout_ui_fixed_settings %{
+    "engine" => "elk",
+    "groups" => "none",
+    "locale" => "en",
+    "orderDirection" => "asc",
+    "orderPolicy" => "prefer",
+    "preservePreviousPositions" => false
+  }
 
   @impl true
   def mount(
@@ -180,7 +180,9 @@ defmodule WandererAppWeb.MapsLive do
           |> WandererApp.Map.Server.get_export_settings()
 
         {:ok, options_form_data} = WandererApp.MapRepo.options_to_form_data(map)
-        layout_settings = WandererApp.LayoutSettings.get(map.id)
+
+        layout_settings =
+          map.id |> WandererApp.LayoutSettings.get() |> normalize_layout_form_settings()
 
         socket
         |> assign(:active_page, :maps)
@@ -203,12 +205,8 @@ defmodule WandererAppWeb.MapsLive do
           layout_settings: layout_settings,
           layout_settings_form: to_form(layout_settings, as: :layout),
           layout_service_available?: WandererApp.Env.layout_service_enabled?(),
-          layout_engine_options: @layout_engine_options,
           layout_direction_options: @layout_direction_options,
           layout_order_by_options: @layout_order_by_options,
-          layout_order_direction_options: @layout_order_direction_options,
-          layout_order_policy_options: @layout_order_policy_options,
-          layout_group_options: @layout_group_options,
           layout_options: [
             {"Left To Right", "left_to_right"},
             {"Top To Bottom", "top_to_bottom"}
@@ -623,7 +621,7 @@ defmodule WandererAppWeb.MapsLive do
         %{"layout" => layout_settings},
         socket
       ) do
-    normalized_settings = WandererApp.LayoutSettings.normalize(layout_settings)
+    normalized_settings = normalize_layout_form_settings(layout_settings)
 
     {:noreply, assign(socket, :layout_settings_form, to_form(normalized_settings, as: :layout))}
   end
@@ -633,15 +631,31 @@ defmodule WandererAppWeb.MapsLive do
         %{"layout" => layout_settings},
         %{assigns: %{map_id: map_id, current_user: current_user}} = socket
       ) do
-    case WandererApp.LayoutSettings.save(map_id, layout_settings, current_user) do
+    normalized_settings = normalize_layout_form_settings(layout_settings)
+
+    case WandererApp.LayoutSettings.save(map_id, normalized_settings, current_user) do
       {:ok, _settings} ->
         normalized_settings = WandererApp.LayoutSettings.get(map_id)
 
-        {:noreply,
-         socket
-         |> assign(:layout_settings, normalized_settings)
-         |> assign(:layout_settings_form, to_form(normalized_settings, as: :layout))
-         |> put_flash(:info, "Auto layout settings saved")}
+        case WandererApp.Map.LayoutScheduler.schedule_and_wait(map_id, []) do
+          :ok ->
+            WandererApp.Map.Server.Impl.broadcast!(map_id, :layout_settings_updated, %{})
+
+            {:noreply,
+             socket
+             |> assign(:layout_settings, normalized_settings)
+             |> assign(:layout_settings_form, to_form(normalized_settings, as: :layout))
+             |> put_flash(:info, "Auto layout settings saved and applied")}
+
+          {:error, reason} ->
+            Logger.error("Unable to apply saved auto layout settings: #{inspect(reason)}")
+
+            {:noreply,
+             socket
+             |> assign(:layout_settings, normalized_settings)
+             |> assign(:layout_settings_form, to_form(normalized_settings, as: :layout))
+             |> put_flash(:error, "Auto layout settings were saved but could not be applied")}
+        end
 
       {:error, reason} ->
         Logger.error("Unable to save auto layout settings: #{inspect(reason)}")
@@ -652,13 +666,13 @@ defmodule WandererAppWeb.MapsLive do
   def handle_event(
         "run_auto_layout",
         _params,
-        %{assigns: %{map: map, map_id: map_id}} = socket
+        %{assigns: %{map_id: map_id}} = socket
       ) do
     settings = WandererApp.LayoutSettings.get(map_id)
 
     with true <- WandererApp.Env.layout_service_enabled?(),
          %{"enabled" => true} <- settings,
-         {:ok, _result} <- WandererApp.Map.Layout.run(map, settings) do
+         :ok <- WandererApp.Map.LayoutScheduler.schedule_and_wait(map_id, []) do
       {:noreply, put_flash(socket, :info, "Map layout applied")}
     else
       false ->
@@ -959,5 +973,21 @@ defmodule WandererAppWeb.MapsLive do
       scope when is_atom(scope) -> Atom.to_string(scope)
       scope when is_binary(scope) -> scope
     end)
+  end
+
+  defp normalize_layout_form_settings(layout_settings) do
+    layout_settings
+    |> Map.merge(@layout_ui_fixed_settings)
+    |> WandererApp.LayoutSettings.normalize()
+    |> normalize_layout_form_choice("direction", @layout_direction_values, "TB")
+    |> normalize_layout_form_choice("orderBy", @layout_order_by_values, "added-at")
+  end
+
+  defp normalize_layout_form_choice(settings, key, allowed_values, fallback) do
+    if Map.get(settings, key) in allowed_values do
+      settings
+    else
+      Map.put(settings, key, fallback)
+    end
   end
 end

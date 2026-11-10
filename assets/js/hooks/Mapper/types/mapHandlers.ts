@@ -22,6 +22,7 @@ export enum Commands {
   presentCharacters = 'present_characters',
   updateConnection = 'update_connection',
   mapUpdated = 'map_updated',
+  layoutSettingsUpdated = 'layout_settings_updated',
   killsUpdated = 'kills_updated',
   detailedKillsUpdated = 'detailed_kills_updated',
   routes = 'routes',
@@ -61,6 +62,7 @@ export type Command =
   | Commands.presentCharacters
   | Commands.updateConnection
   | Commands.mapUpdated
+  | Commands.layoutSettingsUpdated
   | Commands.killsUpdated
   | Commands.detailedKillsUpdated
   | Commands.routes
@@ -126,6 +128,7 @@ export type CommandPresentCharacters = string[];
 export type CommandUpdateConnection = SolarSystemConnection;
 export type CommandSignaturesUpdated = string;
 export type CommandMapUpdated = Partial<CommandInit>;
+export type CommandLayoutSettingsUpdated = Record<string, never>;
 export type CommandRoutes = RoutesList;
 export type CommandUserRoutes = RoutesList;
 export type CommandRoutesListBy = RoutesList;
@@ -209,6 +212,7 @@ export interface CommandData {
   [Commands.presentCharacters]: CommandPresentCharacters;
   [Commands.updateConnection]: CommandUpdateConnection;
   [Commands.mapUpdated]: CommandMapUpdated;
+  [Commands.layoutSettingsUpdated]: CommandLayoutSettingsUpdated;
   [Commands.routes]: CommandRoutes;
   [Commands.userRoutes]: CommandUserRoutes;
   [Commands.routesListBy]: CommandRoutesListBy;
@@ -266,6 +270,7 @@ export enum OutCommand {
   updateSystemDescription = 'update_system_description',
   updateSystemLabels = 'update_system_labels',
   updateSystemLocked = 'update_system_locked',
+  moveLockedSystem = 'move_locked_system',
   updateSystemStatus = 'update_system_status',
   updateSystemTag = 'update_system_tag',
   updateSystemPosition = 'update_system_position',

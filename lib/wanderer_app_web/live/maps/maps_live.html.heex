@@ -562,13 +562,6 @@
                   />
                   <.input
                     type="select"
-                    field={f[:engine]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Engine"
-                    options={@layout_engine_options}
-                  />
-                  <.input
-                    type="select"
                     field={f[:direction]}
                     class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
                     label="Direction"
@@ -581,30 +574,8 @@
                     label="Order by"
                     options={@layout_order_by_options}
                   />
-                  <.input
-                    type="select"
-                    field={f[:orderDirection]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Order direction"
-                    options={@layout_order_direction_options}
-                  />
-                  <.input
-                    type="select"
-                    field={f[:orderPolicy]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Ordering policy"
-                    options={@layout_order_policy_options}
-                  />
-                  <.input
-                    type="select"
-                    field={f[:groups]}
-                    class="select h-8 min-h-[10px] !pt-1 !pb-1 text-sm bg-neutral-900"
-                    label="Groups"
-                    options={@layout_group_options}
-                  />
-
                   <div class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Vertical spacing (TB/BT)
+                    Vertical spacing (TB)
                   </div>
                   <div class="grid grid-cols-3 gap-3">
                     <.input
@@ -631,7 +602,7 @@
                   </div>
 
                   <div class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Horizontal spacing (LR/RL)
+                    Horizontal spacing (LR)
                   </div>
                   <div class="grid grid-cols-3 gap-3">
                     <.input
@@ -657,23 +628,9 @@
                     />
                   </div>
 
-                  <.input type="text" field={f[:locale]} label="Locale" />
-                  <.input
-                    type="checkbox"
-                    field={f[:preservePreviousPositions]}
-                    label="Prefer previous positions"
-                  />
-
                   <div class="mt-4 flex gap-3 border-t border-neutral-700 pt-4">
                     <.button type="submit" disabled={not @layout_service_available?}>
                       <.icon name="hero-check-solid" class="w-4 h-4" /> Save
-                    </.button>
-                    <.button
-                      type="button"
-                      phx-click="run_auto_layout"
-                      disabled={not @layout_service_available? or not @layout_settings["enabled"]}
-                    >
-                      <.icon name="hero-squares-2x2-solid" class="w-4 h-4" /> Run layout
                     </.button>
                   </div>
                 </.form>

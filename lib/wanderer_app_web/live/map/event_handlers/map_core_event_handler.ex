@@ -147,6 +147,9 @@ defmodule WandererAppWeb.MapCoreEventHandler do
         map_diff
       )
 
+  def handle_server_event(%{event: :layout_settings_updated}, socket),
+    do: MapEventHandler.push_map_event(socket, "layout_settings_updated", %{})
+
   def handle_server_event(
         %{event: "presence_diff"},
         socket
@@ -364,8 +367,8 @@ defmodule WandererAppWeb.MapCoreEventHandler do
 
     with true <- WandererApp.Env.layout_service_enabled?(),
          %{"enabled" => true} <- settings,
-         {:ok, result} <- WandererApp.Map.Layout.run(map_id, settings) do
-      {:reply, %{success: true, result: result}, socket}
+         :ok <- WandererApp.Map.LayoutScheduler.schedule_and_wait(map_id, []) do
+      {:reply, %{success: true}, socket}
     else
       false -> {:reply, %{success: false, error: "Layout service is disabled"}, socket}
       %{} -> {:reply, %{success: false, error: "Auto layout is disabled for this map"}, socket}

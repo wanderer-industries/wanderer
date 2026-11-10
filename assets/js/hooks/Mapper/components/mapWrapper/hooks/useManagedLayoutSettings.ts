@@ -1,6 +1,7 @@
 import { ManagedLayoutDirection } from '@/hooks/Mapper/components/map/map.types.ts';
+import { useMapEventListener } from '@/hooks/Mapper/events';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
+import { Commands, OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 import { useEffect, useState } from 'react';
 
 const LAYOUT_SETTINGS_RETRY_DELAY_MS = 500;
@@ -23,12 +24,14 @@ const INITIAL_SETTINGS: ManagedLayoutSettings = {
 };
 
 export const useManagedLayoutSettings = (): ManagedLayoutSettings => {
-  const {
-    outCommand,
-    data: { systems },
-  } = useMapRootState();
+  const { outCommand } = useMapRootState();
   const [settings, setSettings] = useState<ManagedLayoutSettings>(INITIAL_SETTINGS);
-  const systemsPositionKey = systems.map(system => `${system.id}:${system.position.x}:${system.position.y}`).join('|');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useMapEventListener(event => {
+    if (event.name !== Commands.layoutSettingsUpdated && event.name !== Commands.init) return;
+    setRefreshKey(current => current + 1);
+  });
 
   useEffect(() => {
     let active = true;
@@ -58,7 +61,7 @@ export const useManagedLayoutSettings = (): ManagedLayoutSettings => {
       active = false;
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [outCommand, systemsPositionKey]);
+  }, [outCommand, refreshKey]);
 
   return settings;
 };

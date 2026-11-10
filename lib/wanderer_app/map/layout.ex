@@ -6,20 +6,57 @@ defmodule WandererApp.Map.Layout do
   @edge_routing "orthogonal"
   @position_update_concurrency 8
   @position_update_timeout_ms 10_000
+  @home_status 8
+  @missing_sort_index 2_147_483_647
+  @missing_system_class 2_147_483_647
+  @system_class_order [7, 8, 9, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18, 25]
+  @system_class_order_index @system_class_order |> Enum.with_index() |> Map.new()
 
-  def run(map_id, settings) when is_binary(map_id), do: run_layout(map_id, settings)
+  def run(map_or_id, settings, opts \\ [])
 
-  def run(%{id: map_id}, settings), do: run_layout(map_id, settings)
+  def run(map_id, settings, opts) when is_binary(map_id), do: run_layout(map_id, settings, opts)
 
-  defp run_layout(map_id, settings) do
-    with {:ok, systems} <- WandererApp.MapSystemRepo.get_visible_by_map(map_id),
-         {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id),
-         request = build_request(systems, connections, settings),
-         {:ok, result} <- WandererApp.LayoutServiceClient.layout(request),
-         :ok <- apply_positions(map_id, Map.get(result, "nodes", [])) do
-      {:ok, result}
+  def run(%{id: map_id}, settings, opts), do: run_layout(map_id, settings, opts)
+
+  defp run_layout(map_id, settings, opts) do
+    with {:ok, plan} <- calculate(map_id, settings, opts),
+         :ok <- apply_positions(map_id, plan.nodes) do
+      {:ok, plan.result}
     end
   end
+
+  def calculate(map_id, settings, opts \\ []) do
+    with {:ok, systems} <- WandererApp.MapSystemRepo.get_visible_by_map(map_id),
+         {:ok, connections} <- WandererApp.MapConnectionRepo.get_by_map(map_id),
+         {:ok, plan} <- calculate_graph(systems, connections, settings, opts) do
+      {:ok, plan}
+    end
+  end
+
+  def calculate_graph(systems, connections, settings, opts \\ []) do
+    with request = build_request(systems, connections, settings, opts),
+         {:ok, result} <- WandererApp.LayoutServiceClient.layout(request),
+         {:ok, nodes} <- validate_result_nodes(result, systems),
+         nodes = repack_root_components(nodes, request, systems, settings) do
+      {:ok, %{result: Map.put(result, "nodes", nodes), nodes: nodes, systems: systems}}
+    end
+  end
+
+  @doc false
+  def validate_result_nodes(%{"nodes" => nodes}, systems) when is_list(nodes) do
+    expected_ids = MapSet.new(systems, & &1.solar_system_id)
+
+    with {:ok, positions} <- parse_result_positions(nodes),
+         actual_ids = MapSet.new(positions, & &1.solar_system_id),
+         true <- actual_ids == expected_ids do
+      {:ok, nodes}
+    else
+      false -> {:error, :incomplete_layout_result}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def validate_result_nodes(_result, _systems), do: {:error, :invalid_layout_result}
 
   def apply_positions(map_id, nodes) do
     results =
@@ -41,8 +78,9 @@ defmodule WandererApp.Map.Layout do
   end
 
   @doc false
-  def build_request(systems, connections, settings) do
+  def build_request(systems, connections, settings, opts \\ []) do
     system_ids = MapSet.new(systems, & &1.solar_system_id)
+    new_system_ids = Keyword.get(opts, :new_system_ids, MapSet.new())
 
     connections =
       Enum.filter(connections, fn connection ->
@@ -55,7 +93,7 @@ defmodule WandererApp.Map.Layout do
     spacing = layout_spacing(settings)
 
     %{
-      nodes: Enum.map(systems, &build_node(&1, ranks, layout_names)),
+      nodes: Enum.map(systems, &build_node(&1, ranks, layout_names, new_system_ids)),
       edges: Enum.map(oriented_connections, &build_edge/1),
       options: %{
         engine: settings["engine"],
@@ -97,7 +135,7 @@ defmodule WandererApp.Map.Layout do
     }
   end
 
-  defp build_node(system, ranks, layout_names) do
+  defp build_node(system, ranks, layout_names, new_system_ids) do
     id = to_string(system.solar_system_id)
 
     node = %{
@@ -105,12 +143,18 @@ defmodule WandererApp.Map.Layout do
       name: Map.fetch!(layout_names, system.solar_system_id),
       width: @node_width,
       height: @node_height,
-      previousPosition: %{
-        x: system.position_x || 0,
-        y: system.position_y || 0
-      },
       pinned: false
     }
+
+    node =
+      if MapSet.member?(new_system_ids, system.solar_system_id) do
+        node
+      else
+        Map.put(node, :previousPosition, %{
+          x: system.position_x || 0,
+          y: system.position_y || 0
+        })
+      end
 
     case Map.fetch(ranks, system.solar_system_id) do
       {:ok, rank} -> Map.put(node, :rank, rank)
@@ -178,6 +222,20 @@ defmodule WandererApp.Map.Layout do
   defp system_sort_key(system, %{"orderBy" => "added-at"}),
     do: {inserted_at_key(system), system.solar_system_id}
 
+  defp system_sort_key(system, %{"orderBy" => "system-class"}) do
+    {
+      system_class_sort_key(system),
+      tag_sort_key(system),
+      system_name_key(system),
+      system.solar_system_id
+    }
+  end
+
+  defp system_sort_key(system, %{"orderBy" => "tag"}) do
+    {tag_sort_key(system), system_class_sort_key(system), system_name_key(system),
+     system.solar_system_id}
+  end
+
   defp system_sort_key(system, %{"orderBy" => "id"}),
     do: {system.solar_system_id}
 
@@ -189,7 +247,44 @@ defmodule WandererApp.Map.Layout do
     do: {system.position_y || 0, system.solar_system_id}
 
   defp system_sort_key(system, _settings),
-    do: {system.name |> to_string() |> String.downcase(), system.solar_system_id}
+    do: {system_name_key(system), system.solar_system_id}
+
+  defp system_class_sort_key(system) do
+    system_class = resolve_system_class(system)
+    fallback_class = if is_integer(system_class), do: system_class, else: @missing_system_class
+
+    {
+      Map.get(@system_class_order_index, system_class, @missing_system_class),
+      fallback_class
+    }
+  end
+
+  defp resolve_system_class(system) do
+    case Map.get(system, :system_class) do
+      system_class when is_integer(system_class) ->
+        system_class
+
+      _ ->
+        case WandererApp.CachedInfo.get_system_static_info(system.solar_system_id) do
+          {:ok, %{system_class: system_class}} when is_integer(system_class) -> system_class
+          _ -> nil
+        end
+    end
+  end
+
+  defp tag_sort_key(system) do
+    case Map.get(system, :tag) do
+      tag when is_binary(tag) ->
+        normalized_tag = tag |> String.trim() |> String.downcase()
+        if normalized_tag == "", do: {1, ""}, else: {0, normalized_tag}
+
+      _ ->
+        {1, ""}
+    end
+  end
+
+  defp system_name_key(system),
+    do: system.name |> to_string() |> String.downcase()
 
   defp sort_direction("desc"), do: :desc
   defp sort_direction(_direction), do: :asc
@@ -242,10 +337,10 @@ defmodule WandererApp.Map.Layout do
     roots =
       component
       |> Enum.filter(fn id ->
-        status = systems_by_id |> Map.fetch!(id) |> Map.get(:status)
-        is_integer(status) and status != 0
+        system = Map.fetch!(systems_by_id, id)
+        Map.get(system, :locked, false) or non_default_status?(system.status)
       end)
-      |> Enum.sort_by(&Map.fetch!(order_index, &1))
+      |> Enum.sort_by(&root_sort_key(&1, systems_by_id, order_index))
 
     case roots do
       [] -> [Enum.min_by(component, &Map.fetch!(order_index, &1))]
@@ -257,7 +352,137 @@ defmodule WandererApp.Map.Layout do
     component
     |> component_roots(systems_by_id, order_index)
     |> List.first()
-    |> then(&Map.fetch!(order_index, &1))
+    |> then(&root_sort_key(&1, systems_by_id, order_index))
+  end
+
+  defp root_sort_key(id, systems_by_id, order_index) do
+    system = Map.fetch!(systems_by_id, id)
+    natural_order = Map.fetch!(order_index, id)
+
+    cond do
+      Map.get(system, :locked, false) ->
+        raw_sort_index = Map.get(system, :sort_index)
+        sort_index = if is_integer(raw_sort_index), do: raw_sort_index, else: @missing_sort_index
+        {0, sort_index, natural_order, id}
+
+      system.status == @home_status ->
+        {1, 0, natural_order, id}
+
+      non_default_status?(system.status) ->
+        {2, 0, natural_order, id}
+
+      true ->
+        {3, 0, natural_order, id}
+    end
+  end
+
+  defp non_default_status?(status), do: is_integer(status) and status != 0
+
+  @doc false
+  def repack_root_components(nodes, request, systems, settings) do
+    systems_by_id = Map.new(systems, &{&1.solar_system_id, &1})
+    order_index = systems |> ordered_ids(settings) |> Enum.with_index() |> Map.new()
+    dimensions = Map.new(request.nodes, &{&1.id, {&1.width, &1.height, &1.rank}})
+    nodes_by_id = Map.new(nodes, &{&1["id"], &1})
+    component_gap = max(layout_spacing(settings).layer, layout_spacing(settings).node * 2)
+    vertical_tree? = settings["direction"] in ["TB", "BT"]
+
+    {_offset, shifted_nodes} =
+      request
+      |> request_components()
+      |> Enum.map(fn ids ->
+        bounds = component_bounds(ids, nodes_by_id, dimensions)
+
+        root_id =
+          Enum.find(ids, fn id ->
+            case Map.fetch(dimensions, id) do
+              {:ok, {_width, _height, 0}} -> true
+              _ -> false
+            end
+          end) || List.first(ids)
+
+        root_system_id = String.to_integer(root_id)
+        sort_key = root_sort_key(root_system_id, systems_by_id, order_index)
+        %{ids: ids, bounds: bounds, sort_key: sort_key}
+      end)
+      |> Enum.sort_by(& &1.sort_key)
+      |> Enum.reduce({0, %{}}, fn component, {offset, shifted_nodes} ->
+        x_shift =
+          if vertical_tree?, do: offset - component.bounds.min_x, else: -component.bounds.min_x
+
+        y_shift =
+          if vertical_tree?, do: -component.bounds.min_y, else: offset - component.bounds.min_y
+
+        shifted_nodes =
+          Enum.reduce(component.ids, shifted_nodes, fn id, result ->
+            node = Map.fetch!(nodes_by_id, id)
+            Map.put(result, id, %{node | "x" => node["x"] + x_shift, "y" => node["y"] + y_shift})
+          end)
+
+        component_size =
+          if vertical_tree?, do: component.bounds.width, else: component.bounds.height
+
+        {offset + component_size + component_gap, shifted_nodes}
+      end)
+
+    Enum.map(nodes, &Map.fetch!(shifted_nodes, &1["id"]))
+  end
+
+  defp request_components(request) do
+    adjacency = Map.new(request.nodes, &{&1.id, MapSet.new()})
+
+    adjacency =
+      Enum.reduce(request.edges, adjacency, fn edge, result ->
+        result
+        |> Map.update!(edge.source, &MapSet.put(&1, edge.target))
+        |> Map.update!(edge.target, &MapSet.put(&1, edge.source))
+      end)
+
+    {components, _visited} =
+      Enum.reduce(request.nodes, {[], MapSet.new()}, fn node, {components, visited} ->
+        if MapSet.member?(visited, node.id) do
+          {components, visited}
+        else
+          {component, visited} = collect_request_component([node.id], adjacency, visited, [])
+          {[component | components], visited}
+        end
+      end)
+
+    Enum.reverse(components)
+  end
+
+  defp collect_request_component([], _adjacency, visited, component),
+    do: {Enum.reverse(component), visited}
+
+  defp collect_request_component([id | pending], adjacency, visited, component) do
+    if MapSet.member?(visited, id) do
+      collect_request_component(pending, adjacency, visited, component)
+    else
+      neighbours = adjacency |> Map.fetch!(id) |> MapSet.to_list()
+
+      collect_request_component(
+        neighbours ++ pending,
+        adjacency,
+        MapSet.put(visited, id),
+        [id | component]
+      )
+    end
+  end
+
+  defp component_bounds(ids, nodes_by_id, dimensions) do
+    bounds =
+      Enum.map(ids, fn id ->
+        node = Map.fetch!(nodes_by_id, id)
+        {width, height, _rank} = Map.fetch!(dimensions, id)
+        {node["x"], node["y"], node["x"] + width, node["y"] + height}
+      end)
+
+    min_x = bounds |> Enum.map(&elem(&1, 0)) |> Enum.min()
+    min_y = bounds |> Enum.map(&elem(&1, 1)) |> Enum.min()
+    max_x = bounds |> Enum.map(&elem(&1, 2)) |> Enum.max()
+    max_y = bounds |> Enum.map(&elem(&1, 3)) |> Enum.max()
+
+    %{min_x: min_x, min_y: min_y, width: max_x - min_x, height: max_y - min_y}
   end
 
   defp inserted_at_key(%{inserted_at: %DateTime{} = value}),
@@ -268,15 +493,18 @@ defmodule WandererApp.Map.Layout do
 
   defp inserted_at_key(_system), do: 0
 
-  defp service_order_by("added-at"), do: "name"
+  defp service_order_by(value) when value in ["added-at", "system-class", "tag"], do: "name"
   defp service_order_by(value), do: value
 
-  defp build_layout_names(systems, ranks, parents, %{"orderBy" => "added-at"}) do
+  defp build_layout_names(systems, ranks, parents, %{"orderBy" => order_by} = settings)
+       when order_by in ["added-at", "system-class", "tag"] do
+    order_index = systems |> ordered_ids(settings) |> Enum.with_index() |> Map.new()
+
     systems
     |> Enum.sort_by(&{Map.get(ranks, &1.solar_system_id, -1), &1.solar_system_id})
     |> Enum.reduce(%{}, fn system, names ->
       id = system.solar_system_id
-      segment = layout_order_segment(system)
+      segment = layout_order_segment(Map.fetch!(order_index, id), id)
 
       name =
         case Map.get(parents, id) do
@@ -291,10 +519,8 @@ defmodule WandererApp.Map.Layout do
   defp build_layout_names(systems, _ranks, _parents, _settings),
     do: Map.new(systems, &{&1.solar_system_id, &1.name || to_string(&1.solar_system_id)})
 
-  defp layout_order_segment(system) do
-    timestamp = inserted_at_key(system) |> Integer.to_string() |> String.pad_leading(20, "0")
-    "#{timestamp}:#{system.solar_system_id}"
-  end
+  defp layout_order_segment(order_index, system_id),
+    do: "#{order_index |> Integer.to_string() |> String.pad_leading(20, "0")}:#{system_id}"
 
   defp breadth_first_forest(roots, adjacency, order_index) do
     initial_ranks = Map.new(roots, &{&1, 0})
@@ -398,6 +624,17 @@ defmodule WandererApp.Map.Layout do
   end
 
   defp position_update(_node), do: []
+
+  defp parse_result_positions(nodes) do
+    positions = Enum.flat_map(nodes, &position_update/1)
+
+    if length(positions) == length(nodes) and
+         Enum.uniq_by(positions, & &1.solar_system_id) == positions do
+      {:ok, positions}
+    else
+      {:error, :invalid_layout_nodes}
+    end
+  end
 
   defp update_system_position(map_id, update),
     do: WandererApp.Map.Server.update_system_position_silently(map_id, update)

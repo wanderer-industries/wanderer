@@ -241,6 +241,8 @@ defmodule WandererApp.Map.Server.Impl do
   defdelegate update_system_temporary_name(map_id, update), to: SystemsImpl
   defdelegate update_system_custom_name(map_id, update), to: SystemsImpl
   defdelegate update_system_locked(map_id, update), to: SystemsImpl
+  defdelegate update_system_sort_index(map_id, update), to: SystemsImpl
+  defdelegate move_locked_system(map_id, solar_system_id, offset), to: SystemsImpl
   defdelegate update_system_labels(map_id, update), to: SystemsImpl
   defdelegate update_system_linked_sig_eve_id(map_id, update), to: SystemsImpl
   defdelegate update_system_position(map_id, update), to: SystemsImpl
@@ -447,7 +449,7 @@ defmodule WandererApp.Map.Server.Impl do
     })
   end
 
-  def broadcast!(map_id, event, payload \\ nil) do
+  def broadcast!(map_id, event, payload \\ nil, opts \\ []) do
     if can_broadcast?(map_id) do
       @pubsub_client.broadcast!(WandererApp.PubSub, map_id, %{
         event: event,
@@ -455,13 +457,14 @@ defmodule WandererApp.Map.Server.Impl do
       })
     end
 
-    if event in [
-         :add_system,
-         :systems_removed,
-         :add_connection,
-         :remove_connections,
-         :update_system
-       ] do
+    if Keyword.get(opts, :schedule_layout, true) and
+         event in [
+           :add_system,
+           :systems_removed,
+           :add_connection,
+           :remove_connections,
+           :update_system
+         ] do
       WandererApp.Map.LayoutScheduler.schedule(map_id)
     end
 

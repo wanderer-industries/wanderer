@@ -6,6 +6,7 @@ function system(locked: boolean): SolarSystemRawType {
     id: 'system',
     position: { x: 0, y: 0 },
     locked,
+    sort_index: null,
   } as SolarSystemRawType;
 }
 

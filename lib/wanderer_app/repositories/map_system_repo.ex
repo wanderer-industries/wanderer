@@ -140,6 +140,9 @@ defmodule WandererApp.MapSystemRepo do
     end
   end
 
+  def update_sort_index(system, update),
+    do: WandererApp.Api.MapSystem.update_sort_index(system, update)
+
   def update_status(system, update),
     do:
       system

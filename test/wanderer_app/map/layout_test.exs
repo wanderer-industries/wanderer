@@ -42,6 +42,46 @@ defmodule WandererApp.Map.LayoutTest do
     assert request.edges == [%{id: "1_2", source: "1", target: "2"}]
   end
 
+  test "treats a locked system as a root even when it has the default status" do
+    systems = [
+      system(1, "Home", 8),
+      system(2, "Locked", 0) |> Map.merge(%{locked: true, sort_index: 0}),
+      system(3, "Child", 0)
+    ]
+
+    request = Layout.build_request(systems, [connection(1, 2), connection(2, 3)], @settings)
+    nodes = Map.new(request.nodes, &{&1.id, &1})
+
+    assert nodes["1"].rank == 0
+    assert nodes["2"].rank == 0
+    assert nodes["3"].rank == 1
+    assert request.edges == [%{id: "2_3", source: "2", target: "3"}]
+  end
+
+  test "packs locked root chains by sort index before home roots" do
+    systems = [
+      system(1, "Home", 8),
+      system(2, "Locked second", 0) |> Map.merge(%{locked: true, sort_index: 1}),
+      system(3, "Locked first", 0) |> Map.merge(%{locked: true, sort_index: 0})
+    ]
+
+    request = Layout.build_request(systems, [], @settings)
+
+    nodes = [
+      result_node(1, 0, 0),
+      result_node(2, 400, 0),
+      result_node(3, 800, 0)
+    ]
+
+    positions =
+      nodes
+      |> Layout.repack_root_components(request, systems, @settings)
+      |> Map.new(&{&1["id"], &1["x"]})
+
+    assert positions["3"] < positions["2"]
+    assert positions["2"] < positions["1"]
+  end
+
   test "selects spacing profile from the layout direction" do
     systems = [system(1, "Root", 1), system(2, "Child", 0)]
     connections = [connection(1, 2)]
@@ -51,6 +91,46 @@ defmodule WandererApp.Map.LayoutTest do
 
     assert vertical.options.spacing == %{nodeSpacing: 24, layerSpacing: 52, edgeSpacing: 12}
     assert horizontal.options.spacing == %{nodeSpacing: 40, layerSpacing: 80, edgeSpacing: 16}
+  end
+
+  test "does not send a provisional position for a newly added system" do
+    systems = [system(1, "Existing", 1), system(2, "New", 0)]
+
+    request =
+      Layout.build_request(systems, [], @settings, new_system_ids: MapSet.new([2]))
+
+    nodes = Map.new(request.nodes, &{&1.id, &1})
+
+    assert nodes["1"].previousPosition == %{x: 10, y: 20}
+    refute Map.has_key?(nodes["2"], :previousPosition)
+  end
+
+  test "accepts a complete layout result" do
+    systems = [system(1, "Root", 1), system(2, "Child", 0)]
+    nodes = [result_node(1, 10, 20), result_node(2, 30, 40)]
+
+    assert {:ok, ^nodes} = Layout.validate_result_nodes(%{"nodes" => nodes}, systems)
+  end
+
+  test "rejects incomplete, duplicate and malformed layout results" do
+    systems = [system(1, "Root", 1), system(2, "Child", 0)]
+
+    assert {:error, :incomplete_layout_result} =
+             Layout.validate_result_nodes(%{"nodes" => [result_node(1, 10, 20)]}, systems)
+
+    assert {:error, :invalid_layout_nodes} =
+             Layout.validate_result_nodes(
+               %{"nodes" => [result_node(1, 10, 20), result_node(1, 30, 40)]},
+               systems
+             )
+
+    assert {:error, :invalid_layout_nodes} =
+             Layout.validate_result_nodes(
+               %{"nodes" => [result_node(1, 10, 20), %{"id" => "2", "x" => 30}]},
+               systems
+             )
+
+    assert {:error, :invalid_layout_result} = Layout.validate_result_nodes(%{}, systems)
   end
 
   test "does not merge separate root chains through a cross-chain connection" do
@@ -130,6 +210,48 @@ defmodule WandererApp.Map.LayoutTest do
     assert String.starts_with?(names["5"], names["3"])
   end
 
+  test "sorts system classes by space priority and tagged systems first within a class" do
+    systems = [
+      system(1, "Other", 0) |> Map.merge(%{system_class: 19, tag: nil}),
+      system(2, "C4 untagged", 0) |> Map.merge(%{system_class: 4, tag: nil}),
+      system(3, "Highsec", 0) |> Map.merge(%{system_class: 7, tag: nil}),
+      system(4, "C4 B", 0) |> Map.merge(%{system_class: 4, tag: "B"}),
+      system(5, "C4 A", 0) |> Map.merge(%{system_class: 4, tag: "A"}),
+      system(6, "C1", 0) |> Map.merge(%{system_class: 1, tag: nil}),
+      system(7, "Lowsec", 0) |> Map.merge(%{system_class: 8, tag: nil}),
+      system(8, "Nullsec", 0) |> Map.merge(%{system_class: 9, tag: nil}),
+      system(9, "C6", 0) |> Map.merge(%{system_class: 6, tag: nil}),
+      system(10, "Pochven", 0) |> Map.merge(%{system_class: 25, tag: nil}),
+      system(11, "Thera", 0) |> Map.merge(%{system_class: 12, tag: nil})
+    ]
+
+    request = Layout.build_request(systems, [], Map.put(@settings, "orderBy", "system-class"))
+
+    ordered_ids =
+      request.nodes
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(& &1.id)
+
+    assert ordered_ids == ~w(3 7 8 6 5 4 2 9 11 10 1)
+  end
+
+  test "sorts tagged systems alphabetically before untagged systems" do
+    systems = [
+      system(1, "Untagged", 0) |> Map.merge(%{system_class: 1, tag: nil}),
+      system(2, "Tag B", 0) |> Map.merge(%{system_class: 6, tag: "B"}),
+      system(3, "Tag A", 0) |> Map.merge(%{system_class: 4, tag: "A"})
+    ]
+
+    request = Layout.build_request(systems, [], Map.put(@settings, "orderBy", "tag"))
+
+    ordered_ids =
+      request.nodes
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(& &1.id)
+
+    assert ordered_ids == ~w(3 2 1)
+  end
+
   defp system(id, name, status) do
     system(id, name, status, nil)
   end
@@ -143,6 +265,7 @@ defmodule WandererApp.Map.LayoutTest do
       position_x: id * 10,
       position_y: id * 20,
       locked: false,
+      sort_index: nil,
       inserted_at: inserted_at
     }
   end
@@ -150,4 +273,6 @@ defmodule WandererApp.Map.LayoutTest do
   defp connection(source, target) do
     %{solar_system_source: source, solar_system_target: target}
   end
+
+  defp result_node(id, x, y), do: %{"id" => to_string(id), "x" => x, "y" => y}
 end

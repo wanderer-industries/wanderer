@@ -60,6 +60,8 @@ defmodule WandererApp.Map.Server do
   defdelegate update_system_custom_name(map_id, update), to: Impl
 
   defdelegate update_system_locked(map_id, update), to: Impl
+  defdelegate update_system_sort_index(map_id, update), to: Impl
+  defdelegate move_locked_system(map_id, solar_system_id, offset), to: Impl
 
   defdelegate update_system_labels(map_id, update), to: Impl
 

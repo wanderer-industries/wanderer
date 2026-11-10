@@ -633,7 +633,18 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         old_location,
         character_id,
         is_manual,
-        extra_info
+        extra_info,
+        opts \\ []
+      )
+
+  def maybe_add_connection(
+        map_id,
+        location,
+        old_location,
+        character_id,
+        is_manual,
+        extra_info,
+        opts
       )
       when not is_nil(location) and not is_nil(old_location) and
              not is_nil(old_location.solar_system_id) and
@@ -720,7 +731,9 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
           solar_system_id: location.solar_system_id
         })
 
-        Impl.broadcast!(map_id, :add_connection, connection)
+        Impl.broadcast!(map_id, :add_connection, connection,
+          schedule_layout: Keyword.get(opts, :schedule_layout, true)
+        )
 
         Impl.broadcast!(map_id, :maybe_link_signature, %{
           character_id: character_id,
@@ -771,7 +784,8 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
         _old_location,
         _character_id,
         _is_manual,
-        _connection_extra_info
+        _connection_extra_info,
+        _opts
       ),
       do: :ok
 

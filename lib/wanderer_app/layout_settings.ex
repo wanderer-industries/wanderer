@@ -17,13 +17,13 @@ defmodule WandererApp.LayoutSettings do
     "locale" => "en",
     "orderPolicy" => "prefer",
     "groups" => "none",
-    "preservePreviousPositions" => true
+    "preservePreviousPositions" => false
   }
 
   @select_options %{
     "engine" => ~w(elk dagre),
     "direction" => ~w(TB BT LR RL),
-    "orderBy" => ~w(added-at name id previous-order),
+    "orderBy" => ~w(added-at name system-class tag id previous-order),
     "orderDirection" => ~w(asc desc),
     "orderPolicy" => ~w(strict prefer crossings-first),
     "groups" => ~w(none compound)

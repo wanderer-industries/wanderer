@@ -29,6 +29,18 @@ defmodule WandererApp.Map.MapTransferTest do
       target = start_test_map()
 
       seed_source_map(source)
+      Server.update_system_locked(source.map_id, %{solar_system_id: @system_a, locked: true})
+      Server.update_system_locked(source.map_id, %{solar_system_id: @system_b, locked: true})
+      Server.move_locked_system(source.map_id, @system_b, -1)
+
+      {:ok, source_system_a} =
+        WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(source.map_id, @system_a)
+
+      {:ok, source_system_b} =
+        WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(source.map_id, @system_b)
+
+      assert source_system_a.sort_index == 1
+      assert source_system_b.sort_index == 0
 
       {:ok, document} = Transfer.export(source.map_id)
 
@@ -53,8 +65,16 @@ defmodule WandererApp.Map.MapTransferTest do
       assert system.tag == "A"
       assert system.status == 1
       assert system.temporary_name == "HS-1"
+      assert system.locked
+      assert system.sort_index == 1
       assert system.position_x == 120
       assert system.position_y == 240
+
+      {:ok, second_system} =
+        WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(target.map_id, @system_b)
+
+      assert second_system.locked
+      assert second_system.sort_index == 0
 
       {:ok, connections} = WandererApp.MapConnectionRepo.get_by_map(target.map_id)
       assert length(connections) == 1

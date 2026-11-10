@@ -12,6 +12,7 @@ defmodule WandererApp.Api.MapSystem do
              :status,
              :visible,
              :locked,
+             :sort_index,
              :custom_name,
              :description,
              :tag,
@@ -117,6 +118,7 @@ defmodule WandererApp.Api.MapSystem do
     define(:update_name, action: :update_name)
     define(:update_description, action: :update_description)
     define(:update_locked, action: :update_locked)
+    define(:update_sort_index, action: :update_sort_index)
     define(:update_status, action: :update_status)
     define(:update_tag, action: :update_tag)
     define(:update_temporary_name, action: :update_temporary_name)
@@ -137,6 +139,7 @@ defmodule WandererApp.Api.MapSystem do
       :status,
       :visible,
       :locked,
+      :sort_index,
       :custom_name,
       :description,
       :tag,
@@ -158,6 +161,7 @@ defmodule WandererApp.Api.MapSystem do
         :status,
         :visible,
         :locked,
+        :sort_index,
         :custom_name,
         :description,
         :tag,
@@ -184,6 +188,7 @@ defmodule WandererApp.Api.MapSystem do
         :status,
         :visible,
         :locked,
+        :sort_index,
         :custom_name,
         :description,
         :tag,
@@ -219,6 +224,7 @@ defmodule WandererApp.Api.MapSystem do
         :position_y,
         :visible,
         :locked,
+        :sort_index,
         :status
       ]
     end
@@ -271,7 +277,12 @@ defmodule WandererApp.Api.MapSystem do
     end
 
     update :update_locked do
-      accept [:locked]
+      accept [:locked, :sort_index]
+      require_atomic? false
+    end
+
+    update :update_sort_index do
+      accept [:sort_index]
       require_atomic? false
     end
 
@@ -372,6 +383,10 @@ defmodule WandererApp.Api.MapSystem do
 
     attribute :locked, :boolean do
       default false
+      allow_nil? true
+    end
+
+    attribute :sort_index, :integer do
       allow_nil? true
     end
 

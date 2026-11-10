@@ -113,6 +113,7 @@ export type SolarSystemRawType = {
   description: string | null;
   labels: string | null;
   locked: boolean;
+  sort_index: number | null;
   tag: string | null;
   status: number;
   name: string | null;

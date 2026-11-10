@@ -30,6 +30,7 @@ import {
   useContextMenuRootHandlers,
 } from './components';
 import { DepthBands } from './components/DepthBands';
+import { LockedRootControls } from './components/LockedRootControls';
 import { getBehaviorForTheme } from './helpers/getThemeBehavior';
 import { useEdgesState, useManagedLayoutNodes, useMapHandlers, useNodesState, useUpdateNodes } from './hooks';
 import { useBackgroundVars } from './hooks/useBackgroundVars';
@@ -315,6 +316,9 @@ const MapComp = ({
           selectionMode={SelectionMode.Partial}
         >
           {managedLayoutEnabled && <DepthBands nodes={nodes} direction={managedLayoutDirection} />}
+          {managedLayoutEnabled && (
+            <LockedRootControls nodes={nodes} direction={managedLayoutDirection} onCommand={onCommand} />
+          )}
           {isShowMinimap && (
             <MiniMap pannable zoomable ariaLabel="Mini map" className={minimapClasses} position={minimapPlacement} />
           )}
