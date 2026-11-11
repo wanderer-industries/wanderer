@@ -1,0 +1,22 @@
+.fallbackPage {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  @apply bg-stone-950 text-stone-200;
+}
+
+.retryButton {
+  margin-top: 1rem;
+  padding: 0.5rem 0.75rem;
+  @apply border-red-700 text-red-100;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.retryButton:hover {
+  @apply bg-red-900/50;
+}

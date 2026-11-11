@@ -12,6 +12,7 @@ import MapAclOverflow from './maps/mapAclOverflow';
 import MapViewPreference from './maps/mapViewPreference';
 import ShowCharactersAddAlert from './showCharactersAddAlert';
 import WysiwygEditor from './wysiwygEditor';
+import PageCharacters from './Mapper/PageCharacters';
 
 export default {
   DownloadJson,
@@ -28,4 +29,5 @@ export default {
   NewVersionUpdate,
   ShowCharactersAddAlert,
   WysiwygEditor,
+  PageCharacters,
 };

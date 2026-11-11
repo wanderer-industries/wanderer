@@ -1,0 +1,16 @@
+.dialog {
+  width: min(480px, calc(100vw - 2rem));
+}
+
+.dialog :global(.p-dialog-content) {
+  padding: 1rem !important;
+  overflow-wrap: anywhere;
+}
+
+.dialog :global(.p-dialog-header-icons) {
+  display: none;
+}
+
+.dialog :global(.p-dialog-footer) {
+  padding: 0.75rem 1rem 1rem !important;
+}
