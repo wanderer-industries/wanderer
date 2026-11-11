@@ -191,6 +191,39 @@ export const calculateBookmarkIndex = (
   return { index: i, chained, chainedLetters };
 };
 
+// Conditional separator token: `{? - }`. Everything between `?` and `}` is the separator text.
+const CONDITIONAL_SEPARATOR_REGEX = /\{\?([^{}]*)\}/;
+
+/**
+ * Resolves the conditional separators of a rendered format.
+ * A separator is only kept between two non-empty segments; when several separators
+ * sit between two non-empty segments, the first one wins.
+ */
+const applyConditionalSeparators = (rendered: string): string => {
+  // split() with a capturing group alternates segments (even) and separator texts (odd)
+  const parts = rendered.split(CONDITIONAL_SEPARATOR_REGEX);
+  if (parts.length === 1) return rendered;
+
+  let result = '';
+  let pendingSeparator: string | undefined;
+
+  parts.forEach((part, i) => {
+    const isSeparatorIndex = i % 2 === 1;
+    if (isSeparatorIndex) {
+      if (result !== '' && pendingSeparator === undefined) {
+        pendingSeparator = part;
+      }
+      return;
+    }
+    if (part.trim() === '') return;
+
+    result += `${pendingSeparator ?? ''}${part}`;
+    pendingSeparator = undefined;
+  });
+
+  return result;
+};
+
 export const formatBookmarkName = (
   formatStr: string,
   signature: SystemSignature,
@@ -391,6 +424,9 @@ export const formatBookmarkName = (
 
   // Replace {spawn_type} -> Static or Wandering for outgoing wormholes, or K162 for incoming
   result = result.replace(/\{spawn_type\}/g, () => getSpawnTypeString(signature.type, currentSystemStatics, mapping));
+
+  // Resolve conditional separators ({? - })
+  result = applyConditionalSeparators(result);
 
   // Cleanup whitespace
   if (/^\s*$/.test(formatStr)) {
