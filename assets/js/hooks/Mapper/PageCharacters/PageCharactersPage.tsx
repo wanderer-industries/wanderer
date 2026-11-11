@@ -121,7 +121,7 @@ export const PageCharactersPage = (_props: PageCharactersPageProps) => {
       <WdButton text label="Cancel" onClick={() => setAuthorizeOpen(false)} />
       <button
         type="button"
-        className={clsx('login-red-glow group', styles.eveLoginButton)}
+        className={clsx('login-accent-glow group', styles.eveLoginButton)}
         onClick={submitAuthorization}
       >
         <span className={clsx('animate-rotate', styles.eveLoginBorder)} />

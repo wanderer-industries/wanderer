@@ -76,53 +76,69 @@ body > div:first-of-type {
 }
 
 .maps_bg {
-  background-image: url('/images/character-selection-background.png');
-  background-color: #050000;
-  background-size: auto 100%;
-  background-position: center top;
+  background-image: url('https://wanderer-industries.github.io/wanderer-assets/images/fractured-skies-background.webp');
+  background-color: #080b0c;
+  background-size: cover;
+  background-position: center center;
   background-repeat: no-repeat;
   width: 100%;
   height: 100%;
 }
 
-/* Temporary Crimson Harvest campaign frames. Remove when the campaign ends. */
-.crimson-harvest-frame,
-.crimson-harvest-frame-bright,
-.crimson-harvest-partner-frame {
+/* Fractured Skies surfaces share the cool metal and warm energy tones of the campaign art. */
+.fractured-skies-frame,
+.fractured-skies-frame-emphasis,
+.fractured-skies-partner-frame {
   box-sizing: border-box;
-  border: 2px solid #db5d5d;
-  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgb(206 216 214 / 18%);
+  background: linear-gradient(135deg, rgb(18 24 25 / 42%), rgb(5 8 9 / 28%));
+  box-shadow:
+    0 12px 32px rgb(0 0 0 / 22%),
+    inset 0 1px rgb(255 255 255 / 3%);
+  backdrop-filter: blur(1px) saturate(90%);
 }
 
-.crimson-harvest-frame {
-  box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
+.fractured-skies-frame {
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease;
 }
 
-.crimson-harvest-frame-bright {
-  box-shadow: 0 0 26px 6px rgb(255 0 0 / 88%);
+.fractured-skies-frame:hover {
+  border-color: rgb(230 184 117 / 40%);
+  box-shadow:
+    0 14px 36px rgb(0 0 0 / 28%),
+    0 0 14px rgb(217 151 76 / 8%),
+    inset 0 1px rgb(255 255 255 / 4%);
 }
 
-.crimson-harvest-partner-frame {
+.fractured-skies-frame-emphasis {
+  border-color: rgb(221 197 164 / 26%);
+}
+
+.fractured-skies-partner-frame {
   width: min(640px, calc(100% - 2rem));
   padding: 1.5rem clamp(1rem, 5vw, 3rem);
-  box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
 }
 
-.crimson-harvest-news-panel {
+.fractured-skies-news-panel {
   position: relative;
   z-index: 1;
   max-width: 90%;
   max-height: calc(100vh - 25rem);
   overflow-y: auto;
-  border: 2px solid #ffadad80;
-  background: rgb(0 0 0 / 20%);
+  border: 1px solid rgb(206 216 214 / 18%);
+  background: linear-gradient(145deg, rgb(12 17 18 / 40%), rgb(4 7 8 / 26%));
   padding: 2rem 4rem;
-  box-shadow: 0 0 26px 6px rgb(181 9 9);
-  backdrop-filter: blur(3px);
+  box-shadow:
+    0 18px 48px rgb(0 0 0 / 28%),
+    inset 0 1px rgb(255 255 255 / 3%);
+  backdrop-filter: blur(1px) saturate(88%);
 }
 
 #posts-container {
-  scrollbar-color: #db5d5d transparent;
+  scrollbar-color: #b87943 transparent;
   scrollbar-width: thin;
 }
 
@@ -136,42 +152,32 @@ body > div:first-of-type {
 
 #posts-container::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  background: #db5d5d;
+  background: #b87943;
 }
 
 #posts-container::-webkit-scrollbar-thumb:hover {
-  background: #ef7777;
+  background: #d8a36a;
 }
 
-.login-red-glow {
-  animation: login-red-glow 4.8s ease-in-out infinite;
+.login-accent-glow {
+  animation: login-accent-glow 5.6s ease-in-out infinite;
 }
 
-@keyframes login-red-glow {
+@keyframes login-accent-glow {
   0%,
   100% {
-    box-shadow: 0 0 4px rgba(239, 27, 27, 0.3);
+    box-shadow: 0 0 4px rgb(216 163 106 / 20%);
   }
 
-  28% {
+  50% {
     box-shadow:
-      0 0 8px rgba(239, 27, 27, 0.55),
-      0 0 18px rgba(190, 18, 60, 0.25);
-  }
-
-  61% {
-    box-shadow: 0 0 5px rgba(239, 27, 27, 0.38);
-  }
-
-  82% {
-    box-shadow:
-      0 0 10px rgba(255, 55, 55, 0.65),
-      0 0 22px rgba(190, 18, 60, 0.3);
+      0 0 8px rgb(216 163 106 / 38%),
+      0 0 18px rgb(126 154 154 / 14%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-red-glow {
+  .login-accent-glow {
     animation: none;
   }
 }
@@ -1391,7 +1397,7 @@ body > div:first-of-type {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
 }
 
-.ql-tooltip input[type="text"] {
+.ql-tooltip input[type='text'] {
   background-color: #0c0a09;
   border-color: #44403c;
   color: #e7e5e4;

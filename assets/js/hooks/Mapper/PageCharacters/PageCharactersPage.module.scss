@@ -14,11 +14,11 @@
   width: 100%;
   height: 100%;
   border-radius: 9999px;
-  background: conic-gradient(#ef1b1b 20deg, transparent 120deg);
+  background: conic-gradient(#d8a36a 20deg, transparent 120deg);
 }
 
 .eveLoginButton:hover .eveLoginBorder {
-  background-color: #ef1b1b;
+  background-color: #d8a36a;
 }
 
 .eveLoginContent {
@@ -60,7 +60,7 @@
 }
 
 .eveHeader {
-  @apply border-red-950/80 bg-black/80;
+  @apply border-stone-700/80 bg-black/80;
 }
 
 .defaultHeader {

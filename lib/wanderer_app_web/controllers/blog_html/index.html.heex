@@ -3,7 +3,7 @@
   <div class="h-full w-full flex flex-col items-center">
     <!--Main-->
     <div class="artboard artboard-horizontal phone-3 max-w-full pt-6 !h-40">
-      <div class="crimson-harvest-frame-bright container min-h-[74px] -mt-[14px] mx-auto flex flex-wrap flex-row justify-center items-center gap-8">
+      <div class="fractured-skies-frame-emphasis container min-h-[74px] -mt-[14px] mx-auto flex flex-wrap flex-row justify-center items-center gap-8">
         <!--Left Col-->
         <div class="flex flex-col justify-center items-center overflow-y-hidden">
           <h1 class="ccp-font my-4 px-8 py-1 text-2xl text-stone-200 font-bold leading-tight text-center md:text-left [text-shadow:0_0px_8px_rgba(0,0,0,0.7)]">
@@ -12,8 +12,8 @@
         </div>
         <!--Right Col-->
         <div :if={@invite_token_valid} class="overflow-visible">
-          <div class="login-red-glow !z-100 relative group alert items-center fade-in-scale text-white w-[224px] h-[44px] rounded p-px overflow-hidden">
-            <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#ef1b1b_20deg,transparent_120deg)] group-hover:bg-[#ef1b1b]" />
+          <div class="login-accent-glow !z-100 relative group alert items-center fade-in-scale text-white w-[224px] h-[44px] rounded p-px overflow-hidden">
+            <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#d8a36a_20deg,transparent_120deg)] group-hover:bg-[#d8a36a]" />
             <div class="!bg-black  rounded w-[220px] h-[40px] flex items-center justify-center relative z-20">
               <.link navigate={~p"/auth/eve?invite=#{@invite_token}"} class="opacity-100">
                 <img
@@ -27,11 +27,11 @@
       </div>
     </div>
 
-    <div id="posts-container" class="crimson-harvest-news-panel">
+    <div id="posts-container" class="fractured-skies-news-panel">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
         <%= for post <- @posts do %>
           <.link class="group carousel-item relative my-2 mx-2" navigate={~p"/news/#{post.id}"}>
-            <div class="crimson-harvest-frame artbard-hoorizontal phone-1 relative overflow-hidden hover:text-white">
+            <div class="fractured-skies-frame artbard-hoorizontal phone-1 relative overflow-hidden hover:text-white">
               <img
                 class="rounded-m shadow-lg block !w-[300px] !h-[180px] opacity-75 !m-0"
                 src={post.cover_image_uri}
