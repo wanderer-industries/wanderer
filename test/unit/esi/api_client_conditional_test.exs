@@ -61,18 +61,121 @@ defmodule WandererApp.Esi.ApiClientConditionalTest do
     refute_received {:request, _}
   end
 
-  test "304 without stored body retries unconditionally" do
+  test "retries an unsolicited 304 without a usable stored body unconditionally" do
+    Cachex.put(:api_cache, @validators_key, %{etag: "\"v1\"", last_modified: nil})
+
+    Req.Test.expect(ApiClient, fn conn ->
+      assert Plug.Conn.get_req_header(conn, "if-none-match") == []
+      Plug.Conn.send_resp(conn, 304, "")
+    end)
+
+    Req.Test.expect(ApiClient, fn conn ->
+      assert Plug.Conn.get_req_header(conn, "if-none-match") == []
+      assert Plug.Conn.get_req_header(conn, "if-modified-since") == []
+      ok_response(conn, %{"players" => 2}, "\"v2\"", future(30))
+    end)
+
+    assert {:ok, %{"players" => 2}} = ApiClient.get_server_status()
+    Req.Test.verify!()
+  end
+
+  test "keeps a 304 paired with its request body when shared validators change" do
+    stub(fn conn -> ok_response(conn, %{"players" => 1}, "\"v1\"", past(10)) end)
+    assert {:ok, %{"players" => 1}} = ApiClient.get_server_status()
+    assert_received {:request, _}
+
     stub(fn conn ->
-      if Plug.Conn.get_req_header(conn, "if-none-match") == [] do
-        ok_response(conn, %{"players" => 2}, "\"v2\"", future(30))
-      else
+      assert Plug.Conn.get_req_header(conn, "if-none-match") == ["\"v1\""]
+
+      # Another request completes after these headers were built, before this 304 arrives.
+      Cachex.put(:api_cache, @validators_key, %{
+        body: %{"players" => 2},
+        etag: "\"v2\"",
+        last_modified: nil
+      })
+
+      conn
+      |> Plug.Conn.put_resp_header("etag", "\"v1\"")
+      |> Plug.Conn.put_resp_header("expires", future(60))
+      |> Plug.Conn.send_resp(304, "")
+    end)
+
+    assert {:ok, %{"players" => 1}} = ApiClient.get_server_status()
+    assert {:ok, %{"players" => 1}} = Cachex.get(:api_cache, @path)
+
+    assert {:ok, %{body: %{"players" => 1}, etag: "\"v1\""}} =
+             Cachex.get(:api_cache, @validators_key)
+  end
+
+  test "reuses the request body when its shared validators are evicted in flight" do
+    stub(fn conn -> ok_response(conn, %{"players" => 1}, "\"v1\"", past(10)) end)
+    assert {:ok, %{"players" => 1}} = ApiClient.get_server_status()
+    assert_received {:request, _}
+
+    stub(fn conn ->
+      Cachex.del(:api_cache, @validators_key)
+
+      if Plug.Conn.get_req_header(conn, "if-none-match") == ["\"v1\""] do
         Plug.Conn.send_resp(conn, 304, "")
+      else
+        ok_response(conn, %{"players" => 2}, "\"v2\"", future(30))
       end
     end)
 
-    Cachex.put(:api_cache, @validators_key, %{etag: "\"v1\"", last_modified: nil})
+    assert {:ok, %{"players" => 1}} = ApiClient.get_server_status()
+    assert_received {:request, _}
+    refute_received {:request, _}
+  end
 
-    assert {:ok, %{"players" => 2}} = ApiClient.get_server_status()
+  test "keeps Last-Modified validation paired with the dispatched body" do
+    modified = "Wed, 11 Nov 2026 10:00:00 GMT"
+
+    Cachex.put(:api_cache, @validators_key, %{
+      body: %{"players" => 1},
+      etag: nil,
+      last_modified: modified
+    })
+
+    stub(fn conn ->
+      assert Plug.Conn.get_req_header(conn, "if-modified-since") == [modified]
+      assert Plug.Conn.get_req_header(conn, "if-none-match") == []
+
+      Cachex.put(:api_cache, @validators_key, %{
+        body: %{"players" => 2},
+        etag: nil,
+        last_modified: "Wed, 11 Nov 2026 11:00:00 GMT"
+      })
+
+      conn
+      |> Plug.Conn.put_resp_header("expires", future(60))
+      |> Plug.Conn.send_resp(304, "")
+    end)
+
+    assert {:ok, %{"players" => 1}} = ApiClient.get_server_status()
+
+    assert {:ok, %{body: %{"players" => 1}, last_modified: ^modified}} =
+             Cachex.get(:api_cache, @validators_key)
+  end
+
+  test "rejects repeated unsolicited 304s even when shared validators appear" do
+    stub(fn conn ->
+      assert Plug.Conn.get_req_header(conn, "if-none-match") == []
+      assert Plug.Conn.get_req_header(conn, "if-modified-since") == []
+
+      Cachex.put(:api_cache, @validators_key, %{
+        body: %{"players" => 2},
+        etag: "\"v2\"",
+        last_modified: nil
+      })
+
+      Plug.Conn.send_resp(conn, 304, "")
+    end)
+
+    assert {:error, "Unexpected status: 304"} = ApiClient.get_server_status()
+    assert_received {:request, _}
+    assert_received {:request, _}
+    refute_received {:request, _}
+    assert {:ok, nil} = Cachex.get(:api_cache, @path)
   end
 
   test "does not cache responses with expires in the past" do
