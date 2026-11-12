@@ -1,11 +1,25 @@
+<% welcome_page = String.starts_with?(@conn.request_path, "/welcome") %>
+
 <main
   class="main relative flex-col !min-h-screen justify-between flex z-0 overflow-x-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0 bg-stone-950 ccp-font"
   phx-mounted={JS.remove_class("opacity-0")}
 >
-  <navbar class="navbar bg-base-100 !sticky top-0 z-50 bg-opacity-0 ">
+  <navbar :if={!welcome_page} class={[
+    "navbar top-0 z-50 bg-base-100 bg-opacity-0",
+    welcome_page && "!absolute !left-4 !top-4 !min-h-0 !w-auto !p-0 sm:!left-7",
+    !welcome_page && "!sticky"
+  ]}>
     <div class="navbar-start">
       <div class="dropdown">
-        <div tabindex="0" role="button" class="btn btn-ghost btn-circle text-white">
+        <div
+          tabindex="0"
+          role="button"
+          aria-label="Open navigation"
+          class={[
+            "btn btn-ghost btn-circle text-white",
+            welcome_page && "!h-10 !min-h-10 !w-10 rounded-none border border-white/15 bg-black/55 shadow-[0_12px_35px_rgba(0,0,0,0.35)] backdrop-blur-[1px] hover:border-orange-200/50 hover:bg-black/75 hover:text-orange-100"
+          ]}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5"
@@ -23,7 +37,11 @@
         </div>
         <ul
           tabindex="0"
-          class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+          class={[
+            "menu menu-sm dropdown-content z-[1] mt-3 w-52 p-2 shadow",
+            welcome_page && "rounded-none border border-white/15 bg-black/90 text-stone-200 shadow-[0_18px_50px_rgba(0,0,0,0.55)] backdrop-blur-sm",
+            !welcome_page && "rounded-box bg-base-100"
+          ]}
         >
           <li><a href="/">Home</a></li>
           <li><a href="/changelog">Changelog</a></li>
@@ -33,7 +51,7 @@
         </ul>
       </div>
     </div>
-    <div class="navbar-center">
+    <div :if={!welcome_page} class="navbar-center">
       <a
         href="/"
         class="!opacity-0 text-[24px] text-white [text-shadow:0_0px_8px_rgba(0,0,0,0.8)]"
@@ -41,20 +59,27 @@
         Wanderer
       </a>
     </div>
-    <div class="navbar-end"></div>
+    <div :if={!welcome_page} class="navbar-end"></div>
   </navbar>
-  <div class="!z-10 min-h-[calc(100vh-15rem)]">
+  <div class={[
+    "!z-10",
+    !welcome_page && "min-h-[calc(100vh-15rem)]"
+  ]}>
     {@inner_content}
   </div>
   <!--Footer-->
-  <footer class="!z-10 w-full pt-8 pb-4 text-sm text-center fade-in flex justify-center items-center">
+  <footer
+    :if={!welcome_page}
+    class="!z-10 w-full pt-3 pb-2 text-sm text-center fade-in flex justify-center items-center"
+  >
     <div class="fractured-skies-partner-frame flex flex-col justify-center items-center gap-4">
       <a target="_blank" rel="noopener noreferrer" href="https://www.eveonline.com/partners">
         <img src="/images/eo_pp.png" style="width: 300px;" alt="Eve Online Partnership Program" />
       </a>
       <div class="text-stone-400 no-underline hover:no-underline [text-shadow:0_0px_4px_rgba(0,0,0,0.8)]">
         All <a href="/license">EVE related materials</a>
-        are property of Fenris Creations &copy; {Date.utc_today().year} Wanderer Industries.
+        are property of <span class="text-orange-200/80">Fenris Creations</span>
+        &copy; {Date.utc_today().year} Wanderer Industries.
       </div>
     </div>
   </footer>

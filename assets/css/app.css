@@ -85,9 +85,6 @@ body > div:first-of-type {
   height: 100%;
 }
 
-/* Fractured Skies surfaces share the cool metal and warm energy tones of the campaign art. */
-.fractured-skies-frame,
-.fractured-skies-frame-emphasis,
 .fractured-skies-partner-frame {
   box-sizing: border-box;
   border: 1px solid rgb(206 216 214 / 18%);
@@ -96,67 +93,8 @@ body > div:first-of-type {
     0 12px 32px rgb(0 0 0 / 22%),
     inset 0 1px rgb(255 255 255 / 3%);
   backdrop-filter: blur(1px) saturate(90%);
-}
-
-.fractured-skies-frame {
-  transition:
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    background-color 220ms ease;
-}
-
-.fractured-skies-frame:hover {
-  border-color: rgb(230 184 117 / 40%);
-  box-shadow:
-    0 14px 36px rgb(0 0 0 / 28%),
-    0 0 14px rgb(217 151 76 / 8%),
-    inset 0 1px rgb(255 255 255 / 4%);
-}
-
-.fractured-skies-frame-emphasis {
-  border-color: rgb(221 197 164 / 26%);
-}
-
-.fractured-skies-partner-frame {
   width: min(640px, calc(100% - 2rem));
-  padding: 1.5rem clamp(1rem, 5vw, 3rem);
-}
-
-.fractured-skies-news-panel {
-  position: relative;
-  z-index: 1;
-  max-width: 90%;
-  max-height: calc(100vh - 25rem);
-  overflow-y: auto;
-  border: 1px solid rgb(206 216 214 / 18%);
-  background: linear-gradient(145deg, rgb(12 17 18 / 40%), rgb(4 7 8 / 26%));
-  padding: 2rem 4rem;
-  box-shadow:
-    0 18px 48px rgb(0 0 0 / 28%),
-    inset 0 1px rgb(255 255 255 / 3%);
-  backdrop-filter: blur(1px) saturate(88%);
-}
-
-#posts-container {
-  scrollbar-color: #b87943 transparent;
-  scrollbar-width: thin;
-}
-
-#posts-container::-webkit-scrollbar {
-  width: 7px;
-}
-
-#posts-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-#posts-container::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: #b87943;
-}
-
-#posts-container::-webkit-scrollbar-thumb:hover {
-  background: #d8a36a;
+  padding: 1rem clamp(1rem, 5vw, 3rem);
 }
 
 .login-accent-glow {
