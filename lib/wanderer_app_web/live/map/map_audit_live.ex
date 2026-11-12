@@ -8,7 +8,7 @@ defmodule WandererAppWeb.MapAuditLive do
         _session,
         %{assigns: %{current_user: current_user}} = socket
       ) do
-    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
+    WandererApp.Maps.check_user_can_manage_map(map_slug, current_user)
     |> case do
       {:ok,
        %{

@@ -4,6 +4,7 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
   @default_search_results_limit 10
 
   attr :access_lists, :list, required: true
+  attr :assigned_access_lists, :list, required: true
   attr :selected_ids, :list, required: true
   attr :saved_ids, :list, required: true
   attr :marked_ids, :list, required: true
@@ -12,7 +13,9 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
 
   def content(assigns) do
     assigned_access_lists =
-      Enum.filter(assigns.access_lists, &(&1.id in assigns.selected_ids))
+      (assigns.assigned_access_lists ++ assigns.access_lists)
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.filter(&(&1.id in assigns.selected_ids))
 
     assigned_ids = Enum.map(assigned_access_lists, & &1.id)
     marked_count = Enum.count(assigned_ids, &(&1 in assigns.marked_ids))

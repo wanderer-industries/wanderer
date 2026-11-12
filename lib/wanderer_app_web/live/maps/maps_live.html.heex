@@ -375,6 +375,7 @@
     <div class="min-h-0 flex-1">
       <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
         access_lists={@acls}
+        assigned_access_lists={@assigned_acls}
         selected_ids={@selected_access_list_ids}
         saved_ids={@saved_access_list_ids}
         marked_ids={@marked_access_list_ids}
@@ -417,7 +418,8 @@
                 role="presentation"
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
                   tabindex="0"
@@ -433,9 +435,8 @@
                     <.icon name="hero-pencil-square-solid" class="h-4 w-4 shrink-0" />
                     <span>Common</span>
                   </span>
-                </a>
+                </button>
               </li>
-
               <li
                 class={[
                   "p-unselectable-text",
@@ -445,10 +446,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_330_content"
                   aria-selected={@active_settings_tab == "general"}
                   aria-disabled="false"
@@ -463,9 +465,8 @@
                     <.icon name="hero-wrench-screwdriver-solid" class="h-4 w-4 shrink-0" />
                     <span>Settings</span>
                   </span>
-                </a>
+                </button>
               </li>
-
               <li
                 class={[
                   "p-unselectable-text",
@@ -476,10 +477,11 @@
                 role="presentation"
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-selected={@active_settings_tab == "access_lists"}
                   data-pc-section="headeraction"
                   phx-click="change_settings_tab"
@@ -492,7 +494,7 @@
                     <.icon name="hero-key-solid" class="h-4 w-4 shrink-0" />
                     <span>Access Lists</span>
                   </span>
-                </a>
+                </button>
               </li>
 
               <li
@@ -505,10 +507,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_332_content"
                   aria-selected="false"
                   aria-disabled="false"
@@ -523,7 +526,7 @@
                     <.icon name="hero-banknotes-solid" class="h-4 w-4 shrink-0" />
                     <span>Balance</span>
                   </span>
-                </a>
+                </button>
               </li>
 
               <li
@@ -538,10 +541,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_334_content"
                   aria-selected="false"
                   aria-disabled="false"
@@ -556,7 +560,7 @@
                     <.icon name="hero-check-badge-solid" class="h-4 w-4 shrink-0" />
                     <span>Subscription</span>
                   </span>
-                </a>
+                </button>
               </li>
 
               <li
@@ -568,10 +572,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_331_content"
                   aria-selected="false"
                   aria-disabled="false"
@@ -586,8 +591,9 @@
                     <.icon name="hero-document-arrow-down-solid" class="h-4 w-4 shrink-0" />
                     <span>Import/Export</span>
                   </span>
-                </a>
+                </button>
               </li>
+
               <li
                 :if={not WandererApp.Env.public_api_disabled?()}
                 class={[
@@ -598,10 +604,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_335_content"
                   aria-selected="false"
                   aria-disabled="false"
@@ -616,8 +623,9 @@
                     <.icon name="hero-globe-alt-solid" class="h-4 w-4 shrink-0" />
                     <span>Public Api</span>
                   </span>
-                </a>
+                </button>
               </li>
+
               <li
                 :if={@map_subscriptions_enabled?}
                 class={[
@@ -628,10 +636,11 @@
                 data-pc-name=""
                 data-pc-section="header"
               >
-                <a
+                <button
+                  type="button"
                   role="tab"
                   class="p-tabview-nav-link flex p-[10px]"
-                  tabindex="-1"
+                  tabindex="0"
                   aria-controls="pr_id_335_content"
                   aria-selected="false"
                   aria-disabled="false"
@@ -646,7 +655,7 @@
                     <.icon name="hero-puzzle-piece-solid" class="h-4 w-4 shrink-0" />
                     <span>Bots</span>
                   </span>
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -671,6 +680,7 @@
             <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
               :if={@active_settings_tab == "access_lists"}
               access_lists={@acls}
+              assigned_access_lists={@assigned_acls}
               selected_ids={@selected_access_list_ids}
               saved_ids={@saved_access_list_ids}
               marked_ids={@marked_access_list_ids}

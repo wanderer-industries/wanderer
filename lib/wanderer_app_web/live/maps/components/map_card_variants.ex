@@ -320,7 +320,7 @@ defmodule WandererAppWeb.Maps.MapCardVariants do
         <.icon name="hero-cog-6-tooth-solid" class="size-3.5" />
       </button>
       <button
-        :if={WandererApp.Maps.can_edit?(@map, @current_user)}
+        :if={WandererApp.Maps.can_delete?(@map, @current_user)}
         id={"#{@prefix}-delete-#{@map.slug}"}
         type="button"
         phx-hook="MapAction"

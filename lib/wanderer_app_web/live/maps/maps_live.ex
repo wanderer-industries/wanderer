@@ -38,6 +38,7 @@ defmodule WandererAppWeb.MapsLive do
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
        map_view_mode: :compact,
        acls: [],
+       assigned_acls: [],
        location: nil,
        is_version_valid?: false
      )
@@ -91,6 +92,7 @@ defmodule WandererAppWeb.MapsLive do
           active_create_tab: "common",
           selected_access_list_ids: [],
           saved_access_list_ids: [],
+          assigned_acls: [],
           marked_access_list_ids: [],
           access_list_search: "",
           access_list_search_focused: false
@@ -127,7 +129,7 @@ defmodule WandererAppWeb.MapsLive do
          url
        )
        when not is_nil(current_user) do
-    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
+    WandererApp.Maps.check_user_can_manage_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
         {:ok, export_settings} =
@@ -263,7 +265,7 @@ defmodule WandererAppWeb.MapsLive do
         _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    case WandererApp.Maps.check_user_can_delete_map(map_slug, current_user) do
+    case WandererApp.Maps.check_user_can_manage_map(map_slug, current_user) do
       {:ok, map} ->
         {:noreply, assign_common_form(socket, map, ~p"/maps/#{map_slug}/settings")}
 
@@ -456,12 +458,15 @@ defmodule WandererAppWeb.MapsLive do
         %{"ids" => access_list_ids},
         socket
       ) do
-    available_ids = socket.assigns.acls |> Enum.map(& &1.id) |> MapSet.new()
+    assigned_ids =
+      (socket.assigns.assigned_acls ++ socket.assigns.acls)
+      |> Enum.map(& &1.id)
+      |> MapSet.new()
 
     visible_ids =
       access_list_ids
       |> String.split(",", trim: true)
-      |> Enum.filter(&MapSet.member?(available_ids, &1))
+      |> Enum.filter(&MapSet.member?(assigned_ids, &1))
 
     all_visible_marked? =
       visible_ids != [] and
@@ -556,6 +561,8 @@ defmodule WandererAppWeb.MapsLive do
         |> WandererApp.Api.Map.update(form)
         |> case do
           {:ok, updated_map} ->
+            broadcast_map_settings_update(updated_map)
+
             if socket.assigns.live_action == :settings do
               {:ok, %{maps: maps}} = load_maps(current_user)
 
@@ -602,7 +609,7 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   def handle_event("delete", %{"data" => map_slug} = _params, socket) do
-    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    WandererApp.Maps.check_user_can_delete_map(map_slug, socket.assigns.current_user)
     |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with deletion
@@ -907,6 +914,16 @@ defmodule WandererAppWeb.MapsLive do
     end)
   end
 
+  defp broadcast_map_settings_update(map) do
+    map_update = Map.take(map, [:name, :owner_id, :scope, :scopes])
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "maps:#{map.id}",
+      {:map_settings_updated, map.id, map_update}
+    )
+  end
+
   defp track_map_acl_event(event, access_list_id, map_id, user_id, character_id) do
     WandererApp.User.ActivityTracker.track_map_event(event, %{
       character_id: character_id,
@@ -956,6 +973,7 @@ defmodule WandererAppWeb.MapsLive do
     |> assign(:characters, characters)
     |> assign(:selected_access_list_ids, selected_access_list_ids)
     |> assign(:saved_access_list_ids, selected_access_list_ids)
+    |> assign(:assigned_acls, form_map.acls)
     |> assign(:marked_access_list_ids, [])
     |> assign(:access_list_search, "")
     |> assign(:access_list_search_focused, false)

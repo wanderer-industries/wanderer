@@ -309,6 +309,8 @@ defmodule WandererApp.Maps do
       user_has_roles?(user, map, [:admin])
   end
 
+  def can_delete?(map, user), do: user_is_map_owner?(user, map)
+
   def can_view_acls?(map, user) do
     user_is_owner?(user, map) or
       user_has_roles?(user, map, [:admin, :manager])
@@ -320,6 +322,11 @@ defmodule WandererApp.Maps do
     acl_owner_ids = map.acls |> Enum.map(& &1.owner_id)
 
     map.owner_id in character_ids or character_ids |> Enum.any?(fn id -> id in acl_owner_ids end)
+  end
+
+  defp user_is_map_owner?(user, map) do
+    character_ids = Enum.map(user.characters, & &1.id)
+    map.owner_id in character_ids
   end
 
   def user_has_roles?(user, map, roles) do
@@ -338,25 +345,26 @@ defmodule WandererApp.Maps do
   def check_user_can_delete_map(map_slug, current_user) do
     WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
     |> case do
-      {:ok,
-       %{
-         user_permissions: user_permissions,
-         owner_id: owner_id
-       } = map} ->
-        user_permissions =
+      {:ok, map} ->
+        if user_is_map_owner?(current_user, map), do: {:ok, map}, else: {:error, :not_authorized}
+
+      error ->
+        {:error, error}
+    end
+  end
+
+  def check_user_can_manage_map(map_slug, current_user) do
+    WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
+    |> case do
+      {:ok, %{user_permissions: permissions, owner_id: owner_id} = map} ->
+        permissions =
           WandererApp.Permissions.get_map_permissions(
-            user_permissions,
+            permissions,
             owner_id,
-            current_user.characters |> Enum.map(& &1.id)
+            Enum.map(current_user.characters, & &1.id)
           )
 
-        case user_permissions.delete_map do
-          true ->
-            {:ok, map}
-
-          _ ->
-            {:error, :not_authorized}
-        end
+        if permissions.manage_map, do: {:ok, map}, else: {:error, :not_authorized}
 
       error ->
         {:error, error}
