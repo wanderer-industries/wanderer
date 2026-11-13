@@ -80,8 +80,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       )
     end
 
-    Enum.each(tracked_characters, &prune_dead_page_consumers/1)
-
     state = restore_page_consumers(state, tracked_characters)
 
     Enum.each(tracked_characters, &start_tracking(state, &1))
@@ -90,16 +88,30 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   defp restore_page_consumers(state, character_ids) do
+    # Collect every cached membership before checking the page PID. If the page
+    # dies during collection, we can either remove the complete set immediately
+    # or monitor the complete set and let the resulting :DOWN clean it up.
     character_ids
     |> Enum.reduce(%{}, &collect_page_consumers/2)
     |> Enum.reduce(state, fn {consumer_id, consumer}, state ->
-      register_consumer(
-        state,
-        MapSet.to_list(consumer.character_ids),
-        consumer_id,
-        consumer.profile,
-        consumer.monitor_pid
-      )
+      character_ids = MapSet.to_list(consumer.character_ids)
+
+      if local_process_alive?(consumer.monitor_pid) do
+        register_consumer(
+          state,
+          character_ids,
+          consumer_id,
+          consumer.profile,
+          consumer.monitor_pid
+        )
+      else
+        Enum.each(
+          character_ids,
+          &update_consumer(&1, consumer_id, consumer.profile, false)
+        )
+
+        state
+      end
     end)
   end
 
@@ -109,18 +121,14 @@ defmodule WandererApp.Character.TrackerManager.Impl do
         Enum.reduce(character_consumers, consumers, fn
           {{:characters_page, pid} = consumer_id, profile}, consumers
           when is_pid(pid) and profile in [:fast, :slow] ->
-            if local_process_alive?(pid) do
-              Map.update(
-                consumers,
-                consumer_id,
-                %{character_ids: MapSet.new([character_id]), monitor_pid: pid, profile: profile},
-                fn consumer ->
-                  %{consumer | character_ids: MapSet.put(consumer.character_ids, character_id)}
-                end
-              )
-            else
-              consumers
-            end
+            Map.update(
+              consumers,
+              consumer_id,
+              %{character_ids: MapSet.new([character_id]), monitor_pid: pid, profile: profile},
+              fn consumer ->
+                %{consumer | character_ids: MapSet.put(consumer.character_ids, character_id)}
+              end
+            )
 
           _consumer, consumers ->
             consumers
@@ -132,28 +140,6 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   end
 
   defp local_process_alive?(pid), do: node(pid) == node() and Process.alive?(pid)
-
-  # Page consumer monitors live only in this process' state, so after a restart
-  # the `:DOWN` messages of pages that died meanwhile are never received. Drop
-  # their consumers from the character state; live pages re-register on reconnect.
-  defp prune_dead_page_consumers(character_id) do
-    case WandererApp.Character.get_character_state(character_id, false) do
-      {:ok, %{consumers: consumers}} when is_map(consumers) ->
-        consumers
-        |> Map.keys()
-        |> Enum.filter(fn
-          {:characters_page, pid} when is_pid(pid) and node(pid) == node() ->
-            not Process.alive?(pid)
-
-          _consumer_id ->
-            false
-        end)
-        |> Enum.each(&update_consumer(character_id, &1, :slow, false))
-
-      _ ->
-        :ok
-    end
-  end
 
   def start_tracking(state, character_id) do
     if not WandererApp.Cache.has_key?("#{character_id}:track_requested") do

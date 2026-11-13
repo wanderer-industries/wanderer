@@ -172,6 +172,8 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
       character_id: character_id,
       map_id: map_id
     } do
+      second_character_id = "test-char-#{System.unique_integer([:positive])}"
+      character_ids = [character_id, second_character_id]
       dead_pid = spawn(fn -> :ok end)
       ref = Process.monitor(dead_pid)
       assert_receive {:DOWN, ^ref, :process, ^dead_pid, _reason}
@@ -186,15 +188,24 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
         }
       })
 
+      seed_state(second_character_id, %{
+        consumers: %{{:characters_page, dead_pid} => :slow}
+      })
+
       {:ok, previous_tracked} = WandererApp.Cache.lookup("tracked_characters", [])
-      WandererApp.Cache.insert("tracked_characters", [character_id])
+      WandererApp.Cache.insert("tracked_characters", character_ids)
 
       on_exit(fn ->
         WandererApp.Cache.insert("tracked_characters", previous_tracked)
-        WandererApp.Cache.delete("#{character_id}:track_requested")
+        Cachex.del(:character_state_cache, second_character_id)
+
+        Enum.each(character_ids, fn id ->
+          WandererApp.Cache.delete("#{id}:track_requested")
+          WandererApp.Cache.delete("character:#{id}:last_active_time")
+        end)
 
         WandererApp.Cache.insert_or_update("track_characters_queue", [], fn queue ->
-          Enum.reject(queue, &(&1 == character_id))
+          Enum.reject(queue, &(&1 in character_ids))
         end)
       end)
 
@@ -205,23 +216,36 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
                {:map, map_id} => :fast,
                live_consumer => :slow
              }
+
+      assert Character.get_character_state!(second_character_id).consumers == %{}
+
+      assert {:ok, %DateTime{}} =
+               WandererApp.Cache.lookup("character:#{second_character_id}:last_active_time")
     end
 
     test "restores monitoring for a surviving page consumer", %{character_id: character_id} do
+      second_character_id = "test-char-#{System.unique_integer([:positive])}"
+      character_ids = [character_id, second_character_id]
       page_pid = spawn(fn -> Process.sleep(:infinity) end)
       consumer_id = {:characters_page, page_pid}
 
       seed_state(character_id, %{consumers: %{consumer_id => :slow}})
+      seed_state(second_character_id, %{consumers: %{consumer_id => :slow}})
 
       {:ok, previous_tracked} = WandererApp.Cache.lookup("tracked_characters", [])
-      WandererApp.Cache.insert("tracked_characters", [character_id])
+      WandererApp.Cache.insert("tracked_characters", character_ids)
 
       on_exit(fn ->
         WandererApp.Cache.insert("tracked_characters", previous_tracked)
-        WandererApp.Cache.delete("#{character_id}:track_requested")
+        Cachex.del(:character_state_cache, second_character_id)
+
+        Enum.each(character_ids, fn id ->
+          WandererApp.Cache.delete("#{id}:track_requested")
+          WandererApp.Cache.delete("character:#{id}:last_active_time")
+        end)
 
         WandererApp.Cache.insert_or_update("track_characters_queue", [], fn queue ->
-          Enum.reject(queue, &(&1 == character_id))
+          Enum.reject(queue, &(&1 in character_ids))
         end)
 
         if Process.alive?(page_pid) do
@@ -236,11 +260,12 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
       assert %{
                monitor_pid: ^page_pid,
                monitor_ref: monitor_ref,
-               character_ids: character_ids
+               character_ids: recovered_character_ids
              } = manager_state.consumers[consumer_id]
 
       assert is_reference(monitor_ref)
-      assert MapSet.member?(character_ids, character_id)
+      assert MapSet.member?(recovered_character_ids, character_id)
+      assert MapSet.member?(recovered_character_ids, second_character_id)
 
       Process.exit(page_pid, :kill)
       assert_receive {:DOWN, ^monitor_ref, :process, ^page_pid, reason}
@@ -253,6 +278,11 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
 
       refute Map.has_key?(manager_state.consumers, consumer_id)
       refute Map.has_key?(Character.get_character_state!(character_id).consumers, consumer_id)
+
+      refute Map.has_key?(
+               Character.get_character_state!(second_character_id).consumers,
+               consumer_id
+             )
     end
   end
 
