@@ -129,7 +129,7 @@ defmodule WandererAppWeb.MapsLive do
          url
        )
        when not is_nil(current_user) do
-    WandererApp.Maps.check_user_can_manage_map(map_slug, current_user)
+    WandererApp.Maps.check_user_can_edit_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
         {:ok, export_settings} =
@@ -265,7 +265,7 @@ defmodule WandererAppWeb.MapsLive do
         _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    case WandererApp.Maps.check_user_can_manage_map(map_slug, current_user) do
+    case WandererApp.Maps.check_user_can_edit_map(map_slug, current_user) do
       {:ok, map} ->
         {:noreply, assign_common_form(socket, map, ~p"/maps/#{map_slug}/settings")}
 
@@ -508,7 +508,7 @@ defmodule WandererAppWeb.MapsLive do
         _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    with {:ok, map} <- WandererApp.MapRepo.get_map_by_slug_safely(map_slug),
+    with {:ok, map} <- WandererApp.Maps.check_user_can_edit_map(map_slug, current_user),
          {:ok, map_with_acls} <- Ash.load(map, :acls),
          selected_ids <- socket.assigns.selected_access_list_ids,
          {:ok, updated_map} <-
@@ -540,7 +540,7 @@ defmodule WandererAppWeb.MapsLive do
         %{"form" => form} = _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    WandererApp.Maps.check_user_can_edit_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with loading and updating
@@ -551,6 +551,7 @@ defmodule WandererAppWeb.MapsLive do
 
         form =
           form
+          |> Map.drop(["acls", "acls_text_input", "acls_empty_selection"])
           |> Map.put("scopes", scopes)
           |> Map.put(
             "only_tracked_characters",

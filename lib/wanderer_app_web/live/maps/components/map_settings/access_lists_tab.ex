@@ -4,7 +4,7 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
   @default_search_results_limit 10
 
   attr :access_lists, :list, required: true
-  attr :assigned_access_lists, :list, required: true
+  attr :saved_access_lists, :list, required: true
   attr :selected_ids, :list, required: true
   attr :saved_ids, :list, required: true
   attr :marked_ids, :list, required: true
@@ -12,17 +12,19 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
   attr :search_focused, :boolean, required: true
 
   def content(assigns) do
-    assigned_access_lists =
-      (assigns.assigned_access_lists ++ assigns.access_lists)
-      |> Enum.uniq_by(& &1.id)
-      |> Enum.filter(&(&1.id in assigns.selected_ids))
+    visible_access_lists =
+      visible_access_lists(
+        assigns.saved_access_lists,
+        assigns.access_lists,
+        assigns.selected_ids
+      )
 
-    assigned_ids = Enum.map(assigned_access_lists, & &1.id)
+    assigned_ids = Enum.map(visible_access_lists, & &1.id)
     marked_count = Enum.count(assigned_ids, &(&1 in assigns.marked_ids))
 
     assigns =
       assign(assigns,
-        assigned_access_lists: assigned_access_lists,
+        visible_access_lists: visible_access_lists,
         search_results: search_results(assigns),
         assigned_ids: Enum.join(assigned_ids, ","),
         all_assigned_marked: assigned_ids != [] and marked_count == length(assigned_ids),
@@ -115,7 +117,7 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
                       event="toggle_all_access_lists"
                       checked={@all_assigned_marked}
                       partial={@some_assigned_marked}
-                      disabled={@assigned_access_lists == []}
+                      disabled={@visible_access_lists == []}
                       visible_ids={@assigned_ids}
                     />
                   </div>
@@ -126,7 +128,7 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
             </thead>
             <tbody>
               <tr
-                :for={access_list <- @assigned_access_lists}
+                :for={access_list <- @visible_access_lists}
                 class={[
                   "border-b border-neutral-700/80 transition-colors",
                   classes(
@@ -157,7 +159,7 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
                   {access_list.owner_name}
                 </td>
               </tr>
-              <tr :if={@assigned_access_lists == []}>
+              <tr :if={@visible_access_lists == []}>
                 <td colspan="3" class="h-28 text-center text-sm text-neutral-500">
                   No access lists assigned
                 </td>
@@ -243,4 +245,11 @@ defmodule WandererAppWeb.Maps.MapSettings.AccessListsTab do
 
   defp checkbox_aria_state(_checked, true), do: "mixed"
   defp checkbox_aria_state(checked, false), do: to_string(checked)
+
+  @doc false
+  def visible_access_lists(saved_access_lists, available_access_lists, selected_ids) do
+    (saved_access_lists ++ available_access_lists)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.filter(&(&1.id in selected_ids))
+  end
 end

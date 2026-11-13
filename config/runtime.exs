@@ -182,6 +182,9 @@ config :wanderer_app,
   character_tracking_pause_disabled:
     System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
     |> String.to_existing_atom(),
+  public_stats_refresh_interval_ms:
+    System.get_env("WANDERER_PUBLIC_STATS_REFRESH_INTERVAL_MS", "30000")
+    |> String.to_integer(),
   character_api_disabled: character_api_disabled,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,

@@ -206,6 +206,54 @@ defmodule WandererApp.Character.TrackerUpdateSettingsTest do
                live_consumer => :slow
              }
     end
+
+    test "restores monitoring for a surviving page consumer", %{character_id: character_id} do
+      page_pid = spawn(fn -> Process.sleep(:infinity) end)
+      consumer_id = {:characters_page, page_pid}
+
+      seed_state(character_id, %{consumers: %{consumer_id => :slow}})
+
+      {:ok, previous_tracked} = WandererApp.Cache.lookup("tracked_characters", [])
+      WandererApp.Cache.insert("tracked_characters", [character_id])
+
+      on_exit(fn ->
+        WandererApp.Cache.insert("tracked_characters", previous_tracked)
+        WandererApp.Cache.delete("#{character_id}:track_requested")
+
+        WandererApp.Cache.insert_or_update("track_characters_queue", [], fn queue ->
+          Enum.reject(queue, &(&1 == character_id))
+        end)
+
+        if Process.alive?(page_pid) do
+          Process.exit(page_pid, :kill)
+        end
+      end)
+
+      manager_state =
+        TrackerManagerImpl.new(%{characters: [], opts: %{}, consumers: %{}})
+        |> TrackerManagerImpl.start()
+
+      assert %{
+               monitor_pid: ^page_pid,
+               monitor_ref: monitor_ref,
+               character_ids: character_ids
+             } = manager_state.consumers[consumer_id]
+
+      assert is_reference(monitor_ref)
+      assert MapSet.member?(character_ids, character_id)
+
+      Process.exit(page_pid, :kill)
+      assert_receive {:DOWN, ^monitor_ref, :process, ^page_pid, reason}
+
+      manager_state =
+        TrackerManagerImpl.handle_info(
+          {:DOWN, monitor_ref, :process, page_pid, reason},
+          manager_state
+        )
+
+      refute Map.has_key?(manager_state.consumers, consumer_id)
+      refute Map.has_key?(Character.get_character_state!(character_id).consumers, consumer_id)
+    end
   end
 
   describe "field-scoped state updates" do

@@ -23,6 +23,8 @@ defmodule WandererApp.CharactersTrackingLiveTest do
   import Mox
   import WandererApp.MapTestHelpers
 
+  alias WandererAppWeb.MapCharactersEventHandler
+
   setup :verify_on_exit!
 
   @test_character_eve_id_1 3_100_000_001
@@ -275,6 +277,43 @@ defmodule WandererApp.CharactersTrackingLiveTest do
 
       {:ok, settings_on_again} = WandererApp.MapCharacterSettingsRepo.get(map.id, character.id)
       assert settings_on_again.tracked == true
+    end
+  end
+
+  describe "map tracking refresh" do
+    @tag :integration
+    test "stores the refreshed tracked characters for reconnect initialization", %{
+      map: map,
+      character1: character,
+      user: user
+    } do
+      {:ok, _settings} =
+        WandererApp.MapCharacterSettingsRepo.track(%{
+          map_id: map.id,
+          character_id: character.id
+        })
+
+      current_user = Ash.load!(user, :characters)
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          map_id: map.id,
+          main_character_eve_id: nil,
+          following_character_eve_id: nil,
+          current_user: current_user,
+          tracked_characters: []
+        }
+      }
+
+      updated_socket =
+        MapCharactersEventHandler.handle_server_event(
+          %{event: :refresh_user_characters},
+          socket
+        )
+
+      assert Enum.map(updated_socket.assigns.tracked_characters, & &1.id) == [character.id]
+      assert updated_socket.assigns.has_tracked_characters?
     end
   end
 

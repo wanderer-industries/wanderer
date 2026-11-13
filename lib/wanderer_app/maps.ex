@@ -353,7 +353,7 @@ defmodule WandererApp.Maps do
     end
   end
 
-  def check_user_can_manage_map(map_slug, current_user) do
+  def check_user_can_edit_map(map_slug, current_user) do
     WandererApp.MapRepo.get_by_slug_with_permissions(map_slug, current_user)
     |> case do
       {:ok, %{user_permissions: permissions, owner_id: owner_id} = map} ->
@@ -364,7 +364,7 @@ defmodule WandererApp.Maps do
             Enum.map(current_user.characters, & &1.id)
           )
 
-        if permissions.manage_map, do: {:ok, map}, else: {:error, :not_authorized}
+        if permissions.admin_map, do: {:ok, map}, else: {:error, :not_authorized}
 
       error ->
         {:error, error}

@@ -80,14 +80,58 @@ defmodule WandererApp.Character.TrackerManager.Impl do
       )
     end
 
-    tracked_characters
-    |> Enum.each(fn character_id ->
-      prune_dead_page_consumers(character_id)
-      start_tracking(state, character_id)
-    end)
+    Enum.each(tracked_characters, &prune_dead_page_consumers/1)
+
+    state = restore_page_consumers(state, tracked_characters)
+
+    Enum.each(tracked_characters, &start_tracking(state, &1))
 
     state
   end
+
+  defp restore_page_consumers(state, character_ids) do
+    character_ids
+    |> Enum.reduce(%{}, &collect_page_consumers/2)
+    |> Enum.reduce(state, fn {consumer_id, consumer}, state ->
+      register_consumer(
+        state,
+        MapSet.to_list(consumer.character_ids),
+        consumer_id,
+        consumer.profile,
+        consumer.monitor_pid
+      )
+    end)
+  end
+
+  defp collect_page_consumers(character_id, consumers) do
+    case WandererApp.Character.get_character_state(character_id, false) do
+      {:ok, %{consumers: character_consumers}} when is_map(character_consumers) ->
+        Enum.reduce(character_consumers, consumers, fn
+          {{:characters_page, pid} = consumer_id, profile}, consumers
+          when is_pid(pid) and profile in [:fast, :slow] ->
+            if local_process_alive?(pid) do
+              Map.update(
+                consumers,
+                consumer_id,
+                %{character_ids: MapSet.new([character_id]), monitor_pid: pid, profile: profile},
+                fn consumer ->
+                  %{consumer | character_ids: MapSet.put(consumer.character_ids, character_id)}
+                end
+              )
+            else
+              consumers
+            end
+
+          _consumer, consumers ->
+            consumers
+        end)
+
+      _ ->
+        consumers
+    end
+  end
+
+  defp local_process_alive?(pid), do: node(pid) == node() and Process.alive?(pid)
 
   # Page consumer monitors live only in this process' state, so after a restart
   # the `:DOWN` messages of pages that died meanwhile are never received. Drop

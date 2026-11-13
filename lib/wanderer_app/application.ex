@@ -109,7 +109,6 @@ defmodule WandererApp.Application do
         {Cachex, name: :wanderer_app_cache, default_ttl: :timer.hours(1)},
         id: :wanderer_app_cache_worker
       ),
-      WandererApp.PublicStats,
       # Cache for webhook subscriptions - 5 minute TTL to reduce DB load
       Supervisor.child_spec(
         {Cachex, name: :webhook_subscriptions_cache, default_ttl: :timer.minutes(5)},
@@ -152,6 +151,7 @@ defmodule WandererApp.Application do
     children =
       core_children ++
         runtime_children ++
+        [WandererApp.PublicStats] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
         maybe_start_kills_services() ++
         maybe_start_external_events_services()

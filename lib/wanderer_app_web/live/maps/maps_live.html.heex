@@ -375,7 +375,7 @@
     <div class="min-h-0 flex-1">
       <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
         access_lists={@acls}
-        assigned_access_lists={@assigned_acls}
+        saved_access_lists={@assigned_acls}
         selected_ids={@selected_access_list_ids}
         saved_ids={@saved_access_list_ids}
         marked_ids={@marked_access_list_ids}
@@ -680,7 +680,7 @@
             <WandererAppWeb.Maps.MapSettings.AccessListsTab.content
               :if={@active_settings_tab == "access_lists"}
               access_lists={@acls}
-              assigned_access_lists={@assigned_acls}
+              saved_access_lists={@assigned_acls}
               selected_ids={@selected_access_list_ids}
               saved_ids={@saved_access_list_ids}
               marked_ids={@marked_access_list_ids}

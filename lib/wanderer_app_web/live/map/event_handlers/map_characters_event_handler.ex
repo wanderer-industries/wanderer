@@ -107,7 +107,10 @@ defmodule WandererAppWeb.MapCharactersEventHandler do
 
     # Update socket assigns but don't affect followed state
     socket
-    |> assign(has_tracked_characters?: user_character_eve_ids |> Enum.empty?() |> Kernel.not())
+    |> assign(
+      tracked_characters: tracked_characters,
+      has_tracked_characters?: user_character_eve_ids |> Enum.empty?() |> Kernel.not()
+    )
     |> MapEventHandler.push_map_event(
       "map_updated",
       %{
