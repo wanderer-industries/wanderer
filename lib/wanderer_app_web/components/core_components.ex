@@ -88,16 +88,14 @@ defmodule WandererAppWeb.CoreComponents do
           >
             <h3 class="p-dialog-header font-bold text-base">
               <div>{@title}</div>
-              <div class="absolute right-4">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="p-link opacity-70 hover:opacity-100"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                type="button"
+                class="p-dialog-header-close p-link opacity-70 hover:opacity-100"
+                aria-label={gettext("close")}
+              >
+                <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+              </button>
             </h3>
             <div id={"#{@id}-content"} class="p-dialog-content !overflow-visible">
               {render_slot(@inner_block)}
@@ -285,6 +283,8 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
   attr(:data, :any, default: nil)
+  attr(:outlined, :boolean, default: true)
+  attr(:severity, :string, default: nil)
   attr(:rest, :global, include: ~w(disabled form name value))
 
   slot(:inner_block, required: true)
@@ -294,7 +294,12 @@ defmodule WandererAppWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 p-button p-component p-button-outlined p-button-sm",
+        "phx-submit-loading:opacity-75 p-button p-component p-button-sm",
+        classes(
+          "p-button-outlined": @outlined,
+          "p-button-warning": @severity == "warning",
+          "p-button-danger": @severity == "error"
+        ),
         @class
       ]}
       data={@data}
@@ -379,7 +384,7 @@ defmodule WandererAppWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name} class="form-control mt-2">
-      <label class="inputContainer" for={@name}>
+      <label class="inputContainer" for={@id}>
         <span>{@label}</span>
         <div></div>
         <div class="smallInputSwitch">
@@ -431,7 +436,6 @@ defmodule WandererAppWeb.CoreComponents do
                 </svg>
               </div>
             </div>
-            <label for={@name} class="select-none ml-1.5"></label>
           </div>
         </div>
       </label>
@@ -523,7 +527,12 @@ defmodule WandererAppWeb.CoreComponents do
     <label class="form-control w-full" phx-feedback-for={@name}>
       <.label for={@id}><span class="label-text">{@label}</span></.label>
       <div class="join">
-        <input :if={@prefix} class="p-inputtext bg-neutral-700 join-item" disabled value={@prefix} />
+        <input
+          :if={@prefix}
+          class="p-inputtext join-item bg-neutral-700 !rounded-l !rounded-r-none"
+          disabled
+          value={@prefix}
+        />
         <input
           type={@type}
           name={@name}

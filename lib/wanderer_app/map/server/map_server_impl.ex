@@ -10,7 +10,8 @@ defmodule WandererApp.Map.Server.Impl do
     ConnectionsImpl,
     SystemsImpl,
     SignaturesImpl,
-    PingsImpl
+    PingsImpl,
+    SettingsImpl
   }
 
   @enforce_keys [
@@ -376,6 +377,10 @@ defmodule WandererApp.Map.Server.Impl do
 
   def handle_event({:map_acl_updated, map_id, added_acls, removed_acls}) do
     AclsImpl.handle_map_acl_updated(map_id, added_acls, removed_acls)
+  end
+
+  def handle_event({:map_settings_updated, map_id, map_update}) do
+    SettingsImpl.handle_map_settings_updated(map_id, map_update)
   end
 
   def handle_event({:acl_updated, %{acl_id: acl_id}}) do

@@ -151,6 +151,7 @@ defmodule WandererApp.Application do
     children =
       core_children ++
         runtime_children ++
+        [WandererApp.PublicStats] ++
         maybe_start_corp_wallet_tracker(WandererApp.Env.map_subscriptions_enabled?()) ++
         maybe_start_kills_services() ++
         maybe_start_external_events_services()

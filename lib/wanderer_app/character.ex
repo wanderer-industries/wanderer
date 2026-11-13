@@ -137,19 +137,39 @@ defmodule WandererApp.Character do
     end
   end
 
-  def update_character_state(character_id, character_state_update) do
-    Cachex.get_and_update(:character_state_cache, character_id, fn character_state ->
-      case character_state do
-        nil ->
-          new_state = WandererApp.Character.Tracker.init(character_id: character_id)
-          :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
+  def update_character_state(character_id, update_fun) when is_function(update_fun, 1) do
+    case Cachex.get_and_update(:character_state_cache, character_id, fn character_state ->
+           current_state =
+             character_state || WandererApp.Character.Tracker.init(character_id: character_id)
 
-          {:commit, Map.merge(new_state, character_state_update)}
+           if is_nil(character_state) do
+             :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
+           end
 
-        _ ->
-          {:commit, Map.merge(character_state, character_state_update)}
-      end
-    end)
+           {:commit, update_fun.(current_state)}
+         end) do
+      {:commit, updated_state} -> {:ok, updated_state}
+      error -> error
+    end
+  end
+
+  def update_character_state(character_id, character_state_update)
+      when is_map(character_state_update) and not is_struct(character_state_update) do
+    case Cachex.get_and_update(:character_state_cache, character_id, fn character_state ->
+           case character_state do
+             nil ->
+               new_state = WandererApp.Character.Tracker.init(character_id: character_id)
+               :telemetry.execute([:wanderer_app, :character, :tracker, :started], %{count: 1})
+
+               {:commit, Map.merge(new_state, character_state_update)}
+
+             _ ->
+               {:commit, Map.merge(character_state, character_state_update)}
+           end
+         end) do
+      {:commit, updated_state} -> {:ok, updated_state}
+      error -> error
+    end
   end
 
   def delete_character_state(character_id) do

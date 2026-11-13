@@ -17,6 +17,7 @@ defmodule WandererApp.Env do
   def invites(), do: get_key(:invites, false)
 
   def map_subscriptions_enabled?(), do: get_key(:map_subscriptions_enabled, false)
+  def legacy_characters_page_enabled?(), do: get_key(:legacy_characters_page_enabled, false)
   def public_api_disabled?(), do: get_key(:public_api_disabled, false)
 
   @decorate cacheable(
@@ -31,6 +32,7 @@ defmodule WandererApp.Env do
             )
   def tracking_pool_max_size(), do: get_key(:tracking_pool_max_size, 300)
   def character_tracking_pause_disabled?(), do: get_key(:character_tracking_pause_disabled, true)
+  def public_stats_refresh_interval_ms(), do: get_key(:public_stats_refresh_interval_ms, 30_000)
   def character_api_disabled?(), do: get_key(:character_api_disabled, false)
   def wanderer_kills_service_enabled?(), do: get_key(:wanderer_kills_service_enabled, false)
   def wallet_tracking_enabled?(), do: get_key(:wallet_tracking_enabled, false)

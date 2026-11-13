@@ -1,5 +1,5 @@
 import { DotlanBehavior } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { to_5 } from './to_5.ts';
+import { to_6 } from './to_6.ts';
 
 describe('to_6', () => {
   it('adds the default Dotlan behavior to existing interface settings', () => {
@@ -9,7 +9,7 @@ describe('to_6', () => {
       },
     };
 
-    expect(to_5.up(previousSettings).interface).toMatchObject({
+    expect(to_6.up(previousSettings).interface).toMatchObject({
       dotlanBehavior: DotlanBehavior.system,
       isShowMenu: true,
     });
@@ -22,6 +22,6 @@ describe('to_6', () => {
       },
     };
 
-    expect(to_5.up(previousSettings).interface.dotlanBehavior).toBe(DotlanBehavior.kills);
+    expect(to_6.up(previousSettings).interface.dotlanBehavior).toBe(DotlanBehavior.kills);
   });
 });

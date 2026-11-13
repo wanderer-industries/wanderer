@@ -4,6 +4,7 @@ defmodule WandererApp.Esi do
   defdelegate get_server_status, to: WandererApp.Esi.ApiClient
   defdelegate get_group_info(group_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_type_info(type_id, opts \\ []), to: WandererApp.Esi.ApiClient
+  defdelegate get_station_info(station_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_alliance_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_corporation_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient
   defdelegate get_character_info(eve_id, opts \\ []), to: WandererApp.Esi.ApiClient

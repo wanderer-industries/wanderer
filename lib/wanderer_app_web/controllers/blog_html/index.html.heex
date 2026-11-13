@@ -1,69 +1,85 @@
-<section class="prose prose-lg max-w-full w-full leading-normal tracking-normal text-indigo-400 bg-cover bg-fixed flex items-center justify-center">
+<% field_posts = Enum.take(@posts, 6) %>
+
+<section class="relative min-h-dvh w-full overflow-hidden text-stone-100">
   <canvas id="bg-canvas"></canvas>
-  <div class="h-full w-full flex flex-col items-center">
-    <!--Main-->
-    <div class="artboard artboard-horizontal phone-3 max-w-full pt-6 !h-40">
-      <div class="crimson-harvest-frame-bright container min-h-[74px] -mt-[14px] mx-auto flex flex-wrap flex-row justify-center items-center gap-8">
-        <!--Left Col-->
-        <div class="flex flex-col justify-center items-center overflow-y-hidden">
-          <h1 class="ccp-font my-4 px-8 py-1 text-2xl text-stone-200 font-bold leading-tight text-center md:text-left [text-shadow:0_0px_8px_rgba(0,0,0,0.7)]">
-            THE #1 EVE MAPPER TOOL
-          </h1>
-        </div>
-        <!--Right Col-->
-        <div :if={@invite_token_valid} class="overflow-visible">
-          <div class="login-red-glow !z-100 relative group alert items-center fade-in-scale text-white w-[224px] h-[44px] rounded p-px overflow-hidden">
-            <div class="group animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#ef1b1b_20deg,transparent_120deg)] group-hover:bg-[#ef1b1b]" />
-            <div class="!bg-black  rounded w-[220px] h-[40px] flex items-center justify-center relative z-20">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_28%_45%,rgba(0,0,0,0.82)_0,rgba(0,0,0,0.52)_25%,transparent_55%)]"></div>
+
+  <div class="relative z-10 mx-auto min-h-dvh w-full max-w-[1480px] px-5 py-4 sm:px-9">
+    <.welcome_navigation />
+
+    <div class="mt-8 grid gap-8 lg:mt-0 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-[minmax(360px,0.72fr)_minmax(0,1.28fr)] lg:items-center">
+      <section class="relative max-w-xl py-6 lg:pl-10">
+        <div class="absolute -left-3 top-0 h-full w-px bg-gradient-to-b from-transparent via-orange-200/60 to-transparent"></div>
+        <div class="font-mono text-[9px] uppercase tracking-[0.36em] text-orange-200/75">Shared navigation // New Eden</div>
+        <h1 class="mb-0 mt-5 text-5xl font-semibold leading-[0.88] tracking-[-0.055em] text-white [text-shadow:0_4px_24px_rgba(0,0,0,1)] sm:text-7xl">
+          WANDERER.<br />W-SPACE.<br />LIVE INTEL.
+        </h1>
+        <p class="mb-0 mt-7 max-w-sm text-base leading-6 text-stone-200 [text-shadow:0_2px_10px_rgba(0,0,0,1)]">
+          Shared wormhole routes, live character tracking, and the intelligence to navigate W-space together.
+        </p>
+
+        <div :if={@invite_token_valid} class="mt-8">
+          <div class="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-stone-200/80">Authorize via EVE SSO / ESI</div>
+          <div class="login-accent-glow group relative h-[44px] w-[224px] overflow-hidden rounded p-px text-white">
+            <div class="animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#d8a36a_20deg,transparent_120deg)] group-hover:bg-[#d8a36a]"></div>
+            <div class="relative z-20 flex h-[40px] w-[220px] items-center justify-center rounded bg-black">
               <.link navigate={~p"/auth/eve?invite=#{@invite_token}"} class="opacity-100">
                 <img
                   src="https://web.ccpgamescdn.com/eveonlineassets/developers/eve-sso-login-black-large.png"
-                  class="w-[220px] h-[40px]"
+                  alt="Log in with EVE Online"
+                  class="h-[40px] w-[220px]"
                 />
               </.link>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <div id="posts-container" class="crimson-harvest-news-panel">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-        <%= for post <- @posts do %>
-          <.link class="group carousel-item relative my-2 mx-2" navigate={~p"/news/#{post.id}"}>
-            <div class="crimson-harvest-frame artbard-hoorizontal phone-1 relative overflow-hidden hover:text-white">
-              <img
-                class="rounded-m shadow-lg block !w-[300px] !h-[180px] opacity-75 !m-0"
-                src={post.cover_image_uri}
-              />
-              <div class="absolute rounded-m top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black opacity-75 group-hover:opacity-25 transition-opacity duration-300">
-              </div>
-
-              <div class="absolute bottom-2 w-full min-w-0 overflow-hidden p-4">
-                <% {first_part, second_part} =
-                  case String.split(post.title, ":", parts: 2) do
-                    [first, second] -> {first, second}
-                    [first] -> {first, nil}
-                  end %>
-                <h3 class="!m-0 !text-s w-full truncate font-bold ccp-font text-white">
-                  {first_part}
-                </h3>
-
-                <p class="!m-0 !text-s w-full truncate text-white ccp-font">
-                  {second_part || "\u00A0"}
-                </p>
-              </div>
-            </div>
+      <section class="relative lg:translate-y-10">
+        <div class="mb-4 flex items-center justify-between border-b border-white/25 px-3 py-3">
+          <span class="font-mono text-[11px] uppercase tracking-[0.26em] text-stone-100">Latest guides &amp; news</span>
+          <.link navigate={~p"/news"} class="group font-mono text-[11px] uppercase tracking-[0.2em] text-orange-200 transition hover:text-white">
+            All news <span class="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
           </.link>
-        <% end %>
-      </div>
+        </div>
+
+        <div class="grid gap-x-6 sm:grid-cols-2">
+          <%= for {post, index} <- Enum.with_index(field_posts, 1) do %>
+            <% {post_type, post_title} =
+              case String.split(post.title, ":", parts: 2) do
+                [first, second] -> {first, second}
+                [first] -> {"Update", first}
+              end %>
+            <.link navigate={~p"/news/#{post.id}"} class="group grid grid-cols-[36px_minmax(0,1fr)] gap-3 border-b border-white/20 bg-black/25 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur-[2px] backdrop-brightness-[0.65] backdrop-saturate-[0.75] transition hover:bg-black/35 hover:backdrop-brightness-[0.55] sm:even:translate-y-8">
+              <span class="font-mono text-[11px] text-orange-200">{String.pad_leading(Integer.to_string(index), 2, "0")}</span>
+              <span class="min-w-0">
+                <span class="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-300">
+                  <span class="truncate">{post_type}</span>
+                  <span :if={post.date} class="ml-auto shrink-0 text-stone-400">
+                    {post.date |> Calendar.strftime("%d %b %Y") |> String.upcase()}
+                  </span>
+                </span>
+                <span class="mt-2 block truncate text-[17px] font-medium text-white [text-shadow:0_2px_8px_rgba(0,0,0,1)] group-hover:text-orange-100">{post_title}</span>
+              </span>
+            </.link>
+          <% end %>
+        </div>
+      </section>
     </div>
 
-    <script>
-    </script>
+    <div class="absolute bottom-16 left-9 hidden items-baseline gap-4 font-mono text-[9px] uppercase tracking-[0.2em] text-stone-300 xl:flex">
+      <span class="shrink-0 whitespace-nowrap text-[10px] leading-none tracking-[0.22em] text-orange-200/80">Mapper activity <span class="text-white/30">//</span></span>
+      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.online_users}</strong> users online</span>
+      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.online_characters}</strong> characters online</span>
+      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.registered_characters}</strong> registered</span>
+      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.created_maps}</strong> maps</span>
+    </div>
 
-    <%!-- <div class="carousel carousel-center !bg-neutral rounded-box max-w-4xl space-x-6 p-4">
-
-    </div> --%>
+    <div class="mt-8 flex flex-col gap-3 border-t border-white/20 py-3 text-xs text-stone-200/80 lg:absolute lg:inset-x-9 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-center lg:justify-between">
+      <a target="_blank" rel="noopener noreferrer" href="https://www.eveonline.com/partners">
+        <img src="/images/eo_pp.png" class="w-[155px] opacity-80" alt="EVE Online Partnership Program" />
+      </a>
+      <span>EVE related materials belong to <span class="text-orange-200">Fenris Creations</span> // Wanderer Industries {Date.utc_today().year}</span>
+    </div>
   </div>
 </section>

@@ -78,6 +78,11 @@ map_subscriptions_enabled =
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
   |> String.to_existing_atom()
 
+legacy_characters_page_enabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_LEGACY_CHARACTERS_PAGE_ENABLED", "false")
+  |> String.to_existing_atom()
+
 map_subscription_characters_limit =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 10_000)
@@ -177,10 +182,14 @@ config :wanderer_app,
   character_tracking_pause_disabled:
     System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
     |> String.to_existing_atom(),
+  public_stats_refresh_interval_ms:
+    System.get_env("WANDERER_PUBLIC_STATS_REFRESH_INTERVAL_MS", "30000")
+    |> String.to_integer(),
   character_api_disabled: character_api_disabled,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,
   map_subscriptions_enabled: map_subscriptions_enabled,
+  legacy_characters_page_enabled: legacy_characters_page_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,

@@ -76,103 +76,69 @@ body > div:first-of-type {
 }
 
 .maps_bg {
-  background-image: url('/images/character-selection-background.png');
-  background-color: #050000;
-  background-size: auto 100%;
-  background-position: center top;
+  background-image: url('https://wanderer-industries.github.io/wanderer-assets/images/fractured-skies-background.webp');
+  background-color: #080b0c;
+  background-size: cover;
+  background-position: center center;
   background-repeat: no-repeat;
   width: 100%;
   height: 100%;
 }
 
-/* Temporary Crimson Harvest campaign frames. Remove when the campaign ends. */
-.crimson-harvest-frame,
-.crimson-harvest-frame-bright,
-.crimson-harvest-partner-frame {
+.fractured-skies-partner-frame {
   box-sizing: border-box;
-  border: 2px solid #db5d5d;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.crimson-harvest-frame {
-  box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
-}
-
-.crimson-harvest-frame-bright {
-  box-shadow: 0 0 26px 6px rgb(255 0 0 / 88%);
-}
-
-.crimson-harvest-partner-frame {
+  border: 1px solid rgb(206 216 214 / 18%);
+  background: linear-gradient(135deg, rgb(18 24 25 / 42%), rgb(5 8 9 / 28%));
+  box-shadow:
+    0 12px 32px rgb(0 0 0 / 22%),
+    inset 0 1px rgb(255 255 255 / 3%);
+  backdrop-filter: blur(1px) saturate(90%);
   width: min(640px, calc(100% - 2rem));
-  padding: 1.5rem clamp(1rem, 5vw, 3rem);
-  box-shadow: 0 0 26px 6px rgba(255, 0, 0, 0.29);
+  padding: 1rem clamp(1rem, 5vw, 3rem);
 }
 
-.crimson-harvest-news-panel {
-  position: relative;
-  z-index: 1;
-  max-width: 90%;
-  max-height: calc(100vh - 25rem);
-  overflow-y: auto;
-  border: 2px solid #ffadad80;
-  background: rgb(0 0 0 / 20%);
-  padding: 2rem 4rem;
-  box-shadow: 0 0 26px 6px rgb(181 9 9);
-  backdrop-filter: blur(3px);
+.login-accent-glow {
+  animation: login-accent-glow 5.6s ease-in-out infinite;
 }
 
-#posts-container {
-  scrollbar-color: #db5d5d transparent;
-  scrollbar-width: thin;
-}
-
-#posts-container::-webkit-scrollbar {
-  width: 7px;
-}
-
-#posts-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-#posts-container::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: #db5d5d;
-}
-
-#posts-container::-webkit-scrollbar-thumb:hover {
-  background: #ef7777;
-}
-
-.login-red-glow {
-  animation: login-red-glow 4.8s ease-in-out infinite;
-}
-
-@keyframes login-red-glow {
+@keyframes login-accent-glow {
   0%,
   100% {
-    box-shadow: 0 0 4px rgba(239, 27, 27, 0.3);
+    box-shadow: 0 0 4px rgb(216 163 106 / 20%);
   }
 
-  28% {
+  50% {
     box-shadow:
-      0 0 8px rgba(239, 27, 27, 0.55),
-      0 0 18px rgba(190, 18, 60, 0.25);
-  }
-
-  61% {
-    box-shadow: 0 0 5px rgba(239, 27, 27, 0.38);
-  }
-
-  82% {
-    box-shadow:
-      0 0 10px rgba(255, 55, 55, 0.65),
-      0 0 22px rgba(190, 18, 60, 0.3);
+      0 0 8px rgb(216 163 106 / 38%),
+      0 0 18px rgb(126 154 154 / 14%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-red-glow {
+  .login-accent-glow {
     animation: none;
+  }
+}
+
+.map-card-border-pulse:hover {
+  animation: map-card-border-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes map-card-border-pulse {
+  0%,
+  100% {
+    border-color: rgb(253 186 116 / 45%);
+  }
+
+  50% {
+    border-color: rgb(253 186 116 / 85%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-card-border-pulse:hover {
+    animation: none;
+    border-color: rgb(253 186 116 / 70%);
   }
 }
 
@@ -1033,33 +999,137 @@ body > div:first-of-type {
   height: 16px;
 }
 
-.verticalTabsContainer {
-  display: flex;
+.mapSettingsDialog {
+  display: flex !important;
+  flex-direction: column;
+  width: min(950px, calc(100vw - 2rem)) !important;
+  height: min(660px, calc(100vh - 2rem)) !important;
+  min-height: min(660px, calc(100vh - 2rem)) !important;
+  overflow: hidden !important;
+}
+
+.mapSettingsDialog > .p-dialog-header {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 40px;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.mapSettingsDialog > .p-dialog-content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.subscriptionRange {
+  --subscription-range-fill: #94a3b8;
+  --subscription-range-track: #27272a;
+  appearance: none;
   width: 100%;
-  min-height: 300px;
+  height: 1rem;
+  overflow: visible;
+  cursor: pointer;
+  background: transparent;
+}
+
+.subscriptionRange::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--subscription-range-fill) 0%,
+    var(--subscription-range-fill) var(--subscription-range-progress),
+    var(--subscription-range-track) var(--subscription-range-progress),
+    var(--subscription-range-track) 100%
+  );
+}
+
+.subscriptionRange::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.375rem;
+  appearance: none;
+  border: 2px solid var(--subscription-range-fill);
+  border-radius: 9999px;
+  background: #171717;
+  box-shadow: none;
+}
+
+.subscriptionRange::-moz-range-track,
+.subscriptionRange::-moz-range-progress {
+  height: 0.25rem;
+  border-radius: 9999px;
+}
+
+.subscriptionRange::-moz-range-track {
+  background: var(--subscription-range-track);
+}
+
+.subscriptionRange::-moz-range-progress {
+  background: var(--subscription-range-fill);
+}
+
+.subscriptionRange::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--subscription-range-fill);
+  border-radius: 9999px;
+  background: #171717;
+  box-shadow: none;
+}
+
+.mapSettingsLayout {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.verticalTabsContainer {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
 }
 .verticalTabsContainer .p-tabview {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
   width: 100%;
-  display: flex;
-  align-items: flex-start;
+  overflow: hidden;
 }
 .verticalTabsContainer .p-tabview-panels {
-  padding: 6px 1rem !important;
-  flex-grow: 1;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  box-sizing: border-box;
   height: 100%;
+  min-height: 0;
+  padding: 0 !important;
+  overflow: hidden;
 }
 .verticalTabsContainer .p-tabview-nav-container {
   border-right: none;
   height: 100%;
+  min-height: 0;
+  background-color: var(--surface-card);
+}
+.verticalTabsContainer .p-tabview-nav-content {
+  height: 100%;
+  min-height: 0;
 }
 .verticalTabsContainer .p-tabview-nav {
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
   width: 150px;
-  min-height: 100%;
   border: none;
 }
 .verticalTabsContainer .p-tabview-nav li {
   width: 100%;
+  cursor: pointer;
   border-right: 4px solid var(--surface-hover);
   background-color: var(--surface-card);
   transition:
@@ -1093,7 +1163,84 @@ body > div:first-of-type {
   border-right: 4px solid var(--primary-color);
 }
 .verticalTabsContainer .p-tabview-panel {
-  flex-grow: 1;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem 1.5rem;
+  overflow: hidden;
+}
+
+.mapSettingsPanelFooter {
+  padding: 0.75rem 1.5rem 1.5rem;
+  background: var(--surface-card);
+}
+
+.mapSettingsScrollableTab {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+}
+
+.mapSettingsCommonForm {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mapSettingsCommonContent {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+  scrollbar-gutter: stable;
+}
+
+@supports (appearance: base-select) {
+  .mapSettingsSelect,
+  .mapSettingsSelect::picker(select) {
+    appearance: base-select;
+  }
+
+  .mapSettingsSelect::picker(select) {
+    max-height: 16rem;
+    margin-top: 0.25rem;
+    overflow-y: auto;
+    border: 1px solid #525252;
+    border-radius: 0.125rem;
+    background: #171717;
+    padding: 0.25rem;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 45%);
+  }
+
+  .mapSettingsSelect option {
+    border-radius: 0.125rem;
+    background: #171717;
+    padding: 0.375rem 0.5rem;
+    color: #f5f5f5;
+    cursor: pointer;
+  }
+
+  .mapSettingsSelect option:hover,
+  .mapSettingsSelect option:focus {
+    background: #262626;
+  }
+
+  .mapSettingsSelect option:checked {
+    background: rgb(12 74 110 / 55%);
+    color: #e0f2fe;
+  }
+
+  .mapSettingsSelect option::checkmark {
+    display: none;
+  }
+
+  .mapSettingsSelect::picker-icon {
+    display: none;
+  }
 }
 
 /* Blog post CTA links - only in main post content */
@@ -1188,7 +1335,7 @@ body > div:first-of-type {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
 }
 
-.ql-tooltip input[type="text"] {
+.ql-tooltip input[type='text'] {
   background-color: #0c0a09;
   border-color: #44403c;
   color: #e7e5e4;

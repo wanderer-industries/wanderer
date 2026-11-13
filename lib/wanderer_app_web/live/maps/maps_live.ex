@@ -5,7 +5,14 @@ defmodule WandererAppWeb.MapsLive do
 
   require Logger
 
+  @map_view_options [
+    %{mode: :compact, value: "compact", label: "Compact cards", icon: "hero-queue-list-solid"},
+    %{mode: :cards, value: "cards", label: "Compact table", icon: "hero-list-bullet-solid"}
+  ]
+
   @pubsub_client Application.compile_env(:wanderer_app, :pubsub_client)
+
+  defp map_view_options, do: @map_view_options
 
   @impl true
   def mount(
@@ -29,7 +36,9 @@ defmodule WandererAppWeb.MapsLive do
        importing: false,
        map_subscriptions_enabled?: WandererApp.Env.map_subscriptions_enabled?(),
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?(),
+       map_view_mode: :compact,
        acls: [],
+       assigned_acls: [],
        location: nil,
        is_version_valid?: false
      )
@@ -46,6 +55,7 @@ defmodule WandererAppWeb.MapsLive do
        characters: [],
        location: nil,
        is_version_valid?: false,
+       map_view_mode: :compact,
        restrict_maps_creation?: WandererApp.Env.restrict_maps_creation?()
      )}
   end
@@ -79,6 +89,15 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:page_title, "Maps - Create")
         |> assign(:available_scopes, available_scopes())
         |> assign(
+          active_create_tab: "common",
+          selected_access_list_ids: [],
+          saved_access_list_ids: [],
+          assigned_acls: [],
+          marked_access_list_ids: [],
+          access_list_search: "",
+          access_list_search_focused: false
+        )
+        |> assign(
           :form,
           AshPhoenix.Form.for_create(WandererApp.Api.Map, :new,
             forms: [
@@ -99,60 +118,18 @@ defmodule WandererAppWeb.MapsLive do
     end
   end
 
-  defp apply_action(
-         %{assigns: %{current_user: current_user}} = socket,
-         :edit,
-         %{"slug" => map_slug} = _params,
-         url
-       )
-       when not is_nil(current_user) do
-    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
-    |> case do
-      {:ok, map} ->
-        # Load the owner association to get character details
-        map =
-          case Ash.load(map, :owner) do
-            {:ok, loaded_map} -> loaded_map |> map_map()
-            _ -> map |> map_map()
-          end
-
-        # Auto-initialize scopes from legacy scope if scopes is empty/nil
-        map = maybe_initialize_scopes_from_legacy(map)
-
-        # Add owner to characters list, filtering out nil values
-        characters =
-          [map.owner |> map_character() | socket.assigns.characters]
-          |> Enum.reject(&is_nil/1)
-          |> Enum.uniq()
-
-        socket
-        |> assign(:active_page, :maps)
-        |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
-        |> assign(:page_title, "Maps - Edit")
-        |> assign(:available_scopes, available_scopes())
-        |> assign(:map_slug, map_slug)
-        |> assign(:characters, characters)
-        |> assign(
-          :form,
-          map |> AshPhoenix.Form.for_update(:update, forms: [auto?: true])
-        )
-        |> load_access_lists()
-
-      _ ->
-        socket
-        |> put_flash(:error, "You don't have an access.")
-        |> push_navigate(to: ~p"/maps")
-    end
+  defp apply_action(socket, :edit, %{"slug" => map_slug}, _url) do
+    socket |> push_patch(to: ~p"/maps/#{map_slug}/settings")
   end
 
   defp apply_action(
          %{assigns: %{current_user: current_user}} = socket,
          :settings,
          %{"slug" => map_slug} = _params,
-         _url
+         url
        )
        when not is_nil(current_user) do
-    WandererApp.Maps.check_user_can_delete_map(map_slug, current_user)
+    WandererApp.Maps.check_user_can_edit_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
         {:ok, export_settings} =
@@ -168,6 +145,7 @@ defmodule WandererAppWeb.MapsLive do
         |> assign(:map_id, map.id)
         |> assign(:public_api_key, map.public_api_key)
         |> assign(:sse_enabled, map.sse_enabled)
+        |> assign_sse_enablement_status(map.id)
         |> assign(:map, map)
         |> assign(
           export_settings: export_settings |> _get_export_map_data(),
@@ -175,25 +153,12 @@ defmodule WandererAppWeb.MapsLive do
           importing: false,
           show_settings?: true,
           is_topping_up?: false,
-          active_settings_tab: "general",
+          active_settings_tab: "common",
           is_adding_subscription?: false,
           selected_subscription: nil,
-          options_form: options_form_data |> to_form(),
-          layout_options: [
-            {"Left To Right", "left_to_right"},
-            {"Top To Bottom", "top_to_bottom"}
-          ],
-          allowed_copy_for_options: [
-            {"Administrators", "admin_map"},
-            {"Managers", "manage_map"},
-            {"Members", "add_system"}
-          ],
-          allowed_paste_for_options: [
-            {"Members", "add_system"},
-            {"Administrators", "admin_map"},
-            {"Managers", "manage_map"}
-          ]
+          options_form: options_form_data |> to_form()
         )
+        |> assign_common_form(map, url)
         |> allow_upload(:settings,
           accept: ~w(.json),
           max_entries: 1,
@@ -217,6 +182,16 @@ defmodule WandererAppWeb.MapsLive do
     send_update(LiveSelect.Component, options: socket.assigns.characters, id: id)
 
     {:noreply, socket}
+  end
+
+  def handle_event("set-map-view", %{"mode" => mode}, socket) do
+    map_view_mode =
+      case mode do
+        "compact" -> :compact
+        _ -> :cards
+      end
+
+    {:noreply, assign(socket, map_view_mode: map_view_mode)}
   end
 
   def handle_event("generate-map-api-key", _params, socket) do
@@ -271,7 +246,10 @@ defmodule WandererAppWeb.MapsLive do
       AshPhoenix.Form.validate(
         socket.assigns.form,
         form
-        |> Map.put("acls", form["acls"] || [])
+        |> maybe_put_create_access_lists(
+          socket.assigns.live_action,
+          socket.assigns[:selected_access_list_ids] || []
+        )
         |> Map.put("scopes", scopes)
         |> Map.put(
           "only_tracked_characters",
@@ -283,6 +261,20 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   def handle_event(
+        "reset_common_settings",
+        _params,
+        %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
+      ) do
+    case WandererApp.Maps.check_user_can_edit_map(map_slug, current_user) do
+      {:ok, map} ->
+        {:noreply, assign_common_form(socket, map, ~p"/maps/#{map_slug}/settings")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Failed to reset map settings")}
+    end
+  end
+
+  def handle_event(
         "create",
         %{"form" => form},
         %{assigns: %{current_user: current_user}} = socket
@@ -291,7 +283,10 @@ defmodule WandererAppWeb.MapsLive do
     # Process scopes from checkbox form data
     scopes = parse_scopes_from_form(form)
 
-    form = form |> Map.put("scopes", scopes)
+    form =
+      form
+      |> Map.put("scopes", scopes)
+      |> Map.put("acls", socket.assigns.selected_access_list_ids)
 
     case WandererApp.Api.Map.new(form) do
       {:ok, new_map} ->
@@ -343,7 +338,7 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map: #{error_message}")
-         |> assign(error: error_message)}
+         |> assign(error: error_message, active_create_tab: "common")}
 
       {:error, %{errors: errors}} ->
         error_message =
@@ -356,7 +351,7 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map: #{error_message}")
-         |> assign(error: error_message)}
+         |> assign(error: error_message, active_create_tab: "common")}
 
       {:error, error} ->
         Logger.error("Unexpected error creating map",
@@ -367,14 +362,8 @@ defmodule WandererAppWeb.MapsLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create map. Please try again.")
-         |> assign(error: error)}
+         |> assign(error: error, active_create_tab: "common")}
     end
-  end
-
-  def handle_event("edit_map", %{"data" => slug}, socket) do
-    {:noreply,
-     socket
-     |> push_patch(to: ~p"/maps/#{slug}/edit")}
   end
 
   def handle_event("open_audit", %{"data" => slug}, socket),
@@ -396,8 +385,149 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   @impl true
+  def handle_event("change_settings_tab", %{"tab" => "public_api" = tab}, socket) do
+    {:noreply,
+     socket
+     |> assign(active_settings_tab: tab)
+     |> assign_sse_enablement_status(socket.assigns.map_id)}
+  end
+
   def handle_event("change_settings_tab", %{"tab" => tab}, socket),
-    do: {:noreply, socket |> assign(active_settings_tab: tab)}
+    do: {:noreply, assign(socket, active_settings_tab: tab)}
+
+  def handle_event("change_create_tab", %{"tab" => tab}, socket)
+      when tab in ["common", "access_lists"] do
+    {:noreply, assign(socket, active_create_tab: tab)}
+  end
+
+  def handle_event(
+        "filter_access_lists",
+        %{"access_list_search" => %{"query" => query}},
+        socket
+      ) do
+    {:noreply, assign(socket, :access_list_search, query)}
+  end
+
+  def handle_event("focus_access_list_search", _params, socket) do
+    {:noreply, assign(socket, :access_list_search_focused, true)}
+  end
+
+  def handle_event("blur_access_list_search", _params, socket) do
+    {:noreply, assign(socket, :access_list_search_focused, false)}
+  end
+
+  def handle_event("add_access_list", %{"id" => access_list_id}, socket) do
+    available? = Enum.any?(socket.assigns.acls, &(&1.id == access_list_id))
+
+    selected_ids =
+      cond do
+        access_list_id in socket.assigns.selected_access_list_ids ->
+          socket.assigns.selected_access_list_ids
+
+        available? ->
+          socket.assigns.selected_access_list_ids ++ [access_list_id]
+
+        true ->
+          socket.assigns.selected_access_list_ids
+      end
+
+    {:noreply,
+     assign(socket,
+       selected_access_list_ids: selected_ids,
+       access_list_search: "",
+       access_list_search_focused: false
+     )}
+  end
+
+  def handle_event("toggle_access_list_selection", %{"id" => access_list_id}, socket) do
+    assigned? = access_list_id in socket.assigns.selected_access_list_ids
+    marked_ids = socket.assigns.marked_access_list_ids
+
+    marked_ids =
+      cond do
+        access_list_id in marked_ids -> List.delete(marked_ids, access_list_id)
+        assigned? -> marked_ids ++ [access_list_id]
+        true -> marked_ids
+      end
+
+    {:noreply, assign(socket, :marked_access_list_ids, marked_ids)}
+  end
+
+  def handle_event(
+        "toggle_all_access_lists",
+        %{"ids" => access_list_ids},
+        socket
+      ) do
+    assigned_ids =
+      (socket.assigns.assigned_acls ++ socket.assigns.acls)
+      |> Enum.map(& &1.id)
+      |> MapSet.new()
+
+    visible_ids =
+      access_list_ids
+      |> String.split(",", trim: true)
+      |> Enum.filter(&MapSet.member?(assigned_ids, &1))
+
+    all_visible_marked? =
+      visible_ids != [] and
+        Enum.all?(visible_ids, &(&1 in socket.assigns.marked_access_list_ids))
+
+    marked_ids =
+      if all_visible_marked? do
+        socket.assigns.marked_access_list_ids -- visible_ids
+      else
+        Enum.uniq(socket.assigns.marked_access_list_ids ++ visible_ids)
+      end
+
+    {:noreply, assign(socket, :marked_access_list_ids, marked_ids)}
+  end
+
+  def handle_event("delete_selected_access_lists", _params, socket) do
+    selected_ids =
+      socket.assigns.selected_access_list_ids -- socket.assigns.marked_access_list_ids
+
+    {:noreply,
+     assign(socket,
+       selected_access_list_ids: selected_ids,
+       marked_access_list_ids: []
+     )}
+  end
+
+  def handle_event("reset_access_lists", _params, socket) do
+    {:noreply,
+     assign(socket,
+       selected_access_list_ids: socket.assigns.saved_access_list_ids,
+       marked_access_list_ids: [],
+       access_list_search: "",
+       access_list_search_focused: false
+     )}
+  end
+
+  def handle_event(
+        "save_access_lists",
+        _params,
+        %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
+      ) do
+    with {:ok, map} <- WandererApp.Maps.check_user_can_edit_map(map_slug, current_user),
+         {:ok, map_with_acls} <- Ash.load(map, :acls),
+         selected_ids <- socket.assigns.selected_access_list_ids,
+         {:ok, updated_map} <-
+           WandererApp.Api.Map.update_acls(map_with_acls, %{acls: selected_ids}) do
+      track_map_acl_changes(map_with_acls, selected_ids, current_user)
+      {:ok, %{maps: maps}} = load_maps(current_user)
+
+      {:noreply,
+       socket
+       |> put_flash(:info, "Access lists saved")
+       |> assign(:maps, AsyncResult.ok(maps))
+       |> assign(:map, updated_map)
+       |> assign_common_form(updated_map, ~p"/maps/#{updated_map.slug}/settings")
+       |> push_patch(to: ~p"/maps")}
+    else
+      _error ->
+        {:noreply, put_flash(socket, :error, "Failed to update access lists")}
+    end
+  end
 
   def handle_event("open_acl", %{"data" => id}, socket) do
     {:noreply,
@@ -410,7 +540,7 @@ defmodule WandererAppWeb.MapsLive do
         %{"form" => form} = _params,
         %{assigns: %{map_slug: map_slug, current_user: current_user}} = socket
       ) do
-    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    WandererApp.Maps.check_user_can_edit_map(map_slug, current_user)
     |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with loading and updating
@@ -421,7 +551,7 @@ defmodule WandererAppWeb.MapsLive do
 
         form =
           form
-          |> Map.put("acls", form["acls"] || [])
+          |> Map.drop(["acls", "acls_text_input", "acls_empty_selection"])
           |> Map.put("scopes", scopes)
           |> Map.put(
             "only_tracked_characters",
@@ -431,44 +561,23 @@ defmodule WandererAppWeb.MapsLive do
         map_with_acls
         |> WandererApp.Api.Map.update(form)
         |> case do
-          {:ok, _updated_map} ->
-            {added_acls, removed_acls} =
-              map_with_acls.acls |> Enum.map(& &1.id) |> _get_acls_diff(form["acls"])
+          {:ok, updated_map} ->
+            broadcast_map_settings_update(updated_map)
 
-            Phoenix.PubSub.broadcast(
-              WandererApp.PubSub,
-              "maps:#{map_with_acls.id}",
-              {:map_acl_updated, map_with_acls.id, added_acls, removed_acls}
-            )
+            if socket.assigns.live_action == :settings do
+              {:ok, %{maps: maps}} = load_maps(current_user)
 
-            {:ok, tracked_characters} =
-              WandererApp.Maps.get_tracked_map_characters(map_with_acls.id, current_user)
-
-            first_tracked_character_id = Enum.map(tracked_characters, & &1.id) |> List.first()
-
-            added_acls
-            |> Enum.each(fn acl_id ->
-              WandererApp.User.ActivityTracker.track_map_event(:map_acl_added, %{
-                character_id: first_tracked_character_id,
-                user_id: current_user.id,
-                map_id: map_with_acls.id,
-                acl_id: acl_id
-              })
-            end)
-
-            removed_acls
-            |> Enum.each(fn acl_id ->
-              WandererApp.User.ActivityTracker.track_map_event(:map_acl_removed, %{
-                character_id: first_tracked_character_id,
-                user_id: current_user.id,
-                map_id: map_with_acls.id,
-                acl_id: acl_id
-              })
-            end)
-
-            {:noreply,
-             socket
-             |> push_navigate(to: ~p"/maps")}
+              {:noreply,
+               socket
+               |> put_flash(:info, "Map settings saved")
+               |> assign(:maps, AsyncResult.ok(maps))
+               |> assign(:map, updated_map)
+               |> assign(:map_slug, updated_map.slug)
+               |> assign_common_form(updated_map, ~p"/maps/#{updated_map.slug}/settings")
+               |> push_patch(to: ~p"/maps")}
+            else
+              {:noreply, push_navigate(socket, to: ~p"/maps")}
+            end
 
           {:error, error} ->
             {:noreply,
@@ -501,7 +610,7 @@ defmodule WandererAppWeb.MapsLive do
   end
 
   def handle_event("delete", %{"data" => map_slug} = _params, socket) do
-    WandererApp.MapRepo.get_map_by_slug_safely(map_slug)
+    WandererApp.Maps.check_user_can_delete_map(map_slug, socket.assigns.current_user)
     |> case do
       {:ok, map} ->
         # Successfully found the map, proceed with deletion
@@ -768,7 +877,64 @@ defmodule WandererAppWeb.MapsLive do
     {added_acls, removed_acls}
   end
 
-  defp maybe_create_default_acl(%{"create_default_acl" => "true"} = _form, new_map) do
+  defp track_map_acl_changes(map, selected_access_list_ids, current_user) do
+    current_access_list_ids = Enum.map(map.acls, & &1.id)
+
+    {added_access_list_ids, removed_access_list_ids} =
+      _get_acls_diff(current_access_list_ids, selected_access_list_ids)
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "maps:#{map.id}",
+      {:map_acl_updated, map.id, added_access_list_ids, removed_access_list_ids}
+    )
+
+    {:ok, tracked_characters} =
+      WandererApp.Maps.get_tracked_map_characters(map.id, current_user)
+
+    first_tracked_character_id = tracked_characters |> Enum.map(& &1.id) |> List.first()
+
+    Enum.each(added_access_list_ids, fn access_list_id ->
+      track_map_acl_event(
+        :map_acl_added,
+        access_list_id,
+        map.id,
+        current_user.id,
+        first_tracked_character_id
+      )
+    end)
+
+    Enum.each(removed_access_list_ids, fn access_list_id ->
+      track_map_acl_event(
+        :map_acl_removed,
+        access_list_id,
+        map.id,
+        current_user.id,
+        first_tracked_character_id
+      )
+    end)
+  end
+
+  defp broadcast_map_settings_update(map) do
+    map_update = Map.take(map, [:name, :owner_id, :scope, :scopes])
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "maps:#{map.id}",
+      {:map_settings_updated, map.id, map_update}
+    )
+  end
+
+  defp track_map_acl_event(event, access_list_id, map_id, user_id, character_id) do
+    WandererApp.User.ActivityTracker.track_map_event(event, %{
+      character_id: character_id,
+      user_id: user_id,
+      map_id: map_id,
+      acl_id: access_list_id
+    })
+  end
+
+  defp maybe_create_default_acl(%{"create_default_acl" => "true"} = form, new_map) do
     {:ok, acl} =
       WandererApp.Api.AccessList.new(%{
         name: "#{new_map.name} ACL",
@@ -776,24 +942,64 @@ defmodule WandererAppWeb.MapsLive do
         owner_id: new_map.owner_id
       })
 
-    {:ok, _} = WandererApp.Api.Map.update_acls(new_map, %{acls: [acl.id]})
+    access_list_ids =
+      form
+      |> Map.get("acls", [])
+      |> List.insert_at(0, acl.id)
+      |> Enum.uniq()
+
+    {:ok, _} = WandererApp.Api.Map.update_acls(new_map, %{acls: access_list_ids})
   end
 
   defp maybe_create_default_acl(_form, _new_map), do: :ok
 
+  defp assign_common_form(socket, map, url) do
+    form_map =
+      case Ash.load(map, [:owner, acls: :owner]) do
+        {:ok, loaded_map} -> map_map(loaded_map)
+        _ -> map_map(map)
+      end
+      |> maybe_initialize_scopes_from_legacy()
+
+    selected_access_list_ids = Enum.map(form_map.acls, & &1.id)
+
+    characters =
+      [map_character(form_map.owner) | socket.assigns.characters]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    socket
+    |> assign(:uri, URI.parse(url) |> Map.put(:path, ~p"/"))
+    |> assign(:available_scopes, available_scopes())
+    |> assign(:characters, characters)
+    |> assign(:selected_access_list_ids, selected_access_list_ids)
+    |> assign(:saved_access_list_ids, selected_access_list_ids)
+    |> assign(:assigned_acls, form_map.acls)
+    |> assign(:marked_access_list_ids, [])
+    |> assign(:access_list_search, "")
+    |> assign(:access_list_search_focused, false)
+    |> assign(:form, AshPhoenix.Form.for_update(form_map, :update, forms: [auto?: true]))
+    |> load_access_lists()
+  end
+
   defp load_access_lists(socket) do
     {:ok, access_lists} = WandererApp.Acls.get_available_acls(socket.assigns.current_user)
+
+    access_lists =
+      case Ash.load(access_lists, :owner) do
+        {:ok, loaded_access_lists} -> loaded_access_lists
+        _ -> access_lists
+      end
 
     socket |> assign(acls: access_lists |> Enum.map(&map_acl/1))
   end
 
-  defp map_acl(%{name: name, id: id} = _acl) do
-    %{label: name, value: id, id: id}
+  defp map_acl(%{name: name, id: id} = acl) do
+    %{label: name, value: id, id: id, name: name, owner_name: acl_owner_name(acl)}
   end
 
-  defp map_acl_value(acl) do
-    acl
-  end
+  defp acl_owner_name(%{owner: %{name: name}}) when is_binary(name), do: name
+  defp acl_owner_name(_acl), do: "Unknown owner"
 
   defp map_character(%{name: name, id: id, eve_id: eve_id} = _character) do
     %{label: name, value: id, id: id, eve_id: eve_id}
@@ -862,6 +1068,21 @@ defmodule WandererAppWeb.MapsLive do
 
       _ ->
         []
+    end
+  end
+
+  defp maybe_put_create_access_lists(form, :create, selected_access_list_ids),
+    do: Map.put(form, "acls", selected_access_list_ids)
+
+  defp maybe_put_create_access_lists(form, _live_action, _selected_access_list_ids), do: form
+
+  defp assign_sse_enablement_status(socket, map_id) do
+    case WandererApp.Api.Map.sse_enablement_status(map_id) do
+      :ok ->
+        assign(socket, sse_can_enable: true, sse_unavailable_reason: nil)
+
+      {:error, reason} ->
+        assign(socket, sse_can_enable: false, sse_unavailable_reason: reason)
     end
   end
 

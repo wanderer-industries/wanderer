@@ -1,10 +1,14 @@
 defmodule WandererAppWeb.BlogController do
   use WandererAppWeb, :controller
 
-  alias WandererApp.Blog
+  alias WandererApp.{Blog, PublicStats}
   require Logger
 
   def index(conn, _params) do
+    render_welcome(conn, "index.html")
+  end
+
+  defp render_welcome(conn, template) do
     invite_token = conn.query_params["invite"]
 
     invite_token_valid =
@@ -21,8 +25,9 @@ defmodule WandererAppWeb.BlogController do
 
     posts = Blog.all_posts()
 
-    render(conn, "index.html",
+    render(conn, template,
       posts: posts,
+      public_stats: PublicStats.snapshot(),
       invite_token: invite_token || "",
       invite_token_valid: invite_token_valid
     )
