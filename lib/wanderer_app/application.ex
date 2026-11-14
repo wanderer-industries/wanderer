@@ -86,15 +86,15 @@ defmodule WandererApp.Application do
         id: :acl_cache_worker
       ),
       Supervisor.child_spec(
-        {Cachex, name: :map_cache, default_ttl: :timer.hours(2)},
+        {Cachex, name: :map_cache},
         id: :map_cache_worker
       ),
       Supervisor.child_spec(
-        {Cachex, name: :map_pool_cache, default_ttl: :timer.hours(2)},
+        {Cachex, name: :map_pool_cache},
         id: :map_pool_cache_worker
       ),
       Supervisor.child_spec(
-        {Cachex, name: :map_state_cache, default_ttl: :timer.hours(2)},
+        {Cachex, name: :map_state_cache},
         id: :map_state_cache_worker
       ),
       Supervisor.child_spec(
@@ -102,7 +102,7 @@ defmodule WandererApp.Application do
         id: :character_state_cache_worker
       ),
       Supervisor.child_spec(
-        {Cachex, name: :tracked_characters, default_ttl: :timer.hours(1)},
+        {Cachex, name: :tracked_characters},
         id: :tracked_characters_cache_worker
       ),
       Supervisor.child_spec(

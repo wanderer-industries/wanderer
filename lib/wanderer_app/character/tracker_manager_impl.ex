@@ -6,6 +6,8 @@ defmodule WandererApp.Character.TrackerManager.Impl do
   - Starting/stopping character tracking
   - Garbage collection of inactive trackers (5-minute timeout)
   - Processing the untrack queue (5-minute interval)
+  - Re-tracking characters missing from every tracker pool (1-minute interval), e.g.
+    after the tracker pool supervisor restarted and lost all pools
 
   ## Logging
 
@@ -17,18 +19,21 @@ defmodule WandererApp.Character.TrackerManager.Impl do
 
   defstruct [
     :characters,
-    :opts
+    :opts,
+    missing_from_pools: MapSet.new()
   ]
 
   @type t :: %__MODULE__{
           characters: [integer],
-          opts: map
+          opts: map,
+          missing_from_pools: MapSet.t()
         }
 
   @check_start_queue_interval :timer.seconds(1)
   @garbage_collection_interval :timer.minutes(5)
   @untrack_characters_interval :timer.minutes(5)
   @inactive_character_timeout :timer.minutes(5)
+  @verify_tracker_pools_interval :timer.minutes(1)
 
   @logger Application.compile_env(:wanderer_app, :logger)
 
@@ -39,6 +44,7 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     Process.send_after(self(), :check_start_queue, @check_start_queue_interval)
     Process.send_after(self(), :garbage_collect, @garbage_collection_interval)
     Process.send_after(self(), :untrack_characters, @untrack_characters_interval)
+    Process.send_after(self(), :verify_tracker_pools, @verify_tracker_pools_interval)
 
     Logger.debug(
       "[TrackerManager] Initialized with intervals: " <>
@@ -419,6 +425,46 @@ defmodule WandererApp.Character.TrackerManager.Impl do
     end)
 
     state
+  end
+
+  # A character in "tracked_characters" must be held by some tracker pool. If it is not
+  # (pool crashed past restart limits and TrackerPoolSupervisor restarted with no pools),
+  # nothing else re-tracks it because track_character/2 skips already tracked characters.
+  # Only re-track characters missing on two consecutive checks, so an in-flight
+  # {:add_tracked_id, _} cast is not mistaken for a lost character.
+  def handle_info(:verify_tracker_pools, state) do
+    Process.send_after(self(), :verify_tracker_pools, @verify_tracker_pools_interval)
+
+    {:ok, characters} = WandererApp.Cache.lookup("tracked_characters", [])
+    pooled = WandererApp.Character.TrackerPoolDynamicSupervisor.tracked_ids()
+
+    missing =
+      characters
+      |> Enum.reject(&MapSet.member?(pooled, &1))
+      |> MapSet.new()
+
+    lost = MapSet.intersection(missing, state.missing_from_pools)
+
+    if MapSet.size(lost) > 0 do
+      Logger.warning(
+        "[TrackerManager] Re-tracking #{MapSet.size(lost)} characters missing from tracker pools"
+      )
+
+      Enum.each(lost, &WandererApp.Character.TrackerPoolDynamicSupervisor.start_tracking/1)
+
+      :telemetry.execute(
+        [:wanderer_app, :character, :tracker, :pool_recovery],
+        %{recovered_count: MapSet.size(lost), total_tracked: length(characters)},
+        %{}
+      )
+    end
+
+    %{state | missing_from_pools: MapSet.difference(missing, lost)}
+  rescue
+    # Registries are briefly unavailable while TrackerPoolSupervisor restarts
+    error in ArgumentError ->
+      Logger.warning("[TrackerManager] Tracker pool verification skipped: #{inspect(error)}")
+      state
   end
 
   def handle_info({:stop_track, character_id}, state) do
