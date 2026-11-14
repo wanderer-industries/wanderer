@@ -12,8 +12,8 @@ import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoa
 import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { useCallback, useEffect, useState} from 'react';
-import { Controller, FormProvider, useForm} from 'react-hook-form';
+import { useCallback, useEffect, useState } from 'react';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 type SystemSignaturePrepared = Omit<SystemSignature, 'linked_system'> & {
   linked_system: string;
@@ -41,8 +41,8 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
   const { setFocus } = signatureForm;
 
   const handleShow = useCallback(() => {
-    setFocus("description");
-}, [setFocus]);
+    setFocus('description');
+  }, [setFocus]);
 
   const [userSettings, setUserSettings] = useState<any>(null);
 
@@ -130,7 +130,9 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
       if (group === SignatureGroup.Wormhole) {
         let targetSystem = null;
         if (values.linked_system) {
-          targetSystem = systems.find((s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system);
+          targetSystem = systems.find(
+            (s: any) => s.system_static_info?.solar_system_id?.toString() === values.linked_system,
+          );
         }
 
         let targetSystemClassGroup = null;
@@ -273,7 +275,12 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                     name="description"
                     control={signatureForm.control}
                     render={({ field }) => (
-                      <InputText placeholder="Type description" ref={field.ref} value={field.value} onChange={field.onChange} />
+                      <InputText
+                        placeholder="Type description"
+                        ref={field.ref}
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     )}
                   />
                 </label>
