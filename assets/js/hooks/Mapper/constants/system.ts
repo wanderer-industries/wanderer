@@ -1,0 +1,1 @@
+export const SYSTEM_CUSTOM_LABEL_MAX_LENGTH = 5;
