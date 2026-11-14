@@ -5,10 +5,9 @@ import { MenuItem } from 'primereact/menuitem';
 import { CharacterTypeRaw, SolarSystemRawType, SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
 import classes from './ContextMenuSystemInfo.module.scss';
 import { getSystemById } from '@/hooks/Mapper/helpers';
-import { useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
+import { useJumpMenu, useWaypointMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { WaypointSetContextHandler } from '@/hooks/Mapper/components/contexts/types.ts';
 import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components';
-import { useJumpPlannerMenu } from '@/hooks/Mapper/components/contexts/hooks';
 import { Route, RouteStationSummary } from '@/hooks/Mapper/types/routes.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
 import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
@@ -20,12 +19,13 @@ export interface ContextMenuSystemInfoProps {
   systemStatics: Map<number, SolarSystemStaticInfoRaw>;
   contextMenuRef: RefObject<ContextMenu>;
   systemId: string | undefined;
-  systemIdFrom?: string | undefined;
   systems: SolarSystemRawType[];
   onOpenSettings(): void;
   onHubToggle(): void;
   onAddSystem(): void;
   onWaypointSet: WaypointSetContextHandler;
+  onJumpFrom(systemId: string): void;
+  onJumpTo(systemId: string): void;
   routes: Route[];
 }
 
@@ -37,12 +37,13 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
   onOpenSettings,
   onAddSystem,
   onWaypointSet,
+  onJumpFrom,
+  onJumpTo,
   systemId,
-  systemIdFrom,
   routes,
 }) => {
   const getWaypointMenu = useWaypointMenu(onWaypointSet);
-  const getJumpPlannerMenu = useJumpPlannerMenu(systems, systemIdFrom);
+  const getJumpMenu = useJumpMenu({ onJumpFrom, onJumpTo });
   const { toggleHubCommand, hubs } = useRouteProvider();
   const getOwnOnlineCharacters = useGetOwnOnlineCharacters();
 
@@ -168,7 +169,7 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
       },
 
       { separator: true },
-      ...getJumpPlannerMenu(system, routes),
+      ...getJumpMenu(systemId, system.system_class),
       ...getWaypointMenu(systemId, system.system_class),
       ...stationItems,
       ...(toggleHubCommand
@@ -198,7 +199,7 @@ export const ContextMenuSystemInfo: React.FC<ContextMenuSystemInfoProps> = ({
     systemId,
     systemStatics,
     systems,
-    getJumpPlannerMenu,
+    getJumpMenu,
     getWaypointMenu,
     getStationsMenu,
     hubs,

@@ -111,16 +111,20 @@ defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
       assert system.map_id == map.id
     end
 
-    test "POST /api/v1/map_systems ignores client-supplied map_id and uses authenticated map", %{
+    # BREAKING API CHANGE: a client-supplied foreign
+    # map_id used to be silently overridden by InjectMapFromActor and the
+    # create succeeded (201). It is now rejected by the
+    # `create_map_matches_token` policy with 403. Omitting map_id entirely
+    # still works and is the path real clients use -- see the positive
+    # control test below.
+    test "POST /api/v1/map_systems rejects a client-supplied foreign map_id with 403", %{
       conn: conn,
       map: map
     } do
-      # Create another map that the client will try to inject
       other_user = insert(:user)
       other_character = insert(:character, %{user_id: other_user.id})
       other_map = insert(:map, %{owner_id: other_character.id})
 
-      # Client tries to supply a different map_id in the payload
       payload = %{
         "data" => %{
           "type" => "map_systems",
@@ -136,16 +140,60 @@ defmodule WandererAppWeb.Api.V1.MapSystemApiV1Test do
 
       conn = post(conn, "/api/v1/map_systems", payload)
 
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["type"] == "map_systems"
-      assert data["attributes"]["name"] == "Dodixie"
+      assert json_response(conn, 403)
 
-      # Verify the system was created with the authenticated map's ID, not the client-supplied one
-      # Use Ecto directly to bypass security filter for test verification
-      system_id = data["id"]
-      system = WandererApp.Repo.get!(WandererApp.Api.MapSystem, system_id)
+      # No row created in EITHER map -- not in the foreign map, and not
+      # silently redirected into the token's own map.
+      require Ash.Query
+
+      {:ok, foreign_count} =
+        Ash.count(
+          Ash.Query.filter(
+            WandererApp.Api.MapSystem,
+            map_id == ^other_map.id and solar_system_id == 30_000_145
+          ),
+          authorize?: false
+        )
+
+      assert foreign_count == 0
+
+      {:ok, own_count} =
+        Ash.count(
+          Ash.Query.filter(
+            WandererApp.Api.MapSystem,
+            map_id == ^map.id and solar_system_id == 30_000_145
+          ),
+          authorize?: false
+        )
+
+      assert own_count == 0
+    end
+
+    # Positive control for the path real clients use: map_id OMITTED, so
+    # InjectMapFromActor injects the token's map and the create succeeds.
+    test "POST /api/v1/map_systems with map_id omitted injects the token map (201)", %{
+      conn: conn,
+      map: map
+    } do
+      payload = %{
+        "data" => %{
+          "type" => "map_systems",
+          "attributes" => %{
+            "solar_system_id" => 30_000_146,
+            "name" => "Rens",
+            "position_x" => 10,
+            "position_y" => 20
+          }
+        }
+      }
+
+      conn = post(conn, "/api/v1/map_systems", payload)
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["attributes"]["name"] == "Rens"
+
+      system = WandererApp.Repo.get!(WandererApp.Api.MapSystem, data["id"])
       assert system.map_id == map.id
-      refute system.map_id == other_map.id
     end
 
     test "GET /api/v1/map_systems/:id returns a single system", %{conn: conn, map: map} do

@@ -8,7 +8,7 @@ import {
   SettingsTypes,
   SIGNATURE_SETTINGS,
 } from '@/hooks/Mapper/components/mapInterface/widgets/SystemSignatures/constants.ts';
-import { SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
+import { DEFAULT_SIGNATURE_SETTINGS, SignatureSettingsType } from '@/hooks/Mapper/constants/signatures.ts';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 
 interface SystemSignatureSettingsDialogProps {
@@ -30,8 +30,10 @@ export const SystemSignatureSettingsDialog = ({
       switch (type) {
         case SettingsTypes.dropdown:
           return { ...prev, [key]: value };
-        case SettingsTypes.flag:
-          return { ...prev, [key]: !prev[key] };
+        case SettingsTypes.flag: {
+          const currentValue = prev[key] ?? DEFAULT_SIGNATURE_SETTINGS[key];
+          return { ...prev, [key]: !currentValue };
+        }
       }
       return prev;
     });
@@ -42,7 +44,7 @@ export const SystemSignatureSettingsDialog = ({
   }, [onSave, settings]);
 
   const renderSetting = (setting: Setting) => {
-    const val = settings[setting.key];
+    const val = settings[setting.key] ?? DEFAULT_SIGNATURE_SETTINGS[setting.key];
     if (setting.options) {
       return (
         <div key={setting.key} className="flex items-center justify-between gap-2 mb-2">

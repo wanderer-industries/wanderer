@@ -2,16 +2,23 @@ import { SETTINGS_KEYS } from '@/hooks/Mapper/constants/signatures';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { ExtendedSystemSignature, SystemSignature } from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { getDeletionTimeoutMs } from '../constants';
 import { getActualSigs, prepareUpdatePayload } from '../helpers';
 import { UseFetchingParams } from './types';
+
+type GetSignaturesResponse = {
+  signatures?: SystemSignature[];
+};
 
 export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSignatures }: UseFetchingParams) => {
   const {
     data: { characters },
     outCommand,
   } = useMapRootState();
+  const systemIdRef = useRef(systemId);
+  const latestGetRequestRef = useRef(0);
+  systemIdRef.current = systemId;
 
   const deleteTimeout = useMemo(() => {
     const lazyDelete = settings[SETTINGS_KEYS.LAZY_DELETE_SIGNATURES] as boolean;
@@ -23,15 +30,22 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
   }, [settings]);
 
   const handleGetSignatures = useCallback(async () => {
+    const requestId = ++latestGetRequestRef.current;
     if (!systemId) {
       setSignatures([]);
-      return;
+      return [];
     }
+    const requestedSystemId = systemId;
     const resp = await outCommand({
       type: OutCommand.getSignatures,
-      data: { system_id: systemId },
+      data: { system_id: requestedSystemId },
     });
-    const serverSigs = (resp.signatures ?? []) as SystemSignature[];
+
+    if (systemIdRef.current !== requestedSystemId || latestGetRequestRef.current !== requestId) {
+      return;
+    }
+
+    const serverSigs = ((resp as GetSignaturesResponse)?.signatures ?? []) as SystemSignature[];
 
     const extended = serverSigs.map(s => ({
       ...s,
@@ -39,7 +53,8 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
-  }, [characters, systemId, outCommand]);
+    return extended;
+  }, [characters, systemId, outCommand, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {

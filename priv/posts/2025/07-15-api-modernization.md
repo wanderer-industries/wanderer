@@ -78,9 +78,6 @@ curl -H "Authorization: Bearer your-map-api-key" \
 **Getting Your API Key:**
 You can find or generate your map's API key in the map settings within the Wanderer web interface. Each map has its own unique API key for secure access.
 
-**Session Authentication:**
-Web clients can also use session-based authentication for interactive use, maintaining compatibility with existing browser-based integrations.
-
 ### Server Configuration (Community Edition)
 
 If you're running Wanderer Community Edition (CE), ensure the following environment variables are configured:
