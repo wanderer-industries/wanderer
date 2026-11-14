@@ -36,6 +36,8 @@ export const IntelSettings = () => {
 
   const [availableMaps, setAvailableMaps] = useState<IntelSourceMap[]>([]);
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  // Pending selections are optimistic; only accepted values are safe rollback targets.
+  const confirmedMapId = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
   const toast = useRef<Toast | null>(null);
 
@@ -72,14 +74,14 @@ export const IntelSettings = () => {
   }, [outCommand, hasPermission]);
 
   useEffect(() => {
-    setSelectedMapId(options?.intel_source_map_id ?? null);
+    confirmedMapId.current = options?.intel_source_map_id ?? null;
+    setSelectedMapId(confirmedMapId.current);
   }, [options?.intel_source_map_id]);
 
   const dropdownOptions = useMemo(() => availableMaps.map(m => ({ label: m.name, value: m.id })), [availableMaps]);
 
   const handleChange = useCallback(
     async (mapId: string | null) => {
-      const previous = options?.intel_source_map_id ?? null;
       setSelectedMapId(mapId);
 
       let response: { success?: boolean; error?: string } | undefined;
@@ -91,17 +93,19 @@ export const IntelSettings = () => {
         });
       } catch {
         // Revert the optimistic selection; the server keeps the old source.
-        setSelectedMapId(previous);
+        setSelectedMapId(confirmedMapId.current);
         callToastError(toast.current, 'Something went wrong while setting the intel source');
         return;
       }
 
       if (response && response.success === false) {
-        setSelectedMapId(previous);
+        setSelectedMapId(confirmedMapId.current);
         callToastError(toast.current, ERROR_MESSAGES[response.error ?? ''] ?? 'The intel source could not be changed');
+      } else if (response?.success) {
+        confirmedMapId.current = mapId;
       }
     },
-    [outCommand, options?.intel_source_map_id],
+    [outCommand],
   );
 
   const handleClear = useCallback(() => {
