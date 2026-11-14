@@ -105,6 +105,13 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     'map',
   );
 
+  const [settingsJumpPlanner, settingsJumpPlannerUpdate] = useSettingsValueAndSetter(
+    mapUserSettings,
+    setMapUserSettings,
+    map_slug,
+    'jumpPlanner',
+  );
+
   // HERE we MUST work with migrations
   useEffect(() => {
     if (isReady) {
@@ -208,6 +215,8 @@ export const useMapUserSettings = ({ map_slug }: MapRootData, outCommand: OutCom
     windowsSettingsUpdate,
     mapSettings,
     mapSettingsUpdate,
+    settingsJumpPlanner,
+    settingsJumpPlannerUpdate,
 
     getSettingsForExport,
     applySettings,

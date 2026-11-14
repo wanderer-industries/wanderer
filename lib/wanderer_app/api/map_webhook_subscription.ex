@@ -138,7 +138,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
       # Generate secret on creation
       change fn changeset, _context ->
         secret = generate_webhook_secret()
-        Ash.Changeset.force_change_attribute(changeset, :secret, secret)
+        AshCloak.encrypt_and_set(changeset, :secret, secret)
       end
 
       # Invalidate cache when subscription is created
@@ -154,7 +154,7 @@ defmodule WandererApp.Api.MapWebhookSubscription do
 
       change fn changeset, _context ->
         new_secret = generate_webhook_secret()
-        Ash.Changeset.change_attribute(changeset, :secret, new_secret)
+        AshCloak.encrypt_and_set(changeset, :secret, new_secret)
       end
 
       change after_action(fn _changeset, record, _context ->

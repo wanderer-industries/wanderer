@@ -1,5 +1,8 @@
 import { LayoutEventBlocker, TooltipPosition, WdImageSize, WdImgButton } from '@/hooks/Mapper/components/ui-kit';
 import { ANOIK_ICON, DOTLAN_ICON, ZKB_ICON } from '@/hooks/Mapper/icons';
+import { getDotlanUrl } from '@/hooks/Mapper/helpers/getDotlanUrl.ts';
+import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
+import { DotlanBehavior } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { useCallback, useRef } from 'react';
 
 import clsx from 'clsx';
@@ -23,8 +26,13 @@ export const FastSystemActions = ({
   onOpenSettings,
   showEdit,
 }: FastSystemActionsProps) => {
-  const ref = useRef({ systemId, systemName, regionName, isWH });
-  ref.current = { systemId, systemName, regionName, isWH };
+  const {
+    storedSettings: { interfaceSettings },
+  } = useMapRootState();
+  const dotlanBehavior = interfaceSettings.dotlanBehavior ?? DotlanBehavior.system;
+
+  const ref = useRef({ systemId, systemName, regionName, isWH, dotlanBehavior });
+  ref.current = { systemId, systemName, regionName, isWH, dotlanBehavior };
 
   const handleOpenZKB = useCallback(
     () => window.open(`https://zkillboard.com/system/${ref.current.systemId}/`, '_blank'),
@@ -37,15 +45,9 @@ export const FastSystemActions = ({
   );
 
   const handleOpenDotlan = useCallback(() => {
-    if (ref.current.isWH) {
-      window.open(`https://evemaps.dotlan.net/system/${ref.current.systemName}`, '_blank');
-      return;
-    }
-
-    return window.open(
-      `https://evemaps.dotlan.net/map/${ref.current.regionName.replace(/ /gim, '_')}/${ref.current.systemName}#jumps`,
-      '_blank',
-    );
+    const { dotlanBehavior, isWH, regionName, systemName } = ref.current;
+    const url = getDotlanUrl({ behavior: dotlanBehavior, isWormhole: isWH, regionName, systemName });
+    return window.open(url, '_blank');
   }, []);
 
   const copySystemNameToClipboard = useCallback(async () => {

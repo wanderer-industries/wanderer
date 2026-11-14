@@ -222,7 +222,7 @@ defmodule WandererApp.Map.Routes do
 
   defp get_all_routes(hubs, origin, params, opts \\ []) do
     cache_key =
-      "routes-#{origin}-#{hubs |> Enum.join("-")}-#{:crypto.hash(:sha, :erlang.term_to_binary(params))}"
+      "routes-v2-#{origin}-#{hubs |> Enum.join("-")}-#{:crypto.hash(:sha, :erlang.term_to_binary(params))}"
 
     case WandererApp.Cache.lookup(cache_key) do
       {:ok, result} when not is_nil(result) ->

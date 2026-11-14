@@ -4,7 +4,18 @@ defmodule WandererApp.Api.MapUserSettings do
   use Ash.Resource,
     domain: WandererApp.Api,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource],
+    authorizers: [Ash.Policy.Authorizer]
+
+  policies do
+    bypass WandererApp.Api.Policies.MapScoped.trusted() do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if WandererApp.Api.Policies.MapScoped.in_token_map([:map_id])
+    end
+  end
 
   postgres do
     repo(WandererApp.Repo)

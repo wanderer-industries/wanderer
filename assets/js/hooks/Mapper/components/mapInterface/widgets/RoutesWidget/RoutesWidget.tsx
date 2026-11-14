@@ -154,7 +154,6 @@ export const RoutesWidgetContent = () => {
         routes={preparedRoutes}
         systems={systems}
         systemStatics={systemStatics}
-        systemIdFrom={systemId}
         {...systemCtxProps}
       />
     </>

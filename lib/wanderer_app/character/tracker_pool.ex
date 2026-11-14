@@ -39,9 +39,8 @@ defmodule WandererApp.Character.TrackerPool do
   def new(), do: __struct__()
   def new(args), do: __struct__(args)
 
-  def start_link(tracked_ids) do
-    uuid = UUID.uuid1()
-
+  # Accept {uuid, tracked_ids} so the uuid survives supervisor restarts (crash recovery)
+  def start_link({uuid, tracked_ids}) when is_binary(uuid) and is_list(tracked_ids) do
     GenServer.start_link(
       @name,
       {uuid, tracked_ids},
@@ -49,8 +48,15 @@ defmodule WandererApp.Character.TrackerPool do
     )
   end
 
+  # For backward compatibility - generate UUID if only tracked_ids provided
+  def start_link(tracked_ids) when is_list(tracked_ids) do
+    start_link({UUID.uuid1(), tracked_ids})
+  end
+
   @impl true
-  def init({uuid, tracked_ids}) do
+  def init({uuid, initial_tracked_ids}) do
+    tracked_ids = recover_tracked_ids(uuid, initial_tracked_ids)
+
     {:ok, _} = Registry.register(@unique_registry, Module.concat(__MODULE__, uuid), tracked_ids)
     {:ok, _} = Registry.register(@registry, __MODULE__, uuid)
 
@@ -69,7 +75,51 @@ defmodule WandererApp.Character.TrackerPool do
     {:ok, state, {:continue, :start}}
   end
 
+  # On crash the supervisor restarts the pool with its original start args (a single
+  # character). Cache entries for characters added later still point to this uuid
+  # (they are only deleted on removal or graceful shutdown), so use them to recover.
+  # Characters no longer in TrackerManager's list were stopped while the pool was
+  # down and must not be resurrected.
+  defp recover_tracked_ids(uuid, initial_tracked_ids) do
+    recovered =
+      @cache
+      |> Cachex.stream!(Cachex.Query.create({:==, :value, uuid}, :key))
+      |> Enum.reject(&(&1 in initial_tracked_ids))
+
+    {:ok, active} = WandererApp.Cache.lookup("tracked_characters", [])
+
+    {restored, stale} = Enum.split_with(recovered, &(&1 in active))
+
+    Enum.each(stale, &Cachex.del(@cache, &1))
+
+    if recovered != [] do
+      Logger.info(
+        "[Tracker Pool #{uuid}] Crash recovery: restored #{length(restored)} characters, " <>
+          "dropped #{length(stale)} stale"
+      )
+
+      :telemetry.execute(
+        [:wanderer_app, :tracker_pool, :recovery, :complete],
+        %{recovered_count: length(restored), stale_count: length(stale)},
+        %{pool_uuid: uuid}
+      )
+    end
+
+    Enum.uniq(initial_tracked_ids ++ restored)
+  end
+
   @impl true
+  def terminate(reason, %{characters: characters} = _state)
+      when reason in [:normal, :shutdown] do
+    Enum.each(characters, &Cachex.del(@cache, &1))
+    :ok
+  end
+
+  def terminate({:shutdown, _}, %{characters: characters} = _state) do
+    Enum.each(characters, &Cachex.del(@cache, &1))
+    :ok
+  end
+
   def terminate(_reason, _state) do
     :ok
   end
