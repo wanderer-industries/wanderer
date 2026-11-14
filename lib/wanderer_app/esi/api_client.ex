@@ -366,12 +366,14 @@ defmodule WandererApp.Esi.ApiClient do
 
   defp do_get_request(path, api_opts, opts, pool) do
     try do
+      {headers, validators} = conditional_request(path, opts)
+
       req_options_for_pool(pool)
       |> Req.new()
       |> Req.get(
         api_opts
         |> Keyword.merge(url: path)
-        |> with_user_agent_opts(conditional_headers(path, opts))
+        |> with_user_agent_opts(headers)
         |> Keyword.merge(@retry_opts)
         |> Keyword.merge(@timeout_opts)
       )
@@ -383,7 +385,7 @@ defmodule WandererApp.Esi.ApiClient do
           {:ok, body}
 
         {:ok, %{status: 304, headers: headers}} ->
-          handle_not_modified(path, headers, api_opts, opts, pool)
+          handle_not_modified(path, headers, api_opts, opts, pool, validators)
 
         {:ok, %{status: 504}} ->
           {:error, :timeout}
@@ -540,17 +542,24 @@ defmodule WandererApp.Esi.ApiClient do
   # it on every tick.
   defp validators_key(path), do: {:esi_validators, path}
 
-  defp conditional_headers(path, opts) do
+  defp conditional_request(path, opts) do
     with true <- Keyword.get(opts, :cache, false),
          false <- Keyword.get(opts, :skip_conditional, false),
-         {:ok, %{} = validators} <- Cachex.get(:api_cache, validators_key(path)) do
-      [
-        {"if-none-match", validators.etag},
-        {"if-modified-since", validators.last_modified}
-      ]
-      |> Enum.reject(fn {_name, value} -> is_nil(value) end)
+         {:ok, %{body: _, etag: etag, last_modified: last_modified} = validators} <-
+           Cachex.get(:api_cache, validators_key(path)) do
+      headers =
+        [
+          {"if-none-match", etag},
+          {"if-modified-since", last_modified}
+        ]
+        |> Enum.reject(fn {_name, value} -> is_nil(value) end)
+
+      case headers do
+        [] -> {[], nil}
+        _ -> {headers, validators}
+      end
     else
-      _ -> []
+      _ -> {[], nil}
     end
   end
 
@@ -570,9 +579,12 @@ defmodule WandererApp.Esi.ApiClient do
     :ok
   end
 
-  defp handle_not_modified(path, headers, api_opts, opts, pool) do
-    case Cachex.get(:api_cache, validators_key(path)) do
-      {:ok, %{body: body} = validators} ->
+  defp handle_not_modified(path, headers, api_opts, opts, pool, request_validators) do
+    # A concurrent request may have replaced or evicted the shared entry. Only the
+    # snapshot used for this request's headers can supply its 304 body. As with 200s,
+    # completion order can republish an older representation, but the pair stays coherent.
+    case request_validators do
+      %{body: body} = validators ->
         Cachex.put(
           :api_cache,
           validators_key(path),
