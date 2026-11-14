@@ -23,9 +23,12 @@ defmodule WandererApp.Api.MapDiscordNotification do
   # this rather than letting an unexpectedly long error be rejected outright.
   @max_error_length 500
 
-  # Discord rejects webhook URLs longer than this, so reject them here rather
-  # than at delivery time.
+  # Keep the form predicate consistent with the URL argument's length limit.
   @max_webhook_url_length 2000
+
+  # Exclusions reach both integer-based dispatch filters and a PostgreSQL
+  # bigint[] column. Reject invalid IDs before they become storage errors.
+  @max_postgres_bigint 9_223_372_036_854_775_807
 
   postgres do
     repo(WandererApp.Repo)
@@ -54,6 +57,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     define(:update, action: :update)
     define(:destroy, action: :destroy)
     define(:by_id, get_by: [:id], action: :read)
+    define(:for_delivery, get_by: [:id], action: :for_delivery)
     define(:by_map, action: :by_map, args: [:map_id])
     define(:record_success, action: :record_success, exclude_inputs: [:webhook_url])
 
@@ -123,6 +127,12 @@ defmodule WandererApp.Api.MapDiscordNotification do
       argument :map_id, :uuid, allow_nil?: false
       get? true
       filter expr(map_id == ^arg(:map_id))
+    end
+
+    # Soft deletion keeps the configuration row. A late enqueue must not
+    # recreate its worker and resume delivery after the destroy hook ran.
+    read :for_delivery do
+      filter expr(map.deleted == false)
     end
 
     update :record_success do
@@ -205,6 +215,38 @@ defmodule WandererApp.Api.MapDiscordNotification do
     end
   end
 
+  changes do
+    # Ciphertext is stable across status writes but changes whenever the URL is
+    # replaced. Match it in the SQL UPDATE so an in-flight outcome for the old
+    # endpoint cannot affect the replacement. Unlike updated_at locking, this
+    # still permits concurrent failure increments for the same endpoint.
+    change fn changeset, _context ->
+      if changeset.action.name in [:record_success, :record_failure, :disable] do
+        Ash.Changeset.filter(changeset,
+          encrypted_webhook_url: changeset.data.encrypted_webhook_url
+        )
+      else
+        changeset
+      end
+    end
+
+    # AshCloak's generated argument does not inherit sensitive?. Cast failures
+    # (for example max_length) therefore retain the credential in error.value,
+    # which callers may log even though Ash redacts the enclosing changeset.
+    change fn changeset, _context ->
+      errors =
+        Enum.map(changeset.errors, fn
+          %Ash.Error.Changes.InvalidArgument{field: :webhook_url} = error ->
+            %{error | value: Ash.Helpers.redact(error.value)}
+
+          error ->
+            error
+        end)
+
+      %{changeset | errors: errors}
+    end
+  end
+
   attributes do
     uuid_primary_key :id
 
@@ -220,6 +262,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     attribute :excluded_systems, {:array, :integer} do
       default []
       allow_nil? false
+      constraints items: [min: 1, max: @max_postgres_bigint]
     end
 
     attribute :last_delivery_at, :utc_datetime
@@ -291,10 +334,8 @@ defmodule WandererApp.Api.MapDiscordNotification do
   def after_destroy(changeset, result, _context) do
     map_id = changeset.data.map_id
 
-    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
-    # Stop the map's delivery worker too: without this, anything already queued
-    # keeps posting to a webhook the user has just removed.
-    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    # Also stop workers on delivery nodes, not just the settings writer's node.
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id, true)
     result
   end
 
@@ -314,17 +355,20 @@ defmodule WandererApp.Api.MapDiscordNotification do
     #
     # Surrounding whitespace is tolerated instead, because Ash's :string type
     # trims before the value is stored — rejecting it here would make this
-    # function disagree with what the write actually does.
-    not String.match?(trimmed, ~r/[[:cntrl:]]/u) and parsed_webhook_url?(trimmed)
+    # function, which the form also calls to pre-validate raw input, disagree
+    # with what the write actually does.
+    String.length(trimmed) <= @max_webhook_url_length and
+      not String.match?(trimmed, ~r/[[:cntrl:]]/u) and parsed_webhook_url?(trimmed)
   end
 
   def valid_webhook_url?(_), do: false
 
   defp parsed_webhook_url?(url) do
-    case URI.parse(url) do
-      %URI{scheme: "https", host: host, path: path} when is_binary(host) and is_binary(path) ->
-        # URI.parse/1 normalizes the scheme but not the host, so a pasted
-        # "https://Discord.com/..." would otherwise fail the allowlist.
+    # URI.parse/1 accepts malformed ports; URI.new/1 rejects invalid request
+    # URLs before a saved credential can reach the HTTP client.
+    case URI.new(url) do
+      {:ok, %URI{scheme: "https", host: host, port: 443, userinfo: nil, path: path}}
+      when is_binary(host) and is_binary(path) ->
         String.downcase(host) in @discord_hosts and valid_webhook_path?(path)
 
       _ ->
@@ -333,16 +377,9 @@ defmodule WandererApp.Api.MapDiscordNotification do
   end
 
   defp valid_webhook_path?(path) do
-    case String.split(path, "/", trim: true) do
-      ["api", "webhooks", id, token] ->
-        id != "" and token != ""
-
-      ["api", version, "webhooks", id, token] ->
-        String.starts_with?(version, "v") and id != "" and token != ""
-
-      _ ->
-        false
-    end
+    # Keep numeric API-version variants and an optional trailing slash. Query
+    # parameters (for example thread_id) remain untouched by the path check.
+    String.match?(path, ~r{\A/api/(?:v[0-9]+/)?webhooks/[0-9]+/[^/]+/?\z})
   end
 
   defmodule ValidateWebhookUrl do
@@ -351,24 +388,20 @@ defmodule WandererApp.Api.MapDiscordNotification do
 
     @impl true
     def validate(changeset, _opts, _context) do
-      # AshCloak rewrites the encrypted field into a changeset *argument* (the
-      # stored attribute is `encrypted_webhook_url`, and `webhook_url` becomes a
-      # calculation). Reading only the attribute yields `%Ash.NotLoaded{}` — not
-      # nil — which fails every validity check and rejects even valid URLs.
-      # Read the argument first so the value being written is what gets checked.
-      case Ash.Changeset.get_argument_or_attribute(changeset, :webhook_url) do
-        # The action is not writing a URL. Because the resource does not
-        # decrypt by default, the attribute falls back to the unloaded
-        # calculation, so every status-only update (enabled?, wh_only,
-        # excluded_systems) lands here. There is nothing to validate — the
-        # stored ciphertext is untouched.
-        %Ash.NotLoaded{} ->
+      # AshCloak turns the field into an optional action argument. Distinguish
+      # an omitted update from an explicit nil/blank value: encrypting nil would
+      # still produce non-null ciphertext, bypassing the column's NOT NULL.
+      case Ash.Changeset.fetch_argument(changeset, :webhook_url) do
+        :error when changeset.action_type == :update ->
           :ok
 
-        nil ->
-          :ok
+        argument ->
+          url =
+            case argument do
+              {:ok, value} -> value
+              :error -> nil
+            end
 
-        url ->
           if WandererApp.Api.MapDiscordNotification.valid_webhook_url?(url) do
             :ok
           else

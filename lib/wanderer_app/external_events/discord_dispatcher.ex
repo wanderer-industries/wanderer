@@ -17,22 +17,23 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   Responsibilities here are filtering and deduplication; serialized HTTP
   delivery belongs to the per-map worker.
 
-  ## Deduplication is at-most-once, by choice
+  ## Best-effort replay deduplication
 
-  Killmails are marked as *attempted* before delivery is confirmed, so an event
-  lost to a delivery failure is never re-sent. This is deliberate. Marking only
-  after success would require holding the batch across an async worker
-  round-trip and would still race on a crash between send and mark. Of the two
-  failure modes — post a kill twice, or silently drop one — a duplicate post in
-  a chat channel is irreversible and worse; a dropped kill is still visible in
-  the kills widget and on zKillboard.
+  Killmails are marked as *attempted* before delivery is confirmed, so upstream
+  replays are suppressed while those in-memory marks remain. This favors
+  dropping an occasional kill over re-enqueuing uncertain delivery; the kill
+  remains visible in the kills widget and on zKillboard. Marking only after
+  success would still race on a crash between sending and marking.
 
-  This is not a delivery guarantee. It is an explicit decision to lose the
-  occasional kill rather than ever double-post one.
+  This is neither an at-most-once nor an exactly-once delivery guarantee.
+  The worker deliberately retries transport errors: Discord may have accepted
+  a post before the connection failed, and the retry can post it again.
+  Cache loss/restart or expiry also permits a replay, while worker loss can
+  discard queued work without clearing its dedup mark.
 
-  The one exception is `{:error, :not_running}` from the worker supervisor,
-  which means nothing was enqueued at all: those marks are released, since no
-  request can possibly have gone out and therefore no duplicate is possible.
+  `{:error, :not_running}` from the worker supervisor means nothing was
+  enqueued at all: those marks are released, since no request could have gone
+  out from that enqueue attempt.
 
   The rationale covers losses to *delivery failure* only. Kills past the
   formatter's per-event cap are never rendered into a message, so they are not
@@ -47,6 +48,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   alias WandererApp.ExternalEvents.Discord.{EmbedFormatter, WorkerSupervisor}
   alias WandererApp.SystemClass
 
+  @config_topic "discord_notifications:config"
   @cache :discord_notification_cache
   @dedup_cache :discord_dedup_cache
   # Comfortably longer than any plausible upstream replay window, matching the
@@ -56,7 +58,10 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   def start_link(opts \\ []), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
   @impl true
-  def init(_opts), do: {:ok, %{}}
+  def init(_opts) do
+    Phoenix.PubSub.subscribe(WandererApp.PubSub, @config_topic)
+    {:ok, %{}}
+  end
 
   @doc """
   Entry point called by `MapEventRelay` for every external event.
@@ -77,7 +82,8 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   (`:not_configured`) are both resolved before returning.
 
   Delivery success is **not** awaited. The final hop is `Worker.enqueue/3`, a
-  cast, so `:ok` means "accepted for delivery", not "Discord accepted it" — a
+  cast, so `:ok` means "submitted for delivery", not an acknowledgement from
+  the worker or Discord. A worker can exit between lookup and cast, and a
   dead or revoked webhook URL still returns `:ok` here and surfaces later as a
   failure recorded on the notification record (`last_error`,
   `consecutive_failures`). UI built on this must not promise the user that the
@@ -121,15 +127,27 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   @doc """
   Drops the cached config for a map after its record changes.
 
-  A plain function, not a GenServer call: it is invoked from Ash after_action
-  hooks that may run before this process exists.
+  The write may happen on a different node from the map's dispatcher. Clear
+  locally before returning and publish the invalidation to the other nodes.
   """
-  def invalidate_cache(map_id) do
+  def invalidate_cache(map_id, stop_worker? \\ false) do
+    clear_local_config(map_id, stop_worker?)
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      @config_topic,
+      {:discord_notification_config_changed, map_id, stop_worker?}
+    )
+
+    :ok
+  end
+
+  defp clear_local_config(map_id, stop_worker?) do
     Cachex.del(@cache, map_id)
+    if stop_worker?, do: WorkerSupervisor.stop_worker(map_id)
     :ok
   rescue
-    # The cache is not started in every context (e.g. unit tests); a missing
-    # cache must not fail the write that triggered the invalidation.
+    # Writes can run before the optional delivery infrastructure starts.
     _ -> :ok
   end
 
@@ -140,6 +158,11 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   end
 
   @impl true
+  def handle_info({:discord_notification_config_changed, map_id, stop_worker?}, state) do
+    clear_local_config(map_id, stop_worker?)
+    {:noreply, state}
+  end
+
   def handle_info(msg, state) do
     Logger.debug(fn -> "[Discord] dispatcher received unexpected message: #{inspect(msg)}" end)
     {:noreply, state}
@@ -160,15 +183,15 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
       # Only the kills the formatter will actually render are marked. Kills past
       # its per-event cap are never turned into a message, so marking them would
       # burn them for the full dedup TTL without ever sending them — a loss to a
-      # formatting cap, which the at-most-once rationale does not cover. Derived
+      # formatting cap, which the delivery-loss tradeoff does not cover. Derived
       # from the formatter's own constant so the two cannot drift apart.
       #
       # `fresh` (not `formatted`) is still handed to format_batch/2 so it can
       # count the overflow and append its "…and N more kills not shown." line.
       formatted = Enum.take(fresh, EmbedFormatter.max_kills_per_event())
 
-      # Marked before delivery: see the moduledoc — this is at-most-once by
-      # choice, not an oversight.
+      # Marked before delivery to suppress upstream replays, not retries of
+      # an uncertain HTTP outcome. See the best-effort tradeoff above.
       mark_attempted(map_id, formatted)
 
       fresh
@@ -320,7 +343,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcher do
   end
 
   # Records that we have *attempted* this killmail, not that Discord accepted
-  # it. Named accordingly so the at-most-once semantics are not misread.
+  # it. The name distinguishes replay suppression from delivery confirmation.
   defp mark_attempted(map_id, killmails) do
     Enum.each(killmails, fn kill ->
       Cachex.put(@dedup_cache, dedup_key(map_id, kill), true, ttl: @dedup_ttl)

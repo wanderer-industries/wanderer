@@ -9,6 +9,11 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
 
   @max_embeds_per_message 10
   @max_kills_per_event 30
+  @max_message_text 6000
+  @max_title 256
+  @max_field_value 1024
+  # Keeps a single embed below the aggregate budget even with all five fields.
+  @max_footer 256
   @color 0xD9534F
 
   @zkill_base "https://zkillboard.com/kill/"
@@ -44,8 +49,23 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
     messages =
       shown
       |> Enum.map(&format_kill(&1, system_name))
-      |> Enum.chunk_every(@max_embeds_per_message)
-      |> Enum.map(&%{"embeds" => &1})
+      |> Enum.chunk_while(
+        {[], 0},
+        fn embed, {embeds, size} ->
+          next_size = embed_length(embed)
+
+          if length(embeds) >= @max_embeds_per_message or size + next_size > @max_message_text do
+            {:cont, Enum.reverse(embeds), {[embed], next_size}}
+          else
+            {:cont, {[embed | embeds], size + next_size}}
+          end
+        end,
+        fn
+          {[], _} -> {:cont, []}
+          {embeds, _} -> {:cont, Enum.reverse(embeds), {[], 0}}
+        end
+      )
+      |> Enum.map(&%{"embeds" => &1, "allowed_mentions" => %{"parse" => []}})
 
     append_overflow(messages, overflow)
   end
@@ -63,7 +83,7 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
     ship = present(kill["victim_ship_name"]) || "Unknown ship"
 
     %{
-      "title" => "#{victim} lost a #{ship}",
+      "title" => limit_text("#{victim} lost a #{ship}", @max_title),
       "url" => zkill_url(kill["killmail_id"]),
       "color" => @color,
       "timestamp" => iso8601(kill["kill_time"]),
@@ -86,7 +106,40 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   end
 
   defp field(_name, nil, _inline), do: nil
-  defp field(name, value, inline), do: %{"name" => name, "value" => value, "inline" => inline}
+
+  defp field(name, value, inline),
+    do: %{"name" => name, "value" => limit_text(value, @max_field_value), "inline" => inline}
+
+  defp embed_length(embed) do
+    text_length(embed["title"]) +
+      text_length(get_in(embed, ["footer", "text"]) || "") +
+      Enum.sum(
+        Enum.map(embed["fields"], fn field ->
+          text_length(field["name"]) + text_length(field["value"])
+        end)
+      )
+  end
+
+  # Counting UTF-16 units is conservative for Discord and handles astral
+  # characters/combining marks, unlike String.length's grapheme count.
+  defp text_length(text) do
+    text |> :unicode.characters_to_binary(:utf8, {:utf16, :little}) |> byte_size() |> div(2)
+  end
+
+  defp limit_text(text, limit) do
+    {chars, _} =
+      text
+      |> String.to_charlist()
+      |> Enum.reduce_while({[], limit}, fn char, {chars, remaining} ->
+        units = if char > 0xFFFF, do: 2, else: 1
+
+        if units <= remaining,
+          do: {:cont, {[char | chars], remaining - units}},
+          else: {:halt, {chars, remaining}}
+      end)
+
+    chars |> Enum.reverse() |> List.to_string()
+  end
 
   defp final_blow(kill) do
     case {present(kill["final_blow_char_name"]), kill["attacker_count"]} do
@@ -99,7 +152,7 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatter do
   defp footer(kill) do
     case present(kill["victim_corp_ticker"]) do
       nil -> nil
-      ticker -> %{"text" => "[#{ticker}]"}
+      ticker -> %{"text" => limit_text("[#{ticker}]", @max_footer)}
     end
   end
 

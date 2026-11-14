@@ -3,8 +3,9 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
   Starts one delivery worker per map on demand, addressed through a Registry.
 
   Workers are transient: they own an in-memory queue, shut down when idle, and
-  are not restarted with their queue intact. Losing a queued notification on
-  crash is acceptable; duplicating a delivered one is not.
+  are not restarted with their queue intact. Delivery and replay deduplication
+  are best-effort: a crash can lose queued work, and retrying an uncertain HTTP
+  outcome can duplicate a message Discord already accepted.
   """
 
   use Supervisor
@@ -15,16 +16,14 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
 
   @registry WandererApp.ExternalEvents.Discord.Registry
   @dyn_sup WandererApp.ExternalEvents.Discord.DynamicSupervisor
-  # Bounded so a worker wedged on a slow DB call cannot block the destroy that
-  # is stopping it. The exit is caught either way; the worker is brought down.
-  @stop_timeout_ms 5_000
-
   def start_link(opts \\ []), do: Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
 
   @impl true
   def init(_opts) do
     children = [
       {Registry, keys: :unique, name: @registry},
+      # Supervised state outlives individual request tasks and map workers.
+      {Cachex, name: :discord_rate_limit_cache},
       {Task.Supervisor, name: WandererApp.ExternalEvents.Discord.TaskSupervisor},
       {DynamicSupervisor, name: @dyn_sup, strategy: :one_for_one}
     ]
@@ -92,10 +91,11 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerSupervisor do
   end
 
   defp try_stop(pid) do
-    GenServer.stop(pid, :normal, @stop_timeout_ms)
+    # The supervisor enforces the child's shutdown timeout and removes its
+    # spec, so even a busy worker is killed without a transient restart.
+    # GenServer.stop/3 merely times out, leaving such a worker alive.
+    DynamicSupervisor.terminate_child(@dyn_sup, pid)
   catch
-    # Already gone, or did not terminate within the timeout — in the latter case
-    # GenServer.stop/3 has already killed it. Either way there is no worker left.
     :exit, _ -> :ok
   end
 
