@@ -103,6 +103,40 @@ defmodule WandererApp.Map.IntelSyncTest do
                )
     end
 
+    test "leaves subscriber intel untouched when the source system is hidden", ctx do
+      enable_intel_sharing()
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.source_system.id,
+          character_id: ctx.character.id,
+          text: "Stale source comment"
+        })
+
+      # A removed source system keeps its row (visible: false) with stale intel.
+      {:ok, _} = WandererApp.MapSystemRepo.update_visible(ctx.source_system, %{visible: false})
+
+      {:ok, _} =
+        WandererApp.MapSystemRepo.update_description(ctx.subscriber_system, %{
+          description: "Native description"
+        })
+
+      assert {:ok, :no_source_data} =
+               IntelSync.sync_system(ctx.subscriber_map.id, ctx.source_map.id, 30_000_142)
+
+      {:ok, subscriber_system} =
+        WandererApp.MapSystemRepo.get_by_map_and_solar_system_id(
+          ctx.subscriber_map.id,
+          30_000_142
+        )
+
+      assert subscriber_system.description == "Native description"
+      assert subscriber_system.custom_name == nil
+
+      assert {:ok, []} =
+               WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+    end
+
     test "returns {:ok, :disabled} when feature flag is off", ctx do
       disable_intel_sharing()
 
@@ -319,6 +353,14 @@ defmodule WandererApp.Map.IntelSyncTest do
       refute IntelSync.inherited_system?(ctx.subscriber_map.id, 99_999_999)
     end
 
+    test "false when the source map has the system hidden", ctx do
+      enable_intel_sharing()
+
+      {:ok, _} = WandererApp.MapSystemRepo.update_visible(ctx.source_system, %{visible: false})
+
+      refute IntelSync.inherited_system?(ctx.subscriber_map.id, 30_000_142)
+    end
+
     test "false when the feature flag is off", ctx do
       disable_intel_sharing()
 
@@ -376,6 +418,68 @@ defmodule WandererApp.Map.IntelSyncTest do
       assert Enum.all?(comments, &is_nil(&1.inherited_from_map_id))
       assert Enum.map(comments, & &1.text) == ["Locally written"]
       assert structures == []
+    end
+
+    test "removes inherited records from systems hidden on the subscriber map", ctx do
+      enable_intel_sharing()
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.source_system.id,
+          character_id: ctx.character.id,
+          text: "From source"
+        })
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemStructure.create(%{
+          system_id: ctx.source_system.id,
+          structure_type_id: "35825",
+          structure_type: "Astrahus",
+          character_eve_id: "2000000001",
+          solar_system_name: "Jita",
+          solar_system_id: 30_000_142,
+          name: "From source",
+          status: "anchored"
+        })
+
+      {:ok, _} = IntelSync.sync_system(ctx.subscriber_map.id, ctx.source_map.id, 30_000_142)
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemComment.create(%{
+          system_id: ctx.subscriber_system.id,
+          character_id: ctx.character.id,
+          text: "Locally written"
+        })
+
+      {:ok, _} =
+        WandererApp.Api.MapSystemStructure.create(%{
+          system_id: ctx.subscriber_system.id,
+          structure_type_id: "35832",
+          structure_type: "Fortizar",
+          character_eve_id: "2000000001",
+          solar_system_name: "Jita",
+          solar_system_id: 30_000_142,
+          name: "Locally recorded",
+          status: "anchored"
+        })
+
+      # Hidden before the source switch: the row and its records survive and can
+      # become visible again, so cleanup must still reach them.
+      {:ok, _} =
+        WandererApp.MapSystemRepo.update_visible(ctx.subscriber_system, %{visible: false})
+
+      assert {:ok, 1} = IntelSync.clear_inherited_from(ctx.subscriber_map.id, ctx.source_map.id)
+
+      {:ok, comments} =
+        WandererApp.Api.MapSystemComment.by_system_id(ctx.subscriber_system.id)
+
+      {:ok, structures} =
+        WandererApp.Api.MapSystemStructure.by_system_id(ctx.subscriber_system.id)
+
+      assert Enum.all?(comments, &is_nil(&1.inherited_from_map_id))
+      assert Enum.map(comments, & &1.text) == ["Locally written"]
+      assert Enum.all?(structures, &is_nil(&1.inherited_from_map_id))
+      assert Enum.map(structures, & &1.name) == ["Locally recorded"]
     end
 
     test "is a no-op when there is no previous source", ctx do

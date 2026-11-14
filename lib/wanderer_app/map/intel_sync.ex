@@ -104,7 +104,7 @@ defmodule WandererApp.Map.IntelSync do
 
   defp do_sync_system(subscriber_map_id, source_map_id, solar_system_id) do
     with {:source, {:ok, source_system}} <-
-           {:source, MapSystemRepo.get_by_map_and_solar_system_id(source_map_id, solar_system_id)},
+           {:source, get_visible_source_system(source_map_id, solar_system_id)},
          {:subscriber, {:ok, subscriber_system}} <-
            {:subscriber,
             MapSystemRepo.get_by_map_and_solar_system_id(subscriber_map_id, solar_system_id)} do
@@ -287,13 +287,22 @@ defmodule WandererApp.Map.IntelSync do
     case WandererApp.Map.get_map_state(subscriber_map_id, false) do
       {:ok, %{map: %{intel_source_map_id: source_map_id}}} when not is_nil(source_map_id) ->
         WandererApp.Env.intel_sharing_enabled?() and
-          match?(
-            {:ok, _},
-            MapSystemRepo.get_by_map_and_solar_system_id(source_map_id, solar_system_id)
-          )
+          match?({:ok, _}, get_visible_source_system(source_map_id, solar_system_id))
 
       _ ->
         false
+    end
+  end
+
+  # Removing a system only hides its row, so the source keeps stale intel for
+  # it. A hidden source row is treated as no source data, matching
+  # `inherited_solar_system_ids/2`, so it neither overwrites nor locks the
+  # subscriber's own intel.
+  defp get_visible_source_system(source_map_id, solar_system_id) do
+    case MapSystemRepo.get_by_map_and_solar_system_id(source_map_id, solar_system_id) do
+      {:ok, %{visible: true}} = found -> found
+      {:ok, _hidden} -> {:error, :not_found}
+      error -> error
     end
   end
 
@@ -309,7 +318,9 @@ defmodule WandererApp.Map.IntelSync do
   """
   def clear_inherited_from(subscriber_map_id, source_map_id)
       when not is_nil(source_map_id) do
-    case MapSystemRepo.get_visible_by_map(subscriber_map_id) do
+    # Hidden rows keep their records and can become visible again, so they
+    # must be cleared too or the old source's records would be stranded.
+    case MapSystemRepo.get_all_by_map(subscriber_map_id) do
       {:ok, systems} ->
         cleared =
           Enum.reduce(systems, 0, fn system, acc ->
@@ -347,7 +358,7 @@ defmodule WandererApp.Map.IntelSync do
 
       error ->
         Logger.error(fn ->
-          "Failed to list visible systems while clearing inherited intel: #{inspect(error)}"
+          "Failed to list systems while clearing inherited intel: #{inspect(error)}"
         end)
 
         {:error, :list_systems_failed}
