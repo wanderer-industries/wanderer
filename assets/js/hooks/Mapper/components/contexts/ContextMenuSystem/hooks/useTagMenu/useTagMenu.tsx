@@ -36,12 +36,13 @@ export const useTagMenu = (
   systems: SolarSystemRawType[],
   systemId: string | undefined,
   onSystemTag: (val?: string) => void,
+  disabled = false,
 ): (() => MenuItem) => {
-  const ref = useRef({ onSystemTag, systems, systemId });
-  ref.current = { onSystemTag, systems, systemId };
+  const ref = useRef({ onSystemTag, systems, systemId, disabled });
+  ref.current = { onSystemTag, systems, systemId, disabled };
 
   return useCallback(() => {
-    const { onSystemTag, systemId, systems } = ref.current;
+    const { onSystemTag, systemId, systems, disabled } = ref.current;
     const system = systemId ? getSystemById(systems, systemId) : undefined;
 
     const isSelectedTag = AVAILABLE_TAGS.includes(system?.tag ?? '');
@@ -49,11 +50,13 @@ export const useTagMenu = (
     const menuItem: MenuItem = {
       label: 'Tag',
       icon: PrimeIcons.HASHTAG,
+      disabled,
       className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: isSelectedTag }),
       items: [
         {
           label: 'Digit',
           icon: PrimeIcons.TAGS,
+          disabled,
           className: '!h-[128px] suppress-menu-behaviour',
           template: () => {
             return (
@@ -66,6 +69,7 @@ export const useTagMenu = (
                       key={x}
                       value={x}
                       size="small"
+                      disabled={disabled}
                       className="p-[3px] justify-center"
                       onClick={() => system?.tag !== x && onSystemTag(x)}
                     >
@@ -73,7 +77,7 @@ export const useTagMenu = (
                     </WdButton>
                   ))}
                   <WdButton
-                    disabled={!isSelectedTag}
+                    disabled={disabled || !isSelectedTag}
                     icon="pi pi-ban"
                     size="small"
                     className="!p-0 !w-[initial] justify-center"

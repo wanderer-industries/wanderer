@@ -12,6 +12,7 @@ export interface StructureItem {
   notes?: string;
   status: StructureStatus;
   endTime?: string;
+  inherited_from_map_id?: string | null;
 }
 
 export const STRUCTURE_TYPE_MAP: Record<string, string> = {

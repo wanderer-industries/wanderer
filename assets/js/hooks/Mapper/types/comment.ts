@@ -4,6 +4,7 @@ export type CommentType = {
   solarSystemId: number;
   text: string;
   updated_at: string;
+  inherited_from_map_id?: string | null;
 };
 
 export type CommentSystem = {

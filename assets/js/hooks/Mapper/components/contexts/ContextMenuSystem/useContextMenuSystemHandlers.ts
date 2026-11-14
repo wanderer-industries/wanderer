@@ -174,6 +174,21 @@ export const useContextMenuSystemHandlers = ({
     setSystem(undefined);
   }, []);
 
+  const onSyncIntel = useCallback(() => {
+    const { system, outCommand } = ref.current;
+    if (!system) {
+      return;
+    }
+
+    outCommand({
+      type: OutCommand.syncIntel,
+      data: {
+        solar_system_id: system,
+      },
+    });
+    setSystem(undefined);
+  }, []);
+
   const onOpenSettings = useCallback(() => {
     const { system, outCommand } = ref.current;
     if (!system) {
@@ -220,6 +235,7 @@ export const useContextMenuSystemHandlers = ({
     onSystemTemporaryName,
     onSystemStatus,
     onSystemLabels,
+    onSyncIntel,
     onOpenSettings,
     onWaypointSet,
     systemId: system,

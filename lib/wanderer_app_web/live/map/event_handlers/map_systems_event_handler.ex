@@ -4,6 +4,14 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
   require Logger
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  # Fields the intel sync overwrites. A write to one of these on an inherited
+  # system would be silently reverted by the next sync, so refuse it here rather
+  # than relying on the client's read-only UI — any WebSocket caller can bypass
+  # that. `:name` and `:locked` are not synced and stay editable.
+  #
+  # Mirrors WandererApp.Map.IntelSync.intel_fields/0 minus :custom_name, which
+  # this handler has no route for.
+  @intel_owned_keys [:description, :labels, :tag, :temporary_name, :status]
 
   def handle_server_event(%{event: :add_system, payload: system}, socket) do
     # Schedule kill update for the new system after a short delay to allow subscription
@@ -267,7 +275,8 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
         _ -> :none
       end
 
-    if can_update_system?(key_atom, user_permissions) do
+    if can_update_system?(key_atom, user_permissions) and
+         not intel_owned?(map_id, key_atom, solar_system_id) do
       apply(WandererApp.Map.Server, method_atom, [
         map_id,
         %{
@@ -346,6 +355,45 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
     {:noreply, socket}
   end
 
+  def handle_ui_event(
+        "sync_intel",
+        %{"solar_system_id" => solar_system_id},
+        %{assigns: %{map_id: map_id, map_loaded?: true, user_permissions: %{update_system: true}}} =
+          socket
+      ) do
+    if WandererApp.Env.intel_sharing_enabled?() do
+      case WandererAppWeb.Helpers.APIUtils.parse_int(solar_system_id) do
+        {:error, _} ->
+          {:reply, %{success: false, error: "invalid_system_id"}, socket}
+
+        {:ok, solar_system_id_int} ->
+          case WandererApp.MapRepo.get(map_id) do
+            {:ok, %{intel_source_map_id: source_map_id}} when not is_nil(source_map_id) ->
+              case WandererApp.Map.Server.sync_intel_for_system(
+                     map_id,
+                     source_map_id,
+                     solar_system_id_int
+                   ) do
+                {:ok, updated_system} when is_map(updated_system) ->
+                  {:reply, %{success: true}, socket}
+
+                _ ->
+                  {:reply, %{success: false, error: "no_source_data"}, socket}
+              end
+
+            _ ->
+              {:reply, %{success: false, error: "no_intel_source"}, socket}
+          end
+      end
+    else
+      {:reply, %{success: false, error: "feature_disabled"}, socket}
+    end
+  end
+
+  def handle_ui_event("sync_intel", _params, socket) do
+    {:reply, %{success: false, error: "forbidden"}, socket}
+  end
+
   def handle_ui_event(event, body, socket),
     do: MapCoreEventHandler.handle_ui_event(event, body, socket)
 
@@ -372,6 +420,15 @@ defmodule WandererAppWeb.MapSystemsEventHandler do
 
   defp can_update_system?(:locked, %{lock_system: false} = _user_permissions), do: false
   defp can_update_system?(_key, _user_permissions), do: true
+
+  defp intel_owned?(map_id, key_atom, solar_system_id) when key_atom in @intel_owned_keys do
+    WandererApp.Map.IntelSync.inherited_system?(
+      map_id,
+      "#{solar_system_id}" |> String.to_integer()
+    )
+  end
+
+  defp intel_owned?(_map_id, _key_atom, _solar_system_id), do: false
 
   defp update_system_positions(_map_id, []), do: :ok
 

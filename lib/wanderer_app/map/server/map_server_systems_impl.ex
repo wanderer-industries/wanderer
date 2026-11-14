@@ -138,12 +138,25 @@ defmodule WandererApp.Map.Server.SystemsImpl do
 
     {:ok, system} = WandererApp.Api.MapSystem.by_id(system_id)
 
-    :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
+    # Inherited comments belong to the source map. The client hides the delete
+    # button for them, but that is advisory only — refuse the write here so an
+    # API or WebSocket caller cannot delete another map's intel. The next sync
+    # would restore it anyway, so accepting it would only produce a broadcast
+    # the client then has to unwind.
+    if is_nil(comment.inherited_from_map_id) do
+      :ok = WandererApp.MapSystemCommentRepo.destroy(comment)
 
-    Impl.broadcast!(map_id, :system_comment_removed, %{
-      solar_system_id: system.solar_system_id,
-      comment_id: comment_id
-    })
+      Impl.broadcast!(map_id, :system_comment_removed, %{
+        solar_system_id: system.solar_system_id,
+        comment_id: comment_id
+      })
+    else
+      Logger.warning(
+        "[remove_system_comment] refused delete of inherited comment #{comment_id} on map #{map_id}"
+      )
+
+      :ok
+    end
   end
 
   def cleanup_systems(map_id) do
@@ -650,6 +663,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
               }
             )
 
+            maybe_sync_intel_from_source(map_id, updated_system)
+
             :ok
 
           _ ->
@@ -702,6 +717,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
                         operation: :upsert
                       }
                     )
+
+                    maybe_sync_intel_from_source(map_id, system)
 
                     :ok
 
@@ -903,6 +920,8 @@ defmodule WandererApp.Map.Server.SystemsImpl do
           })
 
           track_add_system(map_id, user_id, character_id, system.solar_system_id)
+
+          maybe_sync_intel_from_source(map_id, system)
 
           :ok
 
@@ -1126,5 +1145,40 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     })
 
     :ok
+  end
+
+  @doc """
+  Syncs one system's intel from the map's configured source and publishes the
+  result.
+
+  Single entry point for both the automatic sync-on-visibility path and the
+  manual sync button. The manual path previously re-implemented this and called
+  `Impl.broadcast!/3` directly, which skipped the `:system_metadata_changed`
+  external broadcast below, so webhook and SSE consumers never saw manual syncs.
+  """
+  def sync_intel_for_system(map_id, source_map_id, solar_system_id) do
+    case WandererApp.Map.IntelSync.sync_system(map_id, source_map_id, solar_system_id) do
+      {:ok, updated_system} when is_map(updated_system) ->
+        intel_fields = WandererApp.Map.IntelSync.intel_fields()
+        update = Map.take(updated_system, [:solar_system_id | intel_fields])
+        WandererApp.Map.update_system_by_solar_system_id(map_id, update)
+        update_map_system_last_activity(map_id, updated_system)
+        {:ok, updated_system}
+
+      other ->
+        other
+    end
+  end
+
+  defp maybe_sync_intel_from_source(map_id, system) do
+    with true <- WandererApp.Env.intel_sharing_enabled?(),
+         {:ok, %{map: %{intel_source_map_id: source_id}}} when not is_nil(source_id) <-
+           WandererApp.Map.get_map_state(map_id, false) do
+      Task.Supervisor.start_child(WandererApp.TaskSupervisor, fn ->
+        sync_intel_for_system(map_id, source_id, system.solar_system_id)
+      end)
+    else
+      _ -> :ok
+    end
   end
 end
