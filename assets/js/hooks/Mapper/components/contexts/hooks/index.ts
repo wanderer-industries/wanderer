@@ -1,3 +1,3 @@
 export * from './useWaypointMenu';
-export * from './useJumpPlannerMenu';
+export * from './useJumpMenu';
 export * from './useDeleteSystems';

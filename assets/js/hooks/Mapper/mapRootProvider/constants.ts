@@ -1,6 +1,8 @@
 import {
   AvailableThemes,
+  DotlanBehavior,
   InterfaceStoredSettings,
+  JumpPlannerSettings,
   KillsWidgetSettings,
   LocalWidgetSettings,
   MapSettings,
@@ -23,6 +25,7 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   pingsPlacement: PingsPlacement.rightTop,
   minimapPlacement: MiniMapPlacement.rightBottom,
   hideBookmarkWarning: false,
+  dotlanBehavior: DotlanBehavior.system,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {
@@ -64,6 +67,15 @@ export const DEFAULT_KILLS_WIDGET_SETTINGS: KillsWidgetSettings = {
 
 export const DEFAULT_MAP_SETTINGS: MapSettings = {
   viewport: { zoom: 1, x: 0, y: 0 },
+};
+
+export const DEFAULT_JUMP_PLANNER_SETTINGS: JumpPlannerSettings = {
+  shipType: 'Rorqual',
+  jumpDriveCalibration: 5,
+  jumpFuelConservation: 4,
+  jumpFreighter: 4,
+  preferStationSystems: true,
+  avoidIncursions: true,
 };
 
 export const getDefaultWidgetProps = () => ({

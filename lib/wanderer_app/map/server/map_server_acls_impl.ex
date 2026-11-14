@@ -73,7 +73,14 @@ defmodule WandererApp.Map.Server.AclsImpl do
     WandererApp.Map.Server.Impl.broadcast!(map_id, :acl_members_changed, %{})
   end
 
+  # ACL events fan out to every map using the ACL, including maps that are not running.
+  # Skip those: writing to their map cache would create partial entries that never
+  # get cleaned up, and a map loads fresh ACLs when it starts anyway.
   def handle_acl_updated(map_id, acl_id) do
+    if map_started?(map_id), do: do_handle_acl_updated(map_id, acl_id), else: :ok
+  end
+
+  defp do_handle_acl_updated(map_id, acl_id) do
     {:ok, %{acls: acls}} =
       WandererApp.MapRepo.get(map_id,
         acls: [
@@ -97,7 +104,11 @@ defmodule WandererApp.Map.Server.AclsImpl do
     end
   end
 
-  def handle_acl_deleted(map_id, _acl_id) do
+  def handle_acl_deleted(map_id, acl_id) do
+    if map_started?(map_id), do: do_handle_acl_deleted(map_id, acl_id), else: :ok
+  end
+
+  defp do_handle_acl_deleted(map_id, _acl_id) do
     {:ok, %{acls: acls}} =
       WandererApp.MapRepo.get(map_id,
         acls: [
@@ -119,6 +130,9 @@ defmodule WandererApp.Map.Server.AclsImpl do
     # Broadcast to map channel so all viewers can refresh their available characters
     WandererApp.Map.Server.Impl.broadcast!(map_id, :acl_members_changed, %{})
   end
+
+  defp map_started?(map_id),
+    do: WandererApp.Cache.lookup!("map_#{map_id}:started", false)
 
   def track_acls([]), do: :ok
 

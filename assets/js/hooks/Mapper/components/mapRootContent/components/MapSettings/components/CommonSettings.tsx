@@ -47,8 +47,6 @@ export const CommonSettings = () => {
         <div />
         <WdTooltipWrapper content="This dangerous action. And can not be undone" position={TooltipPosition.top}>
           <WdButton
-            // @ts-ignore
-            ref={cfRef}
             className="py-[4px]"
             onClick={cfShow}
             outlined

@@ -4,6 +4,10 @@ defmodule WandererApp.Api do
   use Ash.Domain,
     extensions: [AshJsonApi.Domain]
 
+  authorization do
+    authorize :when_requested
+  end
+
   json_api do
     prefix "/api/v1"
     log_errors?(true)

@@ -15,6 +15,9 @@ module.exports = {
     '../lib/wanderer_app_web/**/*.*ex',
     '../deps/live_select/lib/live_select/component.*ex',
   ],
+  safelist: [
+    'hero-jump-range-diagonal',
+  ],
   theme: {
     extend: {
       animation: {
@@ -107,8 +110,9 @@ module.exports = {
               .readFileSync(fullPath)
               .toString()
               .replace(/\r?\n|\r/g, '');
+            let encodedContent = Buffer.from(content).toString('base64');
             return {
-              [`--hero-${name}`]: `url('data:image/svg+xml;utf8,${content}')`,
+              [`--hero-${name}`]: `url('data:image/svg+xml;base64,${encodedContent}')`,
               '-webkit-mask': `var(--hero-${name})`,
               mask: `var(--hero-${name})`,
               'mask-repeat': 'no-repeat',

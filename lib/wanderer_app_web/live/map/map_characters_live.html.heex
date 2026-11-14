@@ -1,22 +1,71 @@
 <nav class="fixed top-0 z-100 px-6 pl-20 flex items-center justify-between w-full h-12 pointer-events-auto border-b border-stone-800  bg-opacity-70 bg-neutral-900">
-  <span className="w-full font-medium text-sm">
+  <span class="w-full font-medium text-sm">
     <.link navigate={~p"/#{@map_slug}"} class="text-neutral-100">
       {@map_name}
     </.link>
-    - Active Characters [{@characters_count}]
+    - Characters
   </span>
 </nav>
 <main
   id="map-character-list"
   class="pt-20 w-full h-full col-span-2 lg:col-span-1 p-4 pl-20 pb-20 overflow-auto"
 >
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-4">
+    <h1 id="character-view-heading" class="text-lg font-medium">
+      {@character_view_label} ({@characters_count})
+    </h1>
+    <div role="group" aria-label="Character view" class="flex gap-1">
+      <button
+        type="button"
+        phx-click="change_character_view"
+        phx-value-view="active"
+        aria-pressed={to_string(@character_view == :active)}
+        class={["btn btn-sm", @character_view == :active && "btn-active"]}
+      >
+        Active sessions
+      </button>
+      <button
+        type="button"
+        phx-click="change_character_view"
+        phx-value-view="tracked"
+        aria-pressed={to_string(@character_view == :tracked)}
+        class={["btn btn-sm", @character_view == :tracked && "btn-active"]}
+      >
+        All tracked
+      </button>
+    </div>
+  </div>
+  <p :if={@character_view == :active} class="mb-6 text-sm text-gray-400 max-w-prose">
+    Characters with an active mapper session, including viewers. This does not mean they are online in EVE.
+  </p>
+  <p :if={@character_view == :tracked} class="mb-6 text-sm text-gray-400 max-w-prose">
+    Characters with tracking enabled for this map, whether or not they have an active mapper session.
+    Untracked viewers are excluded. Tracking enabled does not mean tracking is currently running.
+  </p>
   <div class="mb-6 p-4 border rounded-md flex gap-2 items-center">
     <.icon name="hero-information-circle-mini" class="h-5 w-5" />
     <p>
-      'Untrack' characters leading to completely remove them from the map, required manually enable the tracking by users later.
+      Untracking disables tracking for this map. The character's user must enable it again to resume tracking.
     </p>
   </div>
 
+  <p :if={@characters_load_error} id="character-list-error" role="alert" class="mb-4">
+    Unable to load character tracking settings. Retrying automatically.
+  </p>
+  <p :if={@characters_incomplete} id="character-list-incomplete" role="alert" class="mb-4">
+    Some characters could not be loaded. This list may be incomplete. Retrying automatically.
+  </p>
+  <p
+    :if={not @characters_load_error and not @characters_incomplete and @characters_count == 0}
+    id="character-list-empty"
+    class="text-gray-400"
+  >
+    <%= if @character_view == :tracked do %>
+      No characters have tracking enabled for this map.
+    <% else %>
+      No active mapper sessions.
+    <% end %>
+  </p>
   <div class="flex flex-col gap-4 w-full">
     <.live_component
       module={MapCharacters}

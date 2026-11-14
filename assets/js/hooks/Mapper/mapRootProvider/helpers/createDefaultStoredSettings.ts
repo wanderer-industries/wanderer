@@ -1,6 +1,7 @@
 import { MapUserSettings, SettingsTypes, SettingsWrapper } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import {
   DEFAULT_KILLS_WIDGET_SETTINGS,
+  DEFAULT_JUMP_PLANNER_SETTINGS,
   DEFAULT_MAP_SETTINGS,
   DEFAULT_ON_THE_MAP_SETTINGS,
   DEFAULT_ROUTES_BY_SETTINGS,
@@ -35,6 +36,7 @@ export const createDefaultStoredSettings = (): MapUserSettings => {
     signaturesWidget: createWidgetSettings(DEFAULT_SIGNATURE_SETTINGS),
     interface: createWidgetSettings(STORED_INTERFACE_DEFAULT_VALUES),
     map: createWidgetSettings(DEFAULT_MAP_SETTINGS),
+    jumpPlanner: createWidgetSettings(DEFAULT_JUMP_PLANNER_SETTINGS),
   };
 };
 
@@ -63,5 +65,7 @@ export const getDefaultSettingsByType = (type: SettingsTypes): SettingsWrapper<a
       return createWidgetSettings(STORED_INTERFACE_DEFAULT_VALUES);
     case SettingsTypes.map:
       return createWidgetSettings(DEFAULT_MAP_SETTINGS);
+    case SettingsTypes.jumpPlanner:
+      return createWidgetSettings(DEFAULT_JUMP_PLANNER_SETTINGS);
   }
 };
