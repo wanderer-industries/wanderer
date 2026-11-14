@@ -10,6 +10,7 @@ import { IconField } from 'primereact/iconfield';
 import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MarkdownEditor } from '@/hooks/Mapper/components/mapInterface/components/MarkdownEditor';
+import { SYSTEM_CUSTOM_LABEL_MAX_LENGTH } from '@/hooks/Mapper/constants/system.ts';
 
 interface SystemSettingsDialog {
   systemId: string;
@@ -19,7 +20,7 @@ interface SystemSettingsDialog {
 
 export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSettingsDialog) => {
   const {
-    data: { systems },
+    data: { systems, systemCustomLabelMaxLength },
     outCommand,
   } = useMapRootState();
 
@@ -176,7 +177,7 @@ export const SystemSettingsDialog = ({ systemId, visible, setVisible }: SystemSe
                   aria-describedby="label"
                   autoComplete="off"
                   value={label}
-                  maxLength={11}
+                  maxLength={systemCustomLabelMaxLength ?? SYSTEM_CUSTOM_LABEL_MAX_LENGTH}
                   onChange={e => setLabel(e.target.value)}
                   onInput={handleInput}
                 />

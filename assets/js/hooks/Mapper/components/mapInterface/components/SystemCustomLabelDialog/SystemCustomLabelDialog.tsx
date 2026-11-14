@@ -7,6 +7,7 @@ import { Dialog } from 'primereact/dialog';
 import { IconField } from 'primereact/iconfield';
 import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SYSTEM_CUSTOM_LABEL_MAX_LENGTH } from '@/hooks/Mapper/constants/system.ts';
 
 interface SystemCustomLabelDialog {
   systemId: string;
@@ -16,7 +17,7 @@ interface SystemCustomLabelDialog {
 
 export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: SystemCustomLabelDialog) => {
   const {
-    data: { systems },
+    data: { systems, systemCustomLabelMaxLength },
     outCommand,
   } = useMapRootState();
 
@@ -114,7 +115,7 @@ export const SystemCustomLabelDialog = ({ systemId, visible, setVisible }: Syste
                   aria-describedby="username-help"
                   autoComplete="off"
                   value={label}
-                  maxLength={11}
+                  maxLength={systemCustomLabelMaxLength ?? SYSTEM_CUSTOM_LABEL_MAX_LENGTH}
                   onChange={e => setLabel(e.target.value)}
                   // @ts-expect-error
                   ref={inputRef}

@@ -107,6 +107,7 @@ export type CommandInit = {
   reset?: boolean;
   is_subscription_active?: boolean;
   available_routes_by?: RoutesByCategoryType[];
+  system_custom_label_max_length?: number;
   main_character_eve_id?: string | null;
   following_character_eve_id?: string | null;
   map_slug?: string;

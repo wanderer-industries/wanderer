@@ -25,6 +25,7 @@ export const useMapInit = () => {
         options,
         is_subscription_active,
         available_routes_by,
+        system_custom_label_max_length,
         main_character_eve_id,
         following_character_eve_id,
         user_hubs,
@@ -89,6 +90,10 @@ export const useMapInit = () => {
 
       if (available_routes_by) {
         updateData.availableRoutesBy = available_routes_by;
+      }
+
+      if (system_custom_label_max_length != null) {
+        updateData.systemCustomLabelMaxLength = system_custom_label_max_length;
       }
 
       if (system_static_infos) {

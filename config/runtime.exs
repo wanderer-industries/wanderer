@@ -162,6 +162,14 @@ restrict_acls_creation =
   |> get_var_from_path_or_env("WANDERER_RESTRICT_ACLS_CREATION", "false")
   |> String.to_existing_atom()
 
+system_custom_label_max_length =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_SYSTEM_CUSTOM_LABEL_MAX_LENGTH", 5)
+
+if system_custom_label_max_length < 1 do
+  raise "WANDERER_SYSTEM_CUSTOM_LABEL_MAX_LENGTH must be greater than 0"
+end
+
 config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
@@ -185,6 +193,7 @@ config :wanderer_app,
   public_stats_refresh_interval_ms:
     System.get_env("WANDERER_PUBLIC_STATS_REFRESH_INTERVAL_MS", "30000")
     |> String.to_integer(),
+  system_custom_label_max_length: system_custom_label_max_length,
   character_api_disabled: character_api_disabled,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,

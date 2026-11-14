@@ -786,6 +786,7 @@ defmodule WandererAppWeb.MapCoreEventHandler do
           following_character_eve_id: following_character_eve_id,
           is_subscription_active: is_subscription_active,
           available_routes_by: WandererApp.RouteBuilderClient.available_routes_by(),
+          system_custom_label_max_length: WandererApp.Env.system_custom_label_max_length(),
           user_permissions: user_permissions,
           characters: map_characters,
           options: options,
