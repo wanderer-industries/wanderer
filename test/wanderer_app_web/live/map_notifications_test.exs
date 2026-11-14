@@ -154,7 +154,14 @@ defmodule WandererAppWeb.MapNotificationsTest do
         webhook_url: "https://discord.com/api/webhooks/123/tok"
       })
 
-    {:ok, _} = MapDiscordNotification.update(rec, %{enabled?: false})
+    rec =
+      Enum.reduce(1..10, rec, fn _, current ->
+        {:ok, failed} = MapDiscordNotification.record_failure(current, "Synthetic failed event")
+        failed
+      end)
+
+    assert rec.consecutive_failures == 10
+    refute rec.enabled?
 
     {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
 
@@ -170,6 +177,8 @@ defmodule WandererAppWeb.MapNotificationsTest do
 
     assert {:ok, updated} = MapDiscordNotification.by_map(map.id)
     assert updated.enabled? == true
+    assert updated.consecutive_failures == 10
+    assert updated.last_error == "Synthetic failed event"
   end
 
   test "the saved url is never rendered in full", %{conn: conn, map: map} do
@@ -187,6 +196,139 @@ defmodule WandererAppWeb.MapNotificationsTest do
       |> render_click()
 
     refute html =~ "SUPERSECRETTOKEN"
+  end
+
+  for {name, suffix} <- [
+        {"fragment slash", "FAKE_SECRET_TOKEN#/note"},
+        {"query slash", "FAKE_SECRET_TOKEN?thread_id=/note"},
+        {"short token", "tok"},
+        {"versioned trailing slash", "FAKE_SECRET_TOKEN/?thread_id=/note#private"}
+      ] do
+    test "masks the saved URL with #{name}", %{conn: conn, map: map} do
+      {:ok, _} =
+        MapDiscordNotification.create(%{
+          map_id: map.id,
+          webhook_url: "https://discord.com/api/v10/webhooks/123/" <> unquote(suffix)
+        })
+
+      {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+      html = view |> element("[phx-value-tab='notifications']") |> render_click()
+
+      refute html =~ "FAKE_SECRET_TOKEN"
+      refute html =~ "/tok"
+      refute html =~ "thread_id"
+      refute html =~ "/note"
+      refute html =~ "#private"
+      assert html =~ ".../123/"
+    end
+  end
+
+  test "blank replacement preserves the saved URL and ignores client map IDs", %{
+    conn: conn,
+    map: map
+  } do
+    url = "https://discord.com/api/webhooks/123/KEEP_SECRET"
+    {:ok, _} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+    other = Factory.insert(:map, %{})
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+    view |> element("button[phx-click='replace-url']") |> render_click()
+
+    view
+    |> with_target("#map-notifications")
+    |> render_submit("save", %{
+      "notification" => %{
+        "webhook_url" => "",
+        "enabled" => "false",
+        "wh_only" => "false",
+        "map_id" => other.id
+      },
+      "map_id" => other.id
+    })
+
+    assert {:ok, rec} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+    assert rec.webhook_url == url
+    refute rec.enabled?
+    assert {:error, _} = MapDiscordNotification.by_map(other.id)
+  end
+
+  test "rejects malformed notification shapes without crashing", %{conn: conn, map: map} do
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    for payload <- [nil, "bad", [], 42] do
+      assert view
+             |> with_target("#map-notifications")
+             |> render_submit("save", %{"notification" => payload}) =~
+               "Could not read the submitted settings."
+    end
+
+    assert Process.alive?(view.pid)
+  end
+
+  test "does not log a pending credential changeset" do
+    secret = "PENDING_CREDENTIAL_SHOULD_NOT_APPEAR"
+
+    socket = %Phoenix.LiveView.Socket{
+      assigns: %{__changed__: %{}, notification: nil, map_id: nil}
+    }
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert {:noreply, result} =
+                 WandererAppWeb.Maps.MapNotificationsComponent.handle_event(
+                   "save",
+                   %{
+                     "notification" => %{
+                       "webhook_url" => "https://discord.com/api/webhooks/123/" <> secret
+                     }
+                   },
+                   socket
+                 )
+
+        assert result.assigns.error =~ "Could not save the Discord configuration."
+      end)
+
+    assert log =~ "Discord notification settings"
+    refute log =~ secret
+  end
+
+  test "rejects non-positive and oversized exclusion IDs", %{conn: conn, map: map} do
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    for id <- ["0", "-1", "9223372036854775808", "1junk", %{}] do
+      assert view
+             |> with_target("#map-notifications")
+             |> render_submit("add-excluded", %{"excluded" => %{"excluded_system" => id}}) =~
+               "Pick a system from the list."
+
+      assert view
+             |> with_target("#map-notifications")
+             |> render_click("remove-excluded", %{"system_id" => id}) =~
+               "Could not remove that system."
+    end
+
+    assert {:ok, rec} = MapDiscordNotification.by_map(map.id)
+    assert rec.excluded_systems == []
+  end
+
+  test "ignores forged search component IDs", %{conn: conn, map: map} do
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    view
+    |> with_target("#map-notifications")
+    |> render_change("live_select_change", %{"id" => "not-the-picker", "text" => "Jita"})
+
+    assert Process.alive?(view.pid)
+    assert render(view) =~ "Discord webhook URL"
   end
 
   test "the excluded-systems picker searches by system name", %{conn: conn, map: map} do
@@ -280,7 +422,19 @@ defmodule WandererAppWeb.MapNotificationsTest do
     assert {:ok, rec} = MapDiscordNotification.by_map(map.id)
     assert rec.excluded_systems == [30_000_142]
     # And it is rendered back with a resolved name, not a bare id.
-    assert render(view) =~ "Jita (30000142)"
+    assert render(view) =~ "Jita (The Forge)"
+
+    assert has_element?(
+             view,
+             "button[phx-click='remove-excluded'][aria-label='Remove Jita (The Forge) (30000142) from excluded systems']",
+             "Remove"
+           )
+
+    assert has_element?(
+             view,
+             "button[phx-click='delete'][aria-label='Remove Discord notification configuration']",
+             "Remove"
+           )
 
     view
     |> element("button[phx-click='remove-excluded'][phx-value-system_id='30000142']")
@@ -288,7 +442,7 @@ defmodule WandererAppWeb.MapNotificationsTest do
 
     assert {:ok, after_remove} = MapDiscordNotification.by_map(map.id)
     assert after_remove.excluded_systems == []
-    refute render(view) =~ "Jita (30000142)"
+    refute render(view) =~ "Jita (The Forge)"
   end
 
   # The rendered forms cannot produce these payloads, but the socket accepts
@@ -441,6 +595,83 @@ defmodule WandererAppWeb.MapNotificationsTest do
       {:ok, _} = MapDiscordNotification.record_success(rec_b)
       assert settled(view) =~ "Last delivered:"
     end
+  end
+
+  test "a queued test is not presented as a Discord acknowledgement", %{conn: conn, map: map} do
+    alias WandererApp.ExternalEvents.Discord.{HttpStub, WorkerSupervisor}
+    alias WandererApp.ExternalEvents.DiscordDispatcher
+
+    HttpStub.start()
+    start_supervised!(WorkerSupervisor)
+    start_supervised!(DiscordDispatcher)
+    owner = self()
+
+    HttpStub.set_responses([
+      fn _url, _body ->
+        send(owner, {:transport_started, self()})
+
+        receive do
+          :complete -> {:ok, 204, []}
+        end
+      end
+    ])
+
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+    html = view |> element("button[phx-click='send-test']") |> render_click()
+
+    assert html =~ "Test message queued."
+    refute html =~ "Test message sent"
+    assert html =~ "No kills delivered yet."
+    assert_receive {:transport_started, task}
+    send(task, :complete)
+  end
+
+  test "disabled configurations cannot queue a test even through a forged event", %{
+    conn: conn,
+    map: map
+  } do
+    alias WandererApp.ExternalEvents.Discord.{HttpStub, WorkerSupervisor}
+    alias WandererApp.ExternalEvents.DiscordDispatcher
+
+    HttpStub.start()
+    start_supervised!(WorkerSupervisor)
+    start_supervised!(DiscordDispatcher)
+
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok",
+        enabled?: false
+      })
+
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    assert has_element?(view, "button[phx-click='send-test'][disabled]")
+
+    html =
+      view
+      |> with_target("#map-notifications")
+      |> render_click("send-test", %{})
+
+    assert html =~ "Enable and save notifications before sending a test message."
+    refute html =~ "Test message queued."
+    assert Registry.lookup(WorkerSupervisor.registry(), map.id) == []
+    assert HttpStub.requests() == []
+  end
+
+  test "server master-off hides the notifications controls", %{conn: conn, map: map} do
+    disable_webhooks()
+    {:ok, view, _} = live(conn, ~p"/maps/#{map.slug}/settings")
+    refute has_element?(view, "[phx-value-tab='notifications']")
+    refute has_element?(view, "#map-notifications")
   end
 
   test "send test message reports the global kill-switch", %{conn: conn, map: map} do

@@ -32,8 +32,9 @@ owner and anyone granted admin rights over it.
    should post to, and copy the webhook URL.
 2. **Paste the URL** into the *Discord webhook URL* field on the Notifications
    tab and hit **Save**.
-3. **Send a test message** to confirm the wiring before you rely on it. The
-   button is right there under the form.
+3. **Send a test message** to check the wiring before you rely on it. The
+   button queues a sample for delivery; “Test message queued” does not confirm
+   Discord received it. Check the channel and the delivery status below the form.
 
 That is the whole setup. From that point on, kills detected in systems on the
 map are formatted and pushed to the channel.
@@ -103,6 +104,13 @@ channel that no longer exists. Other transient errors (rate limits, brief
 outages) are retried with backoff, and only a sustained run of failures will
 disable the config.
 
+Re-checking **Enabled** does not clear the consecutive failed-event history.
+The counter tracks failed events, not individual HTTP retry attempts. A successful
+delivery or replacing the webhook URL resets it. Until then, the next failed event
+can disable the configuration again if the failure threshold has already been
+reached. A test message cannot clear the history while **Enabled** is unchecked:
+the worker drops it without making an HTTP request.
+
 ## Self-hosting notes
 
 Wanderer CE runs this behind the same switch as the rest of the outbound events
@@ -121,19 +129,23 @@ the rest of the application. If you run a large instance with many maps sending
 notifications, you can size that pool:
 
 ```bash
-export WANDERER_DISCORD_POOL_SIZE="10"   # default
+export WANDERER_FINCH_DISCORD_POOL_SIZE="10"   # default
 ```
 
 ## Known limits
 
 Worth knowing before you wire it into an intel channel:
 
-- Notifications are **at most once**. If a delivery fails outright, that kill is
-  not re-sent later. We would rather drop the occasional kill than double-post
-  into a chat channel, and a dropped kill is still visible in the Kills widget
-  and on zKillboard.
-- Deduplication is in memory, so a restart of the application can let a kill
-  that was already posted be posted once more.
+- Delivery is **best effort**, not at-most-once or exactly-once. Transport
+  failures are retried, and Discord may already have accepted a message before
+  the connection failed, so a retry can produce a duplicate.
+- Attempted kills are deduplicated in memory, before delivery is confirmed. An
+  exhausted retry budget or a worker crash can lose queued notifications while
+  the attempted mark still suppresses replays. The kills remain visible in the
+  Kills widget and on zKillboard.
+- A restart, cache loss, or deduplication expiry can let a previously attempted
+  kill be posted again. Kills omitted by the per-event formatting cap are not
+  marked as attempted.
 - One webhook per map. If you want kills split across several channels, that is
   not supported yet.
 

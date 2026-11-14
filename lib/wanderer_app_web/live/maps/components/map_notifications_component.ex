@@ -18,6 +18,7 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   @min_search_length 2
   @max_search_results 20
   @masked_url_token_prefix 4
+  @max_postgres_bigint 9_223_372_036_854_775_807
 
   @impl true
   # Delivery outcomes are written by the map's Discord worker, asynchronously.
@@ -135,7 +136,7 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   defp not_found?(_), do: false
 
   @impl true
-  def handle_event("save", %{"notification" => params}, socket) do
+  def handle_event("save", %{"notification" => params}, socket) when is_map(params) do
     # `.input type="checkbox"` renders a hidden "false" before the box, so a
     # rendered field always submits a value and Phoenix keeps the last one.
     attrs = %{
@@ -197,13 +198,15 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   # `live_select_change` handler answers unconditionally with access-list
   # options. `phx-target={@myself}` on the live_select is what keeps the event
   # in this component.
-  def handle_event("live_select_change", %{"id" => id, "text" => text}, socket) do
+  def handle_event("live_select_change", %{"id" => @live_select_id, "text" => text}, socket) do
     options = search_systems(text)
 
-    send_update(LiveSelect.Component, id: id, options: options)
+    send_update(LiveSelect.Component, id: @live_select_id, options: options)
 
     {:noreply, assign(socket, :system_options, options)}
   end
+
+  def handle_event("live_select_change", _params, socket), do: {:noreply, socket}
 
   # `raw` is client-supplied. `to_string/1` raises Protocol.UndefinedError on a
   # map or a keyword-shaped param, and a raise inside `with` is not caught by
@@ -240,6 +243,17 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
     {:noreply, assign(socket, :error, "Could not remove that system.")}
   end
 
+  def handle_event(
+        "send-test",
+        _params,
+        %{assigns: %{notification: %{enabled?: false}}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> assign(:error, "Enable and save notifications before sending a test message.")
+     |> assign(:flash_message, nil)}
+  end
+
   def handle_event("send-test", _params, socket) do
     case WandererApp.ExternalEvents.DiscordDispatcher.send_test_message(socket.assigns.map_id) do
       # `:ok` means the message was ENQUEUED — the last hop is an async cast, so
@@ -261,9 +275,8 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
         {:noreply,
          socket |> assign(:error, "Save a webhook URL first.") |> assign(:flash_message, nil)}
 
-      {:error, other} ->
-        # Log rather than render: see log_error/1.
-        Logger.warning("Discord test message failed: #{inspect(other)}")
+      {:error, _other} ->
+        Logger.warning("Discord test message could not be queued")
 
         {:noreply,
          socket
@@ -298,11 +311,12 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
 
   # Form params always arrive as strings; live_select can hand back the integer
   # option value directly. Anything else is malformed.
-  defp parse_system_id(id) when is_integer(id), do: id
+  defp parse_system_id(id) when is_integer(id) and id > 0 and id <= @max_postgres_bigint,
+    do: id
 
   defp parse_system_id(raw) when is_binary(raw) do
     case Integer.parse(raw) do
-      {id, ""} -> id
+      {id, ""} -> parse_system_id(id)
       _ -> :error
     end
   end
@@ -416,24 +430,29 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
 
   defp humanize_error(other), do: log_error(other)
 
-  # Only authored validation messages are rendered. An error term here hangs off
-  # a changeset whose arguments hold the plaintext webhook URL — Ash redacts the
-  # changeset today, so this closes the path rather than a known leak.
-  defp log_error(error) do
-    Logger.warning("Discord notification settings error: #{inspect(error)}")
+  # AshCloak's generated argument can retain plaintext in a pending changeset,
+  # even when the resource attribute is sensitive. Never inspect the error term.
+  defp log_error(_error) do
+    Logger.warning("Discord notification settings could not be saved")
     "Could not save the Discord configuration. Try again later."
   end
 
   defp masked_url(nil), do: ""
 
   defp masked_url(url) when is_binary(url) do
-    case String.split(url, "/", trim: true) do
-      parts when length(parts) >= 2 ->
-        [token, id | _] = Enum.reverse(parts)
-        ".../#{id}/#{String.slice(token, 0, @masked_url_token_prefix)}••••"
+    # Query/fragment slashes are not path delimiters: splitting the entire URL
+    # can mistake the full credential for the webhook id and expose it verbatim.
+    with {:ok, %URI{path: path}} when is_binary(path) <- URI.new(url),
+         [token, id | _] <- path |> String.split("/", trim: true) |> Enum.reverse() do
+      # Short valid tokens must not be shown in full, even with bullets appended.
+      prefix =
+        if String.length(token) > @masked_url_token_prefix,
+          do: String.slice(token, 0, @masked_url_token_prefix),
+          else: ""
 
-      _ ->
-        "••••"
+      ".../#{id}/#{prefix}••••"
+    else
+      _ -> "••••"
     end
   end
 
@@ -495,6 +514,7 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
             <.button
               type="button"
               phx-click="remove-excluded"
+              aria-label={"Remove #{label} (#{system_id}) from excluded systems"}
               phx-value-system_id={system_id}
               phx-target={@myself}
             >
@@ -539,13 +559,19 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
         :if={@notification}
         class="flex items-center justify-between border-t border-stone-700 pt-3 mt-2"
       >
-        <.button type="button" phx-click="send-test" phx-target={@myself}>
+        <.button
+          type="button"
+          phx-click="send-test"
+          phx-target={@myself}
+          disabled={!@notification.enabled?}
+        >
           Send test message
         </.button>
         <.button
           type="button"
           class="p-button-danger"
           phx-click="delete"
+          aria-label="Remove Discord notification configuration"
           phx-target={@myself}
           data-confirm="Remove Discord notifications for this map?"
         >
