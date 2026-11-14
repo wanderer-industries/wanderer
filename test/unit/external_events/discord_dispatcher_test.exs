@@ -110,7 +110,7 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
   end
 
   # Asserting "nothing was delivered" needs more than `settle/1`: the HTTP call
-  # itself runs in a `Task.Supervisor.async_nolink` task, so a request can still
+  # itself runs in a linked `Task.Supervisor.async` task, so a request can still
   # be in flight when the worker's mailbox is drained. Wait until the worker is
   # genuinely idle (no queued event, none in progress) before asserting, or the
   # assertion passes for the wrong reason. Mutating the seeded system class
@@ -147,6 +147,32 @@ defmodule WandererApp.ExternalEvents.DiscordDispatcherTest do
             await_worker_idle(map_id, deadline)
         end
     end
+  end
+
+  test "publishes configuration invalidation after a successful update", %{
+    map: map,
+    notification: n
+  } do
+    Phoenix.PubSub.subscribe(WandererApp.PubSub, "discord_notifications:config")
+    assert {:ok, _} = MapDiscordNotification.update(n, %{wh_only: false})
+    assert_receive {:discord_notification_config_changed, map_id, false}
+    assert map_id == map.id
+  end
+
+  test "invalidates a cached configuration on a cluster PubSub notification", %{
+    map: map,
+    notification: n
+  } do
+    Cachex.put(:discord_notification_cache, map.id, n)
+
+    Phoenix.PubSub.broadcast(
+      WandererApp.PubSub,
+      "discord_notifications:config",
+      {:discord_notification_config_changed, map.id, false}
+    )
+
+    :sys.get_state(DiscordDispatcher)
+    assert {:ok, nil} = Cachex.get(:discord_notification_cache, map.id)
   end
 
   test "sends nothing when the global webhook gate is off", %{map: map} do

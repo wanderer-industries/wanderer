@@ -47,13 +47,16 @@ defmodule WandererApp.ExternalEvents.Discord.HttpStub do
 
   @impl true
   def post(url, body) do
-    Agent.get_and_update(@agent, fn state ->
-      state = %{state | requests: [{url, body} | state.requests]}
+    response =
+      Agent.get_and_update(@agent, fn state ->
+        state = %{state | requests: [{url, body} | state.requests]}
 
-      case state.responses do
-        [] -> {{:ok, 204, []}, state}
-        [resp | rest] -> {resp, %{state | responses: rest}}
-      end
-    end)
+        case state.responses do
+          [] -> {{:ok, 204, []}, state}
+          [resp | rest] -> {resp, %{state | responses: rest}}
+        end
+      end)
+
+    if is_function(response, 2), do: response.(url, body), else: response
   end
 end

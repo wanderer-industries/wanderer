@@ -50,10 +50,15 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   ## Limits
 
   An event gets at most 5 attempts per chunk and is subject to a ~60s deadline.
-  The deadline is checked before dispatching an attempt, not while a request is
-  in flight, so an event can overrun by up to one request duration (worst case
-  ~75s with the client's 15s timeout). It is a bound on *starting* new work, not
-  a hard wall-clock cap; nothing downstream depends on the exact figure.
+  The deadline is checked after any per-map or node-global cooldown, before
+  dispatching an attempt, not while a request is in flight. A long cooldown
+  can therefore defer that check well beyond 60s; this is a soft bound on
+  *starting* new work, not a 75s wall-clock cap.
+
+  Transport errors are retried, including uncertain outcomes where Discord
+  accepted the request but its response was lost. Such retries can duplicate
+  a post. Stopping a worker cancels its request task, but cannot retract a
+  request already accepted remotely.
   """
 
   use GenServer, restart: :transient
@@ -70,10 +75,8 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   # A 429's Retry-After above this is not honored early: repeatedly ignoring
   # Retry-After is the specific behaviour Discord/Cloudflare issue temporary
   # IP bans for, and that ban would take down every map on the instance, not
-  # just the rate-limited one. See parse_retry_after/1.
+  # just the rate-limited one. See HttpClient.retry_after_ms/2.
   @retry_after_give_up_ms 10_000
-  @min_retry_after_ms 50
-  @default_retry_after_ms 1_000
   @backoff_base_ms 1_000
   @max_backoff_ms 8_000
   # Discord allows a webhook roughly 5 requests/second. A multi-chunk event
@@ -94,6 +97,9 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
 
   @impl true
   def init(opts) do
+    # Run terminate/2 on supervised shutdown to cancel any in-flight HTTP task.
+    Process.flag(:trap_exit, true)
+
     # Both timeouts are overridable so tests can exercise idle shutdown and
     # deadline expiry without waiting a real minute. Production always uses the
     # module defaults.
@@ -106,6 +112,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
        event_deadline_ms: Keyword.get(opts, :event_deadline_ms, @event_deadline_ms),
        queue: :queue.new(),
        queue_len: 0,
+       retry_at: nil,
        # nil when idle, otherwise the event currently being delivered
        current: nil
      }, idle_timeout}
@@ -142,7 +149,8 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   end
 
   # The request task crashed. Treat it as a transient failure and retry, rather
-  # than losing the event: async_nolink means this does not take the worker down.
+  # than losing the event. The worker traps exits from its linked task; only
+  # this monitor path schedules a retry, never the accompanying EXIT.
   def handle_info({:DOWN, ref, :process, _pid, reason}, %{current: %{task_ref: ref}} = state)
       when is_reference(ref) do
     state = put_current(state, %{state.current | task_ref: nil})
@@ -159,6 +167,12 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     {:noreply, state, state.idle_timeout}
   end
 
+  # Linked task exits also arrive after normal results or DOWN. Do not retry
+  # twice, or log an exit reason that could contain transport credentials.
+  def handle_info({:EXIT, _pid, _reason}, state) do
+    {:noreply, state, state.idle_timeout}
+  end
+
   # A late reply or DOWN from a task we already gave up on — ignore it.
   def handle_info({ref, _result}, state) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
@@ -170,7 +184,11 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   end
 
   def handle_info(:timeout, %{queue_len: 0, current: nil} = state) do
-    {:stop, :normal, state}
+    if cooldown_ms(state) > 0 do
+      {:noreply, state, state.idle_timeout}
+    else
+      {:stop, :normal, state}
+    end
   end
 
   def handle_info(:timeout, state), do: {:noreply, state, state.idle_timeout}
@@ -179,6 +197,16 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     Logger.debug(fn -> "[Discord.Worker] unexpected message: #{inspect(msg)}" end)
     {:noreply, state, state.idle_timeout}
   end
+
+  @impl true
+  def terminate(_reason, %{current: %{task_pid: pid}}) when is_pid(pid) do
+    # Graceful shutdown waits for cancellation; the task link also handles a
+    # forced worker death that bypasses this callback.
+    Task.Supervisor.terminate_child(WandererApp.ExternalEvents.Discord.TaskSupervisor, pid)
+    :ok
+  end
+
+  def terminate(_reason, _state), do: :ok
 
   # -- queue ----------------------------------------------------------------
 
@@ -208,6 +236,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
           pending: messages,
           attempt: 1,
           task_ref: nil,
+          task_pid: nil,
           # Most recently loaded record, reused for the status write so
           # finishing an event does not re-query what we just read.
           notification: nil,
@@ -225,6 +254,13 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
 
   defp attempt(%{current: current} = state) do
     cond do
+      not WandererApp.Env.webhooks_enabled?() ->
+        drop_current(state)
+
+      cooldown_ms(state) > 0 ->
+        Process.send_after(self(), :attempt, min(cooldown_ms(state), @event_deadline_ms))
+        state
+
       System.monotonic_time(:millisecond) > current.deadline ->
         finish(state, {:error, "delivery deadline exceeded", :count})
 
@@ -239,7 +275,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         # The explicit load is required: the resource does not decrypt
         # `webhook_url` by default, so without it do_post/2 would read
         # %Ash.NotLoaded{}. This is the only send-path decrypt in the app.
-        case MapDiscordNotification.by_id(current.notification_id, load: [:webhook_url]) do
+        case MapDiscordNotification.for_delivery(current.notification_id, load: [:webhook_url]) do
           {:ok, notification} ->
             state = put_current(state, %{current | notification: notification})
 
@@ -266,12 +302,16 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     url = notification.webhook_url
 
     task =
-      Task.Supervisor.async_nolink(
+      Task.Supervisor.async(
         WandererApp.ExternalEvents.Discord.TaskSupervisor,
         fn -> HttpClient.post(url, message) end
       )
 
-    put_current(state, %{current | task_ref: task.ref})
+    put_current(state, %{current | task_ref: task.ref, task_pid: task.pid})
+  end
+
+  defp handle_post_result(state, {:ok, 429, headers, body}) do
+    handle_rate_limited(state, headers, body)
   end
 
   defp handle_post_result(state, result) do
@@ -293,7 +333,6 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
         end
 
       {:ok, 429, headers} ->
-        state = put_current(state, %{current | task_ref: nil})
         handle_rate_limited(state, headers)
 
       {:ok, 404, _headers} ->
@@ -331,9 +370,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     end
   end
 
-  # last_error is persisted and rendered in the settings tab, so it carries a
-  # bounded, readable message; the raw term stays in the log.
-  defp http_error_message(%{__exception__: true} = exception), do: Exception.message(exception)
+  # HttpClient strips credential-bearing transport terms at the boundary.
   defp http_error_message(_reason), do: "connection error"
 
   # Schedules the next attempt instead of sleeping, so the mailbox keeps moving.
@@ -372,7 +409,7 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   end
 
   defp record_outcome(notification_id, outcome) do
-    case MapDiscordNotification.by_id(notification_id) do
+    case MapDiscordNotification.for_delivery(notification_id) do
       {:ok, notification} -> apply_outcome(notification, outcome)
       _ -> :ok
     end
@@ -405,12 +442,15 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
   # A Retry-After within budget is honored and the event retried; one beyond
   # @retry_after_give_up_ms is not sent early — the event is recorded as a
   # failed delivery instead (record_failure, same as any other terminal
-  # outcome; the kill is already recoverable per this module's at-most-once
-  # rationale). This is the only place the worker deliberately gives up
+  # outcome). Later queued events still wait for the cooldown. This gives up
   # rather than retrying, because retrying anyway is the thing that gets a
   # webhook (and the shared IP) rate-limited by Cloudflare.
-  defp handle_rate_limited(state, headers) do
-    case retry_after_ms(headers) do
+  defp handle_rate_limited(state, headers, body \\ nil) do
+    ms = HttpClient.retry_after_ms(headers, body)
+    state = put_current(state, %{state.current | task_ref: nil})
+    state = %{state | retry_at: System.monotonic_time(:millisecond) + ms}
+
+    case ms do
       ms when ms > @retry_after_give_up_ms ->
         finish(
           state,
@@ -422,27 +462,13 @@ defmodule WandererApp.ExternalEvents.Discord.Worker do
     end
   end
 
-  defp retry_after_ms(headers) do
-    headers
-    |> Enum.find_value(fn {k, v} ->
-      if String.downcase(k) == "retry-after", do: v
-    end)
-    |> parse_retry_after()
-  end
+  defp cooldown_ms(state) do
+    local =
+      if is_integer(state.retry_at),
+        do: max(state.retry_at - System.monotonic_time(:millisecond), 0),
+        else: 0
 
-  defp parse_retry_after(nil), do: @default_retry_after_ms
-
-  defp parse_retry_after(value) do
-    case Float.parse(to_string(value)) do
-      {seconds, _} ->
-        seconds
-        |> Kernel.*(1000)
-        |> round()
-        |> max(@min_retry_after_ms)
-
-      :error ->
-        @default_retry_after_ms
-    end
+    max(local, HttpClient.global_cooldown_ms())
   end
 
   defp backoff_ms(attempt) do

@@ -2,6 +2,52 @@ defmodule WandererApp.ExternalEvents.Discord.EmbedFormatterTest do
   use ExUnit.Case, async: true
 
   alias WandererApp.ExternalEvents.Discord.EmbedFormatter
+
+  test "bounds untrusted embed text and packs messages within Discord's aggregate limit" do
+    text = String.duplicate("🛰️", 3_000)
+
+    kills =
+      for id <- 1..10 do
+        %{
+          "killmail_id" => id,
+          "victim_char_name" => text,
+          "victim_ship_name" => text,
+          "victim_corp_name" => text,
+          "victim_alliance_name" => text,
+          "victim_corp_ticker" => text,
+          "final_blow_char_name" => text
+        }
+      end
+
+    messages = EmbedFormatter.format_batch(kills, text)
+    assert messages |> Enum.flat_map(& &1["embeds"]) |> length() == 10
+
+    for message <- messages do
+      assert message["allowed_mentions"] == %{"parse" => []}
+      assert length(message["embeds"]) <= 10
+      assert Enum.sum(Enum.map(message["embeds"], &embed_length/1)) <= 6_000
+
+      for embed <- message["embeds"] do
+        assert discord_length(embed["title"]) <= 256
+        assert discord_length(embed["footer"]["text"]) <= 2_048
+        for field <- embed["fields"], do: assert(discord_length(field["value"]) <= 1_024)
+      end
+    end
+  end
+
+  defp discord_length(text),
+    do: text |> :unicode.characters_to_binary(:utf8, {:utf16, :little}) |> byte_size() |> div(2)
+
+  defp embed_length(embed) do
+    discord_length(embed["title"]) +
+      discord_length(get_in(embed, ["footer", "text"]) || "") +
+      Enum.sum(
+        Enum.map(embed["fields"], fn field ->
+          discord_length(field["name"]) + discord_length(field["value"])
+        end)
+      )
+  end
+
   alias WandererAppWeb.Factory
 
   describe "format_kill/2" do

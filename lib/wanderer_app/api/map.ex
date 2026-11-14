@@ -361,8 +361,7 @@ defmodule WandererApp.Api.Map do
     # on the action, so the id comes from the changeset either way.
     map_id = changeset.data.id
 
-    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
-    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id, true)
     result
   end
 

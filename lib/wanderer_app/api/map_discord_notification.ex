@@ -57,6 +57,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     define(:update, action: :update)
     define(:destroy, action: :destroy)
     define(:by_id, get_by: [:id], action: :read)
+    define(:for_delivery, get_by: [:id], action: :for_delivery)
     define(:by_map, action: :by_map, args: [:map_id])
     define(:record_success, action: :record_success, exclude_inputs: [:webhook_url])
 
@@ -126,6 +127,12 @@ defmodule WandererApp.Api.MapDiscordNotification do
       argument :map_id, :uuid, allow_nil?: false
       get? true
       filter expr(map_id == ^arg(:map_id))
+    end
+
+    # Soft deletion keeps the configuration row. A late enqueue must not
+    # recreate its worker and resume delivery after the destroy hook ran.
+    read :for_delivery do
+      filter expr(map.deleted == false)
     end
 
     update :record_success do
@@ -327,10 +334,8 @@ defmodule WandererApp.Api.MapDiscordNotification do
   def after_destroy(changeset, result, _context) do
     map_id = changeset.data.map_id
 
-    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id)
-    # Stop the map's delivery worker too: without this, anything already queued
-    # keeps posting to a webhook the user has just removed.
-    WandererApp.ExternalEvents.Discord.WorkerSupervisor.stop_worker(map_id)
+    # Also stop workers on delivery nodes, not just the settings writer's node.
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id, true)
     result
   end
 

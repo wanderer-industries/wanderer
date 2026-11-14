@@ -8,6 +8,15 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
   alias WandererAppWeb.Factory
 
   setup do
+    original = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(original, :webhooks_enabled, true)
+    )
+
+    on_exit(fn -> Application.put_env(:wanderer_app, :external_events, original) end)
     HttpStub.start()
     HttpStub.reset()
 
@@ -49,6 +58,312 @@ defmodule WandererApp.ExternalEvents.Discord.WorkerTest do
   defp reload(map_id) do
     {:ok, rec} = MapDiscordNotification.by_map(map_id)
     rec
+  end
+
+  test "honors numeric retry_after in Discord's JSON rate-limit response", %{
+    map: map,
+    notification: n
+  } do
+    HttpStub.set_responses([{:ok, 429, [], ~s({"retry_after":20.0,"global":false})}])
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+
+    reloaded =
+      await_condition(fn ->
+        rec = reload(map.id)
+        if rec.consecutive_failures == 1, do: {:ok, rec}, else: :retry
+      end)
+
+    assert reloaded.last_error =~ "429"
+    assert reloaded.last_error =~ "20000ms"
+    assert length(HttpStub.requests()) == 1
+  end
+
+  for {scope, headers, body} <- [
+        {"global header", [{"X-RateLimit-Global", "true"}], ~s({"retry_after":0.6})},
+        {"scope header", [{"X-RateLimit-Scope", "global"}], ~s({"retry_after":0.6})},
+        {"JSON flag", [], ~s({"retry_after":0.6,"global":true})},
+        {"both flags", [{"x-ratelimit-global", "true"}, {"x-ratelimit-scope", "global"}],
+         ~s({"retry_after":0.6,"global":true})}
+      ] do
+    @tag :review_batch
+    test "delays another map's actual worker for a known global cooldown from #{scope}", %{
+      map: map,
+      notification: n
+    } do
+      other = Factory.insert(:map, %{})
+
+      {:ok, other_n} =
+        MapDiscordNotification.create(%{
+          map_id: other.id,
+          webhook_url: "https://discord.com/api/webhooks/456/other"
+        })
+
+      parent = self()
+
+      probe = fn url, _ ->
+        send(parent, {:network, url, System.monotonic_time(:millisecond)})
+        {:ok, 204, []}
+      end
+
+      HttpStub.set_responses([
+        fn _, _ ->
+          send(parent, {:limited_at, System.monotonic_time(:millisecond)})
+          {:ok, 429, [{"retry-after", "0.6"} | unquote(headers)], unquote(body)}
+        end,
+        probe,
+        probe
+      ])
+
+      WorkerSupervisor.deliver(map.id, n.id, [message()])
+      assert_receive {:limited_at, limited_at}, 1_000
+
+      await_condition(fn ->
+        if is_integer(sync(map.id).retry_at), do: {:ok, :limited}, else: :retry
+      end)
+
+      WorkerSupervisor.deliver(other.id, other_n.id, [message()])
+      sync(other.id)
+      sync(other.id)
+      refute_receive {:network, _, _}, 100
+      assert_receive {:network, "https://discord.com/api/webhooks/456/other", posted_at}, 1_000
+      assert posted_at - limited_at >= 600
+      assert length(wait_for_requests(3)) == 3
+    end
+  end
+
+  @tag :review_batch
+  test "shares a long global cooldown across map workers without sending early", %{
+    map: map,
+    notification: n
+  } do
+    other = Factory.insert(:map, %{})
+
+    {:ok, other_n} =
+      MapDiscordNotification.create(%{
+        map_id: other.id,
+        webhook_url: "https://discord.com/api/webhooks/456/other"
+      })
+
+    HttpStub.set_responses([
+      {:ok, 429,
+       [{"retry-after", "20"}, {"x-ratelimit-global", "true"}, {"x-ratelimit-scope", "global"}],
+       ~s({"retry_after":20.0,"global":true})}
+    ])
+
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+
+    await_condition(fn ->
+      if is_integer(sync(map.id).retry_at), do: {:ok, :limited}, else: :retry
+    end)
+
+    WorkerSupervisor.deliver(other.id, other_n.id, [message()])
+    sync(other.id)
+    sync(other.id)
+    Process.sleep(100)
+    assert length(HttpStub.requests()) == 1
+  end
+
+  @tag :review_batch
+  test "keeps a webhook-only cooldown local to its map", %{map: map, notification: n} do
+    HttpStub.set_responses([
+      {:ok, 429, [{"retry-after", "20"}, {"x-ratelimit-scope", "shared"}],
+       ~s({"retry_after":20.0,"global":false})}
+    ])
+
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+
+    await_condition(fn ->
+      if is_integer(sync(map.id).retry_at), do: {:ok, :limited}, else: :retry
+    end)
+
+    other = Factory.insert(:map, %{})
+
+    {:ok, other_n} =
+      MapDiscordNotification.create(%{
+        map_id: other.id,
+        webhook_url: "https://discord.com/api/webhooks/456/other"
+      })
+
+    WorkerSupervisor.deliver(other.id, other_n.id, [message()])
+    assert length(wait_for_requests(2)) == 2
+  end
+
+  @tag :review_batch
+  test "retries a linked request task crash once without crashing the worker", %{
+    map: map,
+    notification: n
+  } do
+    HttpStub.set_responses([fn _, _ -> Process.exit(self(), :kill) end, {:ok, 204, []}])
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    wait_for_requests(1)
+    [{pid, _}] = Registry.lookup(WorkerSupervisor.registry(), map.id)
+
+    await_condition(fn ->
+      if reload(map.id).last_delivery_at, do: {:ok, :delivered}, else: :retry
+    end)
+
+    assert Process.alive?(pid)
+    assert length(HttpStub.requests()) == 2
+    assert reload(map.id).consecutive_failures == 0
+  end
+
+  @tag :review_batch
+  test "stop_worker removes a busy worker rather than leaving it alive", %{
+    map: map,
+    notification: n
+  } do
+    parent = self()
+
+    HttpStub.set_responses([
+      fn _, _ ->
+        send(parent, {:pending_request, self()})
+
+        receive do
+          :release ->
+            send(parent, :late_effect)
+            {:ok, 204, []}
+        end
+      end
+    ])
+
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    assert_receive {:pending_request, task}, 1_000
+    task_ref = Process.monitor(task)
+
+    on_exit(fn -> if Process.alive?(task), do: Process.exit(task, :kill) end)
+
+    [{pid, _}] = Registry.lookup(WorkerSupervisor.registry(), map.id)
+    # Model a blocked DB call: unlike suspension this also blocks system
+    # messages, so GenServer.stop alone times out without killing the worker.
+    Task.start(fn ->
+      try do
+        :sys.replace_state(pid, fn state ->
+          send(parent, :worker_blocked)
+
+          receive do
+            :release -> state
+          end
+        end)
+      catch
+        # The deliberately blocked callback cannot reply before forced stop.
+        :exit, _ -> :ok
+      end
+    end)
+
+    assert_receive :worker_blocked
+    on_exit(fn -> send(pid, :release) end)
+    assert :ok = WorkerSupervisor.stop_worker(map.id)
+    refute Process.alive?(pid)
+    assert_receive {:DOWN, ^task_ref, :process, ^task, _}, 1_000
+    send(task, :release)
+    refute_receive :late_effect
+
+    assert [] ==
+             DynamicSupervisor.which_children(
+               WandererApp.ExternalEvents.Discord.DynamicSupervisor
+             )
+  end
+
+  test "does not resume queued delivery for a soft-deleted map", %{map: map, notification: n} do
+    {:ok, _} = WandererApp.Api.Map.mark_as_deleted(map)
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    sync(map.id)
+    sync(map.id)
+    assert HttpStub.requests() == []
+    assert reload(map.id).last_delivery_at == nil
+  end
+
+  test "stops retrying when the global webhook switch turns off", %{map: map, notification: n} do
+    HttpStub.set_responses([{:ok, 429, [{"retry-after", "0.05"}]}])
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    wait_for_requests(1)
+    original = Application.get_env(:wanderer_app, :external_events, [])
+
+    Application.put_env(
+      :wanderer_app,
+      :external_events,
+      Keyword.put(original, :webhooks_enabled, false)
+    )
+
+    await_condition(fn ->
+      if sync(map.id).current == nil, do: {:ok, :idle}, else: :retry
+    end)
+
+    assert length(HttpStub.requests()) == 1
+    assert reload(map.id).last_delivery_at == nil
+    assert reload(map.id).consecutive_failures == 0
+  end
+
+  test "redacts credential-bearing transport errors and exceptions", %{map: map, notification: n} do
+    secret = "synthetic-webhook-token"
+    url = "https://discord.com/api/webhooks/123/#{secret}"
+    {:ok, _} = MapDiscordNotification.update(n, %{webhook_url: url})
+
+    for response <- [
+          {:error, %RuntimeError{message: "request failed for #{url}"}},
+          fn _, _ -> raise "request failed for #{url}" end
+        ] do
+      HttpStub.set_responses(
+        List.duplicate({:ok, 429, [{"retry-after", "0.05"}]}, 4) ++ [response]
+      )
+
+      previous = reload(map.id).consecutive_failures
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          WorkerSupervisor.deliver(map.id, n.id, [message()])
+
+          await_condition(fn ->
+            rec = reload(map.id)
+            if rec.consecutive_failures > previous, do: {:ok, rec}, else: :retry
+          end)
+        end)
+
+      refute log =~ secret
+      refute reload(map.id).last_error =~ secret
+      assert reload(map.id).last_error =~ "connection error"
+    end
+  end
+
+  test "destroy cancels the in-flight HTTP task and queued deliveries", %{
+    map: map,
+    notification: n
+  } do
+    parent = self()
+
+    HttpStub.set_responses([
+      fn _, _ ->
+        send(parent, {:http_started, self()})
+
+        receive do
+          :release -> {:ok, 204, []}
+        end
+      end
+    ])
+
+    WorkerSupervisor.deliver(map.id, n.id, [message(), message()])
+    assert_receive {:http_started, task}, 1_000
+    on_exit(fn -> send(task, :release) end)
+    ref = Process.monitor(task)
+
+    assert :ok = MapDiscordNotification.destroy(n)
+    assert_receive {:DOWN, ^ref, :process, ^task, _}, 1_000
+    assert length(HttpStub.requests()) == 1
+  end
+
+  test "honors a long 429 cooldown for the next queued event", %{map: map, notification: n} do
+    HttpStub.set_responses([{:ok, 429, [{"retry-after", "20"}]}])
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+
+    await_condition(fn ->
+      rec = reload(map.id)
+      if rec.consecutive_failures == 1, do: {:ok, rec}, else: :retry
+    end)
+
+    WorkerSupervisor.deliver(map.id, n.id, [message()])
+    sync(map.id)
+    Process.sleep(100)
+    assert length(HttpStub.requests()) == 1
   end
 
   test "delivers a message to the configured url", %{map: map, notification: n} do
