@@ -3,7 +3,7 @@ defmodule WandererApp.MixProject do
 
   @source_url "https://github.com/wanderer-industries/wanderer"
 
-  @version "1.104.3"
+  @version "1.104.5"
 
   def project do
     [
@@ -160,9 +160,7 @@ defmodule WandererApp.MixProject do
       ],
       "assets.build": [],
       "assets.deploy": [
-        "assets.setup",
-        "cmd --cd assets yarn run build",
-        "phx.digest"
+        "assets.setup", "cmd --cd assets yarn run build", "phx.digest"
       ]
     ]
   end

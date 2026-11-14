@@ -108,21 +108,21 @@ defmodule WandererApp.Map.MapPool do
   end
 
   @impl true
-  def terminate(reason, %{uuid: uuid} = _state) do
-    # On graceful shutdown, clean up ETS state
-    # On crash, keep ETS state for recovery
+  def terminate(reason, %{uuid: uuid} = state) do
+    # On graceful shutdown, clean up ETS state and map -> pool cache entries
+    # On crash, keep ETS state for recovery (recovery re-populates the cache)
     case reason do
       :normal ->
         Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
-        MapPoolState.delete_pool_state(uuid)
+        cleanup_on_shutdown(state)
 
       :shutdown ->
         Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
-        MapPoolState.delete_pool_state(uuid)
+        cleanup_on_shutdown(state)
 
       {:shutdown, _} ->
         Logger.debug("[Map Pool #{uuid}] Graceful shutdown, cleaning up ETS state")
-        MapPoolState.delete_pool_state(uuid)
+        cleanup_on_shutdown(state)
 
       _ ->
         Logger.warning(
@@ -134,6 +134,14 @@ defmodule WandererApp.Map.MapPool do
     end
 
     :ok
+  end
+
+  defp cleanup_on_shutdown(%{uuid: uuid} = state) do
+    MapPoolState.delete_pool_state(uuid)
+
+    state
+    |> Map.get(:map_ids, [])
+    |> Enum.each(&Cachex.del(@cache, &1))
   end
 
   @impl true
