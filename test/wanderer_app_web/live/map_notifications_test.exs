@@ -53,6 +53,10 @@ defmodule WandererAppWeb.MapNotificationsTest do
     {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
 
     assert has_element?(view, "[phx-value-tab='notifications']")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    assert has_element?(view, "#map-notifications h2", "Discord kill notifications")
   end
 
   test "saving a valid webhook url creates the record", %{conn: conn, map: map} do
@@ -147,6 +151,85 @@ defmodule WandererAppWeb.MapNotificationsTest do
     assert rec.wh_only == false
   end
 
+  test "checkboxes update visually before save", %{conn: conn, map: map} do
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok"
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    view
+    |> form("#discord-notification-form", %{
+      "notification" => %{"enabled" => "false", "wh_only" => "false"}
+    })
+    |> render_change()
+
+    refute has_element?(view, "input[name='notification[enabled]'][checked]")
+    assert has_element?(view, "section [role='switch'][aria-checked='false']")
+    assert has_element?(view, "section label[data-switch-status='disabled']")
+    refute has_element?(view, "input[name='notification[wh_only]'][checked]")
+    assert has_element?(view, "input[name='notification[wh_only]'][disabled]")
+    assert has_element?(view, ".p-checkbox.p-disabled[data-p-disabled='true']")
+    assert has_element?(view, "button[phx-click='replace-url'][disabled]")
+
+    view
+    |> form("#discord-notification-form", %{
+      "notification" => %{"enabled" => "true"}
+    })
+    |> render_change()
+
+    assert has_element?(view, "input[name='notification[enabled]'][checked]")
+    assert has_element?(view, "section [role='switch'][aria-checked='true']")
+    assert has_element?(view, "section label[data-switch-status='enabled']")
+    refute has_element?(view, "input[name='notification[wh_only]'][checked]")
+    refute has_element?(view, "input[name='notification[wh_only]'][disabled]")
+  end
+
+  test "disabling notifications preserves the other checkbox value", %{conn: conn, map: map} do
+    {:ok, _} =
+      MapDiscordNotification.create(%{
+        map_id: map.id,
+        webhook_url: "https://discord.com/api/webhooks/123/tok",
+        wh_only: true
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    view
+    |> form("#discord-notification-form", %{
+      "notification" => %{"enabled" => "false", "wh_only" => "true"}
+    })
+    |> render_change()
+
+    view
+    |> form("#discord-notification-form", %{"notification" => %{"enabled" => "false"}})
+    |> render_submit()
+
+    assert {:ok, rec} = MapDiscordNotification.by_map(map.id)
+    refute rec.enabled?
+    assert rec.wh_only
+  end
+
+  test "save action is rendered in the settings footer", %{conn: conn, map: map} do
+    {:ok, view, _html} = live(conn, ~p"/maps/#{map.slug}/settings")
+
+    view |> element("[phx-value-tab='notifications']") |> render_click()
+
+    assert has_element?(view, "section input[name='notification[enabled]']")
+
+    assert has_element?(
+             view,
+             ".mapSettingsPanelFooter button[form='discord-notification-form']",
+             "Save"
+           )
+  end
+
   test "re-checking 'enabled' turns it back on", %{conn: conn, map: map} do
     {:ok, rec} =
       MapDiscordNotification.create(%{
@@ -169,6 +252,12 @@ defmodule WandererAppWeb.MapNotificationsTest do
 
     # A checked box wins: the browser sends both hidden "false" and "true",
     # and Phoenix keeps the last value.
+    view
+    |> form("#discord-notification-form", %{
+      "notification" => %{"enabled" => "true"}
+    })
+    |> render_change()
+
     view
     |> form("#discord-notification-form", %{
       "notification" => %{"enabled" => "true", "wh_only" => "true"}

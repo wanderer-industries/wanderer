@@ -136,11 +136,24 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   defp not_found?(_), do: false
 
   @impl true
+  def handle_event("change", %{"notification" => params}, socket) when is_map(params) do
+    current_params =
+      Map.new(
+        [{"webhook_url", :webhook_url}, {"wh_only", :wh_only}, {"enabled", :enabled}],
+        fn {param, field} -> {param, socket.assigns.form[field].value} end
+      )
+
+    {:noreply,
+     assign(socket, :form, to_form(Map.merge(current_params, params), as: :notification))}
+  end
+
+  def handle_event("change", _params, socket), do: {:noreply, socket}
+
   def handle_event("save", %{"notification" => params}, socket) when is_map(params) do
     # `.input type="checkbox"` renders a hidden "false" before the box, so a
     # rendered field always submits a value and Phoenix keeps the last one.
     attrs = %{
-      wh_only: checked?(params["wh_only"]),
+      wh_only: checkbox_param(params, "wh_only", current_wh_only(socket)),
       enabled?: checked?(params["enabled"])
     }
 
@@ -421,6 +434,17 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
   defp checked?(true), do: true
   defp checked?(_), do: false
 
+  defp checkbox_param(params, field, fallback) do
+    case Map.fetch(params, field) do
+      {:ok, value} -> checked?(value)
+      :error -> fallback
+    end
+  end
+
+  defp current_wh_only(%{assigns: %{form: form}}), do: checked?(form[:wh_only].value)
+  defp current_wh_only(%{assigns: %{notification: %{wh_only: wh_only}}}), do: wh_only
+  defp current_wh_only(_socket), do: false
+
   defp humanize_error(%Ash.Error.Invalid{errors: errors} = error) do
     case Enum.filter(errors, &is_binary(Map.get(&1, :message))) do
       [] -> log_error(error)
@@ -460,23 +484,94 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
 
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, :form_enabled?, checked?(assigns.form[:enabled].value))
+
     ~H"""
     <div id={@id} class="flex flex-col gap-4">
-      <p class="text-sm opacity-70">
-        Posts kills for systems on this map to a Discord channel.
-      </p>
-
-      <p :if={@error} role="alert" class="text-sm text-red-400">{@error}</p>
-      <p :if={@flash_message} role="alert" class="text-sm text-green-400">{@flash_message}</p>
-
       <.form
         :let={f}
         for={@form}
         id="discord-notification-form"
+        phx-change="change"
         phx-submit="save"
         phx-target={@myself}
         class="flex flex-col gap-3"
       >
+        <section class="rounded-sm border border-neutral-700/80 bg-neutral-900/30 p-4">
+          <div class="flex items-center justify-between gap-6">
+            <div class="flex min-w-0 items-start gap-3">
+              <.icon name="hero-bell-alert-solid" class="mt-0.5 h-5 w-5 shrink-0 text-sky-400/80" />
+              <div class="min-w-0">
+                <h2 class="text-sm font-medium text-neutral-200">Discord kill notifications</h2>
+                <p class="mt-1 text-sm leading-5 text-neutral-500">
+                  Send kill reports for systems on this map directly to a Discord channel.
+                </p>
+              </div>
+            </div>
+
+            <label
+              for={f[:enabled].id}
+              class="relative h-6 w-[5.75rem] shrink-0 cursor-pointer select-none"
+              data-switch-status={if @form_enabled?, do: "enabled", else: "disabled"}
+            >
+              <input type="hidden" name={f[:enabled].name} value="false" />
+              <input
+                id={f[:enabled].id}
+                name={f[:enabled].name}
+                type="checkbox"
+                role="switch"
+                class="peer absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0"
+                value="true"
+                checked={@form_enabled?}
+                aria-checked={to_string(@form_enabled?)}
+                aria-label={
+                  if @form_enabled?, do: "Disable notifications", else: "Enable notifications"
+                }
+              />
+              <span
+                aria-hidden="true"
+                class={[
+                  "absolute inset-0 rounded-sm border transition-colors duration-200 ease-out peer-focus-visible:ring-1 peer-focus-visible:ring-sky-300",
+                  if(@form_enabled?,
+                    do: "border-sky-400/70 bg-sky-400/20",
+                    else: "border-neutral-600 bg-neutral-800"
+                  )
+                ]}
+              >
+                <span class={[
+                  "absolute top-0.5 h-[18px] w-[18px] rounded-[2px] border transition-[left,background-color,border-color] duration-200 ease-out",
+                  if(@form_enabled?,
+                    do: "left-[calc(100%-1.25rem)] border-sky-300/80 bg-sky-300",
+                    else: "left-0.5 border-neutral-500 bg-neutral-500"
+                  )
+                ]}>
+                </span>
+                <span class={[
+                  "absolute inset-y-0 left-2 right-7 flex items-center justify-start text-[10px] font-medium uppercase tracking-wide text-sky-200 transition-all duration-200 ease-out",
+                  if(@form_enabled?,
+                    do: "translate-x-0 opacity-100",
+                    else: "-translate-x-1 opacity-0"
+                  )
+                ]}>
+                  Enabled
+                </span>
+                <span class={[
+                  "absolute inset-y-0 left-7 right-2 flex items-center justify-end text-[10px] font-medium uppercase tracking-wide text-neutral-400 transition-all duration-200 ease-out",
+                  if(@form_enabled?, do: "translate-x-1 opacity-0", else: "translate-x-0 opacity-100")
+                ]}>
+                  Disabled
+                </span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <p :if={@error} role="alert" class="text-sm text-red-400">{@error}</p>
+
+        <p :if={@flash_message} role="alert" class="text-sm text-green-400">
+          {@flash_message}
+        </p>
+
         <.input
           :if={@replacing_url?}
           field={f[:webhook_url]}
@@ -484,24 +579,38 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
           label="Discord webhook URL"
           placeholder="https://discord.com/api/webhooks/..."
           autocomplete="off"
+          disabled={!@form_enabled?}
         />
-
         <div :if={!@replacing_url? && @notification} class="flex items-center gap-2">
           <span class="text-sm opacity-70">URL: {masked_url(@notification.webhook_url)}</span>
-          <.button type="button" phx-click="replace-url" phx-target={@myself}>
+          <.button
+            type="button"
+            phx-click="replace-url"
+            phx-target={@myself}
+            disabled={!@form_enabled?}
+          >
             Replace
           </.button>
         </div>
 
-        <.input field={f[:wh_only]} type="checkbox" label="Only wormhole kills" />
-        <.input field={f[:enabled]} type="checkbox" label="Enabled" />
+        <div class="mt-1 flex items-center gap-3">
+          <span class="shrink-0 text-xs font-normal uppercase tracking-wide text-stone-500">
+            Notification options
+          </span>
+          <div class="h-px flex-1 border-t border-stone-700" />
+        </div>
 
-        <div class="modal-action">
-          <.button type="submit">Save</.button>
+        <div class="mt-1 [&_.form-control]:mt-0">
+          <.input
+            field={f[:wh_only]}
+            type="checkbox"
+            label="Only wormhole kills"
+            disabled={!@form_enabled?}
+          />
         </div>
       </.form>
 
-      <div :if={@notification} class="flex flex-col gap-2">
+      <div :if={@notification} class={["flex flex-col gap-2", !@form_enabled? && "opacity-50"]}>
         <h4 class="text-sm font-semibold">Excluded systems</h4>
 
         <p :if={@excluded_systems == []} class="text-sm opacity-70">
@@ -517,6 +626,7 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
               aria-label={"Remove #{label} (#{system_id}) from excluded systems"}
               phx-value-system_id={system_id}
               phx-target={@myself}
+              disabled={!@form_enabled?}
             >
               Remove
             </.button>
@@ -546,8 +656,9 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
             mode={:single}
             options={@system_options}
             placeholder="Search a system by name"
+            disabled={!@form_enabled?}
           />
-          <.button type="submit">Add</.button>
+          <.button type="submit" disabled={!@form_enabled?}>Add</.button>
         </.form>
       </div>
 
@@ -563,10 +674,11 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
           type="button"
           phx-click="send-test"
           phx-target={@myself}
-          disabled={!@notification.enabled?}
+          disabled={!@form_enabled? or !@notification.enabled?}
         >
           Send test message
         </.button>
+
         <.button
           type="button"
           class="p-button-danger"
@@ -583,6 +695,7 @@ defmodule WandererAppWeb.Maps.MapNotificationsComponent do
         <span :if={@notification.last_delivery_at} class="opacity-70">
           Last delivered: {Calendar.strftime(@notification.last_delivery_at, "%Y-%m-%d %H:%M UTC")}
         </span>
+
         <span :if={is_nil(@notification.last_delivery_at)} class="opacity-70">
           No kills delivered yet.
         </span>

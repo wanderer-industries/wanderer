@@ -378,13 +378,18 @@ defmodule WandererAppWeb.CoreComponents do
 
   def input(%{type: "checkbox"} = assigns) do
     assigns =
-      assign_new(assigns, :checked, fn ->
+      assigns
+      |> assign_new(:checked, fn ->
         Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
       end)
+      |> assign(:disabled, assigns[:rest][:disabled] || false)
 
     ~H"""
-    <div phx-feedback-for={@name} class="form-control mt-2">
-      <label class="inputContainer" for={@id}>
+    <div
+      phx-feedback-for={@name}
+      class={["form-control mt-2", @disabled && "opacity-50"]}
+    >
+      <label class={["inputContainer", @disabled && "cursor-not-allowed"]} for={@id}>
         <span>{@label}</span>
         <div></div>
         <div class="smallInputSwitch">
@@ -392,10 +397,11 @@ defmodule WandererAppWeb.CoreComponents do
             <div
               class={[
                 "checkboxRoot sizeM p-checkbox p-component",
+                @disabled && "p-disabled",
                 classes("p-highlight": @checked)
               ]}
               data-p-highlight={@checked}
-              data-p-disabled="false"
+              data-p-disabled={to_string(@disabled)}
               data-pc-name="checkbox"
               data-pc-section="root"
             >
@@ -414,7 +420,7 @@ defmodule WandererAppWeb.CoreComponents do
               <div
                 class="p-checkbox-box"
                 data-p-highlight={@checked}
-                data-p-disabled="false"
+                data-p-disabled={to_string(@disabled)}
                 data-pc-section="box"
               >
                 <svg
@@ -725,6 +731,7 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:options, :list, default: [])
   attr(:debounce, :integer, default: nil)
   attr(:update_min_len, :integer, default: nil)
+  attr(:disabled, :boolean, default: false)
   attr(:available_option_class, :string, default: nil)
   attr(:value_mapper, :any, default: nil)
   # Declared so callers inside a LiveComponent can scope the change/blur events to
