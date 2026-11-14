@@ -44,10 +44,10 @@ defmodule WandererApp.Api.MapDiscordNotification do
     attributes([:webhook_url])
     # Deliberately NOT decrypt_by_default: AshCloak applies that as a
     # resource-wide read preparation and update change, so every read and every
-    # status write would decrypt the credential — including any copy of the
-    # struct a caller caches, which would then hold the webhook in plaintext for
-    # the lifetime of that cache entry. Only the call sites that actually post
-    # to Discord, or render the masked hint, need the plaintext, and they load
+    # status write would decrypt the credential — including the notification
+    # struct DiscordDispatcher caches in ETS, which would then hold the webhook
+    # in plaintext for the cache TTL. Only two call sites need the plaintext
+    # (Discord.Worker's POST and the settings tab's masked hint) and both load
     # `:webhook_url` explicitly. Everywhere else `webhook_url` is
     # %Ash.NotLoaded{}; read it via the argument, as ValidateWebhookUrl does.
   end
@@ -57,6 +57,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
     define(:update, action: :update)
     define(:destroy, action: :destroy)
     define(:by_id, get_by: [:id], action: :read)
+    define(:for_delivery, get_by: [:id], action: :for_delivery)
     define(:by_map, action: :by_map, args: [:map_id])
     define(:record_success, action: :record_success, exclude_inputs: [:webhook_url])
 
@@ -72,11 +73,22 @@ defmodule WandererApp.Api.MapDiscordNotification do
   actions do
     default_accept [:map_id, :webhook_url, :enabled?, :wh_only, :excluded_systems]
 
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    # Custom destroy, following map_webhook_subscription.ex:51-58. The default
+    # destroy would leave a stale cache entry AND leave the map's delivery
+    # worker draining its queue into a webhook the user just removed.
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      change after_transaction(&__MODULE__.after_destroy/3)
+    end
 
     create :create do
       primary? true
       validate {__MODULE__.ValidateWebhookUrl, []}
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
 
     update :update do
@@ -107,12 +119,20 @@ defmodule WandererApp.Api.MapDiscordNotification do
             changeset
         end
       end
+
+      change after_transaction(&__MODULE__.invalidate_cache/3)
     end
 
     read :by_map do
       argument :map_id, :uuid, allow_nil?: false
       get? true
       filter expr(map_id == ^arg(:map_id))
+    end
+
+    # Soft deletion keeps the configuration row. A late enqueue must not
+    # recreate its worker and resume delivery after the destroy hook ran.
+    read :for_delivery do
+      filter expr(map.deleted == false)
     end
 
     update :record_success do
@@ -168,6 +188,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
         |> Ash.Changeset.change_attribute(:last_error_at, DateTime.utc_now())
       end
 
+      change after_transaction(&__MODULE__.invalidate_cache/3)
       change after_transaction(&__MODULE__.broadcast_status/3)
     end
 
@@ -189,6 +210,7 @@ defmodule WandererApp.Api.MapDiscordNotification do
         )
       end
 
+      change after_transaction(&__MODULE__.invalidate_cache/3)
       change after_transaction(&__MODULE__.broadcast_status/3)
     end
   end
@@ -264,10 +286,14 @@ defmodule WandererApp.Api.MapDiscordNotification do
   end
 
   # after_transaction, not after_action: an after_action hook runs *inside* the
-  # transaction, so a subscriber that re-reads the record on receiving the
-  # broadcast can observe the pre-commit row and render stale status. The
-  # sibling resource map_webhook_subscription.ex still uses after_action; this
-  # deviates from it deliberately.
+  # transaction, so a concurrent reader can re-populate the cache from the
+  # pre-commit row in the window between the invalidation and the commit.
+  # DiscordDispatcher's cache has a 5-minute TTL (discord_dispatcher.ex:271,277),
+  # but within that window a stale entry would survive an after_action
+  # invalidation racing a concurrent reader — kills would keep being posted to
+  # a webhook the user had already replaced or disabled until the TTL expires.
+  # The sibling resource map_webhook_subscription.ex still uses after_action for
+  # the same purpose; this deviates from it deliberately.
   @doc """
   PubSub topic carrying delivery-status changes for a map's Discord config.
 
@@ -291,9 +317,33 @@ defmodule WandererApp.Api.MapDiscordNotification do
 
   def broadcast_status(_changeset, result, _context), do: result
 
+  @doc false
+  def invalidate_cache(_changeset, {:ok, record} = result, _context) do
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(record.map_id)
+    result
+  end
+
+  def invalidate_cache(_changeset, result, _context), do: result
+
+  @doc false
+  def after_destroy(_changeset, {:error, _} = result, _context), do: result
+
+  # A destroy yields `:ok` or `{:ok, record}` depending on `return_destroyed?`,
+  # so the map id is taken from the changeset's own data, which is the record
+  # being destroyed in either case.
+  def after_destroy(changeset, result, _context) do
+    map_id = changeset.data.map_id
+
+    # Also stop workers on delivery nodes, not just the settings writer's node.
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id, true)
+    result
+  end
+
   @doc """
   Returns true when the URL is a syntactically valid Discord webhook endpoint.
-  Exposed so the LiveView form can validate before submitting.
+
+  Used by the changeset validation on create/update; also available to any
+  caller that wants to check a URL up front, outside of a changeset.
   """
   def valid_webhook_url?(url) when is_binary(url) do
     trimmed = String.trim(url)
