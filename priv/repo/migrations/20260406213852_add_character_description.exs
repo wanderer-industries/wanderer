@@ -9,7 +9,7 @@ defmodule WandererApp.Repo.Migrations.AddCharacterDescription do
 
   def up do
     alter table(:maps_v1) do
-      modify :scopes, {:array, :text}, default: '{wormholes}'
+      modify :scopes, {:array, :text}, default: ~c"{wormholes}"
     end
 
     alter table(:character_v1) do
