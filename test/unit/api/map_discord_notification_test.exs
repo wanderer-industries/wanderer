@@ -256,6 +256,55 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert updated.enabled? == false
   end
 
+  for action <- [:record_success, :record_failure, :disable] do
+    test "#{action} rejects an in-flight outcome after webhook replacement", %{map: map} do
+      # The delivery worker explicitly loads the old credential before sending.
+      {:ok, old} =
+        MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()},
+          load: [:webhook_url]
+        )
+
+      replacement = "https://discord.com/api/webhooks/456/REPLACEMENT_TOKEN"
+      {:ok, current} = MapDiscordNotification.update(old, %{webhook_url: replacement})
+      {:ok, _} = MapDiscordNotification.record_failure(current, "new endpoint failure")
+      {:ok, before_outcome} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+      assert before_outcome.enabled?
+      assert before_outcome.consecutive_failures == 1
+      assert before_outcome.last_error == "new endpoint failure"
+
+      :ok =
+        Phoenix.PubSub.subscribe(WandererApp.PubSub, MapDiscordNotification.status_topic(map.id))
+
+      args = if unquote(action) == :record_success, do: [old], else: [old, "old endpoint failure"]
+
+      assert {:error, %Ash.Error.Invalid{errors: errors} = error} =
+               apply(MapDiscordNotification, unquote(action), args)
+
+      assert Enum.any?(errors, &match?(%Ash.Error.Changes.StaleRecord{}, &1))
+      refute inspect(error) =~ "abcdefTOKEN"
+      refute inspect(error) =~ "REPLACEMENT_TOKEN"
+      refute Exception.message(error) =~ "abcdefTOKEN"
+      refute Exception.message(error) =~ "REPLACEMENT_TOKEN"
+
+      {:ok, after_outcome} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+
+      fields = [
+        :enabled?,
+        :consecutive_failures,
+        :last_error,
+        :last_error_at,
+        :last_delivery_at,
+        :updated_at,
+        :encrypted_webhook_url,
+        :webhook_url
+      ]
+
+      assert Map.take(after_outcome, fields) == Map.take(before_outcome, fields)
+      map_id = map.id
+      refute_receive %{event: :discord_notification_status, map_id: ^map_id}
+    end
+  end
+
   test "record_failure truncates an over-long error", %{map: map} do
     {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
 
@@ -298,6 +347,185 @@ defmodule WandererApp.Api.MapDiscordNotificationTest do
     assert rec.consecutive_failures == 0
     assert rec.last_error == nil
     assert rec.last_delivery_at != nil
+  end
+
+  test "rejects malformed ports without raising", %{map: map} do
+    url = "https://discord.com:invalid/api/webhooks/123/tok"
+
+    refute MapDiscordNotification.valid_webhook_url?(url)
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             MapDiscordNotification.update(rec, %{webhook_url: url})
+  end
+
+  for path <- [
+        "/api//webhooks/123/tok",
+        "/api/vbogus/webhooks/123/tok",
+        "/api/webhooks/not-a-snowflake/tok"
+      ] do
+    test "rejects a non-endpoint path #{path}", %{map: map} do
+      url = "https://discord.com" <> unquote(path)
+
+      refute MapDiscordNotification.valid_webhook_url?(url)
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+    end
+  end
+
+  test "rejects non-HTTPS ports and embedded credentials", %{map: map} do
+    for url <- [
+          "https://discord.com:444/api/webhooks/123/tok",
+          "https://user:pass@discord.com/api/webhooks/123/tok"
+        ] do
+      refute MapDiscordNotification.valid_webhook_url?(url)
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+    end
+  end
+
+  test "keeps URL length validation consistent with the form predicate", %{map: map} do
+    url = valid_url() <> String.duplicate("x", 2000)
+
+    refute MapDiscordNotification.valid_webhook_url?(url)
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             MapDiscordNotification.create(%{map_id: map.id, webhook_url: url})
+  end
+
+  test "requires a nonblank webhook on create", %{map: map} do
+    for attrs <- [
+          %{map_id: map.id},
+          %{map_id: map.id, webhook_url: nil},
+          %{map_id: map.id, webhook_url: " "}
+        ] do
+      assert {:error, %Ash.Error.Invalid{}} = MapDiscordNotification.create(attrs)
+    end
+  end
+
+  test "rejects clearing the webhook without changing the stored credential", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    for url <- [nil, "", " "] do
+      assert {:error, %Ash.Error.Invalid{}} =
+               MapDiscordNotification.update(rec, %{webhook_url: url})
+    end
+
+    assert {:ok, loaded} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+    assert loaded.webhook_url == valid_url()
+  end
+
+  test "redacts rejected webhook credentials in returned errors", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    for url <- [
+          "https://evil.example.com/api/webhooks/123/FAKE_SECRET_TOKEN",
+          "https://discord.com/api/webhooks/123/FAKE_SECRET_TOKEN" <> String.duplicate("x", 2000)
+        ] do
+      for result <- [
+            MapDiscordNotification.create(%{map_id: map.id, webhook_url: url}),
+            MapDiscordNotification.update(rec, %{webhook_url: url})
+          ] do
+        assert {:error, %Ash.Error.Invalid{} = error} = result
+        refute inspect(error) =~ "FAKE_SECRET_TOKEN"
+        refute Exception.message(error) =~ "FAKE_SECRET_TOKEN"
+      end
+    end
+  end
+
+  test "preserves supported hosts, API versions and webhook queries", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    for host <- ["discord.com", "discordapp.com", "ptb.discord.com", "canary.discord.com"],
+        path <- [
+          "/api/webhooks/123/tok",
+          "/api/v6/webhooks/123/tok",
+          "/api/v10/webhooks/123/tok/"
+        ] do
+      url = "https://#{host}:443#{path}?wait=true&thread_id=123456789"
+      assert MapDiscordNotification.valid_webhook_url?(url)
+
+      assert {:ok, updated} =
+               MapDiscordNotification.update(rec, %{webhook_url: url}, load: [:webhook_url])
+
+      assert updated.webhook_url == url
+    end
+  end
+
+  test "normalizes string system IDs for the integer-based dispatcher", %{map: map} do
+    assert {:ok, rec} =
+             MapDiscordNotification.create(%{
+               map_id: map.id,
+               webhook_url: valid_url(),
+               excluded_systems: ["30000142", "31000005"]
+             })
+
+    assert rec.excluded_systems == [30_000_142, 31_000_005]
+    assert {:ok, updated} = MapDiscordNotification.update(rec, %{excluded_systems: ["30002187"]})
+    assert updated.excluded_systems == [30_002_187]
+  end
+
+  for invalid <- [[0], [-1], [9_223_372_036_854_775_808], [nil], ["Jita"], [%{}]] do
+    test "rejects invalid excluded system IDs #{inspect(invalid)} on create and update", %{
+      map: map
+    } do
+      attrs = %{
+        map_id: map.id,
+        webhook_url: valid_url(),
+        excluded_systems: unquote(Macro.escape(invalid))
+      }
+
+      assert {:error, %Ash.Error.Invalid{}} = MapDiscordNotification.create(attrs)
+
+      {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               MapDiscordNotification.update(rec, %{
+                 excluded_systems: unquote(Macro.escape(invalid))
+               })
+    end
+  end
+
+  test "stores ciphertext rather than the webhook credential", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    %{rows: [[ciphertext]]} =
+      WandererApp.Repo.query!(
+        "SELECT encrypted_webhook_url FROM map_discord_notifications_v1 WHERE id = $1",
+        [Ecto.UUID.dump!(rec.id)]
+      )
+
+    assert is_binary(ciphertext)
+    refute ciphertext =~ "abcdefTOKEN"
+    assert {:ok, loaded} = MapDiscordNotification.by_map(map.id, load: [:webhook_url])
+    assert loaded.webhook_url == valid_url()
+  end
+
+  test "broadcasts only the map's status identifier after delivery outcomes", %{map: map} do
+    {:ok, rec} = MapDiscordNotification.create(%{map_id: map.id, webhook_url: valid_url()})
+
+    :ok =
+      Phoenix.PubSub.subscribe(WandererApp.PubSub, MapDiscordNotification.status_topic(map.id))
+
+    map_id = map.id
+
+    assert {:ok, failed} = MapDiscordNotification.record_failure(rec, "connection error")
+    assert_receive %{event: :discord_notification_status, map_id: ^map_id} = message
+    assert map_size(message) == 2
+    assert {:ok, reloaded} = MapDiscordNotification.by_map(map.id)
+    assert reloaded.last_error == failed.last_error
+
+    assert {:ok, _} = MapDiscordNotification.record_success(failed)
+    assert_receive %{event: :discord_notification_status, map_id: ^map_id}
+
+    assert {:ok, _} = MapDiscordNotification.disable(rec, "webhook deleted")
+    assert_receive %{event: :discord_notification_status, map_id: ^map_id}
   end
 
   test "destroy removes the record", %{map: map} do
