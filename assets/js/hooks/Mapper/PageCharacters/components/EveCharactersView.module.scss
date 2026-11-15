@@ -2,25 +2,7 @@
   position: relative;
   min-height: 700px;
   padding: 2rem 0;
-  @apply border-stone-500/30 bg-black/25;
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  backdrop-filter: blur(2px);
-  box-shadow: 0 18px 80px rgb(0 0 0 / 28%);
-}
-
-.topGlow {
-  @apply from-transparent via-orange-300/70 to-transparent;
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background-image: linear-gradient(to right, var(--tw-gradient-stops));
-  pointer-events: none;
-  box-shadow: 0 0 12px 1px rgb(216 163 106 / 32%);
+  @apply bg-transparent;
 }
 
 .viewTitle {

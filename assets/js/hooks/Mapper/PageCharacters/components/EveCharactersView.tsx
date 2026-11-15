@@ -33,7 +33,6 @@ export const EveCharactersView = ({
 
   return (
     <section className={styles.view}>
-      <div className={styles.topGlow} />
       <div className={styles.viewTitle}>Select a capsuleer</div>
 
       <div className={styles.cardsLayout}>
