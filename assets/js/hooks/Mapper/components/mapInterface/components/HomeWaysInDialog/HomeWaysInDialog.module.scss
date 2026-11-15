@@ -1,0 +1,14 @@
+// the map draws the systems; these only say which of them this dialog is about
+.Home > :global(.react-flow__node-custom),
+.Home {
+  outline: 1px solid rgb(231 229 228 / 90%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.WayIn > :global(.react-flow__node-custom),
+.WayIn {
+  outline: 1px solid rgb(52 211 153 / 90%);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
