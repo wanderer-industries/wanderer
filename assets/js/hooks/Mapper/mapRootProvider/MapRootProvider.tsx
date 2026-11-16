@@ -106,6 +106,7 @@ const INITIAL_DATA: MapRootData = {
   loadingPublicRoutes: false,
   map_slug: null,
   expiredCharacters: [],
+  clientEnv: { intelSharingEnabled: false, detailedKillsDisabled: false },
 };
 
 export enum InterfaceStoredSettingsProps {

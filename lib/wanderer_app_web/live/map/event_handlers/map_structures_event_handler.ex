@@ -151,7 +151,8 @@ defmodule WandererAppWeb.MapStructuresEventHandler do
           :end_time,
           :inserted_at,
           :updated_at,
-          :structure_type
+          :structure_type,
+          :inherited_from_map_id
         ])
         |> Map.update!(:inserted_at, &Calendar.strftime(&1, "%Y/%m/%d %H:%M:%S"))
         |> Map.update!(:updated_at, &Calendar.strftime(&1, "%Y/%m/%d %H:%M:%S"))

@@ -17,6 +17,7 @@ defmodule WandererApp.Env do
   def invites(), do: get_key(:invites, false)
 
   def map_subscriptions_enabled?(), do: get_key(:map_subscriptions_enabled, false)
+  def intel_sharing_enabled?(), do: get_key(:intel_sharing_enabled, false)
   def public_api_disabled?(), do: get_key(:public_api_disabled, false)
 
   @decorate cacheable(
@@ -119,6 +120,9 @@ defmodule WandererApp.Env do
   made available to react
   """
   def to_client_env() do
-    %{detailedKillsDisabled: not wanderer_kills_service_enabled?()}
+    %{
+      detailedKillsDisabled: not wanderer_kills_service_enabled?(),
+      intelSharingEnabled: intel_sharing_enabled?()
+    }
   end
 end
