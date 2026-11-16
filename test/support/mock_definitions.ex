@@ -115,6 +115,11 @@ if Mix.env() == :test do
     @callback create!(any()) :: map()
   end
 
+  # Define EVE SSO mock behaviour (used by WandererApp.Map.EveTokenAuth)
+  defmodule WandererApp.EveSso.MockBehaviour do
+    @callback verify_token(binary()) :: {:ok, map()} | {:error, atom()}
+  end
+
   # Define ESI mock behaviour
   defmodule WandererApp.Esi.MockBehaviour do
     @callback get_character_info(binary()) :: {:ok, map()} | {:error, any()}
@@ -123,6 +128,8 @@ if Mix.env() == :test do
     @callback get_corporation_info(binary(), keyword()) :: {:ok, map()} | {:error, any()}
     @callback get_alliance_info(binary()) :: {:ok, map()} | {:error, any()}
     @callback get_alliance_info(binary(), keyword()) :: {:ok, map()} | {:error, any()}
+    @callback get_routes_custom(list(), integer(), map()) :: {:ok, list()} | {:error, any()}
+    @callback get_routes_eve(list(), integer(), map(), keyword()) :: {:ok, list()} | {:error, any()}
   end
 
   # Define all the mocks
@@ -155,4 +162,5 @@ if Mix.env() == :test do
   Mox.defmock(Test.TelemetryMock, for: Test.TelemetryMock.MockBehaviour)
   Mox.defmock(Test.AshMock, for: Test.AshMock.MockBehaviour)
   Mox.defmock(WandererApp.Esi.Mock, for: WandererApp.Esi.MockBehaviour)
+  Mox.defmock(Test.EveSsoMock, for: WandererApp.EveSso.MockBehaviour)
 end

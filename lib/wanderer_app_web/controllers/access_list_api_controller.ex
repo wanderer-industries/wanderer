@@ -17,6 +17,14 @@ defmodule WandererAppWeb.MapAccessListAPIController do
   import Ash.Query
   require Logger
 
+  # Only :index/:create go through :api_map (GET/POST /api/map/acls). :show
+  # and :update are routed separately under /api/acls/:id with the :api_acl
+  # pipeline (CheckAclApiKey, a different credential entirely) and are
+  # deliberately left out of this map so they pass through unaffected.
+  # No dedicated "view ACLs" bit exists, so index falls back to admin_map;
+  # create already has add_acl.
+  plug WandererAppWeb.Plugs.RequirePermission, %{index: :admin_map, create: :add_acl}
+
   # ------------------------------------------------------------------------
   # Inline Schemas for OpenApiSpex
   # ------------------------------------------------------------------------
