@@ -41,6 +41,10 @@ const VARIABLES = [
   { id: '{description}', desc: 'Custom description' },
   { id: '{direction}', desc: 'Wormhole direction (e.g., In, Out)' },
   { id: '{spawn_type}', desc: 'Spawn type for outgoing wormholes (e.g., Static, Wandering)' },
+  {
+    id: '{? - }',
+    desc: 'Conditional separator, only shown when there is a value on both sides. Replace " - " with any text (e.g., {? / })',
+  },
 ];
 
 interface CustomMappingInputProps {
