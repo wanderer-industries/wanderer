@@ -1152,13 +1152,13 @@ defmodule WandererApp.Map.Server.ConnectionsImpl do
     {:ok, target_system_info} = get_system_static_info(target_solar_system_id)
 
     cond do
-      # C1 systems always get medium
-      source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
-        @medium_ship_size
-
       # C13 systems always get frigate
       source_system_info.system_class == @c13 or target_system_info.system_class == @c13 ->
         @frigate_ship_size
+
+      # C1 systems always get medium
+      source_system_info.system_class == @c1 or target_system_info.system_class == @c1 ->
+        @medium_ship_size
 
       true ->
         # Default to large for other wormhole connections

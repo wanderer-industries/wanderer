@@ -686,12 +686,14 @@ describe('bookmarkFormatHelper', () => {
 
     it('should format {size}, {mass}, {dest_class_index}, and avoid recursive token expansion (Issues 3, 4, 5, 6)', () => {
       const wormholesData: Record<string, Partial<WormholeDataRaw>> = {
-        L614: { max_mass_per_jump: 1000000000, total_mass: 3000000000, dest: ['c5'] },
+        H900: { max_mass_per_jump: 375000000, total_mass: 3000000000, dest: ['c5'] },
+        Z971: { max_mass_per_jump: 62000000, total_mass: 100000000, dest: ['c1'] },
+        A009: { max_mass_per_jump: 5000000, total_mass: 500000000, dest: ['c13'] },
         H296: { max_mass_per_jump: 1000000000, total_mass: 3000000000, dest: ['c5'] },
         C729: { max_mass_per_jump: 1000000000, total_mass: 2000000000, dest: ['pochven'] },
       };
 
-      // K162 with destType fallback ('c5' -> whClassName 'L614') when k162Type is absent
+      // K162 with destType ('c5' -> whClassName 'H900') defaults to Large ('') rather than Medium ('M')
       const k162Sig = createMockSignature({
         eve_id: 'ABC-123',
         type: 'K162',
@@ -704,7 +706,31 @@ describe('bookmarkFormatHelper', () => {
       });
 
       const formattedK162 = formatBookmarkName('{size} {mass} {chain_index_letters}', k162Sig, null, 1, wormholesData);
-      expect(formattedK162).toBe('XL 3 A');
+      expect(formattedK162).toBe('3 A');
+
+      // K162 leading to C1 defaults to Medium ('M'), and C13 defaults to Small ('S')
+      const k162C1Sig = createMockSignature({
+        eve_id: 'ABC-124',
+        type: 'K162',
+        custom_info: JSON.stringify({ destType: 'c1' }),
+      });
+      expect(formatBookmarkName('{size} {dest_type}', k162C1Sig, null, 1, wormholesData)).toBe('M C1');
+
+      const k162C13Sig = createMockSignature({
+        eve_id: 'ABC-125',
+        type: 'K162',
+        custom_info: JSON.stringify({ destType: 'c13' }),
+      });
+      expect(formatBookmarkName('{size} {dest_type}', k162C13Sig, null, 1, wormholesData)).toBe('S C13');
+
+      // K162 linked to a system without explicit destType in custom_info still resolves size from target class
+      const k162LinkedToC1 = createMockSignature({
+        eve_id: 'ABC-126',
+        type: 'K162',
+        custom_info: JSON.stringify({}),
+      });
+      expect(formatBookmarkName('{size} {dest_type}', k162LinkedToC1, 'C1', 1, wormholesData)).toBe('M C1');
+      expect(formatBookmarkName('{size} {dest_type}', k162LinkedToC1, 'C5', 1, wormholesData)).toBe('C5');
 
       // C729 (in MULTI_DEST_WHS, non-K162) should look up wormholesData['C729'] directly
       const c729Sig = createMockSignature({
@@ -739,6 +765,61 @@ describe('bookmarkFormatHelper', () => {
         { class_c5: '{type}' },
       );
       expect(formattedSinglePass).toBe('{type} H296');
+    });
+
+    it('resolves correct default hole sizes across all destination classes using real wormholes.json data', () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const rawWormholes = require('../../../../../priv/repo/data/wormholes.json') as WormholeDataRaw[];
+      const realWormholesData: Record<string, Partial<WormholeDataRaw>> = Object.fromEntries(
+        rawWormholes.map(wh => [wh.name, wh]),
+      );
+
+      const expectedSizesByDestType: Record<string, string> = {
+        hs: '',
+        ls: '',
+        ns: '',
+        c1: 'M',
+        c2: '',
+        c3: '',
+        c4: '',
+        c5: '',
+        c6: '',
+        c13: 'S',
+        thera: '',
+        pochven: '',
+        c1_c2_c3: '',
+        c4_c5: '',
+      };
+
+      for (const [destType, expectedSize] of Object.entries(expectedSizesByDestType)) {
+        const sig = createMockSignature({
+          eve_id: 'K16-200',
+          type: 'K162',
+          custom_info: JSON.stringify({ destType }),
+        });
+        expect(formatBookmarkName('{size}', sig, null, 1, realWormholesData)).toBe(expectedSize);
+        expect(formatBookmarkName('{size}', sig, null, 1, realWormholesData, false, { size_large: 'L' })).toBe(
+          expectedSize || 'L',
+        );
+      }
+
+      // When current system is C1 or C13, K162 to C5 should be constrained to Medium ('M') or Small ('S')
+      (getSystemStaticInfo as jest.Mock).mockImplementation((id?: string | number) => {
+        if (id === 'sys_c1') return { system_class: 1 };
+        if (id === 'sys_c13') return { system_class: 13 };
+        return undefined;
+      });
+      const k162ToC5 = createMockSignature({
+        eve_id: 'K16-205',
+        type: 'K162',
+        custom_info: JSON.stringify({ destType: 'c5' }),
+      });
+      expect(
+        formatBookmarkName('{size}', k162ToC5, null, 1, realWormholesData, false, undefined, undefined, 'sys_c1'),
+      ).toBe('M');
+      expect(
+        formatBookmarkName('{size}', k162ToC5, null, 1, realWormholesData, false, undefined, undefined, 'sys_c13'),
+      ).toBe('S');
     });
 
     it('should update auto-generated temporary_name when chain index changes (Issue 13)', async () => {

@@ -50,8 +50,11 @@ defmodule WandererApp.Utils.EVEUtil do
 
   defp get_connection_size_status(5_000_000), do: Connections.small_ship_size()
   defp get_connection_size_status(62_000_000), do: Connections.medium_ship_size()
+  defp get_connection_size_status(300_000_000), do: Connections.large_ship_size()
   defp get_connection_size_status(375_000_000), do: Connections.large_ship_size()
   defp get_connection_size_status(1_000_000_000), do: Connections.freight_ship_size()
+  defp get_connection_size_status(1_350_000_000), do: Connections.capital_ship_size()
+  defp get_connection_size_status(1_800_000_000), do: Connections.capital_ship_size()
   defp get_connection_size_status(2_000_000_000), do: Connections.capital_ship_size()
   defp get_connection_size_status(_max_mass_per_jump), do: Connections.large_ship_size()
 end

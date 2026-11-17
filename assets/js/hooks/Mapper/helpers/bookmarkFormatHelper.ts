@@ -1201,51 +1201,84 @@ export const formatBookmarkName = (
   let sizeStr = '';
   let massStr = '';
   let whDataForSize: Partial<WormholeDataRaw> | null = null;
+  let fallbackSizeStatus: ShipSizeStatus | null = null;
 
   const isK162 = signature.type === 'K162';
-  const k162DestType = info.k162Type || info.destType;
+  const linkedClassGroup = signature.linked_system?.system_class
+    ? getSystemClassGroup(signature.linked_system.system_class)
+    : undefined;
+  const normalizedDestClass = destSystemClass?.toLowerCase();
+  const k162DestType =
+    info.k162Type ||
+    info.destType ||
+    (normalizedDestClass && ALL_DEST_TYPES_MAP[normalizedDestClass] ? normalizedDestClass : undefined) ||
+    (linkedClassGroup && ALL_DEST_TYPES_MAP[linkedClassGroup] ? linkedClassGroup : undefined);
 
   if (signature.type && !isK162 && wormholesData[signature.type]) {
     whDataForSize = wormholesData[signature.type];
-  } else if (isK162 && k162DestType) {
-    const destOption = ALL_DEST_TYPES_MAP[k162DestType];
+  } else if ((isK162 || !signature.type) && k162DestType) {
+    const currentSystemStatic =
+      (currentSolarSystemId ? getSystemStaticInfo(currentSolarSystemId) : undefined) ||
+      (currentSystemId ? getSystemStaticInfo(currentSystemId) : undefined);
+    const currentClassGroup = currentSystemStatic?.system_class
+      ? getSystemClassGroup(currentSystemStatic.system_class)
+      : undefined;
+
+    let effectiveDestType = k162DestType;
+    if (k162DestType === 'c13' || currentClassGroup === 'c13') {
+      effectiveDestType = 'c13';
+    } else if (k162DestType === 'c1' || currentClassGroup === 'c1') {
+      effectiveDestType = 'c1';
+    }
+
+    const destOption = ALL_DEST_TYPES_MAP[effectiveDestType];
     if (destOption?.whClassName) {
-      const whName = destOption.whClassName.split('_')[0];
-      whDataForSize = wormholesData[whName];
+      const whNames = destOption.whClassName.split('_');
+      const whName = whNames[whNames.length - 1];
+      whDataForSize = wormholesData[whName] ?? null;
+      fallbackSizeStatus =
+        effectiveDestType === 'c13'
+          ? ShipSizeStatus.small
+          : effectiveDestType === 'c1'
+            ? ShipSizeStatus.medium
+            : ShipSizeStatus.large;
     }
   }
 
-  if (whDataForSize) {
-    if (whDataForSize.max_mass_per_jump) {
-      const sizeStatus = SHIP_MASSES_SIZE[whDataForSize.max_mass_per_jump] ?? ShipSizeStatus.large;
-      const defaultSizeNames: Record<ShipSizeStatus, string> = {
-        [ShipSizeStatus.small]: 'S',
-        [ShipSizeStatus.medium]: 'M',
-        [ShipSizeStatus.large]: '',
-        [ShipSizeStatus.freight]: 'XL',
-        [ShipSizeStatus.capital]: 'C',
-      };
-      const sizeMappingKeys: Record<ShipSizeStatus, BookmarkCustomMappingKey> = {
-        [ShipSizeStatus.small]: 'size_small',
-        [ShipSizeStatus.medium]: 'size_medium',
-        [ShipSizeStatus.large]: 'size_large',
-        [ShipSizeStatus.freight]: 'size_freight',
-        [ShipSizeStatus.capital]: 'size_capital',
-      };
-      const mappingKey = sizeMappingKeys[sizeStatus];
-      if (mapping && mapping[mappingKey] !== undefined) {
-        sizeStr = mapping[mappingKey]!;
-      } else {
-        sizeStr = defaultSizeNames[sizeStatus] ?? SHIP_SIZES_NAMES_SHORT[sizeStatus] ?? '';
-      }
-    }
-    if (whDataForSize.total_mass) {
-      massStr = Number((whDataForSize.total_mass / 1_000_000_000).toFixed(2)).toString();
+  const resolvedSizeStatus =
+    whDataForSize?.max_mass_per_jump != null
+      ? (SHIP_MASSES_SIZE[whDataForSize.max_mass_per_jump] ?? ShipSizeStatus.large)
+      : fallbackSizeStatus;
+
+  if (resolvedSizeStatus !== null) {
+    const defaultSizeNames: Record<ShipSizeStatus, string> = {
+      [ShipSizeStatus.small]: 'S',
+      [ShipSizeStatus.medium]: 'M',
+      [ShipSizeStatus.large]: '',
+      [ShipSizeStatus.freight]: 'XL',
+      [ShipSizeStatus.capital]: 'C',
+    };
+    const sizeMappingKeys: Record<ShipSizeStatus, BookmarkCustomMappingKey> = {
+      [ShipSizeStatus.small]: 'size_small',
+      [ShipSizeStatus.medium]: 'size_medium',
+      [ShipSizeStatus.large]: 'size_large',
+      [ShipSizeStatus.freight]: 'size_freight',
+      [ShipSizeStatus.capital]: 'size_capital',
+    };
+    const mappingKey = sizeMappingKeys[resolvedSizeStatus];
+    if (mapping && mapping[mappingKey] !== undefined) {
+      sizeStr = mapping[mappingKey]!;
+    } else {
+      sizeStr = defaultSizeNames[resolvedSizeStatus] ?? SHIP_SIZES_NAMES_SHORT[resolvedSizeStatus] ?? '';
     }
   } else if (signature.type === 'K162') {
     if (mapping?.size_k162_unknown !== undefined) {
       sizeStr = mapping.size_k162_unknown;
     }
+  }
+
+  if (whDataForSize?.total_mass) {
+    massStr = Number((whDataForSize.total_mass / 1_000_000_000).toFixed(2)).toString();
   }
 
   const indexStr = bookmarkIndex.toString();

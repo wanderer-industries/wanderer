@@ -141,11 +141,11 @@ defmodule WandererApp.Map.Operations.Connections do
         inferred_size
 
       # Otherwise fall back to system class rules
-      c1_system?(src, tgt) ->
-        @medium_ship_size
-
       c13_system?(src, tgt) ->
         @small_ship_size
+
+      c1_system?(src, tgt) ->
+        @medium_ship_size
 
       true ->
         @large_ship_size

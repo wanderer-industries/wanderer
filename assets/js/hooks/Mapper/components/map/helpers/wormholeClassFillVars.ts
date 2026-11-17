@@ -37,7 +37,8 @@ export function resolveSignatureFillVar(
   if (MULTI_DEST_WHS.includes(signature.type) && customInfo.destType) {
     const destTypeOption = ALL_DEST_TYPES_MAP[customInfo.destType];
     if (destTypeOption) {
-      const whData = wormholesData[destTypeOption.whClassName];
+      const whName = destTypeOption.whClassName.split('_')[0];
+      const whData = wormholesData[whName];
       const whClass = whData?.dest?.length === 1 ? WORMHOLES_ADDITIONAL_INFO[whData.dest[0]] : null;
       if (whClass) {
         const className = WORMHOLE_CLASS_STYLES[whClass.wormholeClassID];
