@@ -5,7 +5,6 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
 
   alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
   alias WandererApp.Map.Server.SignaturesImpl
-  alias WandererApp.Utils.EVEUtil
 
   def handle_server_event(
         %{
@@ -93,7 +92,11 @@ defmodule WandererAppWeb.MapSignaturesEventHandler do
       |> WandererApp.MapUserSettingsRepo.to_form_data!()
       |> WandererApp.MapUserSettingsRepo.get_boolean_setting("delete_connection_with_sigs")
 
-to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{solar_system_id}_#{eve_id}" in removed_sig_eve_ids end)
+    to_remove =
+      removed_signatures
+      |> Enum.filter(fn %{"eve_id" => eve_id} ->
+        "#{solar_system_id}_#{eve_id}" in removed_sig_eve_ids
+      end)
 
     to_remove_eve_ids =
       to_remove
@@ -113,10 +116,10 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
     socket
     |> assign(
       removed_sig_eve_ids:
-      removed_sig_eve_ids
-    |> Enum.reject(fn sig_id ->
-      sig_id in Enum.map(to_remove_eve_ids, &("#{solar_system_id}_#{&1}")) 
-    end)
+        removed_sig_eve_ids
+        |> Enum.reject(fn sig_id ->
+          sig_id in Enum.map(to_remove_eve_ids, &"#{solar_system_id}_#{&1}")
+        end)
     )
   end
 
@@ -141,7 +144,7 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
           system_id
           |> get_system_signatures()
           |> Enum.filter(fn signature ->
-            is_nil(signature.linked_system) && signature.group == "Wormhole"
+            signature.group == "Wormhole"
           end)
 
         acc |> Map.put(solar_system_id, signatures)
@@ -201,51 +204,57 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
       removed_signatures: []
     })
 
-    saved_eve_ids = (added_signatures ++ updated_signatures) |> Enum.map(fn sig -> sig["eve_id"] end)
-    saved_system_keys = saved_eve_ids |> Enum.map(&("#{solar_system_id}_#{&1}"))
-    just_removed_system_keys = new_removed_sig_eve_ids |> Enum.map(&("#{solar_system_id}_#{&1}"))
-    updated_removed_sig_eve_ids = (old_removed_sig_eve_ids ++ just_removed_system_keys)
+    saved_eve_ids =
+      (added_signatures ++ updated_signatures) |> Enum.map(fn sig -> sig["eve_id"] end)
+
+    saved_system_keys = saved_eve_ids |> Enum.map(&"#{solar_system_id}_#{&1}")
+    just_removed_system_keys = new_removed_sig_eve_ids |> Enum.map(&"#{solar_system_id}_#{&1}")
+
+    updated_removed_sig_eve_ids =
+      (old_removed_sig_eve_ids ++ just_removed_system_keys)
       |> Enum.uniq()
       |> Enum.reject(fn key -> key in saved_system_keys end)
 
     {:noreply,
-      socket
-        |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)}
+     socket
+     |> assign(removed_sig_eve_ids: updated_removed_sig_eve_ids)}
   end
 
   def handle_ui_event(
-      "get_signatures",
+        "get_signatures",
         %{"system_id" => solar_system_id},
-          %{
-            assigns:
-          %{
-            map_id: map_id
-          } = assigns
+        %{
+          assigns:
+            %{
+              map_id: map_id
+            } = assigns
         } = socket
       ) do
-        solar_system_id_int = get_integer(solar_system_id)
-        case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
-          map_id: map_id,
-          solar_system_id: solar_system_id_int
-        }) do
-          {:ok, system} ->
-            removed_sig_eve_ids = Map.get(assigns, :removed_sig_eve_ids, [])
-            system_signatures =
-              get_system_signatures(system.id)
-                |> Enum.map(fn sig ->
-                  if "#{solar_system_id_int}_#{sig.eve_id}" in removed_sig_eve_ids do
-                    sig |> Map.put(:deleted, true)
-                  else
-                    sig
-                  end
-                end)
+    solar_system_id_int = get_integer(solar_system_id)
 
-          {:reply, %{signatures: system_signatures}, socket}
-            _ ->
-            {:reply, %{signatures: []}, socket}
-        end
+    case WandererApp.Api.MapSystem.read_by_map_and_solar_system(%{
+           map_id: map_id,
+           solar_system_id: solar_system_id_int
+         }) do
+      {:ok, system} ->
+        removed_sig_eve_ids = Map.get(assigns, :removed_sig_eve_ids, [])
+
+        system_signatures =
+          get_system_signatures(system.id)
+          |> Enum.map(fn sig ->
+            if "#{solar_system_id_int}_#{sig.eve_id}" in removed_sig_eve_ids do
+              sig |> Map.put(:deleted, true)
+            else
+              sig
+            end
+          end)
+
+        {:reply, %{signatures: system_signatures}, socket}
+
+      _ ->
+        {:reply, %{signatures: []}, socket}
+    end
   end
-
 
   def handle_ui_event(
         "link_signature_to_system",
@@ -280,126 +289,7 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
              map_id,
              %{solar_system_id: solar_system_target}
            ) do
-      signature
-      |> WandererApp.Api.MapSystemSignature.update_group!(%{group: "Wormhole"})
-      |> WandererApp.Api.MapSystemSignature.update_linked_system(%{
-        linked_system_id: solar_system_target
-      })
-
-      if is_nil(target_system.linked_sig_eve_id) or
-           target_system.linked_sig_eve_id == signature_eve_id do
-        map_id
-        |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
-          solar_system_id: solar_system_target,
-          linked_sig_eve_id: signature_eve_id
-        })
-
-        if not is_nil(signature.temporary_name) do
-          map_id
-          |> WandererApp.Map.Server.update_system_temporary_name(%{
-            solar_system_id: solar_system_target,
-            temporary_name: signature.temporary_name
-          })
-        end
-
-        {signature_time_status, signature_mass_status} =
-          if not is_nil(signature.custom_info) do
-            decoded = signature.custom_info |> Jason.decode!()
-            {Map.get(decoded, "time_status"), Map.get(decoded, "mass_status")}
-          else
-            {nil, nil}
-          end
-
-        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
-
-        # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
-        # look for a forward signature in the target system that links back to our source
-        {signature_time_status, signature_ship_size_type, signature_mass_status} =
-          if is_nil(signature_ship_size_type) do
-            case SignaturesImpl.find_forward_signature(target_system.id, solar_system_source) do
-              nil ->
-                {signature_time_status, signature_ship_size_type, signature_mass_status}
-
-              forward_sig ->
-                Logger.info(
-                  "[link_signature_to_system] Back-link detected: " <>
-                    "using forward sig type=#{forward_sig.type} from target system"
-                )
-
-                forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
-
-                {forward_time_status, forward_mass_status} =
-                  if not is_nil(forward_sig.custom_info) do
-                    decoded = forward_sig.custom_info |> Jason.decode!()
-
-                    # Always prefer forward sig values over K162 defaults
-                    fwd_time = Map.get(decoded, "time_status") || signature_time_status
-                    fwd_mass = Map.get(decoded, "mass_status") || signature_mass_status
-
-                    {fwd_time, fwd_mass}
-                  else
-                    {signature_time_status, signature_mass_status}
-                  end
-
-                {forward_time_status, forward_ship_size, forward_mass_status}
-            end
-          else
-            {signature_time_status, signature_ship_size_type, signature_mass_status}
-          end
-
-        if not is_nil(signature_time_status) do
-          map_id
-          |> WandererApp.Map.Server.update_connection_time_status(%{
-            solar_system_source_id: solar_system_source,
-            solar_system_target_id: solar_system_target,
-            time_status: signature_time_status
-          })
-        end
-
-        if not is_nil(signature_ship_size_type) do
-          map_id
-          |> WandererApp.Map.Server.update_connection_ship_size_type(%{
-            solar_system_source_id: solar_system_source,
-            solar_system_target_id: solar_system_target,
-            ship_size_type: signature_ship_size_type
-          })
-        end
-
-        if not is_nil(signature_mass_status) do
-          map_id
-          |> WandererApp.Map.Server.update_connection_mass_status(%{
-            solar_system_source_id: solar_system_source,
-            solar_system_target_id: solar_system_target,
-            mass_status: signature_mass_status
-          })
-        end
-
-        # Update K162's custom_info to match the resolved connection values
-        if not is_nil(signature_time_status) or not is_nil(signature_mass_status) do
-          updated_custom_info =
-            (signature.custom_info || "{}")
-            |> Jason.decode!()
-            |> then(fn decoded ->
-              decoded
-              |> then(fn d ->
-                if not is_nil(signature_time_status),
-                  do: Map.put(d, "time_status", signature_time_status),
-                  else: d
-              end)
-              |> then(fn d ->
-                if not is_nil(signature_mass_status),
-                  do: Map.put(d, "mass_status", signature_mass_status),
-                  else: d
-              end)
-            end)
-            |> Jason.encode!()
-
-          WandererApp.Api.MapSystemSignature.update(signature, %{custom_info: updated_custom_info})
-        end
-      end
-
-      WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_source)
-
+      SignaturesImpl.link_signature(map_id, signature, solar_system_target)
       {:noreply, socket}
     else
       _ ->
@@ -433,19 +323,8 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
         WandererApp.Api.MapSystemSignature.by_system_id!(system.id)
         |> Enum.filter(fn s -> s.eve_id == signature_eve_id end)
         |> Enum.each(fn s ->
-          map_id
-          |> WandererApp.Map.Server.update_system_linked_sig_eve_id(%{
-            solar_system_id: s.linked_system_id,
-            linked_sig_eve_id: nil
-          })
-
-          # Use the wrapper to log unlink operations
-          WandererApp.Map.Server.SignaturesImpl.update_signature_linked_system(s, %{
-            linked_system_id: nil
-          })
+          SignaturesImpl.unlink_signature(map_id, s)
         end)
-
-        WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_source)
 
         {:noreply, socket}
 
@@ -467,17 +346,18 @@ to_remove = removed_signatures |> Enum.filter(fn %{"eve_id" => eve_id} -> "#{sol
         } = socket
       )
       when not is_nil(main_character_id) do
-      solar_system_id_int = get_integer(solar_system_id)
+    solar_system_id_int = get_integer(solar_system_id)
     WandererApp.Map.Server.Impl.broadcast!(map_id, :signatures_updated, solar_system_id)
 
     {:noreply,
-      socket
-      |> assign(
-        removed_sig_eve_ids:
-        removed_sig_eve_ids|> Enum.reject(fn sig_id ->
-        sig_id in Enum.map(eve_ids, &("#{solar_system_id_int}_#{&1}"))
-        end)
-      )}
+     socket
+     |> assign(
+       removed_sig_eve_ids:
+         removed_sig_eve_ids
+         |> Enum.reject(fn sig_id ->
+           sig_id in Enum.map(eve_ids, &"#{solar_system_id_int}_#{&1}")
+         end)
+     )}
   end
 
   def handle_ui_event(event, body, socket),

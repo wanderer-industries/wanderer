@@ -18,7 +18,7 @@ import {
   DEFAULT_REMOTE_SETTINGS,
   UserSettingsRemoteList,
 } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/constants.ts';
-import { OutCommand } from '@/hooks/Mapper/types';
+import { BookmarkCustomMapping, OutCommand } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from '@/hooks/Mapper/components/mapRootContent/components/MapSettings/components';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -27,7 +27,7 @@ import { WithChildren } from '@/hooks/Mapper/types/common.ts';
 
 type MapSettingsContextType = {
   renderSettingItem: (item: SettingsListItem) => ReactNode;
-  updateSetting: (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => Promise<void>;
+  updateSetting: (prop: keyof UserSettings, value: boolean | string | BookmarkCustomMapping) => Promise<void>;
   setUserRemoteSettings: Dispatch<SetStateAction<UserSettingsRemote>>;
   settings: UserSettings;
 };
@@ -55,10 +55,10 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
   refVars.current = { mergedSettings, userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings };
 
   const handleSettingChange = useCallback(
-    async (prop: keyof UserSettings, value: boolean | string | Record<string, string>) => {
+    async (prop: keyof UserSettings, value: boolean | string | BookmarkCustomMapping) => {
       const { userRemoteSettings, interfaceSettings, outCommand, setInterfaceSettings } = refVars.current;
 
-      if (UserSettingsRemoteList.includes(prop as any)) {
+      if (UserSettingsRemoteList.includes(prop)) {
         const newRemoteSettings = {
           ...userRemoteSettings,
           [prop]: value,
@@ -122,6 +122,7 @@ export const MapSettingsProvider = ({ children }: WithChildren) => {
           <div key={item.prop.toString()} className="flex flex-col gap-1 w-full mt-2 mb-2">
             {item.label && <label className="text-[var(--gray-200)] text-[13px] select-none">{item.label}</label>}
             <InputText
+              key={`${item.prop.toString()}_${(currentValue as string) || ''}`}
               className="text-sm w-full"
               defaultValue={(currentValue as string) || ''}
               onBlur={e => handleSettingChange(item.prop, e.target.value)}

@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { handleAutoBookmark, applySystemAutoTags } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { executeLinkSignatureToSystem } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { CommandLinkSignatureToSystem, SignatureGroup, SystemSignature } from '@/hooks/Mapper/types';
+import {
+  CommandLinkSignatureToSystem,
+  GetUserSettingsResponse,
+  SystemSignature,
+  UserSettings,
+} from '@/hooks/Mapper/types';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
 
 export interface UseLinkSignatureProps {
@@ -19,72 +24,28 @@ export const useLinkSignature = ({ data, targetSystemClassGroup }: UseLinkSignat
   const ref = useRef({ outCommand });
   ref.current = { outCommand };
 
-  const [userSettings, setUserSettings] = useState<any>(null);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
   useEffect(() => {
-    outCommand({ type: OutCommand.getUserSettings, data: null })
-      .then((res: any) => setUserSettings(res?.user_settings))
-      .catch((e: any) => console.warn('Failed to fetch user settings', e));
+    outCommand<GetUserSettingsResponse>({ type: OutCommand.getUserSettings, data: null })
+      .then(res => setUserSettings(res?.user_settings ?? null))
+      .catch((e: unknown) => console.warn('Failed to fetch user settings', e));
   }, [outCommand]);
 
   const handleLinkSignature = useCallback(
     async (signature: SystemSignature) => {
       const { outCommand } = ref.current;
-
-      const sourceSystem = systems.find((s: any) => s.id === data.solar_system_source?.toString());
-      const systemUuid = sourceSystem?.id || data.solar_system_source.toString();
-
-      const targetSystem = systems.find((s: any) => s.id === data.solar_system_target?.toString());
-      const targetSystemUuid = targetSystem?.id;
-      const targetSolarSystemIdStr = data.solar_system_target?.toString();
-
-      const signatureToLink = { ...signature, group: SignatureGroup.Wormhole };
-
-      let currentSettings = userSettings;
-      if (!currentSettings) {
-        try {
-          const res: any = await outCommand({ type: OutCommand.getUserSettings, data: null });
-          currentSettings = res?.user_settings;
-        } catch (e) {
-          console.warn('Failed to fetch user settings', e);
-        }
-      }
-
-      const { updatedSignature, shouldUpdate } = await handleAutoBookmark(
-        signatureToLink,
-        currentSettings,
-        systemSignatures,
-        systemUuid,
-        data.solar_system_source.toString(),
-        wormholesData,
+      await executeLinkSignatureToSystem({
+        signature,
+        data,
         targetSystemClassGroup,
-        targetSystemUuid,
-        targetSolarSystemIdStr,
+        userSettings,
+        systemSignatures,
         systems,
+        wormholesData,
         connections,
-      );
-
-      if (shouldUpdate) {
-        await outCommand({
-          type: OutCommand.updateSignatures,
-          data: {
-            system_id: `${data.solar_system_source}`,
-            updated: [updatedSignature],
-            removed: [],
-            deleteTimeout: 0,
-          },
-        });
-      }
-
-      await outCommand({
-        type: OutCommand.linkSignatureToSystem,
-        data: {
-          ...data,
-          signature_eve_id: signature.eve_id,
-        },
+        outCommand,
       });
-
-      await applySystemAutoTags(updatedSignature, currentSettings, targetSystem, outCommand);
     },
     [data, userSettings, targetSystemClassGroup, systemSignatures, systems, wormholesData, connections],
   );

@@ -70,7 +70,17 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       solar_system_target_id: solar_system_target_id_int
     })
 
-    {:noreply, socket}
+    connection_type =
+      case WandererApp.Map.find_connection(
+             map_id,
+             solar_system_source_id_int,
+             solar_system_target_id_int
+           ) do
+        {:ok, %{type: type}} -> type
+        _ -> nil
+      end
+
+    {:reply, %{connection_type: connection_type}, socket}
   end
 
   def handle_ui_event(

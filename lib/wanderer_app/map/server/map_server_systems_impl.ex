@@ -438,6 +438,12 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         WandererApp.Api.MapSystemSignature.by_linked_system_id!(solar_system_id)
       end)
       |> Enum.uniq_by(& &1.id)
+      |> Enum.filter(fn sig ->
+        case WandererApp.Api.MapSystem.by_id(sig.system_id) do
+          {:ok, %{map_id: ^map_id}} -> true
+          _ -> false
+        end
+      end)
       |> Enum.group_by(fn sig -> sig.system_id end)
 
     signatures_by_system
@@ -504,22 +510,28 @@ defmodule WandererApp.Map.Server.SystemsImpl do
   end
 
   defp cleanup_linked_system_sig_eve_ids(map_id, system_ids_to_remove) do
-    linked_system_ids =
+    sigs_by_linked_system =
       system_ids_to_remove
-      |> Enum.map(fn system_id ->
+      |> Enum.flat_map(fn system_id ->
         WandererApp.Api.MapSystemSignature.by_system_id!(system_id)
         |> Enum.filter(fn s -> not is_nil(s.linked_system_id) end)
-        |> Enum.map(fn s -> s.linked_system_id end)
       end)
-      |> List.flatten()
-      |> Enum.uniq()
+      |> Enum.group_by(& &1.linked_system_id, & &1.eve_id)
 
-    linked_system_ids
-    |> Enum.each(fn linked_system_id ->
-      update_system(map_id, :update_linked_sig_eve_id, [:linked_sig_eve_id], %{
-        solar_system_id: linked_system_id,
-        linked_sig_eve_id: nil
-      })
+    sigs_by_linked_system
+    |> Enum.each(fn {linked_system_id, removed_eve_ids} ->
+      with target_system when not is_nil(target_system) <-
+             WandererApp.Map.find_system_by_location(map_id, %{
+               solar_system_id: linked_system_id
+             }),
+           true <- target_system.linked_sig_eve_id in removed_eve_ids do
+        update_system(map_id, :update_linked_sig_eve_id, [:linked_sig_eve_id], %{
+          solar_system_id: linked_system_id,
+          linked_sig_eve_id: nil
+        })
+      else
+        _ -> :ok
+      end
     end)
   end
 
@@ -1075,8 +1087,9 @@ defmodule WandererApp.Map.Server.SystemsImpl do
         callback_fn.(updated_system)
       end
 
-      if update_method in [:update_tag, :update_labels, :update_temporary_name] do
-        maybe_sync_to_signatures(map_id, updated_system)
+      if update_method in [:update_tag, :update_labels, :update_temporary_name] and
+           not Map.get(update, :skip_signature_sync, false) do
+        maybe_sync_to_signatures(map_id, updated_system, update_method, system)
       end
 
       update_map_system_last_activity(map_id, updated_system)
@@ -1121,20 +1134,79 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     :ok
   end
 
-  defp maybe_sync_to_signatures(map_id, {:ok, system}), do: maybe_sync_to_signatures(map_id, system)
+  def maybe_sync_to_signatures(map_id, {:ok, system}),
+    do: maybe_sync_to_signatures(map_id, system)
 
-  defp maybe_sync_to_signatures(map_id, %{solar_system_id: solar_system_id} = system) do
+  def maybe_sync_to_signatures(map_id, %{solar_system_id: _solar_system_id} = system) do
+    sync_value = get_sync_value(system)
+    do_sync_to_signatures(map_id, system, sync_value)
+  end
+
+  def maybe_sync_to_signatures(_map_id, _), do: :ok
+
+  defp maybe_sync_to_signatures(map_id, updated_system, update_method, old_system)
+       when update_method in [:update_labels, :update_tag, :update_temporary_name] do
+    old_val = get_field_val(old_system, update_method)
+    new_val = get_field_val(updated_system, update_method)
+
+    if (old_val || "") == (new_val || "") do
+      :ok
+    else
+      sync_value = get_sync_value_for_method(updated_system, update_method)
+      do_sync_to_signatures(map_id, updated_system, sync_value)
+    end
+  end
+
+  defp maybe_sync_to_signatures(_map_id, _updated_system, _update_method, _old_system), do: :ok
+
+  defp get_field_val(system, :update_labels), do: get_label_value(system.labels)
+  defp get_field_val(system, :update_tag), do: Map.get(system, :tag)
+  defp get_field_val(system, :update_temporary_name), do: Map.get(system, :temporary_name)
+
+  defp get_sync_value_for_method(system, :update_labels) do
+    presence(get_label_value(system.labels)) || presence(system.tag)
+  end
+
+  defp get_sync_value_for_method(system, :update_tag) do
+    presence(Map.get(system, :tag)) || presence(get_label_value(system.labels))
+  end
+
+  defp get_sync_value_for_method(system, :update_temporary_name) do
+    presence(Map.get(system, :temporary_name)) || presence(get_label_value(system.labels)) ||
+      presence(Map.get(system, :tag))
+  end
+
+  defp presence(nil), do: nil
+  defp presence(""), do: nil
+  defp presence(val), do: val
+
+  defp do_sync_to_signatures(map_id, %{solar_system_id: solar_system_id} = system, sync_value) do
     case WandererApp.Api.MapSystemSignature.by_linked_system_id(solar_system_id) do
       {:ok, signatures} ->
-        sync_value = get_sync_value(system)
+        linked_sig_eve_id = Map.get(system, :linked_sig_eve_id)
 
         signatures
-        |> Enum.filter(fn sig -> sig.temporary_name != sync_value end)
+        |> Enum.filter(fn sig ->
+          (is_nil(linked_sig_eve_id) or sig.eve_id == linked_sig_eve_id) and
+            sig.temporary_name != sync_value
+        end)
         |> Enum.each(fn sig ->
           case WandererApp.Api.MapSystem.by_id(sig.system_id) do
-            {:ok, source_system} ->
-              SignaturesImpl.apply_update_signature(map_id, sig, %{temporary_name: sync_value})
-              Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
+            {:ok, %{map_id: ^map_id} = source_system} ->
+              is_back_link =
+                SignaturesImpl.return_hole_signature?(sig) or
+                  (is_nil(linked_sig_eve_id) and
+                     not is_nil(
+                       SignaturesImpl.find_forward_signature(
+                         system.id,
+                         source_system.solar_system_id
+                       )
+                     ))
+
+              if not is_back_link do
+                SignaturesImpl.apply_update_signature(map_id, sig, %{temporary_name: sync_value})
+                Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
+              end
 
             _ ->
               :ok
@@ -1146,32 +1218,20 @@ defmodule WandererApp.Map.Server.SystemsImpl do
     end
   end
 
-  defp maybe_sync_to_signatures(_map_id, _), do: :ok
+  defp do_sync_to_signatures(_map_id, _, _), do: :ok
 
   defp get_sync_value(system) do
-    label_val = get_label_value(system.labels)
-    tag_val = system.tag
-
-    cond do
-      not is_nil(label_val) and label_val != "" ->
-        label_val
-
-      not is_nil(tag_val) and tag_val != "" ->
-        tag_val
-
-      true ->
-        nil
-    end
+    presence(get_label_value(system.labels)) || presence(system.tag) ||
+      presence(Map.get(system, :temporary_name))
   end
 
   defp get_label_value(labels) when is_binary(labels) do
     case Jason.decode(labels) do
-      {:ok, %{"customLabel" => custom_label}}
-      when is_binary(custom_label) and custom_label != "" ->
-        custom_label
+      {:ok, %{"customLabel" => custom_label}} when is_binary(custom_label) ->
+        if custom_label != "", do: custom_label, else: nil
 
-      {:ok, %{"labels" => labels_list}} when is_list(labels_list) ->
-        Enum.at(labels_list, 0)
+      {:ok, %{}} ->
+        nil
 
       _ ->
         labels

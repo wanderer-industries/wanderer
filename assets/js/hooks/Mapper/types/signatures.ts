@@ -1,4 +1,4 @@
-import { SolarSystemStaticInfoRaw } from '@/hooks/Mapper/types';
+import { MassState, SolarSystemStaticInfoRaw, TimeStatus } from '@/hooks/Mapper/types';
 
 export enum SignatureGroup {
   CosmicSignature = 'Cosmic Signature',
@@ -30,9 +30,9 @@ export type GroupType = {
 export type SignatureCustomInfo = {
   destType?: string;
   k162Type?: string;
-  time_status?: number;
+  time_status?: TimeStatus;
   isCrit?: boolean;
-  mass_status?: number;
+  mass_status?: MassState;
   bookmark_index?: number;
   bookmark_index_chained?: string;
   bookmark_index_chained_letters?: string;

@@ -15,6 +15,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
   const {
     data: { characters },
     outCommand,
+    update,
   } = useMapRootState();
   const systemIdRef = useRef(systemId);
   const latestGetRequestRef = useRef(0);
@@ -47,6 +48,13 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
 
     const serverSigs = ((resp as GetSignaturesResponse)?.signatures ?? []) as SystemSignature[];
 
+    update(
+      prev => ({
+        systemSignatures: { ...prev.systemSignatures, [`${requestedSystemId}`]: serverSigs },
+      }),
+      true,
+    );
+
     const extended = serverSigs.map(s => ({
       ...s,
       character_name: s.character_name ?? characters.find(c => c.eve_id === s.character_eve_id)?.name,
@@ -54,7 +62,7 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
 
     setSignatures(() => extended);
     return extended;
-  }, [characters, systemId, outCommand, setSignatures]);
+  }, [characters, systemId, outCommand, update, setSignatures]);
 
   const handleUpdateSignatures = useCallback(
     async (newList: ExtendedSystemSignature[], updateOnly: boolean, skipUpdateUntouched?: boolean) => {

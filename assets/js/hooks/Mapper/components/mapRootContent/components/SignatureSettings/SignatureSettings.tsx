@@ -2,14 +2,19 @@ import {
   SignatureGroupContent,
   SignatureGroupSelect,
 } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/components';
-import { getSystemClassGroup } from '@/hooks/Mapper/components/map/helpers/getSystemClassGroup.ts';
-import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
 import { SystemsSettingsProvider } from '@/hooks/Mapper/components/mapRootContent/components/SignatureSettings/Provider.tsx';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
-import { handleAutoBookmark, applySystemAutoTags } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
+import { executeSaveSignatureSettings } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { parseSignatureCustomInfo } from '@/hooks/Mapper/helpers/parseSignatureCustomInfo';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { MassState, OutCommand, SignatureGroup, SystemSignature, TimeStatus } from '@/hooks/Mapper/types';
+import {
+  GetUserSettingsResponse,
+  MassState,
+  OutCommand,
+  SystemSignature,
+  TimeStatus,
+  UserSettings,
+} from '@/hooks/Mapper/types';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect, useState } from 'react';
@@ -40,168 +45,32 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
 
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
 
-  const [userSettings, setUserSettings] = useState<any>(null);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
   useEffect(() => {
-    outCommand({ type: OutCommand.getUserSettings, data: null })
-      .then((res: any) => setUserSettings(res?.user_settings))
-      .catch((e: any) => console.warn('Failed to fetch user settings', e));
+    outCommand<GetUserSettingsResponse>({ type: OutCommand.getUserSettings, data: null })
+      .then(res => setUserSettings(res?.user_settings ?? null))
+      .catch((e: unknown) => console.warn('Failed to fetch user settings', e));
   }, [outCommand]);
 
   const handleSave = useCallback(
-    // TODO: need fix
-    async (e: any) => {
+    async (e?: React.FormEvent<HTMLFormElement>) => {
       e?.preventDefault();
       if (!signatureData) {
         return;
       }
 
-      const { group, ...values } = signatureForm.getValues();
-      let out = { ...signatureData };
-
-      switch (group) {
-        case SignatureGroup.Wormhole:
-          const existingInfo = parseSignatureCustomInfo(signatureData.custom_info);
-          out = {
-            ...out,
-            custom_info: JSON.stringify({
-              ...existingInfo,
-              destType: values.destType,
-              k162Type: values.k162Type,
-              time_status: values.time_status,
-              mass_status: values.mass_status,
-            }),
-          };
-
-          if (values.type != null) {
-            out = { ...out, type: values.type };
-          }
-
-          if (values.temporary_name != null) {
-            out = { ...out, temporary_name: values.temporary_name };
-          }
-
-          if (signatureData.group !== SignatureGroup.Wormhole) {
-            out = { ...out, name: '' };
-          }
-
-          break;
-        case SignatureGroup.CosmicSignature:
-          out = { ...out, type: '', name: '' };
-          break;
-        default:
-          if (values.name != null) {
-            out = { ...out, name: values.name ?? '' };
-          }
-      }
-
-      if (values.description != null) {
-        out = { ...out, description: values.description };
-      }
-
-      // Note: when type of signature changed from WH to other type - we should drop name
-      if (
-        group !== SignatureGroup.Wormhole && // new
-        signatureData.group === SignatureGroup.Wormhole && // prev
-        signatureData.linked_system
-      ) {
-        await outCommand({
-          type: OutCommand.unlinkSignature,
-          data: { signature_eve_id: signatureData.eve_id, solar_system_source: systemId },
-        });
-
-        out = { ...out, type: '' };
-      }
-
-      if (group === SignatureGroup.Wormhole && signatureData.linked_system != null && values.linked_system === null) {
-        await outCommand({
-          type: OutCommand.unlinkSignature,
-          data: { signature_eve_id: signatureData.eve_id, solar_system_source: systemId },
-        });
-      }
-
-      // Note: despite groups have optional type - this will always set
-      out = { ...out, group: group! };
-
-      let currentSettings = userSettings;
-      if (!currentSettings) {
-        try {
-          const res: any = await outCommand({ type: OutCommand.getUserSettings, data: null });
-          currentSettings = res?.user_settings;
-        } catch (e) {
-          console.warn('Failed to fetch user settings', e);
-        }
-      }
-
-      if (group === SignatureGroup.Wormhole) {
-        let targetSystem = null;
-        if (values.linked_system) {
-          targetSystem = systems.find((s: any) => s.id === values.linked_system);
-        }
-
-        let targetSystemClassGroup = null;
-        const targetSystemStatic = getSystemStaticInfo(values.linked_system);
-        if (targetSystemStatic) {
-          targetSystemClassGroup = getSystemClassGroup(targetSystemStatic.system_class);
-        }
-
-        const targetSystemUuid = targetSystem?.id;
-
-        let targetSolarSystemIdStr = values.linked_system;
-        if (targetSystemStatic?.solar_system_id) {
-          targetSolarSystemIdStr = targetSystemStatic.solar_system_id.toString();
-        }
-
-        const currentSystemStatic = getSystemStaticInfo(systemId);
-
-        let solarSystemIdStr = systemId;
-        if (currentSystemStatic?.solar_system_id) {
-          solarSystemIdStr = currentSystemStatic.solar_system_id.toString();
-        }
-
-        const { updatedSignature } = await handleAutoBookmark(
-          out,
-          currentSettings,
-          systemSignatures,
-          systemId,
-          solarSystemIdStr,
-          wormholesData,
-          targetSystemClassGroup,
-          targetSystemUuid,
-          targetSolarSystemIdStr,
-          systems,
-          connections,
-        );
-        out = updatedSignature;
-      }
-
-      await outCommand({
-        type: OutCommand.updateSignatures,
-        data: {
-          system_id: systemId,
-          added: [],
-          updated: [out],
-          removed: [],
-          deleteTimeout: 0,
-        },
+      await executeSaveSignatureSettings({
+        signatureData,
+        formValues: signatureForm.getValues(),
+        systemId,
+        userSettings,
+        systemSignatures,
+        systems,
+        wormholesData,
+        connections,
+        outCommand,
       });
-
-      // Link after updateSignatures so the K162's linked_system_id is still nil
-      // during signature update, preventing maybe_update_connection_* from
-      // resetting connection properties set by the forward signature.
-      if (group === SignatureGroup.Wormhole && values.linked_system) {
-        await outCommand({
-          type: OutCommand.linkSignatureToSystem,
-          data: {
-            signature_eve_id: signatureData.eve_id,
-            solar_system_source: systemId,
-            solar_system_target: values.linked_system,
-          },
-        });
-
-        const targetSystem = systems.find((s: any) => s.id === values.linked_system);
-        await applySystemAutoTags(out, currentSettings, targetSystem, outCommand);
-      }
 
       signatureForm.reset();
       onHide();
