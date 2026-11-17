@@ -7,7 +7,7 @@ import { useAudioPlayer } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { normalizeKillNotificationToastLifetime } from '@/hooks/Mapper/mapRootProvider/helpers/normalizeKillNotificationToastLifetime.ts';
 import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { Command, Commands } from '@/hooks/Mapper/types';
+import { Command, CommandInit, Commands } from '@/hooks/Mapper/types';
 import { DetailedKill } from '@/hooks/Mapper/types/kills.ts';
 import { KillNotificationContent } from './KillNotificationContent.tsx';
 import {
@@ -30,7 +30,6 @@ export const useMapKillsNotifications = () => {
 
   const toastRef = useRef<Toast>(null);
   const seenKillmailIdsRef = useRef(new Set<number>());
-  const hasReceivedInitialUpdateRef = useRef(false);
   const playKillSound = useAudioPlayer(KILL_SOUND_PATH, KILL_AUDIO_OPTIONS);
 
   const showNotifications = useCallback((notifications: PendingKillNotification[], toastLifetimeSeconds: number) => {
@@ -61,20 +60,21 @@ export const useMapKillsNotifications = () => {
 
   const handleDetailedKillsUpdated = useCallback(
     (event: MapEvent<Command>) => {
+      if (event.name === Commands.init) {
+        const initialKillsBySystem = (event.data as CommandInit).detailed_kills ?? {};
+
+        Object.values(initialKillsBySystem).forEach(kills => {
+          kills.forEach(kill => seenKillmailIdsRef.current.add(kill.killmail_id));
+        });
+        return true;
+      }
+
       if (event.name !== Commands.detailedKillsUpdated) {
         return false;
       }
 
       let hasNewKills = false;
       const killsBySystem = event.data as Record<string, DetailedKill[]>;
-
-      if (!hasReceivedInitialUpdateRef.current) {
-        Object.values(killsBySystem).forEach(kills => {
-          kills.forEach(kill => seenKillmailIdsRef.current.add(kill.killmail_id));
-        });
-        hasReceivedInitialUpdateRef.current = true;
-        return true;
-      }
 
       const toastLifetimeSeconds = normalizeKillNotificationToastLifetime(
         interfaceSettings.killActivityToastLifetimeSeconds,

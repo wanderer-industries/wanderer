@@ -691,12 +691,25 @@ defmodule WandererAppWeb.MapCoreEventHandler do
             nil
         end
 
+      detailed_kills =
+        case WandererApp.Map.is_subscription_active?(map_id) do
+          {:ok, true} ->
+            case WandererApp.Cache.get("map:#{map_id}:zkb:detailed_kills") do
+              cached_kills when is_map(cached_kills) -> cached_kills
+              _ -> %{}
+            end
+
+          _ ->
+            %{}
+        end
+
       expired_characters =
         tracked_characters |> Enum.filter(&(&1.access_token == nil)) |> Enum.map(& &1.eve_id)
 
       initial_data =
         %{
           kills: kills_data,
+          detailed_kills: detailed_kills,
           present_characters:
             map_character_ids
             |> WandererApp.Character.get_character_eve_ids!(),

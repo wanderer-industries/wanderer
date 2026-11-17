@@ -24,13 +24,12 @@ defmodule WandererApp.Kills.MessageHandlerTest do
     :ok
   end
 
-  test "resolves a missing final-blow corporation name from ESI" do
+  test "stores a killmail without waiting for missing affiliation enrichment" do
     killmail_id = System.unique_integer([:positive])
     test_pid = self()
 
     Req.Test.stub(ApiClient, fn conn ->
-      send(test_pid, :corporation_resolved)
-      assert conn.request_path == "/corporations/#{@corporation_id}/"
+      send(test_pid, :unexpected_esi_request)
       Req.Test.json(conn, %{"name" => "Attacker Corporation", "ticker" => "ATK"})
     end)
 
@@ -58,8 +57,48 @@ defmodule WandererApp.Kills.MessageHandlerTest do
 
     assert :ok = MessageHandler.process_killmail_update(payload)
     assert {:ok, kill} = Storage.get_killmail(killmail_id)
+    assert kill["final_blow_corp_name"] == nil
+    assert kill["final_blow_corp_ticker"] == nil
+    refute_received :unexpected_esi_request
+  end
+
+  test "uses cached affiliation without making an ESI request" do
+    killmail_id = System.unique_integer([:positive])
+    test_pid = self()
+
+    WandererApp.Cache.put("corporation-info-#{@corporation_id}", {
+      :ok,
+      %{"name" => "Attacker Corporation", "ticker" => "ATK"}
+    })
+
+    Req.Test.stub(ApiClient, fn conn ->
+      send(test_pid, :unexpected_esi_request)
+      Req.Test.json(conn, %{"name" => "Unexpected Corporation", "ticker" => "BAD"})
+    end)
+
+    payload = %{
+      "system_id" => @system_id,
+      "killmails" => [
+        %{
+          "killmail_id" => killmail_id,
+          "kill_time" => "2026-11-16T12:00:00Z",
+          "solar_system_id" => @system_id,
+          "victim" => %{"ship_type_id" => 626},
+          "attackers" => [
+            %{
+              "corporation_id" => @corporation_id,
+              "final_blow" => true
+            }
+          ],
+          "zkb" => %{}
+        }
+      ]
+    }
+
+    assert :ok = MessageHandler.process_killmail_update(payload)
+    assert {:ok, kill} = Storage.get_killmail(killmail_id)
     assert kill["final_blow_corp_name"] == "Attacker Corporation"
     assert kill["final_blow_corp_ticker"] == "ATK"
-    assert_received :corporation_resolved
+    refute_received :unexpected_esi_request
   end
 end

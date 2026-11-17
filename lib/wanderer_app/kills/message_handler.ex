@@ -5,7 +5,6 @@ defmodule WandererApp.Kills.MessageHandler do
 
   require Logger
 
-  alias WandererApp.Esi
   alias WandererApp.Kills.{Config, Storage}
   alias WandererApp.Kills.Subscription.MapIntegration
 
@@ -270,7 +269,7 @@ defmodule WandererApp.Kills.MessageHandler do
     final_blow_attacker =
       attackers_list
       |> find_final_blow_attacker()
-      |> enrich_attacker_affiliation()
+      |> enrich_attacker_affiliation_from_cache()
 
     adapted_kill =
       %{}
@@ -395,27 +394,23 @@ defmodule WandererApp.Kills.MessageHandler do
 
   defp find_final_blow_attacker(_), do: %{}
 
-  defp enrich_attacker_affiliation(%{"alliance_id" => alliance_id} = attacker)
+  defp enrich_attacker_affiliation_from_cache(%{"alliance_id" => alliance_id} = attacker)
        when is_integer(alliance_id) and alliance_id > 0 do
-    if get_alliance_name(attacker) do
-      attacker
-    else
-      attacker
-      |> fetch_affiliation(&Esi.get_alliance_info/1, "alliance", alliance_id)
-      |> fallback_to_corporation()
-    end
+    attacker
+    |> put_cached_affiliation("alliance", alliance_id)
+    |> fallback_to_cached_corporation()
   end
 
-  defp enrich_attacker_affiliation(attacker) when is_map(attacker),
-    do: fallback_to_corporation(attacker)
+  defp enrich_attacker_affiliation_from_cache(attacker) when is_map(attacker),
+    do: fallback_to_cached_corporation(attacker)
 
-  defp fallback_to_corporation(attacker) do
+  defp fallback_to_cached_corporation(attacker) do
     if get_alliance_name(attacker) || get_corp_name(attacker) do
       attacker
     else
       case attacker["corporation_id"] do
         corporation_id when is_integer(corporation_id) and corporation_id > 0 ->
-          fetch_affiliation(attacker, &Esi.get_corporation_info/1, "corporation", corporation_id)
+          put_cached_affiliation(attacker, "corporation", corporation_id)
 
         _ ->
           attacker
@@ -423,8 +418,8 @@ defmodule WandererApp.Kills.MessageHandler do
     end
   end
 
-  defp fetch_affiliation(attacker, fetch, prefix, id) do
-    case fetch.(id) do
+  defp put_cached_affiliation(attacker, prefix, id) do
+    case WandererApp.Cache.get("#{prefix}-info-#{id}") do
       {:ok, %{"name" => name} = affiliation} when is_binary(name) and name != "" ->
         attacker
         |> Map.put("#{prefix}_name", name)

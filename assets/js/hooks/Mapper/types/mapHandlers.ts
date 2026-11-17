@@ -90,6 +90,7 @@ export type CommandInit = {
   systems: SolarSystemRawType[];
   system_signatures: Record<string, SystemSignature[]>;
   kills: Kill[];
+  detailed_kills: CommandDetailedKillsUpdated;
   system_static_infos: SolarSystemStaticInfoRaw[];
   connections: SolarSystemConnection[];
   wormholes: WormholeDataRaw[];
