@@ -14,9 +14,12 @@ import { FastSystemActions } from '@/hooks/Mapper/components/contexts/components
 import { useMapCheckPermissions } from '@/hooks/Mapper/mapRootProvider/hooks/api';
 import { UserPermission } from '@/hooks/Mapper/types/permissions.ts';
 import { isWormholeSpace } from '@/hooks/Mapper/components/map/helpers/isWormholeSpace.ts';
+import { SOLAR_SYSTEM_CLASS_IDS } from '@/hooks/Mapper/components/map/constants.ts';
+import { GRADIENT_MENU_ACTIVE_CLASSES } from '@/hooks/Mapper/constants.ts';
 import { getSystemStaticInfo } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic';
-import { MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
+import { BattleshipIcon, MapAddIcon, MapDeleteIcon } from '@/hooks/Mapper/icons';
 import { PingType } from '@/hooks/Mapper/types';
+import { LabelsManager } from '@/hooks/Mapper/utils/labelsManager.ts';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import clsx from 'clsx';
 import { MenuItem } from 'primereact/menuitem';
@@ -70,13 +73,18 @@ export const useContextMenuSystemItems = ({
 
   return useMemo((): MenuItem[] => {
     const system = systemId ? getSystemById(systems, systemId) : undefined;
-    const systemStaticInfo = getSystemStaticInfo(systemId)!;
+    const systemStaticInfo = getSystemStaticInfo(systemId);
 
     const hasPing = ping?.solar_system_id === systemId;
 
-    if (!system || !systemId) {
+    if (!system || !systemId || !systemStaticInfo) {
       return [];
     }
+
+    const isDrifterSystem =
+      systemStaticInfo.system_class === SOLAR_SYSTEM_CLASS_IDS.c5 ||
+      systemStaticInfo.system_class === SOLAR_SYSTEM_CLASS_IDS.c6;
+    const labelsManager = new LabelsManager(system.labels ?? '');
 
     return [
       {
@@ -141,6 +149,19 @@ export const useContextMenuSystemItems = ({
           );
         },
       },
+      ...(isDrifterSystem && canManageSystem
+        ? [
+            {
+              label: 'Drifter is out',
+              icon: <BattleshipIcon className="mr-1 relative left-[-2px] w-[16px] h-[16px]" />,
+              className: clsx({ [GRADIENT_MENU_ACTIVE_CLASSES]: labelsManager.drifterOut }),
+              command: () => {
+                labelsManager.toggleDrifterOut();
+                onSystemLabels(labelsManager.toString());
+              },
+            },
+          ]
+        : []),
       ...(system.locked && canLockSystem
         ? [
             {
@@ -203,6 +224,7 @@ export const useContextMenuSystemItems = ({
     canDeleteSystem,
     onDeleteSystem,
     onOpenSettings,
+    onSystemLabels,
     onTogglePing,
     ping,
     isShowPingBtn,

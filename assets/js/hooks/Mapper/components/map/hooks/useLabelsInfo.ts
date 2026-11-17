@@ -20,6 +20,7 @@ function sortedLabels(labels: string[]): LabelInfo[] {
 export function useLabelsInfo({ labels, linkedSigPrefix, isShowLinkedSigId }: UseLabelsInfoParams) {
   const labelsManager = useMemo(() => new LabelsManager(labels ?? ''), [labels]);
   const labelsInfo = useMemo(() => sortedLabels(labelsManager.list), [labelsManager]);
+  const isDrifterOut = labelsManager.drifterOut;
   const labelCustom = useMemo(() => {
     if (isShowLinkedSigId && linkedSigPrefix) {
       return labelsManager.customLabel ? `${linkedSigPrefix}・${labelsManager.customLabel}` : linkedSigPrefix;
@@ -27,5 +28,5 @@ export function useLabelsInfo({ labels, linkedSigPrefix, isShowLinkedSigId }: Us
     return labelsManager.customLabel;
   }, [linkedSigPrefix, isShowLinkedSigId, labelsManager]);
 
-  return { labelsInfo, labelCustom };
+  return { labelsInfo, labelCustom, isDrifterOut };
 }
