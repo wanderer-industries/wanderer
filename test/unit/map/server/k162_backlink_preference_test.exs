@@ -78,8 +78,7 @@ defmodule WandererApp.Map.Server.K162BacklinkPreferenceTest do
           type: "H296",
           group: "Wormhole",
           linked_system_id: 30_000_143,
-          custom_info:
-            Jason.encode!(%{"time_status" => 1, "mass_status" => 1, "destType" => nil})
+          custom_info: Jason.encode!(%{"time_status" => 1, "mass_status" => 1, "destType" => nil})
         })
 
       # find_forward_signature looks in the target system (system_b.id)
