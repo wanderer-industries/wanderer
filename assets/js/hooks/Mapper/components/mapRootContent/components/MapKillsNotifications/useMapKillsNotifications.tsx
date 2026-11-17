@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { MapEvent, useMapEventListener } from '@/hooks/Mapper/events';
 import { useAudioPlayer } from '@/hooks/Mapper/hooks';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { DEFAULT_KILL_NOTIFICATION_TOAST_LIFETIME_SECONDS } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { normalizeKillNotificationToastLifetime } from '@/hooks/Mapper/mapRootProvider/helpers/normalizeKillNotificationToastLifetime.ts';
 import { PingsPlacement } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { Command, Commands } from '@/hooks/Mapper/types';
 import { DetailedKill } from '@/hooks/Mapper/types/kills.ts';
@@ -76,8 +76,9 @@ export const useMapKillsNotifications = () => {
         return true;
       }
 
-      const toastLifetimeSeconds =
-        interfaceSettings.killActivityToastLifetimeSeconds ?? DEFAULT_KILL_NOTIFICATION_TOAST_LIFETIME_SECONDS;
+      const toastLifetimeSeconds = normalizeKillNotificationToastLifetime(
+        interfaceSettings.killActivityToastLifetimeSeconds,
+      );
       const notifications: PendingKillNotification[] = [];
 
       Object.entries(killsBySystem).forEach(([systemId, kills]) => {

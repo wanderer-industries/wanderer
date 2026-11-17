@@ -6,6 +6,7 @@ import { AddSystemDialog } from '@/hooks/Mapper/components/mapInterface/componen
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
 import { InterfaceStoredSettings, KillNotificationScope } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { DEFAULT_KILL_NOTIFICATION_SCOPES } from '@/hooks/Mapper/mapRootProvider/constants.ts';
+import { normalizeKillNotificationToastLifetime } from '@/hooks/Mapper/mapRootProvider/helpers/normalizeKillNotificationToastLifetime.ts';
 import { SearchSystemItem } from '@/hooks/Mapper/types';
 import { PrettySwitchbox } from './PrettySwitchbox';
 
@@ -39,6 +40,9 @@ export const NotificationSettings = ({}: NotificationSettingsProps) => {
 
   const excludedSystems = interfaceSettings.killActivityExcludedSystems ?? [];
   const selectedScopes = interfaceSettings.killActivityScopes ?? DEFAULT_KILL_NOTIFICATION_SCOPES;
+  const toastLifetimeSeconds = normalizeKillNotificationToastLifetime(
+    interfaceSettings.killActivityToastLifetimeSeconds,
+  );
 
   const updateSettings = useCallback(
     (patch: Partial<InterfaceStoredSettings>) => {
@@ -125,8 +129,9 @@ export const NotificationSettings = ({}: NotificationSettingsProps) => {
         <div className="mx-3 h-px border-b-2 border-dotted border-[#3f3f3f]" />
         <Dropdown
           className="text-sm"
-          value={interfaceSettings.killActivityToastLifetimeSeconds ?? 0}
+          value={toastLifetimeSeconds}
           options={KILL_NOTIFICATION_TOAST_LIFETIME_OPTIONS}
+          optionValue="value"
           onChange={event => updateSettings({ killActivityToastLifetimeSeconds: event.value })}
         />
       </div>
