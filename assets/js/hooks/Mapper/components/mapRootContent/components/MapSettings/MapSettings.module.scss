@@ -8,10 +8,29 @@
     font-size: var(--rf-settings-label-font-size, 13px);
   }
 
-  & > :nth-child(2){
+  & > :nth-child(2) {
     border-bottom: 2px dotted #3f3f3f;
     height: 2px;
     margin: 0 12px;
+  }
+}
+
+.tabViewContent {
+  :global(.p-tabview-panels),
+  :global(.p-tabview-panel) {
+    min-width: 0;
+  }
+
+  :global(.p-tabview-panels) {
+    overflow: hidden;
+  }
+}
+
+.dotlanSetting {
+  border-color: var(--surface-border);
+
+  :global(.p-dropdown) {
+    width: 12rem;
   }
 }
 
@@ -43,5 +62,4 @@
       }
     }
   }
-
 }

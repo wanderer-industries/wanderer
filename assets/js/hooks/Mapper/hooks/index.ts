@@ -1,4 +1,5 @@
 export * from './useClipboard';
+export * from './useAudioPlayer';
 export * from './useConfirmPopup';
 export * from './useEventBuffer';
 export * from './useHotkey';

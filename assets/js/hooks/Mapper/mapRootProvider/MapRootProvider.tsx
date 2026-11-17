@@ -117,6 +117,8 @@ export enum InterfaceStoredSettingsProps {
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
   isShowBackgroundPattern = 'isShowBackgroundPattern',
   isSoftBackground = 'isSoftBackground',
+  killActivityNotifications = 'killActivityNotifications',
+  killActivitySounds = 'killActivitySounds',
   theme = 'theme',
 }
 
