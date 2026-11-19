@@ -161,6 +161,19 @@ defmodule WandererApp.Esi.ApiClient do
 
   @decorate cacheable(
               cache: Cache,
+              key: "station-info-#{station_id}",
+              opts: [ttl: @ttl]
+            )
+  def get_station_info(station_id, opts),
+    do:
+      do_get(
+        "/universe/stations/#{station_id}/",
+        opts,
+        @cache_opts
+      )
+
+  @decorate cacheable(
+              cache: Cache,
               key: "alliance-info-#{eve_id}",
               opts: [ttl: @ttl]
             )

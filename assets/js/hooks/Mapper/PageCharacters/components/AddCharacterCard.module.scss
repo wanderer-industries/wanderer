@@ -1,0 +1,71 @@
+.card {
+  display: flex;
+  min-height: 440px;
+  flex-direction: column;
+  overflow: hidden;
+  @apply border-white/[0.06] from-stone-900 to-stone-950;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -4px rgb(0 0 0 / 10%);
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.card:hover {
+  @apply border-orange-400/30;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 40%), 0 4px 6px -4px rgb(0 0 0 / 40%);
+}
+
+.portraitImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.3);
+  transition: filter 300ms ease;
+}
+
+.card:hover .portraitImage {
+  filter: grayscale(1) brightness(0.4);
+}
+
+.addIcon {
+  display: flex;
+  width: 4rem;
+  height: 4rem;
+  align-items: center;
+  justify-content: center;
+  @apply border-stone-500 bg-black/70 text-stone-300;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 9999px;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.card:hover .addIcon {
+  @apply border-stone-300 text-white;
+}
+
+.details {
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.userIcon {
+  margin-bottom: 0.75rem;
+  @apply text-stone-600;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  transition: color 150ms ease;
+}
+
+.card:hover .userIcon {
+  @apply text-stone-300;
+}

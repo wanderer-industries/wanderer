@@ -19,6 +19,7 @@ interface AddSystemDialogProps {
   setVisible: (visible: boolean) => void;
   onSubmit?: SearchOnSubmitCallback;
   excludedSystems?: number[];
+  width?: string | number;
 }
 
 export const AddSystemDialog = ({
@@ -27,6 +28,7 @@ export const AddSystemDialog = ({
   setVisible,
   onSubmit,
   excludedSystems = [],
+  width = '520px',
 }: AddSystemDialogProps) => {
   const {
     outCommand,
@@ -105,7 +107,7 @@ export const AddSystemDialog = ({
       header={title}
       visible={visible}
       draggable={false}
-      style={{ width: '520px' }}
+      style={{ width }}
       onShow={onShow}
       onHide={() => {
         if (!visible) {

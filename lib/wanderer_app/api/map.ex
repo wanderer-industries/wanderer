@@ -112,7 +112,16 @@ defmodule WandererApp.Api.Map do
   end
 
   actions do
-    defaults [:create, :read, :destroy]
+    defaults [:create, :read]
+
+    # Promoted out of `defaults` only to hang an after_transaction hook on it;
+    # the action is otherwise the stock primary destroy.
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+
+      change after_transaction(&__MODULE__.after_destroy/3)
+    end
 
     read :by_slug do
       get? true
@@ -158,6 +167,7 @@ defmodule WandererApp.Api.Map do
       argument :acls_empty_selection, :string, allow_nil?: true
       change manage_relationship(:acls, type: :append_and_remove)
       change WandererApp.Api.Changes.SlugifyName
+      validate present(:owner_id), message: "Map owner is required"
     end
 
     update :update do
@@ -223,6 +233,9 @@ defmodule WandererApp.Api.Map do
       require_atomic? false
 
       change(set_attribute(:deleted, true))
+      # This soft delete, not the hard :destroy action, is the path users
+      # actually take (maps_live.ex, admin_maps_live.ex) — see after_destroy/3.
+      change after_transaction(&__MODULE__.after_destroy/3)
     end
 
     update :restore do
@@ -326,6 +339,31 @@ defmodule WandererApp.Api.Map do
                end
              end)
     end
+  end
+
+  @doc false
+  def after_destroy(_changeset, {:error, _} = result, _context), do: result
+
+  # Wired to both the hard `:destroy` action and the soft-delete
+  # `:mark_as_deleted` action — the latter is the path actual users take
+  # (maps_live.ex, admin_maps_live.ex), and neither leaves Discord's cache or
+  # delivery worker cleaned up on its own.
+  def after_destroy(changeset, result, _context) do
+    # Only the hard :destroy actually removes the row: map_discord_notifications_v1
+    # has `reference :map, on_delete: :delete`, so on that path its rows are
+    # removed by the database cascade and MapDiscordNotification's own
+    # after_destroy/3 never runs — its cache entry and delivery worker would
+    # survive the map otherwise. :mark_as_deleted never touches that row at
+    # all, so the same cleanup is needed there too. Both helpers tolerate a
+    # cache or registry that was never started.
+    #
+    # after_transaction, for the commit-window race documented in
+    # map_discord_notification.ex. It yields `:ok` or `{:ok, record}` depending
+    # on the action, so the id comes from the changeset either way.
+    map_id = changeset.data.id
+
+    WandererApp.ExternalEvents.DiscordDispatcher.invalidate_cache(map_id, true)
+    result
   end
 
   # Generate a unique slug from map name
@@ -479,7 +517,6 @@ defmodule WandererApp.Api.Map do
   defp validate_sse_subscription(changeset, _context) do
     sse_enabled = Ash.Changeset.get_attribute(changeset, :sse_enabled)
     map_id = changeset.data.id
-    subscriptions_enabled = WandererApp.Env.map_subscriptions_enabled?()
 
     cond do
       # Not enabling SSE - no validation needed
@@ -490,27 +527,29 @@ defmodule WandererApp.Api.Map do
       is_nil(map_id) ->
         :ok
 
-      # Community Edition mode - always allow
-      not subscriptions_enabled ->
-        :ok
-
-      # Enterprise mode - check subscription
       true ->
-        validate_active_subscription(map_id)
+        case sse_enablement_status(map_id) do
+          :ok -> :ok
+          {:error, message} -> {:error, field: :sse_enabled, message: message}
+        end
     end
   end
 
-  defp validate_active_subscription(map_id) do
-    case WandererApp.Map.is_subscription_active?(map_id) do
-      {:ok, true} ->
-        :ok
+  def sse_enablement_status(map_id) do
+    if WandererApp.Env.map_subscriptions_enabled?() do
+      case WandererApp.Map.is_subscription_active?(map_id) do
+        {:ok, true} ->
+          :ok
 
-      {:ok, false} ->
-        {:error, field: :sse_enabled, message: "Active subscription required to enable SSE"}
+        {:ok, false} ->
+          {:error, "Active subscription required to enable SSE"}
 
-      {:error, reason} ->
-        Logger.error("Error checking subscription status: #{inspect(reason)}")
-        {:error, field: :sse_enabled, message: "Unable to verify subscription status"}
+        {:error, reason} ->
+          Logger.error("Error checking subscription status: #{inspect(reason)}")
+          {:error, "Unable to verify subscription status"}
+      end
+    else
+      :ok
     end
   end
 end

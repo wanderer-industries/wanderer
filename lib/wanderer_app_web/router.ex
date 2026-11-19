@@ -130,7 +130,7 @@ defmodule WandererAppWeb.Router do
         img_src: @img_src_values,
         font_src: @font_src_values,
         connect_src: @connect_src_values ++ [ws_url],
-        media_src: ~w('none'),
+        media_src: ~w('self'),
         object_src: ~w('none'),
         child_src: ~w('none'),
         frame_src: @frame_src_values,
@@ -555,8 +555,8 @@ defmodule WandererAppWeb.Router do
       live "/coming-soon", ComingLive, :index
       live "/tracking/:slug", CharactersTrackingLive, :characters
       live "/tracking", CharactersTrackingLive, :index
-      live "/characters", CharactersLive, :index
-      live "/characters/authorize", CharactersLive, :authorize
+      live "/characters", CharactersPageLive, :index
+      live "/characters/authorize", CharactersPageLive, :authorize
       live "/characters/:eve_id", CharacterProfileLive, :show
       live "/sponsors", SponsorsLive, :index
       live "/maps/new", MapsLive, :create

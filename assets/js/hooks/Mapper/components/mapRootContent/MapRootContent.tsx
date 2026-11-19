@@ -18,6 +18,7 @@ import { PingsInterface } from '@/hooks/Mapper/components/mapInterface/component
 import { OldSettingsDialog } from '@/hooks/Mapper/components/mapRootContent/components/OldSettingsDialog.tsx';
 import { TopSearch } from '@/hooks/Mapper/components/mapRootContent/components/TopSearch';
 import { JumpPlanner, JumpPlannerInitialSystem } from '@/hooks/Mapper/components/mapRootContent/components/JumpPlanner';
+import { MapKillsNotifications } from './components/MapKillsNotifications/MapKillsNotifications.tsx';
 
 interface JumpPlannerDialogState {
   visible: boolean;
@@ -134,6 +135,7 @@ export const MapRootContent = ({}: MapRootContentProps) => {
         />
 
         {hasOldSettings && <OldSettingsDialog />}
+        <MapKillsNotifications />
       </Layout>
     </div>
   );
