@@ -13,6 +13,7 @@ export const useMapInit = () => {
       const {
         systems,
         system_signatures,
+        detailed_kills,
         connections,
         effects,
         wormholes,
@@ -62,6 +63,10 @@ export const useMapInit = () => {
 
       if (system_signatures) {
         updateData.systemSignatures = system_signatures;
+      }
+
+      if (detailed_kills) {
+        updateData.detailedKills = detailed_kills;
       }
 
       if (connections) {
