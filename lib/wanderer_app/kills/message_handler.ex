@@ -265,7 +265,11 @@ defmodule WandererApp.Kills.MessageHandler do
 
     # Validate attackers is a list
     attackers_list = if is_list(attackers), do: attackers, else: []
-    final_blow_attacker = find_final_blow_attacker(attackers_list)
+
+    final_blow_attacker =
+      attackers_list
+      |> find_final_blow_attacker()
+      |> enrich_attacker_affiliation_from_cache()
 
     adapted_kill =
       %{}
@@ -389,6 +393,42 @@ defmodule WandererApp.Kills.MessageHandler do
   end
 
   defp find_final_blow_attacker(_), do: %{}
+
+  defp enrich_attacker_affiliation_from_cache(%{"alliance_id" => alliance_id} = attacker)
+       when is_integer(alliance_id) and alliance_id > 0 do
+    attacker
+    |> put_cached_affiliation("alliance", alliance_id)
+    |> fallback_to_cached_corporation()
+  end
+
+  defp enrich_attacker_affiliation_from_cache(attacker) when is_map(attacker),
+    do: fallback_to_cached_corporation(attacker)
+
+  defp fallback_to_cached_corporation(attacker) do
+    if get_alliance_name(attacker) || get_corp_name(attacker) do
+      attacker
+    else
+      case attacker["corporation_id"] do
+        corporation_id when is_integer(corporation_id) and corporation_id > 0 ->
+          put_cached_affiliation(attacker, "corporation", corporation_id)
+
+        _ ->
+          attacker
+      end
+    end
+  end
+
+  defp put_cached_affiliation(attacker, prefix, id) do
+    case WandererApp.Cache.get("#{prefix}-info-#{id}") do
+      {:ok, %{"name" => name} = affiliation} when is_binary(name) and name != "" ->
+        attacker
+        |> Map.put("#{prefix}_name", name)
+        |> Map.put("#{prefix}_ticker", affiliation["ticker"])
+
+      _ ->
+        attacker
+    end
+  end
 
   # Generic field extraction with multiple possible field names
   @spec extract_field(map(), list(String.t())) :: String.t() | nil

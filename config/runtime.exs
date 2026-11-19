@@ -78,6 +78,11 @@ map_subscriptions_enabled =
   |> get_var_from_path_or_env("WANDERER_MAP_SUBSCRIPTIONS_ENABLED", "false")
   |> String.to_existing_atom()
 
+legacy_characters_page_enabled =
+  config_dir
+  |> get_var_from_path_or_env("WANDERER_LEGACY_CHARACTERS_PAGE_ENABLED", "false")
+  |> String.to_existing_atom()
+
 map_subscription_characters_limit =
   config_dir
   |> get_int_from_path_or_env("WANDERER_MAP_SUBSCRIPTION_CHARACTERS_LIMIT", 10_000)
@@ -157,6 +162,14 @@ restrict_acls_creation =
   |> get_var_from_path_or_env("WANDERER_RESTRICT_ACLS_CREATION", "false")
   |> String.to_existing_atom()
 
+system_custom_label_max_length =
+  config_dir
+  |> get_int_from_path_or_env("WANDERER_SYSTEM_CUSTOM_LABEL_MAX_LENGTH", 5)
+
+if system_custom_label_max_length < 1 do
+  raise "WANDERER_SYSTEM_CUSTOM_LABEL_MAX_LENGTH must be greater than 0"
+end
+
 config :wanderer_app,
   web_app_url: web_app_url,
   git_sha: System.get_env("GIT_SHA", "111"),
@@ -177,10 +190,15 @@ config :wanderer_app,
   character_tracking_pause_disabled:
     System.get_env("WANDERER_CHARACTER_TRACKING_PAUSE_DISABLED", "true")
     |> String.to_existing_atom(),
+  public_stats_refresh_interval_ms:
+    System.get_env("WANDERER_PUBLIC_STATS_REFRESH_INTERVAL_MS", "30000")
+    |> String.to_integer(),
+  system_custom_label_max_length: system_custom_label_max_length,
   character_api_disabled: character_api_disabled,
   wanderer_kills_service_enabled: wanderer_kills_service_enabled,
   wanderer_kills_base_url: wanderer_kills_base_url,
   map_subscriptions_enabled: map_subscriptions_enabled,
+  legacy_characters_page_enabled: legacy_characters_page_enabled,
   map_connection_auto_expire_hours: map_connection_auto_expire_hours,
   map_connection_auto_eol_hours: map_connection_auto_eol_hours,
   map_connection_eol_expire_timeout_mins: map_connection_eol_expire_timeout_mins,
@@ -227,6 +245,11 @@ config :wanderer_app,
     System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_SIZE", "25") |> String.to_integer(),
   finch_webhooks_pool_count:
     System.get_env("WANDERER_FINCH_WEBHOOKS_POOL_COUNT", "2") |> String.to_integer(),
+  # Discord pool - isolated so a slow Discord cannot exhaust shared pools
+  finch_discord_pool_size:
+    System.get_env("WANDERER_FINCH_DISCORD_POOL_SIZE", "10") |> String.to_integer(),
+  finch_discord_pool_count:
+    System.get_env("WANDERER_FINCH_DISCORD_POOL_COUNT", "1") |> String.to_integer(),
   # Default pool - everything else (email, license manager, etc.)
   finch_default_pool_size:
     System.get_env("WANDERER_FINCH_DEFAULT_POOL_SIZE", "25") |> String.to_integer(),

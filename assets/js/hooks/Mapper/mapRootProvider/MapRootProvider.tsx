@@ -59,6 +59,7 @@ export type MapRootData = MapUnionTypes & {
   loadingPublicRoutes: boolean;
   map_slug: string | null;
   expiredCharacters: string[];
+  systemCustomLabelMaxLength: number | null;
 };
 
 const INITIAL_DATA: MapRootData = {
@@ -99,6 +100,7 @@ const INITIAL_DATA: MapRootData = {
     store_custom_labels: 'false',
   },
   isSubscriptionActive: false,
+  systemCustomLabelMaxLength: null,
   linkSignatureToSystem: null,
   mainCharacterEveId: null,
   followingCharacterEveId: null,
@@ -115,6 +117,8 @@ export enum InterfaceStoredSettingsProps {
   isShowUnsplashedSignatures = 'isShowUnsplashedSignatures',
   isShowBackgroundPattern = 'isShowBackgroundPattern',
   isSoftBackground = 'isSoftBackground',
+  killActivityNotifications = 'killActivityNotifications',
+  killActivitySounds = 'killActivitySounds',
   theme = 'theme',
 }
 

@@ -35,6 +35,15 @@ export enum DotlanBehavior {
   npcKillsDelta = 'npc_delta',
 }
 
+export enum KillNotificationScope {
+  wormhole = 'wormhole',
+  highSec = 'highSec',
+  lowSec = 'lowSec',
+  nullSec = 'nullSec',
+  pochven = 'pochven',
+  other = 'other',
+}
+
 export type InterfaceStoredSettings = {
   isShowMenu: boolean;
   isShowKSpace: boolean;
@@ -47,6 +56,11 @@ export type InterfaceStoredSettings = {
   pingsPlacement: PingsPlacement;
   hideBookmarkWarning: boolean;
   dotlanBehavior: DotlanBehavior;
+  killActivityNotifications: boolean;
+  killActivitySounds: boolean;
+  killActivityExcludedSystems: number[];
+  killActivityScopes: KillNotificationScope[];
+  killActivityToastLifetimeSeconds: number;
 };
 
 export type RoutesType = {

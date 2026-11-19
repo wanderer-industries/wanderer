@@ -15,7 +15,15 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, show_key: false, license: nil, loading: true, error: nil)}
+    {:ok,
+     assign(socket,
+       show_key: false,
+       license: nil,
+       loading: true,
+       error: nil,
+       can_create_license: false,
+       license_unavailable_reason: nil
+     )}
   end
 
   @impl true
@@ -24,6 +32,7 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
       socket
       |> assign(assigns)
       |> assign(loading: true, error: nil)
+      |> assign_license_creation_status(map_id)
       |> load_license(map_id)
 
     {:ok, socket}
@@ -52,6 +61,8 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
         {:noreply,
          assign(socket,
            loading: false,
+           can_create_license: false,
+           license_unavailable_reason: "An active map subscription is required",
            error: "Cannot create license: Map does not have an active subscription"
          )}
 
@@ -86,111 +97,143 @@ defmodule WandererAppWeb.Maps.LicenseComponent do
     end
   end
 
+  defp assign_license_creation_status(socket, map_id) do
+    case LicenseManager.license_creation_status(map_id) do
+      :ok ->
+        assign(socket, can_create_license: true, license_unavailable_reason: nil)
+
+      {:error, :no_active_subscription} ->
+        assign(socket,
+          can_create_license: false,
+          license_unavailable_reason: "An active map subscription is required"
+        )
+    end
+  end
+
+  defp license_status_class(true), do: "mt-1 text-green-300/85"
+  defp license_status_class(false), do: "mt-1 text-rose-300/85"
+
+  defp license_expiration(nil), do: "Never"
+  defp license_expiration(expire_at), do: Calendar.strftime(expire_at, "%Y-%m-%d")
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="license-info">
-      <h3 class="text-lg font-semibold mb-4">Map License</h3>
+    <section class="license-info rounded-sm border border-neutral-700/80 bg-neutral-900/30 p-4">
+      <div>
+        <h3 class="text-sm font-medium text-neutral-200">Map license</h3>
+        <p class="mt-1 text-sm leading-5 text-neutral-500">
+          Manage the license used by bot integrations for this map.
+        </p>
+      </div>
 
-      <%= if @loading do %>
-        <div class="flex justify-center py-4">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div :if={@loading} class="mt-4 flex justify-center border-t border-neutral-700/80 py-8">
+        <div class="h-6 w-6 animate-spin rounded-full border-2 border-neutral-700 border-t-sky-400">
         </div>
-      <% else %>
-        <%= if @error do %>
-          <div class="border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <p>{@error}</p>
+      </div>
+
+      <div :if={not @loading} class="mt-4 border-t border-neutral-700/80 pt-4">
+        <div
+          :if={@error}
+          class="mb-4 flex items-start gap-2 rounded-sm border border-rose-800/30 bg-rose-950/15 px-3 py-2 text-xs leading-5 text-rose-200/80"
+        >
+          <.icon name="hero-exclamation-circle-solid" class="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{@error}</p>
+        </div>
+
+        <div :if={@license}>
+          <label class="mb-1.5 block text-xs text-neutral-400">License key</label>
+          <div class="flex h-9 overflow-hidden rounded-sm border border-neutral-700 bg-neutral-950/60">
+            <span class="min-w-0 flex-1 truncate px-3 py-2 font-mono text-sm text-neutral-200">
+              {if @show_key, do: @license.license_key, else: String.duplicate("*", 16)}
+            </span>
+            <button
+              type="button"
+              phx-click="toggle_key_visibility"
+              phx-target={@myself}
+              title={if @show_key, do: "Hide license key", else: "Show license key"}
+              aria-label={if @show_key, do: "Hide license key", else: "Show license key"}
+              class="inline-flex h-full w-9 shrink-0 items-center justify-center border-l border-neutral-700 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-sky-300"
+            >
+              <.icon
+                name={if @show_key, do: "hero-eye-slash-solid", else: "hero-eye-solid"}
+                class="h-4 w-4"
+              />
+            </button>
+            <button
+              type="button"
+              phx-hook="CopyToClipboard"
+              id="copy-key"
+              class="copy-link inline-flex h-full w-9 shrink-0 items-center justify-center border-l border-neutral-700 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-sky-300"
+              data-url={@license.license_key}
+              title="Copy license key"
+              aria-label="Copy license key"
+            >
+              <.icon name="hero-clipboard-document-solid" class="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              phx-click="refresh_license"
+              phx-target={@myself}
+              title="Refresh license"
+              aria-label="Refresh license"
+              class="inline-flex h-full w-9 shrink-0 items-center justify-center border-l border-neutral-700 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-sky-300"
+            >
+              <.icon name="hero-arrow-path-solid" class="h-4 w-4" />
+            </button>
           </div>
-        <% end %>
 
-        <%= if @license do %>
-          <div class="mt-4 p-4 border rounded-md">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <span class="font-medium">License Key:</span>
-                <span class="font-mono bg-gray-800 px-2 py-1 rounded">
-                  {if @show_key,
-                    do: @license.license_key,
-                    else: "••••••••••••••••"}
-                </span>
-                <button
-                  type="button"
-                  phx-click="toggle_key_visibility"
-                  phx-target={@myself}
-                  class="ml-2 btn"
-                >
-                  {if @show_key, do: "Hide", else: "Show"}
-                </button>
-                <.button
-                  phx-hook="CopyToClipboard"
-                  id="copy-key"
-                  class="copy-link btn"
-                  data-url={@license.license_key}
-                >
-                  Copy
-                  <div class="absolute w-[100px] !mr-[-170px] link-copied hidden">
-                    Key copied
-                  </div>
-                </.button>
-                <button
-                  type="button"
-                  phx-click="refresh_license"
-                  phx-target={@myself}
-                  class="ml-2 btn"
-                >
-                  Refresh
-                </button>
-              </div>
+          <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div class="rounded-sm bg-neutral-950/30 px-3 py-2">
+              <span class="text-neutral-500">Status</span>
+              <p class={license_status_class(@license.is_valid)}>
+                {if @license.is_valid, do: "Active", else: "Inactive"}
+              </p>
             </div>
-
-            <div class="mt-3 grid grid-cols-2 gap-2">
-              <div>
-                <span class="font-medium">Status:</span>
-                <span class={(@license.is_valid && "text-green-600") || "text-red-600"}>
-                  {(@license.is_valid && "Active") || "Inactive"}
-                </span>
-              </div>
-
-              <div>
-                <span class="font-medium">Expires:</span>
-                <span>
-                  <%= if @license.expire_at do %>
-                    {Calendar.strftime(@license.expire_at, "%Y-%m-%d")}
-                  <% else %>
-                    Never
-                  <% end %>
-                </span>
-              </div>
-            </div>
-
-            <div class="mt-4 text-sm text-gray-600">
-              <p>
-                This license key allows you to use bot functionality with your map. Keep it secure and do not share it with unauthorized users.
+            <div class="rounded-sm bg-neutral-950/30 px-3 py-2">
+              <span class="text-neutral-500">Expires</span>
+              <p class="mt-1 text-neutral-300">
+                {license_expiration(@license.expire_at)}
               </p>
             </div>
           </div>
-        <% else %>
-          <div class="mt-4 p-4 border rounded-md">
-            <p class="mb-4">No license found for this map.</p>
 
-            <button
+          <p class="mt-4 text-sm leading-5 text-neutral-500">
+            Keep this key secure and do not share it with unauthorized users.
+          </p>
+        </div>
+
+        <div :if={is_nil(@license)}>
+          <div class="flex items-center justify-between gap-6">
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-neutral-300">No license has been created</p>
+              <p class="mt-1 text-sm leading-5 text-neutral-500">
+                Create a license to connect bot integrations to this map.
+              </p>
+            </div>
+
+            <.button
               type="button"
               phx-click="create_license"
               phx-target={@myself}
-              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+              disabled={not @can_create_license}
+              class="inline-flex shrink-0 items-center justify-center gap-2 !rounded-sm !px-4 !py-2"
             >
-              Create License
-            </button>
-
-            <div class="mt-4 text-sm text-gray-600">
-              <p>
-                A license is required to use bot functionality with your map. Creating a license requires an active map subscription.
-              </p>
-            </div>
+              <.icon name="hero-plus-solid" class="h-4 w-4 shrink-0" />
+              <span>Create license</span>
+            </.button>
           </div>
-        <% end %>
-      <% end %>
-    </div>
+
+          <div
+            :if={not @can_create_license}
+            class="mt-3 flex items-start gap-2 rounded-sm border border-amber-800/30 bg-amber-950/15 px-3 py-2 text-xs leading-5 text-amber-200/75"
+          >
+            <.icon name="hero-lock-closed-solid" class="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{@license_unavailable_reason}.</span>
+          </div>
+        </div>
+      </div>
+    </section>
     """
   end
 end

@@ -88,16 +88,14 @@ defmodule WandererAppWeb.CoreComponents do
           >
             <h3 class="p-dialog-header font-bold text-base">
               <div>{@title}</div>
-              <div class="absolute right-4">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="p-link opacity-70 hover:opacity-100"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                type="button"
+                class="p-dialog-header-close p-link opacity-70 hover:opacity-100"
+                aria-label={gettext("close")}
+              >
+                <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+              </button>
             </h3>
             <div id={"#{@id}-content"} class="p-dialog-content !overflow-visible">
               {render_slot(@inner_block)}
@@ -285,6 +283,8 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
   attr(:data, :any, default: nil)
+  attr(:outlined, :boolean, default: true)
+  attr(:severity, :string, default: nil)
   attr(:rest, :global, include: ~w(disabled form name value))
 
   slot(:inner_block, required: true)
@@ -294,7 +294,12 @@ defmodule WandererAppWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 p-button p-component p-button-outlined p-button-sm",
+        "phx-submit-loading:opacity-75 p-button p-component p-button-sm",
+        classes(
+          "p-button-outlined": @outlined,
+          "p-button-warning": @severity == "warning",
+          "p-button-danger": @severity == "error"
+        ),
         @class
       ]}
       data={@data}
@@ -373,13 +378,18 @@ defmodule WandererAppWeb.CoreComponents do
 
   def input(%{type: "checkbox"} = assigns) do
     assigns =
-      assign_new(assigns, :checked, fn ->
+      assigns
+      |> assign_new(:checked, fn ->
         Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
       end)
+      |> assign(:disabled, assigns[:rest][:disabled] || false)
 
     ~H"""
-    <div phx-feedback-for={@name} class="form-control mt-2">
-      <label class="inputContainer" for={@name}>
+    <div
+      phx-feedback-for={@name}
+      class={["form-control mt-2", @disabled && "opacity-50"]}
+    >
+      <label class={["inputContainer", @disabled && "cursor-not-allowed"]} for={@id}>
         <span>{@label}</span>
         <div></div>
         <div class="smallInputSwitch">
@@ -387,10 +397,11 @@ defmodule WandererAppWeb.CoreComponents do
             <div
               class={[
                 "checkboxRoot sizeM p-checkbox p-component",
+                @disabled && "p-disabled",
                 classes("p-highlight": @checked)
               ]}
               data-p-highlight={@checked}
-              data-p-disabled="false"
+              data-p-disabled={to_string(@disabled)}
               data-pc-name="checkbox"
               data-pc-section="root"
             >
@@ -409,7 +420,7 @@ defmodule WandererAppWeb.CoreComponents do
               <div
                 class="p-checkbox-box"
                 data-p-highlight={@checked}
-                data-p-disabled="false"
+                data-p-disabled={to_string(@disabled)}
                 data-pc-section="box"
               >
                 <svg
@@ -431,7 +442,6 @@ defmodule WandererAppWeb.CoreComponents do
                 </svg>
               </div>
             </div>
-            <label for={@name} class="select-none ml-1.5"></label>
           </div>
         </div>
       </label>
@@ -523,7 +533,12 @@ defmodule WandererAppWeb.CoreComponents do
     <label class="form-control w-full" phx-feedback-for={@name}>
       <.label for={@id}><span class="label-text">{@label}</span></.label>
       <div class="join">
-        <input :if={@prefix} class="p-inputtext bg-neutral-700 join-item" disabled value={@prefix} />
+        <input
+          :if={@prefix}
+          class="p-inputtext join-item bg-neutral-700 !rounded-l !rounded-r-none"
+          disabled
+          value={@prefix}
+        />
         <input
           type={@type}
           name={@name}
@@ -716,12 +731,24 @@ defmodule WandererAppWeb.CoreComponents do
   attr(:options, :list, default: [])
   attr(:debounce, :integer, default: nil)
   attr(:update_min_len, :integer, default: nil)
+  attr(:disabled, :boolean, default: false)
   attr(:available_option_class, :string, default: nil)
   attr(:value_mapper, :any, default: nil)
+  # Declared so callers inside a LiveComponent can scope the change/blur events to
+  # themselves. Both are forwarded only when set, so callers that omit them keep
+  # LiveSelect's own defaults (it derives an id from the field name).
+  attr(:id, :string, default: nil)
+  attr(:"phx-target", :any, default: nil)
   slot(:inner_block)
   slot(:option)
 
   def live_select(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    optional_opts =
+      Enum.reject(
+        [id: assigns[:id], "phx-target": assigns[:"phx-target"]],
+        fn {_key, value} -> is_nil(value) end
+      )
+
     assigns =
       assigns
       |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
@@ -734,8 +761,10 @@ defmodule WandererAppWeb.CoreComponents do
           :label_class,
           :input_class,
           :dropdown_extra_class,
-          :option_extra_class
-        ])
+          :option_extra_class,
+          :id,
+          :"phx-target"
+        ]) ++ optional_opts
       )
 
     ~H"""
