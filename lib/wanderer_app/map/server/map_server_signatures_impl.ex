@@ -576,13 +576,13 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
 
       # Update connection time_status and mass_status from signature custom_info
       {signature_time_status, signature_mass_status} =
-        if not is_nil(signature.custom_info) do
+        if is_nil(signature.custom_info) do
+          {nil, nil}
+        else
           case Jason.decode(signature.custom_info) do
             {:ok, decoded} -> {Map.get(decoded, "time_status"), Map.get(decoded, "mass_status")}
             {:error, _} -> {nil, nil}
           end
-        else
-          {nil, nil}
         end
 
       # Update connection ship_size_type from signature wormhole type
@@ -605,7 +605,9 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
               forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
 
               {forward_time_status, forward_mass_status} =
-                if not is_nil(forward_sig.custom_info) do
+                if is_nil(forward_sig.custom_info) do
+                  {signature_time_status, signature_mass_status}
+                else
                   case Jason.decode(forward_sig.custom_info) do
                     {:ok, decoded} ->
                       # Always prefer forward sig values over K162 defaults
@@ -617,8 +619,6 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
                     {:error, _} ->
                       {signature_time_status, signature_mass_status}
                   end
-                else
-                  {signature_time_status, signature_mass_status}
                 end
 
               {forward_time_status, forward_ship_size, forward_mass_status}
@@ -660,14 +660,14 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
             |> then(fn decoded ->
               decoded
               |> then(fn d ->
-                if not is_nil(signature_time_status),
-                  do: Map.put(d, "time_status", signature_time_status),
-                  else: d
+                if is_nil(signature_time_status),
+                  do: d,
+                  else: Map.put(d, "time_status", signature_time_status)
               end)
               |> then(fn d ->
-                if not is_nil(signature_mass_status),
-                  do: Map.put(d, "mass_status", signature_mass_status),
-                  else: d
+                if is_nil(signature_mass_status),
+                  do: d,
+                  else: Map.put(d, "mass_status", signature_mass_status)
               end)
             end)
             |> Jason.encode!()
@@ -697,7 +697,7 @@ defmodule WandererApp.Map.Server.SignaturesImpl do
   def unlink_signature(map_id, signature) do
     with {:ok, source_system} <- MapSystem.by_id(signature.system_id),
          :ok <- if(source_system.map_id == map_id, do: :ok, else: {:error, :not_found}),
-         :ok <- if(not is_nil(signature.linked_system_id), do: :ok, else: {:error, :not_linked}) do
+         :ok <- if(is_nil(signature.linked_system_id), do: {:error, :not_linked}, else: :ok) do
       prev_linked_system_id = signature.linked_system_id
 
       # Clear the signature's linked_system_id using the wrapper for logging before cleaning up target system

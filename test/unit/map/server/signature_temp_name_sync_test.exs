@@ -526,7 +526,8 @@ defmodule WandererApp.Map.Server.SignatureTempNameSyncTest do
       assert hop2_reloaded.temporary_name == "1.1"
 
       # 3. Link return hole K162 (RET-2-1) from Hop2 back to Hop1 (which ALREADY has linked_sig_eve_id == "FWD-H-1"!).
-      # Must NOT overwrite Hop1's linked_sig_eve_id or temporary_name, AND must inherit time_status=1 and mass_status=2 from FWD-1-2!
+      # Must NOT overwrite Hop1's linked_sig_eve_id or temporary_name, AND must inherit
+      # time_status=1 and mass_status=2 from FWD-1-2!
       sig_hop2_return_to_hop1 =
         Factory.insert(:map_system_signature, %{
           system_id: hop2.id,
@@ -626,7 +627,8 @@ defmodule WandererApp.Map.Server.SignatureTempNameSyncTest do
 
       # 1. Player jumped Home -> Hop1 WITHOUT pasting any signatures in Home!
       # In Hop1, player pastes return hole RET-101 ("<") and links it back to Home.
-      # Even though Home has no forward_sig and linked_sig_eve_id is nil, Home must NOT get linked_sig_eve_id="RET-101" or temporary_name="<"!
+      # Even though Home has no forward_sig and linked_sig_eve_id is nil, Home must NOT
+      # get linked_sig_eve_id="RET-101" or temporary_name="<"!
       sig_ret_to_unpasted_home =
         Factory.insert(:map_system_signature, %{
           system_id: hop1_unpasted_from_home.id,
@@ -653,7 +655,8 @@ defmodule WandererApp.Map.Server.SignatureTempNameSyncTest do
       assert home_reloaded.linked_sig_eve_id == nil
       assert home_reloaded.temporary_name == nil
 
-      # 2. Renaming Home's tag to "HQ" must NOT overwrite RET-101's "<" temporary_name even though Home has no forward_sig!
+      # 2. Renaming Home's tag to "HQ" must NOT overwrite RET-101's "<" temporary_name
+      # even though Home has no forward_sig!
       :ok =
         WandererApp.Map.Server.SystemsImpl.update_system_tag(map.id, %{
           solar_system_id: home.solar_system_id,
@@ -707,7 +710,8 @@ defmodule WandererApp.Map.Server.SignatureTempNameSyncTest do
       })
 
       # 4. Simulate SystemSettingsDialog save on Hop2:
-      # Sends update_system_labels (customLabel: "7") followed immediately by update_system_temporary_name (unchanged "1.1").
+      # Sends update_system_labels (customLabel: "7") followed immediately by
+      # update_system_temporary_name (unchanged "1.1").
       # FWD-102's temporary_name must become "7" and NOT be overwritten back to "1.1"!
       :ok =
         WandererApp.Map.Server.SystemsImpl.update_system_labels(map.id, %{
@@ -732,7 +736,8 @@ defmodule WandererApp.Map.Server.SignatureTempNameSyncTest do
 
       assert MapSystemSignature.by_id!(sig_fwd_to_hop2.id).temporary_name == "7"
 
-      # Clearing temporary_name to "" in SystemSettingsDialog while customLabel "7" is set must fall back to "7" (not nil)!
+      # Clearing temporary_name to "" in SystemSettingsDialog while customLabel "7" is set
+      # must fall back to "7" (not nil)!
       :ok =
         WandererApp.Map.Server.SystemsImpl.update_system_temporary_name(map.id, %{
           solar_system_id: hop2.solar_system_id,

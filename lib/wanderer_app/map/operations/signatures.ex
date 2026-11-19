@@ -343,7 +343,9 @@ defmodule WandererApp.Map.Operations.Signatures do
     # Get ship size from wormhole type
     ship_size_type = EVEUtil.get_wh_size(wormhole_type)
 
-    if not is_nil(ship_size_type) do
+    if is_nil(ship_size_type) do
+      :ok
+    else
       case Server.update_connection_ship_size_type(map_id, %{
              solar_system_source_id: source_system_id,
              solar_system_target_id: target_system_id,
@@ -363,8 +365,6 @@ defmodule WandererApp.Map.Operations.Signatures do
 
           {:error, :ship_size_update_failed}
       end
-    else
-      :ok
     end
   end
 

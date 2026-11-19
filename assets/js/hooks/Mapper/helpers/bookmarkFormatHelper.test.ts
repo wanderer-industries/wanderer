@@ -518,6 +518,9 @@ describe('bookmarkFormatHelper', () => {
 
       await applySystemAutoTags(signature, settings, system, outCommandMock);
 
+      const expectedLabelsB = new LabelsManager('');
+      expectedLabelsB.updateCustomLabel('B');
+
       expect(outCommandMock).toHaveBeenCalledTimes(2);
       expect(outCommandMock).toHaveBeenNthCalledWith(1, {
         type: 'update_system_tag',
@@ -527,7 +530,7 @@ describe('bookmarkFormatHelper', () => {
         type: 'update_system_labels',
         data: {
           system_id: 'sys1',
-          value: JSON.stringify({ customLabel: 'B', labels: [''] }),
+          value: expectedLabelsB.toString(),
         },
       });
     });
@@ -550,6 +553,9 @@ describe('bookmarkFormatHelper', () => {
 
       await applySystemAutoTags(signature, settings, system, outCommandMock);
 
+      const expectedLabelsA2 = new LabelsManager('');
+      expectedLabelsA2.updateCustomLabel('A-2');
+
       expect(outCommandMock).toHaveBeenCalledTimes(2);
       expect(outCommandMock).toHaveBeenNthCalledWith(1, {
         type: 'update_system_tag',
@@ -559,7 +565,7 @@ describe('bookmarkFormatHelper', () => {
         type: 'update_system_labels',
         data: {
           system_id: 'sys1',
-          value: JSON.stringify({ customLabel: 'A-2', labels: [''] }),
+          value: expectedLabelsA2.toString(),
         },
       });
     });
@@ -610,6 +616,9 @@ describe('bookmarkFormatHelper', () => {
 
       await applySystemAutoTags(signature, settings, system, outCommandMock);
 
+      const expectedLabels11 = new LabelsManager('');
+      expectedLabels11.updateCustomLabel('1-1');
+
       expect(outCommandMock).toHaveBeenCalledTimes(2);
       expect(outCommandMock).toHaveBeenNthCalledWith(1, {
         type: 'update_system_tag',
@@ -619,7 +628,7 @@ describe('bookmarkFormatHelper', () => {
         type: 'update_system_labels',
         data: {
           system_id: 'sys1',
-          value: JSON.stringify({ customLabel: '1-1', labels: [''] }),
+          value: expectedLabels11.toString(),
         },
       });
     });

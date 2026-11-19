@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCoreEventHandler, MapEventHandler}
 
   def handle_server_event(%{event: :update_connection, payload: connection}, socket),
     do:
