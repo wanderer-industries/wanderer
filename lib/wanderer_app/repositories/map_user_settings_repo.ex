@@ -7,7 +7,10 @@ defmodule WandererApp.MapUserSettingsRepo do
     "delete_connection_with_sigs" => false,
     "primary_character_id" => nil,
     "bookmark_name_format" => "",
+    "bookmark_auto_copy" => true,
+    "bookmark_wormholes_start_at_zero" => false,
     "bookmark_custom_mapping" => %{},
+    "bookmark_auto_temp_name" => "",
     "system_auto_tag" => "",
     "system_custom_label_name" => "",
     "bookmark_return_hole_ignore" => false,
@@ -82,7 +85,9 @@ defmodule WandererApp.MapUserSettingsRepo do
   end
 
   def to_form_data(nil), do: {:ok, @default_form_data}
-  def to_form_data(%{settings: settings} = _user_settings), do: {:ok, Jason.decode!(settings)}
+
+  def to_form_data(%{settings: settings} = _user_settings),
+    do: {:ok, @default_form_data |> Map.merge(Jason.decode!(settings))}
 
   def to_form_data!(user_settings) do
     {:ok, data} = to_form_data(user_settings)

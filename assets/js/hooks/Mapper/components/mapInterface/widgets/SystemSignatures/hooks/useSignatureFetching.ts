@@ -48,13 +48,19 @@ export const useSignatureFetching = ({ systemId, settings, signaturesRef, setSig
 
     const serverSigs = ((resp as GetSignaturesResponse)?.signatures ?? []) as SystemSignature[];
 
+    update(
+      prev => ({
+        systemSignatures: { ...prev.systemSignatures, [`${requestedSystemId}`]: serverSigs },
+      }),
+      true,
+    );
+
     const extended = serverSigs.map(s => ({
       ...s,
       character_name: s.character_name ?? characters.find(c => c.eve_id === s.character_eve_id)?.name,
     })) as ExtendedSystemSignature[];
 
     setSignatures(() => extended);
-    update(prev => ({ systemSignatures: { ...prev.systemSignatures, [systemId]: serverSigs } }), true);
     return extended;
   }, [characters, systemId, outCommand, update, setSignatures]);
 

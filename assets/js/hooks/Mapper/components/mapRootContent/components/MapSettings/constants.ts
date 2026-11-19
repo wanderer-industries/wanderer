@@ -5,9 +5,10 @@ import {
   MiniMapPlacement,
   PingsPlacement,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
-import { SettingsListItem, UserSettingsRemoteProps } from './types.ts';
+import { AutoFormatOption } from '@/hooks/Mapper/types';
+import { SettingsListItem, UserSettings, UserSettingsRemote, UserSettingsRemoteProps } from './types.ts';
 
-export const DEFAULT_REMOTE_SETTINGS = {
+export const DEFAULT_REMOTE_SETTINGS: UserSettingsRemote = {
   [UserSettingsRemoteProps.link_signature_on_splash]: false,
   [UserSettingsRemoteProps.select_on_spash]: false,
   [UserSettingsRemoteProps.delete_connection_with_sigs]: false,
@@ -22,7 +23,7 @@ export const DEFAULT_REMOTE_SETTINGS = {
   [UserSettingsRemoteProps.bookmark_return_hole_symbol]: '',
 };
 
-export const AUTO_FORMAT_OPTIONS = [
+export const AUTO_FORMAT_OPTIONS: { label: string; value: AutoFormatOption }[] = [
   { label: 'Disabled', value: '' },
   { label: 'Numeric index (1, 2, 3)', value: 'index' },
   { label: 'Letter index (A, B, C)', value: 'index_letter' },
@@ -30,7 +31,7 @@ export const AUTO_FORMAT_OPTIONS = [
   { label: 'Letter chain (A, A1, A21)', value: 'chain_index_letters' },
 ];
 
-export const UserSettingsRemoteList = [
+export const UserSettingsRemoteList: (keyof UserSettings)[] = [
   UserSettingsRemoteProps.link_signature_on_splash,
   UserSettingsRemoteProps.select_on_spash,
   UserSettingsRemoteProps.delete_connection_with_sigs,

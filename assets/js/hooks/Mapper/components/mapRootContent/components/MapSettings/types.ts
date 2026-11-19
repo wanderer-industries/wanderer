@@ -1,4 +1,5 @@
 import { InterfaceStoredSettings } from '@/hooks/Mapper/mapRootProvider/types.ts';
+import { AutoFormatOption, BookmarkCustomMapping } from '@/hooks/Mapper/types';
 
 export enum UserSettingsRemoteProps {
   link_signature_on_splash = 'link_signature_on_splash',
@@ -20,12 +21,12 @@ export type UserSettingsRemote = {
   select_on_spash: boolean;
   delete_connection_with_sigs: boolean;
   bookmark_name_format: string;
-  bookmark_custom_mapping?: Record<string, string>;
+  bookmark_custom_mapping?: BookmarkCustomMapping;
   bookmark_wormholes_start_at_zero: boolean;
   bookmark_auto_copy: boolean;
-  bookmark_auto_temp_name: string;
-  system_auto_tag: string;
-  system_custom_label_name: string;
+  bookmark_auto_temp_name: AutoFormatOption;
+  system_auto_tag: AutoFormatOption;
+  system_custom_label_name: AutoFormatOption;
   bookmark_return_hole_ignore: boolean;
   bookmark_return_hole_symbol: string;
 };

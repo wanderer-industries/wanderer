@@ -9,7 +9,14 @@ import {
 import { Connections } from '@/hooks/Mapper/components/mapRootContent/components/Connections';
 import { getSystemById } from '@/hooks/Mapper/helpers';
 import { MapRootData, useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { CommandSelectSystems, OutCommand, OutCommandHandler, SolarSystemConnection } from '@/hooks/Mapper/types';
+import {
+  CommandInit,
+  CommandSelectSystems,
+  OutCommand,
+  OutCommandHandler,
+  SolarSystemConnection,
+} from '@/hooks/Mapper/types';
+import { executeManualConnectionAutoTag } from '@/hooks/Mapper/helpers/bookmarkFormatHelper.ts';
 import { Commands } from '@/hooks/Mapper/types/mapHandlers.ts';
 import isEqual from 'lodash.isequal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -55,6 +62,8 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
       systems,
       linkSignatureToSystem,
       systemSignatures,
+      connections,
+      map_slug,
     },
     storedSettings: { interfaceSettings, settingsLocal, mapSettings, mapSettingsUpdate },
   } = useMapRootState();
@@ -64,7 +73,6 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     isShowKSpace,
     isThickConnections,
     isShowBackgroundPattern,
-    isShowUnsplashedSignatures,
     isSoftBackground,
     theme,
     minimapPlacement,
@@ -90,6 +98,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     systemContextProps,
     systems,
     systemSignatures,
+    connections,
     deleteSystems,
     mapSettingsUpdate,
   });
@@ -99,6 +108,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     systemContextProps,
     systems,
     systemSignatures,
+    connections,
     deleteSystems,
     mapSettingsUpdate,
   };
@@ -107,6 +117,10 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     runCommand(event);
 
     if (event.name === Commands.init) {
+      if ((event.data as CommandInit | undefined)?.reset) {
+        loadedSignaturesMapSlugRef.current = null;
+      }
+
       const { selectedSystems } = ref.current;
       if (selectedSystems.length === 0) {
         return;
@@ -143,13 +157,28 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
   }, []);
 
   const handleCommand: OutCommandHandler = useCallback(
-    event => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (event: any): Promise<any> => {
       switch (event.type) {
         case OutCommand.openSettings:
           // TODO - need fix it
           // @ts-ignore
           setOpenSettings(event.data.system_id);
           break;
+        case OutCommand.manualAddConnection: {
+          const { source, target } = event.data;
+          const addConnPromise = outCommand(event);
+
+          void executeManualConnectionAutoTag({
+            source,
+            target,
+            addConnPromise,
+            outCommand,
+            getMapState: () => ref.current,
+          });
+
+          return addConnPromise;
+        }
         default:
           return outCommand(event);
       }
@@ -240,7 +269,7 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
 
       setOpenPing({ type, solar_system_id });
     },
-    [],
+    [outCommand],
   );
 
   const handleCustomLabelDialog = useCallback(() => {
@@ -260,14 +289,22 @@ export const MapWrapper = ({ onShowJumpPlanner }: MapWrapperProps) => {
     handleDeleteSelected();
   });
 
+  const loadedSignaturesMapSlugRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const { systemSignatures, systems } = ref.current;
-    if (!isShowUnsplashedSignatures || Object.keys(systemSignatures).length !== 0 || systems?.length === 0) {
+    const { systems } = ref.current;
+    if (!systems || systems.length === 0) {
       return;
     }
 
+    const currentMapKey = map_slug || '__default__';
+    if (loadedSignaturesMapSlugRef.current === currentMapKey) {
+      return;
+    }
+
+    loadedSignaturesMapSlugRef.current = currentMapKey;
     outCommand({ type: OutCommand.loadSignatures, data: {} });
-  }, [isShowUnsplashedSignatures, systems]);
+  }, [map_slug, outCommand, systems]);
 
   const { showMinimap, minimapPosition, minimapClasses } = useMemo(() => {
     const rawPlacement = minimapPlacement == null ? MiniMapPlacement.rightBottom : minimapPlacement;

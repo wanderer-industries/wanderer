@@ -4,9 +4,10 @@ import { Dialog } from 'primereact/dialog';
 import { useCallback, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useMapRootState } from '@/hooks/Mapper/mapRootProvider';
-import { OutCommand, UserPermission } from '@/hooks/Mapper/types';
+import { GetUserSettingsResponse, OutCommand, UserPermission } from '@/hooks/Mapper/types';
 import {
   CONNECTIONS_CHECKBOXES_PROPS,
+  DEFAULT_REMOTE_SETTINGS,
   DOTLAN_BEHAVIOR_SETTING,
   SIGNATURES_CHECKBOXES_PROPS,
   SYSTEMS_CHECKBOXES_PROPS,
@@ -41,14 +42,13 @@ export const MapSettingsComp = ({ visible, onHide }: MapSettingsProps) => {
   refVars.current = { outCommand, onHide, visible };
 
   const handleShow = useCallback(async () => {
-    // TODO: need fix it - add type?
-    // @ts-ignore
-    const { user_settings } = await refVars.current.outCommand({
+    const res = await refVars.current.outCommand<GetUserSettingsResponse>({
       type: OutCommand.getUserSettings,
       data: null,
     });
     setUserRemoteSettings({
-      ...user_settings,
+      ...DEFAULT_REMOTE_SETTINGS,
+      ...res?.user_settings,
     });
   }, [setUserRemoteSettings]);
 

@@ -3,7 +3,7 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
   use Phoenix.Component
   require Logger
 
-  alias WandererAppWeb.{MapEventHandler, MapCoreEventHandler}
+  alias WandererAppWeb.{MapCoreEventHandler, MapEventHandler}
 
   def handle_server_event(%{event: :update_connection, payload: connection}, socket),
     do:
@@ -70,7 +70,17 @@ defmodule WandererAppWeb.MapConnectionsEventHandler do
       solar_system_target_id: solar_system_target_id_int
     })
 
-    {:noreply, socket}
+    connection_type =
+      case WandererApp.Map.find_connection(
+             map_id,
+             solar_system_source_id_int,
+             solar_system_target_id_int
+           ) do
+        {:ok, %{type: type}} -> type
+        _ -> nil
+      end
+
+    {:reply, %{connection_type: connection_type}, socket}
   end
 
   def handle_ui_event(

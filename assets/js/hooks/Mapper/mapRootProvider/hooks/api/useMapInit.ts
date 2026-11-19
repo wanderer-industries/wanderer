@@ -63,6 +63,8 @@ export const useMapInit = () => {
 
       if (system_signatures) {
         updateData.systemSignatures = system_signatures;
+      } else if (props.reset) {
+        updateData.systemSignatures = {};
       }
 
       if (detailed_kills) {

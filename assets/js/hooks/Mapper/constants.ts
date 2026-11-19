@@ -78,17 +78,17 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'Hi-Sec',
     value: 'hs',
-    whClassName: 'A641',
+    whClassName: 'B274',
   },
   {
     label: 'Low-Sec',
     value: 'ls',
-    whClassName: 'J377',
+    whClassName: 'A239',
   },
   {
     label: 'Null-Sec',
     value: 'ns',
-    whClassName: 'C248',
+    whClassName: 'E545',
   },
   {
     label: 'C1',
@@ -113,12 +113,12 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'C5',
     value: 'c5',
-    whClassName: 'L614',
+    whClassName: 'H900',
   },
   {
     label: 'C6',
     value: 'c6',
-    whClassName: 'G008',
+    whClassName: 'U574',
   },
   {
     label: 'C13',
@@ -128,7 +128,7 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'Thera',
     value: 'thera',
-    whClassName: 'F353',
+    whClassName: 'F135',
   },
   {
     label: 'Pochven',
@@ -143,7 +143,7 @@ export const ALL_DEST_TYPES: DestinationType[] = [
   {
     label: 'C4/C5',
     value: 'c4_c5',
-    whClassName: 'Z457_L614',
+    whClassName: 'Z457_H900',
   },
 ];
 

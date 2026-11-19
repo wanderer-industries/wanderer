@@ -1,13 +1,21 @@
 import { useMapSettings } from '../MapSettingsProvider';
-import { UserSettingsRemoteProps } from '../types';
+import { UserSettings, UserSettingsRemoteProps } from '../types';
 import { InputText } from 'primereact/inputtext';
 import { WdButton } from '@/hooks/Mapper/components/ui-kit';
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { formatBookmarkName } from '@/hooks/Mapper/helpers/bookmarkFormatHelper';
-import { SignatureGroup, SignatureKind, SystemSignature } from '@/hooks/Mapper/types';
+import {
+  BookmarkCustomMapping,
+  BookmarkCustomMappingKey,
+  BookmarkFormatVariable,
+  SignatureGroup,
+  SignatureKind,
+  SystemSignature,
+  WormholeDataRaw,
+} from '@/hooks/Mapper/types';
 import { MassState, TimeStatus } from '@/hooks/Mapper/types/connection';
 
-const EMPTY_MAPPING: Record<string, string> = {};
+const EMPTY_MAPPING: BookmarkCustomMapping = {};
 
 const DUMMY_SIG_BASE: SystemSignature = {
   eve_id: 'ABC-123',
@@ -20,7 +28,7 @@ const DUMMY_SIG_BASE: SystemSignature = {
   custom_info: '',
 };
 
-const VARIABLES = [
+const VARIABLES: { id: BookmarkFormatVariable; desc: string }[] = [
   { id: '{index}', desc: 'Numeric index (e.g., 1, 2, 3)' },
   { id: '{index_letter}', desc: 'Letter index (e.g., A, B, C)' },
   { id: '{chain_index}', desc: 'Numeric chain path (e.g., 11, 12, 121)' },
@@ -43,14 +51,20 @@ const VARIABLES = [
   { id: '{spawn_type}', desc: 'Spawn type for outgoing wormholes (e.g., Static, Wandering)' },
 ];
 
-interface CustomMappingInputProps {
-  mappingKey: string;
+type CustomMappingOption = {
+  key: BookmarkCustomMappingKey;
   label: string;
   defaultVal: string;
-  savedMapping: Record<string, string>;
-  localMapping: Record<string, string>;
-  setLocalMapping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  updateSetting: (prop: any, value: any) => void;
+};
+
+interface CustomMappingInputProps {
+  mappingKey: BookmarkCustomMappingKey;
+  label: string;
+  defaultVal: string;
+  savedMapping: BookmarkCustomMapping;
+  localMapping: BookmarkCustomMapping;
+  setLocalMapping: React.Dispatch<React.SetStateAction<BookmarkCustomMapping>>;
+  updateSetting: (prop: keyof UserSettings, value: boolean | string | BookmarkCustomMapping) => Promise<void> | void;
 }
 
 const CustomMappingInput = ({
@@ -64,31 +78,37 @@ const CustomMappingInput = ({
 }: CustomMappingInputProps) => {
   const value = localMapping[mappingKey] !== undefined ? localMapping[mappingKey] : defaultVal;
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalMapping(prev => {
-      const newMapping = { ...prev };
-      newMapping[mappingKey] = e.target.value;
-      return newMapping;
-    });
-  }, [mappingKey, setLocalMapping]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalMapping(prev => {
+        const newMapping = { ...prev };
+        newMapping[mappingKey] = e.target.value;
+        return newMapping;
+      });
+    },
+    [mappingKey, setLocalMapping],
+  );
 
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    
-    const newMapping = { ...localMapping };
-    if (val === defaultVal) {
-      delete newMapping[mappingKey];
-    } else {
-      newMapping[mappingKey] = val;
-    }
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const val = e.target.value;
 
-    setLocalMapping(newMapping);
+      const newMapping = { ...localMapping };
+      if (val === defaultVal) {
+        delete newMapping[mappingKey];
+      } else {
+        newMapping[mappingKey] = val;
+      }
 
-    const savedVal = savedMapping[mappingKey] !== undefined ? savedMapping[mappingKey] : defaultVal;
-    if (val !== savedVal) {
-      updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
-    }
-  }, [mappingKey, defaultVal, savedMapping, localMapping, setLocalMapping, updateSetting]);
+      setLocalMapping(newMapping);
+
+      const savedVal = savedMapping[mappingKey] !== undefined ? savedMapping[mappingKey] : defaultVal;
+      if (val !== savedVal) {
+        updateSetting(UserSettingsRemoteProps.bookmark_custom_mapping, newMapping);
+      }
+    },
+    [mappingKey, defaultVal, savedMapping, localMapping, setLocalMapping, updateSetting],
+  );
 
   return (
     <div className="flex flex-col gap-1 w-[120px]">
@@ -104,7 +124,7 @@ const CustomMappingInput = ({
   );
 };
 
-const TIME_OPTIONS = [
+const TIME_OPTIONS: CustomMappingOption[] = [
   { key: 'time_1h', label: '1 Hour', defaultVal: '1H' },
   { key: 'time_4h', label: '4 Hours', defaultVal: '4H' },
   { key: 'time_4h30m', label: '4.5 Hours', defaultVal: '4.5H' },
@@ -113,26 +133,26 @@ const TIME_OPTIONS = [
   { key: 'time_48h', label: '48 Hours', defaultVal: '' },
 ];
 
-const MASS_OPTIONS = [
+const MASS_OPTIONS: CustomMappingOption[] = [
   { key: 'mass_normal', label: 'Normal Mass', defaultVal: '' },
   { key: 'mass_half', label: 'Destab', defaultVal: 'Destab' },
   { key: 'mass_verge', label: 'Critical', defaultVal: 'Crit' },
 ];
 
-const OTHER_OPTIONS = [{ key: 'chain_separator', label: 'Chain Separator', defaultVal: '' }];
+const OTHER_OPTIONS: CustomMappingOption[] = [{ key: 'chain_separator', label: 'Chain Separator', defaultVal: '' }];
 
-const DIRECTION_OPTIONS = [
+const DIRECTION_OPTIONS: CustomMappingOption[] = [
   { key: 'direction_outgoing', label: 'Outgoing', defaultVal: 'Out' },
   { key: 'direction_incoming', label: 'Incoming (K162)', defaultVal: 'In' },
 ];
 
-const SPAWN_OPTIONS = [
+const SPAWN_OPTIONS: CustomMappingOption[] = [
   { key: 'spawn_static', label: 'Static', defaultVal: 'Static' },
   { key: 'spawn_wandering', label: 'Wandering', defaultVal: 'Wandering' },
   { key: 'spawn_k162', label: 'K162 (Incoming)', defaultVal: 'K162' },
 ];
 
-const SIZE_OPTIONS = [
+const SIZE_OPTIONS: CustomMappingOption[] = [
   { key: 'size_small', label: 'Small (Frigate)', defaultVal: 'S' },
   { key: 'size_medium', label: 'Medium', defaultVal: 'M' },
   { key: 'size_large', label: 'Large', defaultVal: '' },
@@ -141,7 +161,7 @@ const SIZE_OPTIONS = [
   { key: 'size_k162_unknown', label: 'Unknown (K162)', defaultVal: '' },
 ];
 
-const CLASS_OPTIONS = [
+const CLASS_OPTIONS: CustomMappingOption[] = [
   { key: 'class_c1', label: 'Class 1', defaultVal: 'C1' },
   { key: 'class_c2', label: 'Class 2', defaultVal: 'C2' },
   { key: 'class_c3', label: 'Class 3', defaultVal: 'C3' },
@@ -191,6 +211,7 @@ export const BookmarkNameFormatSetting = () => {
       custom_info: JSON.stringify({
         time_status: TimeStatus._1h,
         mass_status: MassState.verge,
+        bookmark_index: currentIndex,
         bookmark_index_chained: chainNum,
         bookmark_index_chained_letters: chainLet,
       }),
@@ -207,12 +228,12 @@ export const BookmarkNameFormatSetting = () => {
       }),
     };
 
-    const dummyWormholesData = {
+    const dummyWormholesData: Record<string, Partial<WormholeDataRaw>> = {
       V283: {
         total_mass: 3300000000,
         max_mass_per_jump: 62000000,
         dest: ['hs'],
-      } as any,
+      },
     };
 
     return formatBookmarkName(
@@ -236,25 +257,28 @@ export const BookmarkNameFormatSetting = () => {
     }
   }, [localFormat, formatStr, updateSetting]);
 
-  const insertVariable = useCallback((variable: string) => {
-    const input = inputRef.current;
-    if (input) {
-      const start = input.selectionStart || 0;
-      const end = input.selectionEnd || 0;
-      const newFormat = localFormat.substring(0, start) + variable + localFormat.substring(end);
-      setLocalFormat(newFormat);
-      updateSetting(UserSettingsRemoteProps.bookmark_name_format, newFormat);
+  const insertVariable = useCallback(
+    (variable: string) => {
+      const input = inputRef.current;
+      if (input) {
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        const newFormat = localFormat.substring(0, start) + variable + localFormat.substring(end);
+        setLocalFormat(newFormat);
+        updateSetting(UserSettingsRemoteProps.bookmark_name_format, newFormat);
 
-      setTimeout(() => {
-        input.focus();
-        input.setSelectionRange(start + variable.length, start + variable.length);
-      }, 0);
-    } else {
-      const newFormat = localFormat + variable;
-      setLocalFormat(newFormat);
-      updateSetting(UserSettingsRemoteProps.bookmark_name_format, newFormat);
-    }
-  }, [localFormat, updateSetting]);
+        setTimeout(() => {
+          input.focus();
+          input.setSelectionRange(start + variable.length, start + variable.length);
+        }, 0);
+      } else {
+        const newFormat = localFormat + variable;
+        setLocalFormat(newFormat);
+        updateSetting(UserSettingsRemoteProps.bookmark_name_format, newFormat);
+      }
+    },
+    [localFormat, updateSetting],
+  );
 
   const resetToDefault = useCallback(() => {
     const defaultFormat = '{chain_index} {sig_letters} {dest_type} {size} {mass_status} {time_status}';
@@ -262,7 +286,7 @@ export const BookmarkNameFormatSetting = () => {
     updateSetting(UserSettingsRemoteProps.bookmark_name_format, defaultFormat);
   }, [updateSetting]);
 
-  const renderCustomMappingInputs = (options: { key: string; label: string; defaultVal: string }[]) => {
+  const renderCustomMappingInputs = (options: CustomMappingOption[]) => {
     return options.map(opt => (
       <CustomMappingInput
         key={opt.key}

@@ -5,6 +5,7 @@ import {
   CommandRemoveSystems,
   CommandUpdateSystems,
   CommandLinkSignatureToSystem,
+  SystemSignature,
 } from '@/hooks/Mapper/types';
 import { useLoadSystemStatic } from '@/hooks/Mapper/mapRootProvider/hooks/useLoadSystemStatic.ts';
 import { OutCommand } from '@/hooks/Mapper/types/mapHandlers.ts';
@@ -59,7 +60,10 @@ export const useCommandsSystems = () => {
         return current;
       }
 
-      return newSystem;
+      return {
+        ...newSystem,
+        system_static_info: newSystem.system_static_info ?? current.system_static_info,
+      };
     });
 
     update({ systems: out }, true);
@@ -69,16 +73,18 @@ export const useCommandsSystems = () => {
 
   const updateSystemSignatures = useCallback(
     async (systemId: string) => {
-      const { update, systemSignatures } = ref.current;
+      const { update } = ref.current;
 
-      // TODO need to fix it
-      // @ts-ignore
-      const { signatures } = await outCommand({
+      const { signatures } = await outCommand<{ signatures: SystemSignature[] }>({
         type: OutCommand.getSignatures,
         data: { system_id: `${systemId}` },
       });
-      const out = { ...systemSignatures, [`${systemId}`]: signatures };
-      update({ systemSignatures: out }, true);
+      update(
+        prev => ({
+          systemSignatures: { ...prev.systemSignatures, [`${systemId}`]: signatures },
+        }),
+        true,
+      );
     },
     [outCommand],
   );

@@ -182,6 +182,67 @@ export type CommandPingBlocked = {
   message: string;
 };
 
+export type AutoFormatOption = '' | 'index' | 'index_letter' | 'chain_index' | 'chain_index_letters';
+
+export type BookmarkCustomMappingKey =
+  | 'time_1h'
+  | 'time_4h'
+  | 'time_4h30m'
+  | 'time_16h'
+  | 'time_24h'
+  | 'time_48h'
+  | 'mass_normal'
+  | 'mass_half'
+  | 'mass_verge'
+  | 'chain_separator'
+  | 'direction_outgoing'
+  | 'direction_incoming'
+  | 'spawn_static'
+  | 'spawn_wandering'
+  | 'spawn_k162'
+  | 'size_small'
+  | 'size_medium'
+  | 'size_large'
+  | 'size_freight'
+  | 'size_capital'
+  | 'size_k162_unknown'
+  | 'class_c1'
+  | 'class_c2'
+  | 'class_c3'
+  | 'class_c4'
+  | 'class_c5'
+  | 'class_c6'
+  | 'class_c13'
+  | 'class_c1c2c3'
+  | 'class_c4c5'
+  | 'class_hs'
+  | 'class_ls'
+  | 'class_ns'
+  | 'class_thera'
+  | 'class_pochven'
+  | 'class_drifter';
+
+export type BookmarkCustomMapping = Partial<Record<BookmarkCustomMappingKey, string>>;
+
+export type BookmarkFormatVariable =
+  | '{index}'
+  | '{chain_index}'
+  | '{index_letter}'
+  | '{chain_index_letters}'
+  | '{sig_letters}'
+  | '{sig}'
+  | '{dest_type}'
+  | '{dest_class_index}'
+  | '{size}'
+  | '{mass}'
+  | '{type}'
+  | '{time_status}'
+  | '{mass_status}'
+  | '{temporary_name}'
+  | '{description}'
+  | '{direction}'
+  | '{spawn_type}';
+
 export interface UserSettings {
   primaryCharacterId?: string;
   mapSettings?: {
@@ -194,8 +255,24 @@ export interface UserSettings {
     showMinimap?: boolean;
     showMenu?: boolean;
   };
+  link_signature_on_splash?: boolean;
+  select_on_spash?: boolean;
+  delete_connection_with_sigs?: boolean;
+  bookmark_name_format?: string;
+  bookmark_custom_mapping?: BookmarkCustomMapping;
+  bookmark_wormholes_start_at_zero?: boolean;
+  bookmark_auto_copy?: boolean;
+  bookmark_auto_temp_name?: AutoFormatOption | null;
+  system_auto_tag?: AutoFormatOption | null;
+  system_custom_label_name?: AutoFormatOption | null;
+  bookmark_return_hole_ignore?: boolean | null;
+  bookmark_return_hole_symbol?: string | null;
   [key: string]: unknown;
 }
+
+export type GetUserSettingsResponse = {
+  user_settings?: UserSettings;
+};
 
 export interface CommandData {
   [Commands.init]: CommandInit;

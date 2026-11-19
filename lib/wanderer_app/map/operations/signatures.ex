@@ -343,7 +343,9 @@ defmodule WandererApp.Map.Operations.Signatures do
     # Get ship size from wormhole type
     ship_size_type = EVEUtil.get_wh_size(wormhole_type)
 
-    if not is_nil(ship_size_type) do
+    if is_nil(ship_size_type) do
+      :ok
+    else
       case Server.update_connection_ship_size_type(map_id, %{
              solar_system_source_id: source_system_id,
              solar_system_target_id: target_system_id,
@@ -363,8 +365,6 @@ defmodule WandererApp.Map.Operations.Signatures do
 
           {:error, :ship_size_update_failed}
       end
-    else
-      :ok
     end
   end
 
@@ -488,141 +488,9 @@ defmodule WandererApp.Map.Operations.Signatures do
       )
       when is_integer(solar_system_target) do
     with {:ok, signature} <- MapSystemSignature.by_id(sig_id),
-         {:ok, source_system} <- MapSystem.by_id(signature.system_id),
-         true <- source_system.map_id == map_id,
-         target_system when not is_nil(target_system) <-
-           WandererApp.Map.find_system_by_location(map_id, %{solar_system_id: solar_system_target}) do
-      # Update signature group to Wormhole and set linked_system_id
-      {:ok, updated_signature} =
-        signature
-        |> MapSystemSignature.update_group!(%{group: "Wormhole"})
-        |> MapSystemSignature.update_linked_system(%{linked_system_id: solar_system_target})
-
-      # Update target system if it has no linked signature or is already linked to the same signature
-      if is_nil(target_system.linked_sig_eve_id) or
-           target_system.linked_sig_eve_id == signature.eve_id do
-        # Set the target system's linked_sig_eve_id
-        Server.update_system_linked_sig_eve_id(map_id, %{
-          solar_system_id: solar_system_target,
-          linked_sig_eve_id: signature.eve_id
-        })
-
-        # Copy temporary_name if present
-        if not is_nil(signature.temporary_name) do
-          Server.update_system_temporary_name(map_id, %{
-            solar_system_id: solar_system_target,
-            temporary_name: signature.temporary_name
-          })
-        end
-
-        # Update connection time_status and mass_status from signature custom_info
-        {signature_time_status, signature_mass_status} =
-          if not is_nil(signature.custom_info) do
-            case Jason.decode(signature.custom_info) do
-              {:ok, decoded} -> {Map.get(decoded, "time_status"), Map.get(decoded, "mass_status")}
-              {:error, _} -> {nil, nil}
-            end
-          else
-            {nil, nil}
-          end
-
-        # Update connection ship_size_type from signature wormhole type
-        signature_ship_size_type = EVEUtil.get_wh_size(signature.type)
-
-        # Back-link detection: if current signature yields no ship_size_type (e.g., K162),
-        # look for a forward signature in the target system that links back to our source
-        {signature_time_status, signature_ship_size_type, signature_mass_status} =
-          if is_nil(signature_ship_size_type) do
-            case Server.SignaturesImpl.find_forward_signature(
-                   target_system.id,
-                   source_system.solar_system_id
-                 ) do
-              nil ->
-                {signature_time_status, signature_ship_size_type, signature_mass_status}
-
-              forward_sig ->
-                Logger.info(
-                  "[link_signature] Back-link detected: " <>
-                    "using forward sig type=#{forward_sig.type} from target system"
-                )
-
-                forward_ship_size = EVEUtil.get_wh_size(forward_sig.type)
-
-                {forward_time_status, forward_mass_status} =
-                  if not is_nil(forward_sig.custom_info) do
-                    case Jason.decode(forward_sig.custom_info) do
-                      {:ok, decoded} ->
-                        # Always prefer forward sig values over K162 defaults
-                        fwd_time = Map.get(decoded, "time_status") || signature_time_status
-                        fwd_mass = Map.get(decoded, "mass_status") || signature_mass_status
-
-                        {fwd_time, fwd_mass}
-
-                      {:error, _} ->
-                        {signature_time_status, signature_mass_status}
-                    end
-                  else
-                    {signature_time_status, signature_mass_status}
-                  end
-
-                {forward_time_status, forward_ship_size, forward_mass_status}
-            end
-          else
-            {signature_time_status, signature_ship_size_type, signature_mass_status}
-          end
-
-        if not is_nil(signature_time_status) do
-          Server.update_connection_time_status(map_id, %{
-            solar_system_source_id: source_system.solar_system_id,
-            solar_system_target_id: solar_system_target,
-            time_status: signature_time_status
-          })
-        end
-
-        if not is_nil(signature_ship_size_type) do
-          Server.update_connection_ship_size_type(map_id, %{
-            solar_system_source_id: source_system.solar_system_id,
-            solar_system_target_id: solar_system_target,
-            ship_size_type: signature_ship_size_type
-          })
-        end
-
-        if not is_nil(signature_mass_status) do
-          Server.update_connection_mass_status(map_id, %{
-            solar_system_source_id: source_system.solar_system_id,
-            solar_system_target_id: solar_system_target,
-            mass_status: signature_mass_status
-          })
-        end
-
-        # Update K162's custom_info to match the resolved connection values
-        if not is_nil(signature_time_status) or not is_nil(signature_mass_status) do
-          updated_custom_info =
-            (signature.custom_info || "{}")
-            |> Jason.decode!()
-            |> then(fn decoded ->
-              decoded
-              |> then(fn d ->
-                if not is_nil(signature_time_status),
-                  do: Map.put(d, "time_status", signature_time_status),
-                  else: d
-              end)
-              |> then(fn d ->
-                if not is_nil(signature_mass_status),
-                  do: Map.put(d, "mass_status", signature_mass_status),
-                  else: d
-              end)
-            end)
-            |> Jason.encode!()
-
-          MapSystemSignature.update(signature, %{custom_info: updated_custom_info})
-        end
-      end
-
-      # Broadcast update
-      Server.Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
-
-      # Return the updated signature
+         {:ok, updated_signature} <-
+           Server.SignaturesImpl.link_signature(map_id, signature, solar_system_target),
+         {:ok, source_system} <- MapSystem.by_id(signature.system_id) do
       result =
         updated_signature
         |> Map.from_struct()
@@ -639,6 +507,9 @@ defmodule WandererApp.Map.Operations.Signatures do
 
       {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :not_found}
+
+      {:error, reason} ->
+        {:error, reason}
 
       err ->
         Logger.error("[link_signature] Unexpected error: #{inspect(err)}")
@@ -657,25 +528,9 @@ defmodule WandererApp.Map.Operations.Signatures do
   @spec unlink_signature(Plug.Conn.t(), String.t()) :: {:ok, map()} | {:error, atom()}
   def unlink_signature(%{assigns: %{map_id: map_id}} = _conn, sig_id) do
     with {:ok, signature} <- MapSystemSignature.by_id(sig_id),
-         {:ok, source_system} <- MapSystem.by_id(signature.system_id),
-         :ok <- if(source_system.map_id == map_id, do: :ok, else: {:error, :not_found}),
-         :ok <- if(not is_nil(signature.linked_system_id), do: :ok, else: {:error, :not_linked}) do
-      # Clear the target system's linked_sig_eve_id
-      Server.update_system_linked_sig_eve_id(map_id, %{
-        solar_system_id: signature.linked_system_id,
-        linked_sig_eve_id: nil
-      })
-
-      # Clear the signature's linked_system_id using the wrapper for logging
-      {:ok, updated_signature} =
-        Server.SignaturesImpl.update_signature_linked_system(signature, %{
-          linked_system_id: nil
-        })
-
-      # Broadcast update
-      Server.Impl.broadcast!(map_id, :signatures_updated, source_system.solar_system_id)
-
-      # Return the updated signature
+         {:ok, updated_signature} <-
+           Server.SignaturesImpl.unlink_signature(map_id, signature),
+         {:ok, source_system} <- MapSystem.by_id(signature.system_id) do
       result =
         updated_signature
         |> Map.from_struct()
@@ -692,6 +547,9 @@ defmodule WandererApp.Map.Operations.Signatures do
 
       {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :not_found}
+
+      {:error, reason} ->
+        {:error, reason}
 
       err ->
         Logger.error("[unlink_signature] Unexpected error: #{inspect(err)}")
