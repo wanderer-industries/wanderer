@@ -24,6 +24,16 @@ defmodule WandererApp.Api.MapTest do
     :ok
   end
 
+  describe "new action owner validation" do
+    test "rejects a map without an owner" do
+      assert {:error, %Ash.Error.Invalid{}} =
+               Map.new(%{
+                 name: "Ownerless Map",
+                 slug: "ownerless-map-#{System.unique_integer([:positive])}"
+               })
+    end
+  end
+
   describe "create action with sse_enabled" do
     setup do
       user = insert(:user)

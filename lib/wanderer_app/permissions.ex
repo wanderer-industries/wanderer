@@ -29,12 +29,14 @@ defmodule WandererApp.Permissions do
                    @delete_system
                  ]
   @manager_role @member_role ++ [@lock_system, @manage_map]
-  @admin_role @manager_role ++ [@add_acl, @delete_acl, @delete_map, @admin_map]
+  @admin_role @manager_role ++ [@add_acl, @delete_acl, @admin_map]
+  @map_owner_role @admin_role ++ [@delete_map]
 
   @viewer_role_mask @viewer_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
   @member_role_mask @member_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
   @manager_role_mask @manager_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
   @admin_role_mask @admin_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
+  @map_owner_role_mask @map_owner_role |> Enum.reduce(0, fn x, acc -> x ||| acc end)
 
   def role_mask(nil), do: 0
   def role_mask(:viewer), do: @viewer_role_mask
@@ -64,7 +66,7 @@ defmodule WandererApp.Permissions do
   def get_map_permissions(user_permissions, owner_id, user_character_ids) do
     case owner_id in user_character_ids do
       true ->
-        role_mask(:admin) |> get_permissions()
+        @map_owner_role_mask |> get_permissions()
 
       _ ->
         get_permissions(user_permissions)
@@ -94,6 +96,7 @@ defmodule WandererApp.Permissions do
   def check_characters_access(characters, acls) do
     character_ids = characters |> Enum.map(& &1.id)
     character_eve_ids = characters |> Enum.map(& &1.eve_id)
+    owns_access_list? = Enum.any?(acls, &(&1.owner_id in character_ids))
 
     character_corporation_ids =
       characters |> Enum.map(& &1.corporation_id) |> Enum.map(&to_string/1)
@@ -191,6 +194,9 @@ defmodule WandererApp.Permissions do
     case result do
       [_, -1] ->
         [-1]
+
+      _ when owns_access_list? ->
+        [role_mask(:admin)]
 
       [-1, char_acc] ->
         [char_acc]

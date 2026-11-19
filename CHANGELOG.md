@@ -2,6 +2,33 @@
 
 <!-- changelog -->
 
+## [v1.105.0](https://github.com/wanderer-industries/wanderer/compare/v1.104.6...v1.105.0) (2026-11-19)
+
+
+
+
+### Features:
+
+* Map: Add kills notification
+
+* Map: Added "WANDERER_SYSTEM_CUSTOM_LABEL_MAX_LENGTH" by default is 5;
+
+* Design: Updated design for Fractured Skies
+
+* maps: Redesign map cards, tables, and view preferences
+
+* Characters: Was added new Characters Page with fully reworked functional and added additional view for card (same like in eve on login screen). Old page still here - this will be removed later.
+
+* discord: deliver per-map kill notifications to Discord webhooks
+
+### Bug Fixes:
+
+* secure Discord notification settings
+
+* harden Discord delivery and shared cooldowns
+
+* validate webhook settings and reject stale delivery outcomes
+
 ## [v1.104.6](https://github.com/wanderer-industries/wanderer/compare/v1.104.5...v1.104.6) (2026-11-15)
 
 

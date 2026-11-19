@@ -41,9 +41,13 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
     data: { systemSignatures, systems, wormholesData, connections },
   } = useMapRootState();
 
-  const handleShow = async () => {};
-
   const signatureForm = useForm<Partial<SystemSignaturePrepared>>({});
+
+  const { setFocus } = signatureForm;
+
+  const handleShow = useCallback(() => {
+    setFocus('description');
+  }, [setFocus]);
 
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
@@ -153,7 +157,12 @@ export const SignatureSettings = ({ systemId, show, onHide, signatureData }: Map
                     name="description"
                     control={signatureForm.control}
                     render={({ field }) => (
-                      <InputText placeholder="Type description" value={field.value} onChange={field.onChange} />
+                      <InputText
+                        placeholder="Type description"
+                        ref={field.ref}
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     )}
                   />
                 </label>

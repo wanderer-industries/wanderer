@@ -3,6 +3,7 @@ import {
   DotlanBehavior,
   InterfaceStoredSettings,
   JumpPlannerSettings,
+  KillNotificationScope,
   KillsWidgetSettings,
   LocalWidgetSettings,
   MapSettings,
@@ -13,6 +14,9 @@ import {
   RoutesType,
 } from '@/hooks/Mapper/mapRootProvider/types.ts';
 import { DEFAULT_WIDGETS, STORED_VISIBLE_WIDGETS_DEFAULT } from '@/hooks/Mapper/components/mapInterface/constants.tsx';
+
+export const DEFAULT_KILL_NOTIFICATION_SCOPES = Object.values(KillNotificationScope);
+export const DEFAULT_KILL_NOTIFICATION_TOAST_LIFETIME_SECONDS = 0;
 
 export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   isShowMenu: false,
@@ -26,6 +30,11 @@ export const STORED_INTERFACE_DEFAULT_VALUES: InterfaceStoredSettings = {
   minimapPlacement: MiniMapPlacement.rightBottom,
   hideBookmarkWarning: false,
   dotlanBehavior: DotlanBehavior.system,
+  killActivityNotifications: false,
+  killActivitySounds: false,
+  killActivityExcludedSystems: [],
+  killActivityScopes: DEFAULT_KILL_NOTIFICATION_SCOPES,
+  killActivityToastLifetimeSeconds: DEFAULT_KILL_NOTIFICATION_TOAST_LIFETIME_SECONDS,
 };
 
 export const DEFAULT_ROUTES_SETTINGS: RoutesType = {

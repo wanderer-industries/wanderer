@@ -1,0 +1,1 @@
+export { applyPageCharactersSettingsMigrations } from './applyMigrations';

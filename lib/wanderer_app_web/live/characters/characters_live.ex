@@ -5,8 +5,17 @@ defmodule WandererAppWeb.CharactersLive do
 
   alias BetterNumber, as: Number
 
-  def mount(_params, %{"user_id" => user_id} = _session, socket)
-      when not is_nil(user_id) do
+  @impl true
+  def mount(params, session, socket) do
+    if WandererApp.Env.legacy_characters_page_enabled?() do
+      mount_legacy_page(params, session, socket)
+    else
+      {:ok, redirect(socket, to: ~p"/characters")}
+    end
+  end
+
+  defp mount_legacy_page(_params, %{"user_id" => user_id} = _session, socket)
+       when not is_nil(user_id) do
     {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
 
     characters
@@ -30,6 +39,16 @@ defmodule WandererAppWeb.CharactersLive do
       :ok = WandererApp.Character.TrackerManager.start_tracking(character_id)
     end)
 
+    if connected?(socket) do
+      :ok =
+        WandererApp.Character.TrackerManager.register_consumer(
+          Enum.map(characters, & &1.id),
+          {:characters_page, self()},
+          :slow,
+          self()
+        )
+    end
+
     {:ok,
      socket
      |> assign(
@@ -41,8 +60,7 @@ defmodule WandererAppWeb.CharactersLive do
      )}
   end
 
-  @impl true
-  def mount(_params, _session, socket) do
+  defp mount_legacy_page(_params, _session, socket) do
     {:ok, socket |> assign(characters: [], user_id: nil)}
   end
 
@@ -172,10 +190,31 @@ defmodule WandererAppWeb.CharactersLive do
 
   @impl true
   def handle_info(
+        {:character_tracking_updated, _character_id},
+        %{assigns: %{user_id: user_id}} = socket
+      )
+      when not is_nil(user_id) do
+    {:ok, characters} = WandererApp.Api.Character.active_by_user(%{user_id: user_id})
+
+    {:noreply,
+     socket
+     |> assign(
+       characters: characters |> Enum.sort_by(& &1.name, :asc) |> Enum.map(&map_ui_character/1)
+     )}
+  end
+
+  @impl true
+  def handle_info(
         _event,
         socket
       ) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def terminate(_reason, _socket) do
+    WandererApp.Character.TrackerManager.unregister_consumer({:characters_page, self()})
+    :ok
   end
 
   defp apply_action(socket, :index, _params) do

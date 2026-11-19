@@ -182,77 +182,77 @@ export const PingsInterface = ({ hasLeftOffset }: PingsInterfaceProps) => {
             >
               <div className="flex gap-3">
                 <i className={clsx('pi text-yellow-500 text-2xl', 'relative top-[2px]', ICONS[ping.type])}></i>
-              <div className="flex flex-col gap-1 w-full">
-                <div className="flex justify-between">
-                  <div>
-                    <div className="m-0 font-semibold text-base text-white">{TITLES[ping.type]}</div>
+                <div className="flex flex-col gap-1 w-full">
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="m-0 font-semibold text-base text-white">{TITLES[ping.type]}</div>
 
-                    <div className="flex gap-1 items-center">
-                      {isShowSelectedSystem && (
-                        <>
-                          <SystemView systemId={selectedSystem} />
-                          <span className="pi pi-angle-double-right text-[10px] relative top-[1px] text-stone-400" />
-                        </>
-                      )}
-                      <SystemView systemId={ping.solar_system_id} />
-                      {isShowSelectedSystem && (
-                        <WdImgButton
-                          className={clsx(PrimeIcons.QUESTION_CIRCLE, 'ml-[2px] relative top-[-2px] !text-[10px]')}
-                          tooltip={{
-                            position: TooltipPosition.top,
-                            content: (
-                              <div className="flex flex-col gap-1">
-                                The settings for the route are taken from the Routes settings and can be configured
-                                through them.
-                              </div>
-                            ),
-                          }}
-                        />
-                      )}
+                      <div className="flex gap-1 items-center">
+                        {isShowSelectedSystem && (
+                          <>
+                            <SystemView systemId={selectedSystem} />
+                            <span className="pi pi-angle-double-right text-[10px] relative top-[1px] text-stone-400" />
+                          </>
+                        )}
+                        <SystemView systemId={ping.solar_system_id} />
+                        {isShowSelectedSystem && (
+                          <WdImgButton
+                            className={clsx(PrimeIcons.QUESTION_CIRCLE, 'ml-[2px] relative top-[-2px] !text-[10px]')}
+                            tooltip={{
+                              position: TooltipPosition.top,
+                              content: (
+                                <div className="flex flex-col gap-1">
+                                  The settings for the route are taken from the Routes settings and can be configured
+                                  through them.
+                                </div>
+                              ),
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <CharacterCardById className="" characterId={ping.character_eve_id} simpleMode />
+                      <TimeAgo timestamp={ping.inserted_at.toString()} className="text-stone-400 text-[11px]" />
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <CharacterCardById className="" characterId={ping.character_eve_id} simpleMode />
-                    <TimeAgo timestamp={ping.inserted_at.toString()} className="text-stone-400 text-[11px]" />
-                  </div>
+
+                  {selectedSystem != null && <PingRoute />}
+
+                  <p className="m-0 text-[13px] text-stone-200 min-h-[20px] pr-[16px]">{message.detail}</p>
                 </div>
 
-                {selectedSystem != null && <PingRoute />}
-
-                <p className="m-0 text-[13px] text-stone-200 min-h-[20px] pr-[16px]">{message.detail}</p>
-              </div>
-
-              <WdImgButton
-                className={clsx(PrimeIcons.TIMES, 'hover:text-red-400 mt-[3px]')}
-                tooltip={CLOSE_TOOLTIP_PROPS}
-                onClick={handleClickHide}
-              />
-            </div>
-
-            {/*Button bar*/}
-            <div className="flex justify-end items-center gap-2 h-0 relative top-[-8px]">
-              <WdImgButton
-                className={clsx('pi-compass', 'hover:text-red-400 mt-[3px]')}
-                tooltip={NAVIGATE_TOOLTIP_PROPS}
-                onClick={navigateTo}
-              />
-
-              {/*@ts-ignore*/}
-              <div ref={cfRef}>
                 <WdImgButton
-                  className={clsx('pi-trash', 'text-red-400 hover:text-red-300')}
-                  tooltip={DELETE_TOOLTIP_PROPS}
-                  onClick={cfShow}
+                  className={clsx(PrimeIcons.TIMES, 'hover:text-red-400 mt-[3px]')}
+                  tooltip={CLOSE_TOOLTIP_PROPS}
+                  onClick={handleClickHide}
                 />
               </div>
-              {/* TODO ADD solar system menu*/}
-              {/*<WdImgButton*/}
-              {/*  className={clsx('pi-map-marker', 'hover:text-red-400 mt-[3px]')}*/}
-              {/*  tooltip={TOOLTIP_WAYPOINT_PROPS}*/}
-              {/*  onClick={handleClickHide}*/}
-              {/*/>*/}
-            </div>
-          </section>
+
+              {/*Button bar*/}
+              <div className="flex justify-end items-center gap-2 h-0 relative top-[-8px]">
+                <WdImgButton
+                  className={clsx('pi-compass', 'hover:text-red-400 mt-[3px]')}
+                  tooltip={NAVIGATE_TOOLTIP_PROPS}
+                  onClick={navigateTo}
+                />
+
+                {/*@ts-ignore*/}
+                <div ref={cfRef}>
+                  <WdImgButton
+                    className={clsx('pi-trash', 'text-red-400 hover:text-red-300')}
+                    tooltip={DELETE_TOOLTIP_PROPS}
+                    onClick={cfShow}
+                  />
+                </div>
+                {/* TODO ADD solar system menu*/}
+                {/*<WdImgButton*/}
+                {/*  className={clsx('pi-map-marker', 'hover:text-red-400 mt-[3px]')}*/}
+                {/*  tooltip={TOOLTIP_WAYPOINT_PROPS}*/}
+                {/*  onClick={handleClickHide}*/}
+                {/*/>*/}
+              </div>
+            </section>
           )}
         ></Toast>
       )}
