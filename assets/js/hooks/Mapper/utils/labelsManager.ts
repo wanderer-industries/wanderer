@@ -1,6 +1,7 @@
 export type LabelsType = {
   customLabel: string;
   labels: string[];
+  drifterOut?: boolean;
 };
 
 export class LabelsManager {
@@ -8,6 +9,7 @@ export class LabelsManager {
   protected parsedLabels: LabelsType = {
     labels: [],
     customLabel: '',
+    drifterOut: false,
   };
   constructor(labels: string) {
     this.labelsRaw = labels;
@@ -16,13 +18,23 @@ export class LabelsManager {
 
   parse(): LabelsType {
     try {
-      return JSON.parse(this.labelsRaw) as LabelsType;
+      const parsed = JSON.parse(this.labelsRaw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return {
+          customLabel: typeof parsed.customLabel === 'string' ? parsed.customLabel : '',
+          labels: Array.isArray(parsed.labels) ? parsed.labels.filter(Boolean) : [],
+          drifterOut: Boolean(parsed.drifterOut),
+        };
+      }
     } catch (err) {
-      return {
-        customLabel: '',
-        labels: this.labelsRaw.split(','),
-      };
+      // Fallback for empty or legacy comma-separated labels
     }
+
+    return {
+      customLabel: '',
+      labels: this.labelsRaw ? this.labelsRaw.split(',').filter(Boolean) : [],
+      drifterOut: false,
+    };
   }
 
   parse2(): LabelsType {
@@ -30,6 +42,7 @@ export class LabelsManager {
       return {
         labels: [],
         customLabel: '',
+        drifterOut: false,
       };
     }
 
@@ -37,6 +50,7 @@ export class LabelsManager {
     return {
       labels: labels.split(','),
       customLabel: customLabel ?? '',
+      drifterOut: false,
     };
   }
 
@@ -78,6 +92,14 @@ export class LabelsManager {
 
   clearLabels() {
     this.parsedLabels.labels = [];
+  }
+
+  toggleDrifterOut() {
+    this.parsedLabels.drifterOut = !this.parsedLabels.drifterOut;
+  }
+
+  get drifterOut() {
+    return Boolean(this.parsedLabels.drifterOut);
   }
 
   get customLabel() {

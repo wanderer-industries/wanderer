@@ -31,6 +31,7 @@ export interface SolarSystemNodeVars {
   tag?: string | null;
   status?: number;
   labelsInfo: LabelInfo[];
+  isDrifterOut: boolean;
   dbClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   sortedStatics: Array<string | number>;
   effectName: string | null;
@@ -133,7 +134,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
 
   const linkedSigPrefix = useMemo(() => (linkedSigEveId ? linkedSigEveId.split('-')[0] : null), [linkedSigEveId]);
 
-  const { labelsInfo, labelCustom } = useLabelsInfo({
+  const { labelsInfo, labelCustom, isDrifterOut } = useLabelsInfo({
     labels,
     linkedSigPrefix,
     isShowLinkedSigId,
@@ -199,6 +200,7 @@ export const useSolarSystemNode = (props: NodeProps<MapSolarSystemType>): SolarS
     tag,
     status,
     labelsInfo,
+    isDrifterOut,
     dbClick,
     sortedStatics,
     effectName: effect_name,

@@ -14,6 +14,7 @@ import { WormholeClassComp } from '@/hooks/Mapper/components/map/components/Worm
 import { UnsplashedSignatureColumn } from '@/hooks/Mapper/components/map/components/UnsplashedSignature';
 import { TooltipSize } from '@/hooks/Mapper/components/ui-kit/WdTooltipWrapper/utils.ts';
 import { TooltipPosition, WdTooltipWrapper } from '@/hooks/Mapper/components/ui-kit';
+import { BattleshipIcon } from '@/hooks/Mapper/icons';
 import { Tag } from 'primereact/tag';
 import { LocalCounter } from '@/hooks/Mapper/components/map/components/LocalCounter';
 import { KillsCounter } from '@/hooks/Mapper/components/map/components/KillsCounter';
@@ -143,6 +144,15 @@ export const SolarSystemNodeDefault = memo((props: NodeProps<MapSolarSystemType>
 
               <div className="flex items-center gap-0.5 justify-end">
                 <div className={classes.StatusIcons}>
+                  {nodeVars.isDrifterOut && (
+                    <WdTooltipWrapper
+                      className={classes.descriptionIconWrapper}
+                      position={TooltipPosition.top}
+                      content="Drifter is out"
+                    >
+                      <BattleshipIcon className={classes.descriptionIcon} />
+                    </WdTooltipWrapper>
+                  )}
                   {nodeVars.locked && <i className={clsx(PrimeIcons.LOCK, classes.lockIcon)} />}
                   {nodeVars.hubs.includes(nodeVars.solarSystemId) && (
                     <i className={clsx(PrimeIcons.MAP_MARKER, classes.mapMarker)} />
