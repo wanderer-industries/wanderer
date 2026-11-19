@@ -9,7 +9,7 @@ defmodule WandererApp.Repo.Migrations.AddMassToMapChainPassages do
 
   def up do
     alter table(:maps_v1) do
-      modify :scopes, {:array, :text}, default: '{wormholes}'
+      modify :scopes, {:array, :text}, default: ~c"{wormholes}"
     end
 
     alter table(:map_chain_passages_v1) do
