@@ -385,10 +385,7 @@ defmodule WandererAppWeb.CoreComponents do
       |> assign(:disabled, assigns[:rest][:disabled] || false)
 
     ~H"""
-    <div
-      phx-feedback-for={@name}
-      class={["form-control mt-2", @disabled && "opacity-50"]}
-    >
+    <div phx-feedback-for={@name} class={["form-control mt-2", @disabled && "opacity-50"]}>
       <label class={["inputContainer", @disabled && "cursor-not-allowed"]} for={@id}>
         <span>{@label}</span>
         <div></div>

@@ -81,7 +81,9 @@ jobs:
           echo "$output" > compile_output.txt
 
           # Count warnings
-          warning_count=$(echo "$output" | grep -c "warning:" || echo "0")
+          # grep -c prints 0 and exits 1 when nothing matches; `|| echo "0"`
+          # would add a second 0 and break $GITHUB_OUTPUT.
+          warning_count=$(echo "$output" | grep -c "warning:" || true)
 
           # Check if compilation succeeded
           if mix compile > /dev/null 2>&1; then
@@ -182,12 +184,11 @@ jobs:
         if: always()
         id: coverage
         run: |
-          # Generate coverage report with GitHub format
-          output=$(mix coveralls.github 2>&1 || true)
-          echo "$output" > coverage_output.txt
-
-          # Extract coverage percentage
-          coverage=$(echo "$output" | grep -o '[0-9]\+\.[0-9]\+%' | head -1 | sed 's/%//' || echo "0")
+          # The test step ran the suite with --cover, and ExCoveralls printed
+          # the total there ("[TOTAL]  30.7%"). Read it instead of running
+          # the whole suite again with `mix coveralls.github`, which without
+          # a token uploads nothing and prints no percentage.
+          coverage=$(grep -o '^\[TOTAL\] *[0-9.]*%' test_output.txt 2>/dev/null | grep -o '[0-9.]\+' | tail -1 || true)
           if [ -z "$coverage" ]; then
             coverage="0"
           fi
@@ -215,13 +216,15 @@ jobs:
           # Try to parse JSON output
           if echo "$output" | jq . > /dev/null 2>&1; then
             issues=$(echo "$output" | jq '.issues | length' 2>/dev/null || echo "0")
-            high_issues=$(echo "$output" | jq '.issues | map(select(.priority == "high")) | length' 2>/dev/null || echo "0")
-            normal_issues=$(echo "$output" | jq '.issues | map(select(.priority == "normal")) | length' 2>/dev/null || echo "0")
-            low_issues=$(echo "$output" | jq '.issues | map(select(.priority == "low")) | length' 2>/dev/null || echo "0")
+            # Credo reports priorities as numbers: high is 10 and up (with
+            # "higher" above 19), normal 0 to 9, low below 0.
+            high_issues=$(echo "$output" | jq '.issues | map(select(.priority >= 10)) | length' 2>/dev/null || echo "0")
+            normal_issues=$(echo "$output" | jq '.issues | map(select(.priority >= 0 and .priority < 10)) | length' 2>/dev/null || echo "0")
+            low_issues=$(echo "$output" | jq '.issues | map(select(.priority < 0)) | length' 2>/dev/null || echo "0")
           else
             # Fallback: try to count issues from regular output
             regular_output=$(mix credo --strict 2>&1 || true)
-            issues=$(echo "$regular_output" | grep -c "┃" || echo "0")
+            issues=$(echo "$regular_output" | grep -c "┃" || true)
             high_issues="0"
             normal_issues="0"
             low_issues="0"
@@ -254,8 +257,10 @@ jobs:
           echo "$output" > dialyzer_output.txt
 
           # Count warnings and errors
-          warnings=$(echo "$output" | grep -c "warning:" || echo "0")
-          errors=$(echo "$output" | grep -c "error:" || echo "0")
+          # grep -c prints 0 and exits 1 when nothing matches; `|| echo "0"`
+          # would add a second 0 and break $GITHUB_OUTPUT.
+          warnings=$(echo "$output" | grep -c "warning:" || true)
+          errors=$(echo "$output" | grep -c "error:" || true)
 
           echo "warnings=$warnings" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
