@@ -133,44 +133,27 @@ defmodule WandererApp.Esi.ApiClient do
          end
        end)}
 
-  @decorate cacheable(
-              cache: Cache,
-              key: "group-info-#{group_id}",
-              opts: [ttl: @ttl]
-            )
-  def get_group_info(group_id, opts),
-    do:
-      do_get(
-        "/universe/groups/#{group_id}/",
-        opts,
-        @cache_opts
-      )
-
-  @decorate cacheable(
-              cache: Cache,
-              key: "type-info-#{type_id}",
-              opts: [ttl: @ttl]
-            )
-  def get_type_info(type_id, opts),
-    do:
-      do_get(
-        "/universe/types/#{type_id}/",
-        opts,
-        @cache_opts
-      )
-
+  # Types and groups come from the SDE API (WandererApp.Sde.ApiClient):
+  # ESI dropped its static-data /universe routes on the 2026-11-19
+  # compatibility date. /universe/names is not static data and stays, so
+  # station names are resolved through it.
   @decorate cacheable(
               cache: Cache,
               key: "station-info-#{station_id}",
               opts: [ttl: @ttl]
             )
-  def get_station_info(station_id, opts),
-    do:
-      do_get(
-        "/universe/stations/#{station_id}/",
-        opts,
-        @cache_opts
-      )
+  def get_station_info(station_id, _opts) do
+    case do_post_esi("/universe/names/", json: [station_id]) do
+      {:ok, [%{"id" => ^station_id, "name" => name} | _]} ->
+        {:ok, %{"station_id" => station_id, "name" => name}}
+
+      {:ok, _names} ->
+        {:error, :not_found}
+
+      error ->
+        error
+    end
+  end
 
   @decorate cacheable(
               cache: Cache,

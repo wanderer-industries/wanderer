@@ -1,6 +1,7 @@
 defmodule WandererApp.CachedInfo do
   require Logger
 
+  alias WandererApp.Sde
   alias WandererAppWeb.Helpers.APIUtils
 
   def run(_arg) do
@@ -44,7 +45,7 @@ defmodule WandererApp.CachedInfo do
         {:ok, ship_type}
 
       {:ok, nil} ->
-        case WandererApp.Esi.get_type_info(type_id) do
+        case Sde.ApiClient.get_type(type_id) do
           {:ok, info} when not is_nil(info) ->
             ship_type = parse_type(type_id, info)
             {:ok, group_info} = get_group_info(ship_type.group_id)
@@ -66,11 +67,14 @@ defmodule WandererApp.CachedInfo do
              ])}
 
           {:error, reason} ->
-            Logger.error("Failed to get ship_type #{type_id} from ESI: #{inspect(reason)}")
+            Logger.error(
+              "Failed to get ship_type #{type_id} from the SDE API: #{inspect(reason)}"
+            )
+
             {:ok, nil}
 
           error ->
-            Logger.error("Failed to get ship_type #{type_id} from ESI: #{inspect(error)}")
+            Logger.error("Failed to get ship_type #{type_id} from the SDE API: #{inspect(error)}")
             {:ok, nil}
         end
     end
@@ -79,16 +83,16 @@ defmodule WandererApp.CachedInfo do
   def get_group_info(nil), do: {:ok, nil}
 
   def get_group_info(group_id) do
-    case WandererApp.Esi.get_group_info(group_id) do
+    case Sde.ApiClient.get_group(group_id) do
       {:ok, info} when not is_nil(info) ->
         {:ok, parse_group(group_id, info)}
 
       {:error, reason} ->
-        Logger.error("Failed to get group_info #{group_id} from ESI: #{inspect(reason)}")
+        Logger.error("Failed to get group_info #{group_id} from the SDE API: #{inspect(reason)}")
         {:ok, %{group_name: ""}}
 
       error ->
-        Logger.error("Failed to get group_info #{group_id} from ESI: #{inspect(error)}")
+        Logger.error("Failed to get group_info #{group_id} from the SDE API: #{inspect(error)}")
         {:ok, %{group_name: ""}}
     end
   end
@@ -210,19 +214,20 @@ defmodule WandererApp.CachedInfo do
     end
   end
 
+  # SDE API records: camelCase ids, text fields localized by language.
   defp parse_group(group_id, group) do
     %{
       group_id: group_id,
-      group_name: Map.get(group, "name")
+      group_name: Sde.ApiClient.localized(group, "name")
     }
   end
 
   defp parse_type(type_id, type) do
     %{
       type_id: type_id,
-      name: Map.get(type, "name"),
-      description: Map.get(type, "description"),
-      group_id: Map.get(type, "group_id"),
+      name: Sde.ApiClient.localized(type, "name"),
+      description: Sde.ApiClient.localized(type, "description"),
+      group_id: Map.get(type, "groupID"),
       mass: "#{Map.get(type, "mass")}",
       capacity: "#{Map.get(type, "capacity")}",
       volume: "#{Map.get(type, "volume")}"
