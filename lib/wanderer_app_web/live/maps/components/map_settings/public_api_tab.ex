@@ -68,7 +68,7 @@ defmodule WandererAppWeb.Maps.MapSettings.PublicApiTab do
 
         <div class={[
           "mt-3 border-t border-neutral-700/80 pt-1",
-          (not @sse_enabled and not @sse_can_enable) && "opacity-60"
+          not @sse_enabled and not @sse_can_enable && "opacity-60"
         ]}>
           <.input
             id="map-sse-enabled"

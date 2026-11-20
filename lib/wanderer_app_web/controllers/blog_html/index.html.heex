@@ -2,15 +2,19 @@
 
 <section class="relative min-h-dvh w-full overflow-hidden text-stone-100">
   <canvas id="bg-canvas"></canvas>
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_28%_45%,rgba(0,0,0,0.82)_0,rgba(0,0,0,0.52)_25%,transparent_55%)]"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_28%_45%,rgba(0,0,0,0.82)_0,rgba(0,0,0,0.52)_25%,transparent_55%)]">
+  </div>
 
   <div class="relative z-10 mx-auto min-h-dvh w-full max-w-[1480px] px-5 py-4 sm:px-9">
     <.welcome_navigation />
 
     <div class="mt-8 grid gap-8 lg:mt-0 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-[minmax(360px,0.72fr)_minmax(0,1.28fr)] lg:items-center">
       <section class="relative max-w-xl py-6 lg:pl-10">
-        <div class="absolute -left-3 top-0 h-full w-px bg-gradient-to-b from-transparent via-orange-200/60 to-transparent"></div>
-        <div class="font-mono text-[9px] uppercase tracking-[0.36em] text-orange-200/75">Shared navigation // New Eden</div>
+        <div class="absolute -left-3 top-0 h-full w-px bg-gradient-to-b from-transparent via-orange-200/60 to-transparent">
+        </div>
+        <div class="font-mono text-[9px] uppercase tracking-[0.36em] text-orange-200/75">
+          Shared navigation // New Eden
+        </div>
         <h1 class="mb-0 mt-5 text-5xl font-semibold leading-[0.88] tracking-[-0.055em] text-white [text-shadow:0_4px_24px_rgba(0,0,0,1)] sm:text-7xl">
           WANDERER.<br />W-SPACE.<br />LIVE INTEL.
         </h1>
@@ -19,9 +23,12 @@
         </p>
 
         <div :if={@invite_token_valid} class="mt-8">
-          <div class="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-stone-200/80">Authorize via EVE SSO / ESI</div>
+          <div class="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-stone-200/80">
+            Authorize via EVE SSO / ESI
+          </div>
           <div class="login-accent-glow group relative h-[44px] w-[224px] overflow-hidden rounded p-px text-white">
-            <div class="animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#d8a36a_20deg,transparent_120deg)] group-hover:bg-[#d8a36a]"></div>
+            <div class="animate-rotate absolute inset-0 h-full w-full rounded-full bg-[conic-gradient(#d8a36a_20deg,transparent_120deg)] group-hover:bg-[#d8a36a]">
+            </div>
             <div class="relative z-20 flex h-[40px] w-[220px] items-center justify-center rounded bg-black">
               <.link navigate={~p"/auth/eve?invite=#{@invite_token}"} class="opacity-100">
                 <img
@@ -37,9 +44,17 @@
 
       <section class="relative lg:translate-y-10">
         <div class="mb-4 flex items-center justify-between border-b border-white/25 px-3 py-3">
-          <span class="font-mono text-[11px] uppercase tracking-[0.26em] text-stone-100">Latest guides &amp; news</span>
-          <.link navigate={~p"/news"} class="group font-mono text-[11px] uppercase tracking-[0.2em] text-orange-200 transition hover:text-white">
-            All news <span class="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+          <span class="font-mono text-[11px] uppercase tracking-[0.26em] text-stone-100">
+            Latest guides &amp; news
+          </span>
+          <.link
+            navigate={~p"/news"}
+            class="group font-mono text-[11px] uppercase tracking-[0.2em] text-orange-200 transition hover:text-white"
+          >
+            All news
+            <span class="inline-block transition-transform group-hover:translate-x-1">
+              &rarr;
+            </span>
           </.link>
         </div>
 
@@ -50,8 +65,13 @@
                 [first, second] -> {first, second}
                 [first] -> {"Update", first}
               end %>
-            <.link navigate={~p"/news/#{post.id}"} class="group grid grid-cols-[36px_minmax(0,1fr)] gap-3 border-b border-white/20 bg-black/25 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur-[2px] backdrop-brightness-[0.65] backdrop-saturate-[0.75] transition hover:bg-black/35 hover:backdrop-brightness-[0.55] sm:even:translate-y-8">
-              <span class="font-mono text-[11px] text-orange-200">{String.pad_leading(Integer.to_string(index), 2, "0")}</span>
+            <.link
+              navigate={~p"/news/#{post.id}"}
+              class="group grid grid-cols-[36px_minmax(0,1fr)] gap-3 border-b border-white/20 bg-black/25 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur-[2px] backdrop-brightness-[0.65] backdrop-saturate-[0.75] transition hover:bg-black/35 hover:backdrop-brightness-[0.55] sm:even:translate-y-8"
+            >
+              <span class="font-mono text-[11px] text-orange-200">
+                {String.pad_leading(Integer.to_string(index), 2, "0")}
+              </span>
               <span class="min-w-0">
                 <span class="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-300">
                   <span class="truncate">{post_type}</span>
@@ -59,7 +79,9 @@
                     {post.date |> Calendar.strftime("%d %b %Y") |> String.upcase()}
                   </span>
                 </span>
-                <span class="mt-2 block truncate text-[17px] font-medium text-white [text-shadow:0_2px_8px_rgba(0,0,0,1)] group-hover:text-orange-100">{post_title}</span>
+                <span class="mt-2 block truncate text-[17px] font-medium text-white [text-shadow:0_2px_8px_rgba(0,0,0,1)] group-hover:text-orange-100">
+                  {post_title}
+                </span>
               </span>
             </.link>
           <% end %>
@@ -68,18 +90,47 @@
     </div>
 
     <div class="absolute bottom-16 left-9 hidden items-baseline gap-4 font-mono text-[9px] uppercase tracking-[0.2em] text-stone-300 xl:flex">
-      <span class="shrink-0 whitespace-nowrap text-[10px] leading-none tracking-[0.22em] text-orange-200/80">Mapper activity <span class="text-white/30">//</span></span>
-      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.online_users}</strong> users online</span>
-      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.online_characters}</strong> characters online</span>
-      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.registered_characters}</strong> registered</span>
-      <span class="whitespace-nowrap leading-none"><strong class="mr-1 inline-block text-sm font-medium leading-none text-white">{@public_stats.created_maps}</strong> maps</span>
+      <span class="shrink-0 whitespace-nowrap text-[10px] leading-none tracking-[0.22em] text-orange-200/80">
+        Mapper activity <span class="text-white/30">//</span>
+      </span>
+      <span class="whitespace-nowrap leading-none">
+        <strong class="mr-1 inline-block text-sm font-medium leading-none text-white">
+          {@public_stats.online_users}
+        </strong>
+        users online
+      </span>
+      <span class="whitespace-nowrap leading-none">
+        <strong class="mr-1 inline-block text-sm font-medium leading-none text-white">
+          {@public_stats.online_characters}
+        </strong>
+        characters online
+      </span>
+      <span class="whitespace-nowrap leading-none">
+        <strong class="mr-1 inline-block text-sm font-medium leading-none text-white">
+          {@public_stats.registered_characters}
+        </strong>
+        registered
+      </span>
+      <span class="whitespace-nowrap leading-none">
+        <strong class="mr-1 inline-block text-sm font-medium leading-none text-white">
+          {@public_stats.created_maps}
+        </strong>
+        maps
+      </span>
     </div>
 
     <div class="mt-8 flex flex-col gap-3 border-t border-white/20 py-3 text-xs text-stone-200/80 lg:absolute lg:inset-x-9 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-center lg:justify-between">
       <a target="_blank" rel="noopener noreferrer" href="https://www.eveonline.com/partners">
-        <img src="/images/eo_pp.png" class="w-[155px] opacity-80" alt="EVE Online Partnership Program" />
+        <img
+          src="/images/eo_pp.png"
+          class="w-[155px] opacity-80"
+          alt="EVE Online Partnership Program"
+        />
       </a>
-      <span>EVE related materials belong to <span class="text-orange-200">Fenris Creations</span> // Wanderer Industries {Date.utc_today().year}</span>
+      <span>
+        EVE related materials belong to <span class="text-orange-200">Fenris Creations</span>
+        // Wanderer Industries {Date.utc_today().year}
+      </span>
     </div>
   </div>
 </section>

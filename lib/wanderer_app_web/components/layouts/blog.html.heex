@@ -4,11 +4,14 @@
   class="main relative flex-col !min-h-screen justify-between flex z-0 overflow-x-hidden focus:outline-none transition-all duration-500 opacity-0 phx-page-loading:opacity-0 bg-stone-950 ccp-font"
   phx-mounted={JS.remove_class("opacity-0")}
 >
-  <navbar :if={!welcome_page} class={[
-    "navbar top-0 z-50 bg-base-100 bg-opacity-0",
-    welcome_page && "!absolute !left-4 !top-4 !min-h-0 !w-auto !p-0 sm:!left-7",
-    !welcome_page && "!sticky"
-  ]}>
+  <navbar
+    :if={!welcome_page}
+    class={[
+      "navbar top-0 z-50 bg-base-100 bg-opacity-0",
+      welcome_page && "!absolute !left-4 !top-4 !min-h-0 !w-auto !p-0 sm:!left-7",
+      !welcome_page && "!sticky"
+    ]}
+  >
     <div class="navbar-start">
       <div class="dropdown">
         <div
@@ -17,7 +20,8 @@
           aria-label="Open navigation"
           class={[
             "btn btn-ghost btn-circle text-white",
-            welcome_page && "!h-10 !min-h-10 !w-10 rounded-none border border-white/15 bg-black/55 shadow-[0_12px_35px_rgba(0,0,0,0.35)] backdrop-blur-[1px] hover:border-orange-200/50 hover:bg-black/75 hover:text-orange-100"
+            welcome_page &&
+              "!h-10 !min-h-10 !w-10 rounded-none border border-white/15 bg-black/55 shadow-[0_12px_35px_rgba(0,0,0,0.35)] backdrop-blur-[1px] hover:border-orange-200/50 hover:bg-black/75 hover:text-orange-100"
           ]}
         >
           <svg
@@ -39,7 +43,8 @@
           tabindex="0"
           class={[
             "menu menu-sm dropdown-content z-[1] mt-3 w-52 p-2 shadow",
-            welcome_page && "rounded-none border border-white/15 bg-black/90 text-stone-200 shadow-[0_18px_50px_rgba(0,0,0,0.55)] backdrop-blur-sm",
+            welcome_page &&
+              "rounded-none border border-white/15 bg-black/90 text-stone-200 shadow-[0_18px_50px_rgba(0,0,0,0.55)] backdrop-blur-sm",
             !welcome_page && "rounded-box bg-base-100"
           ]}
         >
