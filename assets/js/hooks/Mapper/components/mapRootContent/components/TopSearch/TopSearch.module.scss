@@ -109,7 +109,7 @@
 
   &.selected {
     border-color: v.$pastel-pink;
-    box-shadow: 0 0 10px #9a1af1c2;
+    box-shadow: var(--selected-system-shadow);
   }
 
   &.rally {
@@ -123,48 +123,48 @@
       z-index: -1;
 
       border-color: v.$neon-color-1;
-      background: repeating-linear-gradient(
+      background: var(--eve-solar-system-status-rally, repeating-linear-gradient(
           45deg,
           v.$neon-color-3 0px,
           v.$neon-color-3 8px,
           transparent 8px,
-          transparent 21px
-      );
+          transparent 21px));
+
       background-size: 30px 30px;
       animation: move-stripes 3s linear infinite;
     }
   }
 
   &.eve-system-status-home {
-    background-image: linear-gradient(45deg, var(--eve-solar-system-status-color-background), transparent);
+    background-image: var(--eve-solar-system-status-home);
     &.selected {
       border-color: var(--eve-solar-system-status-color-home);
     }
   }
 
   &.eve-system-status-friendly {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-friendly-dark30), transparent);
+    background-image: var(--eve-solar-system-status-friendly);
     &.selected {
       border-color: var(--eve-solar-system-status-color-friendly-dark5);
     }
   }
 
   &.eve-system-status-lookingFor {
-    background-image: linear-gradient(275deg, #45ff8f2f, #457fff2f);
+    background-image: var(--eve-solar-system-status-lookingFor);
     &.selected {
       border-color: v.$pastel-pink;
     }
   }
 
   &.eve-system-status-warning {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-warning), transparent);
+    background-image: var(--eve-solar-system-status-warning);
   }
 
   &.eve-system-status-dangerous {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-dangerous), transparent);
+    background-image: var(--eve-solar-system-status-dangerous);
   }
 
   &.eve-system-status-target {
-    background-image: linear-gradient(275deg, var(--eve-solar-system-status-target), transparent);
+    background-image: var(--eve-solar-system-status-target);
   }
 }
